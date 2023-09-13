@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -279,12 +278,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 .build();
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
-        var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
-                                                           nodeSpec.cloudAccount().isExclave(nodeRepository().zone()),
-                                                           nodeRepository().nameResolver());
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec,
-                true, allocationContext, nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
-                nodeRepository().spareCount());
+                true, nodeRepository().nameResolver(), nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
+                nodeRepository().spareCount(), nodeSpec.cloudAccount().isExclave(nodeRepository().zone()));
         List<NodeCandidate> nodeCandidates = prioritizer.collect();
         MutableInteger index = new MutableInteger(0);
         return nodeCandidates
