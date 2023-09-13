@@ -52,6 +52,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName, c
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef(), get_initial_alloc())
 {
+    //TODO this is not safe without implementing getEnum
     setEnum(true);
 }
 

@@ -132,7 +132,7 @@ StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c) 
     if (F::IsMultiValue()) {
         _idx.push_back(0);
     }
-    setEnum();
+    setEnum(true);
 }
 
 template <typename F>
@@ -143,7 +143,7 @@ StringDirectAttrVector(const vespalib::string & baseFileName) :
     if (F::IsMultiValue()) {
         _idx.push_back(0);
     }
-    setEnum();
+    setEnum(true);
 }
 
 template <typename F>
