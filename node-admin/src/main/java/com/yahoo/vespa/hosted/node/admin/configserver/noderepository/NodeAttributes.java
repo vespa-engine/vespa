@@ -34,7 +34,6 @@ public class NodeAttributes {
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
     private List<TrustStoreItem> trustStore = List.of();
     private Optional<WireguardKey> wireguardPubkey = Optional.empty();
-    private Optional<Instant> wireguardKeyTimestamp = Optional.empty();
     /** The list of reports to patch. A null value is used to remove the report. */
     private Map<String, JsonNode> reports = new TreeMap<>();
 
@@ -138,8 +137,6 @@ public class NodeAttributes {
 
     public Optional<WireguardKey> getWireguardPubkey() { return wireguardPubkey; }
 
-    public Optional<Instant> getWireguardKeyTimestamp() { return wireguardKeyTimestamp; }
-
     public Map<String, JsonNode> getReports() {
         return reports;
     }
@@ -151,7 +148,7 @@ public class NodeAttributes {
     @Override
     public int hashCode() {
         return Objects.hash(hostId, restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                            currentFirmwareCheck, trustStore, wireguardPubkey, wireguardKeyTimestamp, reports);
+                            currentFirmwareCheck, trustStore, wireguardPubkey, reports);
     }
 
     public boolean isEmpty() {
@@ -173,7 +170,6 @@ public class NodeAttributes {
                 && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
                 && Objects.equals(trustStore, other.trustStore)
                 && Objects.equals(wireguardPubkey, other.wireguardPubkey)
-                && Objects.equals(wireguardKeyTimestamp, other.wireguardKeyTimestamp)
                 && Objects.equals(reports, other.reports);
     }
 
@@ -188,7 +184,6 @@ public class NodeAttributes {
                          currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
                          Optional.ofNullable(trustStore.isEmpty() ? null : "trustStore=" + trustStore),
                          Optional.ofNullable(wireguardPubkey.isEmpty() ? null : "wireguardPubkey=" + wireguardPubkey),
-                            Optional.ofNullable(wireguardKeyTimestamp.isEmpty() ? null : "wireguardKeyTimestamp=" + wireguardKeyTimestamp),
                          Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

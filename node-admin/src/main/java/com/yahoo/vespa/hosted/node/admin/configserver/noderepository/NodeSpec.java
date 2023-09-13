@@ -728,7 +728,6 @@ public class NodeSpec {
             // Always replace entire trust store
             trustStore(attributes.getTrustStore());
             attributes.getWireguardPubkey().ifPresent(this::wireguardPubkey);
-            attributes.getWireguardKeyTimestamp().ifPresent(this::wireguardKeyTimestamp);
             this.reports.updateFromRawMap(attributes.getReports());
 
             return this;
