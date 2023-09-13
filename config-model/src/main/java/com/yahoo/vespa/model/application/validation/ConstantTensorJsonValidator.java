@@ -10,14 +10,11 @@ import com.yahoo.tensor.TensorType;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * ConstantTensorJsonValidator strictly validates a constant tensor in JSON format read from a Reader object
@@ -135,21 +132,11 @@ public class ConstantTensorJsonValidator {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
             String fieldName = parser.getCurrentName();
             switch (fieldName) {
-            case FIELD_TYPE:
-                consumeTypeField();
-                break;
-            case FIELD_VALUES:
-                consumeValuesField();
-                break;
-            case FIELD_CELLS:
-                consumeCellsField();
-                break;
-            case FIELD_BLOCKS:
-                consumeBlocksField();
-                break;
-            default:
-                consumeAnyField(fieldName, parser.nextToken());
-                break;
+                case FIELD_TYPE -> consumeTypeField();
+                case FIELD_VALUES -> consumeValuesField();
+                case FIELD_CELLS -> consumeCellsField();
+                case FIELD_BLOCKS -> consumeBlocksField();
+                default -> consumeAnyField(fieldName, parser.nextToken());
             }
         }
         if (seenSimpleMapValue) {
@@ -212,17 +199,17 @@ public class ConstantTensorJsonValidator {
             assertNextTokenIs(JsonToken.FIELD_NAME);
             String fieldName = parser.getCurrentName();
             switch (fieldName) {
-            case FIELD_ADDRESS:
-                validateTensorAddress(new HashSet<>(tensorDimensions.keySet()));
-                seenAddress = true;
-                break;
-            case FIELD_VALUE:
-                validateNumeric(FIELD_VALUE, parser.nextToken());
-                seenValue = true;
-                break;
-            default:
-                throw new InvalidConstantTensorException(parser, String.format("Only '%s' or '%s' fields are permitted within a cell object",
-                                                                               FIELD_ADDRESS, FIELD_VALUE));
+                case FIELD_ADDRESS -> {
+                    validateTensorAddress(new HashSet<>(tensorDimensions.keySet()));
+                    seenAddress = true;
+                }
+                case FIELD_VALUE -> {
+                    validateNumeric(FIELD_VALUE, parser.nextToken());
+                    seenValue = true;
+                }
+                default ->
+                        throw new InvalidConstantTensorException(parser, String.format("Only '%s' or '%s' fields are permitted within a cell object",
+                                FIELD_ADDRESS, FIELD_VALUE));
             }
         }
         if (! seenAddress) {
@@ -275,7 +262,7 @@ public class ConstantTensorJsonValidator {
     private void validateBoundIndex(TensorType.IndexedBoundDimension dimension) throws IOException {
         try {
             int value = Integer.parseInt(parser.getValueAsString());
-            if (value >= dimension.size().get())
+            if (value >= dimension.size().get().intValue())
                 throw new InvalidConstantTensorException(parser, String.format("Index %s not within limits of bound dimension '%s'", value, dimension.name()));
         } catch (NumberFormatException e) {
             throwCoordinateIsNotInteger(parser.getValueAsString(), dimension.name());
@@ -415,18 +402,18 @@ public class ConstantTensorJsonValidator {
                 assertNextTokenIs(JsonToken.FIELD_NAME);
                 String fieldName = parser.getCurrentName();
                 switch (fieldName) {
-                case FIELD_ADDRESS:
-                    validateTensorAddress(new HashSet<>(mappedDims));
-                    seenAddress = true;
-                    break;
-                case FIELD_VALUES:
-                    assertNextTokenIs(JsonToken.START_ARRAY);
-                    consumeValuesArray();
-                    seenValues = true;
-                    break;
-                default:
-                    throw new InvalidConstantTensorException(parser, String.format("Only '%s' or '%s' fields are permitted within a block object",
-                                                                                   FIELD_ADDRESS, FIELD_VALUES));
+                    case FIELD_ADDRESS -> {
+                        validateTensorAddress(new HashSet<>(mappedDims));
+                        seenAddress = true;
+                    }
+                    case FIELD_VALUES -> {
+                        assertNextTokenIs(JsonToken.START_ARRAY);
+                        consumeValuesArray();
+                        seenValues = true;
+                    }
+                    default ->
+                            throw new InvalidConstantTensorException(parser, String.format("Only '%s' or '%s' fields are permitted within a block object",
+                                    FIELD_ADDRESS, FIELD_VALUES));
                 }
             }
             if (! seenAddress) {
