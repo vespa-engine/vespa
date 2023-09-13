@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
-import java.util.stream.Collectors;
 
 /**
  * An optimization for tensor expressions where a join immediately follows a

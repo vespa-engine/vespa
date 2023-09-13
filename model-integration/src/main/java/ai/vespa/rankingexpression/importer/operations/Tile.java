@@ -47,7 +47,7 @@ public class Tile extends IntermediateOperation {
             throw new IllegalArgumentException("Tile " + name + ": repeats must be a 1-d tensor.");
 
         OrderedTensorType inputType = inputs.get(0).type().get();
-        if (shape.type().dimensions().get(0).size().get() != inputType.rank())
+        if (shape.type().dimensions().get(0).size().get().intValue() != inputType.rank())
             throw new IllegalArgumentException("Tile " + name + ": repeats must be the same size as input rank.");
 
         List<Integer> dimSizes = new ArrayList<>(inputType.rank());
