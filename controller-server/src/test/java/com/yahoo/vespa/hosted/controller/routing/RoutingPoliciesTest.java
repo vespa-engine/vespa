@@ -1011,7 +1011,6 @@ public class RoutingPoliciesTest {
         var tester = new RoutingPoliciesTester(SystemName.Public);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        tester.enableTokenEndpoint(true);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
@@ -1233,10 +1232,6 @@ public class RoutingPoliciesTest {
                          .map(Record::data)
                          .map(RecordData::asString)
                          .toList();
-        }
-
-        void enableTokenEndpoint(boolean enabled) {
-            tester.controllerTester().flagSource().withBooleanFlag(Flags.ENABLE_DATAPLANE_PROXY.id(), enabled);
         }
 
         private void assertTargets(TenantAndApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster,

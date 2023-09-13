@@ -324,13 +324,6 @@ public class Flags {
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
-    public static final UnboundBooleanFlag ENABLE_DATAPLANE_PROXY = defineFeatureFlag(
-            "enable-dataplane-proxy", false,
-            List.of("mortent", "olaa"), "2023-05-15", "2023-10-01",
-            "Whether to enable dataplane proxy",
-            "Takes effect at redeployment",
-            APPLICATION_ID
-    );
     public static final UnboundBooleanFlag ENABLE_NESTED_MULTIVALUE_GROUPING = defineFeatureFlag(
             "enable-nested-multivalue-grouping", true,
             List.of("baldersheim"), "2023-06-29", "2023-12-31",

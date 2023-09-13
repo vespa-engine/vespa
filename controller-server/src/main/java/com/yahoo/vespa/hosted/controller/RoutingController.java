@@ -79,7 +79,6 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag createTokenEndpoint;
     private final BooleanFlag randomizedEndpoints;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
@@ -88,7 +87,6 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.createTokenEndpoint = Flags.ENABLE_DATAPLANE_PROXY.bindTo(controller.flagSource());
         this.randomizedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
     }
 
@@ -133,12 +131,11 @@ public class RoutingController {
         // Add zone-scoped endpoints
         final GeneratedEndpoints generatedEndpoints;
         if (randomizedEndpointsEnabled(deployment.applicationId())) { // TODO(mpolden): Remove this guard once config-models < 8.220 are gone
-            boolean includeTokenEndpoint = tokenEndpointEnabled(deployment.applicationId());
             Map<ClusterSpec.Id, List<GeneratedEndpoint>> generatedEndpointsByCluster = new HashMap<>();
             RoutingPolicyList deploymentPolicies = policies().read(deployment);
             for (var container : services.containers()) {
                 ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
-                boolean tokenSupported = includeTokenEndpoint && container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
+                boolean tokenSupported = container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
                 // Use already existing generated endpoints, if any
                 List<GeneratedEndpoint> generatedForCluster = deploymentPolicies.cluster(clusterId)
                                                                                 .first()
@@ -176,7 +173,7 @@ public class RoutingController {
 
     /** Returns the zone- and region-scoped endpoints of given deployment */
     public EndpointList endpointsOf(DeploymentId deployment, ClusterSpec.Id cluster, List<GeneratedEndpoint> generatedEndpoints) {
-        boolean tokenSupported = tokenEndpointEnabled(deployment.applicationId()) && generatedEndpoints.stream().anyMatch(ge -> ge.authMethod() == AuthMethod.token);
+        boolean tokenSupported = generatedEndpoints.stream().anyMatch(ge -> ge.authMethod() == AuthMethod.token);
         RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         boolean isProduction = deployment.zoneId().environment().isProduction();
         List<Endpoint> endpoints = new ArrayList<>();
@@ -493,10 +490,6 @@ public class RoutingController {
             }
         });
         return Collections.unmodifiableList(routingMethods);
-    }
-
-    private boolean tokenEndpointEnabled(ApplicationId instance) {
-        return createTokenEndpoint.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
     }
 
     public boolean randomizedEndpointsEnabled(ApplicationId instance) {

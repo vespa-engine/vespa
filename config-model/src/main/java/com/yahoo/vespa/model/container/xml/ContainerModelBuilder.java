@@ -627,14 +627,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         var server = cluster.getHttp().getHttpServer().get();
-        Set<String> tokenEndpoints = state.getEndpoints().stream()
-                .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token)
+        Set<String> tokenEndpoints = tokenEndpoints(state).stream()
                 .map(ContainerEndpoint::names)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
 
         boolean enableTokenSupport = state.isHosted() && state.zone().system().isPublic()
-                && state.featureFlags().enableDataplaneProxy()
                 && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty())
                 && ! tokenEndpoints.isEmpty();
         if (!enableTokenSupport) return;
@@ -1451,11 +1449,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static int getMtlsDataplanePort(DeployState ds) {
-        return ds.featureFlags().enableDataplaneProxy() ? 8443 : 4443;
+        boolean enableDataplaneProxy = ! tokenEndpoints(ds).isEmpty();
+        return enableDataplaneProxy ? 8443 : 4443;
     }
 
     private static OptionalInt getTokenDataplanePort(DeployState ds) {
-        return ds.featureFlags().enableDataplaneProxy() ? OptionalInt.of(8444) : OptionalInt.empty();
+        boolean enableDataplaneProxy = ! tokenEndpoints(ds).isEmpty();
+        return enableDataplaneProxy ? OptionalInt.of(8444) : OptionalInt.empty();
+    }
+
+    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState) {
+        return deployState.getEndpoints().stream()
+                .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token)
+                .collect(Collectors.toSet());
     }
 
 }
