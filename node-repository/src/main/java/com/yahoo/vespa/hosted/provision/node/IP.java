@@ -108,7 +108,7 @@ public record IP() {
         }
 
         public static Config of(Set<String> primary, Set<String> ipPool, List<HostName> hostnames) {
-            return new Config(primary, new Pool(IpAddresses.of(ipPool), hostnames));
+            return new Config(primary, Pool.of(ipPool, hostnames));
         }
 
         public static Config of(Set<String> primary, Set<String> pool) {
@@ -245,24 +245,25 @@ public record IP() {
      *
      * Addresses in this are available for use by Linux containers.
      */
-    public record Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
+    public static class Pool {
+        private final IpAddresses ipAddresses;
+        private final List<HostName> hostnames;
 
-        public static final Pool EMPTY = new Pool(IpAddresses.of(Set.of()), List.of());
+        public static final Pool EMPTY = Pool.of(Set.of(), List.of());
 
         /** Create a new pool containing given ipAddresses */
         public static Pool of(Set<String> ipAddresses, List<HostName> hostnames) {
-            IpAddresses ips = IpAddresses.of(ipAddresses);
-            return new Pool(ips, hostnames);
+            return new Pool(IpAddresses.of(ipAddresses), hostnames);
         }
 
-        public Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
+        private Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
             this.ipAddresses = Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null");
             this.hostnames = List.copyOf(Objects.requireNonNull(hostnames, "hostnames must be non-null"));
         }
 
-        public Set<String> asSet() {
-            return ipAddresses.addresses;
-        }
+        public IpAddresses ipAddresses() { return ipAddresses; }
+        public List<HostName> hostnames() { return hostnames; }
+        public Set<String> asSet() { return ipAddresses.addresses; }
 
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
@@ -328,6 +329,26 @@ public record IP() {
             return Pool.of(ipAddresses.addresses, hostnames);
         }
 
+        @Override
+        public String toString() {
+            return "Pool{" +
+                   "ipAddresses=" + ipAddresses +
+                   ", hostnames=" + hostnames +
+                   '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pool pool = (Pool) o;
+            return Objects.equals(ipAddresses, pool.ipAddresses) && Objects.equals(hostnames, pool.hostnames);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ipAddresses, hostnames);
+        }
     }
 
     /** An address allocation from a pool */
