@@ -51,7 +51,7 @@ public class CosineSimilarity<NAMETYPE extends Name> extends TensorFunction<NAME
         if (d1.isEmpty() || d2.isEmpty()
             || d1.get().type() != Dimension.Type.indexedBound
             || d2.get().type() != Dimension.Type.indexedBound
-            || d1.get().size().get() != d2.get().size().get())
+            || ! d1.get().size().equals(d2.get().size()))
         {
             throw new IllegalArgumentException("cosine_similarity expects both arguments to have the '"
                                                + dimension + "' dimension with same size, but input types were "
