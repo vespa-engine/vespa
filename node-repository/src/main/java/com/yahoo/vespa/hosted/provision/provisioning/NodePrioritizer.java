@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
@@ -37,17 +36,18 @@ public class NodePrioritizer {
     private final NodeSpec requested;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
-    private final IP.Allocation.Context ipAllocationContext;
+    private final NameResolver nameResolver;
     private final Nodes nodes;
     private final boolean dynamicProvisioning;
     private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
+    private final boolean enclave;
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                           boolean dynamicProvisioning, IP.Allocation.Context ipAllocationContext, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
+                           boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean enclave) {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
@@ -58,8 +58,9 @@ public class NodePrioritizer {
         this.spareHosts = dynamicProvisioning ?
                 capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodes.asList()) :
                 capacity.findSpareHosts(this.allNodes.asList(), spareCount);
-        this.ipAllocationContext = ipAllocationContext;
+        this.nameResolver = nameResolver;
         this.nodes = nodes;
+        this.enclave = enclave;
 
         NodeList nodesInCluster = this.allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -134,7 +135,8 @@ public class NodePrioritizer {
                                                         host,
                                                         spareHosts.contains(host),
                                                         allNodes,
-                                                        ipAllocationContext));
+                                                        nameResolver,
+                                                        !enclave));
         }
     }
 

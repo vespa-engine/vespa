@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
 import java.util.LinkedHashSet;
@@ -168,18 +167,16 @@ public class Preparer {
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
         validateAccount(requested.cloudAccount(), application, allNodes);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
-        var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
-                                                           requested.cloudAccount().isExclave(nodeRepository.zone()),
-                                                           nodeRepository.nameResolver());
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                           application,
                                                           cluster,
                                                           requested,
                                                           nodeRepository.zone().cloud().dynamicProvisioning(),
-                                                          allocationContext,
+                                                          nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount());
+                                                          nodeRepository.spareCount(),
+                                                          requested.cloudAccount().isExclave(nodeRepository.zone()));
         allocation.offer(prioritizer.collect());
         return allocation;
     }
