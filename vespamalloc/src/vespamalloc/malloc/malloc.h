@@ -171,6 +171,7 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::info(FILE * os, size_t level)
     _segment.info(os, level);
     _allocPool.info(os, level);
     _threadList.info(os, level);
+    _mmapPool.info(os, level);
     fflush(os);
 }
 

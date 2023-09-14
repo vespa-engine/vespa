@@ -13,9 +13,7 @@ MMapPool::MMapPool()
       _count(0),
       _mutex(),
       _mappings()
-{
-
-}
+{ }
 
 MMapPool::~MMapPool() {
     ASSERT_STACKTRACE(_mappings.empty());
@@ -111,6 +109,17 @@ MMapPool::get_size(void * ptr) const {
     auto found = _mappings.find(ptr);
     ASSERT_STACKTRACE(found != _mappings.end());
     return found->second._sz;
+}
+
+void
+MMapPool::info(FILE * os, size_t) const {
+    fprintf(os, "MMapPool has %zu mappings, accumulated count is %lu,  with a total of %zu mapped bytes\n",
+            getNumMappings(), _count.load(std::memory_order_relaxed), getMmappedBytes());
+    std::lock_guard guard(_mutex);
+    size_t i(0);
+    for (const auto & e : _mappings) {
+        fprintf(os, "%4zu: (id=%zu, sz=%zu) = %p\n", i++, e.second._id, e.second._sz, e.first);
+    }
 }
 
 }
