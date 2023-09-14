@@ -264,6 +264,12 @@ public class DefParserTest {
                 "continue is a reserved word in C and Java");
     }
 
+    @Test
+    void testParsePathWithDefaultValue() {
+        assertLineFails("somePath path default=\"foo\"",
+                        "Invalid default value");
+    }
+
     static StringBuilder createDefTemplate() {
         StringBuilder sb = new StringBuilder();
         // Add a comment line to check that we get correct line number with comments

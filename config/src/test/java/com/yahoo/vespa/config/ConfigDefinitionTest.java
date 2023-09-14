@@ -81,7 +81,7 @@ public class ConfigDefinitionTest {
         def.addReferenceDef("myref");
         def.addReferenceDef("myrefdef", "reff");
         def.addFileDef("myfile");
-        def.addFileDef("myfiledef", "etc");
+        def.addFileDef("myfiledef");
     }
 
     @Test

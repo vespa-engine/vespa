@@ -630,25 +630,11 @@ public class ConfigDefinition {
         referenceDefs.put(refId, new RefDef(null));
     }
 
-    public void addFileDef(String refId, String defVal) {
-        fileDefs.put(refId, new FileDef(defVal));
-    }
-
     public void addFileDef(String refId) {
         fileDefs.put(refId, new FileDef(null));
     }
 
-    public void addPathDef(String refId, String defVal) {
-        pathDefs.put(refId, new PathDef(defVal));
-    }
-
-    public void addPathDef(String refId) {
-        pathDefs.put(refId, new PathDef(null));
-    }
-
-    public void addOptionalPathDef(String refId, String defVal) {
-        optionalPathDefs.put(refId, new OptionalPathDef(defVal));
-    }
+    public void addPathDef(String refId) { pathDefs.put(refId, new PathDef(null)); }
 
     public void addOptionalPathDef(String refId) {
         optionalPathDefs.put(refId, new OptionalPathDef(null));
