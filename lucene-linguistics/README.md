@@ -1,6 +1,7 @@
 # Vespa Lucene Linguistics
 
-Linguistics implementation based on Apache Lucene.
+Linguistics implementation based on the [Apache Lucene](https://lucene.apache.org).
+
 Features:
 - a list of default analyzers per language;
 - building custom analyzers through the configuration of the linguistics component;
@@ -40,7 +41,7 @@ Add `<component>` to `services.xml` of your application package, e.g.:
   </config>
 </component>
 ```
-into `container` clusters that has `<document-processing/>` and/or `<search>` specified.
+into `container` clusters that have `<document-processing/>` and/or `<search>` specified.
 
 And then package and deploy, e.g.:
 ```shell
@@ -74,7 +75,7 @@ Copy value of the `public static final String NAME` into the `<name>` and observ
 </tokenizer>
 ```
 
-The `AnalyzerFactory` constructor logs the available analysis components.
+The `AnalyzerFactory` constructor on the application startup logs the available analysis components.
 
 The analysis components are discovered through Java Service Provider Interface (SPI).
 To add more analysis components it should be enough to put a Lucene analyzer dependency into your application package `pom.xml`
@@ -82,7 +83,11 @@ or register services and create classes directly in the application package.
 
 ### Resource files
 
-The resource files are relative to the component config `configDir`.
+The Lucene analyzers can use various resource files, e.g. for stopwords, synonyms, etc.
+The `configDir` configuration parameter controls where to load these files from.
+These files are relative to the application package root directory.
+
+If the `configDir` is not specified then files are loaded from the classpath.
 
 ## Inspiration
 
