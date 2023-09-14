@@ -173,7 +173,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
             return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
                     .clusters().entrySet().stream()
                     .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));
-        } catch (ConfigServerException e) {
+        } catch (Exception e) {
             log.info("Could not retrieve scaling events for " + deploymentId + ": " + e.getMessage());
             return Stream.empty();
         }
