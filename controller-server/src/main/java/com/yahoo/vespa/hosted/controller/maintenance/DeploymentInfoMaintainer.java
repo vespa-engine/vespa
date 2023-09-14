@@ -22,8 +22,8 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
 
     private final NodeRepository nodeRepository;
 
-    public DeploymentInfoMaintainer(Controller controller, Duration duration) {
-        super(controller, duration, 0.95);
+    public DeploymentInfoMaintainer(Controller controller, Duration duration, Double successFactorBaseline) {
+        super(controller, duration, successFactorBaseline);
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
 

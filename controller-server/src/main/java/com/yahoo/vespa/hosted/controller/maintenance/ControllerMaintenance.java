@@ -47,7 +47,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(osUpgradeScheduler);
         maintainers.addAll(osUpgraders(controller, intervals.osUpgrader));
         maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
-        maintainers.add(new DeploymentInfoMaintainer(controller, intervals.deploymentInfoMaintainer));
+        maintainers.add(new DeploymentInfoMaintainer(controller, intervals.deploymentInfoMaintainer, successFactorBaseline.deploymentInfoMaintainerBaseline));
         maintainers.add(new DeploymentUpgrader(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval));
         maintainers.add(new MetricsReporter(controller, metric, athenzClientFactory.createZmsClient()));
@@ -200,11 +200,13 @@ public class ControllerMaintenance extends AbstractComponent {
 
         private final Double deploymentMetricsMaintainerBaseline;
         private final Double trafficFractionUpdater;
+        private final Double deploymentInfoMaintainerBaseline;
 
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
             this.deploymentMetricsMaintainerBaseline = 0.90;
             this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
+            this.deploymentInfoMaintainerBaseline = system.isCd() ? 0.5 : 0.95;
         }
 
     }
