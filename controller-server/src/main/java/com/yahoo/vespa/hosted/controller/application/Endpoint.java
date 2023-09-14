@@ -77,8 +77,8 @@ public class Endpoint {
      * Returns the name of this endpoint (the first component of the DNS name). This can be one of the following:
      *
      * - The wildcard character '*' (for wildcard endpoints, with any scope)
-     * - The cluster ID (zone scope)
-     * - The endpoint ID (global scope)
+     * - The cluster ID ({@link Scope#zone} and {@link Scope#weighted}
+     * - The endpoint ID ({@link Scope#global} and {@link Scope#application})
      */
     public String name() {
         return endpointOrClusterAsString(id, cluster);
@@ -181,7 +181,7 @@ public class Endpoint {
         String portPart = port.isDefault() ? "" : ":" + port.port;
         final String subdomain;
         if (generated.isPresent()) {
-            subdomain = generatedPart(generated.get(), name, scope, separator);
+            subdomain = generatedPart(generated.get(), separator);
         } else {
             subdomain = sanitize(namePart(name, separator)) +
                         systemPart(system, separator) +
@@ -199,12 +199,8 @@ public class Endpoint {
                           "/");
     }
 
-    private static String generatedPart(GeneratedEndpoint generated, String name, Scope scope, String separator) {
-        return switch (scope) {
-            // Endpoints with these scopes have a name part that is explicitly configured through deployment.xml
-            case weighted, global, application ->  sanitize(namePart(name, separator)) + generated.applicationPart();
-            case zone -> generated.clusterPart() + separator + generated.applicationPart();
-        };
+    private static String generatedPart(GeneratedEndpoint generated, String separator) {
+        return generated.clusterPart() + separator + generated.applicationPart();
     }
 
     private static String sanitize(String part) { // TODO: Reject reserved words
@@ -624,6 +620,9 @@ public class Endpoint {
             }
             if ((scope == Scope.weighted) != (authMethod == AuthMethod.none)) {
                 throw illegal(url, "Attempted to set unsupported authentication method " + authMethod + " on " + scope + " endpoint");
+            }
+            if (scope.multiDeployment() && generated.isPresent() && (generated.get().endpoint().isEmpty() || !generated.get().endpoint().get().equals(endpointId))) {
+                throw illegal(url, "Generated endpoint must contain a matching endpoint ID, but got " + generated.get().endpoint());
             }
             return new Endpoint(application,
                                 instance,

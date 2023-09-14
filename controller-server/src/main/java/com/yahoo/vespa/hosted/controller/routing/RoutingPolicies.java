@@ -109,7 +109,10 @@ public class RoutingPolicies {
      * Refresh routing policies for instance in given zone. This is idempotent and changes will only be performed if
      * routing configuration affecting given deployment has changed.
      */
-    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
+    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec, EndpointList generatedEndpoints) {
+        if (!generatedEndpoints.not().generated().isEmpty()) {
+            throw new IllegalStateException("Generated endpoints contains non-generated, got " + generatedEndpoints);
+        }
         ApplicationId instance = deployment.applicationId();
         List<LoadBalancer> loadBalancers = controller.serviceRegistry().configServer()
                                                      .getLoadBalancers(instance, deployment.zoneId());
@@ -182,7 +185,7 @@ public class RoutingPolicies {
     /** Update global DNS records for given global endpoint */
     private void updateGlobalDnsOf(Endpoint endpoint, List<RoutingPolicy> policies,
                                    Optional<DeploymentId> deployment, Optional<TenantAndApplicationId> owner) {
-        if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalArgumentException("Endpoint " + endpoint + " is not global");
+        if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalStateException("Endpoint " + endpoint + " is not global");
         if (deployment.isPresent() && !endpoint.deployments().contains(deployment.get())) return;
 
         Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(endpoint, policies);
@@ -239,7 +242,7 @@ public class RoutingPolicies {
     /** Compute region endpoints and their targets from given policies */
     private Collection<RegionEndpoint> computeRegionEndpoints(Endpoint parent, List<RoutingPolicy> policies) {
         if (!parent.scope().multiDeployment()) {
-            throw new IllegalArgumentException(parent + " has unexpected scope");
+            throw new IllegalStateException(parent + " has unexpected scope, got " + parent.scope());
         }
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
         for (var policy : policies) {
@@ -253,7 +256,7 @@ public class RoutingPolicies {
             EndpointList weightedEndpoints = controller.routing()
                                                        .endpointsOf(policy.id().deployment(),
                                                                     policy.id().cluster(),
-                                                                    parent.generated().stream().toList())
+                                                                    policy.generatedEndpoints().cluster())
                                                        .scope(Endpoint.Scope.weighted);
             if (generated) {
                 weightedEndpoints = weightedEndpoints.generated();
@@ -368,29 +371,24 @@ public class RoutingPolicies {
      *
      * @return the updated policies
      */
-    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList applicationPolicies, GeneratedEndpoints generatedEndpoints, @SuppressWarnings("unused") Mutex lock) {
+    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList applicationPolicies, EndpointList generatedEndpoints, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(applicationPolicies.instance(allocation.deployment.applicationId()).asMap());
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
             if (loadBalancer.hostname().isEmpty() && loadBalancer.ipAddress().isEmpty()) continue;
-            var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
-            var existingPolicy = policies.get(policyId);
-            var dnsZone = loadBalancer.ipAddress().isPresent() ? Optional.of("ignored") : loadBalancer.dnsZone();
-            var clusterGeneratedEndpoints = generatedEndpoints.cluster(loadBalancer.cluster());
+            RoutingPolicyId policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
+            RoutingPolicy existingPolicy = policies.get(policyId);
+            Optional<String> dnsZone = loadBalancer.ipAddress().isPresent() ? Optional.of("ignored") : loadBalancer.dnsZone();
+            List<GeneratedEndpoint> clusterGeneratedEndpoints = generatedEndpoints.cluster(loadBalancer.cluster())
+                                                                                  .mapToList(e -> e.generated().get());
+            clusterGeneratedEndpoints.forEach(ge -> requireNonClashing(ge, applicationPolicies.without(existingPolicy)));
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
                                               RoutingStatus.DEFAULT,
                                               loadBalancer.isPublic(),
-                                              clusterGeneratedEndpoints);
-            boolean addingGeneratedEndpoints = !clusterGeneratedEndpoints.isEmpty() && (existingPolicy == null || existingPolicy.generatedEndpoints().isEmpty());
-            if (addingGeneratedEndpoints) {
-                clusterGeneratedEndpoints.forEach(ge -> requireNonClashing(ge, applicationPolicies));
-            }
+                                              GeneratedEndpointList.copyOf(clusterGeneratedEndpoints));
             if (existingPolicy != null) {
-                newPolicy = newPolicy.with(existingPolicy.routingStatus());          // Always preserve routing status
-                if (!addingGeneratedEndpoints) {
-                    newPolicy = newPolicy.with(existingPolicy.generatedEndpoints()); // Endpoints are generated once
-                }
+                newPolicy = newPolicy.with(existingPolicy.routingStatus()); // Always preserve routing status
             }
             updateZoneDnsOf(newPolicy, loadBalancer, allocation.deployment);
             policies.put(newPolicy.id(), newPolicy);
@@ -404,7 +402,7 @@ public class RoutingPolicies {
     private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId,
                                                                       policy.id().cluster(),
-                                                                      policy.generatedEndpoints())
+                                                                      policy.generatedEndpoints().cluster())
                                                .scope(Endpoint.Scope.zone);
         for (var endpoint : zoneEndpoints) {
             RecordName name = RecordName.from(endpoint.dnsName());
@@ -488,7 +486,7 @@ public class RoutingPolicies {
         for (var policy : removable) {
             EndpointList zoneEndpoints = controller.routing().endpointsOf(allocation.deployment,
                                                                           policy.id().cluster(),
-                                                                          policy.generatedEndpoints())
+                                                                          policy.generatedEndpoints().cluster())
                                                    .scope(Endpoint.Scope.zone);
             for (var endpoint : zoneEndpoints) {
                 Record.Type type = policy.canonicalName().isPresent() ? Record.Type.CNAME : Record.Type.A;
@@ -516,8 +514,8 @@ public class RoutingPolicies {
             Set<Endpoint> endpoints = new LinkedHashSet<>();
             policyByCluster.forEach((cluster, clusterPolicies) -> {
                 List<DeploymentId> deployments = clusterPolicies.stream().map(p -> p.id().deployment()).toList();
-                List<GeneratedEndpoint> generated = clusterPolicies.stream().flatMap(p -> p.generatedEndpoints().stream()).distinct().toList();
-                endpoints.addAll(controller.routing().declaredEndpointsOf(id, cluster, deployments, new GeneratedEndpoints(Map.of(cluster, generated)))
+                GeneratedEndpointList generated = declaredGeneratedEndpoints(clusterPolicies);
+                endpoints.addAll(controller.routing().declaredEndpointsOf(id, cluster, deployments, generated)
                                            .not().requiresRotation()
                                            .named(id.endpointId(), Endpoint.Scope.global).asList());
             });
@@ -554,9 +552,9 @@ public class RoutingPolicies {
                 Map<DeploymentId, Integer> deployments = clusterPolicies.stream()
                                                                  .map(p -> p.id().deployment())
                                                                  .collect(Collectors.toMap(Function.identity(), (ignored) -> 1));
-                List<GeneratedEndpoint> generated = clusterPolicies.stream().flatMap(p -> p.generatedEndpoints().stream()).distinct().toList();
+                GeneratedEndpointList generated = declaredGeneratedEndpoints(clusterPolicies);
                 endpoints.addAll(controller.routing().declaredEndpointsOf(application, id.endpointId(), cluster,
-                                                                          deployments, new GeneratedEndpoints(Map.of(cluster, generated))).asList());
+                                                                          deployments, generated).asList());
             });
             for (var policy : policies) {
                 if (!policy.appliesTo(allocation.deployment)) continue;
@@ -586,6 +584,13 @@ public class RoutingPolicies {
 
     private Set<RoutingId> applicationRoutingIds(LoadBalancerAllocation allocation) {
         return routingIdsFrom(allocation, true);
+    }
+
+    private static GeneratedEndpointList declaredGeneratedEndpoints(List<RoutingPolicy> clusterPolicies) {
+        return GeneratedEndpointList.copyOf(clusterPolicies.stream()
+                                                           .flatMap(p -> p.generatedEndpoints().declared().asList().stream())
+                                                           .distinct()
+                                                           .toList());
     }
 
     /** Compute routing IDs from given load balancers */
@@ -760,7 +765,7 @@ public class RoutingPolicies {
         for (var policy : applicationPolicies) {
             for (var ge : policy.generatedEndpoints()) {
                 if (ge.clusterPart().equals(generatedEndpoint.clusterPart())) {
-                    throw new IllegalArgumentException(generatedEndpoint + " clashes with " + ge + " in " + policy.id());
+                    throw new IllegalStateException(generatedEndpoint + " clashes with " + ge + " in " + policy.id());
                 }
             }
         }

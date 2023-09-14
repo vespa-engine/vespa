@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.pkg.BasicServicesXml;
-import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.PreparedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
@@ -50,7 +50,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
     }
 
     /** Finalize routing configuration for the deployment in this context, using given deployment spec */
-    public final void activate(DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
+    public final void activate(DeploymentSpec deploymentSpec, EndpointList generatedEndpoints) {
         routing.policies().refresh(deployment, deploymentSpec, generatedEndpoints);
     }
 

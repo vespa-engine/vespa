@@ -13,6 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
+import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpointList;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -56,6 +57,7 @@ public class RoutingPolicySerializer {
     private static final String clusterPartField = "clusterPart";
     private static final String applicationPartField = "applicationPart";
     private static final String authMethodField = "authMethod";
+    private static final String endpointIdField = "endpointId";
 
     public Slime toSlime(List<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -80,6 +82,7 @@ public class RoutingPolicySerializer {
                 generatedEndpointObject.setString(clusterPartField, generatedEndpoint.clusterPart());
                 generatedEndpointObject.setString(applicationPartField, generatedEndpoint.applicationPart());
                 generatedEndpointObject.setString(authMethodField, authMethod(generatedEndpoint.authMethod()));
+                generatedEndpoint.endpoint().ifPresent(endpointId -> generatedEndpointObject.setString(endpointIdField, endpointId.id()));
             });
         });
         return slime;
@@ -104,7 +107,9 @@ public class RoutingPolicySerializer {
                 generatedEndpointsArray.traverse((ArrayTraverser) (idx, generatedEndpointObject) ->
                         generatedEndpoints.add(new GeneratedEndpoint(generatedEndpointObject.field(clusterPartField).asString(),
                                                                      generatedEndpointObject.field(applicationPartField).asString(),
-                                                                     authMethodFromSlime(generatedEndpointObject.field(authMethodField)))));
+                                                                     authMethodFromSlime(generatedEndpointObject.field(authMethodField)),
+                                                                     SlimeUtils.optionalString(generatedEndpointObject.field(endpointIdField))
+                                                                               .map(EndpointId::of))));
             }
             policies.add(new RoutingPolicy(id,
                                            SlimeUtils.optionalString(inspect.field(canonicalNameField)).map(DomainName::of),
@@ -114,7 +119,7 @@ public class RoutingPolicySerializer {
                                            applicationEndpoints,
                                            routingStatusFromSlime(inspect.field(globalRoutingField)),
                                            isPublic,
-                                           generatedEndpoints));
+                                           GeneratedEndpointList.copyOf(generatedEndpoints)));
         });
         return Collections.unmodifiableList(policies);
     }

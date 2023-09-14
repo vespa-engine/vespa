@@ -5,9 +5,7 @@ import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,12 +24,12 @@ public record RoutingPolicy(RoutingPolicyId id,
                             Set<EndpointId> applicationEndpoints,
                             RoutingStatus routingStatus,
                             boolean isPublic,
-                            List<GeneratedEndpoint> generatedEndpoints) {
+                            GeneratedEndpointList generatedEndpoints) {
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(RoutingPolicyId id, Optional<DomainName> canonicalName, Optional<String> ipAddress, Optional<String> dnsZone,
                          Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, RoutingStatus routingStatus, boolean isPublic,
-                         List<GeneratedEndpoint> generatedEndpoints) {
+                         GeneratedEndpointList generatedEndpoints) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
@@ -40,7 +38,7 @@ public record RoutingPolicy(RoutingPolicyId id,
         this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.routingStatus = Objects.requireNonNull(routingStatus, "status must be non-null");
         this.isPublic = isPublic;
-        this.generatedEndpoints = List.copyOf(Objects.requireNonNull(generatedEndpoints, "generatedEndpoints must be non-null"));
+        this.generatedEndpoints = Objects.requireNonNull(generatedEndpoints, "generatedEndpoints must be non-null");
 
         if (canonicalName.isEmpty() == ipAddress.isEmpty())
             throw new IllegalArgumentException("Exactly 1 of canonicalName=%s and ipAddress=%s must be set".formatted(
@@ -81,8 +79,8 @@ public record RoutingPolicy(RoutingPolicyId id,
         return applicationEndpoints;
     }
 
-    /** The endpoints to generate for this policy, if any */
-    public List<GeneratedEndpoint> generatedEndpoints() {
+    /** The endpoints generated for this policy, if any */
+    public GeneratedEndpointList generatedEndpoints() {
         return generatedEndpoints;
     }
 
@@ -104,10 +102,6 @@ public record RoutingPolicy(RoutingPolicyId id,
 
     /** Returns a copy of this with routing status set to given status */
     public RoutingPolicy with(RoutingStatus routingStatus) {
-        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic, generatedEndpoints);
-    }
-
-    public RoutingPolicy with(List<GeneratedEndpoint> generatedEndpoints) {
         return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic, generatedEndpoints);
     }
 
