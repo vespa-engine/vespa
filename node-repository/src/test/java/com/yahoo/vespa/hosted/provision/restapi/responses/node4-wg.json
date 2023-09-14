@@ -118,6 +118,5 @@
   "ipAddresses": ["127.0.4.1", "::4:1"],
   "additionalIpAddresses": [],
   "cloudAccount": "aws:111222333444",
-  "wireguardPubkey": "lololololololololololololololololololololoo=",
-  "wireguardKeyTimestamp": 123
+  "wireguardPubkey": "lololololololololololololololololololololoo="
 }

@@ -405,7 +405,7 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");
     }
 
-    @Test
+        @Test
     public void post_controller_node() throws Exception {
         String data = "[{\"hostname\":\"controller1.yahoo.com\", \"id\":\"fake-controller1.yahoo.com\"," +
                       createIpAddresses("127.0.0.1") +

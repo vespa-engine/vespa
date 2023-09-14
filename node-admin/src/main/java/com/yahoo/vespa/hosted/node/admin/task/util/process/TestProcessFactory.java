@@ -63,9 +63,7 @@ public class TestProcessFactory implements ProcessFactory {
             int missingCommandIndex = spawnCommandLines.size();
             throw new IllegalStateException("Command #" + missingCommandIndex +
                     " never executed: " +
-                    expectedSpawnCalls.get(missingCommandIndex).commandDescription +
-                    "\nExpected commands:\n" + getExpectedCommandLines() +
-                    "\nActual commands:\n" + spawnCommandLines);
+                    expectedSpawnCalls.get(missingCommandIndex).commandDescription);
         }
     }
 
@@ -103,11 +101,4 @@ public class TestProcessFactory implements ProcessFactory {
 
         return toReturn;
     }
-
-    private List<String> getExpectedCommandLines() {
-        return expectedSpawnCalls.stream()
-                .map(spawnCall -> spawnCall.commandDescription)
-                .toList();
-    }
-
 }

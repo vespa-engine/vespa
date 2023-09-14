@@ -3,7 +3,6 @@
     {
       "hostname": "cfg1.yahoo.com",
       "wireguardPubkey": "lololololololololololololololololololololoo=",
-      "wireguardKeyTimestamp":456,
       "ipAddresses": ["::201:1"]
     }
   ]
