@@ -68,8 +68,8 @@ org.vafer:jdependency:2.8.0
 #[test-only]
 # Contains dependencies that are used exclusively in 'test' scope
 junit:junit:4.13.2
-net.bytebuddy:byte-buddy:1.14.7
-net.bytebuddy:byte-buddy-agent:1.14.7
+net.bytebuddy:byte-buddy:1.14.8
+net.bytebuddy:byte-buddy-agent:1.14.8
 org.apiguardian:apiguardian-api:1.1.2
 org.hamcrest:hamcrest:2.2
 org.hamcrest:hamcrest-core:2.2
