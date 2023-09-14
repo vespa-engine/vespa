@@ -159,6 +159,11 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
         builder.consumer.add(toConsumerBuilder(newDefaultConsumer()));
+        getAdmin()
+                .map(Admin::getAmendedMetricsConsumers)
+                .map(consumers -> consumers.stream().map(ConsumersConfigGenerator::toConsumerBuilder).toList())
+                .ifPresent(builder.consumer::addAll);
+
     }
 
     public MetricsConsumer newDefaultConsumer() {
