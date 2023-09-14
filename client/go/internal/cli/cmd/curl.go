@@ -80,7 +80,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 	}
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the curl command that would be executed")
 	cmd.Flags().StringVarP(&curlService, "service", "s", "container", "Which service to query. Must be \"deploy\" or \"container\"")
-	cli.bindWaitFlag(cmd, 60, &waitSecs)
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
