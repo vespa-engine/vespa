@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Dns;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
@@ -98,7 +99,7 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
     /** Verify DNS configuration of given node */
     private void verifyDns(String hostname, NodeType hostType, CloudAccount cloudAccount, IP.Config ipConfig) {
         for (String ipAddress : ipConfig.primary()) {
-            IP.verifyDns(hostname, ipAddress, hostType, nodeRepository().nameResolver(), cloudAccount, nodeRepository().zone());
+            Dns.verify(hostname, ipAddress, hostType, nodeRepository().nameResolver(), cloudAccount, nodeRepository().zone());
         }
     }
 

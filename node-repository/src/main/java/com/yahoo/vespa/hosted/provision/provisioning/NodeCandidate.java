@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
@@ -276,9 +275,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                                Node parent,
                                                boolean violatesSpares,
                                                LockedNodeList allNodes,
-                                               NameResolver nameResolver,
-                                               boolean hasPtrRecord) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nameResolver, hasPtrRecord);
+                                               IP.Allocation.Context ipAllocationContext) {
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, ipAllocationContext);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
@@ -382,8 +380,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         /** Needed to construct the node */
         private final LockedNodeList allNodes;
-        private final NameResolver nameResolver;
-        private final boolean hasPtrRecord;
+        private final IP.Allocation.Context ipAllocationContext;
 
         private VirtualNodeCandidate(NodeResources resources,
                                      NodeResources freeParentCapacity,
@@ -391,13 +388,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      boolean violatesSpares,
                                      boolean exclusiveSwitch,
                                      LockedNodeList allNodes,
-                                     NameResolver nameResolver,
-                                     boolean hasPtrRecord) {
+                                     IP.Allocation.Context ipAllocationContext) {
             super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, false, true, false);
             this.resources = resources;
             this.allNodes = allNodes;
-            this.nameResolver = nameResolver;
-            this.hasPtrRecord = hasPtrRecord;
+            this.ipAllocationContext = ipAllocationContext;
         }
 
         @Override
@@ -436,7 +431,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         public NodeCandidate withNode() {
             Optional<IP.Allocation> allocation;
             try {
-                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nameResolver, hasPtrRecord);
+                allocation = parent.get().ipConfig().pool().findAllocation(ipAllocationContext, allNodes);
                 if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
                                                                           "No addresses available on parent host");
             } catch (Exception e) {
@@ -460,7 +455,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
-            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nameResolver, hasPtrRecord);
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, ipAllocationContext);
         }
 
         @Override
