@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import ai.vespa.http.DomainName;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -222,8 +220,9 @@ public class CuratorDb {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                                    node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(), node.exclusiveToClusterType(),
-                                    node.switchHostname(), node.trustedCertificates(), node.cloudAccount(), node.wireguardPubKey());
+                                    node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(),
+                                    node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates(),
+                                    node.cloudAccount(), node.wireguardPubKey(), node.wireguardKeyTimestamp());
             curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
         }

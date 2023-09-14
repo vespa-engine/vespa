@@ -10,7 +10,9 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A response containing the wireguard peer config for each configserver that has a public key.
@@ -28,19 +30,22 @@ public class WireguardResponse extends SlimeJsonResponse {
                 .nodeType(NodeType.config);
 
         for (Node cfg : configservers) {
-            if (cfg.wireguardPubKey().isEmpty()) return;
+            if (cfg.wireguardPubKey().isEmpty()) continue;
             List<String> ipAddresses = cfg.ipConfig().primary().stream()
                     .filter(WireguardResponse::isPublicIp)
                     .toList();
-            if (ipAddresses.isEmpty()) return;
+            if (ipAddresses.isEmpty()) continue;
 
-            addConfigserver(cfgArray.addObject(), cfg.hostname(), cfg.wireguardPubKey().get(), ipAddresses);
+            addConfigserver(cfgArray.addObject(), cfg.hostname(), cfg.wireguardPubKey().get(),
+                            cfg.wireguardKeyTimestamp(), ipAddresses);
         }
     }
 
-    private void addConfigserver(Cursor cfgEntry, String hostname, WireguardKey key, List<String> ipAddresses) {
+    private void addConfigserver(Cursor cfgEntry, String hostname, WireguardKey key, Optional<Instant> keyTimestamp,
+                                 List<String> ipAddresses) {
         cfgEntry.setString("hostname", hostname);
         cfgEntry.setString("wireguardPubkey", key.value());
+        cfgEntry.setLong("wireguardKeyTimestamp", keyTimestamp.orElse(Instant.EPOCH).toEpochMilli());
         NodesResponse.ipAddressesToSlime(ipAddresses, cfgEntry.setArray("ipAddresses"));
     }
 

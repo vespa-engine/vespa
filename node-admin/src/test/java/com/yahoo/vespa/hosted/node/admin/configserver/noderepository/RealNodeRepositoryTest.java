@@ -139,6 +139,7 @@ public class RealNodeRepositoryTest {
         var hostname = "host4.yahoo.com";
         var dockerImage = "registry.example.com/repo/image-1:6.2.3";
         var wireguardKey = WireguardKey.from("111122223333444455556666777788889999000042c=");
+        var wireguardKeyTimestamp = Instant.ofEpochMilli(123L); // Instant from clock in MockNodeRepository
 
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -151,6 +152,7 @@ public class RealNodeRepositoryTest {
         assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
         assertEquals(dockerImage, hostSpec.currentDockerImage().orElseThrow().asString());
         assertEquals(wireguardKey.value(), hostSpec.wireguardPubkey().orElseThrow().value());
+        assertEquals(wireguardKeyTimestamp, hostSpec.wireguardKeyTimestamp().orElseThrow());
     }
 
     @Test
@@ -212,7 +214,8 @@ public class RealNodeRepositoryTest {
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1",
-                            "lololololololololololololololololololololoo=");
+                            "lololololololololololololololololololololoo=",
+                            Instant.ofEpochMilli(456L));
 
         //// Exclave nodes ////
 
@@ -223,14 +226,17 @@ public class RealNodeRepositoryTest {
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
                             "::101:1",
-                            "000011112222333344445555666677778888999900c=");
+                            "000011112222333344445555666677778888999900c=",
+                            Instant.ofEpochMilli(123L));
     }
 
-    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String publicKey) {
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6,
+                                     String publicKey, Instant keyTimestamp) {
         assertEquals(hostname, peer.hostname().value());
         assertEquals(1, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
         assertEquals(publicKey, peer.publicKey().value());
+        assertEquals(keyTimestamp, peer.wireguardKeyTimestamp());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
