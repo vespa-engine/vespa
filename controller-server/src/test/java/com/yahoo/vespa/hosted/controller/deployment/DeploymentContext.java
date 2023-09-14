@@ -6,9 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -29,16 +27,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.Timeouts;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -47,7 +41,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -262,9 +255,8 @@ public class DeploymentContext {
         try {
             dispatcher.run();
             return this;
-        }
-        finally {
-            dispatcher.shutdown();
+        } finally {
+            dispatcher.awaitShutdown();
         }
     }
 

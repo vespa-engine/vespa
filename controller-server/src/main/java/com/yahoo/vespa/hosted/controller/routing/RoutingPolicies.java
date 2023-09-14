@@ -514,7 +514,7 @@ public class RoutingPolicies {
             Set<Endpoint> endpoints = new LinkedHashSet<>();
             policyByCluster.forEach((cluster, clusterPolicies) -> {
                 List<DeploymentId> deployments = clusterPolicies.stream().map(p -> p.id().deployment()).toList();
-                GeneratedEndpointList generated = declaredGeneratedEndpoints(clusterPolicies);
+                GeneratedEndpointList generated = declaredGeneratedEndpoints(id.endpointId(), clusterPolicies);
                 endpoints.addAll(controller.routing().declaredEndpointsOf(id, cluster, deployments, generated)
                                            .not().requiresRotation()
                                            .named(id.endpointId(), Endpoint.Scope.global).asList());
@@ -552,7 +552,7 @@ public class RoutingPolicies {
                 Map<DeploymentId, Integer> deployments = clusterPolicies.stream()
                                                                  .map(p -> p.id().deployment())
                                                                  .collect(Collectors.toMap(Function.identity(), (ignored) -> 1));
-                GeneratedEndpointList generated = declaredGeneratedEndpoints(clusterPolicies);
+                GeneratedEndpointList generated = declaredGeneratedEndpoints(id.endpointId(), clusterPolicies);
                 endpoints.addAll(controller.routing().declaredEndpointsOf(application, id.endpointId(), cluster,
                                                                           deployments, generated).asList());
             });
@@ -586,9 +586,9 @@ public class RoutingPolicies {
         return routingIdsFrom(allocation, true);
     }
 
-    private static GeneratedEndpointList declaredGeneratedEndpoints(List<RoutingPolicy> clusterPolicies) {
+    private static GeneratedEndpointList declaredGeneratedEndpoints(EndpointId endpoint, List<RoutingPolicy> clusterPolicies) {
         return GeneratedEndpointList.copyOf(clusterPolicies.stream()
-                                                           .flatMap(p -> p.generatedEndpoints().declared().asList().stream())
+                                                           .flatMap(p -> p.generatedEndpoints().declared(endpoint).asList().stream())
                                                            .distinct()
                                                            .toList());
     }

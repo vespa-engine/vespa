@@ -932,7 +932,7 @@ public class ApplicationController {
         DeploymentId id = new DeploymentId(instanceId, zone);
         interface CleanCloseable extends AutoCloseable { void close(); }
         try (CleanCloseable postDeactivation = () -> {
-            application.ifPresent(app -> controller.routing().of(id).activate(app.get().deploymentSpec(), EndpointList.EMPTY));
+            application.ifPresent(app -> controller.routing().of(id).deactivate(app.get().deploymentSpec()));
             if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
             if ( ! id.zoneId().environment().isTest())

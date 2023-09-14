@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.config.provision.zone.AuthMethod;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 
 import java.util.Collection;
@@ -19,6 +20,11 @@ public class GeneratedEndpointList extends AbstractFilteringList<GeneratedEndpoi
 
     private GeneratedEndpointList(Collection<? extends GeneratedEndpoint> items, boolean negate) {
         super(items, negate, GeneratedEndpointList::new);
+    }
+
+    /** Returns the subset of endpoints which are generated for given endpoint ID */
+    public GeneratedEndpointList declared(EndpointId endpoint) {
+        return matching(e -> e.endpoint().isPresent() && e.endpoint().get().equals(endpoint));
     }
 
     /** Returns the subset of endpoints which are generated for endpoints declared in {@link com.yahoo.config.application.api.DeploymentSpec} */
