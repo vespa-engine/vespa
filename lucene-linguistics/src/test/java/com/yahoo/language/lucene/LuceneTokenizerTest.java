@@ -167,4 +167,30 @@ public class LuceneTokenizerTest {
                 .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.ALL, false);
         assertEquals(List.of("Dog", "and", "Cat"), tokenStrings(tokens));
     }
+
+    @Test
+    public void testOptionalPathWithClasspathResources() {
+        String languageCode = Language.ENGLISH.languageCode();
+        LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
+                .analysis(
+                        Map.of(languageCode,
+                                new LuceneAnalysisConfig.Analysis.Builder().tokenFilters(List.of(
+                                        new LuceneAnalysisConfig
+                                                .Analysis
+                                                .TokenFilters
+                                                .Builder()
+                                                .name("englishMinimalStem"),
+                                        new LuceneAnalysisConfig
+                                                .Analysis
+                                                .TokenFilters
+                                                .Builder()
+                                                .name("stop")
+                                                .conf("words", "classpath-stopwords.txt"))))
+                ).build();
+        LuceneLinguistics linguistics = new LuceneLinguistics(enConfig, new ComponentRegistry<>());
+        Iterable<Token> tokens = linguistics
+                .getTokenizer()
+                .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.ALL, false);
+        assertEquals(List.of("and", "Cat"), tokenStrings(tokens));
+    }
 }
