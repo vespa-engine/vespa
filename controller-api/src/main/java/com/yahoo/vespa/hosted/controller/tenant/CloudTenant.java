@@ -27,11 +27,14 @@ public class CloudTenant extends Tenant {
     private final List<TenantSecretStore> tenantSecretStores;
     private final ArchiveAccess archiveAccess;
     private final Optional<Instant> invalidateUserSessionsBefore;
+    private final Optional<BillingReference> billingReference;
 
     /** Public for the serialization layer — do not use! */
     public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                        BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
-                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore, Instant tenantRoleLastMaintained) {
+                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess,
+                       Optional<Instant> invalidateUserSessionsBefore, Instant tenantRoleLastMaintained,
+                       Optional<BillingReference> billingReference) {
         super(name, createdAt, lastLoginInfo, Optional.empty(), tenantRoleLastMaintained);
         this.creator = creator;
         this.developerKeys = developerKeys;
@@ -39,6 +42,7 @@ public class CloudTenant extends Tenant {
         this.tenantSecretStores = tenantSecretStores;
         this.archiveAccess = Objects.requireNonNull(archiveAccess);
         this.invalidateUserSessionsBefore = invalidateUserSessionsBefore;
+        this.billingReference = Objects.requireNonNull(billingReference);
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
@@ -47,7 +51,7 @@ public class CloudTenant extends Tenant {
                                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator).map(SimplePrincipal::of),
-                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(), Instant.EPOCH);
+                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(), Instant.EPOCH, Optional.empty());
     }
 
     /** The user that created the tenant */
@@ -81,6 +85,10 @@ public class CloudTenant extends Tenant {
     /** Returns instant before which all user sessions that have access to this tenant must be refreshed */
     public Optional<Instant> invalidateUserSessionsBefore() {
         return invalidateUserSessionsBefore;
+    }
+
+    public Optional<BillingReference> billingReference() {
+        return billingReference;
     }
 
     @Override
