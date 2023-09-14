@@ -193,6 +193,7 @@ class NodesResponse extends SlimeJsonResponse {
             object.setString("cloudAccount", node.cloudAccount().value());
         }
         node.wireguardPubKey().ifPresent(key -> object.setString("wireguardPubkey", key.value()));
+        node.wireguardKeyTimestamp().ifPresent(timestamp -> object.setLong("wireguardKeyTimestamp", timestamp.toEpochMilli()));
     }
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {
