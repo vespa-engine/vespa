@@ -30,7 +30,7 @@ For a more high-level interface to query and feeding, see the 'query' and 'docum
 `,
 		Example: `$ vespa curl /ApplicationStatus
 $ vespa curl -- -X POST -H "Content-Type:application/json" --data-binary @src/test/resources/A-Head-Full-of-Dreams.json /document/v1/namespace/music/docid/1
-$ vespa curl -- -v --data-urlencode "yql=select * from music where album contains 'head';" /search/\?hits=5`,
+$ vespa curl -- -v --data-urlencode "yql=select * from music where album contains 'head'" /search/\?hits=5`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
