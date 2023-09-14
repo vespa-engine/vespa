@@ -18,9 +18,10 @@ public:
     size_t get_size(void *) const;
     size_t getNumMappings() const;
     size_t getMmappedBytes() const;
+    void info(FILE * os, size_t level) const;
 private:
     struct MMapInfo {
-        MMapInfo(size_t id, size_t sz) : _id(id), _sz(sz) { }
+        MMapInfo(size_t id, size_t sz) noexcept : _id(id), _sz(sz) { }
         size_t _id;
         size_t _sz;
     };

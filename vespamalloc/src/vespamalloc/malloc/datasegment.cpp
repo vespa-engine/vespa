@@ -43,7 +43,8 @@ DataSegment::freeSize() const {
     return _freeList.numFreeBlocks() * BlockSize;
 }
 
-void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
+void *
+DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
 {
     const size_t minBlockSize = std::max(BlockSize, _osMemory.getMinBlockSize());
     oldBlockSize = ((oldBlockSize + (minBlockSize-1))/minBlockSize)*minBlockSize;
@@ -272,7 +273,8 @@ size_t DataSegment::infoThread(FILE * os, int level, uint32_t thread, SizeClassT
     return usedCount;
 }
 
-void DataSegment::info(FILE * os, size_t level)
+void
+DataSegment::info(FILE * os, size_t level)
 {
     fprintf(os, "Start at %p, End at %p(%p) size(%ld) partialExtension(%ld) NextLogLimit(%lx) logLevel(%ld)\n",
             _osMemory.getStart(), _osMemory.getEnd(), sbrk(0), dataSize(), _partialExtension, _nextLogLimit, level);
