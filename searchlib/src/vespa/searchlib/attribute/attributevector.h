@@ -120,15 +120,8 @@ protected:
      */
     void updateStat(bool forceUpdate);
 
-    void
-    updateStatistics(uint64_t numValues,
-                     uint64_t numUniqueValue,
-                     uint64_t allocated,
-                     uint64_t used,
-                     uint64_t dead,
-                     uint64_t onHold);
-
-    void performCompactionWarning();
+    void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
+                          uint64_t used, uint64_t dead, uint64_t onHold);
 
     AttributeVector(vespalib::stringref baseFileName, const Config & c);
 
@@ -138,8 +131,7 @@ protected:
         }
     }
 
-    void setEnumMax(uint32_t e)          { _enumMax = e; setEnum(); }
-    void setEnum(bool hasEnum_=true)     { _hasEnum = hasEnum_; }
+    void setEnum(bool hasEnum_)          { _hasEnum = hasEnum_; }
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 

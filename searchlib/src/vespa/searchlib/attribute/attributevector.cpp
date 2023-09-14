@@ -422,17 +422,6 @@ AttributeVector::divideByZeroWarning() {
         "or weighted sets. Ignoring operation.");
 }
 
-
-void
-AttributeVector::performCompactionWarning()
-{
-    LOG(warning,
-        "Could not perform compaction on MultiValueMapping "
-        "with current generation = %" PRIu64,
-        _genHandler.getCurrentGeneration());
-}
-
-
 void
 AttributeVector::addReservedDoc()
 {
