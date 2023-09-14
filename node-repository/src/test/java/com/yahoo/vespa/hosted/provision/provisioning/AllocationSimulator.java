@@ -15,11 +15,8 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 
 import javax.swing.JFrame;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 
 /**
@@ -77,17 +74,15 @@ public class AllocationSimulator {
         Node.Builder builder = Node.create("fake", hostname, flavor,
                 parent.isPresent() ? Node.State.ready : Node.State.active,
                 parent.isPresent() ? NodeType.tenant : NodeType.host)
-                .ipConfig(IP.Config.of(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP(), List.of()));
+                .ipConfig(IP.Config.of(List.of("127.0.0.1"), parent.isPresent() ? List.of() : getAdditionalIP(), List.of()));
         parent.ifPresent(builder::parentHostname);
         allocation(tenant, flavor).ifPresent(builder::allocation);
 
         return builder.build();
     }
 
-    private Set<String> getAdditionalIP() {
-        Set<String> h = new HashSet<String>();
-        Collections.addAll(h, "::1", "::2", "::3", "::4", "::5", "::6", "::7", "::8");
-        return h;
+    private List<String> getAdditionalIP() {
+        return List.of("::1", "::2", "::3", "::4", "::5", "::6", "::7", "::8");
     }
 
     private Optional<Allocation> allocation(Optional<String> tenant, Flavor flavor) {

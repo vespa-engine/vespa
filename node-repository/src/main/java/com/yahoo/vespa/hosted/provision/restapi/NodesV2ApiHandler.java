@@ -55,7 +55,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -282,9 +281,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private Node createNode(Inspector inspector) {
-        Set<String> ipAddresses = new HashSet<>();
+        var ipAddresses = new ArrayList<String>();
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
-        Set<String> ipAddressPool = new HashSet<>();
+        var ipAddressPool = new ArrayList<String>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
         List<HostName> hostnames = new ArrayList<>();

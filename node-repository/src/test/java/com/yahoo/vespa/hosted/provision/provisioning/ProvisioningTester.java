@@ -66,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -212,7 +211,7 @@ public class ProvisioningTester {
             try (var lock = nodeRepository.nodes().lockAndGetRequired(prepared.hostname())) {
                 Node node = lock.node();
                 if (node.ipConfig().primary().isEmpty()) {
-                    node = node.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of()));
+                    node = node.with(IP.Config.of(List.of("::" + 0 + ":0"), List.of()));
                     nodeRepository.nodes().write(node, lock);
                 }
                 if (node.parentHostname().isEmpty()) continue;
@@ -220,7 +219,7 @@ public class ProvisioningTester {
                 if (parent.state() == Node.State.active) continue;
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
-                    parent = parent.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+                    parent = parent.with(IP.Config.of(List.of("::" + 0 + ":0"), List.of("::" + 0 + ":2")));
                 nodeRepository.nodes().activate(List.of(parent), new ApplicationTransaction(new ProvisionLock(application, () -> { }), t));
                 t.commit();
             }
@@ -450,11 +449,11 @@ public class ProvisioningTester {
             String ipv6 = String.format("::%x", nextIP);
 
             nameResolver.addRecord(hostname, ipv4, ipv6);
-            HashSet<String> hostIps = new HashSet<>();
+            var hostIps = new ArrayList<String>();
             hostIps.add(ipv4);
             hostIps.add(ipv6);
 
-            Set<String> ipAddressPool = new LinkedHashSet<>();
+            var ipAddressPool = new ArrayList<String>();
             for (int poolIp = 1; poolIp <= ipAddressPoolSize; poolIp++) {
                 nextIP++;
                 String nodeHostname = hostnameParts[0] + "-" + poolIp + (hostnameParts.length > 1 ? "." + hostnameParts[1] : "");
@@ -485,7 +484,7 @@ public class ProvisioningTester {
             String ipv4 = "127.0.1." + i;
 
             nameResolver.addRecord(hostname, ipv4);
-            Node node = Node.create(hostname, IP.Config.of(Set.of(ipv4), Set.of()), hostname,
+            Node node = Node.create(hostname, IP.Config.of(List.of(ipv4), List.of()), hostname,
                                     nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
             nodes.add(node);
         }
@@ -553,7 +552,7 @@ public class ProvisioningTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            IP.Config ipConfig = IP.Config.of(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+            IP.Config ipConfig = IP.Config.of(List.copyOf(nodeRepository.nameResolver().resolveAll(hostname)), List.of());
             Node node = Node.create("node-id", ipConfig, hostname, new Flavor(resources), nodeType)
                             .parentHostname(parentHostname)
                             .build();

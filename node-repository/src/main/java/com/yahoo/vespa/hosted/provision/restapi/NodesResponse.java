@@ -182,7 +182,7 @@ class NodesResponse extends SlimeJsonResponse {
         toSlime(node.history().events(), object.setArray("history"));
         toSlime(node.history().log(), object.setArray("log"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.ipConfig().pool().asSet(), object.setArray("additionalIpAddresses"));
+        ipAddressesToSlime(node.ipConfig().pool().ips(), object.setArray("additionalIpAddresses"));
         hostnamesToSlime(node.ipConfig().pool().hostnames(), object);
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));

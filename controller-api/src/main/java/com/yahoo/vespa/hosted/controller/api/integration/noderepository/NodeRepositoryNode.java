@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The wire format of a node retrieved from the node repository.
@@ -32,9 +31,9 @@ public class NodeRepositoryNode {
     @JsonProperty("hostname")
     private String hostname;
     @JsonProperty("ipAddresses")
-    private Set<String> ipAddresses;
+    private List<String> ipAddresses;
     @JsonProperty("additionalIpAddresses")
-    private Set<String> additionalIpAddresses;
+    private List<String> additionalIpAddresses;
     @JsonProperty("additionalHostnames")
     private List<String> additionalHostnames;
     @JsonProperty("flavor")
@@ -148,19 +147,19 @@ public class NodeRepositoryNode {
         this.hostname = hostname;
     }
 
-    public Set<String> getIpAddresses() {
+    public List<String> getIpAddresses() {
         return ipAddresses;
     }
 
-    public Set<String> getAdditionalIpAddresses() {
+    public List<String> getAdditionalIpAddresses() {
         return additionalIpAddresses;
     }
 
-    public void setIpAddresses(Set<String> ipAddresses) {
+    public void setIpAddresses(List<String> ipAddresses) {
         this.ipAddresses = ipAddresses;
     }
 
-    public void setAdditionalIpAddresses(Set<String> additionalIpAddresses) {
+    public void setAdditionalIpAddresses(List<String> additionalIpAddresses) {
         this.additionalIpAddresses = additionalIpAddresses;
     }
 

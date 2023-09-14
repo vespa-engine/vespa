@@ -545,7 +545,8 @@ public class DynamicProvisioningTest {
         for (var host : hosts) {
             try (var nodeLock = nodeRepository.nodes().lockAndGetRequired(host.hostname())) {
                 var node = nodeLock.node();
-                nodeRepository.nodes().write(node.with(node.ipConfig().withPrimary(nodeRepository.nameResolver().resolveAll(node.hostname()))), nodeLock);
+                List<String> primary = List.copyOf(nodeRepository.nameResolver().resolveAll(node.hostname()));
+                nodeRepository.nodes().write(node.with(node.ipConfig().withPrimary(primary)), nodeLock);
             }
         }
     }

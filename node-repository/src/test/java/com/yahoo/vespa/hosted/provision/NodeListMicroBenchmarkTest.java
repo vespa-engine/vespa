@@ -16,12 +16,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author hmusum
@@ -64,7 +61,7 @@ public class NodeListMicroBenchmarkTest {
     private List<Node> createHosts() {
         List<Node> hosts = new ArrayList<>();
         for (int i = 0; i < hostCount; i++) {
-            hosts.add(Node.create("host" + i, IP.Config.of(Set.of("::1"), createIps(), List.of()),
+            hosts.add(Node.create("host" + i, IP.Config.of(List.of("::1"), createIps(), List.of()),
                                "host" + i, getFlavor("host"), NodeType.host).build());
         }
         return hosts;
@@ -74,7 +71,7 @@ public class NodeListMicroBenchmarkTest {
         List<Node> nodes = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             nodeCounter++;
-            Node node = Node.reserve(Set.of("::2"), "node" + nodeCounter, parentHostname, resources0, NodeType.tenant).build();
+            Node node = Node.reserve(List.of("::2"), "node" + nodeCounter, parentHostname, resources0, NodeType.tenant).build();
             nodes.add(node);
         }
         return nodes;
@@ -92,11 +89,11 @@ public class NodeListMicroBenchmarkTest {
         return nodeFlavors.getFlavor(name).orElseThrow(() -> new RuntimeException("Unknown flavor"));
     }
 
-    private Set<String> createIps() {
+    private List<String> createIps() {
         // Allow 4 containers
         int start = 2;
         int count = 4;
-        Set<String> ipAddressPool = new LinkedHashSet<>();
+        var ipAddressPool = new ArrayList<String>();
         for (int i = start; i < (start + count); i++) {
             ipAddressPool.add("::" + i);
         }

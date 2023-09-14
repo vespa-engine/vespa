@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -41,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Serializes a node to/from JSON.
@@ -152,8 +150,8 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         object.setString(stateKey, toString(node.state()));
-        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
-        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey), true);
+        toSlime(node.ipConfig().pool().ips(), object.setArray(ipAddressPoolKey), true);
         toSlime(node.ipConfig().pool().hostnames(), object);
         object.setString(idKey, node.id());
         node.extraId().ifPresent(id -> object.setString(extraIdKey, id));
@@ -231,10 +229,10 @@ public class NodeSerializer {
         object.setString(agentKey, toString(event.agent()));
     }
 
-    private void toSlime(Set<String> ipAddresses, Cursor array) {
+    private void toSlime(List<String> addresses, Cursor array, boolean dummyDueToErasure) {
         // Validating IP address string literals is expensive, so we do it at serialization time instead of Node
         // construction time
-        ipAddresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
+        addresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
     }
 
     private void toSlime(List<HostName> hostnames, Cursor object) {
@@ -377,10 +375,10 @@ public class NodeSerializer {
         return SlimeUtils.optionalString(object).map(DockerImage::fromString);
     }
 
-    private Set<String> ipAddressesFromSlime(Inspector object, String key) {
-        ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
+    private List<String> ipAddressesFromSlime(Inspector object, String key) {
+        var ipAddresses = new ArrayList<String>();
         object.field(key).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
-        return ipAddresses.build();
+        return ipAddresses;
     }
 
     private List<HostName> hostnamesFromSlime(Inspector object) {

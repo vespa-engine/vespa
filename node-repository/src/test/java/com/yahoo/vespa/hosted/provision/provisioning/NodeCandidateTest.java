@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -134,7 +133,7 @@ public class NodeCandidateTest {
 
     private static Node node(String hostname, Node.State state) {
         return Node.create(hostname, hostname, new Flavor(new NodeResources(2, 2, 2, 2)), state, NodeType.tenant)
-                .ipConfigWithEmptyPool(Set.of("::1")).build();
+                .ipConfigWithEmptyPool(List.of("::1")).build();
     }
 
     private static NodeCandidate node(String hostname,
@@ -144,9 +143,9 @@ public class NodeCandidateTest {
                                       boolean exclusiveSwitch) {
         Node node = Node.create(hostname, hostname, new Flavor(nodeResources), Node.State.ready, NodeType.tenant)
                 .parentHostname(hostname + "parent")
-                .ipConfigWithEmptyPool(Set.of("::1")).build();
+                .ipConfigWithEmptyPool(List.of("::1")).build();
         Node parent = Node.create(hostname + "parent", hostname, new Flavor(totalHostResources), Node.State.ready, NodeType.host)
-                          .ipConfig(IP.Config.of(Set.of("::1"), Set.of("::2")))
+                          .ipConfig(IP.Config.of(List.of("::1"), List.of("::2")))
                           .build();
         return new NodeCandidate.ConcreteNodeCandidate(node, false, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
                                                        false, exclusiveSwitch, false, true, false);

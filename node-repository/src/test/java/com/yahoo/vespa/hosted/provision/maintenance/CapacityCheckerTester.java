@@ -43,8 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertTrue;
@@ -108,8 +106,8 @@ public class CapacityCheckerTester {
                         child.minMainMemoryAvailableGb = cnr.memoryGb();
                         child.minDiskAvailableGb = cnr.diskGb();
                         child.fastDisk = true;
-                        child.ipAddresses = Set.of();
-                        child.additionalIpAddresses = Set.of();
+                        child.ipAddresses = List.of();
+                        child.additionalIpAddresses = List.of();
                         child.owner = new NodeModel.OwnerModel();
                         child.owner.tenant = tenant + j / childCombinations;
                         child.owner.application = application;
@@ -140,7 +138,7 @@ public class CapacityCheckerTester {
                 String childHostName = parentName + "-v6-" + k + parentRoot;
                 childModel.id = childHostName;
                 childModel.hostname = childHostName;
-                childModel.ipAddresses = Set.of(String.format("%04X::%04X", i, k));
+                childModel.ipAddresses = List.of(String.format("%04X::%04X", i, k));
                 childModel.membership.index = j / distinctChildren.size();
                 childModel.parentHostname = Optional.of(hostname);
 
@@ -151,12 +149,12 @@ public class CapacityCheckerTester {
             }
 
             final int hostindex = i;
-            Set<String> availableIps = IntStream.range(0, childrenPerHost + excessIps)
+            List<String> availableIps = IntStream.range(0, childrenPerHost + excessIps)
                     .mapToObj(n -> String.format("%04X::%04X", hostindex, n))
-                    .collect(Collectors.toSet());
+                    .toList();
 
             NodeResources nr = containingNodeResources(childResources, excessCapacity);
-            Node node = Node.create(hostname, IP.Config.of(Set.of("::"), availableIps), hostname,
+            Node node = Node.create(hostname, IP.Config.of(List.of("::"), availableIps), hostname,
                                     new Flavor(nr), NodeType.host).build();
             hosts.computeIfAbsent(tenantHostApp, (ignored) -> new ArrayList<>())
                  .add(node);
@@ -172,10 +170,10 @@ public class CapacityCheckerTester {
             String hostname = parentName + parentRoot;
 
             final int hostId = i;
-            Set<String> availableIps = IntStream.range(2000, 2000 + ips)
+            List<String> availableIps = IntStream.range(2000, 2000 + ips)
                     .mapToObj(n -> String.format("%04X::%04X", hostId, n))
-                    .collect(Collectors.toSet());
-            Node node = Node.create(hostname, IP.Config.of(Set.of("::" + (1000 + hostId)), availableIps), hostname,
+                    .toList();
+            Node node = Node.create(hostname, IP.Config.of(List.of("::" + (1000 + hostId)), availableIps), hostname,
                                     new Flavor(capacity), NodeType.host).build();
             hosts.add(node);
         }
@@ -256,8 +254,8 @@ public class CapacityCheckerTester {
         @JsonProperty double minCpuCores;
         @JsonProperty double bandwidth;
         @JsonProperty boolean fastDisk;
-        @JsonProperty Set<String> ipAddresses;
-        @JsonProperty Set<String> additionalIpAddresses;
+        @JsonProperty List<String> ipAddresses;
+        @JsonProperty List<String> additionalIpAddresses;
 
         @JsonProperty OwnerModel owner;
         @JsonProperty MembershipModel membership;

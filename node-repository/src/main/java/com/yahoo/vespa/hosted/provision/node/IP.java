@@ -14,10 +14,9 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver.RecordType;
 
 import java.net.InetAddress;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +36,7 @@ import static com.yahoo.config.provision.NodeType.proxyhost;
 public record IP() {
 
     /** IP version.  Can be compared with ==, !=, and equals(). */
-    public static class Version {
+    public static class Version implements Comparable<Version> {
         public static final Version v4 = new Version(4);
         public static final Version v6 = new Version(6);
 
@@ -57,6 +56,9 @@ public record IP() {
         public boolean is6() { return version == 6; }
 
         public RecordType toForwardRecordType() { return is4() ? RecordType.A : RecordType.AAAA; }
+
+        @Override
+        public int compareTo(Version that) { return Integer.compare(this.version, that.version); }
 
         @Override
         public String toString() { return "IPv" + version; }
@@ -98,37 +100,24 @@ public record IP() {
         return 0;
     };
 
-    /** IP configuration of a node */
-    public record Config(Set<String> primary, Pool pool) {
+    /**
+     * IP configuration of a node
+     *
+     * @param primary The primary addresses of this. These addresses are used when communicating with the node itself
+     * @param pool    The IP address pool available on a node
+     */
+    public record Config(List<String> primary, Pool pool) {
 
-        public static final Config EMPTY = Config.ofEmptyPool(Set.of());
+        public static final Config EMPTY = Config.ofEmptyPool();
 
-        public static Config ofEmptyPool(Set<String> primary) {
-            return new Config(primary, Pool.EMPTY);
-        }
+        public static Config ofEmptyPool(String... primary) { return ofEmptyPool(List.of(primary)); }
+        public static Config ofEmptyPool(List<String> primary) { return of(primary, List.of(), List.of()); }
+        public static Config of(List<String> primary, List<String> ips, List<HostName> hostnames) { return new Config(primary, Pool.of(ips, hostnames)); }
+        public static Config of(List<String> primary, List<String> ips) { return of(primary, ips, List.of()); }
 
-        public static Config of(Set<String> primary, Set<String> ipPool, List<HostName> hostnames) {
-            return new Config(primary, Pool.of(ipPool, hostnames));
-        }
-
-        public static Config of(Set<String> primary, Set<String> pool) {
-            return of(primary, pool, List.of());
-        }
-
-        /** DO NOT USE: Public for NodeSerializer. */
-        public Config(Set<String> primary, Pool pool) {
-            this.primary = Collections.unmodifiableSet(new LinkedHashSet<>(Objects.requireNonNull(primary, "primary must be non-null")));
+        public Config(List<String> primary, Pool pool) {
+            this.primary = List.copyOf(Objects.requireNonNull(primary, "primary must be non-null"));
             this.pool = Objects.requireNonNull(pool, "pool must be non-null");
-        }
-
-        /** The primary addresses of this. These addresses are used when communicating with the node itself */
-        public Set<String> primary() {
-            return primary;
-        }
-
-        /** Returns the IP address pool available on a node */
-        public Pool pool() {
-            return pool;
         }
 
         /** Returns a copy of this with pool set to given value */
@@ -137,7 +126,7 @@ public record IP() {
         }
 
         /** Returns a copy of this with pool set to given value */
-        public Config withPrimary(Set<String> primary) {
+        public Config withPrimary(List<String> primary) {
             return new Config(primary, pool);
         }
 
@@ -157,8 +146,8 @@ public record IP() {
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
                     if (node.type().isHost()) { // Addresses of a host can never overlap with any other nodes
-                        addresses.addAll(node.ipConfig().pool().asSet());
-                        otherAddresses.addAll(other.ipConfig().pool().asSet());
+                        addresses.addAll(node.ipConfig().pool().ips());
+                        otherAddresses.addAll(other.ipConfig().pool().ips());
                     }
                     otherAddresses.removeIf(otherIp -> !ipSpace.contains(otherIp, other.cloudAccount()));
                     otherAddresses.retainAll(addresses);
@@ -191,15 +180,15 @@ public record IP() {
     }
 
     /** A list of IP addresses and their protocol */
-    record IpAddresses(Set<String> addresses, Stack stack) {
+    record IpAddresses(List<String> addresses, Stack stack) {
 
-        public IpAddresses(Set<String> addresses, Stack stack) {
-            this.addresses = Collections.unmodifiableSet(new LinkedHashSet<>(Objects.requireNonNull(addresses, "addresses must be non-null")));
+        public IpAddresses(List<String> addresses, Stack stack) {
+            this.addresses = List.copyOf(Objects.requireNonNull(addresses, "addresses must be non-null"));
             this.stack = Objects.requireNonNull(stack, "type must be non-null");
         }
 
         /** Create addresses of the given set */
-        private static IpAddresses of(Set<String> addresses) {
+        private static IpAddresses of(List<String> addresses) {
             long ipv6AddrCount = addresses.stream().filter(IP::isV6).count();
             if (ipv6AddrCount == addresses.size()) { // IPv6-only
                 return new IpAddresses(addresses, Stack.ipv6);
@@ -245,25 +234,21 @@ public record IP() {
      *
      * Addresses in this are available for use by Linux containers.
      */
-    public static class Pool {
-        private final IpAddresses ipAddresses;
-        private final List<HostName> hostnames;
+    public record Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
 
-        public static final Pool EMPTY = Pool.of(Set.of(), List.of());
+        public static final Pool EMPTY = Pool.of(List.of(), List.of());
 
-        /** Create a new pool containing given ipAddresses */
-        public static Pool of(Set<String> ipAddresses, List<HostName> hostnames) {
-            return new Pool(IpAddresses.of(ipAddresses), hostnames);
+        /** Create a new pool containing given ips */
+        public static Pool of(List<String> ips, List<HostName> hostnames) {
+            return new Pool(IpAddresses.of(ips), hostnames);
         }
 
-        private Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
+        public Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
             this.ipAddresses = Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null");
             this.hostnames = List.copyOf(Objects.requireNonNull(hostnames, "hostnames must be non-null"));
         }
 
-        public IpAddresses ipAddresses() { return ipAddresses; }
-        public List<HostName> hostnames() { return hostnames; }
-        public Set<String> asSet() { return ipAddresses.addresses; }
+        public List<String> ips() { return ipAddresses.addresses; }
 
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
@@ -279,7 +264,7 @@ public record IP() {
                                                  .findFirst();
             }
 
-            Set<String> unusedIps = findUnusedIpAddresses(nodes);
+            List<String> unusedIps = findUnusedIpAddresses(nodes);
 
             if (context.allocateFromUnusedHostname())
                 return findUnusedHostnames(nodes).findFirst().map(hostname -> Allocation.fromHostname(context, hostname, ipAddresses.stack, unusedIps));
@@ -309,11 +294,11 @@ public record IP() {
          *
          * @param nodes a list of all nodes in the repository
          */
-        public Set<String> findUnusedIpAddresses(NodeList nodes) {
-            Set<String> unusedAddresses = new LinkedHashSet<>(asSet());
-            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> asSet().contains(ip)))
+        public List<String> findUnusedIpAddresses(NodeList nodes) {
+            List<String> unusedAddresses = new ArrayList<>(ips());
+            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> ips().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
-            return Collections.unmodifiableSet(unusedAddresses);
+            return unusedAddresses;
         }
 
         private Stream<HostName> findUnusedHostnames(NodeList nodes) {
@@ -321,7 +306,7 @@ public record IP() {
             return hostnames.stream().filter(hostname -> !usedHostnames.contains(hostname.value()));
         }
 
-        public Pool withIpAddresses(Set<String> ipAddresses) {
+        public Pool withIpAddresses(List<String> ipAddresses) {
             return Pool.of(ipAddresses, hostnames);
         }
 
@@ -329,26 +314,6 @@ public record IP() {
             return Pool.of(ipAddresses.addresses, hostnames);
         }
 
-        @Override
-        public String toString() {
-            return "Pool{" +
-                   "ipAddresses=" + ipAddresses +
-                   ", hostnames=" + hostnames +
-                   '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Pool pool = (Pool) o;
-            return Objects.equals(ipAddresses, pool.ipAddresses) && Objects.equals(hostnames, pool.hostnames);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(ipAddresses, hostnames);
-        }
     }
 
     /** An address allocation from a pool */
@@ -444,13 +409,13 @@ public record IP() {
             return new Allocation(hostname4, Optional.of(addresses.get(0)), Optional.empty());
         }
 
-        private static Allocation fromHostname(Context context, HostName hostname, IpAddresses.Stack stack, Set<String> unusedIps) {
+        private static Allocation fromHostname(Context context, HostName hostname, IpAddresses.Stack stack, List<String> unusedIps) {
             Optional<String> ipv4Address = resolveAndVerify(context, hostname, stack, IP.Version.v4, unusedIps);
             Optional<String> ipv6Address = resolveAndVerify(context, hostname, stack, IP.Version.v6, unusedIps);
             return new Allocation(hostname.value(), ipv4Address, ipv6Address);
         }
 
-        private static Optional<String> resolveAndVerify(Context context, HostName hostname, IpAddresses.Stack stack, Version version, Set<String> unusedIps) {
+        private static Optional<String> resolveAndVerify(Context context, HostName hostname, IpAddresses.Stack stack, Version version, List<String> unusedIps) {
             if (context.hasIpNotInDns(version)) {
                 List<String> candidates = unusedIps.stream()
                                                    .filter(a -> IP.Version.fromIpAddress(a).equals(version))
@@ -484,9 +449,8 @@ public record IP() {
         }
 
         /** All IP addresses in this */
-        public Set<String> addresses() {
-            return Stream.concat(ipv4Address.stream(), ipv6Address.stream())
-                         .collect(Collectors.toUnmodifiableSet());
+        public List<String> addresses() {
+            return Stream.concat(ipv4Address.stream(), ipv6Address.stream()).toList();
         }
 
     }

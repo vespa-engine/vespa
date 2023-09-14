@@ -52,7 +52,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -271,8 +270,8 @@ public class MockNodeRepository extends NodeRepository {
     }
 
     private IP.Config ipConfig(int nodeIndex, int primarySize, int poolSize) {
-        var primary = new LinkedHashSet<String>();
-        var ipPool = new LinkedHashSet<String>();
+        var primary = new ArrayList<String>();
+        var ipPool = new ArrayList<String>();
         for (int i = 1; i <= primarySize + poolSize; i++) {
             var set = primary;
             if (i > primarySize) {
