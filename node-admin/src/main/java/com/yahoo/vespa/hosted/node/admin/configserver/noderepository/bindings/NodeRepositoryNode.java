@@ -95,9 +95,6 @@ public class NodeRepositoryNode {
     @JsonProperty("wireguardPubkey")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String wireguardPubkey;
-    @JsonProperty("wireguardKeyTimestamp")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Long wireguardKeyTimestamp;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -142,7 +139,6 @@ public class NodeRepositoryNode {
                ", history=" + history +
                ", trustStore=" + trustStore +
                ", wireguardPubkey=" + wireguardPubkey +
-               ", wireguardKeyTimestamp=" + wireguardKeyTimestamp +
                ", reports=" + reports +
                '}';
     }

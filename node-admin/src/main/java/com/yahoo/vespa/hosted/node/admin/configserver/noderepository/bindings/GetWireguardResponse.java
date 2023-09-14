@@ -35,18 +35,13 @@ public class GetWireguardResponse {
         @JsonProperty("wireguardPubkey")
         public final String wireguardPubkey;
 
-        @JsonProperty("wireguardKeyTimestamp")
-        public final Long wireguardKeyTimestamp;
-
         @JsonCreator
         public Configserver(@JsonProperty("hostname") String hostname,
                             @JsonProperty("ipAddresses") List<String> ipAddresses,
-                            @JsonProperty("wireguardPubkey") String wireguardPubkey,
-                            @JsonProperty("wireguardKeyTimestamp") Long wireguardKeyTimestamp) {
+                            @JsonProperty("wireguardPubkey") String wireguardPubkey) {
             this.hostname = hostname;
             this.ipAddresses = ipAddresses;
             this.wireguardPubkey = wireguardPubkey;
-            this.wireguardKeyTimestamp = wireguardKeyTimestamp;
         }
     }
 

@@ -147,10 +147,8 @@ public class RealNodeRepository implements NodeRepository {
                             .toList();
                     if (ipAddresses.isEmpty()) return;
 
-                    consumer.accept(new WireguardPeer(HostName.of(node.hostname),
-                                                      ipAddresses,
-                                                      WireguardKey.from(node.wireguardPubkey),
-                                                      Instant.ofEpochMilli(node.wireguardKeyTimestamp)));
+                    consumer.accept(new WireguardPeer(
+                            HostName.of(node.hostname), ipAddresses, WireguardKey.from(node.wireguardPubkey)));
                 })
                 .sorted()
                 .toList();
@@ -244,7 +242,6 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
                 trustStore,
                 Optional.ofNullable(node.wireguardPubkey).map(WireguardKey::from),
-                Optional.ofNullable(node.wireguardKeyTimestamp).map(Instant::ofEpochMilli),
                 node.wantToRebuild);
     }
 
@@ -371,7 +368,6 @@ public class RealNodeRepository implements NodeRepository {
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 WireguardKey.from(configServer.wireguardPubkey),
-                                 Instant.ofEpochMilli(configServer.wireguardKeyTimestamp));
+                                 WireguardKey.from(configServer.wireguardPubkey));
     }
 }
