@@ -16,7 +16,7 @@ import java.util.List;
 public record WireguardPeer(HostName hostname,
                             List<VersionedIpAddress> ipAddresses,
                             WireguardKey publicKey,
-                            Instant wireguardKeyTimestamp) implements Comparable<WireguardPeer> {
+                            java.util.Optional<Instant> wireguardKeyTimestamp) implements Comparable<WireguardPeer> {
 
     public WireguardPeer {
         if (ipAddresses.isEmpty()) throw new IllegalArgumentException("No IP addresses for peer node " + hostname.value());

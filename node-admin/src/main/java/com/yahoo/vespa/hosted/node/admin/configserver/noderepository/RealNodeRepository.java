@@ -147,10 +147,11 @@ public class RealNodeRepository implements NodeRepository {
                             .toList();
                     if (ipAddresses.isEmpty()) return;
 
+                    var wireguardKeyTimestamp = Optional.ofNullable(node.wireguardKeyTimestamp).map(Instant::ofEpochMilli);
                     consumer.accept(new WireguardPeer(HostName.of(node.hostname),
                                                       ipAddresses,
                                                       WireguardKey.from(node.wireguardPubkey),
-                                                      Instant.ofEpochMilli(node.wireguardKeyTimestamp)));
+                                                      wireguardKeyTimestamp));
                 })
                 .sorted()
                 .toList();
@@ -369,9 +370,10 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
+        var wireguardKeyTimestamp = Optional.ofNullable(configServer.wireguardKeyTimestamp).map(Instant::ofEpochMilli);
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
                                  WireguardKey.from(configServer.wireguardPubkey),
-                                 Instant.ofEpochMilli(configServer.wireguardKeyTimestamp));
+                                 wireguardKeyTimestamp);
     }
 }

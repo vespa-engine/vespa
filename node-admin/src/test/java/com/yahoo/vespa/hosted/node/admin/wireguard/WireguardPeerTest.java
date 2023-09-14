@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +32,6 @@ public class WireguardPeerTest {
 
     private static WireguardPeer peer(String hostname) {
         return new WireguardPeer(HostName.of(hostname), List.of(VersionedIpAddress.from("::1:1")),
-                                 WireguardKey.generateRandomForTesting(), Instant.EPOCH);
+                                 WireguardKey.generateRandomForTesting(), Optional.of(Instant.EPOCH));
     }
 }
