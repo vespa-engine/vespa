@@ -273,8 +273,9 @@ public class NodePatcher {
             case "trustStore":
                 return nodeWithTrustStore(node, value);
             case "wireguardPubkey":
-                return node.withWireguardPubkey(SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null));
-            default :
+                return node.withWireguardPubkey(SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null))
+                        .withWireguardKeyTimestamp(clock.instant());
+            default:
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
     }

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,6 +31,6 @@ public class WireguardPeerTest {
 
     private static WireguardPeer peer(String hostname) {
         return new WireguardPeer(HostName.of(hostname), List.of(VersionedIpAddress.from("::1:1")),
-                                 WireguardKey.generateRandomForTesting());
+                                 WireguardKey.generateRandomForTesting(), Instant.EPOCH);
     }
 }
