@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
@@ -107,7 +108,8 @@ public class TenantSerializerTest {
                 List.of(),
                 new ArchiveAccess(),
                 Optional.empty(),
-                Instant.EPOCH);
+                Instant.EPOCH,
+                Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -130,7 +132,8 @@ public class TenantSerializerTest {
                 ),
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role"),
                 Optional.of(Instant.ofEpochMilli(1234567)),
-                Instant.EPOCH);
+                Instant.EPOCH,
+                Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
         assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
@@ -181,7 +184,8 @@ public class TenantSerializerTest {
                 List.of(),
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
                 Optional.empty(),
-                Instant.EPOCH);
+                Instant.EPOCH,
+                Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
         assertEquals(serialized.archiveAccess().gcpMember().get(), "user:foo@example.com");
@@ -261,6 +265,26 @@ public class TenantSerializerTest {
                 lastLoginInfo(321L, 654L, 987L),
                 Instant.ofEpochMilli(1_000_000));
         assertEquals(tenant, serializer.tenantFrom(serializer.toSlime(tenant)));
+    }
+
+    @Test
+    void tenant_with_billing_reference() {
+        BillingReference reference = new BillingReference("abcdefg", Instant.now());
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Instant.ofEpochMilli(1234L),
+                lastLoginInfo(123L, 456L, null),
+                Optional.of(new SimplePrincipal("foobar-user")),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                        otherPublicKey, new SimplePrincipal("jane")),
+                TenantInfo.empty(),
+                List.of(),
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
+                Optional.empty(),
+                Instant.EPOCH,
+                Optional.of(reference));
+        var slime = serializer.toSlime(tenant);
+        var deserialized = serializer.tenantFrom(slime);
+        assertEquals(tenant, deserialized);
     }
 
     private static Contact contact() {

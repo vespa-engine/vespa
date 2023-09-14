@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
@@ -139,10 +140,13 @@ public abstract class LockedTenant {
         private final List<TenantSecretStore> tenantSecretStores;
         private final ArchiveAccess archiveAccess;
         private final Optional<Instant> invalidateUserSessionsBefore;
+        private final Optional<BillingReference> billingReference;
 
         private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                       BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
-                      List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore, Instant tenantRolesLastMaintained) {
+                      List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess,
+                      Optional<Instant> invalidateUserSessionsBefore, Instant tenantRolesLastMaintained,
+                      Optional<BillingReference> billingReference) {
             super(name, createdAt, lastLoginInfo, tenantRolesLastMaintained);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
@@ -150,15 +154,16 @@ public abstract class LockedTenant {
             this.tenantSecretStores = tenantSecretStores;
             this.archiveAccess = archiveAccess;
             this.invalidateUserSessionsBefore = invalidateUserSessionsBefore;
+            this.billingReference = billingReference;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.creator(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccess(), tenant.invalidateUserSessionsBefore(), tenant.tenantRolesLastMaintained());
+            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.creator(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccess(), tenant.invalidateUserSessionsBefore(), tenant.tenantRolesLastMaintained(), tenant.billingReference());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -169,47 +174,51 @@ public abstract class LockedTenant {
             if (keys.inverse().containsKey(simplePrincipal))
                 throw new IllegalArgumentException(principal + " is already associated with key " + KeyUtils.toPem(keys.inverse().get(simplePrincipal)));
             keys.put(key, simplePrincipal);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, SimplePrincipal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withInfo(TenantInfo newInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.add(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withoutSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.remove(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withArchiveAccess(ArchiveAccess archiveAccess) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore,tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore,tenantRolesLastMaintained, billingReference);
         }
 
         public Cloud withInvalidateUserSessionsBefore(Instant invalidateUserSessionsBefore) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, Optional.of(invalidateUserSessionsBefore), tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, Optional.of(invalidateUserSessionsBefore), tenantRolesLastMaintained, billingReference);
         }
 
         @Override
         public LockedTenant with(Instant tenantRolesLastMaintained) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
+        }
+
+        public Cloud with(BillingReference billingReference) {
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, Optional.of(billingReference));
         }
     }
 

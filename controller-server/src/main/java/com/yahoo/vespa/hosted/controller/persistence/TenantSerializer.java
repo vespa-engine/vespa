@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
@@ -39,7 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Slime serialization of {@link Tenant} sub-types.
@@ -84,6 +84,7 @@ public class TenantSerializer {
     private static final String gcpArchiveAccessMemberField = "gcpArchiveAccessMember";
     private static final String invalidateUserSessionsBeforeField = "invalidateUserSessionsBefore";
     private static final String tenantRolesLastMaintainedField = "tenantRolesLastMaintained";
+    private static final String billingReferenceField = "billingReference";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -127,6 +128,7 @@ public class TenantSerializer {
         toSlime(tenant.info(), root);
         toSlime(tenant.tenantSecretStores(), root);
         toSlime(tenant.archiveAccess(), root);
+        tenant.billingReference().ifPresent(b -> toSlime(b, root));
         tenant.invalidateUserSessionsBefore().ifPresent(instant -> root.setLong(invalidateUserSessionsBeforeField, instant.toEpochMilli()));
     }
 
@@ -195,7 +197,8 @@ public class TenantSerializer {
         ArchiveAccess archiveAccess = archiveAccessFromSlime(tenantObject);
         Optional<Instant> invalidateUserSessionsBefore = SlimeUtils.optionalInstant(tenantObject.field(invalidateUserSessionsBeforeField));
         Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+        Optional<BillingReference> billingReference = billingReferenceFrom(tenantObject.field(billingReferenceField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
@@ -332,6 +335,19 @@ public class TenantSerializer {
         if (contacts.isEmpty()) return;
         var cursor = parent.setArray("contacts");
         contacts.all().forEach(contact -> writeContact(contact, cursor.addObject()));
+    }
+
+    private void toSlime(BillingReference reference, Cursor parent) {
+        var cursor = parent.setObject(billingReferenceField);
+        cursor.setString("reference", reference.reference());
+        cursor.setLong("updated", reference.updated().toEpochMilli());
+    }
+
+    private Optional<BillingReference> billingReferenceFrom(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        return Optional.of(new BillingReference(
+                object.field("reference").asString(),
+                SlimeUtils.instant(object.field("updated"))));
     }
 
     private TenantContacts tenantContactsFrom(Inspector object) {
