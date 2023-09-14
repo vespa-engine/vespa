@@ -24,10 +24,10 @@ func TestGet(t *testing.T) {
 	require.Nil(t, err)
 	c.PrivateKey = "key.pem"
 	c.Certificate = "cert.pem"
-	c.Param("yql", "select * from sources * where title contains 'foo';")
+	c.Param("yql", "select * from sources * where title contains 'foo'")
 	c.Param("hits", "5")
 
-	assert.Equal(t, `curl --key key.pem --cert cert.pem 'https://example.com?hits=5&yql=select+%2A+from+sources+%2A+where+title+contains+%27foo%27%3B'`, c.String())
+	assert.Equal(t, `curl --key key.pem --cert cert.pem 'https://example.com?hits=5&yql=select+%2A+from+sources+%2A+where+title+contains+%27foo%27'`, c.String())
 }
 
 func TestRawArgs(t *testing.T) {
