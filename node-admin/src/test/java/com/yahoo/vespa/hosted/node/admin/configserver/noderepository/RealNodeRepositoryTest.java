@@ -214,7 +214,8 @@ public class RealNodeRepositoryTest {
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1",
-                            "lololololololololololololololololololololoo=");
+                            "lololololololololololololololololololololoo=",
+                            Instant.ofEpochMilli(456L));
 
         //// Exclave nodes ////
 
@@ -225,14 +226,17 @@ public class RealNodeRepositoryTest {
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
                             "::101:1",
-                            "000011112222333344445555666677778888999900c=");
+                            "000011112222333344445555666677778888999900c=",
+                            Instant.ofEpochMilli(123L));
     }
 
-    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String publicKey) {
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6,
+                                     String publicKey, Instant keyTimestamp) {
         assertEquals(hostname, peer.hostname().value());
         assertEquals(1, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
         assertEquals(publicKey, peer.publicKey().value());
+        assertEquals(keyTimestamp, peer.wireguardKeyTimestamp());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
