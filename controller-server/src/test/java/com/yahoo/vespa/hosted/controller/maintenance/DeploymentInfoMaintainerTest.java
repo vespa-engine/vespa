@@ -33,7 +33,7 @@ public class DeploymentInfoMaintainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().region(z1.region()).region(z2.region()).trustDefaultCertificate().build();
         List.of(app1, app2).forEach(app -> tester.newDeploymentContext(app).submit(applicationPackage).deploy());
 
-        var maintainer = new DeploymentInfoMaintainer(tester.controller(), Duration.ofMinutes(5));
+        var maintainer = new DeploymentInfoMaintainer(tester.controller(), Duration.ofMinutes(5), 0.95);
         var nodeRepo = tester.configServer().nodeRepository().allowPatching(true);
         nodeRepo.putApplication(z1, new Application(app1, List.of()));
         nodeRepo.putApplication(z1, new Application(app2, List.of()));
