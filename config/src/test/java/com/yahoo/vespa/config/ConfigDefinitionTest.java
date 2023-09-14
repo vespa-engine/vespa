@@ -1,14 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
+import com.yahoo.vespa.config.ConfigDefinition.EnumDef;
 import org.junit.Test;
 
-import com.yahoo.vespa.config.ConfigDefinition.EnumDef;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -20,31 +16,6 @@ import static org.junit.Assert.assertNull;
  * @author hmusum
  */
 public class ConfigDefinitionTest {
-
-    @Test
-    public void testVersionComparator() {
-        Comparator<String> c = new ConfigDefinition.VersionComparator();
-
-        assertEquals(0, c.compare("1", "1"));
-        assertEquals(0, c.compare("1-0", "1"));
-        assertEquals(0, c.compare("1-0-0", "1"));
-        assertEquals(0, c.compare("1-0-0", "1-0"));
-        assertEquals(0, c.compare("0-1-1", "0-1-1"));
-        assertEquals(0, c.compare("0-1-0", "0-1"));
-        assertEquals(-1, c.compare("0", "1"));
-        assertEquals(-1, c.compare("0-1-0", "0-1-1"));
-        assertEquals(-1, c.compare("0-1-0", "1-1-1"));
-        assertEquals(-1, c.compare("0-0-1", "0-1"));
-        assertEquals(1, c.compare("0-1-1", "0-1-0"));
-        assertEquals(1, c.compare("1-1-1", "0-1-0"));
-        assertEquals(1, c.compare("0-1", "0-0-1"));
-        assertEquals(1, c.compare("1-1", "1"));
-
-        List<String> versions = Arrays.asList("25", "5", "1-1", "0-2-3", "1", "1-0");
-        Collections.sort(versions, new ConfigDefinition.VersionComparator());
-        List<String> solution = Arrays.asList("0-2-3", "1", "1-0", "1-1", "5", "25");
-        assertEquals(solution, versions);
-    }
 
     @Test
     public void testIntDefaultValues() {
@@ -110,7 +81,7 @@ public class ConfigDefinitionTest {
         def.addReferenceDef("myref");
         def.addReferenceDef("myrefdef", "reff");
         def.addFileDef("myfile");
-        def.addFileDef("myfiledef", "etc");
+        def.addFileDef("myfiledef");
     }
 
     @Test

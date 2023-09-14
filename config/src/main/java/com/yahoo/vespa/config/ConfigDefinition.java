@@ -5,7 +5,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,34 +146,6 @@ public class ConfigDefinition {
 
     public void verify(String id) {
         verify(id, null);
-    }
-
-    /**
-     * Compares def-versions. Examples: 2 is higher than 1, and 2-0-0 is higher than 1-2-2 but the same as 2.
-     */
-    public static class VersionComparator implements Comparator<String> {
-        int[] parseVersion(String version) {
-            int[] result = {0, 0, 0};
-            String[] v = version.split("-");
-
-            for (int i = 0; i < 3; i++) {
-                if (v.length > i) result[i] = Integer.parseInt(v[i]);
-            }
-
-            return result;
-        }
-
-        public int compare(String o1, String o2) throws ClassCastException {
-            int[] version1 = parseVersion(o1);
-            int[] version2 = parseVersion(o2);
-
-            for (int i = 0; i < 3; i ++) {
-                int diff = version1[i] - version2[i];
-                if (diff != 0) return diff;
-            }
-
-            return 0;
-        }
     }
 
     /**
@@ -659,25 +630,11 @@ public class ConfigDefinition {
         referenceDefs.put(refId, new RefDef(null));
     }
 
-    public void addFileDef(String refId, String defVal) {
-        fileDefs.put(refId, new FileDef(defVal));
-    }
-
     public void addFileDef(String refId) {
         fileDefs.put(refId, new FileDef(null));
     }
 
-    public void addPathDef(String refId, String defVal) {
-        pathDefs.put(refId, new PathDef(defVal));
-    }
-
-    public void addPathDef(String refId) {
-        pathDefs.put(refId, new PathDef(null));
-    }
-
-    public void addOptionalPathDef(String refId, String defVal) {
-        optionalPathDefs.put(refId, new OptionalPathDef(defVal));
-    }
+    public void addPathDef(String refId) { pathDefs.put(refId, new PathDef(null)); }
 
     public void addOptionalPathDef(String refId) {
         optionalPathDefs.put(refId, new OptionalPathDef(null));

@@ -109,7 +109,6 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-
     private static void addNode(ConfigDefinition def, LeafCNode.IntegerLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addIntDef(leaf.getName(), Integer.valueOf(leaf.getDefaultValue().getValue()));
@@ -159,27 +158,15 @@ public class ConfigDefinitionBuilder {
     }
 
     private static void addNode(ConfigDefinition def, LeafCNode.FileLeaf leaf) {
-        if (leaf.getDefaultValue() != null) {
-            def.addFileDef(leaf.getName(), leaf.getDefaultValue().getValue());
-        } else {
-            def.addFileDef(leaf.getName(), null);
-        }
+        def.addFileDef(leaf.getName());
     }
 
     private static void addNode(ConfigDefinition def, LeafCNode.PathLeaf leaf) {
-        if (leaf.getDefaultValue() != null) {
-            def.addPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
-        } else {
-            def.addPathDef(leaf.getName(), null);
-        }
+        def.addPathDef(leaf.getName());
     }
 
     private static void addNode(ConfigDefinition def, LeafCNode.OptionalPathLeaf leaf) {
-        if (leaf.getDefaultValue() != null) {
-            def.addOptionalPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
-        } else {
-            def.addOptionalPathDef(leaf.getName(), null);
-        }
+        def.addOptionalPathDef(leaf.getName());
     }
 
     private static void addNode(ConfigDefinition def, LeafCNode.UrlLeaf leaf) {
