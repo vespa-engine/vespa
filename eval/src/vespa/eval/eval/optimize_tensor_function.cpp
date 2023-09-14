@@ -45,7 +45,7 @@ LOG_SETUP(".eval.eval.optimize_tensor_function");
 namespace vespalib::eval {
 
 OptimizeTensorFunctionOptions::OptimizeTensorFunctionOptions() noexcept
-  : allow_universal_dot_product(false)
+  : allow_universal_dot_product(true)
 {
 }
 
