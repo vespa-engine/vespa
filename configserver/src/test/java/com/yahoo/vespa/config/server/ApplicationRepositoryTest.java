@@ -224,7 +224,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void applicationData() {
-        flagSource = flagSource.withBooleanFlag(Flags.WRITE_APPLICATION_DATA_AS_JSON.id(), true);
         long firstSessionId = deployApp(testApp).sessionId();
         assertApplicationData(firstSessionId, firstSessionId);
         assertEquals(firstSessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
