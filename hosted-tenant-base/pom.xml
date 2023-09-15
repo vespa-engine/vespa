@@ -441,7 +441,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.gpg.plugin.version}</version>
+                        <version>${maven-gpg-plugin.vespa.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
