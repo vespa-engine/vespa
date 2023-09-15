@@ -51,6 +51,12 @@ public class CloudAccount implements Comparable<CloudAccount> {
                !equals(zone.cloud().account());
     }
 
+    /** Returns true if this is an enclave account. */
+    public boolean isEnclave(Zone zone) {
+        return !isUnspecified() &&
+               !equals(zone.cloud().account());
+    }
+
     @Override
     public String toString() {
         return isUnspecified() ? "unspecified account" : "account '" + account + "' in " + cloudName;

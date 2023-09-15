@@ -24,14 +24,14 @@ public class Dns {
     public enum RecordType { FORWARD, PUBLIC_FORWARD, REVERSE }
 
     /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
-    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean exclave) {
+    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave) {
         if (cloudName == CloudName.AWS)
-            return exclave ?
+            return enclave ?
                    EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
                    EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD, RecordType.REVERSE);
 
         if (cloudName == CloudName.GCP) {
-            if (exclave) {
+            if (enclave) {
                 return ipVersion.is6() ?
                        EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
                        EnumSet.noneOf(RecordType.class);
@@ -49,7 +49,7 @@ public class Dns {
     public static void verify(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
                                  CloudAccount cloudAccount, Zone zone) {
         IP.Version version = IP.Version.fromIpAddress(ipAddress);
-        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isExclave(zone));
+        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
 
         if (recordTypes.contains(RecordType.FORWARD)) {
             NameResolver.RecordType recordType = version.is6() ? NameResolver.RecordType.AAAA : NameResolver.RecordType.A;
