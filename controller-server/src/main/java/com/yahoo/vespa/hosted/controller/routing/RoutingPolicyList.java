@@ -75,6 +75,13 @@ public class RoutingPolicyList extends AbstractFilteringList<RoutingPolicy, Rout
         return copyOf(copy);
     }
 
+    /** Returns a copy of this excluding the given policy */
+    public RoutingPolicyList without(RoutingPolicy policy) {
+        List<RoutingPolicy> copy = new ArrayList<>(asList());
+        copy.remove(policy);
+        return copyOf(copy);
+    }
+
     /** Create a routing table for instance-level endpoints backed by routing policies in this */
     Map<RoutingId, List<RoutingPolicy>> asInstanceRoutingTable() {
         return asRoutingTable(false);

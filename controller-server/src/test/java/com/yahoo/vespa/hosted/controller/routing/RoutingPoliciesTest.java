@@ -1030,24 +1030,24 @@ public class RoutingPoliciesTest {
         // Deployment creates generated zone names
         List<String> expectedRecords = List.of(
                 // save me, jebus!
-                "b22ab332.cafed00d.z.vespa-app.cloud",
-                "b7e79800.cafed00d.z.vespa-app.cloud",
-                "b8ee0967.cafed00d.z.vespa-app.cloud",
+                "b36bf591.cafed00d.aws-us-east-1.w.vespa-app.cloud",
+                "b36bf591.cafed00d.z.vespa-app.cloud",
                 "bar.app1.tenant1.a.vespa-app.cloud",
-                "bar.cafed00d.a.vespa-app.cloud",
+                "bc50b636.cafed00d.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                "c0.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
-                "c0.cafed00d.aws-us-east-1.w.vespa-app.cloud",
                 "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                "c60d3149.cafed00d.z.vespa-app.cloud",
-                "cbff1506.cafed00d.z.vespa-app.cloud",
-                "d151139b.cafed00d.z.vespa-app.cloud",
-                "foo.app1.tenant1.g.vespa-app.cloud",
-                "foo.cafed00d.g.vespa-app.cloud"
+                "c33db5ed.cafed00d.z.vespa-app.cloud",
+                "d71005bf.cafed00d.z.vespa-app.cloud",
+                "dd0971b4.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
+                "dd0971b4.cafed00d.z.vespa-app.cloud",
+                "eb48ad53.cafed00d.z.vespa-app.cloud",
+                "f2fa41ec.cafed00d.g.vespa-app.cloud",
+                "f4a4d111.cafed00d.a.vespa-app.cloud",
+                "foo.app1.tenant1.g.vespa-app.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(4, tester.policiesOf(context.instanceId()).size());
@@ -1083,6 +1083,37 @@ public class RoutingPoliciesTest {
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(containerEndpointsInProd, tester.containerEndpoints(Environment.prod));
+
+        // One endpoint is removed
+        applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                        .region(zone2.region())
+                                                        .container("c0", AuthMethod.mtls)
+                                                        .container("c1", AuthMethod.mtls, AuthMethod.token)
+                                                        .applicationEndpoint("bar", "c0", Map.of(zone1.region().value(), Map.of(InstanceName.defaultName(), 1)))
+                                                        .allow(ValidationId.globalEndpointChange)
+                                                        .build();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(List.of(
+                "b36bf591.cafed00d.z.vespa-app.cloud",
+                "bar.app1.tenant1.a.vespa-app.cloud",
+                "bc50b636.cafed00d.z.vespa-app.cloud",
+                "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                "c33db5ed.cafed00d.z.vespa-app.cloud",
+                "d71005bf.cafed00d.z.vespa-app.cloud",
+                "dd0971b4.cafed00d.z.vespa-app.cloud",
+                "eb48ad53.cafed00d.z.vespa-app.cloud",
+                "f4a4d111.cafed00d.a.vespa-app.cloud"
+        ), tester.recordNames());
+
+        // Removing application removes all records
+        context.submit(ApplicationPackageBuilder.fromDeploymentXml("<deployment version='1.0'/>",
+                                                                   ValidationId.deploymentRemoval,
+                                                                   ValidationId.globalEndpointChange));
+        context.flushDnsUpdates();
+        assertEquals(List.of(), tester.recordNames());
     }
 
     private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {

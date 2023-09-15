@@ -1959,6 +1959,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private void toSlime(Endpoint endpoint, Cursor object) {
+        if (endpoint.scope().multiDeployment()) {
+            object.setString("id", endpoint.name());
+        }
         object.setString("cluster", endpoint.cluster().value());
         object.setBool("tls", endpoint.tls());
         object.setString("url", endpoint.url().toString());
@@ -1968,6 +1971,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         switch (endpoint.authMethod()) {
             case mtls -> object.setString("authMethod", "mtls");
             case token -> object.setString("authMethod", "token");
+            case none -> object.setString("authMethod", "none");
         }
     }
 

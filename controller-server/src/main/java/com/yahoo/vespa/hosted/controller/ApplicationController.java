@@ -56,6 +56,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics.Warning;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -73,7 +74,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.PreparedEndpoints;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -671,7 +671,7 @@ public class ApplicationController {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
         interface CleanCloseable extends AutoCloseable { void close(); }
-        AtomicReference<GeneratedEndpoints> generatedEndpoints = new AtomicReference<>(GeneratedEndpoints.empty);
+        AtomicReference<EndpointList> generatedEndpoints = new AtomicReference<>(EndpointList.EMPTY);
         try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage, generatedEndpoints)) {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
@@ -704,7 +704,7 @@ public class ApplicationController {
             Supplier<DeploymentEndpoints> endpoints = () -> {
                 if (preparedEndpoints == null) return DeploymentEndpoints.none;
                 PreparedEndpoints prepared = preparedEndpoints.get();
-                generatedEndpoints.set(prepared.generatedEndpoints());
+                generatedEndpoints.set(prepared.endpoints().generated());
                 return new DeploymentEndpoints(prepared.containerEndpoints(), prepared.certificate());
             };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
@@ -715,7 +715,7 @@ public class ApplicationController {
         }
     }
 
-    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data, AtomicReference<GeneratedEndpoints> generatedEndpoints) {
+    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data, AtomicReference<EndpointList> generatedEndpoints) {
         if (id.applicationId().instance().isTester()) return;
         controller.routing().of(id).activate(data.truncatedPackage().deploymentSpec(), generatedEndpoints.get());
         if ( ! id.zoneId().environment().isManuallyDeployed()) return;
@@ -932,7 +932,7 @@ public class ApplicationController {
         DeploymentId id = new DeploymentId(instanceId, zone);
         interface CleanCloseable extends AutoCloseable { void close(); }
         try (CleanCloseable postDeactivation = () -> {
-            application.ifPresent(app -> controller.routing().of(id).activate(app.get().deploymentSpec(), GeneratedEndpoints.empty));
+            application.ifPresent(app -> controller.routing().of(id).deactivate(app.get().deploymentSpec()));
             if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
             if ( ! id.zoneId().environment().isTest())

@@ -418,10 +418,6 @@ public class ApplicationPackageBuilder {
         return fromDeploymentXml(deploymentXml, "6.1", overrides);
     }
 
-    public static ApplicationPackage fromDeploymentXml(String deploymentXml, String compileVersion) {
-        return fromDeploymentXml(deploymentXml, compileVersion, new ValidationId[0]);
-    }
-
     public static ApplicationPackage fromDeploymentXml(String deploymentXml, String compileVersion, ValidationId... overrides) {
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {

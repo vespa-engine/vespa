@@ -103,6 +103,7 @@
           "authMethod": "mtls"
         },
         {
+          "id": "default",
           "cluster": "foo",
           "tls": true,
           "url": "https://instance1.application1.tenant1.global.vespa.oath.cloud/",
@@ -112,6 +113,7 @@
           "authMethod": "mtls"
         },
         {
+          "id": "a0",
           "cluster": "foo",
           "tls": true,
           "url": "https://a0.application1.tenant1.a.vespa.oath.cloud/",
