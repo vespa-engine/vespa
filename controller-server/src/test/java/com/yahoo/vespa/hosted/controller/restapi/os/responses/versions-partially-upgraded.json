@@ -167,6 +167,7 @@
       "pinned": false,
       "nextVersion": "8.2.1.20211228",
       "nextScheduledAt": 1640671200000,
+      "certified": true,
       "cloud": "cloud2",
       "nodes": [ ]
     }

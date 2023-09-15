@@ -73,8 +73,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         Change change = releaseIn(cloud).change(currentVersion, now);
         if (!change.osVersion().version().isAfter(currentVersion)) return Optional.empty();
         if (!future && !change.scheduleAt(now)) return Optional.empty();
-        if (!certified(change)) return Optional.empty();
-        return Optional.of(change);
+
+        boolean certified = certified(change);
+        if (!future && !certified) return Optional.empty();
+        return Optional.of(change.withCertified(certified));
     }
 
     private boolean certified(Change change) {
@@ -135,11 +137,15 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS version change and the earliest time it can be scheduled */
-    public record Change(OsVersion osVersion, Instant scheduleAt) {
+    public record Change(OsVersion osVersion, Instant scheduleAt, boolean certified) {
 
         public Change {
             Objects.requireNonNull(osVersion);
             Objects.requireNonNull(scheduleAt);
+        }
+
+        public Change withCertified(boolean certified) {
+            return new Change(osVersion, scheduleAt, certified);
         }
 
         /** Returns whether this can be scheduled at given instant */
@@ -163,7 +169,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), OsRelease.Tag.latest);
             Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
             Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
-            return new Change(new OsVersion(release.version(), cloud), scheduleAt);
+            return new Change(new OsVersion(release.version(), cloud), scheduleAt, false);
         }
 
         /** The cool-down period that must pass before a release can be used */
@@ -204,7 +210,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             }
             Duration cooldown = remainingCooldownOf(COOLDOWN, version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
-            return new Change(new OsVersion(version.version(), cloud), schedulingInstant);
+            return new Change(new OsVersion(version.version(), cloud), schedulingInstant, false);
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */

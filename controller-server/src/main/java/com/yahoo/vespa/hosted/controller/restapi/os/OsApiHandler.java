@@ -214,6 +214,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
                 nextChange.ifPresent(c -> {
                     currentVersionObject.setString("nextVersion", c.osVersion().version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
+                    currentVersionObject.setBool("certified", c.certified());
                 });
             });
 
