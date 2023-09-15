@@ -372,7 +372,7 @@ public class Flags {
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag WRITE_APPLICATION_DATA_AS_JSON = defineFeatureFlag(
-            "write-application-data-as-json", false,
+            "write-application-data-as-json", true,
             List.of("hmusum"), "2023-08-27", "2023-10-01",
             "Whether to write application data (active session id, last deployed session id etc. ) as json",
             "Takes effect immediately");
