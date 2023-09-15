@@ -43,8 +43,8 @@ bool
 EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
     return _fold
         ? (use_prefix()
-            ? (FoldedStringCompare::compareFoldedPrefix(get(lhs), get(rhs), _prefix_len) < 0)
-            : (FoldedStringCompare::compareFolded(get(lhs), get(rhs)) < 0))
+           ? (FoldedStringCompare::compareFoldedPrefix<true, true>(get(lhs), get(rhs), _prefix_len) < 0)
+           : (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0))
         : (use_prefix()
            ? (FoldedStringCompare::comparePrefix(get(lhs), get(rhs), _prefix_len) < 0)
            : (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0));
@@ -54,7 +54,7 @@ EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const v
 bool
 EnumStoreStringComparator::equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
     return _fold
-        ? (FoldedStringCompare::compareFolded(get(lhs), get(rhs)) == 0)
+        ? (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) == 0)
         : (FoldedStringCompare::compare(get(lhs), get(rhs)) == 0);
 }
 
