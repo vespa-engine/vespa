@@ -13,8 +13,8 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ConfigActivationListener;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -27,13 +27,12 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -79,7 +78,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final String serverId;
     private final ListFlag<String> incompatibleVersions;
-    private final BooleanFlag writeApplicationDataAsJson;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ConfigActivationListener configActivationListener,
@@ -101,7 +99,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
         this.clock = clock;
         this.serverId = configserverConfig.serverId();
         this.incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
-        this.writeApplicationDataAsJson = Flags.WRITE_APPLICATION_DATA_AS_JSON.bindTo(flagSource);
     }
 
     /** The curator backed ZK storage of this. */
@@ -147,7 +144,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
      * @param sessionId session id belonging to the application package for this application id.
      */
     public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
-        return database().createWriteActiveTransaction(transaction, applicationId, sessionId, writeApplicationDataAsJson.value());
+        return database().createWriteActiveTransaction(transaction, applicationId, sessionId);
     }
 
     /**
@@ -163,15 +160,14 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return database().createWritePrepareTransaction(transaction,
                                                         applicationId,
                                                         sessionId,
-                                                        activeSessionId.map(OptionalLong::of).orElseGet(OptionalLong::empty),
-                                                        writeApplicationDataAsJson.value());
+                                                        activeSessionId.map(OptionalLong::of).orElseGet(OptionalLong::empty));
     }
 
     /**
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        database().createApplication(id, writeApplicationDataAsJson.value());
+        database().createApplication(id);
     }
 
     /**
