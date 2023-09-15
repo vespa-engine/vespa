@@ -26,9 +26,9 @@ public class SubstringTestCase {
     @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Expression exp = new SubstringExpression(6, 9);
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new SubstringExpression(66, 99)));
-        assertFalse(exp.equals(new SubstringExpression(6, 99)));
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new SubstringExpression(66, 99));
+        assertNotEquals(exp, new SubstringExpression(6, 99));
         assertEquals(exp, new SubstringExpression(6, 9));
         assertEquals(exp.hashCode(), new SubstringExpression(6, 9).hashCode());
     }

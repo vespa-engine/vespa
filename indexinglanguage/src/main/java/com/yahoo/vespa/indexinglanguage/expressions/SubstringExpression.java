@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.text.Text;
 
 /**
  * @author Simon Thoresen Hult
@@ -32,15 +33,8 @@ public final class SubstringExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getValue());
-        int len = input.length();
-        if (from >= len) {
-            input = "";
-        } else if (to >= len) {
-            input = input.substring(from);
-        } else {
-            input = input.substring(from, to);
-        }
-        context.setValue(new StringFieldValue(input));
+        String substring = Text.substringByCodepoints(input, from, to);
+        context.setValue(new StringFieldValue(substring));
     }
 
     @Override

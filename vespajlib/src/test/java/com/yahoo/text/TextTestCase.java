@@ -50,6 +50,37 @@ public class TextTestCase {
         validateText(OptionalInt.empty(), new StringBuilder().appendCodePoint(0xD800).appendCodePoint(0xDC00).toString());
     }
 
+    static private String fromCP(String prefix, int [] codePoints, String suffix) {
+        StringBuilder sb = new StringBuilder(prefix);
+        for (int cp : codePoints) {
+            sb.appendCodePoint(cp);
+        }
+        sb.append(suffix);
+        return sb.toString();
+    }
+
+    @Test
+    public void testSubstringByCodePoint() {
+        assertEquals("", Text.substringByCodepoints("", 0, 0));
+        assertEquals("", Text.substringByCodepoints("abcdef", 0, 0));
+        assertEquals("", Text.substringByCodepoints("abcdef", 3, 3));
+        assertEquals("", Text.substringByCodepoints("abcdef", 3, 2));
+        assertEquals("", Text.substringByCodepoints("abcdef", 7, 9));
+        assertEquals("abcdef", Text.substringByCodepoints("abcdef", 0, 9));
+        assertEquals("a", Text.substringByCodepoints("abcdef", 0, 1));
+        assertEquals("cd", Text.substringByCodepoints("abcdef", 2, 4));
+
+        String withSurrogates = fromCP("abc", new int[]{0x10F000, 0x10F001, 0x10F002}, "def");
+        assertEquals(withSurrogates, Text.substringByCodepoints(withSurrogates, 0, 11));
+        assertEquals(withSurrogates, Text.substringByCodepoints(withSurrogates, 0, 20));
+        assertEquals(fromCP("bc", new int[]{0x10F000, 0x10F001}, ""),
+                     Text.substringByCodepoints(withSurrogates, 1, 5));
+        assertEquals(fromCP("", new int[]{0x10F001}, ""),
+                     Text.substringByCodepoints(withSurrogates, 4, 5));
+        assertEquals(fromCP("", new int[]{0x10F001, 0x10F002}, "de"),
+                     Text.substringByCodepoints(withSurrogates, 4, 8));
+    }
+
     @Test
     public void testIsDisplayable() {
         assertTrue(Text.isDisplayable('A'));

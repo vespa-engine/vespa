@@ -182,6 +182,25 @@ public final class Text {
         return s.substring(0, length - 4) + " ...";
     }
 
+    public static String substringByCodepoints(String s, int fromCP, int toCP) {
+        int len = s.length();
+        if ((fromCP >= len) || (fromCP >= toCP)) return "";
+
+        int from = s.offsetByCodePoints(0, fromCP);
+        if (from >= len) return "";
+        int lenCP = toCP - fromCP;
+        if (from + lenCP >= len) return s.substring(from);
+
+        try {
+            int to = s.offsetByCodePoints(from, toCP - fromCP);
+            return (to >= len)
+                    ? s.substring(from)
+                    : s.substring(from, to);
+        } catch (IndexOutOfBoundsException e) {
+            return s.substring(from);
+        }
+    }
+
     public static String format(String format, Object... args) {
 	return String.format(Locale.US, format, args);
     }
