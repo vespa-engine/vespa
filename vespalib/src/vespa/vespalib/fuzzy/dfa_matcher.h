@@ -8,7 +8,7 @@ namespace vespalib::fuzzy {
 
 // Concept that all DFA matcher implementations must satisfy
 template <typename T>
-concept DfaMatcher = requires(T a) {
+concept DfaMatcher = requires(T a, std::string u8str) {
     typename T::StateType;
     typename T::StateParamType;
     typename T::EdgeType;
@@ -44,7 +44,7 @@ concept DfaMatcher = requires(T a) {
     // match any character in the target string (i.e. is always a mismatch).
     { a.match_wildcard(typename T::StateType{}) } -> std::same_as<typename T::StateType>;
 
-    // Whether there is exists an out edge from the given state that can accept a
+    // Whether there exists an out edge from the given state that can accept a
     // _higher_ UTF-32 code point value (character) than the input u32 value. Such an
     // edge _may_ be a wildcard edge, which accepts any character.
     { a.has_higher_out_edge(typename T::StateType{}, uint32_t{}) } -> std::same_as<bool>;
@@ -70,6 +70,21 @@ concept DfaMatcher = requires(T a) {
 
     // Returns the state that is the result of following the given edge from the given state.
     { a.edge_to_state(typename T::StateType{}, typename T::EdgeType{}) } -> std::same_as<typename T::StateType>;
+
+    // Returns true iff the only way for the remaining input string to match the target string
+    // is for each subsequent character to match exactly. More precisely, this means that it is
+    // not possible to perform any more edits on the string. This will be the case if the
+    // current row of the Levenshtein matrix contains only 1 entry <= max_edits, and its cost
+    // is equal to max_edits.
+    // It is OK for an implementation to always return false. In this case, a slower code path
+    // (per-state stepping and character output) will be used for emitting the suffix.
+    { a.implies_exact_match_suffix(typename T::StateType{}) } -> std::same_as<bool>;
+
+    // Verbatim emit a suffix of the target string that will turn the prefix represented
+    // by the input state concatenated with the suffix into a matching string.
+    // Precondition: implies_match_suffix(state) == true, i.e. the state is guaranteed to
+    //               afford no edits anywhere.
+    { a.emit_exact_match_suffix(typename T::StateType{}, u8str) } -> std::same_as<void>;
 };
 
 }

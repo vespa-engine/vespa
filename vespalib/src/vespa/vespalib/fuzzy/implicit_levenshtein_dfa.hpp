@@ -29,10 +29,17 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     using Base::is_match;
     using Base::can_match;
 
-    const bool _is_cased;
+    std::span<const char>     _target_as_utf8;
+    std::span<const uint32_t> _target_utf8_char_offsets;
+    const bool                _is_cased;
 
-    ImplicitDfaMatcher(std::span<const uint32_t> u32_str, bool is_cased) noexcept
+    ImplicitDfaMatcher(std::span<const uint32_t> u32_str,
+                       std::span<const char>     target_as_utf8,
+                       std::span<const uint32_t> target_utf8_char_offsets,
+                       bool is_cased) noexcept
         : Base(u32_str),
+          _target_as_utf8(target_as_utf8),
+          _target_utf8_char_offsets(target_utf8_char_offsets),
           _is_cased(is_cased)
     {}
 
@@ -109,12 +116,22 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     StateType edge_to_state(const StateType& state, EdgeType edge) const noexcept {
         return step(state, edge);
     }
+    bool implies_exact_match_suffix(const StateType& state) const noexcept {
+        // Only one entry in the sparse matrix row and it implies no edits can be done
+        return (state.size() == 1 && state.cost(0) == max_edits());
+    }
+    // Precondition: implies_match_suffix(state)
+    void emit_exact_match_suffix(const StateType& state, std::string& u8_out) const {
+        const uint32_t target_u8_offset = _target_utf8_char_offsets[state.index(0)];
+        u8_out.append(_target_as_utf8.data() + target_u8_offset, _target_as_utf8.size() - target_u8_offset);
+    }
+    // TODO emit_exact_match_suffix(const StateType& state, std::u32string& u32_out)
 };
 
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string* successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _is_cased);
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 

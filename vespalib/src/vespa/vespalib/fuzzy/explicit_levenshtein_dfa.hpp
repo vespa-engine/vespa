@@ -79,6 +79,14 @@ struct ExplicitDfaMatcher {
     StateType edge_to_state([[maybe_unused]] StateType node, EdgeType edge) const noexcept {
         return &_nodes[edge->node];
     }
+    constexpr bool implies_exact_match_suffix(const StateType&) const noexcept {
+        // TODO
+        return false;
+    }
+    void emit_exact_match_suffix(const StateType&, std::string&) const {
+        // TODO (will never be called as long as `implies_exact_match_suffix()` returns false)
+        abort();
+    }
 };
 
 template <uint8_t MaxEdits>
@@ -101,7 +109,7 @@ void ExplicitLevenshteinDfaImpl<MaxEdits>::dump_as_graphviz(std::ostream& os) co
         }
         for (const auto& edge : node.match_out_edges()) {
             std::string as_utf8;
-            append_utf32_char_as_utf8(as_utf8, edge.u32ch);
+            append_utf32_char(as_utf8, edge.u32ch);
             os << "    " << i << " -> " << edge.node << " [label=\"" << as_utf8 << "\"];\n";
         }
         if (node.wildcard_edge_to != DOOMED) {

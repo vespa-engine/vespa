@@ -31,6 +31,14 @@ std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str);
  * ... So don't copy this function for use as a general UTF-8 emitter, as it is not
  * _technically_ conformant!
  */
-void append_utf32_char_as_utf8(std::string& out_str, uint32_t u32_char);
+void append_utf32_char(std::string& out_str, uint32_t u32_char);
+
+inline void append_utf32_char(std::u32string& out_str, uint32_t u32_char) {
+    out_str.push_back(u32_char); // no conversion needed
+}
+
+inline void append_utf32_char(std::vector<uint32_t>& out_str, uint32_t u32_char) {
+    out_str.push_back(u32_char); // no conversion needed
+}
 
 }

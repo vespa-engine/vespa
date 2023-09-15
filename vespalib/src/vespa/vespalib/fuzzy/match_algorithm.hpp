@@ -235,14 +235,14 @@ struct MatchAlgorithm {
             // instead of the wildcard edge, or we'll end up in the wrong state.
             const auto next_char = input_at_branch + 1;
             if (!matcher.has_exact_explicit_out_edge(last_state_with_higher_out, next_char)) {
-                append_utf32_char_as_utf8(successor, next_char);
+                append_utf32_char(successor, next_char);
                 emit_smallest_matching_suffix(matcher, wildcard_state, successor);
                 return;
             } // else: handle exact match below (it will be found as the first higher out edge)
         }
         const auto first_highest_edge = matcher.lowest_higher_explicit_out_edge(last_state_with_higher_out, input_at_branch);
         assert(matcher.valid_edge(first_highest_edge));
-        append_utf32_char_as_utf8(successor, matcher.edge_to_u32char(first_highest_edge));
+        append_utf32_char(successor, matcher.edge_to_u32char(first_highest_edge));
         emit_smallest_matching_suffix(matcher, matcher.edge_to_state(last_state_with_higher_out, first_highest_edge), successor);
     }
 
@@ -285,6 +285,13 @@ struct MatchAlgorithm {
     {
         auto state = from;
         while (!matcher.is_match(state)) {
+            // Optimization: if the only way for the remaining suffix to match is for it to be
+            // exactly equal to the suffix of the target string, emit it directly instead of
+            // stepping the state per character. This allows for matcher-specific shortcuts.
+            if (matcher.implies_exact_match_suffix(state)) {
+                matcher.emit_exact_match_suffix(state, str);
+                return;
+            }
             // If we can take a wildcard path, emit the smallest possible valid UTF-8 character (0x01).
             // Otherwise, find the smallest char that can eventually lead us to a match.
             auto wildcard_state = matcher.match_wildcard(state);
@@ -294,7 +301,7 @@ struct MatchAlgorithm {
             } else {
                 const auto smallest_out_edge = matcher.smallest_explicit_out_edge(state);
                 assert(matcher.valid_edge(smallest_out_edge));
-                append_utf32_char_as_utf8(str, matcher.edge_to_u32char(smallest_out_edge));
+                append_utf32_char(str, matcher.edge_to_u32char(smallest_out_edge));
                 state = matcher.edge_to_state(state, smallest_out_edge);
             }
         }
@@ -328,7 +335,7 @@ struct MatchAlgorithm {
             successor_out.clear();
             Utf8Reader u8_reader(source.data(), source.size());
             while (u8_reader.getPos() < n_prefix_u8_bytes) {
-                append_utf32_char_as_utf8(successor_out, LowerCase::convert(u8_reader.getChar()));
+                append_utf32_char(successor_out, LowerCase::convert(u8_reader.getChar()));
             }
         }
     }
