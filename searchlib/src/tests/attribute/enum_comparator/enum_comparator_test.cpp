@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/enumcomparator.h>
+#include <vespa/searchlib/attribute/dfa_string_comparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -22,6 +23,8 @@ using TreeType = BTreeRoot<AtomicEntryRef, BTreeNoLeafData,
                            vespalib::btree::NoAggregated,
                            const vespalib::datastore::EntryComparatorWrapper>;
 using NodeAllocator = TreeType::NodeAllocatorType;
+
+using attribute::DfaStringComparator;
 
 
 TEST(EnumComparatorTest, require_that_numeric_less_is_working)
@@ -190,6 +193,28 @@ TEST(EnumComparatorTest, require_that_folded_equal_is_working)
     EXPECT_FALSE(cmp3.equal(EnumIndex(), e4)); // similar when prefix
     EXPECT_FALSE(cmp3.equal(e4, EnumIndex())); // similar when prefix
     EXPECT_TRUE(cmp3.equal(EnumIndex(), EnumIndex())); // similar when prefix
+}
+
+TEST(DfaStringComparatorTest, require_that_less_is_working)
+{
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
+    EnumIndex e1 = es.insert("Aa");
+    EnumIndex e2 = es.insert("aa");
+    EnumIndex e3 = es.insert("aB");
+    DfaStringComparator cmp1(es.get_data_store(), "aa");
+    EXPECT_FALSE(cmp1.less(EnumIndex(), e1));
+    EXPECT_FALSE(cmp1.less(EnumIndex(), e2));
+    EXPECT_TRUE(cmp1.less(EnumIndex(), e3));
+    EXPECT_FALSE(cmp1.less(e1, EnumIndex()));
+    EXPECT_FALSE(cmp1.less(e2, EnumIndex()));
+    EXPECT_FALSE(cmp1.less(e3, EnumIndex()));
+    DfaStringComparator cmp2(es.get_data_store(), "Aa");
+    EXPECT_TRUE(cmp2.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp2.less(EnumIndex(), e2));
+    EXPECT_TRUE(cmp2.less(EnumIndex(), e3));
+    EXPECT_FALSE(cmp2.less(e1, EnumIndex()));
+    EXPECT_FALSE(cmp2.less(e2, EnumIndex()));
+    EXPECT_FALSE(cmp2.less(e3, EnumIndex()));
 }
 
 }

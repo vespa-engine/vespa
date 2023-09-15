@@ -239,6 +239,9 @@ public:
         auto cmp = make_folded_comparator(value);
         return _dict->find_matching_enums(cmp);
     }
+    const vespalib::datastore::DataStoreT<IEnumStore::InternalIndex>& get_data_store() const noexcept {
+        return _store.get_data_store();
+    }
 };
 
 template <>

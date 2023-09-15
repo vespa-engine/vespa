@@ -4,6 +4,7 @@
 
 #include "entry_comparator.h"
 #include "unique_store_string_allocator.h"
+#include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace vespalib::datastore {
 

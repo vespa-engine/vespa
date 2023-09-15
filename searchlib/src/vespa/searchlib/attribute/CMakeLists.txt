@@ -36,6 +36,7 @@ vespa_add_library(searchlib_attribute OBJECT
     createsinglefastsearch.cpp
     createsinglestd.cpp
     defines.cpp
+    dfa_string_comparator.cpp
     distance_metric_utils.cpp
     diversity.cpp
     dociditerator.cpp
