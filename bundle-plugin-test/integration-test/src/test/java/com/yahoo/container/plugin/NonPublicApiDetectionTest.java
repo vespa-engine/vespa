@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.container.plugin.BundleTest.findBundleJar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,13 +37,15 @@ public class NonPublicApiDetectionTest {
     }
 
     @Test
-    void usage_of_non_publicApi_packages_is_detected() {
+    void direct_usage_of_non_publicApi_packages_is_detected() {
         var nonPublicApiAttribute = mainAttributes.getValue("X-JDisc-Non-PublicApi-Import-Package");
         assertNotNull(nonPublicApiAttribute);
         var usedNonPublicApi = Arrays.stream(nonPublicApiAttribute.split(",")).collect(Collectors.toSet());
 
-        assertEquals(3, usedNonPublicApi.size());
-        assertTrue(usedNonPublicApi.contains("ai.vespa.internal"));
+        // Package 'ai.vespa.internal' is only used indirectly by the compile scoped dependency, and must not be included.
+        assertFalse(usedNonPublicApi.contains("ai.vespa.internal"));
+
+        assertEquals(2, usedNonPublicApi.size());
         assertTrue(usedNonPublicApi.contains("ai.vespa.lib.non_public"));
         assertTrue(usedNonPublicApi.contains("com.yahoo.lib.non_public"));
     }

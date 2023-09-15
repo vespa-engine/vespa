@@ -134,14 +134,18 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
 
-            Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
-                                                                     includedPackages.definedPackages(),
-                                                                     exportsByPackageName(exportedPackagesFromProvidedJars));
+            Map<String, Export> exportedPackagesByName = exportsByPackageName(exportedPackagesFromProvidedJars);
 
-            List<String> nonPublicApiUsed = disallowedImports(calculatedImports, nonPublicApiPackagesFromProvidedJars);
+            Map<String, Import> importsForProjectPackages = calculateImports(projectPackages.referencedPackages(),
+                                                                             includedPackages.definedPackages(),
+                                                                             exportedPackagesByName);
+            List<String> nonPublicApiUsed = disallowedImports(importsForProjectPackages, nonPublicApiPackagesFromProvidedJars);
             logNonPublicApiUsage(nonPublicApiUsed);
 
-            Map<String, String> manifestContent = generateManifestContent(artifactsToInclude, calculatedImports, includedPackages);
+            Map<String, Import> importsForIncludedPackages = calculateImports(includedPackages.referencedPackages(),
+                                                                     includedPackages.definedPackages(),
+                                                                     exportedPackagesByName);
+            Map<String, String> manifestContent = generateManifestContent(artifactsToInclude, importsForIncludedPackages, includedPackages);
             addAdditionalManifestProperties(manifestContent);
             addManifestPropertiesForInternalAndCoreBundles(manifestContent, includedPackages, providedJarArtifacts);
             addManifestPropertiesForUserBundles(manifestContent, providedJarArtifacts, nonPublicApiUsed);
