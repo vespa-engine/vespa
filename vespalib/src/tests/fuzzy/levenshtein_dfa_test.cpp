@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/fuzzy/levenshtein_dfa.h>
 #include <vespa/vespalib/fuzzy/dfa_stepping_base.h>
-#include <vespa/vespalib/fuzzy/unicode_utils.h>
+#include <vespa/vespalib/fuzzy/levenshtein_dfa.h>
 #include <vespa/vespalib/fuzzy/levenshtein_distance.h> // For benchmarking purposes
+#include <vespa/vespalib/fuzzy/unicode_utils.h>
+#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <charconv>
 #include <concepts>
 #include <filesystem>
 #include <fstream>
@@ -18,38 +18,67 @@ namespace fs = std::filesystem;
 
 static std::string benchmark_dictionary;
 
-struct LevenshteinDfaTest : TestWithParam<LevenshteinDfa::DfaType> {
+using CasingAndDfaType = std::tuple<LevenshteinDfa::Casing, LevenshteinDfa::DfaType>;
 
-    static LevenshteinDfa::DfaType dfa_type() noexcept { return GetParam(); }
+namespace {
+
+std::optional<uint32_t> do_calculate(std::string_view left, std::string_view right, uint32_t threshold,
+                                     LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type)
+{
+    auto dfa_lhs = LevenshteinDfa::build(left, threshold, casing, dfa_type);
+    auto maybe_match_lhs = dfa_lhs.match(right, nullptr);
+
+    auto dfa_rhs = LevenshteinDfa::build(right, threshold, casing, dfa_type);
+    auto maybe_match_rhs = dfa_rhs.match(left, nullptr);
+
+    EXPECT_EQ(maybe_match_lhs.matches(), maybe_match_rhs.matches());
+    if (maybe_match_lhs.matches()) {
+        EXPECT_EQ(maybe_match_lhs.edits(), maybe_match_rhs.edits());
+        return {maybe_match_lhs.edits()};
+    }
+    return std::nullopt;
+}
+
+std::optional<uint32_t> do_calculate(std::u8string_view left, std::u8string_view right, uint32_t threshold,
+                                     LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type)
+{
+    std::string_view lhs_ch(reinterpret_cast<const char*>(left.data()), left.size());
+    std::string_view rhs_ch(reinterpret_cast<const char*>(right.data()), right.size());
+    return do_calculate(lhs_ch, rhs_ch, threshold, casing, dfa_type);
+}
+
+}
+
+struct LevenshteinDfaTest : TestWithParam<CasingAndDfaType> {
+
+    static LevenshteinDfa::Casing casing() noexcept { return std::get<0>(GetParam()); }
+    static LevenshteinDfa::DfaType dfa_type() noexcept { return std::get<1>(GetParam()); }
+
+    static std::string stringify_params(const TestParamInfo<ParamType>& info) {
+        std::ostringstream ss;
+        ss << std::get<0>(info.param) << '_' << std::get<1>(info.param);
+        return ss.str();
+    }
 
     static std::optional<uint32_t> calculate(std::string_view left, std::string_view right, uint32_t threshold) {
-        auto dfa_lhs = LevenshteinDfa::build(left, threshold, dfa_type());
-        auto maybe_match_lhs = dfa_lhs.match(right, nullptr);
-
-        auto dfa_rhs = LevenshteinDfa::build(right, threshold, dfa_type());
-        auto maybe_match_rhs = dfa_rhs.match(left, nullptr);
-
-        EXPECT_EQ(maybe_match_lhs.matches(), maybe_match_rhs.matches());
-        if (maybe_match_lhs.matches()) {
-            EXPECT_EQ(maybe_match_lhs.edits(), maybe_match_rhs.edits());
-            return {maybe_match_lhs.edits()};
-        }
-        return std::nullopt;
+        return do_calculate(left, right, threshold, casing(), dfa_type());
     }
 
     static std::optional<uint32_t> calculate(std::u8string_view left, std::u8string_view right, uint32_t threshold) {
-        std::string_view lhs_ch(reinterpret_cast<const char*>(left.data()), left.size());
-        std::string_view rhs_ch(reinterpret_cast<const char*>(right.data()), right.size());
-        return calculate(lhs_ch, rhs_ch, threshold);
+        return do_calculate(left, right, threshold, casing(), dfa_type());
     }
 
 };
 
-INSTANTIATE_TEST_SUITE_P(AllDfaTypes,
+// All the baseline DFA tests use lowercase only, so they should have the exact same outcome
+// for both cased and uncased matching.
+INSTANTIATE_TEST_SUITE_P(AllCasingAndDfaTypes,
                          LevenshteinDfaTest,
-                         Values(LevenshteinDfa::DfaType::Explicit,
-                                LevenshteinDfa::DfaType::Implicit),
-                         PrintToStringParamName());
+                         Combine(Values(LevenshteinDfa::Casing::Uncased,
+                                        LevenshteinDfa::Casing::Cased),
+                                 Values(LevenshteinDfa::DfaType::Explicit,
+                                        LevenshteinDfa::DfaType::Implicit)),
+                         LevenshteinDfaTest::stringify_params);
 
 // Same as existing non-DFA Levenshtein tests, but with some added instantiations
 // for smaller max distances.
@@ -101,7 +130,7 @@ void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source, std:
 }
 
 TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings) {
-    auto dfa = LevenshteinDfa::build("food", 1, dfa_type());
+    auto dfa = LevenshteinDfa::build("food", 1, casing(), dfa_type());
 
     test_dfa_successor(dfa, "",       "\x01""food");
     test_dfa_successor(dfa, "faa",    "faod");
@@ -122,8 +151,8 @@ TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings
 
     // Also works with Unicode
     // 2 chars
-    test_dfa_successor(dfa, "\xc3\x86""x",                // "Æx"
-                            "\xc3\x87""food");            // "Çfood"
+    test_dfa_successor(dfa, "\xc3\xa6""x",                // "æx"
+                            "\xc3\xa7""food");            // "çfood"
     // 3 chars
     test_dfa_successor(dfa, "\xe7\x8c\xab""\xe3\x81\xaf", // "猫は"
                             "\xe7\x8c\xac""food");        // "猬food"
@@ -138,7 +167,7 @@ TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings
 }
 
 TEST_P(LevenshteinDfaTest, successor_is_well_defined_for_max_unicode_code_point_input) {
-    auto dfa = LevenshteinDfa::build("food", 1, dfa_type());
+    auto dfa = LevenshteinDfa::build("food", 1, casing(), dfa_type());
     // The successor string must be lexicographically larger than the input string.
     // In the presence of a wildcard output edge we handle this by increase the input
     // character by 1 and encoding it back as UTF-8.
@@ -155,7 +184,7 @@ TEST_P(LevenshteinDfaTest, successor_is_well_defined_for_max_unicode_code_point_
 }
 
 TEST_P(LevenshteinDfaTest, successor_is_well_defined_for_empty_target) {
-    auto dfa = LevenshteinDfa::build("", 1, dfa_type());
+    auto dfa = LevenshteinDfa::build("", 1, casing(), dfa_type());
     test_dfa_successor(dfa, "aa",    "b");
     test_dfa_successor(dfa, "b\x01", "c");
     test_dfa_successor(dfa, "vespa", "w");
@@ -170,12 +199,80 @@ TEST_P(LevenshteinDfaTest, malformed_utf8_is_replaced_with_placeholder_char) {
     EXPECT_EQ(calculate("\xff\xff", "a", 2),     std::optional{2});
     EXPECT_EQ(calculate("a", "\xff", 2),         std::optional{1});
     EXPECT_EQ(calculate("a", "\xff\xff\xff", 2), std::nullopt);
-    EXPECT_EQ(calculate("\xff", "\xef\xbf\xbd"/*U+FFFD*/, 2),  std::optional{0});
+    EXPECT_EQ(calculate("\xff", "\xef\xbf\xbd"/*U+FFFD*/, 2), std::optional{0});
 }
 
 TEST_P(LevenshteinDfaTest, unsupported_max_edits_value_throws) {
-    EXPECT_THROW((void)LevenshteinDfa::build("abc", 0, dfa_type()), std::invalid_argument);
-    EXPECT_THROW((void)LevenshteinDfa::build("abc", 3, dfa_type()), std::invalid_argument);
+    EXPECT_THROW((void)LevenshteinDfa::build("abc", 0, casing(), dfa_type()), std::invalid_argument);
+    EXPECT_THROW((void)LevenshteinDfa::build("abc", 3, casing(), dfa_type()), std::invalid_argument);
+}
+
+struct LevenshteinDfaCasingTest : TestWithParam<LevenshteinDfa::DfaType> {
+    static LevenshteinDfa::DfaType dfa_type() noexcept { return GetParam(); }
+
+    static std::optional<uint32_t> calculate_cased(std::string_view left, std::string_view right, uint32_t threshold) {
+        return do_calculate(left, right, threshold, LevenshteinDfa::Casing::Cased, dfa_type());
+    }
+
+    static std::optional<uint32_t> calculate_uncased(std::string_view left, std::string_view right, uint32_t threshold) {
+        return do_calculate(left, right, threshold, LevenshteinDfa::Casing::Uncased, dfa_type());
+    }
+};
+
+INSTANTIATE_TEST_SUITE_P(AllDfaTypes,
+                         LevenshteinDfaCasingTest,
+                         Values(LevenshteinDfa::DfaType::Explicit,
+                                LevenshteinDfa::DfaType::Implicit),
+                         PrintToStringParamName());
+
+TEST_P(LevenshteinDfaCasingTest, uncased_edge_cases_have_correct_edit_distance) {
+    for (auto max : {1, 2}) {
+        EXPECT_EQ(calculate_uncased("abc", "ABC", max),  std::optional{0}) << max;
+        EXPECT_EQ(calculate_uncased("Abc", "aB1", max),  std::optional{1}) << max;
+        EXPECT_EQ(calculate_uncased("aBC", "1bc", max),  std::optional{1}) << max;
+        EXPECT_EQ(calculate_uncased("Abc", "a1C", max),  std::optional{1}) << max;
+        EXPECT_EQ(calculate_uncased("aBc", "AB", max),   std::optional{1}) << max;
+        EXPECT_EQ(calculate_uncased("ABC", "abcd", max), std::optional{1}) << max;
+    }
+    EXPECT_EQ(calculate_uncased("bc", "aBCd", 2),  std::optional{2});
+    EXPECT_EQ(calculate_uncased("ab", "AbCd", 2),  std::optional{2});
+    EXPECT_EQ(calculate_uncased("CD", "AbcD", 2),  std::optional{2});
+    EXPECT_EQ(calculate_uncased("ad", "AbcD", 2),  std::optional{2});
+}
+
+TEST_P(LevenshteinDfaCasingTest, cased_edge_cases_have_correct_edit_distance) {
+    for (auto max : {1, 2}) {
+        EXPECT_EQ(calculate_cased("abc", "abC", max),  std::optional{1}) << max;
+        EXPECT_EQ(calculate_cased("Abc", "aB1", max),  std::nullopt) << max;
+        EXPECT_EQ(calculate_cased("aBC", "1bc", max),  std::nullopt) << max;
+        EXPECT_EQ(calculate_cased("Abc", "a1C", max),  std::nullopt) << max;
+        EXPECT_EQ(calculate_cased("ABC", "abcd", max), std::nullopt) << max;
+    }
+    EXPECT_EQ(calculate_cased("abc", "ABC", 2),  std::nullopt);
+    EXPECT_EQ(calculate_cased("abc", "aBC", 2),  std::optional{2});
+    EXPECT_EQ(calculate_cased("bc", "aBCd", 2),  std::nullopt);
+    EXPECT_EQ(calculate_cased("ab", "AbCd", 2),  std::nullopt);
+    EXPECT_EQ(calculate_cased("CD", "AbcD", 2),  std::nullopt);
+    EXPECT_EQ(calculate_cased("ad", "AbcD", 2),  std::nullopt);
+    EXPECT_EQ(calculate_cased("ad", "aBCd", 2),  std::optional{2});
+}
+
+TEST_P(LevenshteinDfaCasingTest, uncased_successor_is_emitted_as_if_match_term_was_lowercased) {
+    auto dfa = LevenshteinDfa::build("FOOD", 1, LevenshteinDfa::Casing::Uncased, dfa_type());
+    // This is a subset of the other successor test cases
+    test_dfa_successor(dfa, "",       "\x01""food");
+    test_dfa_successor(dfa, "FAA",    "faod");
+    test_dfa_successor(dfa, "fOoOoO", "foop");
+    test_dfa_successor(dfa, "OOOf",   "pfood");
+    test_dfa_successor(dfa, "Fo",     "fo\x01""d");
+    test_dfa_successor(dfa, "oO",     "ood");
+    test_dfa_successor(dfa, "OOO",    "oood");
+    test_dfa_successor(dfa, "FOXX",   "foyd");
+    test_dfa_successor(dfa, "GG",     "good");
+    test_dfa_successor(dfa, "Gp",     "hfood");
+    test_dfa_successor(dfa, "EP",     "f\x01""od");
+    test_dfa_successor(dfa, "Hfoodz", "hood");
+    test_dfa_successor(dfa, "Aooodz", "bfood");
 }
 
 // Turn integer v into its bitwise string representation with the MSB as the leftmost character.
@@ -191,20 +288,22 @@ std::string bits_to_str(T v) {
     return ret;
 }
 
-using DfaTypeAndMaxEdits = std::tuple<LevenshteinDfa::DfaType, uint32_t>;
+using CasingAndDfaTypeAndMaxEdits = std::tuple<LevenshteinDfa::Casing, LevenshteinDfa::DfaType, uint32_t>;
 
-struct LevenshteinDfaSuccessorTest : TestWithParam<DfaTypeAndMaxEdits> {
-    // Print test suffix as e.g. "/Explicit_1" instead of just a GTest-chosen number.
+struct LevenshteinDfaSuccessorTest : TestWithParam<CasingAndDfaTypeAndMaxEdits> {
+    // Print test suffix as e.g. "/Uncased_Explicit_1" instead of just a GTest-chosen number.
     static std::string stringify_params(const TestParamInfo<ParamType>& info) {
         std::ostringstream ss;
-        ss << std::get<0>(info.param) << '_' << std::get<1>(info.param);
+        ss << std::get<0>(info.param) << '_' << std::get<1>(info.param) << '_' << std::get<2>(info.param);
         return ss.str();
     }
 };
 
 INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
                          LevenshteinDfaSuccessorTest,
-                         Combine(Values(LevenshteinDfa::DfaType::Explicit,
+                         Combine(Values(LevenshteinDfa::Casing::Uncased,
+                                        LevenshteinDfa::Casing::Cased),
+                                 Values(LevenshteinDfa::DfaType::Explicit,
                                         LevenshteinDfa::DfaType::Implicit),
                                  Values(1, 2)),
                          LevenshteinDfaSuccessorTest::stringify_params);
@@ -225,10 +324,10 @@ INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
  * Inspired by approach used by Lucene DFA exhaustive testing.
  */
 TEST_P(LevenshteinDfaSuccessorTest, exhaustive_successor_test) {
-    const auto [dfa_type, max_edits] = GetParam();
+    const auto [casing, dfa_type, max_edits] = GetParam();
     for (uint32_t i = 0; i < 256; ++i) {
         const auto target = bits_to_str(static_cast<uint8_t>(i));
-        auto target_dfa = LevenshteinDfa::build(target, max_edits, dfa_type);
+        auto target_dfa = LevenshteinDfa::build(target, max_edits, casing, dfa_type);
         std::string skip_to, successor;
         for (uint32_t j = 0; j < 256; ++j) {
             const auto source = bits_to_str(static_cast<uint8_t>(j));
@@ -298,11 +397,10 @@ enum class BenchmarkType {
 };
 
 const char* to_s(BenchmarkType t) noexcept {
-    // Note: need underscores since this is used as part of GTest-generated test instance names
     switch (t) {
-    case BenchmarkType::DfaExplicit: return "DFA_explicit";
-    case BenchmarkType::DfaImplicit: return "DFA_implicit";
-    case BenchmarkType::Legacy:      return "legacy";
+    case BenchmarkType::DfaExplicit: return "DfaExplicit";
+    case BenchmarkType::DfaImplicit: return "DfaImplicit";
+    case BenchmarkType::Legacy:      return "Legacy";
     }
     abort();
 }
@@ -315,10 +413,14 @@ const char* to_s(BenchmarkType t) noexcept {
     return {2, 8, 16, 64, 256, 1024, 1024*16, 1024*64};
 }
 
-struct LevenshteinBenchmarkTest : TestWithParam<BenchmarkType> {
+using BenchmarkTypeAndCasing = std::tuple<BenchmarkType, LevenshteinDfa::Casing>;
+
+struct LevenshteinBenchmarkTest : TestWithParam<BenchmarkTypeAndCasing> {
 
     static std::string stringify_params(const TestParamInfo<ParamType>& info) {
-        return to_s(info.param);
+        std::ostringstream ss;
+        ss << to_s(std::get<0>(info.param)) << '_' << std::get<1>(info.param);
+        return ss.str();
     }
 
     void SetUp() override {
@@ -327,7 +429,8 @@ struct LevenshteinBenchmarkTest : TestWithParam<BenchmarkType> {
         }
     }
 
-    static BenchmarkType benchmark_type() noexcept { return GetParam(); }
+    static BenchmarkType benchmark_type() noexcept  { return std::get<0>(GetParam()); }
+    static LevenshteinDfa::Casing casing() noexcept { return std::get<1>(GetParam()); }
 
     static const std::vector<std::string>& load_dictionary_once() {
         static auto sorted_lines = read_and_sort_all_lines(fs::path(benchmark_dictionary));
@@ -351,9 +454,11 @@ struct LevenshteinBenchmarkTest : TestWithParam<BenchmarkType> {
 
 INSTANTIATE_TEST_SUITE_P(AllDfaTypes,
                          LevenshteinBenchmarkTest,
-                         Values(BenchmarkType::DfaExplicit,
-                                BenchmarkType::DfaImplicit,
-                                BenchmarkType::Legacy),
+                         Combine(Values(BenchmarkType::DfaExplicit,
+                                        BenchmarkType::DfaImplicit,
+                                        BenchmarkType::Legacy),
+                                 Values(LevenshteinDfa::Casing::Cased,
+                                        LevenshteinDfa::Casing::Uncased)),
                          LevenshteinBenchmarkTest::stringify_params);
 
 // ("abc", 1) => "a"
@@ -382,12 +487,12 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_worst_case_matching_excluding_setup_t
             // string must be matched and any sparse representation is always maximally filled since
             // we never expend any edits via mismatches.
             // Also ensure that we have multiple out-edges per node (i.e. don't just repeat "AAA" etc.).
-            std::string str = repeated_string("abcde", sz);
+            std::string str = repeated_string("aBcDeFgHiJ", sz);
             double min_time_s;
             if (type == BenchmarkType::DfaExplicit || type == BenchmarkType::DfaImplicit) {
                 auto dfa_type = (type == BenchmarkType::DfaExplicit) ? LevenshteinDfa::DfaType::Explicit
                                                                      : LevenshteinDfa::DfaType::Implicit;
-                auto dfa = LevenshteinDfa::build(str, k, dfa_type);
+                auto dfa = LevenshteinDfa::build(str, k, casing(), dfa_type);
                 min_time_s = BenchmarkTimer::benchmark([&] {
                     auto res = dfa.match(str, nullptr); // not benchmarking successor generation
                     do_not_optimize_away(res);
@@ -408,15 +513,16 @@ TEST(LevenshteinExplicitDfaBenchmarkTest, benchmark_explicit_dfa_construction) {
     if (!benchmarking_enabled()) {
         GTEST_SKIP() << "benchmarking not enabled";
     }
+    const auto casing = LevenshteinDfa::Casing::Cased; // For building, casing only affects initial string normalization
     using vespalib::BenchmarkTimer;
     for (uint8_t k : {1, 2}) {
         for (uint32_t sz : string_lengths()) {
-            std::string str = repeated_string("abcde", sz);
+            std::string str = repeated_string("aBcDeFgHiJ", sz);
             double min_time_s = BenchmarkTimer::benchmark([&] {
-                auto dfa = LevenshteinDfa::build(str, k, LevenshteinDfa::DfaType::Explicit);
+                auto dfa = LevenshteinDfa::build(str, k, casing, LevenshteinDfa::DfaType::Explicit);
                 do_not_optimize_away(dfa);
             }, 2.0);
-            auto dfa = LevenshteinDfa::build(str, k, LevenshteinDfa::DfaType::Explicit);
+            auto dfa = LevenshteinDfa::build(str, k, casing, LevenshteinDfa::DfaType::Explicit);
             size_t mem_usage = dfa.memory_usage();
             fprintf(stderr, "k=%u, sz=%u: \t%g us \t%zu bytes\n", k, sz, min_time_s * 1000000.0, mem_usage);
         }
@@ -431,12 +537,12 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_brute_force_dictionary_scan) {
     fprintf(stderr, "------ %s ------\n", to_s(type));
     for (uint8_t k : {1, 2}) {
         for (uint32_t sz : target_lengths) {
-            std::string str = repeated_string("abcde", sz);
+            std::string str = repeated_string("aBcDeFgHiJ", sz);
             double min_time_s;
             if (type == BenchmarkType::DfaExplicit || type == BenchmarkType::DfaImplicit) {
                 auto dfa_type = (type == BenchmarkType::DfaExplicit) ? LevenshteinDfa::DfaType::Explicit
                                                                      : LevenshteinDfa::DfaType::Implicit;
-                auto dfa = LevenshteinDfa::build(str, k, dfa_type);
+                auto dfa = LevenshteinDfa::build(str, k, casing(), dfa_type);
                 min_time_s = BenchmarkTimer::benchmark([&] {
                     for (const auto& line : dict) {
                         auto res = dfa.match(line, nullptr);
@@ -447,7 +553,9 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_brute_force_dictionary_scan) {
                 min_time_s = BenchmarkTimer::benchmark([&] {
                     auto target_u32 = utf8_string_to_utf32(str);
                     for (const auto& line : dict) {
-                        auto line_u32 = utf8_string_to_utf32(line);
+                        std::vector<uint32_t> line_u32 = ((casing() == LevenshteinDfa::Casing::Uncased)
+                                                          ? vespalib::LowerCase::convert_to_ucs4(std::string_view(str))
+                                                          : utf8_string_to_utf32(line));
                         auto res = vespalib::LevenshteinDistance::calculate(line_u32, target_u32, k);
                         do_not_optimize_away(res);
                     }
@@ -472,7 +580,7 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_skipping_dictionary_scan) {
             std::string str = repeated_string("abcde", sz);
             auto dfa_type = (type == BenchmarkType::DfaExplicit) ? LevenshteinDfa::DfaType::Explicit
                                                                  : LevenshteinDfa::DfaType::Implicit;
-            auto dfa = LevenshteinDfa::build(str, k, dfa_type);
+            auto dfa = LevenshteinDfa::build(str, k, casing(), dfa_type);
             double min_time_s = BenchmarkTimer::benchmark([&] {
                 auto iter = dict.cbegin();
                 auto end = dict.cend();

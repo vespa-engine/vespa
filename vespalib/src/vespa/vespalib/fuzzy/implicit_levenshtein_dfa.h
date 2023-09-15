@@ -9,16 +9,14 @@ namespace vespalib::fuzzy {
 
 template <typename Traits>
 class ImplicitLevenshteinDfa final : public LevenshteinDfa::Impl {
-    std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
+    const std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
+    const bool                  _is_cased;
 public:
     using MatchResult = LevenshteinDfa::MatchResult;
 
-    explicit ImplicitLevenshteinDfa(std::string_view str)
-        : ImplicitLevenshteinDfa(utf8_string_to_utf32(str))
-    {}
-
-    explicit ImplicitLevenshteinDfa(std::vector<uint32_t> str) noexcept
-        : _u32_str_buf(std::move(str))
+    ImplicitLevenshteinDfa(std::vector<uint32_t> str, bool is_cased) noexcept
+        : _u32_str_buf(std::move(str)),
+          _is_cased(is_cased)
     {}
 
     ~ImplicitLevenshteinDfa() override = default;

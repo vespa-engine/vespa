@@ -182,6 +182,13 @@ public:
      * memcmp()-ordering of strings and not whether they are technically valid Unicode.
      * This should be the case for low-level dictionary data structures etc.
      *
+     * Ordering notes: when the DFA is created as Uncased, the target and source strings
+     * are treated as lowercase when matching. The successor string is in this case generated
+     * _as if_ the input source string was originally lowercase. This is a special case
+     * intended for case-folded dictionaries that implicitly order strings by their lowercased
+     * form, but where they are stored in their original cased form. The (raw) cased form
+     * is what is passed to the DFA match() function.
+     *
      * Memory allocation:
      * This function does not directly or indirectly allocate any heap memory if either:
      *
@@ -205,6 +212,29 @@ public:
     };
 
     /**
+     * Specifies the character case matching semantics of the DFA.
+     */
+    enum class Casing {
+        /**
+         * Characters are case-normalized (i.e. lowercased) prior to matching.
+         * Example: In uncased mode, 'A' and 'a' are considered exact matches and do not
+         * consume edits.
+         *
+         * See the ordering notes for `match()` on what Uncased implies when generating
+         * successor strings.
+         */
+        Uncased,
+        /**
+         * Characters are not case-normalized prior to matching.
+         * Example: 'A' and 'a' are considered separate characters and will consume edits.
+         *
+         * Cased mode preserves strict memcmp() UTF-8 ordering between source and successor
+         * strings.
+         */
+        Cased
+    };
+
+    /**
      * Builds and returns a Levenshtein DFA that matches all strings within `max_edits`
      * edits of `target_string`. The type of DFA returned is specified by dfa_type.
      *
@@ -212,14 +242,13 @@ public:
      *
      * `target_string` must not contain any null UTF-8 chars.
      */
-    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string,
-                                              uint8_t max_edits,
-                                              DfaType dfa_type);
+    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits,
+                                              Casing casing, DfaType dfa_type);
 
     /**
      * Same as build() but currently always returns an implicit DFA.
      */
-    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits);
+    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits, Casing casing);
 
     /**
      * Dumps the DFA as a Graphviz graph in text format to the provided output stream.
@@ -239,6 +268,7 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& os, const LevenshteinDfa::MatchResult& mos);
-std::ostream& operator<<(std::ostream& os, const LevenshteinDfa::DfaType& dt);
+std::ostream& operator<<(std::ostream& os, LevenshteinDfa::DfaType dt);
+std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c);
 
 }

@@ -8,6 +8,9 @@
 
 namespace vespalib::fuzzy {
 
+// UTF-8 -> UTF-32 conversion with lowercasing of all characters
+std::vector<uint32_t> utf8_string_to_utf32_lowercased(std::string_view str);
+// UTF-8 -> UTF-32 conversion without case conversion
 std::vector<uint32_t> utf8_string_to_utf32(std::string_view str);
 
 std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str);

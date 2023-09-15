@@ -13,6 +13,11 @@ concept DfaMatcher = requires(T a) {
     typename T::StateParamType;
     typename T::EdgeType;
 
+    // Whether the matching is case-sensitive or not. If false, all source string code points will
+    // be implicitly lower-cased prior to state stepping. For case-insensitive (i.e. uncased)
+    // matching to have the expected semantics, the actual target string must be pre-lowercased.
+    { a.is_cased() } -> std::same_as<bool>;
+
     // Initial (starting) state of the DFA
     { a.start() } -> std::same_as<typename T::StateType>;
 

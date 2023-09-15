@@ -29,11 +29,16 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     using Base::is_match;
     using Base::can_match;
 
-    explicit ImplicitDfaMatcher(std::span<const uint32_t> u32_str) noexcept
-        : Base(u32_str)
+    const bool _is_cased;
+
+    ImplicitDfaMatcher(std::span<const uint32_t> u32_str, bool is_cased) noexcept
+        : Base(u32_str),
+          _is_cased(is_cased)
     {}
 
     // start, is_match, can_match, match_edit_distance are all provided by base type
+
+    bool is_cased() const noexcept { return _is_cased; }
 
     template <typename F>
     bool has_any_char_matching(const StateType& state, F&& f) const noexcept(noexcept(f(uint32_t{}))) {
@@ -109,7 +114,7 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string* successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf);
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _is_cased);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 

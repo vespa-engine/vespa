@@ -96,8 +96,11 @@ public:
     using MatchResult = LevenshteinDfa::MatchResult;
 private:
     std::vector<DfaNodeType> _nodes;
+    const bool               _is_cased;
 public:
-    ExplicitLevenshteinDfaImpl() noexcept = default;
+    explicit ExplicitLevenshteinDfaImpl(bool is_cased) noexcept
+        : _is_cased(is_cased)
+    {}
     ~ExplicitLevenshteinDfaImpl() override = default;
 
     static constexpr uint8_t max_edits() noexcept { return MaxEdits; }
@@ -131,14 +134,12 @@ public:
 
 template <typename Traits>
 class ExplicitLevenshteinDfaBuilder {
-    std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
+    const std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
+    const bool                  _is_cased;
 public:
-    explicit ExplicitLevenshteinDfaBuilder(std::string_view str)
-        : ExplicitLevenshteinDfaBuilder(utf8_string_to_utf32(str))
-    {}
-
-    explicit ExplicitLevenshteinDfaBuilder(std::vector<uint32_t> str) noexcept
-        : _u32_str_buf(std::move(str))
+    ExplicitLevenshteinDfaBuilder(std::vector<uint32_t> str, bool is_cased) noexcept
+        : _u32_str_buf(std::move(str)),
+          _is_cased(is_cased)
     {}
 
     [[nodiscard]] LevenshteinDfa build_dfa() const;
