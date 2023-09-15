@@ -4,7 +4,7 @@ package=com.yahoo.language.lucene
 # See
 #  - https://docs.vespa.ai/en/reference/config-files.html
 
-configDir                           path
+configDir                           path	optional
 analysis{}.tokenizer.name           string  default=standard
 analysis{}.tokenizer.conf{}         string
 

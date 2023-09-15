@@ -28,9 +28,6 @@ class AnalyzerFactory {
 
     private final LuceneAnalysisConfig config;
 
-    // Root config directory for all analysis components
-    private final Path configDir;
-
     // Registry of analyzers per language
     // The idea is to create analyzers ONLY WHEN they are needed
     // Analyzers are thread safe so no need to recreate them for every document
@@ -45,7 +42,6 @@ class AnalyzerFactory {
 
     public AnalyzerFactory(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzers) {
         this.config = config;
-        this.configDir = config.configDir();
         this.analyzerComponents = analyzers;
         this.defaultAnalyzers = new DefaultAnalyzers();
         log.config("Available in classpath char filters: " + CharFilterFactory.availableCharFilters());
@@ -83,7 +79,11 @@ class AnalyzerFactory {
 
     private Analyzer createAnalyzer(AnalyzerKey analyzerKey, LuceneAnalysisConfig.Analysis analysis) {
         try {
-            CustomAnalyzer.Builder builder = CustomAnalyzer.builder(configDir);
+            CustomAnalyzer.Builder builder = config.configDir()
+                    // Root config directory for all analysis components in the application package
+                    .map(CustomAnalyzer::builder)
+                    // else load resource files from the classpath
+                    .orElseGet(CustomAnalyzer::builder);
             builder = withTokenizer(builder, analysis);
             builder = addCharFilters(builder, analysis);
             builder = addTokenFilters(builder, analysis);
