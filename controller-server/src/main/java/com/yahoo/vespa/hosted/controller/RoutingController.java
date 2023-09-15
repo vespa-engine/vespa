@@ -134,44 +134,44 @@ public class RoutingController {
         // Add zone-scoped endpoints
         Map<EndpointId, List<GeneratedEndpoint>> generatedForDeclaredEndpoints = new HashMap<>();
         Set<ClusterSpec.Id> clustersWithToken = new HashSet<>();
-        if (randomizedEndpointsEnabled(deployment.applicationId())) { // TODO(mpolden): Remove this guard once config-models < 8.220 are gone
-            RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
-            RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
-            for (var container : services.containers()) {
-                ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
-                boolean tokenSupported = container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
-                if (tokenSupported) {
-                    clustersWithToken.add(clusterId);
-                }
-                Optional<RoutingPolicy> clusterPolicy = deploymentPolicies.cluster(clusterId).first();
-                List<GeneratedEndpoint> generatedForCluster = clusterPolicy.map(policy -> policy.generatedEndpoints().cluster().asList())
-                                                                           .orElseGet(List::of);
-                // Generate endpoints if cluster does not have any
-                if (generatedForCluster.isEmpty()) {
-                    generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
-                }
-                endpoints = endpoints.and(endpointsOf(deployment, clusterId, GeneratedEndpointList.copyOf(generatedForCluster)).scope(Scope.zone));
+        boolean generatedEndpointsEnabled = randomizedEndpointsEnabled(deployment.applicationId());
+        RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
+        RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
+        for (var container : services.containers()) {
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
+            boolean tokenSupported = container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
+            if (tokenSupported) {
+                clustersWithToken.add(clusterId);
             }
-
-            // Generate endpoints if declared endpoint does not have any
-            for (var container : services.containers()) {
-                ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
-                applicationPolicies.cluster(clusterId).asList().stream()
-                                   .flatMap(policy -> policy.generatedEndpoints().declared().asList().stream())
-                                   .forEach(ge -> generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> List.of(ge)));
+            Optional<RoutingPolicy> clusterPolicy = deploymentPolicies.cluster(clusterId).first();
+            List<GeneratedEndpoint> generatedForCluster = clusterPolicy.map(policy -> policy.generatedEndpoints().cluster().asList())
+                                                                       .orElseGet(List::of);
+            // Generate endpoints if cluster does not have any
+            if (generatedForCluster.isEmpty()) {
+                generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
             }
-            Stream.concat(spec.endpoints().stream(), spec.instances().stream().flatMap(i -> i.endpoints().stream()))
-                  .forEach(endpoint -> {
-                      EndpointId endpointId = EndpointId.of(endpoint.endpointId());
-                      generatedForDeclaredEndpoints.computeIfAbsent(endpointId, (k) -> {
-                          boolean tokenSupported = clustersWithToken.contains(ClusterSpec.Id.from(endpoint.containerId()));
-                          return generateEndpoints(tokenSupported, certificate, Optional.of(endpointId));
-                      });
-                  });
+            GeneratedEndpointList generatedEndpoints = generatedEndpointsEnabled ? GeneratedEndpointList.copyOf(generatedForCluster) : GeneratedEndpointList.EMPTY;
+            endpoints = endpoints.and(endpointsOf(deployment, clusterId, generatedEndpoints).scope(Scope.zone));
         }
 
         // Add global- and application-scoped endpoints
-        endpoints = endpoints.and(declaredEndpointsOf(application.get().id(), spec, generatedForDeclaredEndpoints).targets(deployment));
+        for (var container : services.containers()) {
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
+            applicationPolicies.cluster(clusterId).asList().stream()
+                               .flatMap(policy -> policy.generatedEndpoints().declared().asList().stream())
+                               .forEach(ge -> generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> List.of(ge)));
+        }
+        // Generate endpoints if declared endpoint does not have any
+        Stream.concat(spec.endpoints().stream(), spec.instances().stream().flatMap(i -> i.endpoints().stream()))
+              .forEach(endpoint -> {
+                  EndpointId endpointId = EndpointId.of(endpoint.endpointId());
+                  generatedForDeclaredEndpoints.computeIfAbsent(endpointId, (k) -> {
+                      boolean tokenSupported = clustersWithToken.contains(ClusterSpec.Id.from(endpoint.containerId()));
+                      return generatedEndpointsEnabled ? generateEndpoints(tokenSupported, certificate, Optional.of(endpointId)) : null;
+                  });
+              });
+        Map<EndpointId, List<GeneratedEndpoint>> generatedEndpoints = generatedEndpointsEnabled ? generatedForDeclaredEndpoints : Map.of();
+        endpoints = endpoints.and(declaredEndpointsOf(application.get().id(), spec, generatedEndpoints).targets(deployment));
         PreparedEndpoints prepared = new PreparedEndpoints(deployment,
                                                            endpoints,
                                                            application.get().require(deployment.applicationId().instance()).rotations(),
