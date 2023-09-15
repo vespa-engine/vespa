@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_enum_comparator_test_app TEST
     enum_comparator_test.cpp
     DEPENDS
     searchlib
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_enum_comparator_test_app COMMAND searchlib_enum_comparator_test_app)
