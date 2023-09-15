@@ -2,12 +2,9 @@
 
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-
-#include <vespa/log/log.h>
-LOG_SETUP("enum_comparator_test");
 
 using namespace vespalib::btree;
 
@@ -27,7 +24,7 @@ using TreeType = BTreeRoot<AtomicEntryRef, BTreeNoLeafData,
 using NodeAllocator = TreeType::NodeAllocatorType;
 
 
-TEST("requireThatNumericLessIsWorking")
+TEST(EnumComparatorTest, require_that_numeric_less_is_working)
 {
     NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
@@ -41,7 +38,7 @@ TEST("requireThatNumericLessIsWorking")
     EXPECT_FALSE(cmp2.less(e2, EnumIndex()));
 }
 
-TEST("requireThatNumericEqualIsWorking")
+TEST(EnumComparatorTest, require_that_numeric_equal_is_working)
 {
     NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
@@ -56,7 +53,7 @@ TEST("requireThatNumericEqualIsWorking")
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
 }
 
-TEST("requireThatFloatLessIsWorking")
+TEST(EnumComparatorTest, require_that_float_less_is_working)
 {
     FloatEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10.5);
@@ -74,7 +71,7 @@ TEST("requireThatFloatLessIsWorking")
     EXPECT_FALSE(cmp2.less(e2, EnumIndex()));
 }
 
-TEST("requireThatFloatEqualIsWorking")
+TEST(EnumComparatorTest, require_that_float_equal_is_working)
 {
     FloatEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10.5);
@@ -93,7 +90,7 @@ TEST("requireThatFloatEqualIsWorking")
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
 }
 
-TEST("requireThatStringLessIsWorking")
+TEST(EnumComparatorTest, require_that_string_less_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
@@ -110,7 +107,7 @@ TEST("requireThatStringLessIsWorking")
     EXPECT_FALSE(cmp2.less(e3, EnumIndex()));
 }
 
-TEST("requireThatStringEqualIsWorking")
+TEST(EnumComparatorTest, require_that_string_equal_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
@@ -127,7 +124,7 @@ TEST("requireThatStringEqualIsWorking")
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
 }
 
-TEST("requireThatComparatorWithTreeIsWorking")
+TEST(EnumComparatorTest, require_that_comparator_with_tree_is_working)
 {
     NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     vespalib::GenerationHandler g;
@@ -139,12 +136,12 @@ TEST("requireThatComparatorWithTreeIsWorking")
         EnumIndex idx = es.insert(v);
         t.insert(AtomicEntryRef(idx), BTreeNoLeafData(), m, cmp);
     }
-    EXPECT_EQUAL(100u, t.size(m));
+    EXPECT_EQ(100u, t.size(m));
     int32_t exp = 1;
     for (TreeType::Iterator itr = t.begin(m); itr.valid(); ++itr) {
-        EXPECT_EQUAL(exp++, es.get_value(itr.getKey().load_relaxed()));
+        EXPECT_EQ(exp++, es.get_value(itr.getKey().load_relaxed()));
     }
-    EXPECT_EQUAL(101, exp);
+    EXPECT_EQ(101, exp);
     t.clear(m);
     m.freeze();
     m.assign_generation(g.getCurrentGeneration());
@@ -152,7 +149,7 @@ TEST("requireThatComparatorWithTreeIsWorking")
     m.reclaim_memory(g.get_oldest_used_generation());
 }
 
-TEST("requireThatFoldedLessIsWorking")
+TEST(EnumComparatorTest, require_that_folded_less_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
@@ -172,7 +169,7 @@ TEST("requireThatFoldedLessIsWorking")
     EXPECT_FALSE(cmp3.less(e4, EnumIndex())); // similar when prefix
 }
 
-TEST("requireThatFoldedEqualIsWorking")
+TEST(EnumComparatorTest, require_that_folded_equal_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
@@ -197,4 +194,4 @@ TEST("requireThatFoldedEqualIsWorking")
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
