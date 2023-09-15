@@ -156,7 +156,7 @@ public class RoutingController {
                     }
                 }
                 if (generatedForCluster.isEmpty()) {
-                    generatedForCluster = generateEndpoints(deployment, tokenSupported, certificate, Optional.empty());
+                    generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
                 }
                 endpoints = endpoints.and(endpointsOf(deployment, clusterId, GeneratedEndpointList.copyOf(generatedForCluster)).scope(Scope.zone));
             }
@@ -167,7 +167,7 @@ public class RoutingController {
                       EndpointId endpointId = EndpointId.of(endpoint.endpointId());
                       generatedForDeclaredEndpoints.computeIfAbsent(endpointId, (k) -> {
                           boolean tokenSupported = clustersWithToken.contains(ClusterSpec.Id.from(endpoint.containerId()));
-                          return generateEndpoints(deployment, tokenSupported, certificate, Optional.of(endpointId));
+                          return generateEndpoints(tokenSupported, certificate, Optional.of(endpointId));
                       });
                   });
         }
@@ -185,12 +185,9 @@ public class RoutingController {
         return prepared;
     }
 
-    private List<GeneratedEndpoint> generateEndpoints(DeploymentId deployment, boolean tokenSupported, Optional<EndpointCertificate> certificate, Optional<EndpointId> endpoint) {
+    private List<GeneratedEndpoint> generateEndpoints(boolean tokenSupported, Optional<EndpointCertificate> certificate, Optional<EndpointId> endpoint) {
         return certificate.flatMap(EndpointCertificate::randomizedId)
-                          .map(id -> generateEndpoints(id,
-                                                       deployment.applicationId(),
-                                                       tokenSupported,
-                                                       endpoint))
+                          .map(id -> generateEndpoints(id, tokenSupported, endpoint))
                           .orElseGet(List::of);
     }
 
@@ -463,7 +460,7 @@ public class RoutingController {
     }
 
     /** Generate endpoints for all authentication methods, using given application part */
-    private List<GeneratedEndpoint> generateEndpoints(String applicationPart, ApplicationId instance, boolean token, Optional<EndpointId> endpoint) {
+    private List<GeneratedEndpoint> generateEndpoints(String applicationPart, boolean token, Optional<EndpointId> endpoint) {
         return Arrays.stream(AuthMethod.values())
                      .filter(method -> switch (method) {
                          case token -> token;
