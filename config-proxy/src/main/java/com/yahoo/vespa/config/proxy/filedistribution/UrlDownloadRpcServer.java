@@ -84,13 +84,9 @@ class UrlDownloadRpcServer {
             else
                 req.setError(DOES_NOT_EXIST, "URL '" + url + "' not found");
         } catch (RuntimeException e) {
-            String message = "Download of '" + url + "' failed: " + Exceptions.toMessageString(e);
-            log.log(Level.SEVERE, message);
-            req.setError(HTTP_ERROR, e.getMessage());
+            logAndSetRpcError(req, url, e, HTTP_ERROR);
         } catch (Throwable e) {
-            String message = "Download of '" + url + "' failed: " + Exceptions.toMessageString(e);
-            log.log(Level.SEVERE, message);
-            req.setError(INTERNAL_ERROR, message);
+            logAndSetRpcError(req, url, e, INTERNAL_ERROR);
         }
         req.returnRequest();
     }
@@ -99,6 +95,12 @@ class UrlDownloadRpcServer {
         return (url.startsWith("s3://"))
                 ? new S3Downloader().downloadFile(url, downloadDir)
                 : new UrlDownloader().downloadFile(url, downloadDir);
+    }
+
+    private static void logAndSetRpcError(Request req, String url, Throwable e, int rpcErrorCode) {
+        String message = "Download of '" + url + "' failed: " + Exceptions.toMessageString(e);
+        log.log(Level.SEVERE, message);
+        req.setError(rpcErrorCode, e.getMessage());
     }
 
     private static String urlToDirName(String uri) {
