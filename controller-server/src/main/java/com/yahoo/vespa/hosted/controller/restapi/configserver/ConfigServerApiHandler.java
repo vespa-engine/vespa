@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.configserver;
 
 import ai.vespa.http.HttpURL;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -44,12 +45,14 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
     private final ZoneId controllerZone;
+    private final CloudName controllerCloud;
 
     public ConfigServerApiHandler(Context parentCtx, ServiceRegistry serviceRegistry,
                                   ConfigServerRestExecutor proxy, Controller controller) {
         super(parentCtx, controller.auditLogger());
         this.zoneRegistry = serviceRegistry.zoneRegistry();
         this.controllerZone = zoneRegistry.systemZone().getVirtualId();
+        this.controllerCloud = zoneRegistry.systemZone().getCloudName();
         this.proxy = proxy;
     }
 
@@ -119,7 +122,8 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private URI getEndpoint(ZoneId zoneId) {
-        return controllerZone.equals(zoneId) ? CONTROLLER_URI : zoneRegistry.getConfigServerVipUri(zoneId);
+        if (controllerZone.equals(zoneId)) return CONTROLLER_URI;
+        return controllerCloud.equals(CloudName.AWS) ? zoneRegistry.getConfigServerYcpiUri(zoneId) : zoneRegistry.getConfigServerVipUri(zoneId);
     }
 
 }
