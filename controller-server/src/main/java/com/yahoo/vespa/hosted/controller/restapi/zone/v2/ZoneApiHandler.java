@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.zone.v2;
 
 import ai.vespa.http.HttpURL;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -100,7 +101,10 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ProxyRequest proxyRequest(ZoneId zoneId, HttpURL.Path path, HttpRequest request) {
-        return ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request);
+        return ProxyRequest.tryOne(zoneRegistry.systemZone().getCloudName().equals(CloudName.AWS)
+                ? zoneRegistry.getConfigServerYcpiUri(zoneId)
+                : zoneRegistry.getConfigServerVipUri(zoneId),
+                path, request);
     }
 
 }
