@@ -282,6 +282,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI getConfigServerYcpiUri(ZoneId zoneId) {
+        return URI.create(Text.format("https://cfg-%s.test.vip:4443/", zoneId.value().replace(".", "-")));
+    }
+
+    @Override
     public Optional<String> getVipHostname(ZoneId zoneId) {
         if (routingMethod(zoneId).isShared()) {
             return Optional.of("vip." + zoneId.value());
