@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.proxy;
 import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -277,7 +279,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
         public ConnectionReuseStrategy(ZoneRegistry zoneRegistry) {
             this(zoneRegistry.zones().all().ids().stream()
-                             .map(zoneRegistry::getConfigServerVipUri)
+                             .map((ZoneId zoneId) -> zoneRegistry.getConfigServerVipUri(zoneId, zoneRegistry.systemZone().getCloudName().equals(CloudName.AWS)))
                              .map(URI::getHost)
                              .collect(Collectors.toUnmodifiableSet()));
         }
