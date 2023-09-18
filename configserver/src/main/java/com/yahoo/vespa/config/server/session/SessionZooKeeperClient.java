@@ -118,9 +118,9 @@ public class SessionZooKeeperClient {
 
     public long sessionId() { return sessionId; }
 
-    public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(ACTIVE_BARRIER); }
+    public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(getWaiterPath(ACTIVE_BARRIER)); }
 
-    CompletionWaiter createPrepareWaiter() { return createCompletionWaiter(PREPARE_BARRIER); }
+    CompletionWaiter createPrepareWaiter() { return createCompletionWaiter(getWaiterPath(PREPARE_BARRIER)); }
 
     CompletionWaiter getPrepareWaiter() { return getCompletionWaiter(getWaiterPath(PREPARE_BARRIER)); }
 
@@ -136,8 +136,8 @@ public class SessionZooKeeperClient {
         return sessionPath.append(barrierName);
     }
 
-    private CompletionWaiter createCompletionWaiter(String waiterNode) {
-        return curator.createCompletionWaiter(sessionPath, waiterNode, serverId, barrierWaitForAllTimeout);
+    private CompletionWaiter createCompletionWaiter(Path path) {
+        return curator.createCompletionWaiter(path, serverId, barrierWaitForAllTimeout);
     }
 
     private CompletionWaiter getCompletionWaiter(Path path) {

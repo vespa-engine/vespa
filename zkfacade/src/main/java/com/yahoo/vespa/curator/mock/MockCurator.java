@@ -87,7 +87,7 @@ public class MockCurator extends Curator {
     }
 
     @Override
-    public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, String id, Duration waitForAll) {
+    public CompletionWaiter createCompletionWaiter(Path waiterPath, String id, Duration waitForAll) {
         return mockFramework().createCompletionWaiter();
     }
 
