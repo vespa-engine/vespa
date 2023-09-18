@@ -38,8 +38,6 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
     @BeforeEach
     public void before() {
         tester = new ContainerTester(container, responseFiles);
-        System.out.println("getCloudName().value(): " + tester.controller().zoneRegistry().systemZone().getCloudName().value());;
-
         tester.serviceRegistry().zoneRegistry()
               .setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
               .setZones(zones);
