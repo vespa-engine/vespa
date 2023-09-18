@@ -73,6 +73,7 @@ public class TextTestCase {
         String withSurrogates = fromCP("abc", new int[]{0x10F000, 0x10F001, 0x10F002}, "def");
         assertEquals(withSurrogates, Text.substringByCodepoints(withSurrogates, 0, 11));
         assertEquals(withSurrogates, Text.substringByCodepoints(withSurrogates, 0, 20));
+        assertEquals("", Text.substringByCodepoints(withSurrogates, 10, 11));
         assertEquals(fromCP("bc", new int[]{0x10F000, 0x10F001}, ""),
                      Text.substringByCodepoints(withSurrogates, 1, 5));
         assertEquals(fromCP("", new int[]{0x10F001}, ""),

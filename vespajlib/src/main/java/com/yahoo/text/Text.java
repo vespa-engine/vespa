@@ -186,7 +186,12 @@ public final class Text {
         int len = s.length();
         if ((fromCP >= len) || (fromCP >= toCP)) return "";
 
-        int from = s.offsetByCodePoints(0, fromCP);
+        int from;
+        try {
+            from = s.offsetByCodePoints(0, fromCP);
+        } catch (IndexOutOfBoundsException e) {
+            return "";
+        }
         if (from >= len) return "";
         int lenCP = toCP - fromCP;
         if (from + lenCP >= len) return s.substring(from);
