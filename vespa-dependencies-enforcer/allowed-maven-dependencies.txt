@@ -10,6 +10,8 @@ ch.qos.logback:logback-classic:1.2.10
 ch.qos.logback:logback-core:1.2.10
 classworlds:classworlds:1.1-alpha-2
 com.amazonaws:aws-java-sdk-core:1.12.540
+com.amazonaws:aws-java-sdk-kms:1.12.540
+com.amazonaws:aws-java-sdk-s3:1.12.540
 com.amazonaws:aws-java-sdk-ssm:1.12.540
 com.amazonaws:aws-java-sdk-sts:1.12.540
 com.amazonaws:jmespath-java:1.12.540

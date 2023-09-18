@@ -6,20 +6,17 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.net.URI;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.yolean.Exceptions;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -30,6 +27,7 @@ import static com.yahoo.vespa.config.UrlDownloader.HTTP_ERROR;
 import static com.yahoo.vespa.config.UrlDownloader.INTERNAL_ERROR;
 import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.logging.Level.WARNING;
 
 /**
  * An RPC server that handles URL download requests.
@@ -39,7 +37,6 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 class UrlDownloadRpcServer {
 
     private static final Logger log = Logger.getLogger(UrlDownloadRpcServer.class.getName());
-    private static final String CONTENTS_FILE_NAME = "contents";
     static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
 
     private final File rootDownloadDir;
@@ -58,7 +55,8 @@ class UrlDownloadRpcServer {
     void close() {
         executor.shutdownNow();
         try {
-            executor.awaitTermination(10, TimeUnit.SECONDS);
+            if ( ! executor.awaitTermination(10, TimeUnit.SECONDS))
+                log.log(WARNING, "Failed to shut down url download rpc server within timeout");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -72,60 +70,46 @@ class UrlDownloadRpcServer {
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
         File downloadDir = new File(rootDownloadDir, urlToDirName(url));
-        if (alreadyDownloaded(downloadDir)) {
+        Downloader downloader = downloader(url);
+        if (downloader.alreadyDownloaded(downloader, downloadDir)) {
             log.log(Level.INFO, "URL '" + url + "' already downloaded");
-            req.returnValues().add(new StringValue(new File(downloadDir, CONTENTS_FILE_NAME).getAbsolutePath()));
+            req.returnValues().add(new StringValue(new File(downloadDir, downloader.fileName()).getAbsolutePath()));
             req.returnRequest();
             return;
         }
 
         try {
-            URL website = new URL(url);
-            HttpURLConnection connection = (HttpURLConnection) website.openConnection();
-            if (connection.getResponseCode() == 200) {
-                log.log(Level.INFO, "Downloading URL '" + url + "'");
-                downloadFile(req, connection, downloadDir);
-            } else {
-                log.log(Level.SEVERE, "Download of URL '" + url + "' got server response: " + connection.getResponseCode());
-                req.setError(HTTP_ERROR, String.valueOf(connection.getResponseCode()));
-            }
+            Files.createDirectories(downloadDir.toPath());
+            Optional<File> file = downloader.downloadFile(url, downloadDir);
+            if (file.isPresent())
+                req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
+            else
+                req.setError(DOES_NOT_EXIST, "URL '" + url + "' not found");
+        } catch (RuntimeException e) {
+            logAndSetRpcError(req, url, e, HTTP_ERROR);
         } catch (Throwable e) {
-            log.log(Level.SEVERE, "Download of URL '" + url + "' failed, got exception: " + e.getMessage());
-            req.setError(INTERNAL_ERROR, "Download of URL '" + url + "' internal error: " + e.getMessage());
+            logAndSetRpcError(req, url, e, INTERNAL_ERROR);
         }
         req.returnRequest();
     }
 
-    private static void downloadFile(Request req, HttpURLConnection connection, File downloadDir) throws IOException {
-        long start = System.currentTimeMillis();
-        String url = connection.getURL().toString();
-        Files.createDirectories(downloadDir.toPath());
-        File contentsPath = new File(downloadDir, CONTENTS_FILE_NAME);
-        try (ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream())) {
-            try (FileOutputStream fos = new FileOutputStream((contentsPath.getAbsolutePath()))) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+    private static Downloader downloader(String url) {
+        URI uri = new URI(url);
+        return switch (uri.getScheme()) {
+            case "http", "https" -> new UrlDownloader();
+            case "s3" -> new S3Downloader();
+            default -> throw new IllegalArgumentException("Unsupported scheme '" + uri.getScheme() + "'");
+        };
+    }
 
-                if (contentsPath.exists() && contentsPath.length() > 0) {
-                    new RequestTracker().trackRequest(downloadDir);
-                    req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
-                    log.log(Level.FINE, () -> "URL '" + url + "' available at " + contentsPath);
-                    log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
-                                                      url, (System.currentTimeMillis() - start) / 1000.0));
-                } else {
-                    log.log(Level.SEVERE, "Downloaded URL '" + url + "' not found, returning error");
-                    req.setError(DOES_NOT_EXIST, "Downloaded '" + url + "' not found");
-                }
-            }
-        }
+    private static void logAndSetRpcError(Request req, String url, Throwable e, int rpcErrorCode) {
+        String message = "Download of '" + url + "' failed: " + Exceptions.toMessageString(e);
+        log.log(Level.SEVERE, message);
+        req.setError(rpcErrorCode, e.getMessage());
     }
 
     private static String urlToDirName(String uri) {
         return String.valueOf(XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
-    }
-
-    private static boolean alreadyDownloaded(File downloadDir) {
-        File contents = new File(downloadDir, CONTENTS_FILE_NAME);
-        return contents.exists() && contents.length() > 0;
     }
 
 }
