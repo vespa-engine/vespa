@@ -37,20 +37,17 @@ protected:
             return _lookup_value;
         }
     }
-
+    UniqueStoreStringComparator(const DataStoreType &store, const char *lookup_value)
+        : _store(store),
+          _lookup_value(lookup_value)
+    {
+    }
 public:
     UniqueStoreStringComparator(const DataStoreType &store)
         : _store(store),
           _lookup_value(nullptr)
     {
     }
-
-    UniqueStoreStringComparator(const DataStoreType &store, const char *lookup_value)
-        : _store(store),
-          _lookup_value(lookup_value)
-    {
-    }
-
     bool less(const EntryRef lhs, const EntryRef rhs) const override {
         const char *lhs_value = get(lhs);
         const char *rhs_value = get(rhs);
@@ -65,6 +62,9 @@ public:
         const char *rhs_value = get(rhs);
         vespalib::hash<const char *> hasher;
         return hasher(rhs_value);
+    }
+    UniqueStoreStringComparator<RefT> make_for_lookup(const char* lookup_value) const {
+        return UniqueStoreStringComparator<RefT>(_store, lookup_value);
     }
 };
 

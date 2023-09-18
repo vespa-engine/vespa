@@ -20,7 +20,7 @@ using vespalib::datastore::EntryRef;
 using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
-using MyCompare = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
+using MyComparator = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
 using vespalib::GenerationHolder;
@@ -48,7 +48,7 @@ struct DataStoreFixedSizeHashTest : public ::testing::Test
     GenerationHolder  _generation_holder;
     MyAllocator       _allocator;
     MyDataStore&      _store;
-    std::unique_ptr<const vespalib::datastore::EntryComparator> _comp;
+    const MyComparator _comparator;
     std::unique_ptr<FixedSizeHashMap> _hash_map;
     vespalib::Rand48 _rnd;
 
@@ -70,7 +70,7 @@ DataStoreFixedSizeHashTest::DataStoreFixedSizeHashTest()
       _generation_holder(),
       _allocator({}),
       _store(_allocator.get_data_store()),
-      _comp(std::make_unique<MyCompare>(_store)),
+      _comparator(_store),
       _hash_map(),
       _rnd()
 {
@@ -106,7 +106,7 @@ DataStoreFixedSizeHashTest::size() const noexcept
 void
 DataStoreFixedSizeHashTest::insert(uint32_t key)
 {
-    MyCompare comp(_store, key);
+    auto comp = _comparator.make_for_lookup(key);
     std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
     auto& result = _hash_map->add(_hash_map->get_comp(comp), insert_entry);
     auto ref = result.first.load_relaxed();
@@ -117,7 +117,7 @@ DataStoreFixedSizeHashTest::insert(uint32_t key)
 void
 DataStoreFixedSizeHashTest::remove(uint32_t key)
 {
-    MyCompare comp(_store, key);
+    auto comp = _comparator.make_for_lookup(key);
     auto result = _hash_map->remove(_hash_map->get_comp(comp));
     if (result != nullptr) {
         auto ref = result->first.load_relaxed();
@@ -130,7 +130,7 @@ DataStoreFixedSizeHashTest::remove(uint32_t key)
 bool
 DataStoreFixedSizeHashTest::has_key(uint32_t key)
 {
-    MyCompare comp(_store, key);
+    auto comp = _comparator.make_for_lookup(key);
     auto result = _hash_map->find(_hash_map->get_comp(comp));
     if (result != nullptr) {
         auto ref = result->first.load_relaxed();
@@ -270,7 +270,7 @@ TEST_F(DataStoreFixedSizeHashTest, lookups_works_after_insert_and_remove)
         commit();
     }
     for (auto &kv : expected) {
-        MyCompare comp(_store, kv.first);
+        auto comp = _comparator.make_for_lookup(kv.first);
         EXPECT_EQ(kv.second, _hash_map->find(_hash_map->get_comp(comp)) != nullptr);
     }
 }
