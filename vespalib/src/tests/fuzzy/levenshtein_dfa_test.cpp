@@ -82,7 +82,8 @@ INSTANTIATE_TEST_SUITE_P(AllCasingAndDfaTypes,
                          Combine(Values(LevenshteinDfa::Casing::Uncased,
                                         LevenshteinDfa::Casing::Cased),
                                  Values(LevenshteinDfa::DfaType::Explicit,
-                                        LevenshteinDfa::DfaType::Implicit)),
+                                        LevenshteinDfa::DfaType::Implicit,
+                                        LevenshteinDfa::DfaType::Table)),
                          LevenshteinDfaTest::stringify_params);
 
 // Same as existing non-DFA Levenshtein tests, but with some added instantiations
@@ -233,7 +234,8 @@ struct LevenshteinDfaCasingTest : TestWithParam<LevenshteinDfa::DfaType> {
 INSTANTIATE_TEST_SUITE_P(AllDfaTypes,
                          LevenshteinDfaCasingTest,
                          Values(LevenshteinDfa::DfaType::Explicit,
-                                LevenshteinDfa::DfaType::Implicit),
+                                LevenshteinDfa::DfaType::Implicit,
+                                LevenshteinDfa::DfaType::Table),
                          PrintToStringParamName());
 
 TEST_P(LevenshteinDfaCasingTest, uncased_edge_cases_have_correct_edit_distance) {
@@ -315,7 +317,8 @@ INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
                          Combine(Values(LevenshteinDfa::Casing::Uncased,
                                         LevenshteinDfa::Casing::Cased),
                                  Values(LevenshteinDfa::DfaType::Explicit,
-                                        LevenshteinDfa::DfaType::Implicit),
+                                        LevenshteinDfa::DfaType::Implicit,
+                                        LevenshteinDfa::DfaType::Table),
                                  Values(1, 2)),
                          LevenshteinDfaSuccessorTest::stringify_params);
 

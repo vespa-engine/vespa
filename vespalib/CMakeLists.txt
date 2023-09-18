@@ -96,6 +96,7 @@ vespa_define_module(
     src/tests/fileheader
     src/tests/floatingpointtype
     src/tests/fuzzy
+    src/tests/fuzzy/table_dfa
     src/tests/gencnt
     src/tests/growablebytebuffer
     src/tests/guard

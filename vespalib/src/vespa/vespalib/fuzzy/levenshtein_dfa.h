@@ -231,7 +231,8 @@ public:
 
     enum class DfaType {
         Implicit,
-        Explicit
+        Explicit,
+        Table
     };
 
     /**
