@@ -59,9 +59,7 @@ public interface ZoneRegistry {
     ZoneApi get(ZoneId zoneId);
 
     /** Returns the URI for the config server VIP in the given zone */
-    URI getConfigServerVipUri(ZoneId zoneId);
-
-    URI getConfigServerYcpiUri(ZoneId zoneId);
+    URI getConfigServerVipUri(ZoneId zoneId, boolean publiclyReachable);
 
     /** Returns the VIP hostname for the shared routing layer in given zone, if any */
     Optional<String> getVipHostname(ZoneId zoneId);

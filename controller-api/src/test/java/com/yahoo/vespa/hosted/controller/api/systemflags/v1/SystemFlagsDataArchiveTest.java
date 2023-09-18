@@ -407,7 +407,7 @@ public class SystemFlagsDataArchiveTest {
         when(zoneApi.getCloudName()).thenReturn(CloudName.YAHOO);
         when(zoneApi.getVirtualId()).thenReturn(ZoneId.ofVirtualControllerZone());
         when(registryMock.systemZone()).thenReturn(zoneApi);
-        when(registryMock.getConfigServerVipUri(any())).thenReturn(URI.create("http://localhost:8080/"));
+        when(registryMock.getConfigServerVipUri(any(), false)).thenReturn(URI.create("http://localhost:8080/"));
         when(registryMock.getConfigServerHttpsIdentity(any())).thenReturn(new AthenzService("domain", "servicename"));
         ZoneList zones = mockZoneList("prod.us-west-1", "prod.us-east-3");
         when(registryMock.zones()).thenReturn(zones);

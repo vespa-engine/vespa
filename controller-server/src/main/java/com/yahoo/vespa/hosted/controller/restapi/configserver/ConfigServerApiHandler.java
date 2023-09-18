@@ -123,7 +123,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
 
     private URI getEndpoint(ZoneId zoneId) {
         if (controllerZone.equals(zoneId)) return CONTROLLER_URI;
-        return controllerCloud.equals(CloudName.AWS) ? zoneRegistry.getConfigServerYcpiUri(zoneId) : zoneRegistry.getConfigServerVipUri(zoneId);
+        return zoneRegistry.getConfigServerVipUri(zoneId, controllerCloud.equals(CloudName.AWS));
     }
 
 }
