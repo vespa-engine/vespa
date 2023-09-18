@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
 
 /**
  * @author lesters
@@ -67,41 +66,24 @@ public class UrlDownloader {
         return target != null && target.isValid();
     }
 
-    private boolean temporaryError(Request req) {
-        return false;  // Currently, none of the errors are considered temporary
-    }
-
-    public File waitFor(UrlReference urlReference, long timeout) {
-        long start = System.currentTimeMillis() / 1000;
+   public File waitFor(UrlReference urlReference, Duration timeout) {
         if (! isValid())
             connect();
-        long timeLeft = timeout;
-        do {
-            Request request = new Request("url.waitFor");
-            request.parameters().add(new StringValue(urlReference.value()));
 
-            double rpcTimeout = Math.min(timeLeft, 60 * 60.0);
-            log.log(FINE, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
-            target.invokeSync(request, rpcTimeout);
+       Request request = new Request("url.waitFor");
+       request.parameters().add(new StringValue(urlReference.value()));
 
-            if (request.checkReturnTypes("s")) {
-                return new File(request.returnValues().get(0).asString());
-            } else if (!request.isError()) {
-                throw new RuntimeException("Invalid response: " + request.returnValues());
-            } else if (temporaryError(request)) {
-                log.log(INFO, "Retrying waitFor for " + urlReference + ": " + request.errorCode() + " -- " + request.errorMessage());
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Interrupted sleep between retries of waitFor", e);
-                }
-            } else {
-                 throw new RuntimeException("Wait for " + urlReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
-            }
-            timeLeft = start + timeout - System.currentTimeMillis() / 1000;
-        } while (timeLeft > 0);
+       double rpcTimeout = timeout.toSeconds();
+       log.log(FINE, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
+       target.invokeSync(request, rpcTimeout);
 
-        throw new RuntimeException("Timed out waiting for " + urlReference + " after " + timeout);
+       if (request.checkReturnTypes("s")) {
+           return new File(request.returnValues().get(0).asString());
+       } else if (! request.isError()) {
+           throw new RuntimeException("Invalid response: " + request.returnValues());
+       } else {
+           throw new RuntimeException("Wait for " + urlReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
+       }
     }
 
 }
