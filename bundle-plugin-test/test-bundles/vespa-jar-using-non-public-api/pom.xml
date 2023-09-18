@@ -11,9 +11,9 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>non-public-api-usage</artifactId>
+  <artifactId>vespa-jar-using-non-public-api</artifactId>
   <version>8-SNAPSHOT</version>
-  <packaging>container-plugin</packaging>
+  <packaging>jar</packaging>
 
   <dependencies>
     <dependency>
@@ -22,24 +22,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-
-    <dependency>
-      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
-      <artifactId>vespa-jar-using-non-public-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <failOnWarnings>false</failOnWarnings>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

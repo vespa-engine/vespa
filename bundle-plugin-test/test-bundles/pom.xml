@@ -51,8 +51,9 @@
         <module>artifact-version-for-exports</module>
         <module>artifact-version-for-exports-dep</module>
         <module>export-packages-lib</module>
-        <module>non-public-api-usage</module>
         <module>main</module>
+        <module>non-public-api-usage</module>
+        <module>vespa-jar-using-non-public-api</module>
     </modules>
 
     <dependencies>
