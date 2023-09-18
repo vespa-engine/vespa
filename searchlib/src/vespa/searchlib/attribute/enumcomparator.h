@@ -18,14 +18,24 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    EnumStoreComparator(const DataStoreType& data_store, const EntryT& lookup_value)
-        : ParentType(data_store, lookup_value)
-    {}
     EnumStoreComparator(const DataStoreType& data_store)
         : ParentType(data_store)
     {}
 
+private:
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& lookup_value)
+        : ParentType(data_store, lookup_value)
+    {}
+
+public:
     static bool equal_helper(const EntryT& lhs, const EntryT& rhs);
+
+    EnumStoreComparator<EntryT> make_folded() const {
+        return *this;
+    }
+    EnumStoreComparator<EntryT> make_for_lookup(const EntryT& lookup_value) const {
+        return EnumStoreComparator<EntryT>(this->_store, lookup_value);
+    }
 };
 
 /**
@@ -45,22 +55,31 @@ public:
     EnumStoreStringComparator(const DataStoreType& data_store)
         : EnumStoreStringComparator(data_store, false)
     {}
+
+private:
     EnumStoreStringComparator(const DataStoreType& data_store, bool fold);
 
     /**
      * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
      */
-    EnumStoreStringComparator(const DataStoreType& data_store, const char* lookup_value)
-        : EnumStoreStringComparator(data_store, false, lookup_value)
-    {}
     EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value);
     EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value, bool prefix);
 
+public:
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
+    EnumStoreStringComparator make_folded() const {
+        return EnumStoreStringComparator(_store, true);
+    }
+    EnumStoreStringComparator make_for_lookup(const char* lookup_value) const {
+        return EnumStoreStringComparator(_store, _fold, lookup_value);
+    }
+    EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const {
+        return EnumStoreStringComparator(_store, _fold, lookup_value, true);
+    }
 private:
-    inline bool use_prefix() const { return _prefix; }
+    inline bool use_prefix() const noexcept { return _prefix; }
     const bool _fold;
     const bool _prefix;
     uint32_t   _prefix_len;

@@ -37,15 +37,16 @@ namespace search {
 template <class EntryT>
 class EnumStoreT : public IEnumStore {
 public:
-    using ComparatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
+    using EntryType = EntryT;
+    static constexpr bool has_string_type = std::is_same_v<EntryType, const char *>;
+    using ComparatorType = std::conditional_t<has_string_type,
                                               EnumStoreStringComparator,
                                               EnumStoreComparator<EntryT>>;
-    using AllocatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
+    using AllocatorType = std::conditional_t<has_string_type,
                                              vespalib::datastore::UniqueStoreStringAllocator<InternalIndex>,
                                              vespalib::datastore::UniqueStoreAllocator<EntryT, InternalIndex>>;
     using UniqueStoreType = vespalib::datastore::UniqueStore<EntryT, InternalIndex, ComparatorType, AllocatorType>;
 
-    using EntryType = EntryT;
     using EnumStoreType = EnumStoreT<EntryT>;
     using EntryRef = vespalib::datastore::EntryRef;
     using EntryComparator = vespalib::datastore::EntryComparator;
@@ -67,10 +68,6 @@ private:
 
     const vespalib::datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
-    }
-
-    static bool has_string_type() {
-        return std::is_same_v<EntryType, const char *>;
     }
 
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
@@ -191,7 +188,7 @@ public:
     }
 
     ComparatorType make_comparator(const EntryType& lookup_value) const {
-        return ComparatorType(_store.get_data_store(), lookup_value);
+        return _store.get_comparator().make_for_lookup(lookup_value);
     }
 
     const EntryComparator & get_folded_comparator() const {
@@ -225,12 +222,12 @@ public:
     template <typename Type>
     ComparatorType
     make_folded_comparator(const Type& lookup_value) const {
-        return ComparatorType(_store.get_data_store(), is_folded(), lookup_value);
+        return _foldedComparator.make_for_lookup(lookup_value);
     }
     template<typename Type>
     ComparatorType
     make_folded_comparator_prefix(const Type& lookup_value) const {
-        return ComparatorType(_store.get_data_store(), is_folded(), lookup_value, true);
+        return _foldedComparator.make_for_prefix_lookup(lookup_value);
     }
     template<typename Type>
     std::vector<IEnumStore::EnumHandle>

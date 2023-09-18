@@ -106,14 +106,12 @@ protected:
             return _lookup_value;
         }
     }
-
-public:
     UniqueStoreComparator(const DataStoreType &store, const EntryType &lookup_value)
         : _store(store),
           _lookup_value(lookup_value)
     {
     }
-
+public:
     UniqueStoreComparator(const DataStoreType &store)
         : _store(store),
           _lookup_value()
@@ -133,6 +131,10 @@ public:
     size_t hash(const EntryRef rhs) const override {
         const EntryType &rhsValue = get(rhs);
         return UniqueStoreComparatorHelper<EntryT>::hash(rhsValue);
+    }
+
+    UniqueStoreComparator<EntryT, RefT> make_for_lookup(const EntryType& lookup_value) const {
+        return UniqueStoreComparator<EntryT, RefT>(_store, lookup_value);
     }
 };
 

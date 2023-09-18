@@ -305,15 +305,15 @@ template <typename EntryT>
 std::unique_ptr<EntryComparator>
 EnumStoreT<EntryT>::allocate_comparator() const
 {
-    return std::make_unique<ComparatorType>(_store.get_data_store());
+    return std::make_unique<ComparatorType>(_store.get_comparator());
 }
 
 template <typename EntryT>
 std::unique_ptr<EntryComparator>
 EnumStoreT<EntryT>::allocate_optionally_folded_comparator(bool folded) const
 {
-    return (has_string_type() && folded)
-            ? std::make_unique<ComparatorType>(_store.get_data_store(), true)
+    return (has_string_type && folded)
+        ? std::make_unique<ComparatorType>(_store.get_comparator().make_folded())
             : std::unique_ptr<EntryComparator>();
 }
 
@@ -321,9 +321,9 @@ template <typename EntryT>
 typename EnumStoreT<EntryT>::ComparatorType
 EnumStoreT<EntryT>::make_optionally_folded_comparator(bool folded) const
 {
-    return (has_string_type() && folded)
-           ? ComparatorType(_store.get_data_store(), true)
-           : ComparatorType(_store.get_data_store());
+    return (has_string_type && folded)
+        ? _store.get_comparator().make_folded()
+        : _store.get_comparator();
 }
 
 }

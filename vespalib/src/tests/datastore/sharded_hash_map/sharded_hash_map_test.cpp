@@ -25,7 +25,7 @@ using vespalib::datastore::ICompactable;
 using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
-using MyCompare = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
+using MyComparator = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
 using MyHashMap = vespalib::datastore::ShardedHashMap;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
@@ -101,6 +101,7 @@ struct DataStoreShardedHashTest : public ::testing::Test
     GenerationHandler _generationHandler;
     MyAllocator       _allocator;
     MyDataStore&      _store;
+    const MyComparator _comparator;
     MyHashMap         _hash_map;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
     vespalib::ThreadStackExecutor _readers; // multiple reader threads
@@ -134,7 +135,8 @@ DataStoreShardedHashTest::DataStoreShardedHashTest()
     : _generationHandler(),
       _allocator({}),
       _store(_allocator.get_data_store()),
-      _hash_map(std::make_unique<MyCompare>(_store)),
+      _comparator(_store),
+      _hash_map(std::make_unique<MyComparator>(_comparator)),
       _writer(1),
       _readers(4),
       _rnd(),
@@ -178,7 +180,7 @@ DataStoreShardedHashTest::commit()
 void
 DataStoreShardedHashTest::insert(uint32_t key)
 {
-    MyCompare comp(_store, key);
+    auto comp = _comparator.make_for_lookup(key);
     std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
     auto& result = _hash_map.add(comp, EntryRef(), insert_entry);
     auto ref = result.first.load_relaxed();
@@ -189,7 +191,7 @@ DataStoreShardedHashTest::insert(uint32_t key)
 void
 DataStoreShardedHashTest::remove(uint32_t key)
 {
-    MyCompare comp(_store, key);
+    auto comp = _comparator.make_for_lookup(key);
     auto result = _hash_map.remove(comp, EntryRef());
     if (result != nullptr) {
         auto ref = result->first.load_relaxed();
@@ -210,7 +212,7 @@ DataStoreShardedHashTest::read_work(uint32_t cnt)
     for (i = 0; i < cnt && _stop_read.load() == 0; ++i) {
         auto guard = _generationHandler.takeGuard();
         uint32_t key = rnd.lrand48() % (_keyLimit + 1);
-        MyCompare comp(_store, key);
+        auto comp = _comparator.make_for_lookup(key);
         auto result = _hash_map.find(comp, EntryRef());
         if (result != nullptr) {
             auto ref = result->first.load_relaxed();
@@ -264,7 +266,7 @@ void
 DataStoreShardedHashTest::populate_sample_values(uint32_t cnt)
 {
     for (uint32_t i = 0; i < cnt; ++i) {
-        MyCompare comp(_store, i);
+        auto comp = _comparator.make_for_lookup(i);
         auto result = _hash_map.find(comp, EntryRef());
         ASSERT_NE(result, nullptr);
         EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
@@ -276,7 +278,7 @@ void
 DataStoreShardedHashTest::clear_sample_values(uint32_t cnt)
 {
     for (uint32_t i = 0; i < cnt; ++i) {
-        MyCompare comp(_store, i);
+        auto comp = _comparator.make_for_lookup(i);
         auto result = _hash_map.find(comp, EntryRef());
         ASSERT_NE(result, nullptr);
         EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
@@ -312,7 +314,7 @@ DataStoreShardedHashTest::test_normalize_values(bool use_filter, bool one_filter
         EXPECT_TRUE(_hash_map.normalize_values([](EntryRef ref) noexcept { RefT iref(ref); return RefT(iref.offset() + 300, iref.bufferId()); }));
     }
     for (uint32_t i = 0; i < large_population; ++i) {
-        MyCompare comp(_store, i);
+        auto comp = _comparator.make_for_lookup(i);
         auto result = _hash_map.find(comp, EntryRef());
         ASSERT_NE(result, nullptr);
         EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());

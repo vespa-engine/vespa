@@ -50,7 +50,7 @@ template <typename EntryT, typename RefT, typename Comparator, typename Allocato
 UniqueStoreAddResult
 UniqueStore<EntryT, RefT, Comparator, Allocator>::add(EntryConstRefType value)
 {
-    Comparator comp(_store, value);
+    auto comp = _comparator.make_for_lookup(value);
     UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return _allocator.allocate(value); });
     _allocator.get_wrapped(result.ref()).inc_ref_count();
     return result;
@@ -60,7 +60,7 @@ template <typename EntryT, typename RefT, typename Comparator, typename Allocato
 EntryRef
 UniqueStore<EntryT, RefT, Comparator, Allocator>::find(EntryConstRefType value)
 {
-    Comparator comp(_store, value);
+    auto comp = _comparator.make_for_lookup(value);
     return _dict->find(comp);
 }
 
