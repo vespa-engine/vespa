@@ -31,7 +31,6 @@ class UrlDownloader implements Downloader {
             throw new RuntimeException("Download of URL '" + url + "' failed, got response code " + connection.getResponseCode());
 
         log.log(Level.INFO, "Downloading URL '" + url + "'");
-        Files.createDirectories(downloadDir.toPath());
         File contentsPath = new File(downloadDir, CONTENTS_FILE_NAME);
         try (ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream())) {
             try (FileOutputStream fos = new FileOutputStream((contentsPath.getAbsolutePath()))) {

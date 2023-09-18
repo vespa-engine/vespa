@@ -6,6 +6,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.net.URI;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
@@ -14,6 +15,7 @@ import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +79,7 @@ class UrlDownloadRpcServer {
         }
 
         try {
+            Files.createDirectories(downloadDir.toPath());
             Optional<File> file = downloader.downloadFile(url, downloadDir);
             if (file.isPresent())
                 req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
@@ -91,7 +94,12 @@ class UrlDownloadRpcServer {
     }
 
     private static Downloader downloader(String url) {
-        return url.startsWith("s3://") ? new S3Downloader() : new UrlDownloader();
+        URI uri = new URI(url);
+        return switch (uri.getScheme()) {
+            case "http", "https" -> new UrlDownloader();
+            case "s3" -> new S3Downloader();
+            default -> throw new IllegalArgumentException("Unsupported scheme '" + uri.getScheme() + "'");
+        };
     }
 
     private static void logAndSetRpcError(Request req, String url, Throwable e, int rpcErrorCode) {
