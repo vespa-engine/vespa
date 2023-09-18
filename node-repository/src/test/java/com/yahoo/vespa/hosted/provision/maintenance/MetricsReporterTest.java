@@ -190,22 +190,22 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = tester.nodeRepository();
 
         // Allow 4 containers
-        Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
+        var ipAddressPool = List.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("node-id-1", IP.Config.of(Set.of("::1"), ipAddressPool), "dockerHost",
+        Node dockerHost = Node.create("node-id-1", IP.Config.of(List.of("::1"), ipAddressPool), "dockerHost",
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         nodeRepository.nodes().addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         tester.move(Node.State.ready, "dockerHost");
 
-        Node container1 = Node.reserve(Set.of("::2"), "container1",
+        Node container1 = Node.reserve(List.of("::2"), "container1",
                                        "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant).build();
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
         try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(List.of(container1), lock));
         }
 
-        Node container2 = Node.reserve(Set.of("::3"), "container2",
+        Node container2 = Node.reserve(List.of("::3"), "container2",
                                        "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant).build();
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
         try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {

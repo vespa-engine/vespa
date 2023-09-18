@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -70,9 +69,9 @@ public class Node {
     private final Optional<ClusterType> exclusiveToClusterType;
     private final Map<String, String> reports;
     private final List<Event> history;
-    private final Set<String> ipAddresses;
-    private final Set<String> additionalIpAddresses;
-    private final Set<String> additionalHostnames;
+    private final List<String> ipAddresses;
+    private final List<String> additionalIpAddresses;
+    private final List<String> additionalHostnames;
     private final Optional<String> switchHostname;
     private final Optional<String> modelName;
     private final Environment environment;
@@ -87,8 +86,8 @@ public class Node {
                  ClusterType clusterType, String group, int index, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                  boolean wantToRebuild, boolean down, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Optional<ClusterType> exclusiveToClusterType, Map<String, String> reports,
-                 List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
-                 Set<String> additionalHostnames, Optional<String> switchHostname,
+                 List<Event> history, List<String> ipAddresses, List<String> additionalIpAddresses,
+                 List<String> additionalHostnames, Optional<String> switchHostname,
                  Optional<String> modelName, Environment environment, CloudAccount cloudAccount) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
@@ -129,9 +128,9 @@ public class Node {
         this.down = down;
         this.reports = Map.copyOf(Objects.requireNonNull(reports, "reports must be non-null"));
         this.history = List.copyOf(Objects.requireNonNull(history, "history must be non-null"));
-        this.ipAddresses = Set.copyOf(Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null"));
-        this.additionalIpAddresses = Set.copyOf(Objects.requireNonNull(additionalIpAddresses, "additionalIpAddresses must be non-null"));
-        this.additionalHostnames = Set.copyOf(Objects.requireNonNull(additionalHostnames, "additionalHostnames must be non-null"));
+        this.ipAddresses = List.copyOf(Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null"));
+        this.additionalIpAddresses = List.copyOf(Objects.requireNonNull(additionalIpAddresses, "additionalIpAddresses must be non-null"));
+        this.additionalHostnames = List.copyOf(Objects.requireNonNull(additionalHostnames, "additionalHostnames must be non-null"));
         this.switchHostname = Objects.requireNonNull(switchHostname, "switchHostname must be non-null");
         this.modelName = Objects.requireNonNull(modelName, "modelName must be non-null");
         this.environment = Objects.requireNonNull(environment, "environment must be non-ull");
@@ -320,17 +319,17 @@ public class Node {
     }
 
     /** IP addresses of this */
-    public Set<String> ipAddresses() {
+    public List<String> ipAddresses() {
         return ipAddresses;
     }
 
     /** Additional IP addresses available on this, usable by child nodes */
-    public Set<String> additionalIpAddresses() {
+    public List<String> additionalIpAddresses() {
         return additionalIpAddresses;
     }
 
     /** Additional hostnames available on this, usable by child nodes */
-    public Set<String> additionalHostnames() {
+    public List<String> additionalHostnames() {
         return additionalHostnames;
     }
 
@@ -502,9 +501,9 @@ public class Node {
         private Optional<ClusterType> exclusiveToClusterType = Optional.empty();
         private Map<String, String> reports = Map.of();
         private List<Event> history = List.of();
-        private Set<String> ipAddresses = Set.of();
-        private Set<String> additionalIpAddresses = Set.of();
-        private Set<String> additionalHostnames = Set.of();
+        private List<String> ipAddresses = List.of();
+        private List<String> additionalIpAddresses = List.of();
+        private List<String> additionalHostnames = List.of();
         private Optional<String> switchHostname = Optional.empty();
         private Optional<String> modelName = Optional.empty();
         private Environment environment = Environment.unknown;
@@ -758,17 +757,17 @@ public class Node {
             return this;
         }
 
-        public Builder ipAddresses(Set<String> ipAdresses) {
+        public Builder ipAddresses(List<String> ipAdresses) {
             this.ipAddresses = ipAdresses;
             return this;
         }
 
-        public Builder additionalIpAddresses(Set<String> additionalIpAddresses) {
+        public Builder additionalIpAddresses(List<String> additionalIpAddresses) {
             this.additionalIpAddresses = additionalIpAddresses;
             return this;
         }
 
-        public Builder additionalHostnames(Set<String> additionalHostnames) {
+        public Builder additionalHostnames(List<String> additionalHostnames) {
             this.additionalHostnames = additionalHostnames;
             return this;
         }

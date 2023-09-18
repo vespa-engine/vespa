@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -116,9 +115,9 @@ public class DynamicProvisioningTester {
 
     public void makeReady(String hostname) {
         Node node = nodeRepository().nodes().node(hostname).get();
-        provisioningTester.patchNode(node, (n) -> n.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of())));
+        provisioningTester.patchNode(node, (n) -> n.with(IP.Config.ofEmptyPool("::" + 0 + ":0")));
         Node host = nodeRepository().nodes().node(node.parentHostname().get()).get();
-        host = host.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+        host = host.with(IP.Config.of(List.of("::" + 0 + ":0"), List.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
             provisioningTester.move(Node.State.ready, host);
     }

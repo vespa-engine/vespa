@@ -74,7 +74,7 @@ public final class Node implements Nodelike {
     private final Optional<Allocation> allocation;
 
     /** Creates a node builder in the initial state (reserved) */
-    public static Node.Builder reserve(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
+    public static Node.Builder reserve(List<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
         return new Node.Builder(UUID.randomUUID().toString(), hostname, new Flavor(resources), State.reserved, type)
                 .ipConfig(IP.Config.ofEmptyPool(ipAddresses))
                 .parentHostname(parentHostname);
@@ -127,11 +127,11 @@ public final class Node implements Nodelike {
 
         if (state == State.ready && type.isHost()) {
             requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
-            requireNonEmpty(ipConfig.pool().asSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+            requireNonEmpty(ipConfig.pool().ips(), "A " + type + " must have a non-empty IP address pool in state " + state);
         }
 
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().ips().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
             if (status.wantToRebuild()) throw new IllegalArgumentException("A child node cannot be rebuilt");
@@ -635,7 +635,7 @@ public final class Node implements Nodelike {
         return value;
     }
 
-    private static Set<String> requireNonEmpty(Set<String> values, String message) {
+    private static List<String> requireNonEmpty(List<String> values, String message) {
         if (values == null || values.isEmpty())
             throw new IllegalArgumentException(message);
         return values;
@@ -828,7 +828,7 @@ public final class Node implements Nodelike {
             return this;
         }
 
-        public Builder ipConfigWithEmptyPool(Set<String> primary) {
+        public Builder ipConfigWithEmptyPool(List<String> primary) {
             this.ipConfig = IP.Config.ofEmptyPool(primary);
             return this;
         }

@@ -13,9 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -48,21 +46,21 @@ public class HostCapacityTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker");
 
         // Create hosts
-        host1 = Node.create("host1", IP.Config.of(Set.of("::1"), createIps(2, 4), List.of()), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host2 = Node.create("host2", IP.Config.of(Set.of("::11"), createIps(12, 3), List.of()), "host2", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host3 = Node.create("host3", IP.Config.of(Set.of("::21"), createIps(22, 2), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host4 = Node.create("host3", IP.Config.of(Set.of("::21"), createIps(50, 0), List.of()), "host4", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host1 = Node.create("host1", IP.Config.of(List.of("::1"), createIps(2, 4), List.of()), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host2 = Node.create("host2", IP.Config.of(List.of("::11"), createIps(12, 3), List.of()), "host2", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host3 = Node.create("host3", IP.Config.of(List.of("::21"), createIps(22, 2), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host4 = Node.create("host3", IP.Config.of(List.of("::21"), createIps(50, 0), List.of()), "host4", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
 
         // Add two containers to host1
-        var nodeA = Node.reserve(Set.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
-        var nodeB = Node.reserve(Set.of("::3"), "nodeB", "host1", resources0, NodeType.tenant).build();
+        var nodeA = Node.reserve(List.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
+        var nodeB = Node.reserve(List.of("::3"), "nodeB", "host1", resources0, NodeType.tenant).build();
 
         // Add two containers to host 2 (same as host 1)
-        var nodeC = Node.reserve(Set.of("::12"), "nodeC", "host2", resources0, NodeType.tenant).build();
-        var nodeD = Node.reserve(Set.of("::13"), "nodeD", "host2", resources0, NodeType.tenant).build();
+        var nodeC = Node.reserve(List.of("::12"), "nodeC", "host2", resources0, NodeType.tenant).build();
+        var nodeD = Node.reserve(List.of("::13"), "nodeD", "host2", resources0, NodeType.tenant).build();
 
         // Add a larger container to host3
-        var nodeE = Node.reserve(Set.of("::22"), "nodeE", "host3", resources1, NodeType.tenant).build();
+        var nodeE = Node.reserve(List.of("::22"), "nodeE", "host3", resources1, NodeType.tenant).build();
 
         // init host capacity
         nodes = new ArrayList<>(List.of(host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE));
@@ -81,7 +79,7 @@ public class HostCapacityTest {
         assertFalse(capacity.hasCapacity(host4, resources1)); // No IPs available
 
         // Add a new node to host1 to deplete the memory resource
-        Node nodeF = Node.reserve(Set.of("::6"), "nodeF", "host1", resources0, NodeType.tenant).build();
+        Node nodeF = Node.reserve(List.of("::6"), "nodeF", "host1", resources0, NodeType.tenant).build();
         nodes.add(nodeF);
         capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         assertFalse(capacity.hasCapacity(host1, resources0));
@@ -133,9 +131,9 @@ public class HostCapacityTest {
 
     @Test
     public void verifyCapacityFromAddresses() {
-        Node nodeA = Node.reserve(Set.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
-        Node nodeB = Node.reserve(Set.of("::3"), "nodeB", "host1", resources0, NodeType.tenant).build();
-        Node nodeC = Node.reserve(Set.of("::4"), "nodeC", "host1", resources0, NodeType.tenant).build();
+        Node nodeA = Node.reserve(List.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
+        Node nodeB = Node.reserve(List.of("::3"), "nodeB", "host1", resources0, NodeType.tenant).build();
+        Node nodeC = Node.reserve(List.of("::4"), "nodeC", "host1", resources0, NodeType.tenant).build();
 
         // host1 is a host with resources = 7-100-120-5 (7 vcpus, 100G memory, 120G disk, and 5Gbps),
         // while nodeA-C have resources = resources0 = 1-30-20-1.5
@@ -180,7 +178,7 @@ public class HostCapacityTest {
                 "host",     // 7-100-120-5
                 "docker"); // 2- 40- 40-0.5 = resources1
 
-        return Node.create(hostHostname, IP.Config.of(Set.of("::1"), Set.of(), hostnames), hostHostname,
+        return Node.create(hostHostname, IP.Config.of(List.of("::1"), List.of(), hostnames), hostHostname,
                 nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
     }
 
@@ -190,9 +188,9 @@ public class HostCapacityTest {
         return capacity.hasCapacity(host, requestedCapacity);
     }
 
-    private Set<String> createIps(int start, int count) {
+    private List<String> createIps(int start, int count) {
         // Allow 4 containers
-        Set<String> ipAddressPool = new LinkedHashSet<>();
+        var ipAddressPool = new ArrayList<String>();
         for (int i = start; i < (start + count); i++) {
             ipAddressPool.add("::" + i);
         }

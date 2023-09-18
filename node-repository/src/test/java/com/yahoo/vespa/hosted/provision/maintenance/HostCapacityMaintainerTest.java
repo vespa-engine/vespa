@@ -61,7 +61,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -847,7 +846,7 @@ public class HostCapacityMaintainerTest {
                             false));
             List<com.yahoo.config.provision.HostName> hostnames = Stream.of(additionalHostnames).map(com.yahoo.config.provision.HostName::of).toList();
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
-                                       .ipConfig(IP.Config.of(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), hostnames))
+                                       .ipConfig(IP.Config.of(state == Node.State.active ? List.of("::1") : List.of(), List.of(), hostnames))
                                        .hostTTL(hostTTL);
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);

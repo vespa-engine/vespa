@@ -59,10 +59,10 @@ public class HostResumeProvisionerTest {
         Node host = tester.nodeRepository().nodes().node("host100").orElseThrow();
         Node node = tester.nodeRepository().nodes().node("host100-1").orElseThrow();
         assertTrue("No IP addresses assigned",
-                Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(Set::isEmpty));
+                Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(List::isEmpty));
 
-        Node hostNew = host.with(host.ipConfig().withPrimary(Set.of("::100:0")).withPool(host.ipConfig().pool().withIpAddresses(Set.of("::100:1", "::100:2"))));
-        Node nodeNew = node.with(IP.Config.ofEmptyPool(Set.of("::100:1")));
+        Node hostNew = host.with(host.ipConfig().withPrimary(List.of("::100:0")).withPool(host.ipConfig().pool().withIpAddresses(List.of("::100:1", "::100:2"))));
+        Node nodeNew = node.with(IP.Config.ofEmptyPool("::100:1"));
 
         hostResumeProvisioner.maintain();
         assertEquals(hostNew.ipConfig(), tester.nodeRepository().nodes().node("host100").get().ipConfig());
@@ -79,12 +79,12 @@ public class HostResumeProvisionerTest {
         hostResumeProvisioner.maintain();
 
         assertTrue("No IP addresses written as DNS updates are failing",
-                provisioning.get().stream().allMatch(host -> host.ipConfig().pool().asSet().isEmpty()));
+                provisioning.get().stream().allMatch(host -> host.ipConfig().pool().ips().isEmpty()));
 
         hostProvisioner.without(MockHostProvisioner.Behaviour.failDnsUpdate);
         hostResumeProvisioner.maintain();
         assertTrue("IP addresses written as DNS updates are succeeding",
-                provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().asSet().isEmpty()));
+                provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().ips().isEmpty()));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class HostResumeProvisionerTest {
         Node host = tester.nodeRepository().nodes().node("host100").orElseThrow();
         Node node = tester.nodeRepository().nodes().node("host100-1").orElseThrow();
         assertTrue("No IP addresses assigned",
-                Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(Set::isEmpty));
+                Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(List::isEmpty));
 
         hostResumeProvisioner.maintain();
         assertEquals(Set.of("host100", "host100-1"), tester.nodeRepository().nodes().list(Node.State.failed).hostnames());

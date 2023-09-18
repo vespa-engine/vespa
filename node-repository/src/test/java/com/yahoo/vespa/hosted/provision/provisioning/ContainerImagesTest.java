@@ -12,8 +12,8 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -71,7 +71,7 @@ public class ContainerImagesTest {
         if (gpu) {
             resources = resources.with(new NodeResources.GpuResources(1, 16));
         }
-        Node.Builder b = Node.reserve(Set.of("::1"), type + "1", "parent1", resources, type);
+        Node.Builder b = Node.reserve(List.of("::1"), type + "1", "parent1", resources, type);
         b.allocation(new Allocation(ApplicationId.defaultId(),
                                     ClusterMembership.from("container/id1/4/37",
                                                            Version.fromString("1.2.3"),

@@ -331,7 +331,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     public int eventuallyUnusedIpAddressCount(Node host) {
         // The count in this method relies on the size of the IP address pool if that's non-empty,
         // otherwise fall back to the address/hostname pool.
-        if (host.ipConfig().pool().asSet().isEmpty()) {
+        if (host.ipConfig().pool().ips().isEmpty()) {
             Set<String> allHostnames = cache().keySet();
             return (int) host.ipConfig().pool().hostnames().stream()
                              .filter(hostname -> !allHostnames.contains(hostname.value()))
@@ -341,7 +341,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
             old != null ? old : stream().flatMap(node -> node.ipConfig().primary().stream())
                                         .collect(Collectors.toUnmodifiableSet())
         );
-        return (int) host.ipConfig().pool().asSet().stream()
+        return (int) host.ipConfig().pool().ips().stream()
                          .filter(address -> !allIps.contains(address))
                          .count();
     }

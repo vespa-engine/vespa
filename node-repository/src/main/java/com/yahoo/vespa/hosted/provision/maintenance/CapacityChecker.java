@@ -83,7 +83,7 @@ public class CapacityChecker {
     }
 
     private Optional<HostFailurePath> greedyHeuristicFindFailurePath(Map<Node, Integer> heuristic) {
-        if (hosts.size() == 0) return Optional.empty();
+        if (hosts.isEmpty()) return Optional.empty();
 
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
                                                         .sorted(this::hostMitigationOrder)
@@ -127,12 +127,12 @@ public class CapacityChecker {
         for (var host : hosts) {
             NodeResources hostResources = host.flavor().resources();
             int occupiedIps = 0;
-            Set<String> ipPool = host.ipConfig().pool().asSet();
+            Set<String> ipPool = Set.copyOf(host.ipConfig().pool().ips());
             for (var child : nodeChildren.get(host)) {
                 hostResources = hostResources.subtract(child.resources().justNumbers());
                 occupiedIps += (int)child.ipConfig().primary().stream().filter(ipPool::contains).count();
             }
-            availableResources.put(host, new AllocationResources(hostResources, host.ipConfig().pool().asSet().size() - occupiedIps));
+            availableResources.put(host, new AllocationResources(hostResources, host.ipConfig().pool().ips().size() - occupiedIps));
         }
 
         return availableResources;

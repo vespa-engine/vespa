@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Describes a single newly provisioned host by {@link HostProvisioner}.
@@ -65,7 +64,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost(Duration hostTTL) {
-        Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeHostnames), hostHostname, hostFlavor, hostType)
+        Node.Builder builder = Node.create(id, IP.Config.of(List.of(), List.of(), nodeHostnames), hostHostname, hostFlavor, hostType)
                                    .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                                    .cloudAccount(cloudAccount);
         exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
@@ -76,7 +75,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType())
+        return Node.reserve(List.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType())
                    .cloudAccount(cloudAccount)
                    .build();
     }

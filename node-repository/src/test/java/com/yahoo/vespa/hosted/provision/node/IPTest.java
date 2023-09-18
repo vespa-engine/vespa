@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -12,7 +11,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -76,7 +75,7 @@ public class IPTest {
 
     @Test
     public void test_find_allocation_ipv6_only() {
-        IP.Pool pool = createNode(ImmutableSet.of(
+        IP.Pool pool = createNode(List.of(
                 "::1",
                 "::2",
                 "::3"
@@ -159,15 +158,15 @@ public class IPTest {
                 .addRecord("node1", "2600:1f10:::2")
                 .addRecord("node2", "2600:1f10:::3");
 
-        IP.Config config = IP.Config.of(Set.of("2600:1f10:::1"),
-                                        Set.of("2600:1f10:::2", "2600:1f10:::3"),
+        IP.Config config = IP.Config.of(List.of("2600:1f10:::1"),
+                                        List.of("2600:1f10:::2", "2600:1f10:::3"),
                                         List.of(HostName.of("node1"), HostName.of("node2")));
         IP.Pool pool = config.pool();
         Optional<IP.Allocation> allocation = pool.findAllocation(contextOf(true), emptyList);
     }
 
     private IP.Pool testPool(boolean dualStack) {
-        var addresses = new LinkedHashSet<String>();
+        var addresses = new ArrayList<String>();
         addresses.add("127.0.0.1");
         addresses.add("127.0.0.2");
         addresses.add("127.0.0.3");
@@ -202,8 +201,8 @@ public class IPTest {
         return pool;
     }
 
-    private static Node createNode(Set<String> ipAddresses) {
-        return Node.create("id1", IP.Config.of(Set.of("127.0.0.1"), ipAddresses),
+    private static Node createNode(List<String> ipAddresses) {
+        return Node.create("id1", IP.Config.of(List.of("127.0.0.1"), ipAddresses),
                            "host1", nodeFlavors.getFlavorOrThrow("default"), NodeType.host).build();
     }
 

@@ -10,9 +10,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -341,8 +340,8 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
 
         NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
-        assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
-        assertEquals(Set.of("127.0.127.13", "::d"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(List.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
+        assertEquals(List.of("127.0.127.13", "::d"), activeNodes.asList().get(0).ipConfig().primary());
     }
 
     @Test
@@ -535,7 +534,7 @@ public class DynamicAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", IP.Config.of(Set.of("127.0.233." + index), Set.of()), hostname,
+        Node node1a = Node.create("open1", IP.Config.ofEmptyPool("127.0.233." + index), hostname,
                                   new Flavor(flavor), NodeType.tenant).parentHostname(parentHostname).build();
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation

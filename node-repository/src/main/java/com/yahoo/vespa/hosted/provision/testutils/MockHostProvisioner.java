@@ -109,7 +109,7 @@ public class MockHostProvisioner implements HostProvisioner {
         Map<String, IP.Config> result = new HashMap<>();
         result.put(host.hostname(), createIpConfig(host));
         host.ipConfig().pool().hostnames().forEach(hostname ->
-                result.put(hostname.value(), IP.Config.ofEmptyPool(nameResolver.resolveAll(hostname.value()))));
+                result.put(hostname.value(), IP.Config.ofEmptyPool(List.copyOf(nameResolver.resolveAll(hostname.value())))));
         return new HostIpConfig(result, Optional.empty());
     }
 
@@ -238,8 +238,8 @@ public class MockHostProvisioner implements HostProvisioner {
     public IP.Config createIpConfig(Node node) {
         if (!node.type().isHost()) throw new IllegalArgumentException("Node " + node + " is not a host");
         int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
-        Set<String> addresses = Set.of("::" + hostIndex + ":0");
-        Set<String> ipAddressPool = new HashSet<>();
+        var addresses = List.of("::" + hostIndex + ":0");
+        var ipAddressPool = new ArrayList<String>();
         if (!behaviour(Behaviour.failDnsUpdate)) {
             nameResolver.addRecord(node.hostname(), addresses.iterator().next());
             int i = 1;

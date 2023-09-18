@@ -36,8 +36,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -328,11 +326,11 @@ public class SpareCapacityMaintainerTest {
         }
 
         private IP.Config ipConfig(int id, boolean host) {
-            return IP.Config.of(Set.of(String.format("%04X::%04X", id, 0)),
+            return IP.Config.of(List.of(String.format("%04X::%04X", id, 0)),
                                 host ? IntStream.range(0, 10)
                                                  .mapToObj(n -> String.format("%04X::%04X", id, n))
-                                                 .collect(Collectors.toSet())
-                                      : Set.of());
+                                                 .toList()
+                                      : List.of());
         }
 
         private void dumpState() {

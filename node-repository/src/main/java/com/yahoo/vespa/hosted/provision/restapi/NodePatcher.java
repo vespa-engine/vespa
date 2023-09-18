@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
@@ -282,8 +281,8 @@ public class NodePatcher {
 
     private Node applyIpconfigField(Node node, String name, Inspector value, LockedNodeList nodes) {
         return switch (name) {
-            case "ipAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), nodes, nodeRepository.zone());
-            case "additionalIpAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), nodes, nodeRepository.zone());
+            case "ipAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringList(value))), nodes, nodeRepository.zone());
+            case "additionalIpAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringList(value)))), nodes, nodeRepository.zone());
             case "additionalHostnames" -> IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withHostnames(asHostnames(value)))), nodes, nodeRepository.zone());
             default -> throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         };
@@ -336,11 +335,11 @@ public class NodePatcher {
         return node.with(trustStoreItems);
     }
 
-    private Set<String> asStringSet(Inspector field) {
+    private List<String> asStringList(Inspector field) {
         if ( ! field.type().equals(Type.ARRAY))
             throw new IllegalArgumentException("Expected an ARRAY value, got a " + field.type());
 
-        TreeSet<String> strings = new TreeSet<>();
+        var strings = new ArrayList<String>();
         for (int i = 0; i < field.entries(); i++) {
             Inspector entry = field.entry(i);
             if ( ! entry.type().equals(Type.STRING))
