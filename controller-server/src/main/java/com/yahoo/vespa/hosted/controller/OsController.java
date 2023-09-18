@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -162,12 +163,19 @@ public record OsController(Controller controller) {
     /** Remove certifications for non-existent OS versions */
     public void removeStaleCertifications(OsVersionStatus currentStatus) {
         try (Mutex lock = curator().lockCertifiedOsVersions()) {
-            Optional<OsVersion> minKnownVersion = currentStatus.versions().keySet().stream()
-                                                               .filter(v -> !v.version().isEmpty())
-                                                               .min(Comparator.naturalOrder());
-            if (minKnownVersion.isEmpty()) return;
+            Map<CloudName, Version> oldestVersionByCloud = currentStatus.versions().keySet().stream()
+                                                                        .filter(v -> !v.version().isEmpty())
+                                                                        .collect(Collectors.toMap(OsVersion::cloud,
+                                                                                                  OsVersion::version,
+                                                                                                  BinaryOperator.minBy(Comparator.naturalOrder())));
+            if (oldestVersionByCloud.isEmpty()) return;
+
             Set<CertifiedOsVersion> certifiedVersions = new HashSet<>(readCertified());
-            if (certifiedVersions.removeIf(cv -> cv.osVersion().version().isBefore(minKnownVersion.get().version()))) {
+            boolean modified = certifiedVersions.removeIf(certifiedVersion -> {
+                Version oldestVersion = oldestVersionByCloud.get(certifiedVersion.osVersion().cloud());
+                return oldestVersion == null || certifiedVersion.osVersion().version().isBefore(oldestVersion);
+            });
+            if (modified) {
                 curator().writeCertifiedOsVersions(certifiedVersions);
             }
         }
