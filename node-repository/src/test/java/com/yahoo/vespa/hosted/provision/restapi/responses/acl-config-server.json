@@ -25,6 +25,18 @@
       "trustedBy": "cfg1.yahoo.com"
     },
     {
+      "hostname": "cfg3.yahoo.com",
+      "type": "config",
+      "ipAddress": "::203:1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "cfg3.yahoo.com",
+      "type": "config",
+      "ipAddress": "127.0.203.1",
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
       "hostname": "dockerhost3.yahoo.com",
       "type": "host",
       "ipAddress": "::102:1",

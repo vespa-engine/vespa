@@ -5,6 +5,13 @@
       "wireguardPubkey": "lololololololololololololololololololololoo=",
       "wireguardKeyTimestamp":456,
       "ipAddresses": ["::201:1"]
+    },
+    {
+      "hostname": "cfg3.yahoo.com",
+      "wireguardPubkey": "lololololololololololololololololololololoo=",
+      "wireguardKeyTimestamp":0,
+      "ipAddresses": ["::203:1"]
     }
+
   ]
 }

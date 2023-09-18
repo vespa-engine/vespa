@@ -210,12 +210,17 @@ public class RealNodeRepositoryTest {
         List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
 
         // cfg2 does not have a wg public key, so should not be included
-        assertEquals(1, cfgPeers.size());
+        assertEquals(2, cfgPeers.size());
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1",
                             "lololololololololololololololololololololoo=",
                             Instant.ofEpochMilli(456L));
+        // Missing key timestamp should default to epoch
+        assertWireguardPeer(cfgPeers.get(1), "cfg3.yahoo.com",
+                            "::203:1",
+                            "lololololololololololololololololololololoo=",
+                            Instant.ofEpochMilli(0));
 
         //// Exclave nodes ////
 

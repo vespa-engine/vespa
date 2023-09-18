@@ -80,17 +80,17 @@ public class NodesV2ApiTest {
                          new byte[0], Request.Method.POST));
         assertRestart(2, new Request("http://localhost:8080/nodes/v2/command/restart?application=tenant2.application2.instance2",
                          new byte[0], Request.Method.POST));
-        assertRestart(15, new Request("http://localhost:8080/nodes/v2/command/restart",
+        assertRestart(16, new Request("http://localhost:8080/nodes/v2/command/restart",
                          new byte[0], Request.Method.POST));
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                      "\"restartGeneration\":3");
 
         // POST reboot command
-        assertReboot(16, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
+        assertReboot(17, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
                         new byte[0], Request.Method.POST));
         assertReboot(2, new Request("http://localhost:8080/nodes/v2/command/reboot?application=tenant2.application2.instance2",
                         new byte[0], Request.Method.POST));
-        assertReboot(19, new Request("http://localhost:8080/nodes/v2/command/reboot",
+        assertReboot(20, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                      "\"rebootGeneration\":3");

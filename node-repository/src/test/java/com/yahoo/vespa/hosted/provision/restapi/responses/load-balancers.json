@@ -67,6 +67,11 @@
           "hostname": "cfg2.yahoo.com",
           "ipAddress": "127.0.202.1",
           "port": 4443
+        },
+        {
+          "hostname": "cfg3.yahoo.com",
+          "ipAddress": "127.0.203.1",
+          "port": 4443
         }
       ],
       "public": true

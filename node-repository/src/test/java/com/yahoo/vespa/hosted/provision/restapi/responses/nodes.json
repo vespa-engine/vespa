@@ -5,6 +5,8 @@
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/cfg2.yahoo.com"
+    },    {
+      "url": "http://localhost:8080/nodes/v2/node/cfg3.yahoo.com"
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"

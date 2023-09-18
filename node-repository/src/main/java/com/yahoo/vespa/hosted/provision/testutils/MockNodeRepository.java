@@ -182,6 +182,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
                       .cloudAccount(defaultCloudAccount)
                       .build());
+        // cfg node with wg key, but missing timestamp
+        nodes.add(Node.create("cfg3", ipConfig(203), "cfg3.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
+                          .cloudAccount(defaultCloudAccount)
+                          .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo="))
+                          .build());
 
         // Ready all nodes, except 7 and 55
         nodes = new ArrayList<>(nodes().addNodes(nodes, Agent.system));
