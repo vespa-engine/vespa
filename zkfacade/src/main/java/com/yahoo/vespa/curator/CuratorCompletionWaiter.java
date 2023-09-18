@@ -6,7 +6,6 @@ import com.yahoo.path.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -60,10 +59,9 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         Instant endTime = startTime.plus(timeout);
         Instant gotQuorumTime = Instant.EPOCH;
 
-        List<String> respondents = new ArrayList<>();
+        List<String> respondents;
         do {
-            respondents.clear();
-            respondents.addAll(curator.framework().getChildren().forPath(barrierPath));
+            respondents = (curator.framework().getChildren().forPath(barrierPath));
             if (log.isLoggable(Level.FINER)) {
                 log.log(Level.FINER, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
                                      respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
@@ -105,14 +103,10 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     @Override
     public void notifyCompletion() {
         try {
-            notifyInternal();
+            curator.framework().create().forPath(myId);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void notifyInternal() throws Exception {
-        curator.framework().create().forPath(myId);
     }
 
     @Override
@@ -124,16 +118,9 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         return new CuratorCompletionWaiter(curator, barrierPath.getAbsolute(), id, Clock.systemUTC(), waitForAll);
     }
 
-    public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id, Duration waitForAll) {
-        Path waiterPath = parentPath.append(waiterNode);
-
-        String debugMessage = log.isLoggable(Level.FINE) ? "Recreating ZK path " + waiterPath : null;
-        if (debugMessage != null) log.fine(debugMessage);
-
+    public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path waiterPath, String id, Duration waitForAll) {
         curator.delete(waiterPath);
         curator.createAtomically(waiterPath);
-
-        if (debugMessage != null) log.fine(debugMessage + ": Done");
 
         return new CuratorCompletionWaiter(curator, waiterPath.getAbsolute(), id, Clock.systemUTC(), waitForAll);
     }
