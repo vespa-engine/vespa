@@ -63,7 +63,9 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 	return d
 }
 
-func (d *Dispatcher) logResult(doc Document, result Result, retry bool) {
+func (d *Dispatcher) logResult(op documentOp, retry bool) {
+	doc := op.document
+	result := op.result
 	if result.Trace != "" {
 		d.msgs <- fmt.Sprintf("feed: trace for %s %s:\n%s", doc.Operation, doc.Id, result.Trace)
 	}
@@ -94,18 +96,18 @@ func (d *Dispatcher) logResult(doc Document, result Result, retry bool) {
 	if !result.Success() {
 		if retry {
 			msg.WriteString(": retrying")
-		} else {
+		} else if op.attempts > 1 {
 			msg.WriteString(": giving up after ")
 			msg.WriteString(strconv.Itoa(maxAttempts))
 			msg.WriteString(" attempts")
+		} else {
+			msg.WriteString(": not retryable")
 		}
 	}
 	d.msgs <- msg.String()
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
-	retry := op.attempts < maxAttempts
-	d.logResult(op.document, result, retry)
 	if result.Success() {
 		d.throttler.Success()
 		d.circuitBreaker.Success()
@@ -115,7 +117,7 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return true
 	} else if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 503 || result.HTTPStatus == 504 {
 		d.circuitBreaker.Failure()
-		if retry {
+		if op.attempts < maxAttempts {
 			return true
 		}
 	}
@@ -155,7 +157,9 @@ func (d *Dispatcher) processResults() {
 		d.statsMu.Lock()
 		d.stats.Add(op.result)
 		d.statsMu.Unlock()
-		if d.shouldRetry(op, op.result) {
+		retry := d.shouldRetry(op, op.result)
+		d.logResult(op, retry)
+		if retry {
 			d.enqueue(op.resetResult(), true)
 		} else {
 			op.document.Reset()
