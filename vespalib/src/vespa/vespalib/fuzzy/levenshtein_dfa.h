@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace vespalib::fuzzy {
 
@@ -140,6 +141,7 @@ public:
     struct Impl {
         virtual ~Impl() = default;
         [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::string* successor_out) const = 0;
+        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::vector<uint32_t>* successor_out) const = 0;
         [[nodiscard]] virtual size_t memory_usage() const noexcept = 0;
         virtual void dump_as_graphviz(std::ostream& out) const = 0;
     };
@@ -169,7 +171,17 @@ public:
      * Iff `source` is _beyond_ the maximum edit distance, returns a MatchResult with
      * matches() == false.
      *
-     * Iff `successor_out` is not nullptr, the following holds:
+     */
+    [[nodiscard]] MatchResult match(std::string_view source) const;
+
+    /**
+     * Attempts to match the source string `source` with the target string this DFA was
+     * built with, emitting a successor string into `successor_out` on mismatch.
+     *
+     * See `match(source)` for semantics of returned MatchResult.
+     *
+     * In the case of a _mismatch_, the following holds:
+     *
      *   - `successor_out` is modified to contain the next (in byte-wise ordering) possible
      *     _matching_ string S so that there exists no other matching string S' that is
      *     greater than `source` but smaller than S.
@@ -199,7 +211,17 @@ public:
      * By reusing the successor string across many calls, this therefore amortizes memory
      * allocations down to near zero per invocation.
      */
-    [[nodiscard]] MatchResult match(std::string_view source, std::string* successor_out) const;
+    [[nodiscard]] MatchResult match(std::string_view source, std::string& successor_out) const;
+
+    /**
+     * Same as `match(source, successor_out)`, but where the successor string is defined in
+     * terms of UTF-32, not UTF-8. This avoids the need for encoding characters to UTF-8
+     * internally, and is therefore expected to be more efficient.
+     *
+     * The code point ordering of the UTF-32 successor string is identical to that its UTF-8
+     * equivalent.
+     */
+    [[nodiscard]] MatchResult match(std::string_view source, std::vector<uint32_t>& successor_out) const;
 
     /**
      * Returns how much memory is used by the underlying DFA representation, in bytes.

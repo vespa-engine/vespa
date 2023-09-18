@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,6 +15,8 @@ std::vector<uint32_t> utf8_string_to_utf32_lowercased(std::string_view str);
 std::vector<uint32_t> utf8_string_to_utf32(std::string_view str);
 
 std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str);
+
+std::string utf32_string_to_utf8(std::span<const uint32_t> u32str);
 
 /**
  * Encodes a single UTF-32 codepoint `u32_char` to a 1-4 byte UTF-8 sequence and

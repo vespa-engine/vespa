@@ -40,6 +40,14 @@ std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str) {
     return utf8_string_to_utf32(std::string_view(reinterpret_cast<const char*>(u8str.data()), u8str.size()));
 }
 
+std::string utf32_string_to_utf8(std::span<const uint32_t> u32str) {
+    std::string u8out;
+    for (uint32_t u32ch : u32str) {
+        append_utf32_char(u8out, u32ch);
+    }
+    return u8out;
+}
+
 [[noreturn]] void throw_bad_code_point(uint32_t codepoint) __attribute__((noinline));
 [[noreturn]] void throw_bad_code_point(uint32_t codepoint) {
     throw std::invalid_argument(make_string("invalid UTF-32 codepoint: U+%04X (%u)", codepoint, codepoint));

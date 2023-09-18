@@ -117,7 +117,8 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
         return step(state, edge);
     }
     bool implies_exact_match_suffix(const StateType& state) const noexcept {
-        // Only one entry in the sparse matrix row and it implies no edits can be done
+        // Only one entry in the sparse matrix row and it implies no edits can be done.
+        // I.e. only way to match the target string suffix is to match it _exactly_.
         return (state.size() == 1 && state.cost(0) == max_edits());
     }
     // Precondition: implies_match_suffix(state)
@@ -125,14 +126,32 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
         const uint32_t target_u8_offset = _target_utf8_char_offsets[state.index(0)];
         u8_out.append(_target_as_utf8.data() + target_u8_offset, _target_as_utf8.size() - target_u8_offset);
     }
-    // TODO emit_exact_match_suffix(const StateType& state, std::u32string& u32_out)
+    void emit_exact_match_suffix(const StateType& state, std::vector<uint32_t>& u32_out) const {
+        // TODO ranged insert
+        for (uint32_t i = state.index(0); i < _u32_str.size(); ++i) {
+            u32_out.push_back(_u32_str[i]);
+        }
+    }
 };
+
+template <typename Traits>
+template <typename SuccessorT>
+LevenshteinDfa::MatchResult
+ImplicitLevenshteinDfa<Traits>::match_impl(std::string_view u8str, SuccessorT* successor_out) const {
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
+}
 
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string* successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
-    return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
+    return match_impl(u8str, successor_out);
+}
+
+template <typename Traits>
+LevenshteinDfa::MatchResult
+ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::vector<uint32_t>* successor_out) const {
+    return match_impl(u8str, successor_out);
 }
 
 template <typename Traits>

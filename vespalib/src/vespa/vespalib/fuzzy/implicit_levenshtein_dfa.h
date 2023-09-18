@@ -29,12 +29,17 @@ public:
 
     [[nodiscard]] MatchResult match(std::string_view u8str, std::string* successor_out) const override;
 
+    [[nodiscard]] MatchResult match(std::string_view u8str, std::vector<uint32_t>* successor_out) const override;
+
     [[nodiscard]] size_t memory_usage() const noexcept override {
         return _u32_str_buf.size() * sizeof(uint32_t);
     }
 
     void dump_as_graphviz(std::ostream& os) const override;
 private:
+    template <typename SuccessorT>
+    [[nodiscard]] MatchResult match_impl(std::string_view u8str, SuccessorT* successor_out) const;
+
     void precompute_utf8_target_with_offsets();
 };
 

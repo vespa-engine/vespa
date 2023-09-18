@@ -80,20 +80,37 @@ struct ExplicitDfaMatcher {
         return &_nodes[edge->node];
     }
     constexpr bool implies_exact_match_suffix(const StateType&) const noexcept {
-        // TODO
+        // TODO; caller will currently just fall back to explicit state stepping
         return false;
     }
     void emit_exact_match_suffix(const StateType&, std::string&) const {
         // TODO (will never be called as long as `implies_exact_match_suffix()` returns false)
         abort();
     }
+    void emit_exact_match_suffix(const StateType&, std::vector<uint32_t>&) const {
+        // TODO (will never be called as long as `implies_exact_match_suffix()` returns false)
+        abort();
+    }
 };
+
+template <uint8_t MaxEdits>
+template <typename SuccessorT>
+LevenshteinDfa::MatchResult
+ExplicitLevenshteinDfaImpl<MaxEdits>::match_impl(std::string_view u8str, SuccessorT* successor_out) const {
+    ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
+    return MatchAlgorithm<MaxEdits>::match(matcher, u8str, successor_out);
+}
 
 template <uint8_t MaxEdits>
 LevenshteinDfa::MatchResult
 ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::string* successor_out) const {
-    ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
-    return MatchAlgorithm<MaxEdits>::match(matcher, u8str, successor_out);
+    return match_impl(u8str, successor_out);
+}
+
+template <uint8_t MaxEdits>
+LevenshteinDfa::MatchResult
+ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::vector<uint32_t>* successor_out) const {
+    return match_impl(u8str, successor_out);
 }
 
 template <uint8_t MaxEdits>
