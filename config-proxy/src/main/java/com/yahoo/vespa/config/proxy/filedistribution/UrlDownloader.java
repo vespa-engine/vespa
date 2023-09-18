@@ -18,12 +18,13 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-class UrlDownloader {
+class UrlDownloader implements Downloader {
 
     private static final Logger log = Logger.getLogger(UrlDownloader.class.getName());
     private static final String CONTENTS_FILE_NAME = "contents";
 
-    Optional<File> downloadFile(String url, File downloadDir) throws IOException {
+    @Override
+    public Optional<File> downloadFile(String url, File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         if (connection.getResponseCode() != 200)

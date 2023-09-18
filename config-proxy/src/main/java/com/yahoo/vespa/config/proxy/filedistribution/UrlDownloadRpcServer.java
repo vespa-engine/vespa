@@ -13,7 +13,6 @@ import com.yahoo.yolean.Exceptions;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -36,7 +35,6 @@ import static java.util.logging.Level.WARNING;
 class UrlDownloadRpcServer {
 
     private static final Logger log = Logger.getLogger(UrlDownloadRpcServer.class.getName());
-    private static final String CONTENTS_FILE_NAME = "contents";
     static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
 
     private final File rootDownloadDir;
@@ -70,15 +68,16 @@ class UrlDownloadRpcServer {
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
         File downloadDir = new File(rootDownloadDir, urlToDirName(url));
-        if (alreadyDownloaded(downloadDir)) {
+        Downloader downloader = downloader(url);
+        if (downloader.alreadyDownloaded(downloader, downloadDir)) {
             log.log(Level.INFO, "URL '" + url + "' already downloaded");
-            req.returnValues().add(new StringValue(new File(downloadDir, CONTENTS_FILE_NAME).getAbsolutePath()));
+            req.returnValues().add(new StringValue(new File(downloadDir, downloader.fileName()).getAbsolutePath()));
             req.returnRequest();
             return;
         }
 
         try {
-            Optional<File> file = downloadFile(url, downloadDir);
+            Optional<File> file = downloader.downloadFile(url, downloadDir);
             if (file.isPresent())
                 req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
             else
@@ -91,10 +90,8 @@ class UrlDownloadRpcServer {
         req.returnRequest();
     }
 
-    private static Optional<File> downloadFile(String url, File downloadDir) throws IOException {
-        return (url.startsWith("s3://"))
-                ? new S3Downloader().downloadFile(url, downloadDir)
-                : new UrlDownloader().downloadFile(url, downloadDir);
+    private static Downloader downloader(String url) {
+        return url.startsWith("s3://") ? new S3Downloader() : new UrlDownloader();
     }
 
     private static void logAndSetRpcError(Request req, String url, Throwable e, int rpcErrorCode) {
@@ -105,11 +102,6 @@ class UrlDownloadRpcServer {
 
     private static String urlToDirName(String uri) {
         return String.valueOf(XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
-    }
-
-    private static boolean alreadyDownloaded(File downloadDir) {
-        File contents = new File(downloadDir, CONTENTS_FILE_NAME);
-        return contents.exists() && contents.length() > 0;
     }
 
 }
