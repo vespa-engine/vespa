@@ -25,7 +25,7 @@ public:
 
     template <typename DictionaryConstIteratorType>
     bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) {
-        auto match = _dfa.match(word, &_successor);
+        auto match = _dfa.match(word, _successor);
         if (match.matches()) {
             return true;
         } else {

@@ -143,21 +143,13 @@ struct MatchAlgorithm {
      * from converted UTF-32 -> UTF-8 chars as we go. This optimization cannot be used
      * when one or more of the prefix characters have been lowercase-transformed.
      *
-     * TODO we could probably also optimize the smallest suffix generation with this when
-     *   we know we can no longer insert any smaller char substitutions and the only way
-     *   to complete the string is to emit it verbatim.
-     *    - To do this we'd need both the original UTF-8 target string as well as a
-     *      secondary vector that maps u32 character index to the corresponding UTF-8 index.
-     *      Both trivial to get as part of DFA initialization.
-     *
      * TODO let matcher know if source string is pre-normalized (i.e. lowercased).
-     * TODO std::u32string output; no need to re-encode to UTF-8.
      * TODO consider opportunistically appending prefix as we go instead of only when needed.
      */
-    template <DfaMatcher Matcher>
+    template <DfaMatcher Matcher, typename SuccessorT>
     static MatchResult match(const Matcher& matcher,
                              std::string_view source,
-                             std::string* successor_out)
+                             SuccessorT* successor_out)
     {
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
@@ -217,12 +209,12 @@ struct MatchAlgorithm {
      * precondition: `last_node_with_higher_out` has either a wildcard edge or a char match
      *    edge that compares greater than `input_at_branch`.
      */
-    template <DfaMatcher Matcher>
+    template <DfaMatcher Matcher, typename SuccessorT>
     static void backtrack_and_emit_greater_suffix(
             const Matcher& matcher,
             typename Matcher::StateParamType last_state_with_higher_out,
             const uint32_t input_at_branch,
-            std::string& successor)
+            SuccessorT& successor)
     {
         auto wildcard_state = matcher.match_wildcard(last_state_with_higher_out);
         if (matcher.can_match(wildcard_state)) {
@@ -235,14 +227,14 @@ struct MatchAlgorithm {
             // instead of the wildcard edge, or we'll end up in the wrong state.
             const auto next_char = input_at_branch + 1;
             if (!matcher.has_exact_explicit_out_edge(last_state_with_higher_out, next_char)) {
-                append_utf32_char_as_utf8(successor, next_char);
+                append_utf32_char(successor, next_char);
                 emit_smallest_matching_suffix(matcher, wildcard_state, successor);
                 return;
             } // else: handle exact match below (it will be found as the first higher out edge)
         }
         const auto first_highest_edge = matcher.lowest_higher_explicit_out_edge(last_state_with_higher_out, input_at_branch);
         assert(matcher.valid_edge(first_highest_edge));
-        append_utf32_char_as_utf8(successor, matcher.edge_to_u32char(first_highest_edge));
+        append_utf32_char(successor, matcher.edge_to_u32char(first_highest_edge));
         emit_smallest_matching_suffix(matcher, matcher.edge_to_state(last_state_with_higher_out, first_highest_edge), successor);
     }
 
@@ -277,27 +269,39 @@ struct MatchAlgorithm {
      */
      // TODO consider variant for only emitting _prefix of suffix_ to avoid having to generate
      //  the full string? Won't generate a matching string, but will be lexicographically greater.
-    template <DfaMatcher Matcher>
+    template <DfaMatcher Matcher, typename SuccessorT>
     static void emit_smallest_matching_suffix(
             const Matcher& matcher,
             typename Matcher::StateParamType from,
-            std::string& str)
+            SuccessorT& str)
     {
         auto state = from;
         while (!matcher.is_match(state)) {
+            // Optimization: if the only way for the remaining suffix to match is for it to be
+            // exactly equal to the suffix of the target string, emit it directly instead of
+            // stepping the state per character. This allows for matcher-specific shortcuts.
+            if (matcher.implies_exact_match_suffix(state)) {
+                matcher.emit_exact_match_suffix(state, str);
+                return;
+            }
             // If we can take a wildcard path, emit the smallest possible valid UTF-8 character (0x01).
             // Otherwise, find the smallest char that can eventually lead us to a match.
             auto wildcard_state = matcher.match_wildcard(state);
             if (matcher.can_match(wildcard_state)) {
-                str += '\x01';
+                str.push_back(0x01);
                 state = wildcard_state;
             } else {
                 const auto smallest_out_edge = matcher.smallest_explicit_out_edge(state);
                 assert(matcher.valid_edge(smallest_out_edge));
-                append_utf32_char_as_utf8(str, matcher.edge_to_u32char(smallest_out_edge));
+                append_utf32_char(str, matcher.edge_to_u32char(smallest_out_edge));
                 state = matcher.edge_to_state(state, smallest_out_edge);
             }
         }
+    }
+
+    template <typename T>
+    static constexpr bool has_8bit_value_type() noexcept {
+        return sizeof(typename T::value_type) == 1;
     }
 
     /**
@@ -318,18 +322,22 @@ struct MatchAlgorithm {
      * successor "foyd" (and _not_ "FOyd"), as the latter would imply a completely different
      * ordering when compared byte-wise against an implicitly lowercased dictionary.
      */
-    static void emit_successor_prefix(std::string& successor_out, std::string_view source,
+    template <typename SuccessorT>
+    static void emit_successor_prefix(SuccessorT& successor_out, std::string_view source,
                                       uint32_t n_prefix_u8_bytes, bool emit_raw_prefix_u8_bytes)
     {
-        if (emit_raw_prefix_u8_bytes) {
-            successor_out = source.substr(0, n_prefix_u8_bytes);
-        } else {
-            // TODO avoid duplicate work...! :I
-            successor_out.clear();
-            Utf8Reader u8_reader(source.data(), source.size());
-            while (u8_reader.getPos() < n_prefix_u8_bytes) {
-                append_utf32_char_as_utf8(successor_out, LowerCase::convert(u8_reader.getChar()));
+        // TODO redesign prefix output wiring
+        if constexpr (has_8bit_value_type<SuccessorT>()) {
+            if (emit_raw_prefix_u8_bytes) {
+                successor_out = source.substr(0, n_prefix_u8_bytes);
+                return;
             }
+        }
+        // TODO avoid duplicate work...! :I
+        successor_out.clear();
+        Utf8Reader u8_reader(source.data(), source.size());
+        while (u8_reader.getPos() < n_prefix_u8_bytes) {
+            append_utf32_char(successor_out, LowerCase::convert(u8_reader.getChar()));
         }
     }
 

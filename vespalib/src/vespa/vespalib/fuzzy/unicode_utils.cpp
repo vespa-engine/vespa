@@ -40,6 +40,14 @@ std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str) {
     return utf8_string_to_utf32(std::string_view(reinterpret_cast<const char*>(u8str.data()), u8str.size()));
 }
 
+std::string utf32_string_to_utf8(std::span<const uint32_t> u32str) {
+    std::string u8out;
+    for (uint32_t u32ch : u32str) {
+        append_utf32_char(u8out, u32ch);
+    }
+    return u8out;
+}
+
 [[noreturn]] void throw_bad_code_point(uint32_t codepoint) __attribute__((noinline));
 [[noreturn]] void throw_bad_code_point(uint32_t codepoint) {
     throw std::invalid_argument(make_string("invalid UTF-32 codepoint: U+%04X (%u)", codepoint, codepoint));
@@ -54,7 +62,7 @@ namespace {
  *
  * Returns the number of bytes written.
  *
- * See comments on append_utf32_char_as_utf8() as to why this is not a generic UTF-8
+ * See comments on append_utf32_char() as to why this is not a generic UTF-8
  * encoding function that can be used in all possible scenarios.
  */
 [[nodiscard]] uint8_t encode_utf8_char(uint32_t codepoint, unsigned char* u8buf) {
@@ -118,7 +126,7 @@ namespace {
 } // anon ns
 
 // TODO optimize inlined in header for case where u32_char is < 0x80?
-void append_utf32_char_as_utf8(std::string& out_str, uint32_t u32_char) {
+void append_utf32_char(std::string& out_str, uint32_t u32_char) {
     unsigned char u8buf[4];
     uint8_t u8bytes = encode_utf8_char(u32_char, u8buf);
     out_str.append(reinterpret_cast<const char*>(u8buf), u8bytes);

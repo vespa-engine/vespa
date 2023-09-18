@@ -26,10 +26,10 @@ std::optional<uint32_t> do_calculate(std::string_view left, std::string_view rig
                                      LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type)
 {
     auto dfa_lhs = LevenshteinDfa::build(left, threshold, casing, dfa_type);
-    auto maybe_match_lhs = dfa_lhs.match(right, nullptr);
+    auto maybe_match_lhs = dfa_lhs.match(right);
 
     auto dfa_rhs = LevenshteinDfa::build(right, threshold, casing, dfa_type);
-    auto maybe_match_rhs = dfa_rhs.match(left, nullptr);
+    auto maybe_match_rhs = dfa_rhs.match(left);
 
     EXPECT_EQ(maybe_match_lhs.matches(), maybe_match_rhs.matches());
     if (maybe_match_lhs.matches()) {
@@ -45,6 +45,11 @@ std::optional<uint32_t> do_calculate(std::u8string_view left, std::u8string_view
     std::string_view lhs_ch(reinterpret_cast<const char*>(left.data()), left.size());
     std::string_view rhs_ch(reinterpret_cast<const char*>(right.data()), right.size());
     return do_calculate(lhs_ch, rhs_ch, threshold, casing, dfa_type);
+}
+
+void expect_utf32_string_code_point_equal_to_utf8(std::span<const uint32_t> u32str, const std::string& u8str) {
+    auto as_utf8 = utf32_string_to_utf8(u32str);
+    EXPECT_EQ(as_utf8, u8str);
 }
 
 }
@@ -119,14 +124,20 @@ TEST_P(LevenshteinDfaTest, distance_is_in_utf32_code_point_space) {
 
 void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source, std::string_view expected_successor) {
     std::string successor;
-    auto m = dfa.match(source, &successor);
+    auto m = dfa.match(source, successor);
     if (m.matches()) {
         FAIL() << "Expected '" << source << "' to emit a successor, but it "
                << "matched with " << static_cast<uint32_t>(m.edits())
                << " edits (of max " << static_cast<uint32_t>(m.max_edits()) <<  " edits)";
     }
     EXPECT_EQ(successor, expected_successor);
-    EXPECT_TRUE(dfa.match(successor, nullptr).matches());
+    EXPECT_TRUE(dfa.match(successor).matches());
+
+    // Make sure the UTF-32 successor output is codepoint-wise identical to the UTF-8 successor
+    std::vector<uint32_t> u32successor;
+    m = dfa.match(source, u32successor);
+    EXPECT_FALSE(m.matches());
+    expect_utf32_string_code_point_equal_to_utf8(u32successor, successor);
 }
 
 TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings) {
@@ -331,7 +342,7 @@ TEST_P(LevenshteinDfaSuccessorTest, exhaustive_successor_test) {
         std::string skip_to, successor;
         for (uint32_t j = 0; j < 256; ++j) {
             const auto source = bits_to_str(static_cast<uint8_t>(j));
-            auto maybe_match = target_dfa.match(source, &successor);
+            auto maybe_match = target_dfa.match(source, successor);
             if (maybe_match.matches() && !skip_to.empty()) {
                 ASSERT_GE(source, skip_to);
             } else if (!maybe_match.matches()) {
@@ -494,7 +505,7 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_worst_case_matching_excluding_setup_t
                                                                      : LevenshteinDfa::DfaType::Implicit;
                 auto dfa = LevenshteinDfa::build(str, k, casing(), dfa_type);
                 min_time_s = BenchmarkTimer::benchmark([&] {
-                    auto res = dfa.match(str, nullptr); // not benchmarking successor generation
+                    auto res = dfa.match(str); // not benchmarking successor generation
                     do_not_optimize_away(res);
                 }, 1.0);
             } else {
@@ -545,7 +556,7 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_brute_force_dictionary_scan) {
                 auto dfa = LevenshteinDfa::build(str, k, casing(), dfa_type);
                 min_time_s = BenchmarkTimer::benchmark([&] {
                     for (const auto& line : dict) {
-                        auto res = dfa.match(line, nullptr);
+                        auto res = dfa.match(line);
                         do_not_optimize_away(res);
                     }
                 }, 2.0);
@@ -586,7 +597,7 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_skipping_dictionary_scan) {
                 auto end = dict.cend();
                 std::string successor;
                 while (iter != end) {
-                    auto maybe_match = dfa.match(*iter, &successor);
+                    auto maybe_match = dfa.match(*iter, successor);
                     if (maybe_match.matches()) {
                         ++iter;
                     } else {
