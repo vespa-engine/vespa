@@ -191,8 +191,8 @@ public:
         return _comparator;
     }
 
-    ComparatorType make_comparator(const EntryType& fallback_value) const {
-        return ComparatorType(_store.get_data_store(), fallback_value);
+    ComparatorType make_comparator(const EntryType& lookup_value) const {
+        return ComparatorType(_store.get_data_store(), lookup_value);
     }
 
     const EntryComparator & get_folded_comparator() const {
@@ -225,13 +225,13 @@ public:
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.
     template <typename Type>
     ComparatorType
-    make_folded_comparator(const Type& fallback_value) const {
-        return ComparatorType(_store.get_data_store(), is_folded(), fallback_value);
+    make_folded_comparator(const Type& lookup_value) const {
+        return ComparatorType(_store.get_data_store(), is_folded(), lookup_value);
     }
     template<typename Type>
     ComparatorType
-    make_folded_comparator_prefix(const Type& fallback_value) const {
-        return ComparatorType(_store.get_data_store(), is_folded(), fallback_value, true);
+    make_folded_comparator_prefix(const Type& lookup_value) const {
+        return ComparatorType(_store.get_data_store(), is_folded(), lookup_value, true);
     }
     template<typename Type>
     std::vector<IEnumStore::EnumHandle>
