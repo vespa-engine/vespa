@@ -18,8 +18,8 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value)
-        : ParentType(data_store, fallback_value)
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& lookup_value)
+        : ParentType(data_store, lookup_value)
     {}
     EnumStoreComparator(const DataStoreType& data_store)
         : ParentType(data_store)
@@ -51,11 +51,11 @@ public:
      * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
      */
-    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value)
-        : EnumStoreStringComparator(data_store, false, fallback_value)
+    EnumStoreStringComparator(const DataStoreType& data_store, const char* lookup_value)
+        : EnumStoreStringComparator(data_store, false, lookup_value)
     {}
-    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value);
-    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value, bool prefix);
+    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value);
+    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value, bool prefix);
 
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
@@ -74,4 +74,3 @@ extern template class EnumStoreComparator<float>;
 extern template class EnumStoreComparator<double>;
 
 }
-

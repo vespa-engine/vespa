@@ -20,22 +20,22 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value)
-    : ParentType(data_store, fallback_value),
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value)
+    : ParentType(data_store, lookup_value),
       _fold(fold),
       _prefix(false),
       _prefix_len(0)
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value, bool prefix)
-    : ParentType(data_store, fallback_value),
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value, bool prefix)
+    : ParentType(data_store, lookup_value),
       _fold(fold),
       _prefix(prefix),
       _prefix_len(0)
 {
     if (use_prefix()) {
-        _prefix_len = FoldedStringCompare::size(fallback_value);
+        _prefix_len = FoldedStringCompare::size(lookup_value);
     }
 }
 

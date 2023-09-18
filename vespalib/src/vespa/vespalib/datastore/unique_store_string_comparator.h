@@ -21,7 +21,7 @@ protected:
     using WrappedExternalEntryType = UniqueStoreEntry<std::string>;
     using DataStoreType = DataStoreT<RefT>;
     const DataStoreType &_store;
-    const char *_fallback_value;
+    const char *_lookup_value;
 
     const char *get(EntryRef ref) const {
         if (ref.valid()) {
@@ -34,20 +34,20 @@ protected:
                 return _store.template getEntry<WrappedExternalEntryType>(iRef)->value().c_str();
             }
         } else {
-            return _fallback_value;
+            return _lookup_value;
         }
     }
 
 public:
     UniqueStoreStringComparator(const DataStoreType &store)
         : _store(store),
-          _fallback_value(nullptr)
+          _lookup_value(nullptr)
     {
     }
 
-    UniqueStoreStringComparator(const DataStoreType &store, const char *fallback_value)
+    UniqueStoreStringComparator(const DataStoreType &store, const char *lookup_value)
         : _store(store),
-          _fallback_value(fallback_value)
+          _lookup_value(lookup_value)
     {
     }
 
