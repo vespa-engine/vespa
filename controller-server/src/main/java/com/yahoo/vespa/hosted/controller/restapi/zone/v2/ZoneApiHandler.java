@@ -101,9 +101,8 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ProxyRequest proxyRequest(ZoneId zoneId, HttpURL.Path path, HttpRequest request) {
-        return ProxyRequest.tryOne(zoneRegistry.systemZone().getCloudName().equals(CloudName.AWS)
-                ? zoneRegistry.getConfigServerYcpiUri(zoneId)
-                : zoneRegistry.getConfigServerVipUri(zoneId),
+        return ProxyRequest.tryOne(zoneRegistry.systemZone().getCloudName().equals(CloudName.AWS) ? zoneRegistry.getConfigServerYcpiUri(zoneId)
+                        : zoneRegistry.getConfigServerVipUri(zoneId),
                 path, request);
     }
 

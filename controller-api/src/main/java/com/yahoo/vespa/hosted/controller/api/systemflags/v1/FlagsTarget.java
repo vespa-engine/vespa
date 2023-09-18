@@ -70,7 +70,8 @@ public interface FlagsTarget {
         return new ConfigServerFlagsTarget(registry.system(),
                                            zone.getCloudName(),
                                            zone.getVirtualId(),
-                                           registry.getConfigServerVipUri(zone.getVirtualId()),
+                                           zone.getCloudName().equals(CloudName.YAHOO) ? registry.getConfigServerYcpiUri(zone.getVirtualId())
+                                                   : registry.getConfigServerVipUri(zone.getVirtualId()),
                                            registry.getConfigServerHttpsIdentity(zone.getVirtualId()));
     }
 
