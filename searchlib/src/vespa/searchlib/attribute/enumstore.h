@@ -55,7 +55,6 @@ private:
     UniqueStoreType        _store;
     IEnumStoreDictionary*  _dict;
     bool                   _is_folded;
-    ComparatorType         _comparator;
     ComparatorType         _foldedComparator;
     enumstore::EnumStoreCompactionSpec _compaction_spec;
     EntryType              _default_value;
@@ -187,8 +186,8 @@ public:
         return BatchUpdater(*this);
     }
 
-    const EntryComparator & get_comparator() const {
-        return _comparator;
+    const EntryComparator & get_comparator() const noexcept {
+        return _store.get_comparator();
     }
 
     ComparatorType make_comparator(const EntryType& lookup_value) const {

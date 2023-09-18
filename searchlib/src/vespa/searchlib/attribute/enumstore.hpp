@@ -77,7 +77,6 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
     : _store(std::move(memory_allocator)),
       _dict(),
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
-      _comparator(_store.get_data_store()),
       _foldedComparator(make_optionally_folded_comparator(is_folded())),
       _compaction_spec(),
       _default_value(default_value),

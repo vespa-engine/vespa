@@ -39,7 +39,7 @@ struct TestBase : public ::testing::Test {
     using EntryRefType = typename UniqueStoreType::RefType;
     using ValueType = typename UniqueStoreType::EntryType;
     using ValueConstRefType = typename UniqueStoreType::EntryConstRefType;
-    using CompareType = typename UniqueStoreType::CompareType;
+    using ComparatorType = typename UniqueStoreType::ComparatorType;
     using ReferenceStoreValueType = std::conditional_t<std::is_same_v<ValueType, const char *>, std::string, ValueType>;
     using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType,uint32_t>>;
 
@@ -164,13 +164,13 @@ TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
         EXPECT_FALSE(store.get_dictionary().get_has_hash_dictionary());
         break;
     case DictionaryType::BTREE_AND_HASH:
-        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
+        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<ComparatorType>(store.get_data_store())));
         EXPECT_TRUE(store.get_dictionary().get_has_btree_dictionary());
         EXPECT_TRUE(store.get_dictionary().get_has_hash_dictionary());
         break;
     case DictionaryType::HASH:
     default:
-        store.set_dictionary(std::make_unique<UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
+        store.set_dictionary(std::make_unique<UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<ComparatorType>(store.get_data_store())));
         EXPECT_FALSE(store.get_dictionary().get_has_btree_dictionary());
         EXPECT_TRUE(store.get_dictionary().get_has_hash_dictionary());
     }
@@ -464,7 +464,7 @@ TEST_F(DoubleTest, nan_is_handled)
 
 TEST_F(DoubleTest, control_memory_usage) {
     static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
-    EXPECT_EQ(376u + sizeof_deque, sizeof(store));
+    EXPECT_EQ(400u + sizeof_deque, sizeof(store));
     EXPECT_EQ(120u, sizeof(BufferState));
     EXPECT_EQ(28740u, store.get_values_memory_usage().allocatedBytes());
     EXPECT_EQ(24780u, store.get_values_memory_usage().usedBytes());

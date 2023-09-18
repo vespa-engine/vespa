@@ -12,6 +12,7 @@
 #include "unique_store_allocator.h"
 #include "unique_store_comparator.h"
 #include "unique_store_entry.h"
+#include <functional>
 
 namespace vespalib::alloc { class MemoryAllocator; }
 
@@ -30,14 +31,14 @@ class UniqueStoreRemapper;
  * Datastore for unique values of type EntryT that is accessed via a
  * 32-bit EntryRef.
  */
-template <typename EntryT, typename RefT = EntryRefT<22>, typename Compare = UniqueStoreComparator<EntryT, RefT>, typename Allocator = UniqueStoreAllocator<EntryT, RefT> >
+template <typename EntryT, typename RefT = EntryRefT<22>, typename Comparator = UniqueStoreComparator<EntryT, RefT>, typename Allocator = UniqueStoreAllocator<EntryT, RefT> >
 class UniqueStore
 {
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
-    using CompareType = Compare;
+    using ComparatorType = Comparator;
     using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
     using Remapper = UniqueStoreRemapper<RefT>;
@@ -45,12 +46,12 @@ public:
 private:
     Allocator _allocator;
     DataStoreType &_store;
+    ComparatorType _comparator;
     std::unique_ptr<IUniqueStoreDictionary> _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
-    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
-    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
+    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const std::function<ComparatorType(const DataStoreType&)>& comparator_factory = [](const auto& data_store) { return ComparatorType(data_store);});
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
     UniqueStoreAddResult add(EntryConstRefType value);
@@ -80,6 +81,8 @@ public:
 
     Builder getBuilder(uint32_t uniqueValuesHint);
     Enumerator getEnumerator(bool sort_unique_values);
+
+    const ComparatorType& get_comparator() const noexcept { return _comparator; }
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
