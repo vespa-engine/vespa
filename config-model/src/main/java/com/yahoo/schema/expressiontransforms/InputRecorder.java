@@ -96,9 +96,7 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
                 return;
             }
             if (FeatureNames.isQueryFeature(ref)) {
-                // get rid of this later, we should be able
-                // to get it from the query
-                neededInputs.add(feature.toString());
+                // we should be able to get it from the query
                 return;
             }
             if (FeatureNames.isConstantFeature(ref)) {
