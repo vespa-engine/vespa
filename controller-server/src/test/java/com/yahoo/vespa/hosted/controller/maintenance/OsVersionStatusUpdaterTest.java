@@ -12,10 +12,10 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,47 +43,53 @@ public class OsVersionStatusUpdaterTest {
 
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
-        CloudName cloud = CloudName.DEFAULT;
-        tester.controller().os().upgradeTo(version1, cloud, false, false);
+        CloudName cloud0 = CloudName.DEFAULT;
+        tester.controller().os().upgradeTo(version1, cloud0, false, false);
         statusUpdater.maintain();
 
         var osVersions = tester.controller().os().status().versions();
         assertEquals(3, osVersions.size());
-        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
-        assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
+        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud0)).isEmpty(), "All nodes on unknown version");
+        assertTrue(osVersions.get(new OsVersion(version1, cloud0)).isEmpty(), "No nodes on current target");
 
-        CloudName otherCloud = CloudName.AWS;
-        tester.controller().os().upgradeTo(version1, otherCloud, false, false);
+        CloudName cloud1 = CloudName.AWS;
+        Version version2 = Version.fromString("7.0");
+        tester.controller().os().upgradeTo(version2, cloud1, false, false);
         statusUpdater.maintain();
 
         osVersions = tester.controller().os().status().versions();
         assertEquals(4, osVersions.size()); // 2 in cloud, 2 in otherCloud.
-        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
-        assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
-        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, otherCloud)).isEmpty(), "All nodes on unknown version");
-        assertTrue(osVersions.get(new OsVersion(version1, otherCloud)).isEmpty(), "No nodes on current target");
+        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud0)).isEmpty(), "All nodes on unknown version");
+        assertTrue(osVersions.get(new OsVersion(version1, cloud0)).isEmpty(), "No nodes on current target");
+        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud1)).isEmpty(), "All nodes on unknown version");
+        assertTrue(osVersions.get(new OsVersion(version2, cloud1)).isEmpty(), "No nodes on current target");
 
         // Updating status cleans up stale certifications
         Set<OsVersion> knownVersions = osVersions.keySet().stream()
                                                  .filter(osVersion -> !osVersion.version().isEmpty())
                                                  .collect(Collectors.toSet());
-        List<OsVersion> versionsToCertify = new ArrayList<>(knownVersions);
-        OsVersion futureVersion = new OsVersion(Version.fromString("98.0.2"), cloud); // Keep future version
-        versionsToCertify.addAll(List.of(new OsVersion(Version.fromString("3.11"), cloud),
-                                         futureVersion));
-        for (OsVersion version : versionsToCertify) {
+        // Known versions
+        for (OsVersion version : knownVersions) {
             tester.controller().os().certify(version.version(), version.cloud(), Version.fromString("1.2.3"));
         }
-        knownVersions.add(futureVersion);
-        assertEquals(knownVersions.size() + 1, certifiedOsVersions(tester).size());
+        // Additional versions
+        OsVersion staleVersion0 = new OsVersion(Version.fromString("7.0"), cloud0);        // Only removed for this cloud
+        OsVersion staleVersion1 = new OsVersion(Version.fromString("3.11"), cloud0);       // Stale in both clouds
+        OsVersion staleVersion2 = new OsVersion(Version.fromString("3.11"), cloud1);
+        OsVersion futureVersion = new OsVersion(Version.fromString("98.0.2"), cloud0);     // Keep future version
+        for (OsVersion version : List.of(staleVersion0, staleVersion1, staleVersion2, futureVersion)) {
+            tester.controller().os().certify(version.version(), version.cloud(), Version.fromString("1.2.3"));
+        }
         statusUpdater.maintain();
-        assertEquals(knownVersions, certifiedOsVersions(tester));
+        assertEquals(Stream.concat(knownVersions.stream(), Stream.of(futureVersion)).sorted().toList(),
+                     certifiedOsVersions(tester));
     }
 
-    private static Set<OsVersion> certifiedOsVersions(ControllerTester tester) {
+    private static List<OsVersion> certifiedOsVersions(ControllerTester tester) {
         return tester.controller().os().readCertified().stream()
                      .map(CertifiedOsVersion::osVersion)
-                     .collect(Collectors.toSet());
+                     .sorted()
+                     .toList();
     }
 
 }
