@@ -3,12 +3,14 @@
 
 #include <concepts>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace vespalib::fuzzy {
 
 // Concept that all DFA matcher implementations must satisfy
 template <typename T>
-concept DfaMatcher = requires(T a, std::string u8str) {
+concept DfaMatcher = requires(T a, std::string u8str, std::vector<uint32_t> u32str) {
     typename T::StateType;
     typename T::StateParamType;
     typename T::EdgeType;
@@ -85,6 +87,9 @@ concept DfaMatcher = requires(T a, std::string u8str) {
     // Precondition: implies_match_suffix(state) == true, i.e. the state is guaranteed to
     //               afford no edits anywhere.
     { a.emit_exact_match_suffix(typename T::StateType{}, u8str) } -> std::same_as<void>;
+
+    // Same as above, but for raw UTF-32 code point output
+    { a.emit_exact_match_suffix(typename T::StateType{}, u32str) } -> std::same_as<void>;
 };
 
 }
