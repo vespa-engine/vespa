@@ -38,6 +38,10 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
         transform(expression.getRoot(), new InputRecorderContext(context));
     }
 
+    public void alreadyHandled(String name) {
+        handled.add(name);
+    }
+
     @Override
     public ExpressionNode transform(ExpressionNode node, InputRecorderContext context) {
         if (node instanceof ReferenceNode r) {

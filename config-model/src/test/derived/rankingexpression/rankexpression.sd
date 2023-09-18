@@ -62,6 +62,10 @@ schema rankexpression {
     field t1 type tensor(m{},v[3]) {
       indexing: attribute
     }
+
+    field labels type array<string> {
+      indexing: attribute
+    }
   }
 
   rank-profile default {
@@ -382,6 +386,25 @@ schema rankexpression {
       global-phase {
         expression: myplus()+sum(mymul())+firstPhase + term(0).significance + fieldLength(artist) + fieldTermMatch(title,0).occurrences + termDistance(title,1,2).reverse + closeness(field, t1)
         rerank-count: 42
+      }
+  }
+
+  rank-profile layered {
+      inputs {
+         query(v) tensor(v[3])
+      }
+      function mymul() {
+        expression: tensorFromLabels(attribute(labels), m) * query(v)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      global-phase {
+        expression: sum(mymul())
+        rerank-count: 123
+      }
+      match-features {
+        mymul
       }
   }
 

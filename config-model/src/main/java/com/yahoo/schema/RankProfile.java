@@ -1067,6 +1067,11 @@ public class RankProfile implements Cloneable {
                                                           inlineFunctions);
             var needInputs = new HashSet<String>();
             var recorder = new InputRecorder(needInputs);
+            if (matchFeatures != null) {
+                for (ReferenceNode mf : matchFeatures) {
+                    recorder.alreadyHandled(mf.toString());
+                }
+            }
             recorder.process(globalPhaseRanking.function().getBody(), context);
             List<FeatureList> addIfMissing = new ArrayList<>();
             for (String input : needInputs) {
