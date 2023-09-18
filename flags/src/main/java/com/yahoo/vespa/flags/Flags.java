@@ -406,13 +406,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CLOUD_NATIVE_REGION_IN_KINESIS_LOGGER = defineFeatureFlag(
-            "use-cloud-native-region-in-KinesisLogger", false,
-            List.of("hmusum"), "2023-09-15", "2023-10-01",
-            "Whether to use VESPA_CLOUD_NATIVE_REGION as source for AWS region in KinesisLogger",
-            "Takes effect on reconfiguration of KinesisLogger",
-            APPLICATION_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
