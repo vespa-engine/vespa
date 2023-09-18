@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -408,7 +409,7 @@ public class SystemFlagsDataArchiveTest {
         when(zoneApi.getCloudName()).thenReturn(CloudName.YAHOO);
         when(zoneApi.getVirtualId()).thenReturn(ZoneId.ofVirtualControllerZone());
         when(registryMock.systemZone()).thenReturn(zoneApi);
-        when(registryMock.getConfigServerVipUri(any(), false)).thenReturn(URI.create("http://localhost:8080/"));
+        when(registryMock.getConfigServerVipUri(any(), anyBoolean())).thenReturn(URI.create("http://localhost:8080/"));
         when(registryMock.getConfigServerHttpsIdentity(any())).thenReturn(new AthenzService("domain", "servicename"));
         ZoneList zones = mockZoneList("prod.us-west-1", "prod.us-east-3");
         when(registryMock.zones()).thenReturn(zones);
