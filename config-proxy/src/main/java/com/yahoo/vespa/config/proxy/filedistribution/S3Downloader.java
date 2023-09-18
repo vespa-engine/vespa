@@ -46,7 +46,6 @@ public class S3Downloader implements Downloader {
         private static final String DEFAULT_CREDENTIALS_PATH = Defaults.getDefaults()
                 .underVespaHome("var/vespa/aws/credentials.json");
 
-        private final AtomicReference<AWSCredentials> credentials = new AtomicReference<>();
         private final Path credentialsPath;
 
         public CredentialsProvider() {
@@ -54,7 +53,7 @@ public class S3Downloader implements Downloader {
         }
 
         @Override
-        public AWSCredentials getCredentials() { return credentials.getAndSet(readCredentials()); }
+        public AWSCredentials getCredentials() { return readCredentials(); }
 
         @Override
         public void refresh() { readCredentials(); }
