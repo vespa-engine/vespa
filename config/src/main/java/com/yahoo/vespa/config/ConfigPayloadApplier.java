@@ -16,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -244,7 +245,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private UrlReference resolveUrl(String url) {
         if ( ! isClientside()) return new UrlReference(url);
-        File file = urlDownloader.waitFor(new UrlReference(url), 60 * 60);
+        File file = urlDownloader.waitFor(new UrlReference(url), Duration.ofMinutes(60));
         return new UrlReference(file.getAbsolutePath());
     }
 
