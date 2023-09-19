@@ -68,7 +68,6 @@ private:
 
 public:
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
-    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     EnumStoreStringComparator make_folded() const {
         return EnumStoreStringComparator(_store, true);
     }

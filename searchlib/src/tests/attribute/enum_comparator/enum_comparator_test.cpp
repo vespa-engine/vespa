@@ -172,27 +172,22 @@ TEST(EnumComparatorTest, require_that_folded_less_is_working)
     EXPECT_FALSE(cmp3.less(e4, EnumIndex())); // similar when prefix
 }
 
-TEST(EnumComparatorTest, require_that_folded_equal_is_working)
+TEST(EnumComparatorTest, require_that_equal_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
-    EnumIndex e4 = es.insert("Folded");
-    const auto & cmp1 = es.get_folded_comparator();
-    EXPECT_TRUE(cmp1.equal(e1, e1)); // similar folded
-    EXPECT_TRUE(cmp1.equal(e2, e1)); // similar folded
-    EXPECT_TRUE(cmp1.equal(e2, e1));
-    EXPECT_FALSE(cmp1.equal(e2, e3)); // folded compare
-    EXPECT_FALSE(cmp1.equal(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol");
-    auto cmp3 = es.make_folded_comparator_prefix("fol");
-    EXPECT_FALSE(cmp2.equal(EnumIndex(), e4));
-    EXPECT_FALSE(cmp2.equal(e4, EnumIndex()));
-    EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
-    EXPECT_FALSE(cmp3.equal(EnumIndex(), e4)); // similar when prefix
-    EXPECT_FALSE(cmp3.equal(e4, EnumIndex())); // similar when prefix
-    EXPECT_TRUE(cmp3.equal(EnumIndex(), EnumIndex())); // similar when prefix
+    const auto & cmp1 = es.get_comparator();
+    EXPECT_TRUE(cmp1.equal(e1, e1));
+    EXPECT_FALSE(cmp1.equal(e1, e2));
+    EXPECT_FALSE(cmp1.equal(e1, e3));
+    EXPECT_FALSE(cmp1.equal(e2, e1));
+    EXPECT_TRUE(cmp1.equal(e2, e2));
+    EXPECT_FALSE(cmp1.equal(e2, e3));
+    EXPECT_FALSE(cmp1.equal(e3, e1));
+    EXPECT_FALSE(cmp1.equal(e3, e2));
+    EXPECT_TRUE(cmp1.equal(e3, e3));
 }
 
 TEST(DfaStringComparatorTest, require_that_less_is_working)
