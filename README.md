@@ -8,12 +8,12 @@ over big data at serving time.
 This is the primary repository for Vespa where all development is happening.
 New production releases from this repository's master branch are made each weekday from Monday through Thursday.
 
-* Home page: [https://vespa.ai](https://vespa.ai)
-* Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
-* Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
-* Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
+- Home page: [https://vespa.ai](https://vespa.ai)
+- Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
+- Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
+- Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
 
-Vespa build status: [![Vespa Build Status](https://cd.screwdriver.cd/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
+Vespa build status: [![Vespa Build Status](https://api.screwdriver.cd/v4/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
 
@@ -31,16 +31,14 @@ evaluate machine-learned models over the selected data, organize and aggregate i
 than 100 milliseconds, all while the data corpus is continuously changing.
 
 This is hard to do, especially with large data sets that needs to be distributed over multiple nodes and evaluated in
-parallel. Vespa is a platform which performs these operations for you  with high availability and performance.
+parallel. Vespa is a platform which performs these operations for you with high availability and performance.
 It has been in development for many years and is used on a number of large internet services and apps which serve
 hundreds of thousands of queries from Vespa per second.
-
 
 ## Install
 
 Run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](https://docs.vespa.ai/en/getting-started.html)
 Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai](https://cloud.vespa.ai)
-
 
 ## Usage
 
@@ -52,14 +50,12 @@ Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai]
 
 Full documentation is at [https://docs.vespa.ai](https://docs.vespa.ai).
 
-
 ## Contribute
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to contribute.
 
 If you want to contribute to the documentation, see
 [https://github.com/vespa-engine/documentation](https://github.com/vespa-engine/documentation)
-
 
 ## Building
 
@@ -82,7 +78,6 @@ for building Vespa, running unit tests and running system tests:
     mvn install --threads 1C
 
 Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
-
 
 ## License
 
