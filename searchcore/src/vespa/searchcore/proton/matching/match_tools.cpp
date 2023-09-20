@@ -187,6 +187,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false)
 {
+    if (doom.soft_doom()) return;
     auto trace = root_trace.make_trace();
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());

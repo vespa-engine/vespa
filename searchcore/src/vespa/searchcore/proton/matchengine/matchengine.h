@@ -28,6 +28,7 @@ private:
     std::atomic<bool>                  _nodeUp;
     std::atomic<bool>                  _nodeMaintenance;
 
+    std::unique_ptr<search::engine::SearchReply> doSearch(const search::engine::SearchRequest & searchRequest);
 public:
     /**
      * Convenience typedefs.

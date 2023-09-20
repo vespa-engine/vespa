@@ -278,6 +278,10 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         if (!mtf->valid()) {
             return reply;
         }
+        if (mtf->get_request_context().getDoom().soft_doom()) {
+            vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
+            return reply;
+        }
 
         const Properties & rankProperties = request.propertiesMap.rankProperties();
         uint32_t heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());

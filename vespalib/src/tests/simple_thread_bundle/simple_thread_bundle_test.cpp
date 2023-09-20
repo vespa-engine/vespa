@@ -160,15 +160,11 @@ TEST("require that all strategies work with variable number of threads and targe
 }
 
 TEST_F("require that bundle pool gives out bundles", SimpleThreadBundle::Pool(5)) {
-    SimpleThreadBundle::UP b1 = f1.obtain();
-    SimpleThreadBundle::UP b2 = f1.obtain();
-    ASSERT_TRUE(b1.get() != 0);
-    ASSERT_TRUE(b2.get() != 0);
-    EXPECT_EQUAL(5u, b1->size());
-    EXPECT_EQUAL(5u, b2->size());
-    EXPECT_FALSE(b1.get() == b2.get());
-    f1.release(std::move(b1));
-    f1.release(std::move(b2));
+    auto b1 = f1.getBundle();
+    auto b2 = f1.getBundle();
+    EXPECT_EQUAL(5u, b1.bundle().size());
+    EXPECT_EQUAL(5u, b2.bundle().size());
+    EXPECT_FALSE(&b1.bundle() == &b2.bundle());
 }
 
 TEST_F("require that bundles do not need to be put back on the pool", SimpleThreadBundle::Pool(5)) {
@@ -178,20 +174,20 @@ TEST_F("require that bundles do not need to be put back on the pool", SimpleThre
 }
 
 TEST_F("require that bundle pool reuses bundles", SimpleThreadBundle::Pool(5)) {
-    SimpleThreadBundle::UP bundle = f1.obtain();
-    SimpleThreadBundle *ptr = bundle.get();
-    f1.release(std::move(bundle));
-    bundle = f1.obtain();
-    EXPECT_EQUAL(ptr, bundle.get());
+    SimpleThreadBundle *ptr;
+    {
+        ptr = &f1.getBundle().bundle();
+    }
+    auto bundle = f1.getBundle();
+    EXPECT_EQUAL(ptr, &bundle.bundle());
 }
 
 TEST_MT_FF("require that bundle pool works with multiple threads", 32, SimpleThreadBundle::Pool(3),
            std::vector<SimpleThreadBundle*>(num_threads, 0))
 {
-    SimpleThreadBundle::UP bundle = f1.obtain();
-    ASSERT_TRUE(bundle.get() != 0);
-    EXPECT_EQUAL(3u, bundle->size());
-    f2[thread_id] = bundle.get();
+    SimpleThreadBundle::Pool::Guard bundle = f1.getBundle();
+    EXPECT_EQUAL(3u, bundle.bundle().size());
+    f2[thread_id] = &bundle.bundle();
     TEST_BARRIER();
     if (thread_id == 0) {
         for (size_t i = 0; i < num_threads; ++i) {
@@ -201,13 +197,12 @@ TEST_MT_FF("require that bundle pool works with multiple threads", 32, SimpleThr
         }
     }
     TEST_BARRIER();
-    f1.release(std::move(bundle));
 }
 
 struct Filler {
     int stuff;
     Filler() : stuff(0) {}
-    virtual ~Filler() {}
+    virtual ~Filler() = default;
 };
 
 struct Proxy : Filler, Runnable {
