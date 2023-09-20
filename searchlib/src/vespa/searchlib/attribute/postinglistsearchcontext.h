@@ -57,7 +57,7 @@ protected:
     void lookupTerm(const vespalib::datastore::EntryComparator &comp);
     void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
     void lookupSingle();
-    virtual bool useThis(const DictionaryConstIterator & it) const {
+    virtual bool use_dictionary_entry(DictionaryConstIterator& it) const {
         (void) it;
         return true;
     }
@@ -182,7 +182,12 @@ private:
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
-    bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override;
+    // Note: steps iterator one ore more steps when not using dictionary entry
+    bool use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const override;
+    // Note: Uses copy of dictionary iterator to avoid stepping original.
+    bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
+        return use_dictionary_entry(it);
+    }
 public:
     StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -289,7 +294,7 @@ StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toB
              * A single dictionary entry from lookupRange() might not be
              * a match if this is a regex search or a fuzzy search.
              */
-            if (!this->_lowerDictItr.valid() || useThis(this->_lowerDictItr)) {
+            if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
                 this->lookupSingle();
             } else {
                 this->_uniqueValues = 0;
@@ -300,15 +305,26 @@ StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toB
 
 template <typename BaseSC, typename AttrT, typename DataT>
 bool
-StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearchContext::DictionaryConstIterator & it) const {
+StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const {
     if ( this->isRegex() ) {
-        return this->getRegex().valid()
-            ? this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire()))
-            : false;
+        if (this->getRegex().valid() &&
+            this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire()))) {
+            return true;
+        }
+        ++it;
+        return false;
     } else if ( this->isCased() ) {
-        return this->match(_enumStore.get_value(it.getKey().load_acquire()));
+        if (this->match(_enumStore.get_value(it.getKey().load_acquire()))) {
+            return true;
+        }
+        ++it;
+        return false;
     } else if (this->isFuzzy()) {
-        return this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()));
+        if (this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()))) {
+            return true;
+        }
+        ++it;
+        return false;
     }
     return true;
 }

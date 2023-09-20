@@ -64,9 +64,10 @@ size_t
 PostingListSearchContextT<DataT>::countHits() const
 {
     size_t sum(0);
-    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        if (useThis(it)) {
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+        if (use_dictionary_entry(it)) {
             sum += _postingList.frozenSize(it.getData().load_acquire());
+            ++it;
         }
     }
     return sum;
@@ -77,10 +78,11 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillArray()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        if (useThis(it)) {
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+        if (use_dictionary_entry(it)) {
             _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
                                                                  it.getData().load_acquire()));
+            ++it;
         }
     }
     _merger.merge();
@@ -91,10 +93,11 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillBitVector()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        if (useThis(it)) {
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+        if (use_dictionary_entry(it)) {
             _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
                                                                      it.getData().load_acquire()));
+            ++it;
         }
     }
 }
