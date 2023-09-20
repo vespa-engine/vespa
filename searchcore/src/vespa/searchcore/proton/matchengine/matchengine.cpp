@@ -161,7 +161,9 @@ MatchEngine::performSearch(SearchRequest::Source req)
     auto capture_issues = vespalib::Issue::listen(*my_issues);
 
     const SearchRequest * searchRequest = req.get();
-    auto ret = (searchRequest) ? doSearch(*searchRequest) : std::make_unique<SearchReply>();
+    auto ret = (searchRequest)
+            ? doSearch(*searchRequest)
+            : std::make_unique<SearchReply>();
     ret->request = req.release();
     if (_forward_issues) {
         ret->my_issues = std::move(my_issues);
