@@ -103,9 +103,21 @@ public:
         std::vector<SimpleThreadBundle*> _bundles;
 
     public:
+        class Guard {
+        public:
+            Guard(Pool & pool) : _bundle(pool.obtain()), _pool(pool) {}
+            Guard(const Guard &) = delete;
+            Guard & operator =(const Guard &) = delete;
+            ~Guard() { _pool.release(std::move(_bundle)); }
+            SimpleThreadBundle & bundle() { return *_bundle; }
+        private:
+            SimpleThreadBundle::UP  _bundle;
+            Pool                   &_pool;
+        };
         Pool(size_t bundleSize, init_fun_t init_fun);
         Pool(size_t bundleSize) : Pool(bundleSize, Runnable::default_init_function) {}
         ~Pool();
+        Guard getBundle() { return Guard(*this); }
         SimpleThreadBundle::UP obtain();
         void release(SimpleThreadBundle::UP bundle);
     };

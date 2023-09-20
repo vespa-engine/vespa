@@ -123,43 +123,45 @@ MatchEngine::search(SearchRequest::Source request, SearchClient &client)
     return performSearch(std::move(request));
 }
 
+std::unique_ptr<search::engine::SearchReply>
+MatchEngine::doSearch(const search::engine::SearchRequest & searchRequest) {
+    // 3 is the minimum level required for backend tracing.
+    searchRequest.setTraceLevel(trace::Level::lookup(searchRequest.propertiesMap.modelOverrides(),
+                                                      searchRequest.trace().getLevel()), 3);
+    ISearchHandler::SP searchHandler;
+    auto threadBundle = _threadBundlePool.getBundle();
+    { // try to find the match handler corresponding to the specified search doc type
+        DocTypeName docTypeName(searchRequest);
+        std::lock_guard<std::mutex> guard(_lock);
+        searchHandler = _handlers.getHandler(docTypeName);
+    }
+    std::unique_ptr<SearchReply> ret;
+    if (searchHandler) {
+        ret = searchHandler->match(searchRequest, threadBundle.bundle());
+    } else {
+        HandlerMap<ISearchHandler>::Snapshot snapshot;
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            snapshot = _handlers.snapshot();
+        }
+        ret = (snapshot.valid())
+                ? snapshot.get()->match(searchRequest, threadBundle.bundle()) // use the first handler
+                :  std::make_unique<SearchReply>();
+    }
+    if (searchRequest.expired()) {
+        vespalib::Issue::report("search request timed out; results may be incomplete");
+    }
+    return ret;
+}
+
 std::unique_ptr<SearchReply>
 MatchEngine::performSearch(SearchRequest::Source req)
 {
     auto my_issues = std::make_unique<search::UniqueIssues>();
     auto capture_issues = vespalib::Issue::listen(*my_issues);
 
-    auto ret = std::make_unique<SearchReply>();
-
     const SearchRequest * searchRequest = req.get();
-    if (searchRequest) {
-        // 3 is the minimum level required for backend tracing.
-        searchRequest->setTraceLevel(trace::Level::lookup(searchRequest->propertiesMap.modelOverrides(),
-                                                          searchRequest->trace().getLevel()), 3);
-        ISearchHandler::SP searchHandler;
-        vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
-        { // try to find the match handler corresponding to the specified search doc type
-            DocTypeName docTypeName(*searchRequest);
-            std::lock_guard<std::mutex> guard(_lock);
-            searchHandler = _handlers.getHandler(docTypeName);
-        }
-        if (searchHandler) {
-            ret = searchHandler->match(*searchRequest, *threadBundle);
-        } else {
-            HandlerMap<ISearchHandler>::Snapshot snapshot;
-            {
-                std::lock_guard<std::mutex> guard(_lock);
-                snapshot = _handlers.snapshot();
-            }
-            if (snapshot.valid()) {
-                ret = snapshot.get()->match(*searchRequest, *threadBundle); // use the first handler
-            }
-        }
-        _threadBundlePool.release(std::move(threadBundle));
-        if (searchRequest->expired()) {
-            vespalib::Issue::report("search request timed out; results may be incomplete");
-        }
-    }
+    auto ret = (searchRequest) ? doSearch(*searchRequest) : std::make_unique<SearchReply>();
     ret->request = req.release();
     if (_forward_issues) {
         ret->my_issues = std::move(my_issues);
