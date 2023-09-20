@@ -11,8 +11,11 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +48,8 @@ public class UserConfiguredFiles implements Serializable {
             try {
                 register(builder, registeredFiles, key);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unable to send file specified in " + key, e);
+                throw new IllegalArgumentException("Unable to register file specified in services.xml for config '" + key + "': " +
+                                                   Exceptions.toMessageString(e));
             }
         }
     }
@@ -109,9 +113,9 @@ public class UserConfiguredFiles implements Serializable {
             String name = entry.getKey();
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
             if (isEmptyOptionalPath(entry, fileEntry)) continue;
-            if (fileEntry.getValue() == null)
-                throw new IllegalArgumentException("Unable to send file for field '" + name +
-                                                   "': Invalid config value " + fileEntry.getValue());
+            if (fileEntry.getValue() == null || fileEntry.getValue().equals("."))
+                throw new IllegalArgumentException("Unable to register file for field '" + name +
+                                                   "': Invalid config value '" + fileEntry.getValue() + "'");
             registerFileEntry(fileEntry, registeredFiles, isModelType);
         }
     }
@@ -137,11 +141,19 @@ public class UserConfiguredFiles implements Serializable {
             path = Path.fromString(builder.getValue());
         }
 
+        File file = path.toFile();
+        if (file.isDirectory()) {
+            if (file.listFiles() == null || file.listFiles().length == 0)
+                throw new IllegalArgumentException("Directory '" + path + "' is empty");
+        }
+
         FileReference reference = registeredFiles.get(path);
         if (reference == null) {
             reference = fileRegistry.addFile(path.getRelative());
             registeredFiles.put(path, reference);
         }
+        if (reference == null)
+            throw new IllegalArgumentException("No such file or directory '" + path + "'");
 
         if (isModelType) {
             var model = ModelReference.valueOf(builder.getValue());
