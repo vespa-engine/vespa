@@ -51,13 +51,6 @@ EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const v
 
 }
 
-bool
-EnumStoreStringComparator::equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
-    return _fold
-        ? (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) == 0)
-        : (FoldedStringCompare::compare(get(lhs), get(rhs)) == 0);
-}
-
 template class EnumStoreComparator<int8_t>;
 template class EnumStoreComparator<int16_t>;
 template class EnumStoreComparator<int32_t>;
