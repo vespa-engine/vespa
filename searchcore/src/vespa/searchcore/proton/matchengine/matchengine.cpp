@@ -123,8 +123,12 @@ MatchEngine::search(SearchRequest::Source request, SearchClient &client)
     return performSearch(std::move(request));
 }
 
-std::unique_ptr<search::engine::SearchReply>
-MatchEngine::doSearch(const search::engine::SearchRequest & searchRequest) {
+std::unique_ptr<SearchReply>
+MatchEngine::doSearch(const SearchRequest & searchRequest) {
+    if (searchRequest.expired()) {
+        vespalib::Issue::report("Query timed out in the query Q.");
+        return std::make_unique<SearchReply>();
+    }
     // 3 is the minimum level required for backend tracing.
     searchRequest.setTraceLevel(trace::Level::lookup(searchRequest.propertiesMap.modelOverrides(),
                                                       searchRequest.trace().getLevel()), 3);
