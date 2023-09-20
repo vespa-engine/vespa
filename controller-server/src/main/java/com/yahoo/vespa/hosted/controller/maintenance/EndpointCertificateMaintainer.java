@@ -284,6 +284,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 .filter(c -> c.instance().isPresent())
                 .filter(c -> c.certificate().randomizedId().isEmpty())
                 .filter(c -> assignRandomizedId.with(FetchVector.Dimension.APPLICATION_ID, c.application().instance(c.instance().get()).serializedForm()).value())
+                .filter(c -> controller().applications().getApplication(c.application()).isPresent()) // In case application has been deleted, but certificate is pending deletion
                 .limit(assignRandomizedIdRate.value())
                 .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));
     }
