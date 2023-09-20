@@ -423,6 +423,14 @@ TEST("test uncased match") {
     EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
+namespace {
+
+const char* char_from_u8(const char8_t* p) {
+    return reinterpret_cast<const char*>(p);
+}
+
+}
+
 TEST("test uncased prefix match") {
     QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, false);
@@ -435,6 +443,12 @@ TEST("test uncased prefix match") {
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
+    QueryTermUCS4 aa(char_from_u8(u8"å"), QueryTermSimple::Type::PREFIXTERM);
+    StringSearchHelper aa_helper(aa, false);
+    EXPECT_FALSE(aa_helper.isMatch("alle"));
+    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"ås")));
+    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"Ås")));
+    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
 }
 
 TEST("test cased match") {
@@ -464,6 +478,12 @@ TEST("test cased prefix match") {
     EXPECT_FALSE(helper.isMatch("Xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
+    QueryTermUCS4 aa(char_from_u8(u8"å"), QueryTermSimple::Type::PREFIXTERM);
+    StringSearchHelper aa_helper(aa, true);
+    EXPECT_FALSE(aa_helper.isMatch("alle"));
+    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"ås")));
+    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ås")));
+    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
 }
 
 TEST("test uncased regex match") {

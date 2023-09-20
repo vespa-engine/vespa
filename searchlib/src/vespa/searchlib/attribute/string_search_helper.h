@@ -34,7 +34,7 @@ private:
     std::unique_ptr<FuzzyMatcher>  _fuzzyMatcher;
     std::unique_ptr<ucs4_t[]>      _ucs4;
     const char *                   _term;
-    uint32_t                       _termLen;
+    uint32_t                       _termLen; // measured in bytes
     bool                           _isPrefix;
     bool                           _isRegex;
     bool                           _isCased;
