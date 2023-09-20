@@ -160,6 +160,8 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
 
     public abstract MetaData getMetaData();
 
+    public abstract long getSize();
+
     public static class MetaData {
 
         public String status = "unknown";
