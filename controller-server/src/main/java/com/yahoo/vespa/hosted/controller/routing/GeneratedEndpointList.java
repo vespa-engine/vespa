@@ -42,6 +42,10 @@ public class GeneratedEndpointList extends AbstractFilteringList<GeneratedEndpoi
         return matching(ge -> ge.authMethod() == authMethod);
     }
 
+    public static GeneratedEndpointList of(GeneratedEndpoint... generatedEndpoint) {
+        return copyOf(List.of(generatedEndpoint));
+    }
+
     public static GeneratedEndpointList copyOf(Collection<GeneratedEndpoint> generatedEndpoints) {
         return generatedEndpoints.isEmpty() ? EMPTY : new GeneratedEndpointList(generatedEndpoints, false);
     }

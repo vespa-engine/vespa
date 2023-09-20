@@ -1116,6 +1116,63 @@ public class RoutingPoliciesTest {
         assertEquals(List.of(), tester.recordNames());
     }
 
+    @Test
+    public void generated_endpoints_multi_instance() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context0 = tester.newDeploymentContext("tenant1", "app1", "default");
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "beta");
+        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+
+        // Deploy application
+        int clustersPerZone = 1;
+        var zone1 = ZoneId.from("prod", "aws-us-east-1c");
+        ApplicationPackage applicationPackage = applicationPackageBuilder().instances("default,beta")
+                                                                           .region(zone1.region())
+                                                                           .container("c0", AuthMethod.mtls)
+                                                                           .applicationEndpoint("a0", "c0", Map.of(zone1.region().value(),
+                                                                                                                   Map.of(context0.instanceId().instance(), 1,
+                                                                                                                          context1.instanceId().instance(), 1)))
+                                                                           .build();
+        tester.provisionLoadBalancers(clustersPerZone, context0.instanceId(), zone1);
+        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1);
+        context0.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(List.of("a0.app1.tenant1.a.vespa-app.cloud",
+                             "a9c8c045.cafed00d.z.vespa-app.cloud",
+                             "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                             "c0.beta.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                             "e144a11b.cafed00d.z.vespa-app.cloud",
+                             "ee82b867.cafed00d.a.vespa-app.cloud"),
+                     tester.recordNames());
+        tester.assertTargets(context0.application().id(), EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(context0.deploymentIdIn(zone1), 1, context1.deploymentIdIn(zone1), 1));
+
+        // Remove one instance from application endpoint
+        applicationPackage = applicationPackageBuilder().instances("default,beta")
+                                                        .region(zone1.region())
+                                                        .container("c0", AuthMethod.mtls)
+                                                        .applicationEndpoint("a0", "c0", Map.of(zone1.region().value(),
+                                                                                                Map.of(context1.instanceId().instance(), 1)))
+                                                        .build();
+        context0.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(List.of("a0.app1.tenant1.a.vespa-app.cloud",
+                             "a9c8c045.cafed00d.z.vespa-app.cloud",
+                             "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                             "c0.beta.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                             "e144a11b.cafed00d.z.vespa-app.cloud",
+                             "ee82b867.cafed00d.a.vespa-app.cloud"),
+                     tester.recordNames());
+        tester.assertTargets(context0.application().id(), EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(context1.deploymentIdIn(zone1), 1));
+
+        // Removing application removes all records
+        context0.submit(ApplicationPackageBuilder.fromDeploymentXml("<deployment version='1.0'/>",
+                                                                   ValidationId.deploymentRemoval,
+                                                                   ValidationId.globalEndpointChange));
+        context0.flushDnsUpdates();
+        assertEquals(List.of(), tester.recordNames());
+    }
+
     private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {
         EndpointCertificate cert = new EndpointCertificate("testKey", "testCert", 1, 0,
                                                            "request-id",

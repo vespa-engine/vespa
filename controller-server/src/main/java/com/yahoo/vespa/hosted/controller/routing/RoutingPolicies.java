@@ -763,9 +763,9 @@ public class RoutingPolicies {
 
     private static void requireNonClashing(GeneratedEndpoint generatedEndpoint, RoutingPolicyList applicationPolicies) {
         for (var policy : applicationPolicies) {
-            for (var ge : policy.generatedEndpoints()) {
-                if (ge.clusterPart().equals(generatedEndpoint.clusterPart())) {
-                    throw new IllegalStateException(generatedEndpoint + " clashes with " + ge + " in " + policy.id());
+            for (var other : policy.generatedEndpoints()) {
+                if (other.clusterPart().equals(generatedEndpoint.clusterPart()) && !other.endpoint().equals(generatedEndpoint.endpoint())) {
+                    throw new IllegalStateException(generatedEndpoint + " clashes with " + other + " in " + policy.id());
                 }
             }
         }
