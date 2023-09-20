@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -14,6 +15,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
+import com.yahoo.processing.response.Data;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,10 +36,30 @@ import java.util.Set;
 
 import static com.yahoo.vespa.model.container.xml.CloudDataPlaneFilterTest.createCertificate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase {
 
+    private static final String servicesXmlTemplate = """
+            <container version='1.0'>
+              <clients>
+                <client id="foo" permissions="read,write">
+                    <certificate file="%s"/>
+                </client>
+                <client id="bar" permissions="read">
+                    <token id="my-token"/>
+                </client>
+              </clients>
+            </container>
+            """;
+
+    private static final List<DataplaneToken> defaultTokens = List.of(new DataplaneToken("my-token", List.of(
+            new DataplaneToken.Version("myfingerprint1", "myaccesshash1", Optional.empty()),
+            new DataplaneToken.Version("myfingerprint2", "myaccesshash2", Optional.of(Instant.EPOCH.plus(Duration.ofDays(100000)))))));
+    private static final ContainerEndpoint tokenEndpoint = new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("token"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.token);
+    private static final ContainerEndpoint mtlsEndpoint = new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("mtls"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.mtls);
     @TempDir
     public File applicationFolder;
 
@@ -54,22 +76,9 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void generates_correct_config_for_tokens() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(
-                """ 
-                        <container version='1.0'>
-                          <clients>
-                            <client id="foo" permissions="read,write">
-                                <certificate file="%s"/>
-                            </client>
-                            <client id="bar" permissions="read">
-                                <token id="my-token"/>
-                            </client>
-                          </clients>
-                        </container>
-                        """
-                        .formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(servicesXmlTemplate.formatted(applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
-        buildModel(clusterElem);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
 
         var cfg = root.getConfig(CloudTokenDataPlaneFilterConfig.class, filterConfigId);
         var tokenClient = cfg.clients().stream().filter(c -> c.id().equals("bar")).findAny().orElse(null);
@@ -81,13 +90,50 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         assertEquals(List.of(expectedTokenCfg), tokenClient.tokens());
     }
 
+    @Test
+    void configures_dataplane_proxy_when_token_defined() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var clusterElem = DomBuilderTest.parse(servicesXmlTemplate.formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        createCertificate(certFile);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
+
+        var configId = "container/component/com.yahoo.container.jdisc.DataplaneProxyConfigurator";
+        var cfg = root.getConfig(DataplaneProxyConfig.class, configId);
+        assertEquals(8443, cfg.mtlsPort());
+        assertEquals(8444, cfg.tokenPort());
+    }
+
+    @Test
+    void configures_dataplane_proxy_when_token_defined_but_missing() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var clusterElem = DomBuilderTest.parse(servicesXmlTemplate.formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        createCertificate(certFile);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), List.of(), clusterElem);
+
+        var configId = "container/component/com.yahoo.container.jdisc.DataplaneProxyConfigurator";
+        var cfg = root.getConfig(DataplaneProxyConfig.class, configId);
+        assertNotNull(cfg);
+        assertEquals(8443, cfg.mtlsPort());
+        assertEquals(8444, cfg.tokenPort());
+    }
+
+    @Test
+    void does_notconfigure_dataplane_proxy_when_token_endpoints_not_defined() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var clusterElem = DomBuilderTest.parse(servicesXmlTemplate.formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        createCertificate(certFile);
+        buildModel(Set.of(mtlsEndpoint), List.of(), clusterElem);
+
+        assertFalse(root.getConfigIds().stream().anyMatch(id -> id.contains("DataplaneProxyConfigurator")));
+    }
+
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(
             String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
         return new CloudTokenDataPlaneFilterConfig.Clients.Tokens.Builder()
                 .id(id).fingerprints(fingerprints).checkAccessHashes(accessCheckHashes).expirations(expirations).build();
     }
 
-    public List<ContainerModel> buildModel(Element... clusterElem) {
+    public List<ContainerModel> buildModel(Set<ContainerEndpoint> endpoints, List<DataplaneToken> definedTokens, Element... clusterElem) {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder)
                 .build();
@@ -96,14 +142,11 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
                 .applicationPackage(applicationPackage)
                 .properties(
                         new TestProperties()
-                                .setEnableDataplaneProxy(true)
-                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
-                                .setDataplaneTokens(List.of(new DataplaneToken("my-token", List.of(
-                                        new DataplaneToken.Version("myfingerprint1", "myaccesshash1", Optional.empty()),
-                                        new DataplaneToken.Version("myfingerprint2", "myaccesshash2", Optional.of(Instant.EPOCH.plus(Duration.ofDays(100000))))))))
-                                .setHostedVespa(true))
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
+                        .setDataplaneTokens(definedTokens)
+                        .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
-                .endpoints(Set.of(new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("name"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.token)))
+                .endpoints(endpoints)
                 .build();
         return createModel(root, state, null, clusterElem);
     }
