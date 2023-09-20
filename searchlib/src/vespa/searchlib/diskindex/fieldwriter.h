@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
+#include <cassert>
 
 namespace search::index { class Schema; }
 

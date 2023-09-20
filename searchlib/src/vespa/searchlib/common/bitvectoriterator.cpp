@@ -4,6 +4,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <cassert>
 
 namespace search {
 
@@ -49,7 +50,7 @@ public:
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
     bool isInverted() const override { return inverse; }
 private:
-    bool isSet(uint32_t docId) const { return inverse == ! _bv.testBit(docId); }
+    bool isSet(uint32_t docId) const noexcept { return inverse == ! _bv.testBit(docId); }
 };
 
 template<bool inverse>
@@ -78,10 +79,10 @@ private:
     void initRange(uint32_t begin, uint32_t end) override;
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
-    uint32_t getNextBit(uint32_t docId) const {
+    uint32_t getNextBit(uint32_t docId) const noexcept {
         return inverse ? this->_bv.getNextFalseBit(docId) : this->_bv.getNextTrueBit(docId);
     }
-    uint32_t getFirstBit(uint32_t docId) const {
+    uint32_t getFirstBit(uint32_t docId) const noexcept {
         return inverse ? this->_bv.getFirstFalseBit(docId) : this->_bv.getFirstTrueBit(docId);
     }
 };
