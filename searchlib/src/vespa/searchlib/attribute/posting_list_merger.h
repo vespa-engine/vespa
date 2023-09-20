@@ -27,20 +27,20 @@ class PostingListMerger
 
     PostingVector &merge(PostingVector &v, PostingVector &temp, const StartVector &startPos) __attribute__((noinline));
 public:
-    PostingListMerger(uint32_t docIdLimit);
+    PostingListMerger(uint32_t docIdLimit) noexcept;
 
     ~PostingListMerger();
 
     void reserveArray(uint32_t postingsCount, size_t postingsSize);
     void allocBitVector();
     void merge();
-    bool hasArray() const { return _arrayValid; }
-    bool hasBitVector() const { return static_cast<bool>(_bitVector); }
-    bool emptyArray() const { return _array.empty(); }
-    vespalib::ConstArrayRef<Posting> getArray() const { return _array; }
-    const BitVector *getBitVector() const { return _bitVector.get(); }
-    const std::shared_ptr<BitVector> &getBitVectorSP() const { return _bitVector; }
-    uint32_t getDocIdLimit() const { return _docIdLimit; }
+    bool hasArray() const noexcept { return _arrayValid; }
+    bool hasBitVector() const noexcept { return static_cast<bool>(_bitVector); }
+    bool emptyArray() const noexcept { return _array.empty(); }
+    vespalib::ConstArrayRef<Posting> getArray() const noexcept { return _array; }
+    const BitVector *getBitVector() const noexcept { return _bitVector.get(); }
+    const std::shared_ptr<BitVector> &getBitVectorSP() const noexcept { return _bitVector; }
+    uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
 
     template <typename PostingListType>
     void addToArray(const PostingListType & postingList)
@@ -62,11 +62,11 @@ public:
                                 { if (__builtin_expect(key < limit, true)) { bv.setBit(key); } });
     }
 
-    bool merge_done() const { return hasArray() || hasBitVector(); }
+    bool merge_done() const noexcept { return hasArray() || hasBitVector(); }
 
     // Until diversity handling has been rewritten
-    PostingVector &getWritableArray() { return _array; }
-    StartVector   &getWritableStartPos() { return _startPos; }
+    PostingVector &getWritableArray() noexcept { return _array; }
+    StartVector   &getWritableStartPos() noexcept { return _startPos; }
 };
 
 }

@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <cassert>
 
 namespace search::diskindex {
 
@@ -21,11 +22,11 @@ namespace {
 class MockFieldLengthInspector : public IFieldLengthInspector {
     FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
         if (field_name == "f1") {
-            return FieldLengthInfo(3.5, 21);
+            return {3.5, 21};
         } else if (field_name == "f2") {
-            return FieldLengthInfo(4.0, 23);
+            return {4.0, 23};
         } else {
-            return FieldLengthInfo();
+            return {};
         }
     }
 };

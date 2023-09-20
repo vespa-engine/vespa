@@ -6,7 +6,9 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <algorithm>
+#if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
 #include <cassert>
+#endif
 
 namespace vespalib {
     class nbostream;
@@ -43,7 +45,7 @@ public:
     Range range() const noexcept { return {getStartIndex(), size()}; }
     Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
-    bool testBit(Index idx) const {
+    bool testBit(Index idx) const noexcept {
         return ((load(_words[wordNum(idx)]) & mask(idx)) != 0);
     }
     Index getSizeAcquire() const {
@@ -70,7 +72,7 @@ public:
      *
      * @return The Index of the first valid bit of the bitvector.
      */
-    Index getStartIndex() const { return _startOffset; }
+    Index getStartIndex() const noexcept { return _startOffset; }
 
     /**
      * Get next bit set in the bitvector (inclusive start).
@@ -79,11 +81,11 @@ public:
      * @param start first bit to check
      * @return next bit set in the bitvector.
      */
-    Index getNextTrueBit(Index start) const {
-        return getNextBit([](Word w) { return w; }, start);
+    Index getNextTrueBit(Index start) const noexcept {
+        return getNextBit([](Word w) noexcept { return w; }, start);
     }
-    Index getNextFalseBit(Index start) const {
-        return getNextBit([](Word w) { return ~w; }, start);
+    Index getNextFalseBit(Index start) const noexcept {
+        return getNextBit([](Word w) noexcept { return ~w; }, start);
     }
 
     /**
@@ -152,7 +154,11 @@ public:
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
     }
     void range_check(Index idx) const {
+#if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
         assert(!_enable_range_check || (idx >= _startOffset && idx < _sz));
+#else
+        (void) idx;
+#endif
     }
     void setBit(Index idx) {
         range_check(idx);
@@ -300,7 +306,7 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
-    static Word load(const Word &word) { return vespalib::atomic::load_ref_relaxed(word); }
+    static Word load(const Word &word) noexcept { return vespalib::atomic::load_ref_relaxed(word); }
     VESPA_DLL_LOCAL void store(Word &word, Word value);
     static void store_unchecked(Word &word, Word value) {
         return vespalib::atomic::store_ref_relaxed(word, value);
@@ -354,7 +360,7 @@ private:
         foreach_bit(func, word & ~endBits(last), lastIndex << numWordBits());
     }
     template<typename WordConverter>
-    Index getNextBit(WordConverter conv, Index start) const {
+    Index getNextBit(WordConverter conv, Index start) const noexcept {
         Index index(wordNum(start));
         const Word *words(_words);
         Word t(conv(load(words[index])) & checkTab(start));

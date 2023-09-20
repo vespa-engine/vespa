@@ -95,7 +95,7 @@ FileHandle::open(vespalib::stringref dir,
                  const TuneFileSeqWrite &tuneFileWrite,
                  const FileHeaderContext &fileHeaderContext)
 {
-    assert(_fieldWriter.get() == nullptr);
+    assert( ! _fieldWriter);
 
     _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, dir + "/");
 

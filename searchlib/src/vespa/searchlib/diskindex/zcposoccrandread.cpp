@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/fastos/file.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zcposoccrandread");
