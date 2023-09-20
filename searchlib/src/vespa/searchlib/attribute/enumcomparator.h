@@ -51,35 +51,59 @@ protected:
 private:
     using ParentType::get;
 
+    /*
+     * CompareStrategy determines how to compare string values:
+     *
+     * UNCASED_THEN_CASED compares the values ignoring case (i.e.
+     * performs case folding during the first compare). If the values
+     * are equal then they are compared again using case.
+     *
+     * UNCASED compares the values ignoring case.
+     *
+     * CASED compares the value, using case.
+     *
+     * Only UNCASED_THEN_CASED or CASED can be used for sorting.
+     * UNCASED can be used for lookup during search when sort order is
+     * UNCASED_THEN_CASED.
+     *
+     * UNCASED_THEN_CASED sort order: ["BAR", "bar", "FOO", "foo"]
+     * CASED sort order:              ["BAR", "FOO", "bar", "foo"]
+     */
+    enum class CompareStrategy : uint8_t {
+        UNCASED_THEN_CASED,
+        UNCASED,
+        CASED
+    };
+
 public:
-    EnumStoreStringComparator(const DataStoreType& data_store)
-        : EnumStoreStringComparator(data_store, false)
+    EnumStoreStringComparator(const DataStoreType& data_store, bool cased)
+        : EnumStoreStringComparator(data_store, cased ? CompareStrategy::CASED : CompareStrategy::UNCASED_THEN_CASED)
     {}
 
 private:
-    EnumStoreStringComparator(const DataStoreType& data_store, bool fold);
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy);
 
     /**
      * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
      */
-    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value);
-    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value, bool prefix);
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value);
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix);
 
 public:
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     EnumStoreStringComparator make_folded() const {
-        return EnumStoreStringComparator(_store, true);
+        return EnumStoreStringComparator(_store, _compare_strategy == CompareStrategy::UNCASED_THEN_CASED ? CompareStrategy::UNCASED : _compare_strategy);
     }
     EnumStoreStringComparator make_for_lookup(const char* lookup_value) const {
-        return EnumStoreStringComparator(_store, _fold, lookup_value);
+        return EnumStoreStringComparator(_store, _compare_strategy, lookup_value);
     }
     EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const {
-        return EnumStoreStringComparator(_store, _fold, lookup_value, true);
+        return EnumStoreStringComparator(_store, _compare_strategy, lookup_value, true);
     }
 private:
     inline bool use_prefix() const noexcept { return _prefix; }
-    const bool _fold;
+    const CompareStrategy _compare_strategy;
     const bool _prefix;
     uint32_t   _prefix_len;
 };
