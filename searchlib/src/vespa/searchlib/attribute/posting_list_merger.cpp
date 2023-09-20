@@ -6,7 +6,7 @@
 namespace search::attribute {
 
 template <typename DataT>
-PostingListMerger<DataT>::PostingListMerger(uint32_t docIdLimit)
+PostingListMerger<DataT>::PostingListMerger(uint32_t docIdLimit) noexcept
     : _array(),
       _startPos(),
       _bitVector(),
