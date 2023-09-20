@@ -144,11 +144,17 @@ public class NodeResources {
         public static GpuResources getDefault() { return zero; }
 
         public GpuResources plus(GpuResources other) {
-            return new GpuResources(this.count + other.count, this.memoryGb + other.memoryGb);
+            if (other.isZero()) return this;
+            var thisMem = this.count() * this.memoryGb();
+            var otherMem = other.count() * other.memoryGb();
+            return new NodeResources.GpuResources(1, thisMem + otherMem);
         }
 
         public GpuResources minus(GpuResources other) {
-            return new GpuResources(this.count - other.count, this.memoryGb - other.memoryGb);
+            if (other.isZero()) return this;
+            var thisMem = this.count() * this.memoryGb();
+            var otherMem = other.count() * other.memoryGb();
+            return new NodeResources.GpuResources(1, thisMem - otherMem);
         }
 
         @Override
