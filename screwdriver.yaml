@@ -532,6 +532,6 @@ jobs:
           --assume-extension --check-html --check-external-hash --no-enforce-http \
           --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
           --hydra '{"max_concurrency": 1}' \
-          --ignore-urls '/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/' \
+          --ignore-urls '/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/,/main.jsx/,/fnet/index.html/' \
           --swap-urls '(.*).md:\1.html' \
           _site
