@@ -87,7 +87,7 @@ SimpleThreadBundle::Pool::obtain()
             return ret;
         }
     }
-    return std::make_unique<SimpleThreadBundle>(_bundleSize, _init_fun);
+    return std::make_unique<SimpleThreadBundle>(_bundleSize, _init_fun, USE_SIGNAL_LIST);
 }
 
 void
@@ -142,11 +142,11 @@ SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Runnable::init_fun_t init
 
 SimpleThreadBundle::~SimpleThreadBundle()
 {
-    for (size_t i = 0; i < _signals.size(); ++i) {
-        _signals[i].cancel();
+    for (auto & _signal : _signals) {
+        _signal.cancel();
     }
-    for (size_t i = 0; i < _workers.size(); ++i) {
-        _workers[i]->thread.join();
+    for (const auto & _worker : _workers) {
+        _worker->thread.join();
     }
 }
 

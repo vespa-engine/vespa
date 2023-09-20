@@ -21,7 +21,7 @@ struct Work {
     Runnable* const* targets;
     size_t cnt;
     CountDownLatch *latch;
-    Work() : targets(nullptr), cnt(0), latch(0) {}
+    Work() : targets(nullptr), cnt(0), latch(nullptr) {}
 };
 
 /**
@@ -31,7 +31,7 @@ struct Part {
     const Work &work;
     size_t offset;
     Part(const Work &w, size_t o) : work(w), offset(o) {}
-    bool valid() { return (offset < work.cnt); }
+    bool valid() const noexcept { return (offset < work.cnt); }
     void perform() {
         if (valid()) {
             work.targets[offset]->run();
@@ -51,7 +51,7 @@ struct Signal {
     Signal() noexcept;
     Signal(Signal &&) noexcept = default;
     ~Signal();
-    size_t wait(size_t &localGen) {
+    size_t wait(size_t &localGen) const {
         std::unique_lock guard(*monitor);
         while (localGen == generation) {
             cond->wait(guard);
@@ -105,7 +105,7 @@ public:
     public:
         class Guard {
         public:
-            Guard(Pool & pool) : _bundle(pool.obtain()), _pool(pool) {}
+            explicit Guard(Pool & pool) : _bundle(pool.obtain()), _pool(pool) {}
             Guard(const Guard &) = delete;
             Guard & operator =(const Guard &) = delete;
             ~Guard() { _pool.release(std::move(_bundle)); }
@@ -115,9 +115,10 @@ public:
             Pool                   &_pool;
         };
         Pool(size_t bundleSize, init_fun_t init_fun);
-        Pool(size_t bundleSize) : Pool(bundleSize, Runnable::default_init_function) {}
+        explicit Pool(size_t bundleSize) : Pool(bundleSize, Runnable::default_init_function) {}
         ~Pool();
         Guard getBundle() { return Guard(*this); }
+        //TODO Make private
         SimpleThreadBundle::UP obtain();
         void release(SimpleThreadBundle::UP bundle);
     };
@@ -138,10 +139,12 @@ private:
     Runnable::UP            _hook;
 
 public:
-    SimpleThreadBundle(size_t size, init_fun_t init_fun, Strategy strategy = USE_SIGNAL_LIST);
-    SimpleThreadBundle(size_t size, Strategy strategy = USE_SIGNAL_LIST)
+    SimpleThreadBundle(size_t size, init_fun_t init_fun, Strategy strategy);
+    SimpleThreadBundle(size_t size, Strategy strategy)
       : SimpleThreadBundle(size, Runnable::default_init_function, strategy) {}
-    ~SimpleThreadBundle();
+    explicit SimpleThreadBundle(size_t size)
+            : SimpleThreadBundle(size, USE_SIGNAL_LIST) {}
+    ~SimpleThreadBundle() override;
     size_t size() const override;
     using ThreadBundle::run;
     void run(Runnable* const* targets, size_t cnt) override;
