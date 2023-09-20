@@ -1,9 +1,9 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ---
 cache:
- job:
-   build-vespa: [/main_job_cache]
-   component-build: [/main_job_cache]
+  job:
+    build-vespa: [/main_job_cache]
+    component-build: [/main_job_cache]
 
 shared:
   image: vespaengine/vespa-build-centos-stream8:latest
@@ -240,7 +240,7 @@ jobs:
       - SVC_OKTA_VESPA_FACTORY_TOKEN
 
     environment:
-       GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+      GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
     steps:
       - get-vespa-version: |
@@ -435,12 +435,9 @@ jobs:
       - install-dependencies: |
           export HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1
           brew install --quiet gh zip go
-      - publish-github:
-          make -C client/go clean dist-github
-      - publish-homebrew:
-          make -C client/go clean dist-homebrew
-      - verify-brew-install:
-          make -C client/go install-brew
+      - publish-github: make -C client/go clean dist-github
+      - publish-homebrew: make -C client/go clean dist-homebrew
+      - verify-brew-install: make -C client/go install-brew
 
   verify-opensource-release-7days:
     annotations:
@@ -511,3 +508,28 @@ jobs:
     steps:
       - cleanup: |
           screwdriver/delete-old-artifactory-artifacts.sh
+
+  link-check:
+    image: ruby:3.1
+    annotations:
+      screwdriver.cd/buildPeriodically: H H(0-5) * * 1-5 # some time between 12:00 AM UTC (midnight) to 5:59 AM UTC Mon-Fri
+    steps:
+      - install: |
+          gem update --system 3.3.3
+          gem install bundler
+          export LANG=C.UTF-8
+          bundle install
+      - add-front-matter-for-processing: |
+          find . -not -path './_site/*' -name \*.md | \
+            while read f; do (echo -e "---\nrender_with_liquid: false\n---\n"; cat ${f})>${f}.new; mv ${f}.new ${f}; done
+      - build-site: |
+          bundle exec jekyll build
+      - ignore-files: |
+          rm -rf _site/airlift-zstd
+      - check-links: |
+          bundle exec htmlproofer \
+          --assume-extension --check-html --check-external-hash --no-enforce-http \
+          --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
+          --hydra '{"max_concurrency": 1}' \
+          --swap-urls '(.*).md:\1.html' \
+          _site
