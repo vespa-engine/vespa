@@ -30,7 +30,7 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
                                                                  isCased());
     } else if (isCased()) {
         _term = term.getTerm();
-        _termLen = term.getTermLen();
+        _termLen = strlen(_term);
     } else {
         _ucs4 = term.asUcs4();
     }
