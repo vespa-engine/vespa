@@ -1,546 +1,759 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<html>
-<head>
-<title>Developers guide to the serialized document format</title>
-</head>
-<body>
-<h1>Developers guide to the serialized document format</h1>
+<html lang="en">
+  <head>
+    <title>Developers guide to the serialized document format</title>
+  </head>
+  <body>
+    <h1>Developers guide to the serialized document format</h1>
 
-<p>When a Vespa document is stored or transferred from one application to
-another, it is serialized. The serialization format tries to achieve
-serialization robustness and speed. The most important fields are kept in a
-header that is accessible at low cost. The other fields are located by table
-look-ups.</p>
+    <p>
+      When a Vespa document is stored or transferred from one application to
+      another, it is serialized. The serialization format tries to achieve
+      serialization robustness and speed. The most important fields are kept in
+      a header that is accessible at low cost. The other fields are located by
+      table look-ups.
+    </p>
 
-<h2>Purpose</h2>
+    <h2>Purpose</h2>
 
-<p>The purpose of the serialized format is
-<ul>
-<li><b>Robustness</b>. The format shall detect errors gracefully.</li>
-<li><b>Speed</b>. Deserialization shall be fast, especially for basic fields like <b>DocumentId</b>.</li> 
-<li><b>Size</b>. The serialized format shall be compact and allow for efficient storage and transfer.
-</ul>
-</p>
+    <p>The purpose of the serialized format is</p>
+    <ul>
+      <li><b>Robustness</b>. The format shall detect errors gracefully.</li>
+      <li>
+        <b>Speed</b>. Deserialization shall be fast, especially for basic fields
+        like <b>DocumentId</b>.
+      </li>
+      <li>
+        <b>Size</b>. The serialized format shall be compact and allow for
+        efficient storage and transfer.
+      </li>
+    </ul>
 
-<p><strong>All fields are in network byte order.</strong></p>
+    <p><strong>All fields are in network byte order.</strong></p>
 
-<h2>Changelog</h2>
+    <h2>Changelog</h2>
 
-<h3>Current version: 8</h3>
+    <h3>Current version: 8</h3>
 
-<ul>
-<li>CRC removed from document format. There used to be a 4 byte CRC in the end
-of a header or header + body serialization, calculated as a crc32 of all the
-other data in the serialization. This CRC was included in the document length.
-</ul>
+    <ul>
+      <li>
+        CRC removed from document format. There used to be a 4 byte CRC in the
+        end of a header or header + body serialization, calculated as a crc32 of
+        all the other data in the serialization. This CRC was included in the
+        document length.
+      </li>
+    </ul>
 
+    <h3>Version: 7</h3>
 
-<h3>Version: 7</h3>
+    <ul>
+      <li>
+        The document length is now a static sized 4 byte value, instead of a
+        variable 2,4,8 byte value.
+      </li>
+      <li>
+        (Anything else? I wrote this changelog when bopping from 7 to 8. Dunno
+        if more was changed in 7.)
+      </li>
+    </ul>
 
-<ul>
-<li>The document length is now a static sized 4 byte value, instead of a variable 2,4,8 byte value.
-<li>(Anything else? I wrote this changelog when bopping from 7 to 8. Dunno if more was changed in 7.)
-</ul>
+    <h3>Version: 6</h3>
 
-<h3>Version: 6</h3>
+    This is the oldest version that we currently support. No known installation
+    stores documents with a version smaller than this.
 
-This is the oldest version that we currently support. No known installation stores documents with a version smaller than this.
+    <h2>Document Format</h2>
 
-<h2>Document Format</h2>
+    <p>This is the description of the serialized document format.</p>
 
-<p>This is the description of the serialized document format.</p>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Document serialization format</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <td>Version</td>
+        <td>Short integer</td>
+        <td>2</td>
+        <td>Version number. Current is 6.</td>
+      </tr>
+      <tr>
+        <td>Length</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>Total length of object (excluding this field and version).</td>
+      </tr>
+      <tr>
+        <td>Document ID</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>Unique ID for document. 0-terminated string, UTF-8 encoding.</td>
+      </tr>
+      <tr>
+        <td>Field Map</td>
+        <td>Bytes</td>
+        <td>See below</td>
+        <td>
+          Placeholder for fields. (Note: Fieldmaps may contain other fieldmaps)
+        </td>
+      </tr>
+    </table>
 
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Document serialization format</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length</td>
-<td><b>Description</td>
-</tr>
-<tr><td>Version</td>
-<td>Short integer</td>
-<td>2</td>
-<td>Version number. Current is 6.</td>
-</tr>
-<tr><td>Length</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>Total length of object (excluding this field and version).</td>
-</tr>
-<tr><td>Document ID</td>
-<td>Bytes</td>
-<td>&nbsp;</td>
-<td>Unique ID for document. 0-terminated string, UTF-8 encoding.</td>
-</tr>
-<tr><td>Field Map</td>
-<td>Bytes</td>
-<td>See below</td><td>Placeholder for fields. (Note: Fieldmaps may contain other fieldmaps)</td>
-</tr>
-</table>
+    <p>Field maps are serialized like this</p>
+    <p></p>
 
-<p>Field maps are serialized like this</p></p><p>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Fieldmap serialization format</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length (bytes)</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <td>Inventory bit mask</td>
+        <td>Byte</td>
+        <td>1</td>
+        <td>
+          Inventory bits describing the FieldMap element with data:<br />
+          &nbsp;Bit 0 set: FieldMap has document type <br />
+          &nbsp;Bit 1 set: FieldMap has header fields <br />
+          &nbsp;Bit 2 set: FieldMap has body fields <br />
+          &nbsp;Bit 3 set: FieldMap has external body fields<br />
+        </td>
+      </tr>
 
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Fieldmap serialization format</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length (bytes)</td>
-<td><b>Description</td>
-</tr>
-<tr><td>Inventory bit mask</td>
-<td>Byte</td>
-<td>1</td>
-<td>
-Inventory bits describing the FieldMap element with data:<br>
-&nbsp;Bit 0 set: FieldMap has document type <br>
-&nbsp;Bit 1 set: FieldMap has header fields <br>
-&nbsp;Bit 2 set: FieldMap has body fields <br>
-&nbsp;Bit 3 set: FieldMap has external body fields<br>
-</tr>
-<tr><td colspan = "4"><b>Below section is present when bit 0 of inventory is set</b></td></tr>
-<tr><td>Document Type</td>
-<td>Bytes</td>
-<td>&nbsp;</td>
-<td>Document type. (0-terminated string, UTF-8 encoding.)</td>
-</tr>
-<tr><td>Version</td>
-<td>Short integer</td>
-<td>2</td>
-<td>Document type version number.</td></tr>
-<tr><td colspan = "4"><b>Below section is present when bit 1 of inventory is set</b></td></tr>
-<tr><td>Header data</td>
-<td>Data array</td>
-<td>See below</td>
-<td>Header data packed in data array</td></tr>
-<tr><td colspan = "4"><b>Below section is present when bit 2 of inventory is set</b></td></tr>
-<tr><td>Body data</td>
-<td>Data array</td>
-<td>See below</td>
-<td>Body data packed in data array</td></tr>
-</table>
+      <tr>
+        <td colspan="4">
+          <b>Below section is present when bit 0 of inventory is set</b>
+        </td>
+      </tr>
+      <tr>
+        <td>Document Type</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>Document type. (0-terminated string, UTF-8 encoding.)</td>
+      </tr>
+      <tr>
+        <td>Version</td>
+        <td>Short integer</td>
+        <td>2</td>
+        <td>Document type version number.</td>
+      </tr>
+      <tr>
+        <td colspan="4">
+          <b>Below section is present when bit 1 of inventory is set</b>
+        </td>
+      </tr>
+      <tr>
+        <td>Header data</td>
+        <td>Data array</td>
+        <td>See below</td>
+        <td>Header data packed in data array</td>
+      </tr>
+      <tr>
+        <td colspan="4">
+          <b>Below section is present when bit 2 of inventory is set</b>
+        </td>
+      </tr>
+      <tr>
+        <td>Body data</td>
+        <td>Data array</td>
+        <td>See below</td>
+        <td>Body data packed in data array</td>
+      </tr>
+    </table>
 
+    <p></p>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Data array serialization</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length (bytes)</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <td>Data length</td>
+        <td>Integer_2_4_8</td>
+        <td>2, 4 or 8</td>
+        <td>
+          Length of data block (see below). NOTE THAT THIS LENGTH INCLUDE
+          ITSELF.
+        </td>
+      </tr>
+      <tr>
+        <td>Number of fields</td>
+        <td>Integer_1_4</td>
+        <td>1 or 4</td>
+        <td>Number of fields in data array</td>
+      </tr>
 
-<p>
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Data array serialization</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length (bytes)</td>
-<td><b>Description</b></td>
-</tr>
-<tr><td>Data length</td>
-<td>Integer_2_4_8</td>
-<td>2, 4 or 8</td>
-<td>Length of data block (see below). NOTE THAT THIS LENGTH INCLUDE ITSELF.</td>
-</tr>
-<tr><td>Number of fields<td>Integer_1_4</td>
-<td>1 or 4</td>
-<td>Number of fields in data array</td>
-<tr><td colspan = "4"><b>Below block is repeated "Number of fields" times</b></td></tr>
-<tr><td>Field ID<td>Integer_1_4</td>
-<td>1 or 4</td>
-<td>ID of field.</td>
-<tr><td>Field Size<td>Integer_1_2_4</td>
-<td>1, 2 or 4</td>
-<td>Length of field.</td>
-</td>
-<tr><td colspan = "4"><b>End of repeated block </b></td></tr>
-<tr><td>Data block<td>Bytes</td>
-<td>&nbsp;</td>
-<td>The data block.<br> 
-&nbsp; - Items are ordered the same way field array is sorted.<br> 
-&nbsp; - Use lengths from field array above to find item offset and length.<br>
-&nbsp; - If the block is compressed, lengths refer to decompressed version</td>
-</table>
+      <tr>
+        <td colspan="4">
+          <b>Below block is repeated "Number of fields" times</b>
+        </td>
+      </tr>
+      <tr>
+        <td>Field ID</td>
+        <td>Integer_1_4</td>
+        <td>1 or 4</td>
+        <td>ID of field.</td>
+      </tr>
+      <tr>
+        <td>Field Size</td>
+        <td>Integer_1_2_4</td>
+        <td>1, 2 or 4</td>
+        <td>Length of field.</td>
+      </tr>
+      <tr>
+        <td colspan="4"><b>End of repeated block </b></td>
+      </tr>
+      <tr>
+        <td>Data block</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>
+          The data block.<br />
+          &nbsp; - Items are ordered the same way field array is sorted.<br />
+          &nbsp; - Use lengths from field array above to find item offset and
+          length.<br />
+          &nbsp; - If the block is compressed, lengths refer to decompressed
+          version
+        </td>
+      </tr>
+    </table>
 
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Data type serialization</em>
+      </caption>
+      <tr>
+        <td width="15%"><b>Data type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Serialization</b></td>
+      </tr>
+      <tr>
+        <td>Integer (ID 0)</td>
+        <td>4</td>
+        <td>Signed integer, two's complement notation, network byte order.</td>
+      </tr>
+      <tr>
+        <td>Floating point number (ID 1)</td>
+        <td>4</td>
+        <td>IEEE 754, single precision, network byte order.</td>
+      </tr>
+      <tr>
+        <td>String (ID 2)</td>
+        <td>1 + (1 or 4) + length + 1</td>
+        <td>
+          Strings are serialization format:<br />
+          &nbsp;- First byte represents coding. This has traditionally denoted
+          the maximum number of bits per character in the UTF-8 encoded string,
+          but has never been used in deserialization code.
+          <ul>
+            <li>Set to 32 if not used.</li>
+            <li>
+              Set to &lt;32 if you know the UTF-8 string uses less bits per
+              character; e.g. ASCII could use 8.
+            </li>
+            <li>
+              Set bit 6 (decimal 64) if the string has an
+              <a href="#annotations">annotation tree</a>.
+            </li>
+          </ul>
+          <br />
+          &nbsp;- Integer_1_4 with length of string. <br />
+          &nbsp;- The string (UTF-8 encoding), including 0-terminating byte.<br />
+          &nbsp;- An annotation tree, if bit 6 (decimal 64) of coding byte is
+          set:
+          <ul>
+            <li>
+              total length of all span trees excl. itself:
+              <strong>uint32</strong>
+            </li>
+            <li>number of span trees <strong>int_1_2_4</strong></li>
+            <li>
+              for each root node:
+              <ol>
+                <li>tree name serialized as String</li>
+                <li>
+                  serialized SpanNode as given below, see
+                  <a href="#annotations">annotation serialization</a>
+                </li>
+              </ol>
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Raw bytes (ID 3)</td>
+        <td>Length of buffer</td>
+        <td>Byte for byte copy</td>
+      </tr>
+      <tr>
+        <td>Long integer (ID 4)</td>
+        <td>8</td>
+        <td>Signed integer, two's complement notation, network byte order.</td>
+      </tr>
+      <tr>
+        <td>Double floating point number (ID 5)</td>
+        <td>8</td>
+        <td>IEEE 754, double precision, network byte order.</td>
+      </tr>
+      <tr>
+        <td>Array (ID 6)</td>
+        <td>At least 8 bytes</td>
+        <td>
+          Arrays of any fields are serialized like this:<br />
+          &nbsp;- 4 bytes: Data type array consists of <br />
+          &nbsp;- 4 bytes: Number of elements in array<br />
+          &nbsp;Below sequence is repeated "number of element" times<br />
+          &nbsp;- 4 bytes: Length of element<br />
+          &nbsp;- Serialized element<br />
+        </td>
+      </tr>
+      <tr>
+        <td>Fieldmap (ID 7)</td>
+        <td>&nbsp;</td>
+        <td>Field maps (embedded or not) are defined above</td>
+      </tr>
+      <tr>
+        <td>Document (ID 8)</td>
+        <td>&nbsp;</td>
+        <td>Document objects (embedded or not) are defined above</td>
+      </tr>
+      <tr>
+        <td>Timestamp (ID 9)</td>
+        <td>&nbsp;</td>
+        <td>Same as long integer</td>
+      </tr>
+      <tr>
+        <td>Uri (ID 10)</td>
+        <td>&nbsp;</td>
+        <td>Same as string</td>
+      </tr>
+      <tr>
+        <td>Exact string (ID 11)</td>
+        <td>&nbsp;</td>
+        <td>Same as string</td>
+      </tr>
+      <tr>
+        <td>Content (ID 12)</td>
+        <td>At least 11 bytes</td>
+        <td>
+          Content fields are serialized like this:<br />
+          &nbsp;- Content type length (1 byte)<br />
+          &nbsp;- Content type (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Content encoding length (1 byte)<br />
+          &nbsp;- Content encoding (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Content language length (1 byte)<br />
+          &nbsp;- Content language (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Content length (Integer, 4 bytes)<br />
+          &nbsp;- Content (including 0-terminating char)<br />
+        </td>
+      </tr>
+      <tr>
+        <td>Content meta (ID 13)</td>
+        <td>At least 12 bytes</td>
+        <td>
+          Content (attachment) meta data are serialized like this:<br />
+          &nbsp;- Attachment size (Integer, 4 bytes)<br />
+          &nbsp;- Attachment name (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Attachment encoding (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Attachment content type (0 terminated string, UTF-8
+          encoding.)<br />
+          &nbsp;- Attachment part (0 terminated string, UTF-8 encoding.)<br />
+          &nbsp;- Attachment flag (Integer, 4 bytes)<br />
+        </td>
+      </tr>
+      <tr>
+        <td>Term boost (ID 15)</td>
+        <td>&nbsp;</td>
+        <td>Same as string</td>
+      </tr>
+      <tr>
+        <td>Byte (ID 16)</td>
+        <td>1</td>
+        <td>One single byte</td>
+      </tr>
+      <tr>
+        <td>Set (ID 17)</td>
+        <td>At least 8 bytes</td>
+        <td>
+          Set of any fields are serialized like this:<br />
+          &nbsp;- Integer (4 bytes): Data type set is made up of<br />
+          &nbsp;- Integer (4 bytes): Number of elements in set<br />
+          &nbsp;Below sequence is repeated "number of element" times<br />
+          &nbsp;- Serialized element<br />
+        </td>
+      </tr>
+    </table>
 
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Data type serialization</em></caption>
-<tr>
-<td width="15%"><b>Data type</td>
-<td width="10%"><b>Length</td>
-<td><b>Serialization</td>
-</tr>
-<tr><td>Integer (ID 0)</td>
-<td>4</td>
-<td>Signed integer, two's complement notation, network byte order.</td>
-</tr>
-<tr><td>Floating point number (ID 1)</td>
-<td>4</td>
-<td>IEEE 754, single precision, network byte order.</td>
-</tr>
-<tr><td>String (ID 2)</td>
-<td>1 + (1 or 4) + length + 1</td>
-<td>Strings are serialization format:<br />
-&nbsp;- First byte represents coding. This has traditionally denoted the maximum number of bits
-        per character in the UTF-8 encoded string, but has never been used in deserialization code.
-<ul>
-  <li>Set to 32 if not used.</li>
-  <li>Set to &lt;32 if you know the UTF-8 string uses less bits per character; e.g. ASCII could use 8.</li>
-  <li>Set bit 6 (decimal 64) if the string has an <a href="#annotations">annotation tree</a>.</li>
-</ul>
-<br />
-&nbsp;- Integer_1_4 with length of string. <br />
-&nbsp;- The string (UTF-8 encoding), including 0-terminating byte.<br>
-&nbsp;- An annotation tree, if bit 6 (decimal 64) of coding byte is set:
-<ul>
-  <li>total length of all span trees excl. itself: <strong>uint32</strong></li>
-  <li>number of span trees <strong>int_1_2_4</strong></li>
-  <li>for each root node:
-  <ol>
-    <li>tree name serialized as String</li>
-    <li>serialized SpanNode as given below, see <a href="#annotations">annotation serialization</a></li>
-  </ol>
-</ul>
-</td>
-</tr>
-<tr><td>Raw bytes (ID 3)</td>
-<td>Length of buffer</td>
-<td>Byte for byte copy</td>
-</tr>
-<tr><td>Long integer (ID 4)</td>
-<td>8</td>
-<td>Signed integer, two's complement notation, network byte order.</td>
-</tr>
-<tr><td>Double floating point number (ID 5)</td>
-<td>8</td>
-<td>IEEE 754, double precision, network byte order.</td>
-</tr>
-<tr><td>Array (ID 6)</td>
-<td>At least 8 bytes</td>
-<td>Arrays of any fields are serialized like this:<br>
-&nbsp;- 4 bytes: Data type array consists of <br>
-&nbsp;- 4 bytes: Number of elements in array<br>
-&nbsp;Below sequence is repeated "number of element" times<br>
-&nbsp;- 4 bytes: Length of element<br>
-&nbsp;- Serialized element<br>
-</td></tr>
-<tr><td>Fieldmap (ID 7)</td>
-<td>&nbsp;</td>
-<td>Field maps (embedded or not) are defined above</td>
-</tr>
-<tr><td>Document (ID 8)</td>
-<td>&nbsp;</td>
-<td>Document objects (embedded or not) are defined above</td>
-</tr>
-<tr><td>Timestamp (ID 9)</td>
-<td>&nbsp;</td>
-<td>Same as long integer</td>
-</tr>
-<tr><td>Uri (ID 10)</td>
-<td>&nbsp;</td>
-<td>Same as string</td>
-</tr>
-<tr><td>Exact string (ID 11)</td>
-<td>&nbsp;</td>
-<td>Same as string</td>
-</tr>
-<tr><td>Content (ID 12)</td>
-<td>At least 11 bytes</td>
-<td>Content fields are serialized like this:<br>
-&nbsp;- Content type length (1 byte)<br>
-&nbsp;- Content type (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Content encoding length (1 byte)<br>
-&nbsp;- Content encoding (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Content language length (1 byte)<br>
-&nbsp;- Content language (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Content length (Integer, 4 bytes)<br>
-&nbsp;- Content (including 0-terminating char)<br>
-</td>
-</tr>
-<tr><td>Content meta (ID 13)</td>
-<td>At least 12 bytes</td>
-<td>Content (attachment) meta data are serialized like this:<br>
-&nbsp;- Attachment size (Integer, 4 bytes)<br>
-&nbsp;- Attachment name  (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Attachment encoding (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Attachment content type (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Attachment part (0 terminated string, UTF-8 encoding.)<br>
-&nbsp;- Attachment flag (Integer, 4 bytes)<br>
-</td>
-</tr>
-<tr><td>Term boost (ID 15)</td>
-<td>&nbsp;</td>
-<td>Same as string</td>
-</tr>
-<tr><td>Byte (ID 16)</td>
-<td>1</td>
-<td>One single byte</td>
-</tr>
-<tr><td>Set (ID 17)</td>
-<td>At least 8 bytes</td>
-<td>Set of any fields are serialized like this:<br>
-&nbsp;- Integer (4 bytes): Data type set is made up of<br>
-&nbsp;- Integer (4 bytes): Number of elements in set<br>
-&nbsp;Below sequence is repeated "number of element" times<br>
-&nbsp;- Serialized element<br>
-</td></tr>
-</table>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption id="annotations">
+        <em>Annotation tree serialization</em>
+      </caption>
+      <tr>
+        <td width="15%"><b>Data type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Serialization</b></td>
+      </tr>
+      <tr>
+        <td>SpanNode (base class)</td>
+        <td>1 + (1, 2 or 4) + Annotation serialization + subclass payload</td>
+        <td>
+          <ul>
+            <li>
+              type <strong>byte</strong> (1: Span, 2: SpanList, 4:
+              AlternateSpanList)
+            </li>
+            <li>number of annotations <strong>int_1_2_4</strong></li>
+            <li>each annotation as given below</li>
+            <li>
+              (remaining payload serialized as given below by subclasses Span,
+              SpanList and AlternateSpanList)
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Annotation</td>
+        <td>4 + (1, 2 or 4) + (possibly 4 + FieldValue serialization)</td>
+        <td>
+          <ul>
+            <li>
+              MD5 name hash (4 LSBytes) <strong>uint32</strong> (NOTE: 0-127
+              reserved for internal Vespa usage.)
+            </li>
+            <li>length <strong>int_1_2_4</strong></li>
+            <li>
+              the following fields are <em>only</em> present if length &gt; 0:
+              <ul>
+                <li>data type id <strong>uint32</strong></li>
+                <li>
+                  NOTE: no sequence id, as we will rely on annotations being
+                  serialized/deserialized in particular order, so we don't need
+                  to write this explicitly
+                </li>
+                <li>FieldValue as given by its own serialization</li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Span</td>
+        <td>SpanNode serialization + (1, 2 or 4) + (1, 2 or 4)</td>
+        <td>
+          <ul>
+            <li>serialization from SpanNode base class</li>
+            <li>
+              from index, as given by Java String (UTF-16)
+              <strong>int_1_2_4</strong>
+            </li>
+            <li>
+              length, as given by Java String (UTF-16)
+              <strong>int_1_2_4</strong>
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>SpanList</td>
+        <td>
+          SpanNode serialization + (1, 2 or 4) + n times SpanNode serialization
+        </td>
+        <td>
+          <ul>
+            <li>serialization from SpanNode base class</li>
+            <li>number of children <strong>int_1_2_4</strong></li>
+            <li>
+              each child node serialized as SpanNode (Span, SpanList,
+              AlternateSpanList)
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>AlternateSpanList</td>
+        <td>
+          SpanNode serialization + (1, 2 or 4) + n times (8 + SpanList
+          serialization)
+        </td>
+        <td>
+          <ul>
+            <li>serialization from SpanNode base class</li>
+            <li>number of child trees <strong>int_1_2_4</strong></li>
+            <li>
+              for each child tree:
+              <ul>
+                <li>probability <strong>double</strong></li>
+                <li>serialization as given by SpanList above</li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>AnnotationRef</td>
+        <td>1, 2 or 4</td>
+        <td>
+          AnnotationRef serialization
+          <ul>
+            <li>
+              unique sequence id of annotation being referred to
+              <strong>int1_2_4</strong>
+            </li>
+          </ul>
+        </td>
+      </tr>
+    </table>
 
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Data types used in serialized format</em>
+      </caption>
+      <tr>
+        <td width="15%"><b>Data type</b></td>
+        <td><b>Serialization</b></td>
+      </tr>
+      <tr>
+        <td>Integer_1_4</td>
+        <td>
+          If bit 7 of first byte is unset, coded using 1 byte.<br />
+          If bit 7 of first byte is set, coded using 4 bytes (bit 7 of first
+          byte must be masked away).<br />
+          <em>Range: 0 - 2**31-1.</em>
+        </td>
+      </tr>
+      <tr>
+        <td>Integer_1_2_4</td>
+        <td>
+          If bit 7 of first byte is unset, coded using 1 byte.<br />
+          If bit 7 of first byte is set and bit 6 of first byte is unset, coded
+          using 2 bytes (bit 7 and 6 of first byte must be masked away).<br />
+          If bit 7 and 6 of first byte are set, coded using 4 bytes (bit 7 and 6
+          of first byte must be masked away).<br />
+          <em>Range: 0 - 2**30-1.</em>
+        </td>
+      </tr>
+      <tr>
+        <td>Integer_2_4_8</td>
+        <td>
+          If bit 7 of first byte is unset, coded using 2 byte.<br />
+          If bit 7 of first byte is set and bit 6 of first byte is unset, coded
+          using 4 bytes (bit 7 and 6 of first byte must be masked away).<br />
+          If bit 7 and 6 of first byte are set, coded using 8 bytes (bit 7 and 6
+          of first byte must be masked away).<br />
+          <em>Range: 0 - 2**62-1.</em>
+        </td>
+      </tr>
+    </table>
 
-<a name="annotations"><table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Annotation tree serialization</em></caption>
-<tr>
-<td width="15%"><b>Data type</td>
-<td width="10%"><b>Length</td>
-<td><b>Serialization</td>
-</tr>
-<tr>
-<td>SpanNode (base class)</td>
-<td>1 + (1, 2 or 4) + Annotation serialization + subclass payload</td>
-<td>
- <ul>
-<li> type <strong>byte</strong> (1: Span, 2: SpanList, 4: AlternateSpanList)
-</li> <li> number of annotations <strong>int_1_2_4</strong>
-</li> <li> each annotation as given below
-</li> <li> (remaining payload serialized as given below by subclasses Span, SpanList and AlternateSpanList)
-</li></ul>
-</td>
-</tr>
-<tr>
-<td>Annotation</td>
-<td>4 + (1, 2 or 4) + (possibly 4 + FieldValue serialization)</td>
-<td>
-<ul>
-<li>MD5 name hash (4 LSBytes) <strong>uint32</strong> (NOTE: 0-127 reserved for internal Vespa usage.)
-</li> <li> length <strong>int_1_2_4</strong>
-</li> <li> the following fields are <em>only</em> present if length &gt; 0: <ul>
-<li> data type id <strong>uint32</strong>
-</li> <li> NOTE: no sequence id, as we will rely on annotations being serialized/deserialized in particular order, so we don't need to write this explicitly
-</li> <li> FieldValue as given by its own serialization
-</li></ul> 
-</li></ul> 
-</td>
-</tr>
-<tr>
-<td>Span</td>
-<td>SpanNode serialization + (1, 2 or 4) + (1, 2 or 4)</td>
-<td><ul>
-<li>serialization from SpanNode base class</li>
-<li> from index, as given by Java String (UTF-16) <strong>int_1_2_4</strong>
-</li> <li> length, as given by Java String (UTF-16) <strong>int_1_2_4</strong>
-</li></ul>
-</td>
-</tr>
-<tr>
-<td>SpanList</td>
-<td>SpanNode serialization + (1, 2 or 4) + n times SpanNode serialization</td>
-<td>
-<ul>
-<li>serialization from SpanNode base class</li>
-<li> number of children <strong>int_1_2_4</strong>
-</li> <li> each child node serialized as SpanNode (Span, SpanList, AlternateSpanList)
-</li></ul>
-</td>
-</tr>
-<tr>
-<td>AlternateSpanList</td>
-<td>SpanNode serialization + (1, 2 or 4) + n times (8 + SpanList serialization)</td>
-<td><ul>
-<li>serialization from SpanNode base class</li>
-<li> number of child trees <strong>int_1_2_4</strong>
-</li> <li> for each child tree: <ul>
-<li> probability <strong>double</strong>
-</li> <li> serialization as given by SpanList above
-</li></ul> 
-</li></ul>
-</td>
-</tr>
-<tr>
-<td>AnnotationRef</td>
-<td>1, 2 or 4</td>
-<td>AnnotationRef serialization <ul>
-<li> unique sequence id of annotation being referred to <strong>int1_2_4</strong>
-</li></ul>
-</td>
-</tr>
-</table>
+    <h2>Document Update Format</h2>
 
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Data types used in serialized format</em></caption>
-<tr>
-<td width="15%"><b>Data type</td>
-<td><b>Serialization</b></td>
-</tr>
-<tr><td>Integer_1_4</td>
-<td>If bit 7 of first byte is unset, coded using 1 byte.<br />
-    If bit 7 of first byte is set, coded using 4 bytes (bit 7 of first byte must be masked away).<br />
-    <em>Range: 0  -  2**31-1.</em></td>
-</tr>
-<tr><td>Integer_1_2_4</td>
-<td>If bit 7 of first byte is unset, coded using 1 byte.<br />
-    If bit 7 of first byte is set and bit 6 of first byte is unset, coded using 2 bytes (bit 7 and 6 of first byte must be masked away).<br />
-    If bit 7 and 6 of first byte are set, coded using 4 bytes (bit 7 and 6 of first byte must be masked away).<br />
-    <em>Range: 0  -  2**30-1.</em></td>
-</td>
-</tr>
-<tr><td>Integer_2_4_8</td>
-<td>If bit 7 of first byte is unset, coded using 2 byte.<br />
-    If bit 7 of first byte is set and bit 6 of first byte is unset, coded using 4 bytes (bit 7 and 6 of first byte must be masked away).<br />
-    If bit 7 and 6 of first byte are set, coded using 8 bytes (bit 7 and 6 of first byte must be masked away).<br />
-    <em>Range: 0  -  2**62-1.</em></td>
-</td>
-</tr>
-</table>
+    <p>This is the description of the serialized document update format.</p>
 
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Document update serialization format</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <td>Document ID</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>Unique ID for document. 0-terminated string, UTF-8 encoding.</td>
+      </tr>
+      <tr>
+        <td>Content byte</td>
+        <td>Byte</td>
+        <td>1 byte</td>
+        <td>Always set to 1</td>
+      </tr>
+      <tr>
+        <td>Document Type</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>Document type. (0-terminated string, UTF-8 encoding.)</td>
+      </tr>
+      <tr>
+        <td>Number of fields to update</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>The number of fields to update</td>
+      </tr>
+      <tr>
+        <td>Serialized field updates</td>
+        <td>Field Update</td>
+        <td>&nbsp;</td>
+        <td>The serialized field updates. See below.</td>
+      </tr>
+    </table>
 
-<h2>Document Update Format</h2>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Document update serialization format</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <td>Field Id</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>Field id within document type.</td>
+      </tr>
+      <tr>
+        <td>Number of value updates</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>Numer of value updates to this field.</td>
+      </tr>
+      <tr>
+        <td>Serialized field update values</td>
+        <td>Bytes</td>
+        <td>&nbsp;</td>
+        <td>The serialized field update values. See below.</td>
+      </tr>
+    </table>
 
-<p>This is the description of the serialized document update format.</p>
-
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Document update serialization format</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length</td>
-<td><b>Description</td>
-</tr>
-<tr><td>Document ID</td>
-<td>Bytes</td>
-<td>&nbsp;</td>
-<td>Unique ID for document. 0-terminated string, UTF-8 encoding.</td>
-</tr>
-<tr><td>Content byte</td>
-<td>Byte</td>
-<td>1 byte</td>
-<td>Always set to 1</td>
-</tr>
-<tr><td>Document Type</td>
-<td>Bytes</td>
-<td>&nbsp;</td>
-<td>Document type. (0-terminated string, UTF-8 encoding.)</td>
-</tr>
-<tr><td>Number of fields to update</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>The number of fields to update</td>
-</tr>
-<tr><td>Serialized field updates</td>
-<td>Field Update</td>
-<td>&nbsp;</td>
-<td>The serialized field updates. See below.</td>
-</tr>
-</table>
-
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Document update serialization format</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length</td>
-<td><b>Description</td>
-</tr>
-<tr><td>Field Id</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>Field id within document type.</td>
-</tr>
-<tr><td>Number of value updates</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>Numer of value updates to this field.</td>
-</tr>
-<tr><td>Serialized field update values</td>
-<td>Bytes</td>
-<td>&nbsp;</td>
-<td>The serialized field update values. See below.</td>
-</tr>
-</table>
-
-<table  border="1" cellspacing="0" cellpadding="1%" width="100%">
-<caption><em>Document update value serialization format</em></caption>
-<tr>
-<td width="10%"><b>Field</td>
-<td width="10%"><b>Type</td>
-<td width="10%"><b>Length</td>
-<td><b>Description</td>
-</tr>
-<tr><th colspan="4">Add Value Update</th></tr>
-<tr><td>Add Value Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>25 + 0x1000 for value updates.</td>
-</tr>
-<tr><td>Field serialization</td>
-<td>FieldValue</td>
-<td>&nbsp;</td>
-<td>Serialization of the field to add.</td>
-</tr>
-<tr><td>Weight</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>Weight. Used if update applies to weighted set.</td>
-</tr>
-<tr><th colspan="4">Arithmetic Update</th></tr>
-<tr><td>Arithmetic Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>26 + 0x1000 for arithmetic updates.</td>
-</tr>
-<tr><td>Operator ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>Identifies whether this does add, subtract, multiply or divide.</td>
-</tr>
-<tr><td>Operand</td>
-<td>Double</td>
-<td>8 bytes</td>
-<td>The right operand to use in the arithmetic operation.</td>
-</tr>
-<tr><th colspan="4">Assign Update</th></tr>
-<tr><td>Assign Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>27 + 0x1000 for assign updates.</td>
-</tr>
-<tr><td>Content flag</td>
-<td>Byte</td>
-<td>1 bytes</td>
-<td>Contains 1 if we have content, 0 if not.</td>
-</tr>
-<tr><td>Field serialization</td>
-<td>FieldValue</td>
-<td>&nbsp;</td>
-<td>Serialization of the field to assign.</td>
-</tr>
-<tr><th colspan="4">Clear Update</th></tr>
-<tr><td>Clear Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>28 + 0x1000 for clear updates.</td>
-</tr>
-<tr><th colspan="4">Map Value Update</th></tr>
-<tr><td>Map Value Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>29 + 0x1000 for map value updates.</td>
-</tr>
-<tr><td>Field serialization</td>
-<td>FieldValue</td>
-<td>4 bytes</td>
-<td>The field indicating what entry to update.</td>
-</tr>
-<tr><td>Value Update</td>
-<td>Document Value Update</td>
-<td>&nbsp;</td>
-<td>The update operation to apply to the field indicated above.</td>
-</tr>
-<tr><th colspan="4">Remove Value Update</th></tr>
-<tr><td>Remove Update ID</td>
-<td>Integer</td>
-<td>4 bytes</td>
-<td>30 + 0x1000 for remove updates.</td>
-</tr>
-<tr><td>Field serialization</td>
-<td>FieldValue</td>
-<td>&nbsp;</td>
-<td>The field indicating what entry to update.</td>
-</tr>
-</table>
-
-</body>
+    <table border="1" cellspacing="0" cellpadding="1%" width="100%">
+      <caption>
+        <em>Document update value serialization format</em>
+      </caption>
+      <tr>
+        <td width="10%"><b>Field</b></td>
+        <td width="10%"><b>Type</b></td>
+        <td width="10%"><b>Length</b></td>
+        <td><b>Description</b></td>
+      </tr>
+      <tr>
+        <th colspan="4">Add Value Update</th>
+      </tr>
+      <tr>
+        <td>Add Value Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>25 + 0x1000 for value updates.</td>
+      </tr>
+      <tr>
+        <td>Field serialization</td>
+        <td>FieldValue</td>
+        <td>&nbsp;</td>
+        <td>Serialization of the field to add.</td>
+      </tr>
+      <tr>
+        <td>Weight</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>Weight. Used if update applies to weighted set.</td>
+      </tr>
+      <tr>
+        <th colspan="4">Arithmetic Update</th>
+      </tr>
+      <tr>
+        <td>Arithmetic Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>26 + 0x1000 for arithmetic updates.</td>
+      </tr>
+      <tr>
+        <td>Operator ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>Identifies whether this does add, subtract, multiply or divide.</td>
+      </tr>
+      <tr>
+        <td>Operand</td>
+        <td>Double</td>
+        <td>8 bytes</td>
+        <td>The right operand to use in the arithmetic operation.</td>
+      </tr>
+      <tr>
+        <th colspan="4">Assign Update</th>
+      </tr>
+      <tr>
+        <td>Assign Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>27 + 0x1000 for assign updates.</td>
+      </tr>
+      <tr>
+        <td>Content flag</td>
+        <td>Byte</td>
+        <td>1 bytes</td>
+        <td>Contains 1 if we have content, 0 if not.</td>
+      </tr>
+      <tr>
+        <td>Field serialization</td>
+        <td>FieldValue</td>
+        <td>&nbsp;</td>
+        <td>Serialization of the field to assign.</td>
+      </tr>
+      <tr>
+        <th colspan="4">Clear Update</th>
+      </tr>
+      <tr>
+        <td>Clear Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>28 + 0x1000 for clear updates.</td>
+      </tr>
+      <tr>
+        <th colspan="4">Map Value Update</th>
+      </tr>
+      <tr>
+        <td>Map Value Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>29 + 0x1000 for map value updates.</td>
+      </tr>
+      <tr>
+        <td>Field serialization</td>
+        <td>FieldValue</td>
+        <td>4 bytes</td>
+        <td>The field indicating what entry to update.</td>
+      </tr>
+      <tr>
+        <td>Value Update</td>
+        <td>Document Value Update</td>
+        <td>&nbsp;</td>
+        <td>The update operation to apply to the field indicated above.</td>
+      </tr>
+      <tr>
+        <th colspan="4">Remove Value Update</th>
+      </tr>
+      <tr>
+        <td>Remove Update ID</td>
+        <td>Integer</td>
+        <td>4 bytes</td>
+        <td>30 + 0x1000 for remove updates.</td>
+      </tr>
+      <tr>
+        <td>Field serialization</td>
+        <td>FieldValue</td>
+        <td>&nbsp;</td>
+        <td>The field indicating what entry to update.</td>
+      </tr>
+    </table>
+  </body>
 </html>

@@ -510,6 +510,7 @@ jobs:
           screwdriver/delete-old-artifactory-artifacts.sh
 
   link-check:
+    requires: [~pr]
     image: ruby:3.1
     annotations:
       screwdriver.cd/buildPeriodically: H H(0-5) * * 1-5 # some time between 12:00 AM UTC (midnight) to 5:59 AM UTC Mon-Fri
@@ -531,5 +532,6 @@ jobs:
           --assume-extension --check-html --check-external-hash --no-enforce-http \
           --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
           --hydra '{"max_concurrency": 1}' \
+          --ignore-urls '/localhost:8080/,/127.0.0.1:3000/' \
           --swap-urls '(.*).md:\1.html' \
           _site
