@@ -1460,8 +1460,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static boolean enableTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state);
-        return state.isHosted() && state.zone().system().isPublic()
-                && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty())
-                && ! tokenEndpoints.isEmpty();
+        return state.isHosted() && state.zone().system().isPublic() && ! tokenEndpoints.isEmpty();
     }
 }

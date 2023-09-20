@@ -85,7 +85,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private boolean enableDataplaneProxy;
     private int contentLayerMetadataFeatureLevel = 0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -372,11 +371,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
         this.dataplaneTokens = List.copyOf(tokens);
-        return this;
-    }
-
-    public TestProperties setEnableDataplaneProxy(boolean enable) {
-        this.enableDataplaneProxy = enable;
         return this;
     }
 
