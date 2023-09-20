@@ -67,17 +67,44 @@ public class NodeResourcesTest {
 
     @Test
     void benchmark() {
-        NodeResources [] resouces = new NodeResources[100];
-        for (int i = 0; i < resouces.length; i++) {
-            resouces[i] = new NodeResources(1 / 3., 10 / 3., 100 / 3., 0.3);
+        NodeResources [] resources = new NodeResources[100];
+        for (int i = 0; i < resources.length; i++) {
+            resources[i] = new NodeResources(1 / 3., 10 / 3., 100 / 3., 0.3);
         }
         int NUM_ITER = 100; // Use at least 100000 for proper benchmarking
-        long warmup = runTest(resouces, NUM_ITER);
+        long warmup = runTest(resources, NUM_ITER);
         long start = System.nanoTime();
-        long benchmark = runTest(resouces, NUM_ITER);
+        long benchmark = runTest(resources, NUM_ITER);
         long duration = System.nanoTime() - start;
         System.out.println("NodeResources.toString() took " + duration / 1000000 + " ms");
         assertEquals(warmup, benchmark);
+    }
+
+    @Test
+    public void testJoiningResources() {
+        var resources = new NodeResources(1, 2, 3, 1,
+                NodeResources.DiskSpeed.fast,
+                NodeResources.StorageType.local,
+                NodeResources.Architecture.x86_64,
+                new NodeResources.GpuResources(4, 16));
+
+        assertNotInterchangeable(resources, resources.with(NodeResources.DiskSpeed.slow));
+        assertNotInterchangeable(resources, resources.with(NodeResources.StorageType.remote));
+        assertNotInterchangeable(resources, resources.with(NodeResources.Architecture.arm64));
+
+        var other = resources.with(new NodeResources.GpuResources(4, 32));
+        var expected = resources.withVcpu(2)
+                .withMemoryGb(4)
+                .withDiskGb(6)
+                .withBandwidthGbps(2)
+                .with(new NodeResources.GpuResources(1, 192));
+        var actual = resources.add(other);
+        assertEquals(expected, actual);
+
+        // Subtracted back to original resources - but GPU is flattened to count=1
+        expected = resources.with(new NodeResources.GpuResources(1, 64));
+        actual = actual.subtract(other);
+        assertEquals(expected, actual);
     }
 
     private void assertInvalid(String valueName, Supplier<NodeResources> nodeResources) {
@@ -98,6 +125,16 @@ public class NodeResourcesTest {
             }
         }
         return sum;
+    }
+
+    private void assertNotInterchangeable(NodeResources a, NodeResources b) {
+        try {
+            a.add(b);
+            fail();
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(a + " and " + b + " are not interchangeable", e.getMessage());
+        }
     }
 
 }
