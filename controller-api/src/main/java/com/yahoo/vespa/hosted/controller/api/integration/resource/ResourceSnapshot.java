@@ -120,13 +120,6 @@ public class ResourceSnapshot {
                 NodeResources.DiskSpeed.any,
                 NodeResources.StorageType.any,
                 a.architecture() == NodeResources.Architecture.any ? b.architecture() : a.architecture(),
-                addGpu(a.gpuResources(), b.gpuResources()));
-    }
-
-    private static NodeResources.GpuResources addGpu(NodeResources.GpuResources a, NodeResources.GpuResources b) {
-        // we don't really care about "count" in this context, so we just reduce everything down to billable GB
-        var aMem = a.count() * b.memoryGb();
-        var bMem = b.count() * b.memoryGb();
-        return new NodeResources.GpuResources(1, aMem + bMem);
+                a.gpuResources().plus(b.gpuResources()));
     }
 }
