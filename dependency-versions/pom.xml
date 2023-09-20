@@ -157,7 +157,7 @@
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
         <maven-source-plugin.vespa.version>3.3.0</maven-source-plugin.vespa.version>
         <properties-maven-plugin.vespa.version>1.2.0</properties-maven-plugin.vespa.version>
-        <versions-maven-plugin.vespa.version>2.16.0</versions-maven-plugin.vespa.version>
+        <versions-maven-plugin.vespa.version>2.16.1</versions-maven-plugin.vespa.version>
     </properties>
 
     <profiles>
