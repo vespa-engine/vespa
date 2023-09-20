@@ -135,33 +135,31 @@ public class RoutingController {
         Map<EndpointId, List<GeneratedEndpoint>> generatedForDeclaredEndpoints = new HashMap<>();
         Set<ClusterSpec.Id> clustersWithToken = new HashSet<>();
         if (randomizedEndpointsEnabled(deployment.applicationId())) { // TODO(mpolden): Remove this guard once config-models < 8.220 are gone
-            RoutingPolicyList deploymentPolicies = policies().read(deployment);
+            RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
+            RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
             for (var container : services.containers()) {
                 ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
                 boolean tokenSupported = container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
                 if (tokenSupported) {
                     clustersWithToken.add(clusterId);
                 }
-                // Use already existing generated endpoints, if any
                 Optional<RoutingPolicy> clusterPolicy = deploymentPolicies.cluster(clusterId).first();
-                List<GeneratedEndpoint> generatedForCluster = new ArrayList<>();
-                if (clusterPolicy.isPresent()) {
-                    for (var ge : clusterPolicy.get().generatedEndpoints()) {
-                        if (ge.declared()) {
-                            generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> new ArrayList<>())
-                                                         .add(ge);
-                        } else {
-                            generatedForCluster.add(ge);
-                        }
-                    }
-                }
+                List<GeneratedEndpoint> generatedForCluster = clusterPolicy.map(policy -> policy.generatedEndpoints().cluster().asList())
+                                                                           .orElseGet(List::of);
+                // Generate endpoints if cluster does not have any
                 if (generatedForCluster.isEmpty()) {
                     generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
                 }
                 endpoints = endpoints.and(endpointsOf(deployment, clusterId, GeneratedEndpointList.copyOf(generatedForCluster)).scope(Scope.zone));
             }
 
-            // For all declared endpoints, generate new endpoints if none exist
+            // Generate endpoints if declared endpoint does not have any
+            for (var container : services.containers()) {
+                ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
+                applicationPolicies.cluster(clusterId).asList().stream()
+                                   .flatMap(policy -> policy.generatedEndpoints().declared().asList().stream())
+                                   .forEach(ge -> generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> List.of(ge)));
+            }
             Stream.concat(spec.endpoints().stream(), spec.instances().stream().flatMap(i -> i.endpoints().stream()))
                   .forEach(endpoint -> {
                       EndpointId endpointId = EndpointId.of(endpoint.endpointId());
