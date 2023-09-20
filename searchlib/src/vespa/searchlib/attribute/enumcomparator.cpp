@@ -12,25 +12,25 @@ EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs)
     return vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::equal(lhs, rhs);
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy)
     : ParentType(data_store, nullptr),
-      _fold(fold),
+      _compare_strategy(compare_strategy),
       _prefix(false),
       _prefix_len(0)
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value)
     : ParentType(data_store, lookup_value),
-      _fold(fold),
+      _compare_strategy(compare_strategy),
       _prefix(false),
       _prefix_len(0)
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* lookup_value, bool prefix)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix)
     : ParentType(data_store, lookup_value),
-      _fold(fold),
+      _compare_strategy(compare_strategy),
       _prefix(prefix),
       _prefix_len(0)
 {
@@ -41,14 +41,21 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 
 bool
 EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
-    return _fold
-        ? (use_prefix()
+    switch (_compare_strategy) {
+    case CompareStrategy::UNCASED:
+        return (use_prefix()
            ? (FoldedStringCompare::compareFoldedPrefix<true, true>(get(lhs), get(rhs), _prefix_len) < 0)
-           : (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0))
-        : (use_prefix()
+           : (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0));
+    case CompareStrategy::CASED:
+        return (use_prefix()
+                ? (FoldedStringCompare::compareFoldedPrefix<false, false>(get(lhs), get(rhs), _prefix_len) < 0)
+                : (FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0));
+    case CompareStrategy::UNCASED_THEN_CASED:
+    default:
+        return (use_prefix()
            ? (FoldedStringCompare::comparePrefix(get(lhs), get(rhs), _prefix_len) < 0)
            : (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0));
-
+    }
 }
 
 template class EnumStoreComparator<int8_t>;

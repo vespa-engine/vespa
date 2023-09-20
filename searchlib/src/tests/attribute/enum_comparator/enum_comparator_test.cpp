@@ -11,6 +11,13 @@ using namespace vespalib::btree;
 
 using vespalib::datastore::AtomicEntryRef;
 
+namespace vespalib::datastore {
+
+std::ostream & operator << (std::ostream& os, const EntryRef& ref) {
+    return os << "EntryRef(" << ref.ref() << ")";
+}
+
+}
 namespace search {
 
 using NumericEnumStore = EnumStoreT<int32_t>;
@@ -25,6 +32,7 @@ using TreeType = BTreeRoot<AtomicEntryRef, BTreeNoLeafData,
 using NodeAllocator = TreeType::NodeAllocatorType;
 
 using attribute::DfaStringComparator;
+using vespalib::datastore::EntryComparator;
 
 
 TEST(EnumComparatorTest, require_that_numeric_less_is_working)
@@ -152,6 +160,13 @@ TEST(EnumComparatorTest, require_that_comparator_with_tree_is_working)
     m.reclaim_memory(g.get_oldest_used_generation());
 }
 
+using EnumIndexVector = std::vector<EnumIndex>;
+
+void sort_enum_indexes(EnumIndexVector &vec, const EntryComparator &compare)
+{
+    std::stable_sort(vec.begin(), vec.end(), [&compare](auto& lhs, auto& rhs) { return compare.less(lhs, rhs); });
+}
+
 TEST(EnumComparatorTest, require_that_folded_less_is_working)
 {
     StringEnumStore es(false, DictionaryConfig::Type::BTREE);
@@ -170,6 +185,18 @@ TEST(EnumComparatorTest, require_that_folded_less_is_working)
     EXPECT_FALSE(cmp2.less(e4, EnumIndex()));
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // similar when prefix
     EXPECT_FALSE(cmp3.less(e4, EnumIndex())); // similar when prefix
+    // Full sort, CompareStrategy::UNCASED_THEN_CASED
+    EnumIndexVector vec{e4, e3, e2, e1};
+    sort_enum_indexes(vec, es.get_comparator());
+    EXPECT_EQ((EnumIndexVector{e1, e2, e3, e4}), vec);
+    // Partial sort, CompareStrategy::UNCASED
+    EnumIndexVector vec2{e4, e3, e2, e1};
+    sort_enum_indexes(vec2, cmp1);
+    EXPECT_EQ((EnumIndexVector{e2, e1, e3, e4}), vec2);
+    // Partial sort, CompareStrategy::UNCASED
+    EnumIndexVector vec3{e4, e3, e1, e2};
+    sort_enum_indexes(vec3, cmp1);
+    EXPECT_EQ((EnumIndexVector{e1, e2, e3, e4}), vec3);
 }
 
 TEST(EnumComparatorTest, require_that_equal_is_working)
@@ -188,6 +215,36 @@ TEST(EnumComparatorTest, require_that_equal_is_working)
     EXPECT_FALSE(cmp1.equal(e3, e1));
     EXPECT_FALSE(cmp1.equal(e3, e2));
     EXPECT_TRUE(cmp1.equal(e3, e3));
+}
+
+TEST(EnumComparatorTest, require_that_cased_less_is_working)
+{
+    StringEnumStore es(false, DictionaryConfig(DictionaryConfig::Type::BTREE, DictionaryConfig::Match::CASED));
+    EnumIndex e1 = es.insert("Aa");
+    EnumIndex e2 = es.insert("aa");
+    EnumIndex e3 = es.insert("aB");
+    EnumIndex e4 = es.insert("Folded");
+    const auto & cmp1 = es.get_folded_comparator();
+    EXPECT_TRUE(cmp1.less(e1, e2));
+    EXPECT_FALSE(cmp1.less(e2, e1));
+    EXPECT_FALSE(cmp1.less(e2, e3));
+    EXPECT_TRUE(cmp1.less(e3, e2));
+    auto cmp2 = es.make_folded_comparator("fol");
+    auto cmp3 = es.make_folded_comparator_prefix("fol");
+    EXPECT_FALSE(cmp2.less(EnumIndex(), e4)); // case mismatch
+    EXPECT_TRUE(cmp2.less(e4, EnumIndex()));  // case mismatch
+    EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // case mismatch
+    EXPECT_TRUE(cmp3.less(e4, EnumIndex()));  // case mismatch
+    auto cmp4 = es.make_folded_comparator("Fol");
+    auto cmp5 = es.make_folded_comparator_prefix("Fol");
+    EXPECT_TRUE(cmp4.less(EnumIndex(), e4));  // no match
+    EXPECT_FALSE(cmp4.less(e4, EnumIndex())); // no match
+    EXPECT_FALSE(cmp5.less(EnumIndex(), e4)); // prefix match
+    EXPECT_FALSE(cmp5.less(e4, EnumIndex())); // prefix match
+    // Full sort, CompareStrategy::CASED
+    EnumIndexVector vec{e4, e3, e2, e1};
+    sort_enum_indexes(vec, es.get_comparator());
+    EXPECT_EQ((EnumIndexVector{e1, e4, e3, e2}), vec);
 }
 
 TEST(DfaStringComparatorTest, require_that_less_is_working)
