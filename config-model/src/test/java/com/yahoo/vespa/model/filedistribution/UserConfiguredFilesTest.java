@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -244,5 +245,33 @@ public class UserConfiguredFilesTest {
         def.addOptionalPathDef("optionalPathVal");
         userConfiguredFiles().register(producer);
     }
+
+    @Test
+    void require_that_missing_file_gives_sane_error_message() {
+        try {
+            def.addFileDef("fileVal");
+            builder.setField("fileVal", "foo.txt");
+            fileRegistry.pathToRef.put("bar.txt", new FileNode("barshash").value());
+            userConfiguredFiles().register(producer);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': No such file or directory 'foo.txt'", e.getMessage());
+        }
+    }
+
+    @Test
+    void require_that_using_dot_gives_sane_error_message() {
+        try {
+            def.addFileDef("fileVal");
+            builder.setField("fileVal", ".");
+            fileRegistry.pathToRef.put("bar.txt", new FileNode("barshash").value());
+            userConfiguredFiles().register(producer);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Unable to register file for field 'fileVal': Invalid config value '.'",
+                         e.getMessage());
+        }
+    }
+
 
 }
