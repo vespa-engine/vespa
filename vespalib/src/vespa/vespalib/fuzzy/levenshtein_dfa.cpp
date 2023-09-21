@@ -19,17 +19,17 @@ LevenshteinDfa::~LevenshteinDfa() = default;
 
 LevenshteinDfa::MatchResult
 LevenshteinDfa::match(std::string_view u8str) const {
-    return _impl->match(u8str, static_cast<std::vector<uint32_t>*>(nullptr)); // TODO rewire
+    return _impl->match(u8str);
 }
 
 LevenshteinDfa::MatchResult
 LevenshteinDfa::match(std::string_view u8str, std::string& successor_out) const {
-    return _impl->match(u8str, &successor_out);
+    return _impl->match(u8str, successor_out);
 }
 
 LevenshteinDfa::MatchResult
 LevenshteinDfa::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
-    return _impl->match(u8str, &successor_out);
+    return _impl->match(u8str, successor_out);
 }
 
 size_t LevenshteinDfa::memory_usage() const noexcept {

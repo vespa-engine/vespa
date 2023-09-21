@@ -94,23 +94,24 @@ struct ExplicitDfaMatcher {
 };
 
 template <uint8_t MaxEdits>
-template <typename SuccessorT>
 LevenshteinDfa::MatchResult
-ExplicitLevenshteinDfaImpl<MaxEdits>::match_impl(std::string_view u8str, SuccessorT* successor_out) const {
+ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str) const {
+    ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
+    return MatchAlgorithm<MaxEdits>::match(matcher, u8str);
+}
+
+template <uint8_t MaxEdits>
+LevenshteinDfa::MatchResult
+ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::string& successor_out) const {
     ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
     return MatchAlgorithm<MaxEdits>::match(matcher, u8str, successor_out);
 }
 
 template <uint8_t MaxEdits>
 LevenshteinDfa::MatchResult
-ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::string* successor_out) const {
-    return match_impl(u8str, successor_out);
-}
-
-template <uint8_t MaxEdits>
-LevenshteinDfa::MatchResult
-ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::vector<uint32_t>* successor_out) const {
-    return match_impl(u8str, successor_out);
+ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
+    ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
+    return MatchAlgorithm<MaxEdits>::match(matcher, u8str, successor_out);
 }
 
 template <uint8_t MaxEdits>

@@ -149,7 +149,7 @@ struct MatchAlgorithm {
     template <DfaMatcher Matcher, typename SuccessorT>
     static MatchResult match(const Matcher& matcher,
                              std::string_view source,
-                             SuccessorT* successor_out)
+                             SuccessorT& successor_out)
     {
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
@@ -166,7 +166,7 @@ struct MatchAlgorithm {
             if (raw_mch != mch) {
                 can_use_raw_prefix = false; // FIXME this is pessimistic; considers entire string, not just prefix
             }
-            if (successor_out && matcher.has_higher_out_edge(state, mch)) {
+            if (matcher.has_higher_out_edge(state, mch)) {
                 last_state_with_higher_out = state;
                 n_prefix_u8_bytes = u8_pos_before_char;
                 char_after_prefix = mch;
@@ -175,14 +175,12 @@ struct MatchAlgorithm {
             if (matcher.can_match(maybe_next)) {
                 state = maybe_next;
             } else {
-                // Can never match; find the successor if requested
-                if (successor_out) {
-                    emit_successor_prefix(*successor_out, source, n_prefix_u8_bytes,
-                                          matcher.is_cased() || can_use_raw_prefix);
-                    assert(matcher.valid_state(last_state_with_higher_out));
-                    backtrack_and_emit_greater_suffix(matcher, last_state_with_higher_out,
-                                                      char_after_prefix, *successor_out);
-                }
+                // Can never match; find the successor
+                emit_successor_prefix(successor_out, source, n_prefix_u8_bytes,
+                                      matcher.is_cased() || can_use_raw_prefix);
+                assert(matcher.valid_state(last_state_with_higher_out));
+                backtrack_and_emit_greater_suffix(matcher, last_state_with_higher_out,
+                                                  char_after_prefix, successor_out);
                 return MatchResult::make_mismatch(max_edits());
             }
         }
@@ -190,10 +188,33 @@ struct MatchAlgorithm {
         if (edits <= max_edits()) {
             return MatchResult::make_match(max_edits(), edits);
         }
-        if (successor_out) {
-            emit_successor_prefix(*successor_out, source, source.size(),
-                                  matcher.is_cased() || can_use_raw_prefix);
-            emit_smallest_matching_suffix(matcher, state, *successor_out);
+        emit_successor_prefix(successor_out, source, source.size(),
+                              matcher.is_cased() || can_use_raw_prefix);
+        emit_smallest_matching_suffix(matcher, state, successor_out);
+        return MatchResult::make_mismatch(max_edits());
+    }
+
+    /**
+     * Simplified match loop which does _not_ emit a successor on mismatch. Otherwise the
+     * exact same semantics as the successor-emitting `match()` overload.
+     */
+    template <DfaMatcher Matcher>
+    static MatchResult match(const Matcher& matcher, std::string_view source) {
+        using StateType = typename Matcher::StateType;
+        Utf8Reader u8_reader(source.data(), source.size());
+        StateType state = matcher.start();
+        while (u8_reader.hasMore()) {
+            const uint32_t mch = normalized_match_char(u8_reader.getChar(), matcher.is_cased());
+            auto maybe_next    = matcher.match_input(state, mch);
+            if (matcher.can_match(maybe_next)) {
+                state = maybe_next;
+            } else {
+                return MatchResult::make_mismatch(max_edits());
+            }
+        }
+        const auto edits = matcher.match_edit_distance(state);
+        if (edits <= max_edits()) {
+            return MatchResult::make_match(max_edits(), edits);
         }
         return MatchResult::make_mismatch(max_edits());
     }

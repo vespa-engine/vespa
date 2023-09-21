@@ -140,8 +140,9 @@ public:
 
     struct Impl {
         virtual ~Impl() = default;
-        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::string* successor_out) const = 0;
-        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::vector<uint32_t>* successor_out) const = 0;
+        [[nodiscard]] virtual MatchResult match(std::string_view u8str) const = 0;
+        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::string& successor_out) const = 0;
+        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::vector<uint32_t>& successor_out) const = 0;
         [[nodiscard]] virtual size_t memory_usage() const noexcept = 0;
         virtual void dump_as_graphviz(std::ostream& out) const = 0;
     };
