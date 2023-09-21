@@ -5,11 +5,11 @@
 You want to get familiar with the Vespa code base but don't know where to start?
 
 Vespa consists of about 1.7 million lines of code, about equal parts Java and C++.
-Since it it's mostly written by a team of developers selected for their ability 
-to do this kind of thing unusually well, who have been given time to dedicate 
-themselves to it for a long time, it is mostly easily to work with. However, one 
+Since it is mostly written by a team of developers selected for their ability
+to do this kind of thing unusually well, who have been given time to dedicate
+themselves to it for a long time, it is mostly easily to work with. However, one
 thing we haven't done is to create a module structure friendly to newcomers - the code
-simply organized in a flat structure of about 150 modules. 
+simply organized in a flat structure of about 150 modules.
 
 This document aims to provide a map from the
 [functional elements](https://docs.vespa.ai/en/overview.html)
@@ -18,22 +18,21 @@ of Vespa to the most important modules in the flat module structure in the
 
 ![Code map](Code-map.png)
 
-It covers the modules you are most likely to encounter as a developer. 
-The rest are either small and needed for technical reasons or doing one thing 
-which should be self-explanatory, or implementing the cloud service run by the 
-Vespa team which we don't expect anybody else to run and therefore be interested 
+It covers the modules you are most likely to encounter as a developer.
+The rest are either small and needed for technical reasons or doing one thing
+which should be self-explanatory, or implementing the cloud service run by the
+Vespa team which we don't expect anybody else to run and therefore be interested
 in changing.
-
 
 ## The stateless container
 
 When a request is made to Vespa it first enters some stateless container cluster,
 called jDisc. This consists of:
 
-- a __jDisc core__ layer which provides a model of a running application, general protocol-independent request-response handling, with various protocol implementations,
-- a __jDisc container__ layer providing component management, configuration and similar.
-- a __search middleware__ layer containing query/result API's, query execution logic etc.
-- API's and modules for writing and processing document operations.
+- a **jDisc core** layer which provides a model of a running application, general protocol-independent request-response handling, with various protocol implementations,
+- a **jDisc container** layer providing component management, configuration and similar.
+- a **search middleware** layer containing query/result APIs, query execution logic etc.
+- APIs and modules for writing and processing document operations.
 
 The stateless container is implemented in Java.
 
@@ -58,7 +57,7 @@ Document operation modules:
 - [container-messagebus](https://github.com/vespa-engine/vespa/tree/master/container-messagebus) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
 - [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
-- [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 
+- [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition.
 - [docprocs](https://github.com/vespa-engine/vespa/tree/master/docprocs) - document processor components bundled with Vespa. Notably the Indexingprocessor - a document processor invoking the indexing language statements configured for the document type in question on document operations.
 - [vespaclient-container-plugin](https://github.com/vespa-engine/vespa/tree/master/vespaclient-container-plugin) - implements the document/v1 API and internal API used by the Java HTTP client on top of the jDisc container, forwarding to the Document API.
 - [vespa-feed-client](https://github.com/vespa-engine/vespa/tree/master/vespa-feed-client) - client for fast writing to the internal API implemented by vespaclient-container-plugin.
@@ -72,9 +71,8 @@ This is written in C++.
 - [searchlib](https://github.com/vespa-engine/vespa/tree/master/searchlib) - libraries invoked by searchcore: Ranking (feature execution framework (fef), rank feature implementations, ranking expressions), index and btree implementations, attributes (forward indexes) etc. In addition, this contains the Java libraries for ranking.
 - [storage](https://github.com/vespa-engine/vespa/tree/master/storage/src/vespa/storage) - system for elastic and auto-recovering data storage over clusters of nodes.
 - [eval](https://github.com/vespa-engine/vespa/tree/master/eval) - library for efficient evaluation of ranking expressions. Tensor API and implementation.
-- [storageapi](https://github.com/vespa-engine/vespa/tree/master/storageapi/src/vespa/storageapi) - message bus messages and implementation for the document API.
-- [clustercontroller-core](https://github.com/vespa-engine/vespa/tree/master/clustercontroller-core) - cluster controller for storage, implemented in Java. This provides singular node-level decision making for storage, based on ZooKeeper.
-
+- [storageapi](https://github.com/vespa-engine/vespa/tree/master/storage/src/vespa/storageapi) - message bus messages and implementation for the document API.
+- [clustercontroller-core](https://github.com/vespa-engine/vespa/tree/master/clustercontroller-core) - cluster controller for storage, implemented in Java. This provides singular node-level decision-making for storage, based on ZooKeeper.
 
 ## Configuration and administration
 
@@ -94,6 +92,3 @@ Libraries used throughput the code.
 
 - [vespalib](https://github.com/vespa-engine/vespa/tree/master/vespalib) - general utility library for C++
 - [vespajlib](https://github.com/vespa-engine/vespa/tree/master/vespajlib) - general utility library for Java. Includes the Java implementation of the tensor library.
-
-
-
