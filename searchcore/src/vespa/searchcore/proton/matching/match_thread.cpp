@@ -311,6 +311,36 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
     }
 }
 
+void
+MatchThread::secondPhase(MatchTools & tools, HitCollector & hits) {
+    trace->addEvent(4, "Start second phase rerank");
+    auto sorted_hit_seq = matchToolsFactory.should_diversify()
+                          ? hits.getSortedHitSequence(matchParams.arraySize)
+                          : hits.getSortedHitSequence(matchParams.heapSize);
+    trace->addEvent(5, "Synchronize before second phase rerank");
+    WaitTimer get_second_phase_work_timer(wait_time_s);
+    auto my_work = communicator.get_second_phase_work(sorted_hit_seq, thread_id);
+    get_second_phase_work_timer.done();
+    if (tools.getDoom().hard_doom()) {
+        my_work.clear();
+    }
+    if (!my_work.empty()) {
+        tools.setup_second_phase(second_phase_profiler.get());
+        DocumentScorer scorer(tools.rank_program(), tools.search());
+        scorer.score(my_work);
+    }
+    thread_stats.docsReRanked(my_work.size());
+    trace->addEvent(5, "Synchronize before rank scaling");
+    WaitTimer complete_second_phase_timer(wait_time_s);
+    auto [kept_hits, ranges] = communicator.complete_second_phase(my_work, thread_id);
+    complete_second_phase_timer.done();
+    hits.setReRankedHits(std::move(kept_hits));
+    hits.setRanges(ranges);
+    if (auto onReRankTask = matchToolsFactory.createOnSecondPhaseTask()) {
+        onReRankTask->run(hits.getReRankedHits());
+    }
+}
+
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
 {
@@ -332,34 +362,10 @@ MatchThread::findMatches(MatchTools &tools)
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     trace->addEvent(4, "Start match and first phase rank");
-    if (tools.getDoom().soft_doom()) return 0;
-    match_loop_helper(tools, hits);
-    if (tools.has_second_phase_rank()) {
-        trace->addEvent(4, "Start second phase rerank");
-        auto sorted_hit_seq = matchToolsFactory.should_diversify()
-                              ? hits.getSortedHitSequence(matchParams.arraySize)
-                              : hits.getSortedHitSequence(matchParams.heapSize);
-        trace->addEvent(5, "Synchronize before second phase rerank");
-        WaitTimer get_second_phase_work_timer(wait_time_s);
-        auto my_work = communicator.get_second_phase_work(sorted_hit_seq, thread_id);
-        get_second_phase_work_timer.done();
-        if (tools.getDoom().hard_doom()) {
-            my_work.clear();
-        }
-        if (!my_work.empty()) {
-            tools.setup_second_phase(second_phase_profiler.get());
-            DocumentScorer scorer(tools.rank_program(), tools.search());
-            scorer.score(my_work);
-        }
-        thread_stats.docsReRanked(my_work.size());
-        trace->addEvent(5, "Synchronize before rank scaling");
-        WaitTimer complete_second_phase_timer(wait_time_s);
-        auto [kept_hits, ranges] = communicator.complete_second_phase(my_work, thread_id);
-        complete_second_phase_timer.done();
-        hits.setReRankedHits(std::move(kept_hits));
-        hits.setRanges(ranges);
-        if (auto onReRankTask = matchToolsFactory.createOnSecondPhaseTask()) {
-            onReRankTask->run(hits.getReRankedHits());
+    if ( !tools.getDoom().soft_doom()) {
+        match_loop_helper(tools, hits);
+        if (tools.has_second_phase_rank()) {
+            secondPhase(tools, hits);
         }
     }
     trace->addEvent(4, "Create result set");
