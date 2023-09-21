@@ -38,7 +38,7 @@ libraries (see the searchlib module).
 **Code pointers:**
 
 - Content cluster mock in Java (currently empy): [ContentCluster](https://github.com/vespa-engine/vespa/blob/master/application/src/main/java/com/yahoo/application/content/ContentCluster.java)
-- The model of a search definition this must consume config from: [Search](https://github.com/vespa-engine/vespa/blob/master/config-model/src/main/java/com/yahoo/searchdefinition/Search.java)
+- The model of a search definition this must consume config from: [Search](https://github.com/vespa-engine/vespa/blob/master/config-model/src/main/java/com/yahoo/schema/Schema.java)
 
 ## Indexed search in maps
 
