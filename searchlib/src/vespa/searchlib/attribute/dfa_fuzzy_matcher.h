@@ -17,7 +17,7 @@ namespace search::attribute {
 class DfaFuzzyMatcher {
 private:
     vespalib::fuzzy::LevenshteinDfa _dfa;
-    std::string _successor;
+    std::vector<uint32_t> _successor;
 
 public:
     DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
@@ -29,7 +29,7 @@ public:
         if (match.matches()) {
             return true;
         } else {
-            DfaStringComparator cmp(data_store, _successor.c_str());
+            DfaStringComparator cmp(data_store, _successor);
             itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
             return false;
         }

@@ -5,8 +5,9 @@
 
 namespace search::attribute {
 
-DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const char* candidate)
-    : ParentType(data_store, candidate)
+DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate)
+    : ParentType(data_store),
+      _candidate(std::cref(candidate))
 {
 }
 
@@ -17,13 +18,13 @@ DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespali
         if (rhs.valid()) {
             return FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0;
         } else {
-            return FoldedStringCompare::compareFolded<true, false>(get(lhs), get(rhs)) < 0;
+            return FoldedStringCompare::compareFolded<true, false>(get(lhs), _candidate) < 0;
         }
     } else {
         if (rhs.valid()) {
-            return FoldedStringCompare::compareFolded<false, true>(get(lhs), get(rhs)) < 0;
+            return FoldedStringCompare::compareFolded<false, true>(_candidate, get(rhs)) < 0;
         } else {
-            return FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0;
+            return false;
         }
     }
 }
