@@ -80,7 +80,7 @@ ComponentDefinition =
 
 TypedComponentDefinition =
    attribute id { xsd:Name } &
-   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder) &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder) &
    GenericConfig* &
    Component*
 
@@ -110,10 +110,28 @@ BertBaseEmbedder =
     element transformer-attention-mask { xsd:string }? &
     element transformer-token-type-ids { xsd:string }? &
     element transformer-output { xsd:string }? &
-    element transformer-start-sequence-token { xsd:integer }? &
-    element transformer-end-sequence-token { xsd:integer }? &
+    StartOfSequence &
+    EndOfSequence &
     OnnxModelExecutionParams &
     EmbedderPoolingStrategy
+
+
+ColBertEmbedder =
+   attribute type { "colbert-embedder" } &
+   element transformer-model { ModelReference } &
+   element tokenizer-model { ModelReference }? &
+   element max-tokens { xsd:positiveInteger }? &
+   element max-query-tokens { xsd:positiveInteger }? &
+   element max-document-tokens { xsd:positiveInteger }? &
+   element transformer-mask-token { xsd:integer }? &
+   element transformer-input-ids { xsd:string }? &
+   element transformer-attention-mask { xsd:string }? &
+   element transformer-token-type-ids { xsd:string }? &
+   element transformer-output { xsd:string }? &
+   element normalize { xsd:boolean }? &
+   OnnxModelExecutionParams &
+   StartOfSequence &
+   EndOfSequence
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &
@@ -122,3 +140,6 @@ OnnxModelExecutionParams =
     element onnx-gpu-device { xsd:integer }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" }?
+
+StartOfSequence = element transformer-start-sequence-token { xsd:integer }?
+EndOfSequence = element transformer-end-sequence-token { xsd:integer }?

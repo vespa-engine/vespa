@@ -9,6 +9,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
+import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
 import com.yahoo.path.Path;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -96,6 +98,29 @@ public class EmbedderTestCase {
         assertEquals(-1, tokenizerCfg.maxLength());
     }
 
+    void colBertEmbedder_selfhosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertColBertEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals(1024, embedderCfg.transformerMaxTokens());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(-1, tokenizerCfg.maxLength());
+    }
+
+    void colBertEmbedder_hosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertColBertEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals(1024, embedderCfg.transformerMaxTokens());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(-1, tokenizerCfg.maxLength());
+    }
 
     @Test
     void bertEmbedder_selfhosted() throws Exception {
@@ -230,6 +255,14 @@ public class EmbedderTestCase {
         assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
         var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
         hfEmbedder.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    private static ColBertEmbedderConfig assertColBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+        var colbert = (ColBertEmbedder) cluster.getComponentsMap().get(new ComponentId("colbert-embedder"));
+        assertEquals("ai.vespa.embedding.ColBertEmbedder", colbert.getClassId().getName());
+        var cfgBuilder = new ColBertEmbedderConfig.Builder();
+        colbert.getConfig(cfgBuilder);
         return cfgBuilder.build();
     }
 

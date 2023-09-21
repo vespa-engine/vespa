@@ -43,6 +43,25 @@
       <onnx-gpu-device>1</onnx-gpu-device>
     </component>
 
+    <component id="colbert" type="colbert-embedder">
+      <transformer-model model-id="e5-base-v2" url="https://my/url/model.onnx"/>
+      <tokenizer-model model-id="e5-base-v2-vocab" path="app/tokenizer.json"/>
+      <max-tokens>1024</max-tokens>
+      <max-query-tokens>32</max-query-tokens>
+      <max-document-tokens>512</max-document-tokens>
+      <transformer-start-sequence-token>101</transformer-start-sequence-token>
+      <transformer-end-sequence-token>102</transformer-end-sequence-token>
+      <transformer-mask-token>103</transformer-mask-token>
+      <transformer-input-ids>my_input_ids</transformer-input-ids>
+      <transformer-attention-mask>my_attention_mask</transformer-attention-mask>
+      <transformer-token-type-ids>my_token_type_ids</transformer-token-type-ids>
+      <transformer-output>my_output</transformer-output>
+      <onnx-execution-mode>parallel</onnx-execution-mode>
+      <onnx-intraop-threads>10</onnx-intraop-threads>
+      <onnx-interop-threads>8</onnx-interop-threads>
+      <onnx-gpu-device>1</onnx-gpu-device>
+    </component>
+
     <nodes>
       <node hostalias="node1" />
     </nodes>
