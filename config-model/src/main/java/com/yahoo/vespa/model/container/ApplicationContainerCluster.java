@@ -10,12 +10,10 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ApplicationClusterInfo;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
@@ -203,49 +201,23 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private void createEndpoints(DeployState deployState) {
         if (!deployState.isHosted()) return;
         if (deployState.getProperties().applicationId().instance().isTester()) return;
+        // Add endpoints provided by the controller
+        List<String> hosts = getContainers().stream().map(AbstractService::getHostName).sorted().toList();
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
-
-        List<String> hosts = getContainers().stream()
-                .map(AbstractService::getHostName)
-                .sorted()
-                .toList();
-
-        Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
-        // Add zone-scoped endpoints if not provided by the controller
-        // TODO(mpolden): Remove this when controller always includes zone-scope endpoints, and config models < 8.230 are gone
-        if (endpointsFromController.stream().noneMatch(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.zone)) {
-            for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
-                ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
-                        deployState.zone().system(),
-                        ClusterSpec.Id.from(getName()),
-                        deployState.getProperties().applicationId(),
-                        suffix);
-                endpoints.add(ApplicationClusterEndpoint.builder()
-                                                        .zoneScope()
-                                                        .sharedL4Routing()
-                                                        .dnsName(l4Name)
-                                                        .hosts(hosts)
-                                                        .clusterId(getName())
-                                                        .authMethod(ApplicationClusterEndpoint.AuthMethod.mtls)
-                                                        .build());
-            }
-        }
-
-        // Include all endpoints provided by controller
-        endpointsFromController.stream()
-                               .filter(ce -> ce.clusterId().equals(getName()))
-                               .forEach(ce -> ce.names().forEach(
-                                       name -> endpoints.add(ApplicationClusterEndpoint.builder()
-                                                                                       .scope(ce.scope())
-                                                                                       .weight(ce.weight().orElse(1)) // Default to weight=1 if not set
-                                                                                       .routingMethod(ce.routingMethod())
-                                                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
-                                                                                       .hosts(hosts)
-                                                                                       .clusterId(getName())
-                                                                                       .authMethod(ce.authMethod())
-                                                                                       .build())
-                               ));
-        this.endpoints = List.copyOf(endpoints);
+        deployState.getEndpoints().stream()
+                   .filter(ce -> ce.clusterId().equals(getName()))
+                   .forEach(ce -> ce.names().forEach(
+                           name -> endpoints.add(ApplicationClusterEndpoint.builder()
+                                                                           .scope(ce.scope())
+                                                                           .weight(ce.weight().orElse(1))
+                                                                           .routingMethod(ce.routingMethod())
+                                                                           .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
+                                                                           .hosts(hosts)
+                                                                           .clusterId(getName())
+                                                                           .authMethod(ce.authMethod())
+                                                                           .build())
+                   ));
+        this.endpoints = Collections.unmodifiableList(endpoints);
     }
 
     @Override

@@ -2,15 +2,8 @@
 
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.SystemName;
-
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Represents one endpoint for an application cluster
@@ -156,8 +149,6 @@ public class ApplicationClusterEndpoint {
 
     public static class DnsName implements Comparable<DnsName> {
 
-        private static final int MAX_LABEL_LENGTH = 63;
-
         private final String name;
 
         private DnsName(String name) {
@@ -168,57 +159,8 @@ public class ApplicationClusterEndpoint {
             return name;
         }
 
-        public static DnsName sharedNameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            String name = dnsParts(systemName, cluster, applicationId)
-                    .filter(Objects::nonNull)             // remove null values that were "default"
-                    .collect(Collectors.joining("--"));
-            return new DnsName(sanitize(name) + suffix); // Need to sanitize name since it is considered one label
-        }
-
-        public static DnsName sharedL4NameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            String name = dnsParts(systemName, cluster, applicationId)
-                    .filter(Objects::nonNull) // remove null values that were "default"
-                    .map(DnsName::sanitize)
-                    .collect(Collectors.joining("."));
-            return new DnsName(name + suffix);
-        }
-
         public static DnsName from(String name) {
             return new DnsName(name);
-        }
-
-        private static Stream<String> dnsParts(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId) {
-            return Stream.of(
-                    nullIfDefault(cluster.value()),
-                    systemPart(systemName),
-                    nullIfDefault(applicationId.instance().value()),
-                    applicationId.application().value(),
-                    applicationId.tenant().value()
-            );
-        }
-
-        /**
-         * Remove any invalid characters from the hostnames
-         */
-        private static String sanitize(String id) {
-            return shortenIfNeeded(id.toLowerCase()
-                                           .replace('_', '-')
-                                           .replaceAll("[^a-z0-9-]*", ""));
-        }
-
-        /**
-         * Truncate the given string at the front so its length does not exceed 63 characters.
-         */
-        private static String shortenIfNeeded(String id) {
-            return id.substring(Math.max(0, id.length() - MAX_LABEL_LENGTH));
-        }
-
-        private static String nullIfDefault(String string) {
-            return Optional.of(string).filter(s -> !s.equals("default")).orElse(null);
-        }
-
-        private static String systemPart(SystemName systemName) {
-            return "cd".equals(systemName.value()) ? systemName.value() : null;
         }
 
         @Override
@@ -232,5 +174,7 @@ public class ApplicationClusterEndpoint {
         public int compareTo(DnsName o) {
             return name.compareTo(o.name);
         }
+
     }
+
 }
