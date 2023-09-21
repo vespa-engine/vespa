@@ -157,6 +157,10 @@ public class NodeResources {
             return new NodeResources.GpuResources(1, thisMem - otherMem);
         }
 
+        public GpuResources multipliedBy(double factor) {
+            return new GpuResources(this.count, this.memoryGb * factor);
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -329,10 +333,12 @@ public class NodeResources {
     }
 
     public NodeResources multipliedBy(double factor) {
+        if (isUnspecified()) return this;
         return this.withVcpu(vcpu * factor)
                    .withMemoryGb(memoryGb * factor)
                    .withDiskGb(diskGb * factor)
-                   .withBandwidthGbps(bandwidthGbps * factor);
+                   .withBandwidthGbps(bandwidthGbps * factor)
+                   .with(gpuResources.multipliedBy(factor));
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
