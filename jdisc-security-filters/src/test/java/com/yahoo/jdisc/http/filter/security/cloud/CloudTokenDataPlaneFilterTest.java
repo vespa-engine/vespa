@@ -166,6 +166,24 @@ class CloudTokenDataPlaneFilterTest {
         assertEquals(FORBIDDEN, responseHandler.getResponse().getStatus());
     }
 
+    @Test
+    void allows_empty_clients() {
+        var emptyClientsFilter = new CloudTokenDataPlaneFilter(
+                new CloudTokenDataPlaneFilterConfig.Builder()
+                        .tokenContext(TOKEN_CONTEXT)
+                        .build(),
+                clock);
+
+        var req = FilterTestUtils.newRequestBuilder()
+                .withMethod(Method.GET)
+                .withHeader("Authorization", "Bearer " + UNKNOWN_TOKEN.secretTokenString())
+                .build();
+        var responseHandler = new MockResponseHandler();
+        emptyClientsFilter.filter(req, responseHandler);
+        assertNotNull(responseHandler.getResponse());
+        assertEquals(FORBIDDEN, responseHandler.getResponse().getStatus());
+    }
+
     private CloudTokenDataPlaneFilter newFilterWithClientsConfig() {
         return new CloudTokenDataPlaneFilter(
                 new CloudTokenDataPlaneFilterConfig.Builder()
