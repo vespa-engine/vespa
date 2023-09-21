@@ -1,0 +1,36 @@
+
+namespace=embedding
+
+# Path to tokenizer.json
+tokenizerPath model
+
+# Path to model.onnx
+transformerModel  model
+
+# Max query tokens for ColBERT
+maxQueryTokens int default=32
+
+# Max document query tokens for ColBERT
+maxDocumentTokens int default=512
+
+# Max length of token sequence model can handle
+transformerMaxTokens int default=512
+
+# Input names
+transformerInputIds      string default=input_ids
+transformerAttentionMask string default=attention_mask
+
+# special token ids
+transformerStartSequenceToken int default=101
+transformerEndSequenceToken   int default=102
+transformerMaskToken   int default=103
+
+# Output name
+transformerOutput string default=contextual
+
+# Settings for ONNX model evaluation
+transformerExecutionMode enum { parallel, sequential } default=sequential
+transformerInterOpThreads int default=1
+transformerIntraOpThreads int default=-4
+# GPU device id, -1 for CPU
+transformerGpuDevice      int default=0
