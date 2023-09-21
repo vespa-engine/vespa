@@ -288,10 +288,11 @@ public class ModelProvisioningTest {
         assertEquals(2025077080L, protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is lowered to account for the jvm heap");
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
-        assertEquals(1, logger.msgs().size());
+        var msgs = logger.msgs().stream().filter(m -> m.level().equals(Level.WARNING)).toList();
+        assertEquals(1, msgs.size());
         assertEquals("Declaring combined cluster with <nodes of=\"...\"> is deprecated without replacement, " +
                      "and the feature will be removed in Vespa 9. Use separate container and content clusters instead",
-                     logger.msgs().get(0).message);
+                     msgs.get(0).message);
     }
 
     @Test
