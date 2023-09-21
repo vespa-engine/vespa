@@ -713,6 +713,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) {
         SearchContextParams scParams = createContextParams(_field.isFilter());
+        scParams.fuzzy_matching_algorithm(getRequestContext().get_attribute_blueprint_params().fuzzy_matching_algorithm);
         const string stack = StackDumpCreator::create(n);
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
     }

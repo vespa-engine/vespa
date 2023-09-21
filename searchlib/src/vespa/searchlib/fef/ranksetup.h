@@ -8,6 +8,7 @@
 #include "blueprintresolver.h"
 #include "rank_program.h"
 #include <vespa/searchlib/common/stringmap.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
 namespace search::fef {
 
@@ -77,6 +78,7 @@ private:
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
     double                   _target_hits_max_adjustment_factor;
+    vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
     MutateOperation          _mutateOnMatch;
     MutateOperation          _mutateOnFirstPhase;
     MutateOperation          _mutateOnSecondPhase;
@@ -396,6 +398,8 @@ public:
     double get_global_filter_upper_limit() const { return _global_filter_upper_limit; }
     void set_target_hits_max_adjustment_factor(double v) { _target_hits_max_adjustment_factor = v; }
     double get_target_hits_max_adjustment_factor() const { return _target_hits_max_adjustment_factor; }
+    void set_fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm v) { _fuzzy_matching_algorithm = v; }
+    vespalib::FuzzyMatchingAlgorithm get_fuzzy_matching_algorithm() const { return _fuzzy_matching_algorithm; }
 
     /**
      * This method may be used to indicate that certain features

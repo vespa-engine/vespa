@@ -6,8 +6,13 @@
 namespace search::attribute {
 
 template <typename M>
-MultiStringEnumHintSearchContext<M>::MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched,  MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit, uint64_t num_values)
-    : MultiStringEnumSearchContext<M>(std::move(qTerm), cased, toBeSearched, mv_mapping_read_view, enum_store),
+MultiStringEnumHintSearchContext<M>::MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
+                                                                      vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
+                                                                      const AttributeVector& toBeSearched,
+                                                                      MultiValueMappingReadView<M> mv_mapping_read_view,
+                                                                      const EnumStoreT<const char*>& enum_store,
+                                                                      uint32_t doc_id_limit, uint64_t num_values)
+    : MultiStringEnumSearchContext<M>(std::move(qTerm), cased, fuzzy_matching_algorithm, toBeSearched, mv_mapping_read_view, enum_store),
       EnumHintSearchContext(enum_store.get_dictionary(),
                             doc_id_limit, num_values)
 {

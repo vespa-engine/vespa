@@ -9,7 +9,7 @@
 
 namespace search::attribute {
 
-StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
+StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _regex(),
       _fuzzyMatcher(),
       _term(),
@@ -24,6 +24,8 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
                 ? vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None)
                 : vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
     } else if (isFuzzy()) {
+        (void) fuzzy_matching_algorithm;
+        // TODO: Select implementation based on algorithm.
         _fuzzyMatcher = std::make_unique<vespalib::FuzzyMatcher>(term.getTerm(),
                                                                  term.getFuzzyMaxEditDistance(),
                                                                  term.getFuzzyPrefixLength(),

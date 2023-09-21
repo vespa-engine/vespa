@@ -438,6 +438,22 @@ TargetHitsMaxAdjustmentFactor::lookup(const Properties& props, double defaultVal
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const vespalib::string FuzzyAlgorithm::NAME("vespa.matching.fuzzy.algorithm");
+const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::BruteForce);
+
+vespalib::FuzzyMatchingAlgorithm
+FuzzyAlgorithm::lookup(const Properties& props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+vespalib::FuzzyMatchingAlgorithm
+FuzzyAlgorithm::lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm default_value)
+{
+    auto value = lookupString(props, NAME, vespalib::to_string(default_value));
+    return vespalib::fuzzy_matching_algorithm_from_string(value, default_value);
+}
+
 } // namespace matching
 
 namespace softtimeout {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "string_search_helper.h"
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
 namespace search { class QueryTermSimple; }
 
@@ -18,7 +19,7 @@ private:
     std::unique_ptr<QueryTermUCS4> _query_term;
     attribute::StringSearchHelper  _helper;
 public:
-    StringMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased);
+    StringMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm);
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 protected:

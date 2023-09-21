@@ -3,6 +3,8 @@
 #pragma once
 
 #include "i_document_meta_store_context.h"
+#include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <cstddef>
 #include <limits>
 #include <cstdint>
@@ -21,6 +23,8 @@ private:
     uint32_t                                          _diversityCutoffGroups;
     bool                                              _useBitVector;
     bool                                              _diversityCutoffStrict;
+    vespalib::FuzzyMatchingAlgorithm                  _fuzzy_matching_algorithm;
+
 
 public:
     SearchContextParams()
@@ -28,13 +32,15 @@ public:
           _metaStoreReadGuard(nullptr),
           _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
           _useBitVector(false),
-          _diversityCutoffStrict(false)
+          _diversityCutoffStrict(false),
+          _fuzzy_matching_algorithm(search::fef::indexproperties::matching::FuzzyAlgorithm::DEFAULT_VALUE)
     { }
     bool useBitVector() const { return _useBitVector; }
     const IAttributeVector * diversityAttribute() const { return _diversityAttribute; }
     uint32_t diversityCutoffGroups() const { return _diversityCutoffGroups; }
     bool diversityCutoffStrict() const { return _diversityCutoffStrict; }
     const IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard() const { return _metaStoreReadGuard; }
+    vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm() const { return _fuzzy_matching_algorithm; }
 
     SearchContextParams &useBitVector(bool value) {
         _useBitVector = value;
@@ -54,6 +60,10 @@ public:
     }
     SearchContextParams &metaStoreReadGuard(const IDocumentMetaStoreContext::IReadGuard::SP * readGuard) {
         _metaStoreReadGuard = readGuard;
+        return *this;
+    }
+    SearchContextParams& fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm value) {
+        _fuzzy_matching_algorithm = value;
         return *this;
     }
 };
