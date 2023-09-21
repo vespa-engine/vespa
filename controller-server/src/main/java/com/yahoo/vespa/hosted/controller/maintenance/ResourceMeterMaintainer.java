@@ -231,13 +231,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     public static double cost(ClusterResources clusterResources, SystemName systemName) {
-        NodeResources nr = clusterResources.nodeResources();
-        return cost(new ResourceAllocation(nr.vcpu(), nr.memoryGb(), nr.diskGb(), nr.architecture()).multiply(clusterResources.nodes()), systemName);
-    }
-
-    private static double cost(ResourceAllocation allocation, SystemName systemName) {
-        var resources = new NodeResources(allocation.getCpuCores(), allocation.getMemoryGb(), allocation.getDiskGb(), 0);
-        return cost(resources, systemName);
+        var totalResources = clusterResources.nodeResources().multipliedBy(clusterResources.nodes());
+        return cost(totalResources, systemName);
     }
 
     private static double cost(NodeResources resources, SystemName systemName) {

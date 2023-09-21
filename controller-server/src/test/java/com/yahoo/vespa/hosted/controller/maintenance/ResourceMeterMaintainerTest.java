@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -121,6 +122,18 @@ public class ResourceMeterMaintainerTest {
         maintainer.maintain();
         assertTrue(resourceClient.hasRefreshedMaterializedView());
         assertEquals(lastRefreshTime + millisAdvanced, tester.curator().readMeteringRefreshTime());
+    }
+
+    @Test
+    public void testClusterCost() {
+        var nodeResources = new NodeResources(10, 64, 100, 10,
+                NodeResources.DiskSpeed.fast,
+                NodeResources.StorageType.local,
+                NodeResources.Architecture.x86_64,
+                new NodeResources.GpuResources(2, 16));
+        var clusterResources = new ClusterResources(5, 1, nodeResources);
+
+        assertEquals(5 * nodeResources.cost(), ResourceMeterMaintainer.cost(clusterResources, SystemName.Public), 0.001);
     }
 
     private void setUpZones() {
