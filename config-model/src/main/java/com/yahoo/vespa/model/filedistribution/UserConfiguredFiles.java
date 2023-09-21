@@ -57,7 +57,7 @@ public class UserConfiguredFiles implements Serializable {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Unable to find config definition for " + builder);
-            logger.logApplicationPackage(Level.FINE, "Unable to find config definition " + key +
+            logger.logApplicationPackage(Level.INFO, "Unable to find config definition " + key +
                                                      ". Will not register files for file distribution for this config");
             return;
         }
