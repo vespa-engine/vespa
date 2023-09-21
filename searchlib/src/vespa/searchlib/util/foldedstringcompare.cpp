@@ -8,6 +8,45 @@ using vespalib::LowerCase;
 using vespalib::Utf8ReaderForZTS;
 namespace search {
 
+using Utf32VectorRef = std::reference_wrapper<const std::vector<uint32_t>>;
+
+namespace foldedstringcompare {
+
+class Utf32Reader {
+    using Iterator = typename std::vector<uint32_t>::const_iterator;
+
+    Iterator _cur;
+    Iterator _end;
+public:
+    Utf32Reader(const std::vector<uint32_t>& key)
+        : _cur(key.begin()),
+          _end(key.end())
+    {
+    }
+
+    bool hasMore() const noexcept { return _cur != _end; }
+    uint32_t getChar() noexcept { return *_cur++; }
+};
+
+template <typename T> class FoldableStringHelper;
+
+template <> class FoldableStringHelper<const char*>
+{
+public:
+    using Reader = Utf8ReaderForZTS;
+};
+
+template <> class FoldableStringHelper<Utf32VectorRef>
+{
+public:
+    using Reader = Utf32Reader;
+};
+
+}
+
+template <typename KeyType>
+using Reader = typename foldedstringcompare::FoldableStringHelper<KeyType>::Reader;
+
 size_t
 FoldedStringCompare::
 size(const char *key)
@@ -15,15 +54,20 @@ size(const char *key)
     return Utf8ReaderForZTS::countChars(key);
 }
 
-template <bool fold_lhs, bool fold_rhs>
+template <bool fold_lhs, bool fold_rhs, detail::FoldableString KeyType, detail::FoldableString OKeyType>
 int
 FoldedStringCompare::
-compareFolded(const char *key, const char *okey)
+compareFolded(KeyType key, OKeyType okey)
 {
-    Utf8ReaderForZTS kreader(key);
-    Utf8ReaderForZTS oreader(okey);
+    Reader<KeyType> kreader(key);
+    Reader<OKeyType> oreader(okey);
 
     for (;;) {
+        if (!kreader.hasMore()) {
+            return oreader.hasMore() ? -1 : 0;
+        } else if (!oreader.hasMore()) {
+            return 1;
+        }
         uint32_t kval = fold_lhs ? LowerCase::convert(kreader.getChar()) : kreader.getChar();
         uint32_t oval = fold_rhs ? LowerCase::convert(oreader.getChar()) : oreader.getChar();
 
@@ -34,12 +78,8 @@ compareFolded(const char *key, const char *okey)
                 return 1;
             }
         }
-        if (kval == 0) {
-            return 0;
-        }
     }
 }
-
 
 template <bool fold_lhs, bool fold_rhs>
 int
@@ -90,6 +130,11 @@ compare(const char *key, const char *okey)
     }
     return strcmp(key, okey);
 }
+
+template int FoldedStringCompare::compareFolded<false, false>(const char* key, Utf32VectorRef okey);
+template int FoldedStringCompare::compareFolded<true, false>(const char* key, Utf32VectorRef okey);
+template int FoldedStringCompare::compareFolded<false, false>(Utf32VectorRef key, const char* okey);
+template int FoldedStringCompare::compareFolded<false, true>(Utf32VectorRef key, const char* okey);
 
 template int FoldedStringCompare::compareFolded<false, false>(const char* key, const char* okey);
 template int FoldedStringCompare::compareFolded<false, true>(const char* key, const char* okey);
