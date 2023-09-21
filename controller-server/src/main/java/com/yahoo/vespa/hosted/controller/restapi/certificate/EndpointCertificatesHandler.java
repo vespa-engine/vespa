@@ -73,7 +73,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
     public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExisting) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
-        if (controller.routing().randomizedEndpointsEnabled(applicationId)) {
+        if (controller.routing().generatedEndpointsEnabled(applicationId)) {
             throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
         }
         try (var lock = curator.lock(TenantAndApplicationId.from(applicationId))) {

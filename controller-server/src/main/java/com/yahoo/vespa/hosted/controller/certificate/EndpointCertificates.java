@@ -155,7 +155,7 @@ public class EndpointCertificates {
     }
 
     private Optional<EndpointCertificate> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
-        if (controller.routing().randomizedEndpointsEnabled(instance.id())) {
+        if (controller.routing().generatedEndpointsEnabled(instance.id())) {
             return Optional.of(assignFromPool(instance, zone));
         }
         Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));

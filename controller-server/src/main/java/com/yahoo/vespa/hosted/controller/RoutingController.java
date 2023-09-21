@@ -134,7 +134,7 @@ public class RoutingController {
         // Add zone-scoped endpoints
         Map<EndpointId, GeneratedEndpointList> generatedForDeclaredEndpoints = new HashMap<>();
         Set<ClusterSpec.Id> clustersWithToken = new HashSet<>();
-        boolean generatedEndpointsEnabled = randomizedEndpointsEnabled(deployment.applicationId());
+        boolean generatedEndpointsEnabled = generatedEndpointsEnabled(deployment.applicationId());
         RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
         RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
         for (var container : services.containers()) {
@@ -520,7 +520,7 @@ public class RoutingController {
         return Collections.unmodifiableList(routingMethods);
     }
 
-    public boolean randomizedEndpointsEnabled(ApplicationId instance) {
+    public boolean generatedEndpointsEnabled(ApplicationId instance) {
         return randomizedEndpoints.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
     }
 
