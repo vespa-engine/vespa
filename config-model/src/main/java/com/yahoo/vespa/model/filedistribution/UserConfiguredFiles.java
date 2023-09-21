@@ -15,7 +15,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -142,10 +141,8 @@ public class UserConfiguredFiles implements Serializable {
         }
 
         File file = path.toFile();
-        if (file.isDirectory()) {
-            if (file.listFiles() == null || file.listFiles().length == 0)
-                throw new IllegalArgumentException("Directory '" + path + "' is empty");
-        }
+        if (file.isDirectory() && (file.listFiles() == null || file.listFiles().length == 0))
+            throw new IllegalArgumentException("Directory '" + path.getRelative() + "' is empty");
 
         FileReference reference = registeredFiles.get(path);
         if (reference == null) {
@@ -153,7 +150,7 @@ public class UserConfiguredFiles implements Serializable {
             registeredFiles.put(path, reference);
         }
         if (reference == null)
-            throw new IllegalArgumentException("No such file or directory '" + path + "'");
+            throw new IllegalArgumentException("No such file or directory '" + path.getRelative() + "'");
 
         if (isModelType) {
             var model = ModelReference.valueOf(builder.getValue());
