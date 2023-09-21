@@ -58,9 +58,12 @@ And then package and deploy, e.g.:
 
 Read the Lucene docs of subclasses of:
 
-- [TokenizerFactory](org.apache.lucene.analysis.TokenizerFactory), e.g. [StandardTokenizerFactory](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/standard/StandardTokenizerFactory.html)
-- [CharFilterFactory](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/CharFilterFactory.html), e.g. [PatternReplaceCharFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/pattern/PatternReplaceCharFilterFactory.html)
-- [TokenFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/util/TokenFilterFactory.html), e.g. [ReverseStringFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/reverse/ReverseStringFilterFactory.html)
+- [TokenizerFactory](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/TokenizerFactory.html),
+  e.g. [StandardTokenizerFactory](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/standard/StandardTokenizerFactory.html)
+- [CharFilterFactory](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/CharFilterFactory.html),
+  e.g. [PatternReplaceCharFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/pattern/PatternReplaceCharFilterFactory.html)
+- [TokenFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/util/TokenFilterFactory.html),
+  e.g. [ReverseStringFilterFactory](https://lucene.apache.org/core/8_1_1/analyzers-common/org/apache/lucene/analysis/reverse/ReverseStringFilterFactory.html)
 
 E.g. tokenizer `StandardTokenizerFactory` has this config [snippet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/analysis/standard/StandardTokenizerFactory.html):
 
@@ -103,7 +106,7 @@ If the `configDir` is not specified then files are loaded from the classpath.
 
 These projects:
 
-- [vespa-chinese-linguistics](https://github.com/vespa-engine/sample-apps/blob/master/examples/vespa-chinese-linguistics/src/main/java/com/qihoo/language/JiebaLinguistics.java).
+- [vespa-chinese-linguistics](https://github.com/vespa-engine/sample-apps/blob/master/examples/vespa-chinese-linguistics/src/main/java/com/qihoo/language/JiebaLinguistics.java)
 - [OpenNlp Linguistics](https://github.com/vespa-engine/vespa/blob/50d7555bfe7bdaec86f8b31c4d316c9ba66bb976/opennlp-linguistics/src/main/java/com/yahoo/language/opennlp/OpenNlpLinguistics.java)
 - [vespa-kuromoji-linguistics](https://github.com/yahoojapan/vespa-kuromoji-linguistics/tree/main)
 - [Clojure library](https://github.com/dainiusjocas/lucene-text-analysis) to work with Lucene analyzers
