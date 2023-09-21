@@ -148,7 +148,7 @@ public class ModelProvisioningTest {
         assertEquals("-Xlog:gc", mydisc2.getContainers().get(1).getJvmOptions());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(0).getPreLoad());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(1).getPreLoad());
-        assertEquals(Optional.of(45), mydisc2.getMemoryPercentage());
+        assertEquals(45, mydisc2.getMemoryPercentage().get().percentage());
         assertEquals(Optional.of("-XX:+UseParNewGC"), mydisc2.getJvmGCOptions());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         mydisc2.getConfig(qrStartBuilder);

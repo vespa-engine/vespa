@@ -191,14 +191,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
 
     @Override
-    public Optional<Integer> getMemoryPercentage() {
-        if (memoryPercentage != null) return Optional.of(memoryPercentage);
+    public Optional<JvmMemoryPercentage> getMemoryPercentage() {
+        if (memoryPercentage != null) return Optional.of(JvmMemoryPercentage.of(memoryPercentage));
 
         if (isHostedVespa()) {
             int availableMemoryPercentage = getHostClusterId().isPresent() ?
                                             heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
                                             heapSizePercentageOfAvailableMemory;
-            if (getContainers().isEmpty()) return Optional.of(availableMemoryPercentage); // Node memory is not known
+            if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(availableMemoryPercentage)); // Node memory is not known
 
             // Node memory is known so convert available memory percentage to node memory percentage
             double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
@@ -207,7 +207,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
             logger.log(Level.FINE, () -> "memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
                            .formatted(memoryPercentage, availableMemory, totalMemory, availableMemoryPercentage, jvmHeapDeductionGb));
-            return Optional.of(memoryPercentage);
+            return Optional.of(JvmMemoryPercentage.of(memoryPercentage, availableMemory));
         }
         return Optional.empty();
     }
@@ -312,12 +312,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
+        var memoryPct = getMemoryPercentage().orElse(null);
+        int heapsize = memoryPct != null && memoryPct.availableMemoryGb().isPresent()
+                ? (int) (memoryPct.availableMemoryGb().getAsDouble() * 1024) : 1536;
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
                 .compressedClassSpaceSize(0)
-                .minHeapsize(1536)
-                .heapsize(1536);
-        getMemoryPercentage().ifPresent(percentage -> builder.jvm.heapSizeAsPercentageOfPhysicalMemory(percentage));
+                .minHeapsize(heapsize)
+                .heapsize(heapsize);
+        if (memoryPct != null) builder.jvm.heapSizeAsPercentageOfPhysicalMemory(memoryPct.percentage());
     }
 
     @Override
