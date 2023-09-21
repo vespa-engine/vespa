@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -92,6 +94,7 @@ public class RankProfilesConfigImporter {
         ExpressionFunction secondPhase = null;
         ExpressionFunction globalPhase = null;
         Map<String, TensorType> declaredTypes = new LinkedHashMap<>();
+        Set<String> matchFeaturesSet = new HashSet<>();
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
             Optional<FunctionReference> externalReference = FunctionReference.fromExternalSerial(property.name());
@@ -139,6 +142,9 @@ public class RankProfilesConfigImporter {
                 declaredTypes.put(function.getName(), type); // "foo"
                 declaredTypes.put(functionRef.serialForm(), type); // "rankingExpression(foo)"
             }
+            else if (property.name().equals("vespa.match.feature")) {
+                matchFeaturesSet.add(property.value());
+            }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to functions
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
                                                     new RankingExpression("first-phase", property.value()));
@@ -166,7 +172,11 @@ public class RankProfilesConfigImporter {
             functions.put(FunctionReference.fromName("globalphase"), globalPhase);
 
         constants.addAll(smallConstantsInfo.asConstants());
-
+        for (String k : matchFeaturesSet) {
+            var optRef = FunctionReference.fromSerial(k);
+            var ref = optRef.orElse(FunctionReference.fromName(k));
+            referencedFunctions.remove(ref);
+        }
         try {
             return new Model(profile.name(), functions, referencedFunctions, declaredTypes, constants, onnxModels);
         }
