@@ -7,7 +7,6 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * A partially parsed variant of services.xml, for use by the {@link com.yahoo.vespa.hosted.controller.Controller}.
@@ -78,7 +77,7 @@ public record BasicServicesXml(List<Container> containers) {
             this.authMethods = Objects.requireNonNull(authMethods).stream()
                                       .distinct()
                                       .sorted()
-                                      .collect(Collectors.toList());
+                                      .toList();
             if (authMethods.isEmpty()) throw new IllegalArgumentException("Container must have at least one auth method");
         }
 
