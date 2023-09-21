@@ -332,6 +332,7 @@ MatchThread::findMatches(MatchTools &tools)
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     trace->addEvent(4, "Start match and first phase rank");
+    if (tools.getDoom().soft_doom()) return 0;
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         trace->addEvent(4, "Start second phase rerank");
