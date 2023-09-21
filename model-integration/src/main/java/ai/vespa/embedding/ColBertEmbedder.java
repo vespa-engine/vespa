@@ -124,6 +124,12 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
+    @Override
+    public void deconstruct() {
+        evaluator.close();
+        tokenizer.close();
+    }
+
     protected Tensor embedQuery(String text, Context context, TensorType tensorType) {
         if(tensorType.valueType() == TensorType.Value.INT8)
             throw new IllegalArgumentException("ColBert query embed does not accept int8 tensor value type");
