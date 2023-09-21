@@ -55,7 +55,6 @@ public class CloudTokenDataPlaneFilter extends JsonSecurityRequestFilterBase {
     private static List<Client> parseClients(CloudTokenDataPlaneFilterConfig cfg) {
         Set<String> ids = new HashSet<>();
         List<Client> clients = new ArrayList<>(cfg.clients().size());
-        if (cfg.clients().isEmpty()) throw new IllegalArgumentException("Empty clients configuration");
         for (var c : cfg.clients()) {
             if (ids.contains(c.id()))
                 throw new IllegalArgumentException("Clients definition has duplicate id '%s'".formatted(c.id()));
