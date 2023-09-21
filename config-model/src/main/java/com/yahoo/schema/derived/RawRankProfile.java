@@ -19,6 +19,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
@@ -207,10 +208,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).toList();
             Map<String, String> functionProperties = new LinkedHashMap<>();
-            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
-                                                                                         Map.of(),
-                                                                                         compiled.typeContext(queryProfiles));
-
+            var typeContext = compiled.typeContext(queryProfiles);
+            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions, Map.of(), typeContext);
             if (firstPhaseRanking != null) {
                 functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
             }
@@ -220,12 +219,27 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (globalPhaseRanking != null) {
                 functionProperties.putAll(globalPhaseRanking.getRankProperties(functionSerializationContext));
             }
+            deriveFeatureDeclarations(matchFeatures, typeContext, functionProperties);
+            deriveFeatureDeclarations(summaryFeatures, typeContext, functionProperties);
             derivePropertiesAndFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
             deriveOnnxModelFunctionsAndFeatures(compiled);
 
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
             deriveWeightProperties(compiled);
+        }
+
+        private void deriveFeatureDeclarations(Collection<ReferenceNode> features,
+                                               TypeContext typeContext,
+                                               Map<String, String> functionProperties)
+        {
+            for (ReferenceNode feature : features) {
+                var tt = feature.type(typeContext);
+                if (tt != null && tt.rank() > 0) {
+                    String k = "vespa.type.feature." + feature.getName() + feature.getArguments();
+                    functionProperties.put(k, tt.toString());
+                }
+            }
         }
 
         private void deriveFilterFields(RankProfile rp) {

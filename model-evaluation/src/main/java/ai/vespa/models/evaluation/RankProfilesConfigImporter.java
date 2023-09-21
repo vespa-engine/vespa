@@ -333,6 +333,9 @@ public class RankProfilesConfigImporter {
         if ( ! expressionMatcher.matches()) return Optional.empty();
         String name = expressionMatcher.group(1);
         String argument = expressionMatcher.group(2);
+        if (name.equals("feature")) {
+            return Optional.of(argument);
+        }
         return Optional.of(name + "(" + argument + ")");
     }
 
