@@ -255,6 +255,11 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>com.yahoo.vespa</groupId>
+                    <artifactId>config-class-plugin</artifactId>
+                    <version>${project.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>com.helger.maven</groupId>
                     <artifactId>ph-javacc-maven-plugin</artifactId>
                     <version>4.1.5</version>
