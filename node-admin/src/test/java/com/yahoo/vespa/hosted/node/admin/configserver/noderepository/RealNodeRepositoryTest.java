@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
@@ -140,6 +141,7 @@ public class RealNodeRepositoryTest {
         var dockerImage = "registry.example.com/repo/image-1:6.2.3";
         var wireguardKey = WireguardKey.from("111122223333444455556666777788889999000042c=");
         var wireguardKeyTimestamp = Instant.ofEpochMilli(123L); // Instant from clock in MockNodeRepository
+        var keyWithTimestamp = new WireguardKeyWithTimestamp(wireguardKey, wireguardKeyTimestamp);
 
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -151,8 +153,7 @@ public class RealNodeRepositoryTest {
         NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode(hostname).orElseThrow();
         assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
         assertEquals(dockerImage, hostSpec.currentDockerImage().orElseThrow().asString());
-        assertEquals(wireguardKey.value(), hostSpec.wireguardPubkey().orElseThrow().value());
-        assertEquals(wireguardKeyTimestamp, hostSpec.wireguardKeyTimestamp().orElseThrow());
+        assertEquals(keyWithTimestamp, hostSpec.wireguardKeyWithTimestamp().orElseThrow());
     }
 
     @Test
@@ -215,7 +216,7 @@ public class RealNodeRepositoryTest {
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1",
                             "lololololololololololololololololololololoo=",
-                            Instant.ofEpochMilli(456L));
+                            456L);
 
         //// Exclave nodes ////
 
@@ -227,16 +228,17 @@ public class RealNodeRepositoryTest {
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
                             "::101:1",
                             "000011112222333344445555666677778888999900c=",
-                            Instant.ofEpochMilli(123L));
+                            123L);
     }
 
     private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6,
-                                     String publicKey, Instant keyTimestamp) {
+                                     String publicKey, long keyTimestamp) {
         assertEquals(hostname, peer.hostname().value());
         assertEquals(1, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
-        assertEquals(publicKey, peer.publicKey().value());
-        assertEquals(keyTimestamp, peer.wireguardKeyTimestamp());
+        var expectedKeyWithTimestamp = new WireguardKeyWithTimestamp(WireguardKey.from(publicKey),
+                                                                     Instant.ofEpochMilli(keyTimestamp));
+        assertEquals(expectedKeyWithTimestamp, peer.keyWithTimestamp());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
