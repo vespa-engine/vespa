@@ -15,8 +15,10 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +57,14 @@ public class UserConfiguredFilesTest {
 
         @Override
         public List<Entry> export() {
-            return null;
+            return pathToRef.entrySet().stream()
+                    .map(e -> new Entry(e.getKey(), e.getValue()))
+                    .toList();
         }
+
+        @Override
+        public String toString() { return export().toString(); }
+
     }
 
     private UserConfiguredFiles userConfiguredFiles() {
@@ -273,5 +281,20 @@ public class UserConfiguredFilesTest {
         }
     }
 
+    @Test
+    void require_that_using_empty_dir_gives_sane_error_message(@TempDir Path tempDir) {
+        String relativeTempDir = tempDir.toString().substring(tempDir.toString().lastIndexOf("target"));
+        try {
+            def.addPathDef("pathVal");
+            builder.setField("pathVal", relativeTempDir);
+            fileRegistry.pathToRef.put(relativeTempDir, new FileReference("bazshash"));
+            userConfiguredFiles().register(producer);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Directory '" +
+                                 relativeTempDir + "' is empty",
+                         e.getMessage());
+        }
+    }
 
 }
