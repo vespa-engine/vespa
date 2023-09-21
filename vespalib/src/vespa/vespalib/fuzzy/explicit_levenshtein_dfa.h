@@ -123,18 +123,17 @@ public:
         _nodes[from_node_idx].set_wildcard_out_edge(to_node_idx);
     }
 
-    [[nodiscard]] MatchResult match(std::string_view u8str, std::string* successor_out) const override;
+    [[nodiscard]] MatchResult match(std::string_view u8str) const override;
 
-    [[nodiscard]] MatchResult match(std::string_view u8str, std::vector<uint32_t>* successor_out) const override;
+    [[nodiscard]] MatchResult match(std::string_view u8str, std::string& successor_out) const override;
+
+    [[nodiscard]] MatchResult match(std::string_view u8str, std::vector<uint32_t>& successor_out) const override;
 
     [[nodiscard]] size_t memory_usage() const noexcept override {
         return sizeof(DfaNodeType) * _nodes.size();
     }
 
     void dump_as_graphviz(std::ostream& os) const override;
-private:
-    template <typename SuccessorT>
-    [[nodiscard]] MatchResult match_impl(std::string_view u8str, SuccessorT* successor_out) const;
 };
 
 template <typename Traits>

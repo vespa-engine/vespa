@@ -135,23 +135,24 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
 };
 
 template <typename Traits>
-template <typename SuccessorT>
 LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match_impl(std::string_view u8str, SuccessorT* successor_out) const {
+ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str) const {
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str);
+}
+
+template <typename Traits>
+LevenshteinDfa::MatchResult
+ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string& successor_out) const {
     ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 
 template <typename Traits>
 LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string* successor_out) const {
-    return match_impl(u8str, successor_out);
-}
-
-template <typename Traits>
-LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::vector<uint32_t>* successor_out) const {
-    return match_impl(u8str, successor_out);
+ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 
 template <typename Traits>
