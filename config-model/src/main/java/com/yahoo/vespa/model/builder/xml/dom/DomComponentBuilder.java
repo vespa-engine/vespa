@@ -7,7 +7,10 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.container.component.*;
+import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
+import com.yahoo.vespa.model.container.component.BertEmbedder;
+import com.yahoo.vespa.model.container.component.ColBertEmbedder;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
