@@ -97,6 +97,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
+    private final boolean dynamicHeapSize;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -108,6 +109,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
+        dynamicHeapSize = deployState.featureFlags().dynamicHeapSize();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                .map(Model::allocatedHosts)
                                                                .map(AllocatedHosts::getHosts)
@@ -200,7 +202,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
             // Node memory is known so convert available memory percentage to node memory percentage
             double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
-            double jvmHeapDeductionGb = onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024);
+            double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
             double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
             logger.log(Level.FINE, () -> "memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
