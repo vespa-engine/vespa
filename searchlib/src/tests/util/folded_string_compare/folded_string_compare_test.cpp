@@ -3,11 +3,31 @@
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/text/utf8.h>
 
 using search::FoldedStringCompare;
+using vespalib::LowerCase;
+using vespalib::Utf8ReaderForZTS;
 
 using IntVec = std::vector<int>;
 using StringVec = std::vector<vespalib::string>;
+
+namespace {
+
+template <bool fold>
+std::vector<uint32_t> as_utf32(const char* key)
+{
+    std::vector<uint32_t> result;
+    Utf8ReaderForZTS reader(key);
+    while (reader.hasMore()) {
+        uint32_t code_point = fold ? LowerCase::convert(reader.getChar()) : reader.getChar();
+        result.push_back(code_point);
+    }
+    return result;
+}
+
+}
 
 class FoldedStringCompareTest : public ::testing::Test
 {
@@ -21,10 +41,22 @@ protected:
 
     template <bool fold_lhs, bool fold_rhs>
     int
-    compare_folded_helper(const vespalib::string& lhs, const vespalib::string& rhs)
+    compare_folded_helper2(const vespalib::string& lhs, const vespalib::string& rhs)
     {
         int ret = FoldedStringCompare::compareFolded<fold_lhs, fold_rhs>(lhs.c_str(), rhs.c_str());
-        EXPECT_EQ(-ret, (FoldedStringCompare::compareFolded<fold_rhs, fold_lhs>(rhs.c_str(), lhs.c_str())));
+        auto folded_lhs_utf32 = as_utf32<fold_lhs>(lhs.c_str());
+        EXPECT_EQ(ret, (FoldedStringCompare::compareFolded<false, fold_rhs>(std::cref(folded_lhs_utf32), rhs.c_str())));
+        auto folded_rhs_utf32 = as_utf32<fold_rhs>(rhs.c_str());
+        EXPECT_EQ(ret, (FoldedStringCompare::compareFolded<fold_lhs, false>(lhs.c_str(), std::cref(folded_rhs_utf32))));
+        return ret;
+    }
+
+    template <bool fold_lhs, bool fold_rhs>
+    int
+    compare_folded_helper(const vespalib::string& lhs, const vespalib::string& rhs)
+    {
+        int ret = compare_folded_helper2<fold_lhs, fold_rhs>(lhs, rhs);
+        EXPECT_EQ(-ret, (compare_folded_helper2<fold_rhs, fold_lhs>(rhs, lhs)));
         return ret;
     }
 
