@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/feature.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include <vespa/searchlib/common/feature.h>
 
 namespace search::fef { class Properties; }
 
@@ -327,6 +328,16 @@ namespace matching {
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
+     * Property to control the algorithm using for fuzzy matching.
+     **/
+    struct FuzzyAlgorithm {
+        static const vespalib::string NAME;
+        static const vespalib::FuzzyMatchingAlgorithm DEFAULT_VALUE;
+        static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props);
+        static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm default_value);
     };
 }
 

@@ -5,9 +5,9 @@
 
 namespace search::attribute {
 
-StringMatcher::StringMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased)
+StringMatcher::StringMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _query_term(static_cast<QueryTermUCS4 *>(query_term.release())),
-      _helper(*_query_term, cased)
+      _helper(*_query_term, cased, fuzzy_matching_algorithm)
 {
 }
 

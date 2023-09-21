@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <vespa/vespalib/regex/regex.h>
 
 namespace vespalib { class FuzzyMatcher; }
@@ -16,7 +17,8 @@ namespace search::attribute {
 class StringSearchHelper {
 public:
     using FuzzyMatcher = vespalib::FuzzyMatcher;
-    StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
+    StringSearchHelper(QueryTermUCS4 & qTerm, bool cased,
+                       vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm = vespalib::FuzzyMatchingAlgorithm::BruteForce);
     StringSearchHelper(StringSearchHelper&&) noexcept;
     StringSearchHelper(const StringSearchHelper &) = delete;
     StringSearchHelper & operator =(const StringSearchHelper &) = delete;

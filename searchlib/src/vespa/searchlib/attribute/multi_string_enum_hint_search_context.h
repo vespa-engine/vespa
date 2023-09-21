@@ -4,6 +4,8 @@
 
 #include "multi_string_enum_search_context.h"
 #include "enumhintsearchcontext.h"
+#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
+
 
 namespace search::attribute {
 
@@ -17,7 +19,12 @@ class MultiStringEnumHintSearchContext : public MultiStringEnumSearchContext<M>,
                                          public EnumHintSearchContext
 {
 public:
-    MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit, uint64_t num_values);
+    MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
+                                     vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
+                                     const AttributeVector& toBeSearched,
+                                     MultiValueMappingReadView<M> mv_mapping_read_view,
+                                     const EnumStoreT<const char*>& enum_store,
+                                     uint32_t doc_id_limit, uint64_t num_values);
     ~MultiStringEnumHintSearchContext() override;
 };
 

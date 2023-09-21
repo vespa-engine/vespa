@@ -5,8 +5,13 @@
 
 namespace search::attribute {
 
-SingleStringEnumHintSearchContext::SingleStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<const char*>& enum_store, uint64_t num_values)
-    : SingleStringEnumSearchContext(std::move(qTerm), cased, toBeSearched, enum_indices, enum_store),
+SingleStringEnumHintSearchContext::SingleStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
+                                                                     vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
+                                                                     const AttributeVector& toBeSearched,
+                                                                     EnumIndices enum_indices,
+                                                                     const EnumStoreT<const char*>& enum_store,
+                                                                     uint64_t num_values)
+    : SingleStringEnumSearchContext(std::move(qTerm), cased, fuzzy_matching_algorithm, toBeSearched, enum_indices, enum_store),
       EnumHintSearchContext(enum_store.get_dictionary(),
                             enum_indices.size(), num_values)
 {

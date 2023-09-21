@@ -46,11 +46,12 @@ MultiValueStringAttributeT<B, M>::freezeEnumDictionary()
 template <typename B, typename M>
 std::unique_ptr<attribute::SearchContext>
 MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
-                                            const attribute::SearchContextParams &) const
+                                            const attribute::SearchContextParams &params) const
 {
     bool cased = this->get_match_is_cased();
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::MultiStringEnumHintSearchContext<M>>(std::move(qTerm), cased, *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit, this->getStatus().getNumValues());
+    return std::make_unique<attribute::MultiStringEnumHintSearchContext<M>>(std::move(qTerm), cased, params.fuzzy_matching_algorithm(),
+            *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit, this->getStatus().getNumValues());
 }
 
 template <typename B, typename M>
