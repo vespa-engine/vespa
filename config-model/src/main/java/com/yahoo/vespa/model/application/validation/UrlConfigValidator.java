@@ -27,9 +27,7 @@ public class UrlConfigValidator extends Validator {
     private static boolean hasExclusiveNodes(VespaModel model, ApplicationContainerCluster cluster) {
         return model.hostSystem().getHosts()
                 .stream()
-                .map(hostResource -> hostResource.spec().membership())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(hostResource -> hostResource.spec().membership().stream())
                 .filter(membership -> membership.cluster().id().equals(cluster.id()))
                 .anyMatch(membership -> membership.cluster().isExclusive());
     }
