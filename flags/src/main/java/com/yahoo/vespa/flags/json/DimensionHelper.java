@@ -15,7 +15,7 @@ public class DimensionHelper {
     private static final Map<FetchVector.Dimension, String> serializedDimensions = new HashMap<>();
 
     static {
-        serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
+        serializedDimensions.put(FetchVector.Dimension.INSTANCE_ID, "application");
         serializedDimensions.put(FetchVector.Dimension.CLOUD, "cloud");
         serializedDimensions.put(FetchVector.Dimension.CLOUD_ACCOUNT, "cloud-account");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_ID, "cluster-id");

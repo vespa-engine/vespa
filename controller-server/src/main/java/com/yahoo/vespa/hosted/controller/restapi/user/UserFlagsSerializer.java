@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -72,7 +71,7 @@ public class UserFlagsSerializer {
         // For the other dimensions, filter the values down to an allowed subset
         switch (condition.dimension()) {
             case TENANT_ID: return valueSubset(condition, tenant -> isOperator || authorizedForTenantNames.contains(TenantName.from(tenant)));
-            case APPLICATION_ID: return valueSubset(condition, appId -> isOperator || authorizedForTenantNames.stream().anyMatch(tenant -> appId.startsWith(tenant.value() + ":")));
+            case INSTANCE_ID: return valueSubset(condition, appId -> isOperator || authorizedForTenantNames.stream().anyMatch(tenant -> appId.startsWith(tenant.value() + ":")));
             default: throw new IllegalArgumentException("Dimension " + condition.dimension() + " is not supported for user flags");
         }
     }

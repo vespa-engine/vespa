@@ -50,7 +50,7 @@ public class FlagsTest {
         // zone is set because it was set on the unbound flag above
         assertThat(vector.getValue().getValue(FetchVector.Dimension.ZONE_ID), is(Optional.of("a-zone")));
         // application and node type are not set
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.APPLICATION_ID), is(Optional.empty()));
+        assertThat(vector.getValue().getValue(FetchVector.Dimension.INSTANCE_ID), is(Optional.empty()));
         assertThat(vector.getValue().getValue(FetchVector.Dimension.NODE_TYPE), is(Optional.empty()));
 
         RawFlag rawFlag = mock(RawFlag.class);
@@ -58,11 +58,11 @@ public class FlagsTest {
         when(rawFlag.asJsonNode()).thenReturn(BooleanNode.getTrue());
 
         // raw flag deserializes to true
-        assertThat(booleanFlag.with(FetchVector.Dimension.APPLICATION_ID, "an-app").value(), equalTo(true));
+        assertThat(booleanFlag.with(FetchVector.Dimension.INSTANCE_ID, "an-app").value(), equalTo(true));
 
         verify(source, times(2)).fetch(any(), vector.capture());
         // application was set on the (bound) flag.
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.APPLICATION_ID), is(Optional.of("an-app")));
+        assertThat(vector.getValue().getValue(FetchVector.Dimension.INSTANCE_ID), is(Optional.of("an-app")));
     }
 
     @Test

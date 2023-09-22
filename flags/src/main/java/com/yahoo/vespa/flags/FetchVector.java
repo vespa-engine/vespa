@@ -22,9 +22,6 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
-        APPLICATION_ID,
-
         /**
          * Cloud from com.yahoo.config.provision.CloudName::value, e.g. yahoo, aws, gcp.
          *
@@ -58,6 +55,9 @@ public class FetchVector {
          * fetching flag value for a Docker container node.
          */
         HOSTNAME,
+
+        /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
+        INSTANCE_ID,
 
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,

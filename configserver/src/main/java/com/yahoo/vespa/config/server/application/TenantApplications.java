@@ -50,7 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -418,7 +418,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         if (vespaVersion.isEmpty()) return true;
         Version wantedVersion = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
                                                  .getModel().wantedNodeVersion();
-        return VersionCompatibility.fromVersionList(incompatibleVersions.with(APPLICATION_ID, application.serializedForm()).value())
+        return VersionCompatibility.fromVersionList(incompatibleVersions.with(INSTANCE_ID, application.serializedForm()).value())
                                    .accept(vespaVersion.get(), wantedVersion);
     }
 

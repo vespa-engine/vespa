@@ -82,7 +82,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -728,7 +728,7 @@ public class SessionRepository {
         } catch (IllegalArgumentException e) {
             if (configserverConfig.hostedVespa()) {
                 UnboundStringFlag flag = PermanentFlags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
-                String value = flag.bindTo(flagSource).with(APPLICATION_ID, applicationId.serializedForm()).value();
+                String value = flag.bindTo(flagSource).with(INSTANCE_ID, applicationId.serializedForm()).value();
                 switch (value) {
                     case "FAIL" -> throw new InvalidApplicationException(e);
                     case "LOG" -> deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));

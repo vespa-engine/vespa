@@ -18,7 +18,7 @@ public class ConditionTest {
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = WhitelistCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
-        assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
+        assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.INSTANCE_ID, "foo")));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, hostname1)));
     }
@@ -29,7 +29,7 @@ public class ConditionTest {
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = BlacklistCondition.create(params);
         assertTrue(condition.test(new FetchVector()));
-        assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
+        assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.INSTANCE_ID, "foo")));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, hostname1)));
     }

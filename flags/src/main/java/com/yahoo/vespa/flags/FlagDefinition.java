@@ -77,7 +77,7 @@ public class FlagDefinition {
         if (dimensions.contains(FetchVector.Dimension.CONSOLE_USER_EMAIL)) {
             Set<FetchVector.Dimension> disallowedCombinations = EnumSet.allOf(FetchVector.Dimension.class);
             disallowedCombinations.remove(FetchVector.Dimension.CONSOLE_USER_EMAIL);
-            disallowedCombinations.remove(FetchVector.Dimension.APPLICATION_ID);
+            disallowedCombinations.remove(FetchVector.Dimension.INSTANCE_ID);
             disallowedCombinations.remove(FetchVector.Dimension.TENANT_ID);
             disallowedCombinations.retainAll(dimensions);
             if (!disallowedCombinations.isEmpty())

@@ -94,7 +94,7 @@ class NodeAllocation {
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
-                                                                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                                                                        .with(FetchVector.Dimension.INSTANCE_ID, application.serializedForm())
                                                                         .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
                                                                         .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                                                                         .value())

@@ -58,7 +58,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     private boolean shouldMaintain(ApplicationId id) {
         BooleanFlag skipMaintenanceDeployment = PermanentFlags.SKIP_MAINTENANCE_DEPLOYMENT.bindTo(flagSource)
-                .with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm());
+                .with(FetchVector.Dimension.INSTANCE_ID, id.serializedForm());
         return ! skipMaintenanceDeployment.value();
     }
 

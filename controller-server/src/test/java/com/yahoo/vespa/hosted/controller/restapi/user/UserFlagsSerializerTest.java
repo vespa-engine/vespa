@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 
@@ -42,7 +42,7 @@ public class UserFlagsSerializerTest {
 
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting()) {
             Flags.defineStringFlag("string-id", "default value", List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL);
-            Flags.defineIntFlag("int-id", 123, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL, TENANT_ID, APPLICATION_ID);
+            Flags.defineIntFlag("int-id", 123, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL, TENANT_ID, INSTANCE_ID);
             Flags.defineDoubleFlag("double-id", 3.14d, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod");
             Flags.defineListFlag("list-id", List.of("a"), String.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL);
             Flags.defineJacksonFlag("jackson-id", new ExampleJacksonClass(123, "abc"), ExampleJacksonClass.class,
@@ -52,9 +52,9 @@ public class UserFlagsSerializerTest {
                     flagData("string-id", rule("\"value1\"", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1))),
                     flagData("int-id", rule("456")),
                     flagData("list-id",
-                            rule("[\"value1\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(APPLICATION_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default")),
+                            rule("[\"value1\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(INSTANCE_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default")),
                             rule("[\"value2\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email2)),
-                            rule("[\"value1\",\"value3\"]", condition(APPLICATION_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default"))),
+                            rule("[\"value1\",\"value3\"]", condition(INSTANCE_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default"))),
                     flagData("jackson-id", rule("{\"integer\":456,\"string\":\"xyz\"}", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(TENANT_ID, Condition.Type.WHITELIST, "tenant1", "tenant3")))
             ).collect(Collectors.toMap(FlagData::id, fd -> fd));
 

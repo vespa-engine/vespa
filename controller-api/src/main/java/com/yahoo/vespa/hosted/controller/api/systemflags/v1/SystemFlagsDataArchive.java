@@ -190,7 +190,7 @@ public class SystemFlagsDataArchive {
         flagData.rules().forEach(rule -> rule.conditions().forEach(condition -> {
             int force_switch_expression_dummy = switch (condition.type()) {
                 case RELATIONAL -> switch (condition.dimension()) {
-                    case APPLICATION_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL, 
+                    case INSTANCE_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL,
                             ENVIRONMENT, HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
                             throw new FlagValidationException(condition.type().toWire() + " " +
                                                               DimensionHelper.toWire(condition.dimension()) +
@@ -205,7 +205,7 @@ public class SystemFlagsDataArchive {
                 };
 
                 case WHITELIST, BLACKLIST -> switch (condition.dimension()) {
-                    case APPLICATION_ID -> validateConditionValues(condition, ApplicationId::fromSerializedForm);
+                    case INSTANCE_ID -> validateConditionValues(condition, ApplicationId::fromSerializedForm);
                     case CONSOLE_USER_EMAIL -> validateConditionValues(condition, email -> {
                         if (!email.contains("@"))
                             throw new FlagValidationException("Invalid email address: " + email);

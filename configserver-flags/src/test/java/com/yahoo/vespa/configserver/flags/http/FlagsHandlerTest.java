@@ -34,7 +34,7 @@ public class FlagsHandlerTest {
             "id1", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc1", "mod1");
     private static final UnboundBooleanFlag FLAG2 = Flags.defineFeatureFlag(
             "id2", true, List.of("joe"), "2010-01-01", "2030-01-01", "desc2", "mod2",
-            FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
+            FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.INSTANCE_ID);
 
     private final FlagsDb flagsDb = new FlagsDbImpl(new MockCurator());
     private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testContext(), flagsDb);

@@ -59,7 +59,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         int failures = 0;
         outer:
         for (var applicationNodes : activeNodesByApplication().entrySet()) {
-            boolean enabled = enabledFlag.with(FetchVector.Dimension.APPLICATION_ID,
+            boolean enabled = enabledFlag.with(FetchVector.Dimension.INSTANCE_ID,
                                                applicationNodes.getKey().serializedForm()).value();
             if (!enabled) continue;
             for (var clusterNodes : nodesByCluster(applicationNodes.getValue()).entrySet()) {
