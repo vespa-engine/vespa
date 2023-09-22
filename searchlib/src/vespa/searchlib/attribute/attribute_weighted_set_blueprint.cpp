@@ -148,8 +148,7 @@ AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context,
     _estHits = std::min(_estHits + context->approximateHits(), _numDocs);
     setEstimate(HitEstimate(_estHits, (_estHits == 0)));
     _weights.push_back(weight);
-    _contexts.push_back(context.get());
-    context.release();
+    _contexts.push_back(context.release());
 }
 
 queryeval::SearchIterator::UP
@@ -169,18 +168,14 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
             children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
         bool field_is_filter = getState().fields()[0].isFilter();
-        return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, field_is_filter, _weights, std::move(match_data)));
+        return queryeval::WeightedSetTermSearch::create(children, tfmd, field_is_filter, _weights, std::move(match_data));
     } else { // use attribute filter optimization
-        bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());
-        bool isInteger = _attr.isIntegerType();
-        assert(isSingleValue);
-        (void) isSingleValue;
+        assert(!_attr.hasMultiValue());
         if (isString) {
             return std::make_unique<AttributeFilter<UseStringEnum>>(tfmd, _attr, _weights, _contexts);
         } else {
-            assert(isInteger);
-            (void) isInteger;
+            assert(_attr.isIntegerType());
             return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
         }
     }
