@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
@@ -64,9 +65,13 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         try {
             moveRequestedCertsToReady();
             List<UnassignedCertificate> certificatePool = curator.readUnassignedCertificates();
-            // So we can alert if the pool goes too low
-            metric.set("preprovisioned.endpoint.certificates", certificatePool.stream().filter(c -> c.state() == UnassignedCertificate.State.ready).count(), metric.createContext(Map.of()));
-            if (certificatePool.size() < certPoolSize.value()) {
+
+            // Create metric for available certificates in the pool as a fraction of configured size
+            int poolSize = certPoolSize.value();
+            long available = certificatePool.stream().filter(c -> c.state() == UnassignedCertificate.State.ready).count();
+            metric.set(ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.baseName(), (poolSize > 0 ? (available/poolSize) : 1.0), metric.createContext(Map.of()));
+
+            if (certificatePool.size() < poolSize) {
                 provisionRandomizedCertificate();
             }
         } catch (Exception e) {
