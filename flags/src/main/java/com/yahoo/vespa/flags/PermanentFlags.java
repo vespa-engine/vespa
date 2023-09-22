@@ -147,9 +147,9 @@ public class PermanentFlags {
             "Takes effect on next deployment from controller",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SEND_LIMITED_METRIC_SET = defineFeatureFlag(
-            "send-limited-metric-set", true,
-            "Whether a limited metric set should be fetched from metrics-proxy (CD systems only)",
+    public static final UnboundStringFlag METRIC_SET = defineStringFlag(
+            "metric-set", "Vespa",
+            "Determines which metric set we should use for the given application",
             "Takes effect on next host admin tick",
             INSTANCE_ID);
 
