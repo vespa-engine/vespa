@@ -111,7 +111,7 @@ public class FlagsHandlerTest {
                                 },
                                 {
                                   "type": "blacklist",
-                                  "dimension": "instance",
+                                  "dimension": "application",
                                   "values": [ "app1", "app2" ]
                                 }
                               ],
@@ -127,7 +127,7 @@ public class FlagsHandlerTest {
 
         // GET on id2 should now return what was put
         verifySuccessfulRequest(Method.GET, "/data/" + FLAG2.id(), "",
-                "{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"app1\",\"app2\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}");
+                "{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app1\",\"app2\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}");
 
         // The list of flag data should return id1 and id2
         verifySuccessfulRequest(Method.GET, "/data",
@@ -153,7 +153,7 @@ public class FlagsHandlerTest {
 
         // Get all recursivelly displays all flag data
         verifySuccessfulRequest(Method.GET, "/data?recursive=true", "",
-                "{\"flags\":[{\"id\":\"id1\",\"rules\":[{\"value\":false}]},{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"app1\",\"app2\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}]}");
+                "{\"flags\":[{\"id\":\"id1\",\"rules\":[{\"value\":false}]},{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"app1\",\"app2\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}]}");
 
         // Deleting both flags
         verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG1.id(), "", "");
