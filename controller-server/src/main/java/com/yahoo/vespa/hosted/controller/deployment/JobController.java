@@ -155,7 +155,7 @@ public class JobController {
     }
 
     public boolean isDisabled(JobId id) {
-        return disabledZones.with(Dimension.APPLICATION_ID, id.application().serializedForm()).value().contains(id.type().zone().value());
+        return disabledZones.with(Dimension.INSTANCE_ID, id.application().serializedForm()).value().contains(id.type().zone().value());
     }
 
     /** Returns all entries currently logged for the given run. */

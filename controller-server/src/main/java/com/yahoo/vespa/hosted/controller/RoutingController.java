@@ -521,7 +521,7 @@ public class RoutingController {
     }
 
     public boolean generatedEndpointsEnabled(ApplicationId instance) {
-        return randomizedEndpoints.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
+        return randomizedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm()).value();
     }
 
     private static void requireGeneratedEndpoints(GeneratedEndpointList generatedEndpoints, boolean declared) {

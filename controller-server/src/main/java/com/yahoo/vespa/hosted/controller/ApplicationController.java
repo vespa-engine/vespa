@@ -113,7 +113,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
@@ -676,7 +676,7 @@ public class ApplicationController {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
-                            .with(APPLICATION_ID, application.serializedForm())
+                            .with(INSTANCE_ID, application.serializedForm())
                             .value())
                     .filter(s -> !s.isBlank())
                     .map(DockerImage::fromString);
@@ -962,7 +962,7 @@ public class ApplicationController {
     }
 
     public VersionCompatibility versionCompatibility(ApplicationId id) {
-        return VersionCompatibility.fromVersionList(incompatibleVersions.with(APPLICATION_ID, id.serializedForm()).value());
+        return VersionCompatibility.fromVersionList(incompatibleVersions.with(INSTANCE_ID, id.serializedForm()).value());
     }
 
     /**

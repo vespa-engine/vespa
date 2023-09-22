@@ -52,6 +52,8 @@ public class FlagDataTest {
                                     }
                                 }""";
 
+    private final String json_with_instance = json.replace("application", "instance");
+
     private final FetchVector vector = new FetchVector();
 
     @Test
@@ -62,16 +64,16 @@ public class FlagDataTest {
         // First rule matches only if both conditions match
         verify(Optional.of("false"), vector
                 .with(FetchVector.Dimension.HOSTNAME, "host1")
-                .with(FetchVector.Dimension.APPLICATION_ID, "app2"));
+                .with(FetchVector.Dimension.INSTANCE_ID, "app2"));
         verify(Optional.of("true"), vector
                 .with(FetchVector.Dimension.HOSTNAME, "host1")
-                .with(FetchVector.Dimension.APPLICATION_ID, "app3"));
+                .with(FetchVector.Dimension.INSTANCE_ID, "app3"));
 
         // Verify unsetting a dimension with null works.
         verify(Optional.of("true"), vector
                 .with(FetchVector.Dimension.HOSTNAME, "host1")
-                .with(FetchVector.Dimension.APPLICATION_ID, "app3")
-                .with(FetchVector.Dimension.APPLICATION_ID, null));
+                .with(FetchVector.Dimension.INSTANCE_ID, "app3")
+                .with(FetchVector.Dimension.INSTANCE_ID, null));
 
         // No rules apply if zone is overridden to an unknown zone
         verify(Optional.empty(), vector.with(FetchVector.Dimension.ZONE_ID, "unknown zone"));
@@ -81,7 +83,7 @@ public class FlagDataTest {
     void testPartialResolve() {
         FlagData data = FlagData.deserialize(json);
         assertEquals(data.partialResolve(vector), data);
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app1")),
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app1")),
                      FlagData.deserialize("""
                                 {
                                     "id": "id1",
@@ -102,7 +104,7 @@ public class FlagDataTest {
                                     }
                                 }"""));
 
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app1")),
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app1")),
                      FlagData.deserialize("""
                                 {
                                     "id": "id1",
@@ -123,7 +125,7 @@ public class FlagDataTest {
                                     }
                                 }"""));
 
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")),
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app3")),
                      FlagData.deserialize("""
                                 {
                                     "id": "id1",
@@ -154,7 +156,7 @@ public class FlagDataTest {
                                     }
                                 }"""));
 
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app3")
                                                .with(FetchVector.Dimension.HOSTNAME, "host1")),
                      FlagData.deserialize("""
                                 {
@@ -169,7 +171,7 @@ public class FlagDataTest {
                                     }
                                 }"""));
 
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app3")
                                                .with(FetchVector.Dimension.HOSTNAME, "host3")),
                      FlagData.deserialize("""
                                 {
@@ -191,7 +193,7 @@ public class FlagDataTest {
                                     }
                                 }"""));
 
-        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app3")
                                                .with(FetchVector.Dimension.HOSTNAME, "host3")
                                                .with(FetchVector.Dimension.ZONE_ID, "zone2")),
                      FlagData.deserialize("""
@@ -204,7 +206,7 @@ public class FlagDataTest {
                                     ]
                                 }"""));
 
-        FlagData fullyResolved = data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+        FlagData fullyResolved = data.partialResolve(vector.with(FetchVector.Dimension.INSTANCE_ID, "app3")
                                                            .with(FetchVector.Dimension.HOSTNAME, "host3")
                                                            .with(FetchVector.Dimension.ZONE_ID, "zone3"));
         assertEquals(fullyResolved, FlagData.deserialize("""
@@ -271,6 +273,11 @@ public class FlagDataTest {
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {
+        verify(json, expectedValue, vector);
+        verify(json_with_instance, expectedValue, vector);
+    }
+
+    private void verify(String json, Optional<String> expectedValue, FetchVector vector) {
         FlagData data = FlagData.deserialize(json);
         assertEquals("id1", data.id().toString());
         Optional<RawFlag> rawFlag = data.resolve(vector);

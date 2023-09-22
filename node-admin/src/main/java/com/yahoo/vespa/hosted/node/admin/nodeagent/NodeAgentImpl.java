@@ -40,7 +40,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
@@ -416,7 +416,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
         double cpuCap = context.vcpuOnThisHost() * containerCpuCap
-                               .with(APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm))
+                               .with(INSTANCE_ID, context.node().owner().map(ApplicationId::serializedForm))
                                .with(CLUSTER_ID, context.node().membership().map(NodeMembership::clusterId))
                                .with(CLUSTER_TYPE, context.node().membership().map(membership -> membership.type().value()))
                                .with(HOSTNAME, context.node().hostname())

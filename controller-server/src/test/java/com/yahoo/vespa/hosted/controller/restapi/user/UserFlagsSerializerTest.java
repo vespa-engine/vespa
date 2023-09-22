@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 
@@ -42,7 +42,7 @@ public class UserFlagsSerializerTest {
 
         try (Flags.Replacer ignored = Flags.clearFlagsForTesting()) {
             Flags.defineStringFlag("string-id", "default value", List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL);
-            Flags.defineIntFlag("int-id", 123, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL, TENANT_ID, APPLICATION_ID);
+            Flags.defineIntFlag("int-id", 123, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL, TENANT_ID, INSTANCE_ID);
             Flags.defineDoubleFlag("double-id", 3.14d, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod");
             Flags.defineListFlag("list-id", List.of("a"), String.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod", CONSOLE_USER_EMAIL);
             Flags.defineJacksonFlag("jackson-id", new ExampleJacksonClass(123, "abc"), ExampleJacksonClass.class,
@@ -52,9 +52,9 @@ public class UserFlagsSerializerTest {
                     flagData("string-id", rule("\"value1\"", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1))),
                     flagData("int-id", rule("456")),
                     flagData("list-id",
-                            rule("[\"value1\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(APPLICATION_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default")),
+                            rule("[\"value1\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(INSTANCE_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default")),
                             rule("[\"value2\"]", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email2)),
-                            rule("[\"value1\",\"value3\"]", condition(APPLICATION_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default"))),
+                            rule("[\"value1\",\"value3\"]", condition(INSTANCE_ID, Condition.Type.BLACKLIST, "tenant1:video:default", "tenant1:video:default", "tenant2:music:default"))),
                     flagData("jackson-id", rule("{\"integer\":456,\"string\":\"xyz\"}", condition(CONSOLE_USER_EMAIL, Condition.Type.WHITELIST, email1), condition(TENANT_ID, Condition.Type.WHITELIST, "tenant1", "tenant3")))
             ).collect(Collectors.toMap(FlagData::id, fd -> fd));
 
@@ -63,7 +63,7 @@ public class UserFlagsSerializerTest {
                     "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
                     "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\"}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
                     // Resolved for email, but conditions are empty since this user is not authorized for any tenants
-                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\"}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"instance\"}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"instance\"}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
                     "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
                     flagData, Set.of(), false, email1);
 
@@ -72,7 +72,7 @@ public class UserFlagsSerializerTest {
                     "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
                     "{\"id\":\"jackson-id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"tenant\",\"values\":[\"tenant1\"]}],\"value\":{\"integer\":456,\"string\":\"xyz\"}},{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Resolved for email
                     // Resolved for email, but conditions have filtered out tenant2
-                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\"]},{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
                     "{\"id\":\"string-id\",\"rules\":[{\"value\":\"value1\"}]}]}", // resolved for email
                     flagData, Set.of("tenant1"), false, email1);
 
@@ -81,7 +81,7 @@ public class UserFlagsSerializerTest {
                     "{\"id\":\"int-id\",\"rules\":[{\"value\":456}]}," + // Default from DB
                     "{\"id\":\"jackson-id\",\"rules\":[{\"value\":{\"integer\":123,\"string\":\"abc\"}}]}," + // Default from code, no DB values match
                     // Includes last value from DB which is not conditioned on email and the default from code
-                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"application\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\",\"tenant2:music:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
+                    "{\"id\":\"list-id\",\"rules\":[{\"conditions\":[{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"tenant1:video:default\",\"tenant1:video:default\",\"tenant2:music:default\"]}],\"value\":[\"value1\",\"value3\"]},{\"value\":[\"a\"]}]}," +
                     "{\"id\":\"string-id\",\"rules\":[{\"value\":\"default value\"}]}]}", // Default from code
                     flagData, Set.of(), true, "operator@domain.tld");
         }

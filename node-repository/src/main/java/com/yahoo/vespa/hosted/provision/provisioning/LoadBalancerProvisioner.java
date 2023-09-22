@@ -273,7 +273,7 @@ public class LoadBalancerProvisioner {
                                                              LoadBalancer currentLoadBalancer,
                                                              ZoneEndpoint zoneEndpoint,
                                                              CloudAccount cloudAccount) {
-        boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
+        boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.INSTANCE_ID,
                                                                  id.application().serializedForm())
                                                            .value();
         Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes, cloudAccount);

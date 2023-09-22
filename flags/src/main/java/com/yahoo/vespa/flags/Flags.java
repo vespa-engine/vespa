@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
@@ -35,7 +35,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
  *     an unbound flag to a flag source produces a (bound) flag, e.g. {@link BooleanFlag} and {@link StringFlag}.</li>
  *     <li>If you would like your flag value to be dependent on e.g. the application ID, then 1. you should
  *     declare this in the unbound flag definition in this file (referring to
- *     {@link FetchVector.Dimension#APPLICATION_ID}), and 2. specify the application ID when retrieving the value, e.g.
+ *     {@link FetchVector.Dimension#INSTANCE_ID}), and 2. specify the application ID when retrieving the value, e.g.
  *     {@link BooleanFlag#with(FetchVector.Dimension, String)}. See {@link FetchVector} for more info.</li>
  * </ol>
  *
@@ -53,7 +53,7 @@ public class Flags {
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "Default limit for when to apply termwise query evaluation",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag QUERY_DISPATCH_POLICY = defineStringFlag(
             "query-dispatch-policy", "adaptive",
@@ -61,62 +61,62 @@ public class Flags {
             "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
                     " latency-amortized-over-requests, latency-amortized-over-time",
             "Takes effect at redeployment (requires restart)",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2023-12-31",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment (requires restart)",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             List.of("geirst, baldersheim"), "2021-10-21", "2023-12-31",
             "Max amount of memory holding updates to an attribute before we do a commit.",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
             "How much concurrency should be allowed for feed",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
             "feed-niceness", 0.0,
             List.of("baldersheim"), "2022-06-24", "2023-12-31",
             "How nice feeding shall be",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
@@ -124,71 +124,71 @@ public class Flags {
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
             List.of("baldersheim"), "2022-07-01", "2023-12-31",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
             "shared-string-repo-no-reclaim", false,
             List.of("baldersheim"), "2022-06-14", "2023-12-31",
             "Controls whether we do track usage and reclaim unused enum values in shared string repo",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
             List.of("baldersheim"), "2021-09-25", "2023-12-31",
             "Will trigger a heap dump during if container shutdown times out",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
     public static final UnboundBooleanFlag LOAD_CODE_AS_HUGEPAGES = defineFeatureFlag(
             "load-code-as-hugepages", false,
             List.of("baldersheim"), "2022-05-13", "2023-12-31",
             "Will try to map the code segment with huge (2M) pages",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
             "container-shutdown-timeout", 50.0,
             List.of("baldersheim"), "2021-09-25", "2023-12-31",
             "Timeout for shutdown of a jdisc container",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
@@ -203,14 +203,14 @@ public class Flags {
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2023-12-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag SYSTEM_MEMORY_HIGH = defineStringFlag(
             "system-memory-high", "",
@@ -243,28 +243,28 @@ public class Flags {
             List.of("arnej"), "2021-11-15", "2023-12-31",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
                 "max-compact-buffers", 1,
                 List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2023-12-31",
                 "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
                 "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
             List.of("tokle"), "2022-05-09", "2023-10-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
             List.of("arnej"), "2022-06-14", "2024-12-31",
             "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
             "Takes effect immediately",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
@@ -278,7 +278,7 @@ public class Flags {
             List.of("bjorncs", "vekterli"), "2022-07-21", "2024-01-01",
             "Configure Vespa TLS capability enforcement mode",
             "Takes effect on restart of Docker container",
-            APPLICATION_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
+            INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
@@ -286,7 +286,7 @@ public class Flags {
             List.of("olaa"), "2022-09-23", "2023-12-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
@@ -300,7 +300,7 @@ public class Flags {
             List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",
             "Enable global phase ranking",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
             "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-10-14",
@@ -311,7 +311,7 @@ public class Flags {
             "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-10-14",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-10-01",
@@ -329,14 +329,14 @@ public class Flags {
             List.of("baldersheim"), "2023-06-29", "2023-12-31",
             "Should we enable proper nested multivalue grouping",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_RECONFIGURABLE_DISPATCHER = defineFeatureFlag(
             "use-reconfigurable-dispatcher", false,
             List.of("jonmv"), "2023-07-14", "2023-10-01",
             "Whether to set up a ReconfigurableDispatcher with config self-sub for backend nodes",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
@@ -382,21 +382,21 @@ public class Flags {
             List.of("freva"), "2023-09-08", "2023-11-01",
             "Minimum amount of advertised memory for exclusive nodes",
             "Takes effect immediately",
-            APPLICATION_ID, CLUSTER_ID, CLUSTER_TYPE);
+            INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
             "assign-randomized-id", false,
             List.of("mortent"), "2023-08-31", "2024-02-01",
             "Whether to assign randomized id to the application",
             "Takes effect immediately",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag ASSIGNED_RANDOMIZED_ID_RATE = defineIntFlag(
             "assign-randomized-id-rate", 5,
             List.of("mortent"), "2023-09-11", "2024-02-01",
             "Rate for requesting assigned ids for existing certificates. Rate is per maintainer cycle.",
             "Takes effect immediately",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 0,
@@ -404,7 +404,7 @@ public class Flags {
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

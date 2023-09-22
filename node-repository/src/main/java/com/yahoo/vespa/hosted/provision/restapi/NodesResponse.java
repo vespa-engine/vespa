@@ -201,7 +201,7 @@ class NodesResponse extends SlimeJsonResponse {
                 .with(FetchVector.Dimension.HOSTNAME, node.hostname())
                 .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
                 .with(FetchVector.Dimension.TENANT_ID, allocation.owner().tenant().value())
-                .with(FetchVector.Dimension.APPLICATION_ID, allocation.owner().serializedForm())
+                .with(FetchVector.Dimension.INSTANCE_ID, allocation.owner().serializedForm())
                 .with(FetchVector.Dimension.CLUSTER_TYPE, allocation.membership().cluster().type().name())
                 .with(FetchVector.Dimension.CLUSTER_ID, allocation.membership().cluster().id().value())
                 .with(FetchVector.Dimension.VESPA_VERSION, allocation.membership().cluster().vespaVersion().toFullString())

@@ -296,7 +296,7 @@ public class ModelContextImpl implements ModelContext {
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
-                    .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                    .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
                     .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
                     .boxedValue();
@@ -308,7 +308,7 @@ public class ModelContextImpl implements ModelContext {
                                        ClusterSpec.Type clusterType,
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
-                       .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
                        .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -320,7 +320,7 @@ public class ModelContextImpl implements ModelContext {
                                        ClusterSpec.Id clusterId,
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
-                       .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
                        .with(FetchVector.Dimension.CLUSTER_ID, clusterId.value())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -397,21 +397,21 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
             this.cloudAccount = cloudAccount;
             this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
             this.endpointConnectionTtl = Duration.ofSeconds(
                     PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource)
-                            .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value());
+                            .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value());
             this.dataplaneTokens = dataplaneTokens;
         }
 

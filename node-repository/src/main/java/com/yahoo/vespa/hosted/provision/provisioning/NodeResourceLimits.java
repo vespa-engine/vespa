@@ -88,7 +88,7 @@ public class NodeResourceLimits {
         if (cluster.type() == ClusterSpec.Type.admin) return 1;
         if (!exclusive) return 4;
         return minExclusiveAdvertisedMemoryGbFlag
-                .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
+                .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm())
                 .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                 .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
                 .value();
