@@ -46,7 +46,7 @@ public class LoadBalancerInstance {
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
         if (hostname.isEmpty() == ip4Address.isEmpty()) {
-            throw new IllegalArgumentException("Exactly 1 of hostname=%s and ipAddress=%s must be set".formatted(
+            throw new IllegalArgumentException("Exactly 1 of hostname=%s and ip4Address=%s must be set".formatted(
                     hostname.map(DomainName::value).orElse("<empty>"), ip4Address.orElse("<empty>")));
         }
     }
