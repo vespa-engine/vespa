@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -203,10 +204,13 @@ public class RoutingController {
                                                         .on(Port.fromRoutingMethod(routingMethod))
                                                         .target(cluster, deployment);
         endpoints.add(zoneEndpoint.in(controller.system()));
+        ZoneApi zone = controller.zoneRegistry().zones().all().get(deployment.zoneId()).get();
         Endpoint.EndpointBuilder regionEndpoint = Endpoint.of(deployment.applicationId())
                                                           .routingMethod(routingMethod)
                                                           .on(Port.fromRoutingMethod(routingMethod))
-                                                          .targetRegion(cluster, deployment.zoneId());
+                                                          .targetRegion(cluster,
+                                                                        zone.getCloudNativeRegionName(),
+                                                                        zone.getCloudName());
         // Region endpoints are only used by global- and application-endpoints and are thus only needed in
         // production environments
         if (isProduction) {

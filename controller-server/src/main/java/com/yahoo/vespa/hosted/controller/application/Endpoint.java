@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -302,22 +304,6 @@ public class Endpoint {
         return part.substring(Math.max(0, part.length() - 63));
     }
 
-    /** Returns the given region without availability zone */
-    private static RegionName effectiveRegion(RegionName region) {
-        if (region.value().length() < 2) return region;
-        String value = region.value();
-        char lastChar = value.charAt(value.length() - 1);
-        if (lastChar >= 'a' && lastChar <= 'z') { // Remove availability zone
-            int skip = value.charAt(value.length() - 2) == '-' ? 2 : 1;
-            value = value.substring(0, value.length() - skip);
-        }
-        return RegionName.from(value);
-    }
-
-    private static ZoneId effectiveZone(ZoneId zone) {
-        return ZoneId.from(zone.environment(), effectiveRegion(zone.region()));
-    }
-
     private static ClusterSpec.Id requireCluster(ClusterSpec.Id cluster, boolean certificateName) {
         if (!certificateName && cluster.value().equals("*")) throw new IllegalArgumentException("Wildcard found in cluster ID which is not a certificate name");
         return cluster;
@@ -550,10 +536,11 @@ public class Endpoint {
         }
 
         /** Sets the region target for this, deduced from given zone */
-        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
+        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, String cloudNativeRegion, CloudName cloudName) {
             this.cluster = cluster;
             this.scope = requireUnset(Scope.weighted);
-            this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
+            RegionName region = RegionName.from(cloudName.value() + "-" + cloudNativeRegion);
+            this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), ZoneId.from(Environment.prod, region))));
             this.authMethod = AuthMethod.none;
             return this;
         }

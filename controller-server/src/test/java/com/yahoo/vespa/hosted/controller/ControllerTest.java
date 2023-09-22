@@ -1040,8 +1040,8 @@ public class ControllerTest {
     @Test
     void testDeployWithGlobalEndpointsAndMultipleRoutingMethods() {
         var context = tester.newDeploymentContext();
-        var zone1 = ZoneId.from("prod", "us-west-1");
-        var zone2 = ZoneId.from("prod", "us-east-3");
+        var zone1 = ZoneId.from("prod", "aws-us-east-1a");
+        var zone2 = ZoneId.from("prod", "aws-us-east-1b");
         var applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                 .endpoint("default", "default", zone1.region().value(), zone2.region().value())
@@ -1059,20 +1059,20 @@ public class ControllerTest {
         var expectedRecords = List.of(
                 // The weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
-                        RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                        new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
-                                "dns-zone-1", "prod.us-east-3", 1).pack()),
+                        RecordName.from("application.tenant.aws-us-east-1-w.vespa.oath.cloud"),
+                        new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.aws-us-east-1b"),
+                                "dns-zone-1", "prod.aws-us-east-1b", 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                         RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                        new LatencyAliasTarget(HostName.of("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                                "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
+                        new LatencyAliasTarget(HostName.of("application.tenant.aws-us-east-1-w.vespa.oath.cloud"),
+                                "dns-zone-1", ZoneId.from("prod.aws-us-east-1b")).pack()),
 
                 // The zone-scoped endpoint pointing to zone 2 with exclusive routing
                 new Record(Record.Type.CNAME,
-                        RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
-                        RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
+                        RecordName.from("application.tenant.aws-us-east-1b.vespa.oath.cloud"),
+                        RecordData.from("lb-0--tenant.application.default--prod.aws-us-east-1b.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 
