@@ -4,12 +4,16 @@
 #include <vespa/searchlib/attribute/dfa_string_comparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/text/utf8.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 
 using namespace vespalib::btree;
 
 using vespalib::datastore::AtomicEntryRef;
+using vespalib::LowerCase;
+using vespalib::Utf8ReaderForZTS;
 
 namespace vespalib::datastore {
 
@@ -18,6 +22,22 @@ std::ostream & operator << (std::ostream& os, const EntryRef& ref) {
 }
 
 }
+
+namespace {
+
+std::vector<uint32_t> as_utf32(const char* key)
+{
+    std::vector<uint32_t> result;
+    Utf8ReaderForZTS reader(key);
+    while (reader.hasMore()) {
+        uint32_t code_point = reader.getChar();
+        result.push_back(code_point);
+    }
+    return result;
+}
+
+}
+
 namespace search {
 
 using NumericEnumStore = EnumStoreT<int32_t>;
@@ -253,14 +273,16 @@ TEST(DfaStringComparatorTest, require_that_less_is_working)
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
-    DfaStringComparator cmp1(es.get_data_store(), "aa");
+    auto aa_utf32 = as_utf32("aa");
+    DfaStringComparator cmp1(es.get_data_store(), aa_utf32);
     EXPECT_FALSE(cmp1.less(EnumIndex(), e1));
     EXPECT_FALSE(cmp1.less(EnumIndex(), e2));
     EXPECT_TRUE(cmp1.less(EnumIndex(), e3));
     EXPECT_FALSE(cmp1.less(e1, EnumIndex()));
     EXPECT_FALSE(cmp1.less(e2, EnumIndex()));
     EXPECT_FALSE(cmp1.less(e3, EnumIndex()));
-    DfaStringComparator cmp2(es.get_data_store(), "Aa");
+    auto Aa_utf32 = as_utf32("Aa");
+    DfaStringComparator cmp2(es.get_data_store(), Aa_utf32);
     EXPECT_TRUE(cmp2.less(EnumIndex(), e1));
     EXPECT_TRUE(cmp2.less(EnumIndex(), e2));
     EXPECT_TRUE(cmp2.less(EnumIndex(), e3));

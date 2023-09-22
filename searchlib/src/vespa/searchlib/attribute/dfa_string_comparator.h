@@ -4,6 +4,7 @@
 
 #include "i_enum_store.h"
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
+#include <functional>
 
 namespace search::attribute {
 
@@ -24,9 +25,10 @@ public:
     using DataStoreType = ParentType::DataStoreType;
 private:
     using ParentType::get;
+    std::reference_wrapper<const std::vector<uint32_t>> _candidate;
 
 public:
-    DfaStringComparator(const DataStoreType& data_store, const char* candidate);
+    DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate);
 
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
 };
