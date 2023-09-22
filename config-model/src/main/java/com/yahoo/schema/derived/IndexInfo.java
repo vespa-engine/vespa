@@ -94,7 +94,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             var sourceField = schema.getField(summaryField.getSourceField()); // Take the first as they should all be consistent
             if (sourceField != null && sourceField.getMatching().getType().equals(MatchType.GRAM)) {
                 addIndexCommand(summaryField.getName(),
-                                "ngram " + (sourceField.getMatching().getGramSize() > 0 ? sourceField.getMatching().getGramSize() : NGramMatch.DEFAULT_GRAM_SIZE));
+                                "ngram " + (sourceField.getMatching().getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
 
             }
         }
@@ -459,7 +459,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 iiB.command(
                         new IndexInfoConfig.Indexinfo.Command.Builder()
                             .indexname(fieldSet.getName())
-                            .command("ngram "+(fieldSetMatching.getGramSize()>0 ? fieldSetMatching.getGramSize() : NGramMatch.DEFAULT_GRAM_SIZE)));
+                            .command("ngram " + fieldSetMatching.getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
             } else if (fieldSetMatching.getType().equals(MatchType.TEXT)) {
                 
             }

@@ -27,15 +27,15 @@ public class NGramTestCase extends AbstractSchemaTestCase {
 
         SDField gram1 = schema.getConcreteField("gram_1");
         assertEquals(MatchType.GRAM, gram1.getMatching().getType());
-        assertEquals(1, gram1.getMatching().getGramSize());
+        assertEquals(1, gram1.getMatching().getGramSize().getAsInt());
 
         SDField gram2 = schema.getConcreteField("gram_2");
         assertEquals(MatchType.GRAM, gram2.getMatching().getType());
-        assertEquals(-1, gram2.getMatching().getGramSize()); // Not set explicitly
+        assertTrue(gram2.getMatching().getGramSize().isEmpty());
 
         SDField gram3 = schema.getConcreteField("gram_3");
         assertEquals(MatchType.GRAM, gram3.getMatching().getType());
-        assertEquals(3, gram3.getMatching().getGramSize());
+        assertEquals(3, gram3.getMatching().getGramSize().getAsInt());
 
         assertEquals("input gram_1 | ngram 1 | index gram_1 | summary gram_1", gram1.getIndexingScript().iterator().next().toString());
         assertEquals("input gram_2 | ngram 2 | attribute gram_2 | index gram_2", gram2.getIndexingScript().iterator().next().toString());
