@@ -78,10 +78,12 @@ MemoryUsage extract_memory_usage() {
     vespalib::string vm_size = UNKNOWN;
     vespalib::string vm_rss = UNKNOWN;
     FilePointer file(fopen("/proc/self/status", "r"));
-    vespalib::string line;
-    while (read_line(file, line)) {
-        extract(line, "VmSize:", vm_size);
-        extract(line, "VmRSS:", vm_rss);
+    if (file.valid()) {
+        vespalib::string line;
+        while (read_line(file, line)) {
+            extract(line, "VmSize:", vm_size);
+            extract(line, "VmRSS:", vm_rss);
+        }
     }
     return {convert(vm_size), convert(vm_rss)};
 }
