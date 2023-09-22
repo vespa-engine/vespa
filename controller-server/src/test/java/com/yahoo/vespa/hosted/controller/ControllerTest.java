@@ -1091,6 +1091,8 @@ public class ControllerTest {
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
+                .container("qrs", AuthMethod.mtls)
+                .container("default", AuthMethod.mtls)
                 .endpoint("default", "default")
                 .endpoint("foo", "qrs")
                 .endpoint("us", "default", zone1.region().value(), zone2.region().value())
@@ -1100,15 +1102,19 @@ public class ControllerTest {
         // Deployment passes container endpoints to config server
         for (var zone : List.of(zone1, zone2)) {
             assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
-                            "foo.application.tenant.global.vespa.oath.cloud",
-                            "us.application.tenant.global.vespa.oath.cloud"),
+                                "foo.application.tenant.global.vespa.oath.cloud",
+                                "us.application.tenant.global.vespa.oath.cloud",
+                                "qrs.application.tenant." + zone.region().value() + ".vespa.oath.cloud",
+                                "application.tenant." + zone.region().value() + ".vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)),
                     "Expected container endpoints in " + zone);
         }
         assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
-                        "foo.application.tenant.global.vespa.oath.cloud"),
-                tester.configServer().containerEndpointNames(context.deploymentIdIn(zone3)),
-                "Expected container endpoints in " + zone3);
+                            "foo.application.tenant.global.vespa.oath.cloud",
+                            "qrs.application.tenant.eu-west-1.vespa.oath.cloud",
+                            "application.tenant.eu-west-1.vespa.oath.cloud"),
+                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone3)),
+                     "Expected container endpoints in " + zone3);
     }
 
     @Test

@@ -129,7 +129,7 @@ public class ApplicationPackageBuilder {
                             .append(m.name()).append("-").append(i)
                             .append("'/>\n");
             }
-            servicesBody.append("     </client>\n");
+            servicesBody.append("      </client>\n");
         }
         servicesBody.append("    </clients>\n")
                     .append("  </container>\n");
