@@ -173,6 +173,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.max());
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
+        addMetric(metrics, ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.max());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.min());
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED.max());
