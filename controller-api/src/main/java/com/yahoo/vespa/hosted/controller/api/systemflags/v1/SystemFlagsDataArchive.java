@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
@@ -255,6 +256,17 @@ public class SystemFlagsDataArchive {
         final JsonNode root;
         try {
             root = mapper.readTree(fileContent);
+            // TODO (mortent): Remove this after completing migration of APPLICATION_ID dimension
+            // replace "application" with "instance" for all dimension fields
+            List<JsonNode> dimensionParents = root.findParents("dimension");
+            for (JsonNode parentNode : dimensionParents) {
+                JsonNode dimension = parentNode.get("dimension");
+                if (dimension.isTextual() && "application".equals(dimension.textValue())) {
+                    ObjectNode parent = (ObjectNode) parentNode;
+                    parent.remove("dimension");
+                    parent.put("dimension", "instance");
+                }
+            }
         } catch (JsonProcessingException e) {
             throw new FlagValidationException("Invalid JSON: " + e.getMessage());
         }
