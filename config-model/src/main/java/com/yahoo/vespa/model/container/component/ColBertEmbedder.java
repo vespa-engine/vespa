@@ -5,7 +5,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.ColBertEmbedderConfig;
-import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
@@ -40,7 +40,7 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     private final Integer onnxIntraopThreads;
     private final Integer onnxGpuDevice;
 
-    public ColBertEmbedder(Element xml, DeployState state) {
+    public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var transformerModelElem = getOptionalChild(xml, "transformer-model").orElseThrow();
         model = ModelIdResolver.resolveToModelReference(transformerModelElem, state);
@@ -60,7 +60,7 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
         onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
         onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
-
+        cluster.onnxModelCost().registerModel(model);
     }
 
     private static ModelReference resolveDefaultVocab(Element model, DeployState state) {

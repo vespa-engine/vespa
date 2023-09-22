@@ -48,7 +48,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
             return switch (type) {
                 case "hugging-face-embedder" -> new HuggingFaceEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "hugging-face-tokenizer" -> new HuggingFaceTokenizer(spec, state);
-                case "colbert-embedder" -> new ColBertEmbedder(spec, state);
+                case "colbert-embedder" -> new ColBertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
             };
