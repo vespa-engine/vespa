@@ -52,6 +52,8 @@ public class FlagDataTest {
                                     }
                                 }""";
 
+    private final String json_with_instance = json.replace("application", "instance");
+
     private final FetchVector vector = new FetchVector();
 
     @Test
@@ -271,6 +273,11 @@ public class FlagDataTest {
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {
+        verify(json, expectedValue, vector);
+        verify(json_with_instance, expectedValue, vector);
+    }
+
+    private void verify(String json, Optional<String> expectedValue, FetchVector vector) {
         FlagData data = FlagData.deserialize(json);
         assertEquals("id1", data.id().toString());
         Optional<RawFlag> rawFlag = data.resolve(vector);
