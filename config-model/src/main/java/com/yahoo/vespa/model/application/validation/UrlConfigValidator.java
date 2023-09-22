@@ -19,33 +19,36 @@ public class UrlConfigValidator extends Validator {
         if (! state.isHostedTenantApplication(model.getAdmin().getApplicationType())) return;
 
         model.getContainerClusters().forEach((__, cluster) -> {
-            var isExclusive = model.hostSystem().getHosts()
-                    .stream()
-                    .map(hostResource -> hostResource.spec().membership())
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .filter(membership -> membership.cluster().id().equals(cluster.id()))
-                    .anyMatch(membership -> membership.cluster().isExclusive());
-
-            if (! isExclusive)
-                validateS3UlsInConfig(state, cluster);
+            var isExclusive = hasExclusiveNodes(model, cluster);
+            validateS3UlsInConfig(state, cluster, isExclusive);
         });
     }
 
-    private static void validateS3UlsInConfig(DeployState state, ApplicationContainerCluster cluster) {
-        var match = state.getFileRegistry().export().stream()
-                .filter(fileReference -> fileReference.relativePath.startsWith("s3://"))
-                .findFirst();
+    private static boolean hasExclusiveNodes(VespaModel model, ApplicationContainerCluster cluster) {
+        return model.hostSystem().getHosts()
+                .stream()
+                .map(hostResource -> hostResource.spec().membership())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(membership -> membership.cluster().id().equals(cluster.id()))
+                .anyMatch(membership -> membership.cluster().isExclusive());
+    }
 
-        if (match.isPresent()) {
+    private static void validateS3UlsInConfig(DeployState state, ApplicationContainerCluster cluster, boolean isExclusive) {
+        if (hasUrlInConfig(state)) {
             // TODO: Would be even better if we could add which config/field the url is set for in the error message
             String message = "Found s3:// urls in config for container cluster " + cluster.getName();
-            if (state.zone().system().isPublic())
+            if ( ! state.zone().system().isPublic())
+                throw new IllegalArgumentException(message + ". This is only supported in public systems");
+            else if ( ! isExclusive)
                 throw new IllegalArgumentException(message + ". Nodes in the cluster need to be 'exclusive'," +
                                                            " see https://cloud.vespa.ai/en/reference/services#nodes");
-            else
-                throw new IllegalArgumentException(message + ". This is only supported in public systems");
         }
+    }
+
+    private static boolean hasUrlInConfig(DeployState state) {
+        return state.getFileRegistry().export().stream()
+                .anyMatch(fileReference -> fileReference.relativePath.startsWith("s3://"));
     }
 
 }

@@ -29,11 +29,16 @@ public class UrlConfigValidatorTest {
 
     @Test
     void failsWhenContainerNodesNotExclusive() throws IOException, SAXException {
-        runValidatorOnApp(true, SystemName.Public);  // Exclusive nodes => success
+        runValidatorOnApp(true, SystemName.Public);  // Exclusive nodes in public => success
 
         assertEquals("Found s3:// urls in config for container cluster default. This is only supported in public systems",
                      assertThrows(IllegalArgumentException.class,
                                   () -> runValidatorOnApp(false, SystemName.main))
+                             .getMessage());
+
+        assertEquals("Found s3:// urls in config for container cluster default. This is only supported in public systems",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> runValidatorOnApp(true, SystemName.main))
                              .getMessage());
 
         assertEquals("Found s3:// urls in config for container cluster default. Nodes in the cluster need to be 'exclusive',"
