@@ -7,11 +7,12 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
-import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
+import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
@@ -35,19 +36,20 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
 
     @Override
     protected Component<? super Component<?, ?>, ?> doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
-        var component = buildComponent(spec, deployState);
+        var component = buildComponent(spec, deployState, ancestor);
         addChildren(deployState, ancestor, spec, component);
         return component;
     }
 
-    private Component<? super Component<?, ?>, ?> buildComponent(Element spec, DeployState state) {
+    private Component<? super Component<?, ?>, ?> buildComponent(
+            Element spec, DeployState state, TreeConfigProducer<AnyConfigProducer> ancestor) {
         if (spec.hasAttribute("type")) {
             var type = spec.getAttribute("type");
             return switch (type) {
-                case "hugging-face-embedder" -> new HuggingFaceEmbedder(spec, state);
+                case "hugging-face-embedder" -> new HuggingFaceEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "hugging-face-tokenizer" -> new HuggingFaceTokenizer(spec, state);
-                case "bert-embedder" -> new BertEmbedder(spec, state);
                 case "colbert-embedder" -> new ColBertEmbedder(spec, state);
+                case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
             };
         } else {

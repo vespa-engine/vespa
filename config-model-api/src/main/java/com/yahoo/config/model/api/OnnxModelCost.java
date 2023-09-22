@@ -5,7 +5,6 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.ApplicationId;
 
 /**
  * @author bjorncs
@@ -20,7 +19,7 @@ public interface OnnxModelCost {
         void registerModel(ModelReference ref);
     }
 
-    static OnnxModelCost testInstance() {
+    static OnnxModelCost disabled() {
         return (__) -> new Calculator() {
             @Override public long aggregatedModelCostInBytes() { return 0; }
             @Override public void registerModel(ApplicationFile path) {}

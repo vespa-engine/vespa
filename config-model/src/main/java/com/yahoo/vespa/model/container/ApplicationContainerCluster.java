@@ -8,10 +8,12 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -47,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
@@ -82,6 +85,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final Set<String> previousHosts;
+    private final OnnxModelCost.Calculator onnxModelCost;
+    private final DeployLogger logger;
 
     private ContainerModelEvaluation modelEvaluation;
 
@@ -125,6 +130,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
                 : defaultHeapSizePercentageOfAvailableMemory;
+        onnxModelCost = deployState.onnxModelCost().newCalculator(deployState.getDeployLogger());
+        logger = deployState.getDeployLogger();
     }
 
     @Override
@@ -193,8 +200,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
             // Node memory is known so convert available memory percentage to node memory percentage
             double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
-            double availableMemory = totalMemory - Host.memoryOverheadGb;
-            return Optional.of((int) (availableMemory / totalMemory * availableMemoryPercentage));
+            double jvmHeapDeductionGb = onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024);
+            double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
+            int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
+            logger.log(Level.FINE, () -> "memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
+                           .formatted(memoryPercentage, availableMemory, totalMemory, availableMemoryPercentage, jvmHeapDeductionGb));
+            return Optional.of(memoryPercentage);
         }
         return Optional.empty();
     }
@@ -372,6 +383,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public String name() { return getName(); }
+
+    public OnnxModelCost.Calculator onnxModelCost() { return onnxModelCost; }
 
     public static class MbusParams {
         // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)

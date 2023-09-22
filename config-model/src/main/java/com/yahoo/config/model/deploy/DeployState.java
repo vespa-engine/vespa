@@ -18,6 +18,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.ValidationParameters;
@@ -90,6 +91,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Provisioned provisioned;
     private final Reindexing reindexing;
     private final ExecutorService executor;
+    private final OnnxModelCost onnxModelCost;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -124,7 +126,8 @@ public class DeployState implements ConfigDefinitionStore {
                         boolean accessLoggingEnabledByDefault,
                         Optional<DockerImage> wantedDockerImageRepo,
                         Reindexing reindexing,
-                        Optional<ValidationOverrides> validationOverrides) {
+                        Optional<ValidationOverrides> validationOverrides,
+                        OnnxModelCost onnxModelCost) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -152,6 +155,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.now = now;
         this.wantedDockerImageRepo = wantedDockerImageRepo;
         this.reindexing = reindexing;
+        this.onnxModelCost = onnxModelCost;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -305,6 +309,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Optional<Reindexing> reindexing() { return Optional.ofNullable(reindexing); }
 
+    public OnnxModelCost onnxModelCost() { return onnxModelCost; }
+
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication;
@@ -333,6 +339,7 @@ public class DeployState implements ConfigDefinitionStore {
         private QueryProfiles queryProfiles = null;
         private Reindexing reindexing = null;
         private Optional<ValidationOverrides> validationOverrides = Optional.empty();
+        private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
 
         public Builder() {}
 
@@ -450,6 +457,8 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder onnxModelCost(OnnxModelCost instance) { this.onnxModelCost = instance; return this; }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -482,7 +491,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    accessLoggingEnabledByDefault,
                                    wantedDockerImageRepo,
                                    reindexing,
-                                   validationOverrides);
+                                   validationOverrides,
+                                   onnxModelCost);
         }
 
     }
