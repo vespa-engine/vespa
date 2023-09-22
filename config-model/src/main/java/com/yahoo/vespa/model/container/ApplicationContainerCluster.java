@@ -201,7 +201,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(availableMemoryPercentage)); // Node memory is not known
 
             // Node memory is known so convert available memory percentage to node memory percentage
-            double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
+            double totalMemory = dynamicHeapSize
+                    ? getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow()
+                    : getContainers().get(0).getHostResource().realResources().memoryGb();
             double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
             double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
