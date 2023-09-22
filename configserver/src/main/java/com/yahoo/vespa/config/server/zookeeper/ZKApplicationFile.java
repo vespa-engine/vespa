@@ -183,7 +183,7 @@ class ZKApplicationFile extends ApplicationFile {
         }
     }
 
-    @Override public long getSize() { return zkApp.getBytes(getZKPath(path)).length; }
+    @Override public long getSize() { return zkApp.getSize(getZKPath(path)); }
 
     @Override
     public int compareTo(ApplicationFile other) {
