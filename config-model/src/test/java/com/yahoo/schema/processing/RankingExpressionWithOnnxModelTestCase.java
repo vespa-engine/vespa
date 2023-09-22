@@ -152,13 +152,15 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("onnx(files_model_onnx).path_to_output_1{d0:1}", config.rankprofile(3).fef().property(9).value());
 
         assertEquals("test_summary_features", config.rankprofile(4).name());
-        assertEquals("rankingExpression(another_function).rankingScript", config.rankprofile(4).fef().property(0).name());
-        assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(4).fef().property(3).name());
-        assertEquals("1", config.rankprofile(4).fef().property(3).value());
-        assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(4).name());
-        assertEquals("onnx(another_model).out", config.rankprofile(4).fef().property(4).value());
-        assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(5).name());
-        assertEquals("onnx(files_summary_model_onnx).path_to_output_2", config.rankprofile(4).fef().property(5).value());
+        assertEquals("vespa.type.feature.onnx(another_model)", config.rankprofile(4).fef().property(0).name());
+        assertEquals("tensor<float>(d0[2])", config.rankprofile(4).fef().property(0).value());
+        assertEquals("rankingExpression(another_function).rankingScript", config.rankprofile(4).fef().property(2).name());
+        assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(4).fef().property(5).name());
+        assertEquals("1", config.rankprofile(4).fef().property(5).value());
+        assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(6).name());
+        assertEquals("onnx(another_model).out", config.rankprofile(4).fef().property(6).value());
+        assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(7).name());
+        assertEquals("onnx(files_summary_model_onnx).path_to_output_2", config.rankprofile(4).fef().property(7).value());
 
         assertEquals("test_dynamic_model", config.rankprofile(5).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(5).fef().property(0).name());

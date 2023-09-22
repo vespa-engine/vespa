@@ -408,4 +408,37 @@ schema rankexpression {
       }
   }
 
+  rank-profile withtfl {
+      inputs {
+         query(v) tensor(v[3])
+      }
+      function mymul() {
+        expression: tensorFromLabels(attribute(labels), m) * query(v)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      global-phase {
+        expression: sum(mymul)
+      }
+      match-features {
+        tensorFromLabels(attribute(labels), m)
+      }
+  }
+
+  rank-profile withtfl2 {
+      inputs {
+         query(v) tensor(v[3])
+      }
+      function mymul() {
+        expression: tensorFromLabels(attribute(labels), m) * query(v)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      global-phase {
+        expression: sum(mymul)
+      }
+  }
+
 }
