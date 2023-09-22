@@ -82,13 +82,20 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
 
         // Commands for summary fields
-        // TODO: Move to fieldinfo and implement differently. This is not right
+        // TODO: Move to schemainfo and implement differently
         for (SummaryField summaryField : schema.getUniqueNamedSummaryFields().values()) {
             if (summaryField.getTransform().isTeaser()) {
                 addIndexCommand(summaryField.getName(), CMD_DYNTEASER);
             }
             if (summaryField.getTransform().isBolded()) {
                 addIndexCommand(summaryField.getName(), CMD_HIGHLIGHT);
+            }
+
+            var sourceField = schema.getField(summaryField.getSourceField()); // Take the first as they should all be consistent
+            if (sourceField != null && sourceField.getMatching().getType().equals(MatchType.GRAM)) {
+                addIndexCommand(summaryField.getName(),
+                                "ngram " + (sourceField.getMatching().getGramSize() > 0 ? sourceField.getMatching().getGramSize() : NGramMatch.DEFAULT_GRAM_SIZE));
+
             }
         }
     }
