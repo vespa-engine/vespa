@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.AuthMethod;
@@ -245,44 +246,37 @@ public class EndpointTest {
         Map<String, Endpoint> tests = Map.of(
                 "https://a1.t1.aws-us-north-1.w.vespa-app.cloud/",
                 Endpoint.of(instance1)
-                        .targetRegion(cluster, ZoneId.from("prod", "aws-us-north-1a"))
+                        .targetRegion(cluster, "us-north-1", CloudName.AWS)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
                 "https://a1.t1.gcp-us-south1.w.vespa-app.cloud/",
                 Endpoint.of(instance1)
-                        .targetRegion(cluster, ZoneId.from("prod", "gcp-us-south1-c"))
+                        .targetRegion(cluster, "us-south1", CloudName.GCP)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
-                "https://a1.t1.us-north-2.w.vespa-app.cloud/",
+                "https://c1.a1.t1.aws-us-north-2.w.vespa-app.cloud/",
                 Endpoint.of(instance1)
-                        .targetRegion(cluster, prodZone)
+                        .targetRegion(ClusterSpec.Id.from("c1"), "us-north-2", CloudName.AWS)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
-                "https://c1.a1.t1.us-north-2.w.vespa-app.cloud/",
+                "https://deadbeef.cafed00d.aws-us-north-2.w.vespa-app.cloud/",
                 Endpoint.of(instance1)
-                        .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
-                        .routingMethod(RoutingMethod.exclusive)
-                        .on(Port.tls())
-                        .in(SystemName.Public),
-                "https://deadbeef.cafed00d.us-north-2.w.vespa-app.cloud/",
-                Endpoint.of(instance1)
-                        .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
+                        .targetRegion(ClusterSpec.Id.from("c1"), "us-north-2", CloudName.AWS)
                         .routingMethod(RoutingMethod.exclusive)
                         .generatedFrom(new GeneratedEndpoint("deadbeef", "cafed00d", AuthMethod.mtls, Optional.empty()))
                         .on(Port.tls())
-                        .in(SystemName.Public)
+                        .in(SystemName.Public),
+                "https://c1.a1.t1.aws-us-north-2-w.vespa.oath.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegion(ClusterSpec.Id.from("c1"), "us-north-2", CloudName.AWS)
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.main)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
-
-        assertEquals("aws-us-north-1",
-                tests.get("https://a1.t1.aws-us-north-1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value(),
-                "Availability zone is removed from region");
-        assertEquals("gcp-us-south1",
-                tests.get("https://a1.t1.gcp-us-south1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value(),
-                "Availability zone is removed from region");
     }
 
     @Test
