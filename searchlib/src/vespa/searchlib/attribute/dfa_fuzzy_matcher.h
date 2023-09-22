@@ -17,22 +17,35 @@ namespace search::attribute {
 class DfaFuzzyMatcher {
 private:
     vespalib::fuzzy::LevenshteinDfa _dfa;
-    std::vector<uint32_t> _successor;
+    std::vector<uint32_t>           _successor;
+    std::vector<uint32_t>           _prefix;
+    std::vector<uint32_t>           _successor_suffix;
+    uint32_t                        _prefix_size;
 
+    const char*skip_prefix(const char* word) const;
 public:
-    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
+    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
     ~DfaFuzzyMatcher();
 
     template <typename DictionaryConstIteratorType>
     bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) {
-        auto match = _dfa.match(word, _successor);
-        if (match.matches()) {
-            return true;
+        if (_prefix_size > 0) {
+            word = skip_prefix(word);
+            auto match = _dfa.match(word, _successor_suffix);
+            if (match.matches()) {
+                return true;
+            }
+            _successor.resize(_prefix.size());
+            _successor.insert(_successor.end(), _successor_suffix.begin(), _successor_suffix.end());
         } else {
-            DfaStringComparator cmp(data_store, _successor);
-            itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
-            return false;
+            auto match = _dfa.match(word, _successor);
+            if (match.matches()) {
+                return true;
+            }
         }
+        DfaStringComparator cmp(data_store, _successor);
+        itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
+        return false;
     }
 };
 
