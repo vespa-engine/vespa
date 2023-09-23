@@ -45,7 +45,6 @@ public class LoadBalancerSerializer {
     private static final String idField = "id";
     private static final String hostnameField = "hostname";
     private static final String lbIpAddressField = "ipAddress";
-    private static final String lbIp6AddressField = "ip6Address";
     private static final String stateField = "state";
     private static final String changedAtField = "changedAt";
     private static final String dnsZoneField = "dnsZone";
@@ -70,8 +69,7 @@ public class LoadBalancerSerializer {
 
         root.setString(idField, loadBalancer.id().serializedForm());
         loadBalancer.instance().flatMap(LoadBalancerInstance::hostname).ifPresent(hostname -> root.setString(hostnameField, hostname.value()));
-        loadBalancer.instance().flatMap(LoadBalancerInstance::ip4Address).ifPresent(ip -> root.setString(lbIpAddressField, ip));
-        loadBalancer.instance().flatMap(LoadBalancerInstance::ip6Address).ifPresent(ip -> root.setString(lbIp6AddressField, ip));
+        loadBalancer.instance().flatMap(LoadBalancerInstance::ipAddress).ifPresent(ip -> root.setString(lbIpAddressField, ip));
         root.setString(stateField, asString(loadBalancer.state()));
         root.setLong(changedAtField, loadBalancer.changedAt().toEpochMilli());
         loadBalancer.instance().flatMap(LoadBalancerInstance::dnsZone).ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
@@ -125,8 +123,7 @@ public class LoadBalancerSerializer {
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
         Optional<DomainName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(DomainName::of);
-        Optional<String> ip4Address = optionalString(object.field(lbIpAddressField), Function.identity()).filter(s -> !s.isEmpty());
-        Optional<String> ip6Address = optionalString(object.field(lbIp6AddressField), Function.identity()).filter(s -> !s.isEmpty());
+        Optional<String> ipAddress = optionalString(object.field(lbIpAddressField), Function.identity()).filter(s -> !s.isEmpty());
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
         ZoneEndpoint settings = zoneEndpoint(object.field(settingsField));
         Optional<PrivateServiceId> serviceId = optionalString(object.field(serviceIdField), PrivateServiceId::of);
@@ -134,9 +131,9 @@ public class LoadBalancerSerializer {
         object.field(serviceIdsField).traverse((ArrayTraverser) (__, serviceIdObject) -> serviceIds.add(PrivateServiceId.of(serviceIdObject.asString())));
         if (serviceIds.isEmpty()) serviceId.ifPresent(serviceIds::add); // TODO: remove after winter vacation '23
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
-        Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ip4Address.isEmpty() && ip6Address.isEmpty()
+        Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ipAddress.isEmpty()
                                                   ? Optional.empty()
-                                                  : Optional.of(new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount));
+                                                  : Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 instance,
