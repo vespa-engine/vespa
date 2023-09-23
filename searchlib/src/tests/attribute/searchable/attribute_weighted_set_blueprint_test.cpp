@@ -29,14 +29,14 @@ using namespace search::attribute::test;
 namespace {
 
 void
-setupAttributeManager(MockAttributeManager &manager)
+setupAttributeManager(MockAttributeManager &manager, bool isFilter)
 {
     AttributeVector::DocId docId;
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType("int64")));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType("int64")).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
-        IntegerAttribute *attr = (IntegerAttribute*)(attr_sp.get());
+        auto *attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -45,10 +45,10 @@ setupAttributeManager(MockAttributeManager &manager)
         }
     }
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType("string")));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType("string")).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
-        StringAttribute *attr = (StringAttribute*)(attr_sp.get());
+        auto *attr = (StringAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -58,9 +58,9 @@ setupAttributeManager(MockAttributeManager &manager)
     }
     {
         AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
-                "multi", Config(BasicType("int64"), search::attribute::CollectionType("array")));
+                "multi", Config(BasicType("int64"), search::attribute::CollectionType("array")).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
-        IntegerAttribute *attr = (IntegerAttribute*)(attr_sp.get());
+        auto *attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -78,35 +78,43 @@ struct WS {
     TermFieldHandle handle;
     std::vector<std::pair<std::string, uint32_t> > tokens;
 
-    WS(IAttributeManager & manager) : attribute_manager(manager), layout(), handle(layout.allocTermField(fieldId)), tokens() {
+    explicit WS(IAttributeManager & manager)
+        : attribute_manager(manager),
+          layout(), handle(layout.allocTermField(fieldId)),
+          tokens()
+    {
         MatchData::UP tmp = layout.createMatchData();
         ASSERT_TRUE(tmp->resolveTermField(handle)->getFieldId() == fieldId);
     }
 
     WS &add(const std::string &token, uint32_t weight) {
-        tokens.push_back(std::make_pair(token, weight));
+        tokens.emplace_back(token, weight);
         return *this;
     }
 
     Node::UP createNode() const {
-        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
-        for (size_t i = 0; i < tokens.size(); ++i) {
-            node->addTerm(tokens[i].first, Weight(tokens[i].second));
+        auto *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
+        for (const auto & token : tokens) {
+            node->addTerm(token.first, Weight(token.second));
         }
         return Node::UP(node);
     }
 
-    bool isGenericSearch(Searchable &searchable, const std::string &field, bool strict) const {
+    SearchIterator::UP
+    createSearch(Searchable &searchable, const std::string &field, bool strict) const {
         AttributeContext ac(attribute_manager);
         FakeRequestContext requestContext(&ac);
         MatchData::UP md = layout.createMatchData();
         Node::UP node = createNode();
         FieldSpecList fields;
-        fields.add(FieldSpec(field, fieldId, handle));
+        fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(queryeval::ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
-        return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != 0);
+        return sb;
+    }
+    bool isWeightedSetTermSearch(Searchable &searchable, const std::string &field, bool strict) const {
+        return dynamic_cast<WeightedSetTermSearch *>(createSearch(searchable, field, strict).get()) != nullptr;
     }
 
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
@@ -140,23 +148,58 @@ struct WS {
 
 } // namespace <unnamed>
 
-TEST("attribute_weighted_set_test") {
+void test_tokens(bool isFilter, const std::vector<uint32_t> & docs) {
     MockAttributeManager manager;
-    setupAttributeManager(manager);
+    setupAttributeManager(manager, isFilter);
     AttributeBlueprintFactory adapter;
 
-    FakeResult expect = FakeResult()
-                        .doc(3).elem(0).weight(30).pos(0)
-                        .doc(5).elem(0).weight(50).pos(0)
-                        .doc(7).elem(0).weight(70).pos(0);
-    WS ws = WS(manager).add("7", 70).add("5", 50).add("3", 30);
+    FakeResult expect = FakeResult();
+    WS ws = WS(manager);
+    for (uint32_t doc : docs) {
+        auto docS = vespalib::stringify(doc);
+        int32_t weight = doc * 10;
+        expect.doc(doc).weight(weight).pos(0);
+        ws.add(docS, weight);
+    }
 
-    EXPECT_TRUE(ws.isGenericSearch(adapter, "integer", true));
-    EXPECT_TRUE(!ws.isGenericSearch(adapter, "integer", false));
-    EXPECT_TRUE(ws.isGenericSearch(adapter, "string", true));
-    EXPECT_TRUE(!ws.isGenericSearch(adapter, "string", false));
-    EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", true));
-    EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", false));
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "integer", true));
+    EXPECT_TRUE(!ws.isWeightedSetTermSearch(adapter, "integer", false));
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "string", true));
+    EXPECT_TRUE(!ws.isWeightedSetTermSearch(adapter, "string", false));
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));
+
+    EXPECT_EQUAL(expect, ws.search(adapter, "integer", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "integer", false));
+    EXPECT_EQUAL(expect, ws.search(adapter, "string", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "string", false));
+    EXPECT_EQUAL(expect, ws.search(adapter, "multi", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "multi", false));
+}
+TEST("attribute_weighted_set_test") {
+    test_tokens(false, {3, 5, 7});
+    test_tokens(true, {3, 5, 7});
+    test_tokens(false, {3});
+}
+
+TEST("attribute_weighted_set_single_token_filter_lifted_out") {
+    MockAttributeManager manager;
+    setupAttributeManager(manager, true);
+    AttributeBlueprintFactory adapter;
+
+    FakeResult expect = FakeResult().doc(3).elem(0).weight(30).pos(0);
+    WS ws = WS(manager).add("3", 30);
+
+    EXPECT_EQUAL("search::FilterAttributeIteratorStrict<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
+                 ws.createSearch(adapter, "integer", true)->getClassName());
+    EXPECT_EQUAL("search::FilterAttributeIteratorT<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
+                 ws.createSearch(adapter, "integer", false)->getClassName());
+    EXPECT_EQUAL("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
+                 ws.createSearch(adapter, "string", true)->getClassName());
+    EXPECT_EQUAL("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
+                 ws.createSearch(adapter, "string", false)->getClassName());
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
+    EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));
 
     EXPECT_EQUAL(expect, ws.search(adapter, "integer", true));
     EXPECT_EQUAL(expect, ws.search(adapter, "integer", false));
