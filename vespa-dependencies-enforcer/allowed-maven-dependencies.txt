@@ -25,7 +25,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2
 com.github.luben:zstd-jni:1.5.5-5
 com.github.spotbugs:spotbugs-annotations:3.1.9
 com.google.code.findbugs:jsr305:3.0.2
-com.google.errorprone:error_prone_annotations:2.21.1
+com.google.errorprone:error_prone_annotations:2.22.0
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:32.1.2-jre
 com.google.inject:guice:6.0.0
