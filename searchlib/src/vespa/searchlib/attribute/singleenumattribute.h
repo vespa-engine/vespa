@@ -110,6 +110,9 @@ public:
     void onUpdateStat() override;
     void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;
+    bool isUndefined(DocId doc) const override {
+        return acquire_enum_entry_ref(doc) == this->getEnumStore().get_default_value_ref().load_relaxed();
+    }
     EnumHandle getEnum(DocId doc) const override {
        return getE(doc);
     }

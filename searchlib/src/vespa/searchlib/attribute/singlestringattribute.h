@@ -41,7 +41,6 @@ public:
     //-------------------------------------------------------------------------
     // Attribute read API
     //-------------------------------------------------------------------------
-    bool isUndefined(DocId doc) const override { return get(doc)[0] == '\0'; }
     const char * get(DocId doc) const override {
         return this->_enumStore.get_value(this->acquire_enum_entry_ref(doc));
     }

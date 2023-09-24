@@ -40,8 +40,7 @@ AttributeFieldValueNode(const vespalib::string& doctype,
 
 
 std::unique_ptr<document::select::Value>
-AttributeFieldValueNode::
-getValue(const Context &context) const
+AttributeFieldValueNode::getValue(const Context &context) const
 {
     const auto &sc(static_cast<const SelectContext &>(context));
     uint32_t docId(sc._docId); 
