@@ -32,7 +32,7 @@ public:
     }
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override {
-        return _children.get_hits(begin_id, getEndId());
+        return _children.get_hits(std::min(getEndId(), std::max(begin_id, getDocId())), getEndId());
     }
 
     Trinary is_strict() const override { return Trinary::True; }
@@ -49,15 +49,17 @@ DocumentWeightOrFilterSearchImpl::~DocumentWeightOrFilterSearchImpl() = default;
 void
 DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
 {
-    if (_children.get_docid(0) < docId) {
-        _children.seek(0, docId);
-    }
-    uint32_t min_doc_id = _children.get_docid(0);
-    for (uint16_t i = 1; i < _children.size(); ++i) {
-        if (_children.get_docid(i) < docId) {
-            _children.seek(i, docId);
+    uint32_t min_doc_id = endDocId;
+    for (uint16_t i = 0; i < _children.size(); ++i) {
+        uint32_t next = _children.get_docid(i);
+        if (next < docId) {
+            next = _children.seek(i, docId);
         }
-        min_doc_id = std::min(min_doc_id, _children.get_docid(i));
+        if (next == docId) {
+            setDocId(next);
+            return;
+        }
+        min_doc_id = std::min(min_doc_id, next);
     }                
     setDocId(min_doc_id);
 }
