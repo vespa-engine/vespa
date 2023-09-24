@@ -204,6 +204,9 @@ public:
     void free_unused_values(IndexList to_remove);
     void clear_default_value_ref() override;
     void setup_default_value_ref() override;
+    bool is_default_value_ref(Index idx) const {
+        return idx == _default_value_ref.load_relaxed();
+    }
     const AtomicIndex& get_default_value_ref() const noexcept { return _default_value_ref; }
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
