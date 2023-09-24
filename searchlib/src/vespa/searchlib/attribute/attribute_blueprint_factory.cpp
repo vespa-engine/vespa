@@ -337,10 +337,7 @@ public:
         if (tfmda.size() == 1) {
             // search in exactly one field
             fef::TermFieldMatchData &tfmd = *tfmda[0];
-            return search::common::create_location_iterator(tfmd,
-                                                            _attribute.getNumDocs(),
-                                                            strict,
-                                                            _location);
+            return common::create_location_iterator(tfmd, _attribute.getNumDocs(), strict, _location);
         } else {
             LOG(debug, "wrong size tfmda: %zu (fallback to old location iterator)\n", tfmda.size());
         }
