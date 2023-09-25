@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.tenant;
 import com.yahoo.config.provision.TenantName;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public class DeletedTenant extends Tenant {
     private final Instant deletedAt;
 
     public DeletedTenant(TenantName name, Instant createdAt, Instant deletedAt) {
-        super(name, createdAt, LastLoginInfo.EMPTY, Optional.empty(), Instant.EPOCH);
+        super(name, createdAt, LastLoginInfo.EMPTY, Optional.empty(), Instant.EPOCH, List.of());
         this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must be non-null");
     }
 

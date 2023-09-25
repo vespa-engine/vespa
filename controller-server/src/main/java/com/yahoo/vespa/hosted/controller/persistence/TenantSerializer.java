@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
+import com.yahoo.vespa.hosted.controller.tenant.CloudAccountInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
@@ -85,6 +88,9 @@ public class TenantSerializer {
     private static final String invalidateUserSessionsBeforeField = "invalidateUserSessionsBefore";
     private static final String tenantRolesLastMaintainedField = "tenantRolesLastMaintained";
     private static final String billingReferenceField = "billingReference";
+    private static final String cloudAccountsField = "cloudAccounts";
+    private static final String accountField = "account";
+    private static final String templateVersionField = "templateVersion";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -97,6 +103,7 @@ public class TenantSerializer {
         tenantObject.setLong(createdAtField, tenant.createdAt().toEpochMilli());
         toSlime(tenant.lastLoginInfo(), tenantObject.setObject(lastLoginInfoField));
         tenantObject.setLong(tenantRolesLastMaintainedField, tenant.tenantRolesLastMaintained().toEpochMilli());
+        cloudAccountsToSlime(tenant.cloudAccounts(), tenantObject.setArray(cloudAccountsField));
 
         switch (tenant.type()) {
             case athenz:  toSlime((AthenzTenant) tenant, tenantObject); break;
@@ -162,6 +169,14 @@ public class TenantSerializer {
         }
     }
 
+    private void cloudAccountsToSlime(List<CloudAccountInfo> cloudAccounts, Cursor cloudAccountsObject) {
+        cloudAccounts.forEach(cloudAccountInfo -> {
+            Cursor object = cloudAccountsObject.addObject();
+            object.setString(accountField, cloudAccountInfo.cloudAccount().account());
+            object.setString(templateVersionField, cloudAccountInfo.templateVersion().toFullString());
+        });
+    }
+
     public Tenant tenantFrom(Slime slime) {
         Inspector tenantObject = slime.get();
         Tenant.Type type = typeOf(tenantObject.field(typeField).asString());
@@ -183,7 +198,8 @@ public class TenantSerializer {
         Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
-        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+        List<CloudAccountInfo> cloudAccountInfos = cloudAccountsFromSlime(tenantObject.field(cloudAccountsField));
+        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained, cloudAccountInfos);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
@@ -197,8 +213,9 @@ public class TenantSerializer {
         ArchiveAccess archiveAccess = archiveAccessFromSlime(tenantObject);
         Optional<Instant> invalidateUserSessionsBefore = SlimeUtils.optionalInstant(tenantObject.field(invalidateUserSessionsBeforeField));
         Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
+        List<CloudAccountInfo> cloudAccountInfos = cloudAccountsFromSlime(tenantObject.field(cloudAccountsField));
         Optional<BillingReference> billingReference = billingReferenceFrom(tenantObject.field(billingReferenceField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, billingReference);
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, cloudAccountInfos, billingReference);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
@@ -282,6 +299,14 @@ public class TenantSerializer {
         lastLoginInfoObject.traverse((String name, Inspector value) ->
                 lastLoginByUserLevel.put(userLevelOf(name), SlimeUtils.instant(value)));
         return new LastLoginInfo(lastLoginByUserLevel);
+    }
+
+    private List<CloudAccountInfo> cloudAccountsFromSlime(Inspector cloudAccountsObject) {
+        return SlimeUtils.entriesStream(cloudAccountsObject)
+                .map(inspector -> new CloudAccountInfo(
+                        CloudAccount.from(inspector.field(accountField).asString()),
+                        Version.fromString(inspector.field(templateVersionField).asString())))
+                .toList();
     }
 
     void toSlime(TenantInfo info, Cursor parentCursor) {
