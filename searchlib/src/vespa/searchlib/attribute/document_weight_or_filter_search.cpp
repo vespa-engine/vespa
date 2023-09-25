@@ -75,6 +75,8 @@ DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& child
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     } else {
+        std::sort(children.begin(), children.end(),
+                  [](const auto & a, const auto & b) { return a.size() > b.size(); });
         return std::make_unique<DocumentWeightOrFilterSearchImpl>(AttributeIteratorPack(std::move(children)));
     }
 }
