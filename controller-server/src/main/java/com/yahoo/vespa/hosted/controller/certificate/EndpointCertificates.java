@@ -140,10 +140,11 @@ public class EndpointCertificates {
             }
             try (NestedTransaction transaction = new NestedTransaction()) {
                 curator.removeUnassignedCertificate(candidate.get(), transaction);
-                curator.writeAssignedCertificate(new AssignedCertificate(application, instanceName, candidate.get().certificate()),
+                EndpointCertificate certificate = candidate.get().certificate().withLastRequested(clock.instant().getEpochSecond());
+                curator.writeAssignedCertificate(new AssignedCertificate(application, instanceName, certificate),
                                                  transaction);
                 transaction.commit();
-                return candidate.get().certificate();
+                return certificate;
             }
         }
     }
