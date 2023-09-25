@@ -53,12 +53,4 @@ public class CertificatePoolMaintainerTest {
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         assertEquals(n, tester.curator().readUnassignedCertificates().size());
     }
-
-    void old_unassigned_certs_are_refreshed() {
-        tester.flagSource().withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), 1);
-        assertNumCerts(1);
-        EndpointCertificateProviderMock endpointCertificateProvider = (EndpointCertificateProviderMock) tester.controller().serviceRegistry().endpointCertificateProvider();
-        var request = endpointCertificateProvider.listCertificates().get(0);
-
-    }
 }

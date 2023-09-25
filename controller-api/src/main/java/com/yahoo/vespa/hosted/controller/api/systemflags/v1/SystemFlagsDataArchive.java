@@ -258,15 +258,15 @@ public class SystemFlagsDataArchive {
             root = mapper.readTree(fileContent);
             // TODO (mortent): Remove this after completing migration of APPLICATION_ID dimension
             // replace "application" with "instance" for all dimension fields
-//            List<JsonNode> dimensionParents = root.findParents("dimension");
-//            for (JsonNode parentNode : dimensionParents) {
-//                JsonNode dimension = parentNode.get("dimension");
-//                if (dimension.isTextual() && "application".equals(dimension.textValue())) {
-//                    ObjectNode parent = (ObjectNode) parentNode;
-//                    parent.remove("dimension");
-//                    parent.put("dimension", "instance");
-//                }
-//            }
+            List<JsonNode> dimensionParents = root.findParents("dimension");
+            for (JsonNode parentNode : dimensionParents) {
+                JsonNode dimension = parentNode.get("dimension");
+                if (dimension.isTextual() && "application".equals(dimension.textValue())) {
+                    ObjectNode parent = (ObjectNode) parentNode;
+                    parent.remove("dimension");
+                    parent.put("dimension", "instance");
+                }
+            }
         } catch (JsonProcessingException e) {
             throw new FlagValidationException("Invalid JSON: " + e.getMessage());
         }

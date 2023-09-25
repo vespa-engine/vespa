@@ -66,7 +66,7 @@ DotProductBlueprint::createFilterSearch(bool strict, FilterConstraint constraint
 void
 DotProductBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
+    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo);
     for (size_t i = 0; i < _terms.size(); ++i) {
         _terms[i]->fetchPostings(childInfo);
     }    

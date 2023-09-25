@@ -21,6 +21,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -197,7 +198,8 @@ public class VespaModelFactory implements ModelFactory {
             .zone(zone)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
-            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo());
+            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
+            .onnxModelCost(modelContext.properties().hostedVespa() ? new DefaultOnnxModelCost() : OnnxModelCost.disabled());
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

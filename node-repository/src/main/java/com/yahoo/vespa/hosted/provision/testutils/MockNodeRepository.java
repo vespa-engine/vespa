@@ -21,6 +21,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -161,8 +162,8 @@ public class MockNodeRepository extends NodeRepository {
         // Emulate host in tenant account
         nodes.add(Node.create("dockerhost2", ipConfig(101, 1, 3), "dockerhost2.yahoo.com",
                               flavors.getFlavorOrThrow("large"), NodeType.host)
-                          .wireguardPubKey(WireguardKey.from("000011112222333344445555666677778888999900c="))
-                          .wireguardKeyTimestamp(Instant.ofEpochMilli(123L))
+                          .wireguardKey(new WireguardKeyWithTimestamp(WireguardKey.from("000011112222333344445555666677778888999900c="),
+                                                                      Instant.ofEpochMilli(123L)))
                           .cloudAccount(tenantAccount).build());
         nodes.add(Node.create("dockerhost3", ipConfig(102, 1, 3), "dockerhost3.yahoo.com",
                              flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
@@ -176,8 +177,8 @@ public class MockNodeRepository extends NodeRepository {
         // Config servers
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
                       .cloudAccount(defaultCloudAccount)
-                      .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo="))
-                      .wireguardKeyTimestamp(Instant.ofEpochMilli(456L))
+                      .wireguardKey(new WireguardKeyWithTimestamp(WireguardKey.from("lololololololololololololololololololololoo="),
+                                                                  Instant.ofEpochMilli(456L)))
                       .build());
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
                       .cloudAccount(defaultCloudAccount)

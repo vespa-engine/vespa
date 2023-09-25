@@ -92,6 +92,10 @@ public class NodeRepositoryNode {
     @JsonProperty("trustStore")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<TrustStoreItem> trustStore;
+    @JsonProperty("wireguard")
+    public WireguardKeyWithTimestamp wireguardKeyWithTimestamp;
+
+    // TODO wg: remove separate key and timestamp when all nodes use new keyWithTimestamp
     @JsonProperty("wireguardPubkey")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String wireguardPubkey;
@@ -141,10 +145,22 @@ public class NodeRepositoryNode {
                ", exclusiveTo='" + exclusiveTo + '\'' +
                ", history=" + history +
                ", trustStore=" + trustStore +
-               ", wireguardPubkey=" + wireguardPubkey +
-               ", wireguardKeyTimestamp=" + wireguardKeyTimestamp +
+               ", wireguard=" + wireguardKeyTimestamp +
                ", reports=" + reports +
                '}';
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class WireguardKeyWithTimestamp {
+        @JsonProperty("key")
+        public String key;
+        @JsonProperty("timestamp")
+        public long timestamp;
+
+        public WireguardKeyWithTimestamp(@JsonProperty("key") String key, @JsonProperty("timestamp") long timestamp) {
+            this.key = key;
+            this.timestamp = timestamp;
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

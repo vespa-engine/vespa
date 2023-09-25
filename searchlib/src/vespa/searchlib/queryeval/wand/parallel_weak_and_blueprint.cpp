@@ -4,7 +4,6 @@
 #include "wand_parts.h"
 #include "parallel_weak_and_search.h"
 #include <vespa/searchlib/queryeval/field_spec.hpp>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -77,10 +76,10 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
         // TODO: pass ownership with unique_ptr
-        terms.push_back(wand::Term(_terms[i]->createSearch(*childrenMatchData, true).release(),
-                                   _weights[i],
-                                   childState.estimate().estHits,
-                                   childState.field(0).resolve(*childrenMatchData)));
+        terms.emplace_back(_terms[i]->createSearch(*childrenMatchData, true).release(),
+                           _weights[i],
+                           childState.estimate().estHits,
+                           childState.field(0).resolve(*childrenMatchData));
     }
     return SearchIterator::UP
         (ParallelWeakAndSearch::create(terms,
@@ -101,9 +100,9 @@ ParallelWeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint const
 void
 ParallelWeakAndBlueprint::fetchPostings(const ExecuteInfo & execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(childInfo);
+    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo);
+    for (const auto & _term : _terms) {
+        _term->fetchPostings(childInfo);
     }
 }
 

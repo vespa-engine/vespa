@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -192,8 +193,13 @@ class NodesResponse extends SlimeJsonResponse {
         if (!node.cloudAccount().isUnspecified()) {
             object.setString("cloudAccount", node.cloudAccount().value());
         }
-        node.wireguardPubKey().ifPresent(key -> object.setString("wireguardPubkey", key.value()));
-        node.wireguardKeyTimestamp().ifPresent(timestamp -> object.setLong("wireguardKeyTimestamp", timestamp.toEpochMilli()));
+        node.wireguardPubKey().ifPresent(key -> toSlime(key, object.setObject("wireguard")));
+
+        // TODO wg: remove when all nodes have upgraded to new key+timestamp format
+        node.wireguardPubKey().ifPresent(key -> {
+            object.setString("wireguardPubkey", key.key().value());
+            object.setLong("wireguardKeyTimestamp", key.timestamp().toEpochMilli());
+        });
     }
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {
@@ -235,6 +241,11 @@ class NodesResponse extends SlimeJsonResponse {
             object.setLong("at", event.at().toEpochMilli());
             object.setString("agent", event.agent().name());
         }
+    }
+
+    static void toSlime(WireguardKeyWithTimestamp keyWithTimestamp, Cursor object) {
+        object.setString("key", keyWithTimestamp.key().value());
+        object.setLong("timestamp", keyWithTimestamp.timestamp().toEpochMilli());
     }
 
     private Optional<DockerImage> currentContainerImage(Node node) {
