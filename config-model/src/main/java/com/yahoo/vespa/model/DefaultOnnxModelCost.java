@@ -4,8 +4,10 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.OnnxModelCost;
+import com.yahoo.vespa.model.ml.OnnxModelProbe;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,16 +31,18 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class DefaultOnnxModelCost implements OnnxModelCost {
 
     @Override
-    public Calculator newCalculator(DeployLogger logger) {
-        return new CalculatorImpl(logger);
+    public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger) {
+        return new CalculatorImpl(appPkg, logger);
     }
 
     private static class CalculatorImpl implements Calculator {
         private final DeployLogger log;
+        private final ApplicationPackage appPkg;
 
         private final ConcurrentMap<String, Long> modelCost = new ConcurrentHashMap<>();
 
-        private CalculatorImpl(DeployLogger log) {
+        private CalculatorImpl(ApplicationPackage appPkg, DeployLogger log) {
+            this.appPkg = appPkg;
             this.log = log;
         }
 
@@ -52,7 +56,17 @@ public class DefaultOnnxModelCost implements OnnxModelCost {
             String path = f.getPath().getRelative();
             if (alreadyAnalyzed(path)) return;
             log.log(Level.FINE, () -> "Register model '%s'".formatted(path));
-            deductJvmHeapSizeWithModelCost(f.exists() ? f.getSize() : 0, path);
+            if (f.exists()) {
+                var memoryStats = OnnxModelProbe.probeMemoryStats(appPkg, f.getPath()).orElse(null);
+                if (memoryStats != null) {
+                    log.log(Level.FINE, () -> "Register model '%s' with memory stats: %s".formatted(path, memoryStats));
+                    deductJvmHeapSizeWithModelCost(f.getSize(), memoryStats, path);
+                } else {
+                    deductJvmHeapSizeWithModelCost(f.getSize(), path);
+                }
+            } else {
+                deductJvmHeapSizeWithModelCost(0, path);
+            }
         }
 
         @Override
@@ -87,6 +101,13 @@ public class DefaultOnnxModelCost implements OnnxModelCost {
         private void deductJvmHeapSizeWithModelCost(long size, String source) {
             long fallbackModelSize = 1024*1024*1024;
             long estimatedCost = Math.max(300*1024*1024, (long) (1.4D * (size > 0 ? size : fallbackModelSize) + 100*1024*1024));
+            log.log(Level.FINE, () ->
+                    "Estimated %s footprint for model of size %s ('%s')".formatted(mb(estimatedCost), mb(size), source));
+            modelCost.put(source, estimatedCost);
+        }
+
+        private void deductJvmHeapSizeWithModelCost(long size, OnnxModelProbe.MemoryStats stats, String source) {
+            long estimatedCost = (long)(1.1D * stats.vmSize());
             log.log(Level.FINE, () ->
                     "Estimated %s footprint for model of size %s ('%s')".formatted(mb(estimatedCost), mb(size), source));
             modelCost.put(source, estimatedCost);
