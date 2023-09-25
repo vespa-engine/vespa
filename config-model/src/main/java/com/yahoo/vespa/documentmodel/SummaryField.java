@@ -17,9 +17,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class SummaryField extends Field implements Cloneable, TypedKey {
 
-    /**
-     * A source (field name).
-     */
+    /** A source (field name). */
     public static class Source implements Serializable {
 
         private final String name;
@@ -38,12 +36,8 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof Source)) {
-                return false;
-            }
-            Source other = (Source)obj;
-            return name.equals(other.name) &&
-                    override == other.override;
+            if (!(obj instanceof Source other)) return false;
+            return name.equals(other.name) && override == other.override;
         }
 
         @Override
@@ -67,14 +61,14 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
      */
     private Set<Source> sources = new java.util.LinkedHashSet<>();
 
-    private Set<String> destinations=new java.util.LinkedHashSet<>();
+    private Set<String> destinations  =new java.util.LinkedHashSet<>();
 
     /** True if this field was defined implicitly */
-    private boolean implicit=false;
+    private boolean implicit = false;
 
     /** Creates a summary field with NONE as transform */
     public SummaryField(String name, DataType type) {
-        this(name,type, SummaryTransform.NONE);
+        this(name, type, SummaryTransform.NONE);
     }
 
     /** Creates a summary field with NONE as transform */
@@ -97,7 +91,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     public boolean isImplicit() { return implicit; }
 
     public void setTransform(SummaryTransform transform) {
-        this.transform=transform;
+        this.transform = transform;
         if (SummaryTransform.DYNAMICTEASER.equals(transform) || SummaryTransform.BOLDED.equals(transform)) {
             // This is the kind of logic we want to have in processing,
             // but can't because of deriveDocuments mode, which doesn't run
@@ -110,9 +104,9 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /** Returns the first source field of this, or null if the source field is not present */
     public String getSourceField() {
-        String sourceName=getName();
-        if (sources.size()>0)
-            sourceName=sources.iterator().next().getName();
+        String sourceName = getName();
+        if ( ! sources.isEmpty())
+            sourceName = sources.iterator().next().getName();
         return sourceName;
     }
 
@@ -137,7 +131,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /** Returns the first source name of this, or the field name if no source has been set */
     public String getSingleSource() {
-        if (sources.size()==0) return getName();
+        if (sources.isEmpty()) return getName();
         return sources.iterator().next().getName();
     }
 
