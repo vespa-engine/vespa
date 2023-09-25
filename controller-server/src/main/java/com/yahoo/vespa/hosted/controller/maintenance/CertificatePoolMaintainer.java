@@ -69,7 +69,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             // Create metric for available certificates in the pool as a fraction of configured size
             int poolSize = certPoolSize.value();
             long available = certificatePool.stream().filter(c -> c.state() == UnassignedCertificate.State.ready).count();
-            metric.set(ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.baseName(), (poolSize > 0 ? (available/poolSize) : 1.0), metric.createContext(Map.of()));
+            metric.set(ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.baseName(), (poolSize > 0 ? ((double)available/poolSize) : 1.0), metric.createContext(Map.of()));
 
             if (certificatePool.size() < poolSize) {
                 provisionRandomizedCertificate();
