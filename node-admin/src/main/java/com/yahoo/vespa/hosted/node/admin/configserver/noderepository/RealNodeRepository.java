@@ -11,6 +11,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -139,23 +140,25 @@ public class RealNodeRepository implements NodeRepository {
 
         return response.nodes.stream()
                 .mapMulti((NodeRepositoryNode node, Consumer<WireguardPeer> consumer) -> {
-                    if (node.wireguardPubkey == null || node.wireguardPubkey.isEmpty()) return;
-                    List<VersionedIpAddress> ipAddresses = node.ipAddresses.stream()
-                            .map(InetAddresses::forString)
-                            .filter(address -> !address.isLoopbackAddress() && !address.isLinkLocalAddress() && !address.isSiteLocalAddress())
-                            .map(VersionedIpAddress::from)
-                            .toList();
+                    var keyWithTimestamp = createWireguardKeyWithTimestamp(node.wireguardKeyWithTimestamp,
+                                                                           node.wireguardPubkey,
+                                                                           node.wireguardKeyTimestamp);
+                    if (keyWithTimestamp == null) return;
+
+                    List<VersionedIpAddress> ipAddresses = getIpAddresses(node);
                     if (ipAddresses.isEmpty()) return;
 
-                    // Unbox to prevent NPE
-                    long keyTimestamp = node.wireguardKeyTimestamp == null ? 0L : node.wireguardKeyTimestamp;
-
-                    consumer.accept(new WireguardPeer(HostName.of(node.hostname),
-                                                      ipAddresses,
-                                                      WireguardKey.from(node.wireguardPubkey),
-                                                      Instant.ofEpochMilli(keyTimestamp)));
+                    consumer.accept(new WireguardPeer(HostName.of(node.hostname), ipAddresses, keyWithTimestamp));
                 })
                 .sorted()
+                .toList();
+    }
+
+    private static List<VersionedIpAddress> getIpAddresses(NodeRepositoryNode node) {
+        return node.ipAddresses.stream()
+                .map(InetAddresses::forString)
+                .filter(address -> !address.isLoopbackAddress() && !address.isLinkLocalAddress() && !address.isSiteLocalAddress())
+                .map(VersionedIpAddress::from)
                 .toList();
     }
 
@@ -246,8 +249,9 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
                 trustStore,
-                Optional.ofNullable(node.wireguardPubkey).map(WireguardKey::from),
-                Optional.ofNullable(node.wireguardKeyTimestamp).map(Instant::ofEpochMilli),
+                Optional.ofNullable(createWireguardKeyWithTimestamp(node.wireguardKeyWithTimestamp,
+                                                                    node.wireguardPubkey,
+                                                                    node.wireguardKeyTimestamp)),
                 node.wantToRebuild);
     }
 
@@ -364,20 +368,39 @@ public class RealNodeRepository implements NodeRepository {
         node.trustStore = nodeAttributes.getTrustStore().stream()
                 .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
                 .toList();
-        node.wireguardPubkey = nodeAttributes.getWireguardPubkey().map(WireguardKey::value).orElse(null);
+        // This is used for patching, and timestamp must only be set on the server side, hence sending EPOCH.
+        node.wireguardKeyWithTimestamp = nodeAttributes.getWireguardPubkey()
+                .map(key -> new NodeRepositoryNode.WireguardKeyWithTimestamp(key.value(), 0L))
+                .orElse(null);
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 
+        // TODO wg: remove when all nodes are using new key+timestamp format
+        node.wireguardPubkey = nodeAttributes.getWireguardPubkey().map(WireguardKey::value).orElse(null);
         return node;
     }
 
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
-        // Unbox to prevent NPE
-        long keyTimestamp = configServer.wireguardKeyTimestamp == null ? 0L : configServer.wireguardKeyTimestamp;
-
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 WireguardKey.from(configServer.wireguardPubkey),
-                                 Instant.ofEpochMilli(keyTimestamp));
+                                 createWireguardKeyWithTimestamp(configServer.wireguardKeyWithTimestamp,
+                                                                 configServer.wireguardPubkey,
+                                                                 configServer.wireguardKeyTimestamp));
     }
+
+    private static WireguardKeyWithTimestamp createWireguardKeyWithTimestamp(NodeRepositoryNode.WireguardKeyWithTimestamp wirguardJson,
+                                                                             String oldKeyJson, Long oldTimestampJson) {
+        if (wirguardJson != null && wirguardJson.key != null && ! wirguardJson.key.isEmpty()) {
+            return new WireguardKeyWithTimestamp(WireguardKey.from(wirguardJson.key),
+                                                 Instant.ofEpochMilli(wirguardJson.timestamp));
+            // TODO wg: remove when all nodes are using new key+timestamp format
+        } else if (oldKeyJson != null) {
+            var timestamp = oldTimestampJson != null ? oldTimestampJson : 0L;
+            return new WireguardKeyWithTimestamp(WireguardKey.from(oldKeyJson),
+                                                 Instant.ofEpochMilli(timestamp));
+            // TODO END
+        } else return null;
+
+    }
+
 }
