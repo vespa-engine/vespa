@@ -34,16 +34,16 @@ class JvmHeapSizeValidatorTest {
         var deployState = createDeployState(8, 7L * 1024 * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated percentage of memory of JVM in cluster 'container' is too low (3% < 10%). Estimated cost of ONNX models is 7.00GB";
+        String expectedMessage = "Allocated percentage of memory of JVM in cluster 'container' is too low (3% < 15%). Estimated cost of ONNX models is 7.00GB";
         assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
     }
 
     @Test
     void fails_on_too_low_heap_size() throws IOException, SAXException {
-        var deployState = createDeployState(2, 1024L * 1024 * 1024);
+        var deployState = createDeployState(2.2, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated memory to JVM in cluster 'container' is too low (0.30GB < 0.40GB). Estimated cost of ONNX models is 1.00GB.";
+        String expectedMessage = "Allocated memory to JVM in cluster 'container' is too low (0.50GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.";
         assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
     }
 
