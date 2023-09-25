@@ -28,7 +28,7 @@ public class JvmHeapSizeValidator extends Validator {
             }
             long jvmModelCost = appCluster.onnxModelCost().aggregatedModelCostInBytes();
             if (jvmModelCost > 0) {
-                int percentLimit = 10;
+                int percentLimit = 15;
                 if (mp.percentage() < percentLimit) {
                     throw new IllegalArgumentException(
                             ("Allocated percentage of memory of JVM in cluster '%s' is too low (%d%% < %d%%). " +
@@ -36,7 +36,7 @@ public class JvmHeapSizeValidator extends Validator {
                                     "You may override this validation by specifying 'allocated-memory' (https://docs.vespa.ai/en/performance/container-tuning.html#jvm-heap-size).")
                                             .formatted(clusterId, mp.percentage(), percentLimit, jvmModelCost / (1024D * 1024 * 1024)));
                 }
-                double gbLimit = 0.4;
+                double gbLimit = 0.6;
                 double availableMemoryGb = mp.availableMemoryGb().getAsDouble();
                 if (availableMemoryGb < gbLimit) {
                     throw new IllegalArgumentException(
