@@ -494,6 +494,14 @@ TEST("test hash set initializer list - empty")
     EXPECT_EQUAL(0u, s.size());
 }
 
+TEST("empty hash_set can be looked up")
+{
+    IntHashSet s;
+    EXPECT_EQUAL(0u, s.size());
+    EXPECT_EQUAL(1u, s.capacity());
+    EXPECT_TRUE(s.find(1) == s.end());
+}
+
 TEST("test hash set initializer list - 1 element")
 {
     IntHashSet s = {1};

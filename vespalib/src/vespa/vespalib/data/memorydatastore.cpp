@@ -41,21 +41,4 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     return ref;
 }
 
-VariableSizeVector::VariableSizeVector(size_t initialCount, size_t initialBufferSize)
-    : _vector(),
-      _store(Alloc::alloc(initialBufferSize))
-{
-    _vector.reserve(initialCount);
-}
-
-VariableSizeVector::~VariableSizeVector() = default;
-
-VariableSizeVector::Reference
-VariableSizeVector::push_back(const void * data, const size_t sz)
-{
-    MemoryDataStore::Reference ptr(_store.push_back(data, sz));
-    _vector.push_back(Reference(ptr.data(), sz));
-    return _vector.back();
-}
-
 } // namespace vespalib
