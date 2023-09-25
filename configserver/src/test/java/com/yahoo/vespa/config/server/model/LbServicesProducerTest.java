@@ -50,10 +50,11 @@ import static org.junit.Assert.assertTrue;
 public class LbServicesProducerTest {
 
     private static final Set<ContainerEndpoint> endpoints = Set.of(
+            new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("mydisc.foo.foo.endpoint1.suffix")),
+            new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("mydisc.foo.foo.endpoint2.suffix")),
             new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1", "rotation-2")),
             new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.application, List.of("app-endpoint"))
     );
-    private static final List<String> zoneDnsSuffixes = List.of(".endpoint1.suffix", ".endpoint2.suffix");
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
@@ -228,7 +229,7 @@ public class LbServicesProducerTest {
     private TestProperties getTestproperties(ApplicationId applicationId) {
         return new TestProperties()
                 .setHostedVespa(true)
-                .setZoneDnsSuffixes(zoneDnsSuffixes)
                 .setApplicationId(applicationId);
     }
+
 }

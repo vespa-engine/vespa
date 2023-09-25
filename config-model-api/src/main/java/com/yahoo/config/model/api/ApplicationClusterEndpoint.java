@@ -168,13 +168,7 @@ public class ApplicationClusterEndpoint {
             return name;
         }
 
-        public static DnsName sharedNameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            String name = dnsParts(systemName, cluster, applicationId)
-                    .filter(Objects::nonNull)             // remove null values that were "default"
-                    .collect(Collectors.joining("--"));
-            return new DnsName(sanitize(name) + suffix); // Need to sanitize name since it is considered one label
-        }
-
+        // TODO(mpolden): Remove when config-models < 8.232 are gone
         public static DnsName sharedL4NameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
             String name = dnsParts(systemName, cluster, applicationId)
                     .filter(Objects::nonNull) // remove null values that were "default"
