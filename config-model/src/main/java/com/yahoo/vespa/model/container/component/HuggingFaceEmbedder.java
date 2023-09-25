@@ -5,6 +5,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
@@ -33,7 +34,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final Integer onnxGpuDevice;
     private final String poolingStrategy;
 
-    public HuggingFaceEmbedder(Element xml, DeployState state) {
+    public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var transformerModelElem = getOptionalChild(xml, "transformer-model").orElseThrow();
         model = ModelIdResolver.resolveToModelReference(transformerModelElem, state);
@@ -51,6 +52,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
         onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
+        cluster.onnxModelCost().registerModel(model);
     }
 
     private static ModelReference resolveDefaultVocab(Element model, DeployState state) {

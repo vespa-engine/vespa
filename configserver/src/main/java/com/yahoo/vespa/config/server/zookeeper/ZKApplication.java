@@ -111,6 +111,12 @@ public class ZKApplication {
         return getBytesInternal(getFullPath(path));
     }
 
+    public long getSize(Path path) {
+        return curator.getStat(path).map(stat -> (long)stat.getDataLength())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Could not get size from '" + path + "' in zookeeper"));
+    }
+
     void putData(Path path, String data) {
         byte[] bytes = Utf8.toBytes(data);
         ensureDataIsNotTooLarge(bytes, path);

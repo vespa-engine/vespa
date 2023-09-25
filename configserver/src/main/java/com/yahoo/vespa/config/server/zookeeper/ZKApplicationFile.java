@@ -3,8 +3,9 @@ package com.yahoo.vespa.config.server.zookeeper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.path.Path;
 import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
+import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -13,11 +14,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.logging.Level;
-import com.yahoo.vespa.config.util.ConfigUtils;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
@@ -183,6 +182,8 @@ class ZKApplicationFile extends ApplicationFile {
             return null;
         }
     }
+
+    @Override public long getSize() { return zkApp.getSize(getZKPath(path)); }
 
     @Override
     public int compareTo(ApplicationFile other) {

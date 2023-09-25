@@ -23,7 +23,7 @@ public class DimensionHelper {
         serializedDimensions.put(FetchVector.Dimension.CONSOLE_USER_EMAIL, List.of("console-user-email"));
         serializedDimensions.put(FetchVector.Dimension.ENVIRONMENT, List.of("environment"));
         serializedDimensions.put(FetchVector.Dimension.HOSTNAME, List.of("hostname"));
-        serializedDimensions.put(FetchVector.Dimension.INSTANCE_ID, List.of("application", "instance"));
+        serializedDimensions.put(FetchVector.Dimension.INSTANCE_ID, List.of("instance", "application"));
         serializedDimensions.put(FetchVector.Dimension.NODE_TYPE, List.of("node-type"));
         serializedDimensions.put(FetchVector.Dimension.SYSTEM, List.of("system"));
         serializedDimensions.put(FetchVector.Dimension.TENANT_ID, List.of("tenant"));

@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -10,9 +10,9 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.net.InetAddress;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+
+import static com.yahoo.vespa.hosted.provision.restapi.NodesResponse.toSlime;
 
 /**
  * A response containing the wireguard peer config for each configserver that has a public key.
@@ -36,17 +36,20 @@ public class WireguardResponse extends SlimeJsonResponse {
                     .toList();
             if (ipAddresses.isEmpty()) continue;
 
-            addConfigserver(cfgArray.addObject(), cfg.hostname(), cfg.wireguardPubKey().get(),
-                            cfg.wireguardKeyTimestamp(), ipAddresses);
+            addConfigserver(cfgArray.addObject(), cfg.hostname(), cfg.wireguardPubKey().get(), ipAddresses);
         }
     }
 
-    private void addConfigserver(Cursor cfgEntry, String hostname, WireguardKey key, Optional<Instant> keyTimestamp,
+    private void addConfigserver(Cursor cfgEntry, String hostname, WireguardKeyWithTimestamp keyWithTimestamp,
                                  List<String> ipAddresses) {
         cfgEntry.setString("hostname", hostname);
-        cfgEntry.setString("wireguardPubkey", key.value());
-        cfgEntry.setLong("wireguardKeyTimestamp", keyTimestamp.orElse(Instant.EPOCH).toEpochMilli());
+
+        // TODO wg: remove when all nodes are using new key+timestamp format
+        cfgEntry.setString("wireguardPubkey", keyWithTimestamp.key().value());
+        cfgEntry.setLong("wireguardKeyTimestamp", keyWithTimestamp.timestamp().toEpochMilli());
+
         NodesResponse.ipAddressesToSlime(ipAddresses, cfgEntry.setArray("ipAddresses"));
+        toSlime(keyWithTimestamp, cfgEntry.setObject("wireguard"));
     }
 
     private static boolean isPublicIp(String ipAddress) {

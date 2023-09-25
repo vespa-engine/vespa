@@ -47,7 +47,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -223,7 +222,7 @@ public class CuratorDb {
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
                                     node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(),
                                     node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates(),
-                                    node.cloudAccount(), node.wireguardPubKey(), node.wireguardKeyTimestamp());
+                                    node.cloudAccount(), node.wireguardPubKey());
             curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
         }
@@ -457,12 +456,7 @@ public class CuratorDb {
         transaction.onCommitted(() -> {
             for (var lb : loadBalancers) {
                 if (lb.state() == fromState) continue;
-                Optional<String> target = lb.instance()
-                                            .flatMap(instance -> instance.hostname()
-                                                                         .map(DomainName::value)
-                                                                         .or(() -> Optional.of(Stream.concat(instance.ip4Address().stream(),
-                                                                                                             instance.ip6Address().stream())
-                                                                                                     .collect(Collectors.joining(",")))));
+                Optional<String> target = lb.instance().flatMap(instance -> instance.hostname().map(DomainName::value).or(instance::ipAddress));
                 if (fromState == null) {
                     log.log(Level.INFO, () -> "Creating " + lb.id() + target.map(t -> " (" +  t + ")").orElse("") +
                                               " in " + lb.state());

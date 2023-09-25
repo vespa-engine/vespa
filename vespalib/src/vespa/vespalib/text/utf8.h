@@ -321,6 +321,7 @@ public:
         return i;
     }
 
+    const char* get_current_ptr() const noexcept { return _p; }
 };
 
 

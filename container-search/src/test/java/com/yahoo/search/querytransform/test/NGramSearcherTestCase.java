@@ -334,15 +334,15 @@ public class NGramSearcherTestCase {
         Result r = new Execution(new Chain<>(createSearcher(), new MockBackend1()), createContextStub(createIndexFacts())).search(q);
         Hit h1 = r.hits().get("hit1");
         assertEquals("Should be untouched,\u001feven if containing \u001f",
-                h1.getField("test").toString());
+                     h1.getField("test").toString());
         assertTrue(h1.getField("test") instanceof String);
 
         assertEquals("Blue red Ed A", h1.getField("gram2").toString());
         assertTrue(h1.getField("gram2") instanceof XMLString);
 
         assertEquals("Blue red ed a\u001f",
-                h1.getField("gram3").toString(),
-                "Separators on borders work");
+                     h1.getField("gram3").toString(),
+                     "Separators on borders work");
         assertTrue(h1.getField("gram3") instanceof String);
 
         Hit h2 = r.hits().get("hit2");
@@ -352,7 +352,7 @@ public class NGramSearcherTestCase {
         Hit h3 = r.hits().get("hit3");
         assertEquals("\u001ffin\u001f \u001fen\u001f \u001fa\u001f", h3.getField("gram2").toString());
         assertEquals("#Logging in #Java is like that \"Judean P\u001fopul\u001far Front\" scene from \"Life of Brian\".",
-                h3.getField("gram3").toString());
+                     h3.getField("gram3").toString());
     }
 
     private Item parseQuery(String query, Query.Type type) {

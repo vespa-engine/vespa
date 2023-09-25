@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private int contentLayerMetadataFeatureLevel = 0;
+    private boolean dynamicHeapSize = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -144,6 +145,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
+    @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -378,6 +380,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         this.contentLayerMetadataFeatureLevel = level;
         return this;
     }
+
+    public TestProperties setDynamicHeapSize(boolean b) { this.dynamicHeapSize = b; return this; }
 
     public static class Spec implements ConfigServerSpec {
 

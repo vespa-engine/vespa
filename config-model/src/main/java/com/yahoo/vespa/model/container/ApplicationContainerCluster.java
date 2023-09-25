@@ -8,14 +8,14 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ApplicationClusterInfo;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
@@ -47,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
@@ -82,6 +83,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final Set<String> previousHosts;
+    private final OnnxModelCost.Calculator onnxModelCost;
+    private final DeployLogger logger;
 
     private ContainerModelEvaluation modelEvaluation;
 
@@ -92,6 +95,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
+    private final boolean dynamicHeapSize;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -103,6 +107,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
+        dynamicHeapSize = deployState.featureFlags().dynamicHeapSize();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                .map(Model::allocatedHosts)
                                                                .map(AllocatedHosts::getHosts)
@@ -125,6 +130,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
                 : defaultHeapSizePercentageOfAvailableMemory;
+        onnxModelCost = deployState.onnxModelCost().newCalculator(deployState.getDeployLogger());
+        logger = deployState.getDeployLogger();
     }
 
     @Override
@@ -182,19 +189,25 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
 
     @Override
-    public Optional<Integer> getMemoryPercentage() {
-        if (memoryPercentage != null) return Optional.of(memoryPercentage);
+    public Optional<JvmMemoryPercentage> getMemoryPercentage() {
+        if (memoryPercentage != null) return Optional.of(JvmMemoryPercentage.of(memoryPercentage));
 
         if (isHostedVespa()) {
             int availableMemoryPercentage = getHostClusterId().isPresent() ?
                                             heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
                                             heapSizePercentageOfAvailableMemory;
-            if (getContainers().isEmpty()) return Optional.of(availableMemoryPercentage); // Node memory is not known
+            if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(availableMemoryPercentage)); // Node memory is not known
 
             // Node memory is known so convert available memory percentage to node memory percentage
-            double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
-            double availableMemory = totalMemory - Host.memoryOverheadGb;
-            return Optional.of((int) (availableMemory / totalMemory * availableMemoryPercentage));
+            double totalMemory = dynamicHeapSize
+                    ? getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow()
+                    : getContainers().get(0).getHostResource().realResources().memoryGb();
+            double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
+            double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
+            int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
+            logger.log(Level.FINE, () -> "memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
+                           .formatted(memoryPercentage, availableMemory, totalMemory, availableMemoryPercentage, jvmHeapDeductionGb));
+            return Optional.of(JvmMemoryPercentage.of(memoryPercentage, availableMemory));
         }
         return Optional.empty();
     }
@@ -203,49 +216,23 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private void createEndpoints(DeployState deployState) {
         if (!deployState.isHosted()) return;
         if (deployState.getProperties().applicationId().instance().isTester()) return;
+        // Add endpoints provided by the controller
+        List<String> hosts = getContainers().stream().map(AbstractService::getHostName).sorted().toList();
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
-
-        List<String> hosts = getContainers().stream()
-                .map(AbstractService::getHostName)
-                .sorted()
-                .toList();
-
-        Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
-        // Add zone-scoped endpoints if not provided by the controller
-        // TODO(mpolden): Remove this when controller always includes zone-scope endpoints, and config models < 8.230 are gone
-        if (endpointsFromController.stream().noneMatch(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.zone)) {
-            for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
-                ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
-                        deployState.zone().system(),
-                        ClusterSpec.Id.from(getName()),
-                        deployState.getProperties().applicationId(),
-                        suffix);
-                endpoints.add(ApplicationClusterEndpoint.builder()
-                                                        .zoneScope()
-                                                        .sharedL4Routing()
-                                                        .dnsName(l4Name)
-                                                        .hosts(hosts)
-                                                        .clusterId(getName())
-                                                        .authMethod(ApplicationClusterEndpoint.AuthMethod.mtls)
-                                                        .build());
-            }
-        }
-
-        // Include all endpoints provided by controller
-        endpointsFromController.stream()
-                               .filter(ce -> ce.clusterId().equals(getName()))
-                               .forEach(ce -> ce.names().forEach(
-                                       name -> endpoints.add(ApplicationClusterEndpoint.builder()
-                                                                                       .scope(ce.scope())
-                                                                                       .weight(ce.weight().orElse(1)) // Default to weight=1 if not set
-                                                                                       .routingMethod(ce.routingMethod())
-                                                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
-                                                                                       .hosts(hosts)
-                                                                                       .clusterId(getName())
-                                                                                       .authMethod(ce.authMethod())
-                                                                                       .build())
-                               ));
-        this.endpoints = List.copyOf(endpoints);
+        deployState.getEndpoints().stream()
+                   .filter(ce -> ce.clusterId().equals(getName()))
+                   .forEach(ce -> ce.names().forEach(
+                           name -> endpoints.add(ApplicationClusterEndpoint.builder()
+                                                                           .scope(ce.scope())
+                                                                           .weight(ce.weight().orElse(1))
+                                                                           .routingMethod(ce.routingMethod())
+                                                                           .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
+                                                                           .hosts(hosts)
+                                                                           .clusterId(getName())
+                                                                           .authMethod(ce.authMethod())
+                                                                           .build())
+                   ));
+        this.endpoints = Collections.unmodifiableList(endpoints);
     }
 
     @Override
@@ -299,12 +286,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
+        var memoryPct = getMemoryPercentage().orElse(null);
+        int heapsize = memoryPct != null && memoryPct.availableMemoryGb().isPresent()
+                ? (int) (memoryPct.availableMemoryGb().getAsDouble() * 1024) : 1536;
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
                 .compressedClassSpaceSize(0)
-                .minHeapsize(1536)
-                .heapsize(1536);
-        getMemoryPercentage().ifPresent(percentage -> builder.jvm.heapSizeAsPercentageOfPhysicalMemory(percentage));
+                .minHeapsize(heapsize)
+                .heapsize(heapsize);
+        if (memoryPct != null) builder.jvm.heapSizeAsPercentageOfPhysicalMemory(memoryPct.percentage());
     }
 
     @Override
@@ -372,6 +362,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public String name() { return getName(); }
+
+    public OnnxModelCost.Calculator onnxModelCost() { return onnxModelCost; }
 
     public static class MbusParams {
         // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)

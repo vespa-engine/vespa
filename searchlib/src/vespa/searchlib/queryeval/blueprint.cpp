@@ -621,7 +621,7 @@ IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
     double nextHitRate = execInfo.hitRate();
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
-        child.fetchPostings(ExecuteInfo::create(execInfo.isStrict() && inheritStrict(i), nextHitRate));
+        child.fetchPostings(ExecuteInfo::create(execInfo.isStrict() && inheritStrict(i), nextHitRate, execInfo.getDoom()));
         nextHitRate = computeNextHitRate(child, nextHitRate);
     }
 }
