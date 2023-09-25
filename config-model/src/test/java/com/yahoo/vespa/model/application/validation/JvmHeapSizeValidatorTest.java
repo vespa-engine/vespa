@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.OnnxModelCost;
@@ -112,7 +113,7 @@ class JvmHeapSizeValidatorTest {
 
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
-        @Override public Calculator newCalculator(DeployLogger logger) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
 
