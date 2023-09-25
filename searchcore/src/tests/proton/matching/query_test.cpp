@@ -711,7 +711,7 @@ void Test::requireThatQueryGluesEverythingTogether() {
     EXPECT_EQUAL(1u, md->getNumTermFields());
 
     query.optimize();
-    query.fetchPostings();
+    query.fetchPostings(requestContext.getDoom());
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search.get());
 }
@@ -744,7 +744,7 @@ void checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQUAL(2u, md->getNumTermFields());
 
-    query.fetchPostings();
+    query.fetchPostings(requestContext.getDoom());
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search.get());
     if (!EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_out))) {
@@ -966,7 +966,7 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     MatchData::UP md = mdl.createMatchData();
 
     query.optimize();
-    query.fetchPostings();
+    query.fetchPostings(requestContext.getDoom());
     SearchIterator::UP search = query.createSearch(*md);
     SimpleResult exp = SimpleResult().addHit(1).addHit(5).addHit(7).addHit(11);
     SimpleResult act;
