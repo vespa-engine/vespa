@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.archive;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -57,6 +58,11 @@ public class MockArchiveService implements ArchiveService {
     @Override
     public URI bucketURI(ZoneId zoneId, String bucketName) {
         return URI.create(String.format("s3://%s/", bucketName));
+    }
+
+    @Override
+    public Optional<Version> getEnclaveTemplateVersion(CloudAccount cloudAccount) {
+        return Optional.of(new Version(1, 2, 3));
     }
 
 
