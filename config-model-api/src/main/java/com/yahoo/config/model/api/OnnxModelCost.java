@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.DeployLogger;
  */
 public interface OnnxModelCost {
 
+    default Calculator newCalculator(DeployLogger logger) { return newCalculator(null, logger); }
     Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger);
 
     interface Calculator {
