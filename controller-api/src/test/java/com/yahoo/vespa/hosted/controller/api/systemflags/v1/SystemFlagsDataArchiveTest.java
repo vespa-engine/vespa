@@ -245,7 +245,7 @@ public class SystemFlagsDataArchiveTest {
                                      "conditions": [
                                        {
                                          "type": "whitelist",
-                                         "dimension": "application",
+                                         "dimension": "instance",
                                          "values": [ "f:o:o" ]
                                        }
                                      ],
@@ -287,7 +287,7 @@ public class SystemFlagsDataArchiveTest {
                                        {
                                          "comment": "bar",
                                          "type": "whitelist",
-                                         "dimension": "application",
+                                         "dimension": "instance",
                                          "values": [ "f:o:o" ]
                                        }
                                      ],
@@ -308,7 +308,7 @@ public class SystemFlagsDataArchiveTest {
     @Test
     void normalize_json_succeed_on_valid_values() {
         addFile(Condition.Type.WHITELIST, "application", "a:b:c");
-//        addFile(Condition.Type.WHITELIST, "instance", "a:b:c");
+        addFile(Condition.Type.WHITELIST, "instance", "a:b:c");
         addFile(Condition.Type.WHITELIST, "cloud", "yahoo");
         addFile(Condition.Type.WHITELIST, "cloud", "aws");
         addFile(Condition.Type.WHITELIST, "cloud", "gcp");
@@ -362,7 +362,7 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void normalize_json_fail_on_invalid_values() {
-        failAddFile(Condition.Type.WHITELIST, "application", "a.b.c", "In file flags/temporary/foo/default.json: Invalid application 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
+        failAddFile(Condition.Type.WHITELIST, "application", "a.b.c", "In file flags/temporary/foo/default.json: Invalid instance 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
         failAddFile(Condition.Type.WHITELIST, "cloud", "foo", "In file flags/temporary/foo/default.json: Unknown cloud: foo");
         // cluster-id: any String is valid
         failAddFile(Condition.Type.WHITELIST, "cluster-type", "foo", "In file flags/temporary/foo/default.json: Invalid cluster-type 'foo' in whitelist condition: Illegal cluster type 'foo'");
