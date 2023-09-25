@@ -196,7 +196,7 @@ struct StateRepo {
         return refs[idx]->first;
     }
 };
-StateRepo::~StateRepo() = default;
+[[maybe_unused]] StateRepo::~StateRepo() = default;
 
 template <uint8_t N>
 std::vector<bool> expand_bits(uint32_t value) {
@@ -212,7 +212,7 @@ std::vector<bool> expand_bits(uint32_t value) {
 }
 
 template <uint8_t N>
-[[maybe_unused]] StateRepo make_state_repo() {
+StateRepo make_state_repo() {
     StateRepo repo;
     for (uint32_t idx = 0; idx < repo.size(); ++idx) {
         const State &state = repo.idx_to_state(idx);
@@ -225,16 +225,20 @@ template <uint8_t N>
     return repo;
 }
 
-// this is the result of our efforts
+struct Transition {
+    uint8_t step;
+    uint8_t state;
+    constexpr Transition() noexcept : step(0), state(0) {}    
+    constexpr Transition(uint8_t di, uint8_t ns) noexcept : step(di), state(ns) {}
+};
+
+template <uint8_t N> struct InlineTfa;
+#include "inline_tfa.hpp"
+
 template <uint8_t N>
 struct Tfa {
-    struct Entry {
-        uint8_t step;
-        uint8_t state;
-    };
-
     // what happens when following a transition from a state?
-    std::array<std::array<Entry,num_transitions<N>()>,num_states<N>()> table;
+    std::array<std::array<Transition,num_transitions<N>()>,num_states<N>()> table;
 
     // how many edits did we use to match the target word?
     std::array<std::array<uint8_t,window_size<N>()>,num_states<N>()> edits;
@@ -267,12 +271,6 @@ std::unique_ptr<Tfa<N>> make_tfa() {
     return tfa;
 }
 
-template <uint8_t N>
-const Tfa<N> *get_tfa() {
-    static std::unique_ptr<Tfa<N>> tfa = make_tfa<N>();
-    return tfa.get();
-}
-
 template <typename T>
 vespalib::string format_vector(const std::vector<T> &vector, bool compact = false) {
     vespalib::string str = compact ? "" : "[";
@@ -296,56 +294,55 @@ struct TableMatcher {
         // needed by dfa matcher concept (should use std::declval instead)
         constexpr S() noexcept : index(0), state(0) {}
         constexpr S(uint32_t i, uint32_t s) noexcept : index(i), state(s) {}
-        S next(const Tfa<N> *tfa, uint32_t bits) noexcept {
-            auto entry = tfa->table[state][bits];
+        S next(uint32_t bits) noexcept {
+            const auto &entry = InlineTfa<N>::table[state][bits];
             return S(index + entry.step, entry.state);
         }
-        constexpr bool is_valid_edge(const Tfa<N> *tfa, uint32_t bits) const noexcept {
-            return tfa->table[state][bits].state != 0;
+        constexpr bool is_valid_edge(uint32_t bits) const noexcept {
+            return InlineTfa<N>::table[state][bits].state != 0;
         }
     };
     using StateType = S;
     using StateParamType = StateType;
     using EdgeType = uint32_t;
 
-    const Tfa<N>              *tfa;
     const TableDfa<N>::Lookup *lookup;
     const uint32_t             end;
     const bool                 cased;
 
-    TableMatcher(const Tfa<N> *tfa_in, const TableDfa<N>::Lookup *lookup_in, uint32_t end_in, bool cased_in)
-      noexcept : tfa(tfa_in), lookup(lookup_in), end(end_in), cased(cased_in) {}
+    TableMatcher(const TableDfa<N>::Lookup *lookup_in, uint32_t end_in, bool cased_in)
+      noexcept : lookup(lookup_in), end(end_in), cased(cased_in) {}
     
     bool is_cased() const noexcept { return cased; }
     static constexpr S start() noexcept { return S(0, 1); }
 
     uint8_t match_edit_distance(S s) const noexcept {
         uint32_t leap = (end - s.index);
-        return (leap < window_size<N>()) ? tfa->edits[s.state][leap] : N + 1;
+        return (leap < window_size<N>()) ? InlineTfa<N>::edits[s.state][leap] : N + 1;
     }
     bool is_match(S s) const noexcept { return match_edit_distance(s) <= N; }
 
     static constexpr bool can_match(S s) noexcept { return (s.state != 0); }
     static constexpr bool valid_state(S s) noexcept { return (s.state != 0); }
 
-    S match_wildcard(S s) const noexcept { return s.next(tfa, 0); }
+    S match_wildcard(S s) const noexcept { return s.next(0); }
     S match_input(S s, uint32_t c) const noexcept {
         const auto *slice = lookup[s.index].list.data();
         for (size_t i = 0; i < window_size<N>() && slice[i].input != 0; ++i) {
             if (slice[i].input == c) {
-                return s.next(tfa, slice[i].match);
+                return s.next(slice[i].match);
             }
         }
         return match_wildcard(s);
     }
 
     bool has_higher_out_edge(S s, uint32_t c) const noexcept {
-        if (s.is_valid_edge(tfa, 0)) {
+        if (s.is_valid_edge(0)) {
             return true;
         }
         const auto *slice = lookup[s.index].list.data();
         for (size_t i = 0; i < window_size<N>() && slice[i].input > c; ++i) {
-            if (s.is_valid_edge(tfa, slice[i].match)) {
+            if (s.is_valid_edge(slice[i].match)) {
                 return true;
             }
         }
@@ -356,7 +353,7 @@ struct TableMatcher {
         const auto *slice = lookup[s.index].list.data();
         for (size_t i = 0; i < window_size<N>() && slice[i].input >= c; ++i) {
             if (slice[i].input == c) {
-                return s.is_valid_edge(tfa, slice[i].match);
+                return s.is_valid_edge(slice[i].match);
             }
         }
         return false;
@@ -366,7 +363,7 @@ struct TableMatcher {
         const auto *slice = lookup[s.index].list.data();
         size_t i = window_size<N>();
         while (i-- > 0) {
-            if (slice[i].input > c && s.is_valid_edge(tfa, slice[i].match)) {
+            if (slice[i].input > c && s.is_valid_edge(slice[i].match)) {
                 return slice[i].input;
             }
         }
@@ -377,7 +374,7 @@ struct TableMatcher {
         const auto *slice = lookup[s.index].list.data();
         size_t i = window_size<N>();
         while (i-- > 0) {
-            if (slice[i].input != 0 && s.is_valid_edge(tfa, slice[i].match)) {
+            if (slice[i].input != 0 && s.is_valid_edge(slice[i].match)) {
                 return slice[i].input;
             }
         }
@@ -436,8 +433,7 @@ TableDfa<N>::make_lookup(const std::vector<uint32_t> &str)->std::vector<Lookup>
 
 template <uint8_t N>
 TableDfa<N>::TableDfa(std::vector<uint32_t> str, bool is_cased)
-  : _tfa(get_tfa<N>()),
-    _lookup(make_lookup(str)),
+  : _lookup(make_lookup(str)),
     _is_cased(is_cased)
 {
 }
@@ -449,7 +445,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str) const
 {
-    TableMatcher matcher(static_cast<const Tfa<N>*>(_tfa), _lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
     return MatchAlgorithm<N>::match(matcher, u8str);
 }
 
@@ -457,7 +453,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str, std::string& successor_out) const
 {
-    TableMatcher matcher(static_cast<const Tfa<N>*>(_tfa), _lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
     return MatchAlgorithm<N>::match(matcher, u8str, successor_out);
 }
 
@@ -465,7 +461,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const
 {
-    TableMatcher matcher(static_cast<const Tfa<N>*>(_tfa), _lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
     return MatchAlgorithm<N>::match(matcher, u8str, successor_out);
 }
 
@@ -486,10 +482,10 @@ TableDfa<N>::dump_as_graphviz(std::ostream &os) const
             if (_lookup[i].list[j].input != 0) {
                 std::string as_utf8;
                 append_utf32_char(as_utf8, _lookup[i].list[j].input);
-                os << "    x" << i << " -> " << _lookup[i].list[j].match << " [label=\"" << as_utf8 << "\"];\n";
+                os << "    x" << i << " -> " << format_vector(expand_bits<N>(_lookup[i].list[j].match), true) << " [label=\"" << as_utf8 << "\"];\n";
             }
         }
-        os << "    x" << i << " -> 0 [label=\"*\"];\n";
+        os << "    x" << i << " -> " << format_vector(expand_bits<N>(0), true) << " [label=\"*\"];\n";
     }
     os << "}\n";
 }
