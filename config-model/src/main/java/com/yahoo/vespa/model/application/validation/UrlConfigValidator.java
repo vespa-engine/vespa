@@ -31,7 +31,7 @@ public class UrlConfigValidator extends Validator {
     }
 
     private static void validateS3UlsInConfig(DeployState state, ApplicationContainerCluster cluster, boolean isExclusive) {
-        if (hasUrlInConfig(cluster)) {
+        if (hasS3UrlInConfig(cluster)) {
             // TODO: Would be even better if we could add which config/field the url is set for in the error message
             String message = "Found s3:// urls in config for container cluster " + cluster.getName();
             if ( ! state.zone().system().isPublic())
@@ -42,8 +42,9 @@ public class UrlConfigValidator extends Validator {
         }
     }
 
-    private static boolean hasUrlInConfig(ApplicationContainerCluster cluster) {
-        return cluster.userConfiguredUrls().all().size() > 0;
+    private static boolean hasS3UrlInConfig(ApplicationContainerCluster cluster) {
+        return cluster.userConfiguredUrls().all().stream()
+                .anyMatch(url -> url.startsWith("s3://"));
     }
 
 }
