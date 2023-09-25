@@ -147,13 +147,7 @@ public class ApplicationClusterEndpoint {
 
     }
 
-    public static class DnsName implements Comparable<DnsName> {
-
-        private final String name;
-
-        private DnsName(String name) {
-            this.name = name;
-        }
+    public record DnsName(String name) implements Comparable<DnsName> {
 
         public String value() {
             return name;
@@ -161,13 +155,6 @@ public class ApplicationClusterEndpoint {
 
         public static DnsName from(String name) {
             return new DnsName(name);
-        }
-
-        @Override
-        public String toString() {
-            return "DnsName{" +
-                   "name='" + name + '\'' +
-                   '}';
         }
 
         @Override
