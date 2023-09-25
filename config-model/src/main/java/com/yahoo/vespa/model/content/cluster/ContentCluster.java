@@ -256,7 +256,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             for (ContainerModel containerModel : containers) {
                 Optional<String> hostClusterId = containerModel.getCluster().getHostClusterId();
                 if (hostClusterId.isPresent() && hostClusterId.get().equals(clusterId) && containerModel.getCluster().getMemoryPercentage().isPresent()) {
-                    return containerModel.getCluster().getMemoryPercentage().get() * 0.01;
+                    return containerModel.getCluster().getMemoryPercentage().get().percentage() * 0.01;
                 }
             }
             return 0.0;
