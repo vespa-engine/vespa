@@ -40,7 +40,6 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.filedistribution.UserConfiguredFiles;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -106,7 +105,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private List<ApplicationClusterEndpoint> endpoints = List.of();
 
-    private UserConfiguredUrls userConfiguredUrls = new UserConfiguredUrls();
+    private final UserConfiguredUrls userConfiguredUrls = new UserConfiguredUrls();
 
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
@@ -163,6 +162,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         // Files referenced from user configs to all components.
         UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(),
                                                             deployState.getDeployLogger(),
+                                                            deployState.featureFlags(),
                                                             userConfiguredUrls);
         for (Component<?, ?> component : getAllComponents()) {
             files.register(component);
