@@ -85,6 +85,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
         maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer));
         maintainers.add(new BillingReportMaintainer(controller, intervals.billingReportMaintainer));
+        maintainers.add(new CloudAccountVerifier(controller, intervals.cloudAccountVerifier));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -147,6 +148,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration meteringMonitorMaintainer;
         private final Duration certificatePoolMaintainer;
         private final Duration billingReportMaintainer;
+        private final Duration cloudAccountVerifier;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -184,6 +186,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.meteringMonitorMaintainer = duration(30, MINUTES);
             this.certificatePoolMaintainer = duration(15, MINUTES);
             this.billingReportMaintainer = duration(60, MINUTES);
+            this.cloudAccountVerifier = duration(10, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

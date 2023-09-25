@@ -33,7 +33,7 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
     private Set<CloudAccount> externalAccounts() {
         Set<CloudAccount> accounts = new HashSet<>();
         for (Tenant tenant : controller().tenants().asList())
-            accounts.addAll(controller().applications().accountsOf(tenant.name()));
+            tenant.cloudAccounts().forEach(accountInfo -> accounts.add(accountInfo.cloudAccount()));
 
         return accounts;
     }

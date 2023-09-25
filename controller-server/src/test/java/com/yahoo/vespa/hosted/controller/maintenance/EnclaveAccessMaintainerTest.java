@@ -21,17 +21,20 @@ class EnclaveAccessMaintainerTest {
     void test() {
         ControllerTester tester = new ControllerTester();
         MockEnclaveAccessService amis = tester.serviceRegistry().enclaveAccessService();
-        EnclaveAccessMaintainer sharer = new EnclaveAccessMaintainer(tester.controller(), Duration.ofMinutes(1));
+        EnclaveAccessMaintainer sharer = new EnclaveAccessMaintainer(tester.controller(), Duration.ofHours(1));
+        CloudAccountVerifier accountVerifier = new CloudAccountVerifier(tester.controller(), Duration.ofHours(1));
         assertEquals(Set.of(), amis.currentAccounts());
 
         assertEquals(1, sharer.maintain());
         assertEquals(Set.of(), amis.currentAccounts());
 
         tester.createTenant("tanten");
+        accountVerifier.maintain();
         assertEquals(1, sharer.maintain());
         assertEquals(Set.of(), amis.currentAccounts());
 
         tester.flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of("123123123123", "321321321321"), String.class);
+        accountVerifier.maintain();
         assertEquals(1, sharer.maintain());
         assertEquals(Set.of(CloudAccount.from("aws:123123123123"), CloudAccount.from("aws:321321321321")), amis.currentAccounts());
     }
