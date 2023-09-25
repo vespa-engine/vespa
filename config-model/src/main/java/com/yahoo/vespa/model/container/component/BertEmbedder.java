@@ -5,6 +5,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
@@ -33,7 +34,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
     private final Integer onnxGpuDevice;
 
 
-    public BertEmbedder(Element xml, DeployState state) {
+    public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         model = ModelIdResolver.resolveToModelReference(getChild(xml, "transformer-model"), state);
         vocab = ModelIdResolver.resolveToModelReference(getChild(xml, "tokenizer-vocab"), state);
@@ -49,6 +50,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
         onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
         onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
+        cluster.onnxModelCost().registerModel(model);
     }
 
     @Override

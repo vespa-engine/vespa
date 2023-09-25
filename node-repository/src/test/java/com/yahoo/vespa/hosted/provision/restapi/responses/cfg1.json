@@ -119,6 +119,10 @@
   ],
   "additionalIpAddresses": [],
   "cloudAccount": "aws:111222333444",
-  "wireguardPubkey":"lololololololololololololololololololololoo=",
+  "wireguard": {
+    "key": "lololololololololololololololololololololoo=",
+    "timestamp": 456
+  },
+  "wireguardPubkey": "lololololololololololololololololololololoo=",
   "wireguardKeyTimestamp": 456
 }

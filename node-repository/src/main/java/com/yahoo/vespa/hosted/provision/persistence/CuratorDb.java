@@ -222,7 +222,7 @@ public class CuratorDb {
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
                                     node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(),
                                     node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates(),
-                                    node.cloudAccount(), node.wireguardPubKey(), node.wireguardKeyTimestamp());
+                                    node.cloudAccount(), node.wireguardPubKey());
             curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
         }

@@ -488,6 +488,8 @@ public class MockApplicationPackage implements ApplicationPackage {
             throw new UnsupportedOperationException();
         }
 
+        @Override public long getSize() { return file.length(); }
+
         @Override
         public int compareTo(ApplicationFile other) {
             return this.getPath().getName().compareTo((other).getPath().getName());

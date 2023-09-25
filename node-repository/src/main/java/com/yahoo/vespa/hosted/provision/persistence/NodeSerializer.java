@@ -16,6 +16,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.slime.ArrayTraverser;
@@ -188,8 +189,10 @@ public class NodeSerializer {
         if (!node.cloudAccount().isUnspecified()) {
             object.setString(cloudAccountKey, node.cloudAccount().value());
         }
-        node.wireguardPubKey().ifPresent(pubKey -> object.setString(wireguardPubKeyKey, pubKey.value()));
-        node.wireguardKeyTimestamp().ifPresent(timestamp -> object.setLong(wireguardKeyTimestampKey, timestamp.toEpochMilli()));
+        node.wireguardPubKey().ifPresent(pubKey -> {
+            object.setString(wireguardPubKeyKey, pubKey.key().value());
+            object.setLong(wireguardKeyTimestampKey, pubKey.timestamp().toEpochMilli());
+        });
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -284,8 +287,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
                         SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty),
-                        SlimeUtils.optionalString(object.field(wireguardPubKeyKey)).map(WireguardKey::from),
-                        SlimeUtils.optionalInstant(object.field(wireguardKeyTimestampKey)));
+                        wireguardKeyWithTimestampFromSlime(object.field(wireguardPubKeyKey), object.field(wireguardKeyTimestampKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -395,6 +397,13 @@ public class NodeSerializer {
                          .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
                                                          Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
                          .toList();
+    }
+
+    private Optional<WireguardKeyWithTimestamp> wireguardKeyWithTimestampFromSlime(Inspector keyObject, Inspector timestampObject) {
+        if ( ! keyObject.valid()) return Optional.empty();
+        return SlimeUtils.optionalString(keyObject).map(
+                key -> new WireguardKeyWithTimestamp(WireguardKey.from(key),
+                                                     SlimeUtils.optionalInstant(timestampObject).orElse(null)));
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

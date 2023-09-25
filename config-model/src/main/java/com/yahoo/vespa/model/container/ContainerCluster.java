@@ -62,6 +62,7 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -718,5 +720,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
      * or empty if this is not specified by the application.
      */
-    public Optional<Integer> getMemoryPercentage() { return Optional.empty(); }
+    public record JvmMemoryPercentage(int percentage, OptionalDouble availableMemoryGb) {
+        static JvmMemoryPercentage of(int percentage) { return new JvmMemoryPercentage(percentage, OptionalDouble.empty()); }
+        static JvmMemoryPercentage of(int percentage, double availableMemoryGb) {
+            return new JvmMemoryPercentage(percentage, OptionalDouble.of(availableMemoryGb));
+        }
+    }
+    public Optional<JvmMemoryPercentage> getMemoryPercentage() { return Optional.empty(); }
 }

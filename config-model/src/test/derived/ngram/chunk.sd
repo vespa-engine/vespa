@@ -1,0 +1,20 @@
+schema chunk {
+
+    document chunk {
+        field content type string {
+            indexing: summary | index
+            match {
+                gram
+                gram-size: 3
+            }
+        }
+    }
+
+    document-summary content-summary inherits default {
+        summary content_dynamic type string {
+            source: content
+            dynamic
+        }
+    }
+
+}

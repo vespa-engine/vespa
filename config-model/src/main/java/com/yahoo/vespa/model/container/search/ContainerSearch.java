@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -56,12 +57,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
+    private ApplicationPackage app;
 
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
         this.globalPhase = deployState.featureFlags().enableGlobalPhase();
         this.useReconfigurableDispatcher = deployState.featureFlags().useReconfigurableDispatcher();
         this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
+        this.app = deployState.getApplicationPackage();
         this.owningCluster = cluster;
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -96,6 +99,9 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                     if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
                     var factory = new RankProfilesEvaluatorComponent(documentDb);
                     if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                        var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();
+                        onnxModels.asMap().forEach(
+                                (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath())));
                         owningCluster.addComponent(factory);
                     }
                 }

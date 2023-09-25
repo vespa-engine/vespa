@@ -88,6 +88,7 @@ public class Validation {
         new CloudUserFilterValidator().validate(model, deployState);
         new CloudHttpConnectorValidator().validate(model, deployState);
         new UrlConfigValidator().validate(model, deployState);
+        new JvmHeapSizeValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 

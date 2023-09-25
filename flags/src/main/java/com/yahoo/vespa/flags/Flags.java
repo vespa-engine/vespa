@@ -406,6 +406,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag DYNAMIC_HEAP_SIZE = defineFeatureFlag(
+            "dynamic-heap-size", false,
+            List.of("bjorncs"), "2023-09-21", "2024-01-15",
+            "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
