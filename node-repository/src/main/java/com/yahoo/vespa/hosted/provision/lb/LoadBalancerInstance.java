@@ -21,7 +21,8 @@ import java.util.Set;
 public class LoadBalancerInstance {
 
     private final Optional<DomainName> hostname;
-    private final Optional<String> ipAddress;
+    private final Optional<String> ip4Address;
+    private final Optional<String> ip6Address;
     private final Optional<DnsZone> dnsZone;
     private final Set<Integer> ports;
     private final Set<String> networks;
@@ -30,11 +31,12 @@ public class LoadBalancerInstance {
     private final List<PrivateServiceId> serviceIds;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress,
+    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
                                 ZoneEndpoint settings, List<PrivateServiceId> serviceIds, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-        this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
+        this.ip4Address = Objects.requireNonNull(ip4Address, "ip4Address must be non-null");
+        this.ip6Address = Objects.requireNonNull(ip6Address, "ip6Address must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
@@ -43,9 +45,9 @@ public class LoadBalancerInstance {
         this.serviceIds = List.copyOf(Objects.requireNonNull(serviceIds, "private service id must be non-null"));
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
-        if (hostname.isEmpty() == ipAddress.isEmpty()) {
-            throw new IllegalArgumentException("Exactly 1 of hostname=%s and ipAddress=%s must be set".formatted(
-                    hostname.map(DomainName::value).orElse("<empty>"), ipAddress.orElse("<empty>")));
+        if (hostname.isEmpty() == ip4Address.isEmpty()) {
+            throw new IllegalArgumentException("Exactly 1 of hostname=%s and ip4Address=%s must be set".formatted(
+                    hostname.map(DomainName::value).orElse("<empty>"), ip4Address.orElse("<empty>")));
         }
     }
 
@@ -54,9 +56,14 @@ public class LoadBalancerInstance {
         return hostname;
     }
 
-    /** IP address of this (public) load balancer */
-    public Optional<String> ipAddress() {
-        return ipAddress;
+    /** IPv4 address of this (public) load balancer */
+    public Optional<String> ip4Address() {
+        return ip4Address;
+    }
+
+    /** IPv6 address of this (public) load balancer */
+    public Optional<String> ip6Address() {
+        return ip6Address;
     }
 
     /** ID of the DNS zone associated with this */
@@ -114,7 +121,7 @@ public class LoadBalancerInstance {
     public LoadBalancerInstance with(Set<Real> reals, ZoneEndpoint settings, Optional<PrivateServiceId> serviceId) {
         List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
         serviceId.filter(id -> ! ids.contains(id)).ifPresent(ids::add);
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks,
+        return new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks,
                                         reals, settings, ids,
                                         cloudAccount);
     }
@@ -123,7 +130,7 @@ public class LoadBalancerInstance {
     public LoadBalancerInstance withServiceIds(List<PrivateServiceId> serviceIds) {
         List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
         for (PrivateServiceId id : this.serviceIds) if ( ! ids.contains(id)) ids.add(id);
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
+        return new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
     }
 
 }
