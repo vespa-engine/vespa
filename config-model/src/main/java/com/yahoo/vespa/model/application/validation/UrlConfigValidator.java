@@ -5,8 +5,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
-import java.util.Optional;
-
 /**
  * Validates that config using s3:// urls is used in public system and with nodes that are exclusive.
  *
@@ -33,7 +31,7 @@ public class UrlConfigValidator extends Validator {
     }
 
     private static void validateS3UlsInConfig(DeployState state, ApplicationContainerCluster cluster, boolean isExclusive) {
-        if (hasUrlInConfig(state)) {
+        if (hasUrlInConfig(cluster)) {
             // TODO: Would be even better if we could add which config/field the url is set for in the error message
             String message = "Found s3:// urls in config for container cluster " + cluster.getName();
             if ( ! state.zone().system().isPublic())
@@ -44,9 +42,8 @@ public class UrlConfigValidator extends Validator {
         }
     }
 
-    private static boolean hasUrlInConfig(DeployState state) {
-        return state.getFileRegistry().export().stream()
-                .anyMatch(fileReference -> fileReference.relativePath.startsWith("s3://"));
+    private static boolean hasUrlInConfig(ApplicationContainerCluster cluster) {
+        return cluster.userConfiguredUrls().all().size() > 0;
     }
 
 }

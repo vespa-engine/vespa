@@ -11,6 +11,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
+
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -21,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserConfiguredUrls;
+
 /**
  * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
  *
@@ -30,10 +33,12 @@ public class UserConfiguredFiles implements Serializable {
 
     private final FileRegistry fileRegistry;
     private final DeployLogger logger;
+    private final UserConfiguredUrls userConfiguredUrls;
 
-    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger) {
+    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger, UserConfiguredUrls userConfiguredUrls) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
+        this.userConfiguredUrls = userConfiguredUrls;
     }
 
     /**
@@ -134,7 +139,7 @@ public class UserConfiguredFiles implements Serializable {
         if (isModelType) {
             var modelReference = ModelReference.valueOf(builder.getValue());
             if (modelReference.path().isEmpty()) {
-                modelReference.url().ifPresent(url -> fileRegistry.addUri(url.value()));
+                modelReference.url().ifPresent(url -> userConfiguredUrls.add(url.value()));
                 return;
             }
             path = Path.fromString(modelReference.path().get().value());
