@@ -42,14 +42,14 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 
+import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.exclusive;
+import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.application;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
-import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.zone;
+import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -365,23 +365,62 @@ public class ContainerClusterTest {
 
     @Test
     void generatesCorrectRoutingInfo() {
+        // main system:
         assertNames(main,
                 ApplicationId.from("t1", "a1", "i1"),
-                Set.of(new ContainerEndpoint("search-cluster", zone, List.of("search-cluster.i1.a1.t1.endpoint.suffix"), OptionalInt.empty(), sharedLayer4)),
+                Set.of(),
                 List.of("search-cluster.i1.a1.t1.endpoint.suffix"));
 
         assertNames(main,
                 ApplicationId.from("t1", "a1", "default"),
-                Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar")),
-                       new ContainerEndpoint("search-cluster", zone, List.of("search-cluster.a1.t1.endpoint.suffix"), OptionalInt.empty(), sharedLayer4)),
+                Set.of(),
+                List.of("search-cluster.a1.t1.endpoint.suffix"));
+
+        assertNames(main,
+                ApplicationId.from("t1", "default", "default"),
+                Set.of(),
+                List.of("search-cluster.default.t1.endpoint.suffix"));
+
+        assertNames(main,
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
                 List.of("search-cluster.a1.t1.endpoint.suffix"));
 
         assertNames(main,
                 ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
-                           new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
-                           new ContainerEndpoint("search-cluster", zone, List.of("search-cluster.a1.t1.endpoint.suffix"), OptionalInt.empty(), sharedLayer4)),
+                Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
+                        new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4)),
                 List.of("search-cluster.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+
+        // cd system:
+        assertNames(cd,
+                ApplicationId.from("t1", "a1", "i1"),
+                Set.of(),
+                List.of("search-cluster.cd.i1.a1.t1.endpoint.suffix"));
+
+        assertNames(cd,
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
+
+        assertNames(cd,
+                ApplicationId.from("t1", "default", "default"),
+                Set.of(),
+                List.of("search-cluster.cd.default.t1.endpoint.suffix"));
+
+        assertNames(cd,
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("not-in-this-cluster", global, List.of("foo", "bar"))),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix"));
+
+        assertNames(cd,
+                ApplicationId.from("t1", "a1", "default"),
+                Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
+                        new ContainerEndpoint("search-cluster", global, List.of("a.b.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), shared),
+                        new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
+                        new ContainerEndpoint("not-supported", global, List.of("not.supported"), OptionalInt.empty(), exclusive)),
+                List.of("search-cluster.cd.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+
     }
 
     private void assertNames(SystemName systemName, ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedSharedL4Names) {

@@ -11,8 +11,8 @@ class DocumentWeightOrFilterSearchImpl : public DocumentWeightOrFilterSearch
 {
     AttributeIteratorPack _children;
 public:
-    DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
-    ~DocumentWeightOrFilterSearchImpl();
+    explicit DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
+    ~DocumentWeightOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
     
@@ -67,7 +67,7 @@ DocumentWeightOrFilterSearchImpl::doUnpack(uint32_t)
 {
 }
 
-std::unique_ptr<search::queryeval::SearchIterator>
+std::unique_ptr<queryeval::SearchIterator>
 DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& children)
 {
     if (children.empty()) {

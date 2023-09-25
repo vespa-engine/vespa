@@ -33,10 +33,8 @@ WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(con
       _search()
 {
     _tfmda.add(&_tfmd);
-    auto generic_search = bp.createLeafSearch(_tfmda, false);
-    auto weighted_set_term_search = dynamic_cast<WeightedSetTermSearch *>(generic_search.get());
-    generic_search.release();
-    _search.reset(weighted_set_term_search);
+    _search.reset(static_cast<WeightedSetTermSearch *>(bp.createLeafSearch(_tfmda, false).release()));
+
 }
 
 WeightedSetTermMatchingElementsSearch::~WeightedSetTermMatchingElementsSearch() = default;
