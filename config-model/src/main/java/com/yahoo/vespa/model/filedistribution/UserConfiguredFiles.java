@@ -133,7 +133,10 @@ public class UserConfiguredFiles implements Serializable {
         Path path;
         if (isModelType) {
             var modelReference = ModelReference.valueOf(builder.getValue());
-            if (modelReference.path().isEmpty()) return;
+            if (modelReference.path().isEmpty()) {
+                modelReference.url().ifPresent(url -> fileRegistry.addUri(url.value()));
+                return;
+            }
             path = Path.fromString(modelReference.path().get().value());
         }
         else {
