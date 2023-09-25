@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "dfa_string_comparator.h"
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <vespa/vespalib/regex/regex.h>
 
@@ -9,6 +10,8 @@ namespace vespalib { class FuzzyMatcher; }
 namespace search { class QueryTermUCS4; }
 
 namespace search::attribute {
+
+class DfaFuzzyMatcher;
 
 /**
  * Helper class for search context when scanning string fields
@@ -29,11 +32,16 @@ public:
     bool isCased() const noexcept { return _isCased; }
     bool isFuzzy() const noexcept { return _isFuzzy; }
     const vespalib::Regex & getRegex() const noexcept { return _regex; }
-    const FuzzyMatcher & getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
+    const FuzzyMatcher& getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
+
+    template <typename DictionaryConstIteratorType>
+    bool is_fuzzy_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) const;
+
 private:
     using ucs4_t = uint32_t;
     vespalib::Regex                _regex;
     std::unique_ptr<FuzzyMatcher>  _fuzzyMatcher;
+    std::unique_ptr<DfaFuzzyMatcher> _dfa_fuzzy_matcher;
     std::unique_ptr<ucs4_t[]>      _ucs4;
     const char *                   _term;
     uint32_t                       _termLen; // measured in bytes
