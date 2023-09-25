@@ -56,7 +56,7 @@ public class DefaultOnnxModelCost implements OnnxModelCost {
             String path = f.getPath().getRelative();
             if (alreadyAnalyzed(path)) return;
             log.log(Level.FINE, () -> "Register model '%s'".formatted(path));
-            if (f.exists()) {
+            if (f.exists() && appPkg != null) {
                 var memoryStats = OnnxModelProbe.probeMemoryStats(appPkg, f.getPath()).orElse(null);
                 if (memoryStats != null) {
                     log.log(Level.FINE, () -> "Register model '%s' with memory stats: %s".formatted(path, memoryStats));
