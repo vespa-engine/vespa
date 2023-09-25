@@ -62,6 +62,7 @@ public class Flags {
                     " latency-amortized-over-requests, latency-amortized-over-time",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
+
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2023-12-31",
@@ -410,6 +411,13 @@ public class Flags {
             "dynamic-heap-size", false,
             List.of("bjorncs"), "2023-09-21", "2024-01-15",
             "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
+            "unknonw-config-definition", "log",
+            List.of("hmusum"), "2023-09-25", "2024-11-01",
+            "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
             "Takes effect at redeployment",
             INSTANCE_ID);
 

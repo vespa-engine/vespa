@@ -202,6 +202,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useReconfigurableDispatcher;
         private final int contentLayerMetadataFeatureLevel;
         private final boolean dynamicHeapSize;
+        private final String unknownConfigDefinition;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -245,6 +246,7 @@ public class ModelContextImpl implements ModelContext {
             this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
             this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
+            this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -296,6 +298,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
+        @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.path.Path;
@@ -30,10 +31,12 @@ public class UserConfiguredFiles implements Serializable {
 
     private final FileRegistry fileRegistry;
     private final DeployLogger logger;
+    private final String unknownConfigDefinition;
 
-    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger) {
+    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger, ModelContext.FeatureFlags featureFlags) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
+        this.unknownConfigDefinition = featureFlags.unknownConfigDefinition();
     }
 
     /**
@@ -56,9 +59,12 @@ public class UserConfiguredFiles implements Serializable {
     private void register(ConfigPayloadBuilder builder, Map<Path, FileReference> registeredFiles, ConfigDefinitionKey key) {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
-            // TODO: throw new IllegalArgumentException("Unable to find config definition for " + builder);
-            logger.logApplicationPackage(Level.INFO, "Unable to find config definition " + key +
-                                                     ". Will not register files for file distribution for this config");
+            String message = "Unable to find config definition " + key + ". Will not register files for file distribution for this config";
+            switch (unknownConfigDefinition) {
+                case "log" -> logger.logApplicationPackage(Level.INFO, message);
+                case "warning" -> logger.logApplicationPackage(Level.WARNING, message);
+                case "fail" -> throw new IllegalArgumentException("Unable to find config definition for " + key);
+            }
             return;
         }
 

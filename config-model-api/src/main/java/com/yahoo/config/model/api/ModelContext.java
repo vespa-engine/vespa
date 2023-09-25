@@ -118,6 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"jonmv"}) default boolean useReconfigurableDispatcher() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "log"; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
