@@ -387,15 +387,13 @@ position(uint32_t levels) const
             res += inode->validLeaves();
             for (uint32_t c = elem.getIdx(); c < slots; ++c) {
                 BTreeNode::Ref node = inode->getChild(c);
-                const InternalNodeType *jnode =
-                    _allocator->mapInternalRef(node);
+                const InternalNodeType *jnode = _allocator->mapInternalRef(node);
                 res -= jnode->validLeaves();
             }
         } else {
             for (uint32_t c = 0; c < elem.getIdx(); ++c) {
                 BTreeNode::Ref node = inode->getChild(c);
-                const InternalNodeType *jnode =
-                    _allocator->mapInternalRef(node);
+                const InternalNodeType *jnode = _allocator->mapInternalRef(node);
                 res += jnode->validLeaves();
             }
         }
@@ -484,7 +482,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 size_t
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-size() const
+size() const noexcept
 {
     if (_pathSize > 0) {
         return _path[_pathSize - 1].getNode()->validLeaves();
