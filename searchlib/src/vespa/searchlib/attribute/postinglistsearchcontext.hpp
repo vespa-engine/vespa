@@ -234,18 +234,9 @@ PostingListSearchContextT<DataT>::approximateHits() const
     } else {
         if (this->fallbackToFiltering()) {
             numHits = _docIdLimit;
-        } else if (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION) {
-            if ((_uniqueValues * MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > static_cast<int>(_docIdLimit)) ||
-                (this->calculateApproxNumHits() * MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > _docIdLimit) ||
-                (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION*10))
-            {
-                numHits = this->calculateApproxNumHits();
-            } else {
-                // XXX: Unsafe
-                numHits = countHits();
-            }
+        } else if (this->fallback_to_approx_num_hits()) {
+            numHits = this->calculateApproxNumHits();
         } else {
-            // XXX: Unsafe
             numHits = countHits();
         }
     }
@@ -286,24 +277,11 @@ PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t
 {
 }
 
-
 template <typename DataT>
-unsigned int
-PostingListFoldedSearchContextT<DataT>::approximateHits() const
+bool
+PostingListFoldedSearchContextT<DataT>::fallback_to_approx_num_hits() const
 {
-    unsigned int numHits = 0;
-    if (_uniqueValues == 0u) {
-    } else if (_uniqueValues == 1u) {
-        numHits = singleHits();
-    } else {
-        if (this->fallbackToFiltering()) {
-            numHits = _docIdLimit;
-        } else {
-            // XXX: Unsafe
-            numHits = countHits();
-        }
-    }
-    return numHits;
+    return false;
 }
 
 }

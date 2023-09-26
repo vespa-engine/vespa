@@ -32,6 +32,10 @@ protected:
     using FrozenDictionary = Dictionary::FrozenView;
     using EnumIndex = IEnumStore::Index;
 
+    static constexpr long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
+    static constexpr long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
+    static constexpr long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
+
     const IEnumStoreDictionary & _dictionary;
     const ISearchContext       &_baseSearchCtx;
     const BitVector            *_bv; // bitvector if _useBitVector has been set
@@ -89,6 +93,12 @@ protected:
         return (numHits > 1000) &&
             (calculateFilteringCost() < calculatePostingListCost(numHits));
     }
+    virtual bool fallback_to_approx_num_hits() const {
+        return ((_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION) &&
+                ((_uniqueValues * MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > static_cast<int>(_docIdLimit)) ||
+                 (calculateApproxNumHits() * MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > _docIdLimit) ||
+                 (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION*10)));
+    }
 };
 
 
@@ -109,10 +119,6 @@ protected:
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingListMerger<DataT> _merger;
-
-    static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
-    static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
-    static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                               bool hasWeight, const PostingList &postingList,
@@ -156,7 +162,7 @@ protected:
                                     bool hasWeight, const PostingList &postingList,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
 
-    unsigned int approximateHits() const override;
+    bool fallback_to_approx_num_hits() const override;
 };
 
 
