@@ -43,6 +43,7 @@ import com.yahoo.vespa.model.filedistribution.UserConfiguredFiles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -104,6 +105,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private List<ApplicationClusterEndpoint> endpoints = List.of();
 
+    private final UserConfiguredUrls userConfiguredUrls = new UserConfiguredUrls();
+
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
@@ -130,9 +133,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
                 : defaultHeapSizePercentageOfAvailableMemory;
-        onnxModelCost = deployState.onnxModelCost().newCalculator(deployState.getDeployLogger());
+        onnxModelCost = deployState.onnxModelCost().newCalculator(
+                deployState.getApplicationPackage(), deployState.getDeployLogger());
         logger = deployState.getDeployLogger();
     }
+
+    public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
 
     @Override
     protected void doPrepare(DeployState deployState) {
@@ -154,7 +160,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (containers.isEmpty()) return;
 
         // Files referenced from user configs to all components.
-        UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(), deployState.getDeployLogger());
+        UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(),
+                                                            deployState.getDeployLogger(),
+                                                            deployState.featureFlags(),
+                                                            userConfiguredUrls);
         for (Component<?, ?> component : getAllComponents()) {
             files.register(component);
         }
@@ -380,6 +389,16 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             this.documentExpansionFactor = documentExpansionFactor;
             this.containerCoreMemory = containerCoreMemory;
         }
+    }
+
+    public static class UserConfiguredUrls {
+
+        private final Set<String> urls = new HashSet<>();
+
+        public void add(String url) { urls.add(url); }
+
+        public Set<String> all() { return urls; }
+
     }
 
 }

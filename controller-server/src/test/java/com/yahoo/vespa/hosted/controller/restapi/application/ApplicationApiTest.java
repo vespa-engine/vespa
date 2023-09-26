@@ -1372,7 +1372,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legacy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY, Instant.EPOCH));
+                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY, Instant.EPOCH, List.of()));
 
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)

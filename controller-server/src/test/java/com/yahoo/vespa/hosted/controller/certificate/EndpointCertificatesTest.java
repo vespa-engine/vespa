@@ -306,6 +306,9 @@ public class EndpointCertificatesTest {
             fail("Expected exception as certificate is not ready");
         } catch (IllegalArgumentException ignored) {}
 
+        // Advance clock to verify last requested time
+        clock.advance(Duration.ofDays(3));
+
         // Certificate is assigned from pool instead. The previously assigned certificate will eventually be cleaned up
         // by EndpointCertificateMaintainer
         { // prod
@@ -315,6 +318,7 @@ public class EndpointCertificatesTest {
             assertEquals(certId, cert.get().randomizedId().get());
             assertEquals(certId, tester.curator().readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty()).get().certificate().randomizedId().get(), "Certificate is assigned at application-level");
             assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
+            assertEquals(clock.instant().getEpochSecond(), cert.get().lastRequested());
         }
 
         { // dev
@@ -325,6 +329,7 @@ public class EndpointCertificatesTest {
             assertEquals(certId, cert.get().randomizedId().get());
             assertEquals(certId, tester.curator().readAssignedCertificate(instance.id()).get().certificate().randomizedId().get(), "Certificate is assigned at instance-level");
             assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
+            assertEquals(clock.instant().getEpochSecond(), cert.get().lastRequested());
         }
     }
 

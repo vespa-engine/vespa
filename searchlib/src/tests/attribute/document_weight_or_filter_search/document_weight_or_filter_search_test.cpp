@@ -24,14 +24,14 @@ class DocumentWeightOrFilterSearchTest : public ::testing::Test {
     uint32_t _range_end;
 public:
     DocumentWeightOrFilterSearchTest();
-    ~DocumentWeightOrFilterSearchTest();
+    ~DocumentWeightOrFilterSearchTest() override;
     void inc_generation();
     size_t num_trees() const { return _trees.size(); }
     Iterator get_tree(size_t idx) const {
         if (idx < _trees.size()) {
             return _postings.beginFrozen(_trees[idx]);
         } else {
-            return Iterator();
+            return {};
         }
     }
     void ensure_tree(size_t idx) {
@@ -39,13 +39,13 @@ public:
             _trees.resize(idx + 1);
         }
     }
-    void add_tree(size_t idx, std::vector<uint32_t> keys) {
+    void add_tree(size_t idx, const std::vector<uint32_t>& keys) {
         ensure_tree(idx);
         std::vector<KeyData> adds;
         std::vector<uint32_t> removes;
         adds.reserve(keys.size());
         for (auto& key : keys) {
-            adds.emplace_back(KeyData(key, 1));
+            adds.emplace_back(key, 1);
         }
         _postings.apply(_trees[idx], adds.data(), adds.data() + adds.size(), removes.data(), removes.data() + removes.size());
     }
@@ -67,7 +67,7 @@ public:
         return result;
     };
 
-    std::vector<uint32_t> eval_daat(SearchIterator &iterator) {
+    std::vector<uint32_t> eval_daat(SearchIterator &iterator) const {
         std::vector<uint32_t> result;
         uint32_t doc_id = _range_start;
         while (doc_id < _range_end) {
@@ -81,7 +81,7 @@ public:
         return result;
     }
 
-    std::vector<uint32_t> frombv(const BitVector &bv) {
+    std::vector<uint32_t> frombv(const BitVector &bv) const {
         std::vector<uint32_t> result;
         uint32_t doc_id = _range_start;
         doc_id = bv.getNextTrueBit(doc_id);
@@ -93,7 +93,7 @@ public:
         return result;
     }
 
-    std::unique_ptr<BitVector> tobv(std::vector<uint32_t> values) {
+    std::unique_ptr<BitVector> tobv(const std::vector<uint32_t> & values) const {
         auto bv = BitVector::create(_range_start, _range_end);
         for (auto value : values) {
             bv->setBit(value);
@@ -102,7 +102,7 @@ public:
         return bv;
     }
 
-    void expect_result(std::vector<uint32_t> exp, std::vector<uint32_t> act)
+    static void expect_result(const std::vector<uint32_t> & exp, const std::vector<uint32_t> & act)
     {
         EXPECT_EQ(exp, act);
     }
@@ -227,7 +227,7 @@ public:
         }
         _test.inc_generation();
     }
-    ~Verifier() {
+    ~Verifier() override {
         for (uint32_t tree_id = 0; tree_id < _test.num_trees(); ++tree_id) {
             _test.clear_tree(tree_id);
         }

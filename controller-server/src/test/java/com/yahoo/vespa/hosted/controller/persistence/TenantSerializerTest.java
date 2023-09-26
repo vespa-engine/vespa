@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.persistence;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.google.common.collect.ImmutableBiMap;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
@@ -16,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
+import com.yahoo.vespa.hosted.controller.tenant.CloudAccountInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
@@ -91,7 +94,8 @@ public class TenantSerializerTest {
                 Optional.of(contact()),
                 Instant.EPOCH,
                 lastLoginInfo(321L, 654L, 987L),
-                Instant.EPOCH);
+                Instant.EPOCH,
+                List.of());
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
@@ -109,6 +113,7 @@ public class TenantSerializerTest {
                 new ArchiveAccess(),
                 Optional.empty(),
                 Instant.EPOCH,
+                List.of(),
                 Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
@@ -133,6 +138,7 @@ public class TenantSerializerTest {
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role"),
                 Optional.of(Instant.ofEpochMilli(1234567)),
                 Instant.EPOCH,
+                List.of(),
                 Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
@@ -185,6 +191,8 @@ public class TenantSerializerTest {
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
                 Optional.empty(),
                 Instant.EPOCH,
+                List.of(new CloudAccountInfo(CloudAccount.from("aws:123456789012"), Version.fromString("1.2.3")),
+                        new CloudAccountInfo(CloudAccount.from("gcp:my-project"), Version.fromString("3.2.1"))),
                 Optional.empty());
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
@@ -263,7 +271,8 @@ public class TenantSerializerTest {
                 Optional.of(contact()),
                 Instant.EPOCH,
                 lastLoginInfo(321L, 654L, 987L),
-                Instant.ofEpochMilli(1_000_000));
+                Instant.ofEpochMilli(1_000_000),
+                List.of());
         assertEquals(tenant, serializer.tenantFrom(serializer.toSlime(tenant)));
     }
 
@@ -281,6 +290,7 @@ public class TenantSerializerTest {
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
                 Optional.empty(),
                 Instant.EPOCH,
+                List.of(),
                 Optional.of(reference));
         var slime = serializer.toSlime(tenant);
         var deserialized = serializer.tenantFrom(slime);

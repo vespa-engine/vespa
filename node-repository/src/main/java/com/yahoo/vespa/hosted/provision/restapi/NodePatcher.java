@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.WireguardKeyWithTimestamp;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -108,7 +109,8 @@ public class NodePatcher {
                                               "reports",
                                               "trustStore",
                                               "vespaVersion",
-                                              "wireguardPubkey"));
+                                              "wireguardPubkey", // TODO wg: remove when all nodes use new key+timestamp format
+                                              "wireguard"));
             if (!disallowedFields.isEmpty()) {
                 throw new IllegalArgumentException("Patching fields not supported: " + disallowedFields);
             }
@@ -271,9 +273,13 @@ public class NodePatcher {
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
             case "trustStore":
                 return nodeWithTrustStore(node, value);
-            case "wireguardPubkey":
-                return node.withWireguardPubkey(SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null))
-                        .withWireguardKeyTimestamp(clock.instant());
+            case "wireguard":
+                // This is where we set the key timestamp.
+                var key = SlimeUtils.optionalString(value.field("key")).map(WireguardKey::new).orElse(null);
+                return node.withWireguardPubkey(new WireguardKeyWithTimestamp(key, clock.instant()));
+            case "wireguardPubkey":  // TODO wg: remove when all nodes use new key+timestamp format
+                var oldKey = SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null);
+                return node.withWireguardPubkey(new WireguardKeyWithTimestamp(oldKey, clock.instant()));
             default:
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

@@ -52,20 +52,9 @@ DocsumContext::initState()
     _docsumState._args.initFromDocsumRequest(req);
     _docsumState._docsumbuf.clear();
     _docsumState._docsumbuf.reserve(req.hits.size());
-    for (uint32_t i = 0; i < req.hits.size(); i++) {
-        _docsumState._docsumbuf.push_back(req.hits[i].docid);
+    for (const auto & hit : req.hits) {
+        _docsumState._docsumbuf.push_back(hit.docid);
     }
-}
-
-namespace {
-
-vespalib::Slime::Params
-makeSlimeParams(size_t chunkSize) {
-    Slime::Params params;
-    params.setChunkSize(chunkSize);
-    return params;
-}
-
 }
 
 vespalib::Slime::UP
@@ -75,11 +64,11 @@ DocsumContext::createSlimeReply()
                                                                          _docsumState._args.get_fields());
     _docsumWriter.initState(_attrMgr, _docsumState, rci);
     const size_t estimatedChunkSize(std::min(0x200000ul, _docsumState._docsumbuf.size()*0x400ul));
-    vespalib::Slime::UP response(std::make_unique<vespalib::Slime>(makeSlimeParams(estimatedChunkSize)));
+    auto response = std::make_unique<vespalib::Slime>(Slime::Params(estimatedChunkSize));
     Cursor & root = response->setObject();
     Cursor & array = root.setArray(DOCSUMS);
     const Symbol docsumSym = response->insert(DOCSUM);
-    _docsumState._omit_summary_features = (rci.res_class != nullptr) ? rci.res_class->omit_summary_features() : true;
+    _docsumState._omit_summary_features = (rci.res_class == nullptr) || rci.res_class->omit_summary_features();
     uint32_t num_ok(0);
     for (uint32_t docId : _docsumState._docsumbuf) {
         if (_request.expired() ) { break; }

@@ -10,9 +10,10 @@ namespace search::attribute {
 class DocumentWeightOrFilterSearchImpl : public DocumentWeightOrFilterSearch
 {
     AttributeIteratorPack _children;
+    void seek_all(uint32_t docId);
 public:
-    DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
-    ~DocumentWeightOrFilterSearchImpl();
+    explicit DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
+    ~DocumentWeightOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
     
@@ -32,6 +33,7 @@ public:
     }
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override {
+        seek_all(getDocId());
         return _children.get_hits(begin_id, getEndId());
     }
 
@@ -47,17 +49,29 @@ DocumentWeightOrFilterSearchImpl::DocumentWeightOrFilterSearchImpl(AttributeIter
 DocumentWeightOrFilterSearchImpl::~DocumentWeightOrFilterSearchImpl() = default;
 
 void
-DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
-{
-    if (_children.get_docid(0) < docId) {
-        _children.seek(0, docId);
-    }
-    uint32_t min_doc_id = _children.get_docid(0);
-    for (uint16_t i = 1; i < _children.size(); ++i) {
-        if (_children.get_docid(i) < docId) {
+DocumentWeightOrFilterSearchImpl::seek_all(uint32_t docId) {
+    for (uint16_t i = 0; i < _children.size(); ++i) {
+        uint32_t next = _children.get_docid(i);
+        if (next < docId) {
             _children.seek(i, docId);
         }
-        min_doc_id = std::min(min_doc_id, _children.get_docid(i));
+    }
+}
+
+void
+DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
+{
+    uint32_t min_doc_id = endDocId;
+    for (uint16_t i = 0; i < _children.size(); ++i) {
+        uint32_t next = _children.get_docid(i);
+        if (next < docId) {
+            next = _children.seek(i, docId);
+        }
+        if (next == docId) {
+            setDocId(next);
+            return;
+        }
+        min_doc_id = std::min(min_doc_id, next);
     }                
     setDocId(min_doc_id);
 }
@@ -67,12 +81,14 @@ DocumentWeightOrFilterSearchImpl::doUnpack(uint32_t)
 {
 }
 
-std::unique_ptr<search::queryeval::SearchIterator>
+std::unique_ptr<queryeval::SearchIterator>
 DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& children)
 {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     } else {
+        std::sort(children.begin(), children.end(),
+                  [](const auto & a, const auto & b) { return a.size() > b.size(); });
         return std::make_unique<DocumentWeightOrFilterSearchImpl>(AttributeIteratorPack(std::move(children)));
     }
 }

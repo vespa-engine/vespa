@@ -41,7 +41,7 @@ public:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id);
     void or_hits_into(BitVector &result, uint32_t begin_id);
 
-    size_t size() const { return _children.size(); }
+    size_t size() const noexcept { return _children.size(); }
     void initRange(uint32_t begin, uint32_t end) {
         (void) end;
         for (auto &child: _children) {

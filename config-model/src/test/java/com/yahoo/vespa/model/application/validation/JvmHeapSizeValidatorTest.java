@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.OnnxModelCost;
@@ -34,16 +35,16 @@ class JvmHeapSizeValidatorTest {
         var deployState = createDeployState(8, 7L * 1024 * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated percentage of memory of JVM in cluster 'container' is too low (3% < 10%). Estimated cost of ONNX models is 7.00GB";
+        String expectedMessage = "Allocated percentage of memory of JVM in cluster 'container' is too low (3% < 15%). Estimated cost of ONNX models is 7.00GB";
         assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
     }
 
     @Test
     void fails_on_too_low_heap_size() throws IOException, SAXException {
-        var deployState = createDeployState(2, 1024L * 1024 * 1024);
+        var deployState = createDeployState(2.2, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated memory to JVM in cluster 'container' is too low (0.30GB < 0.40GB). Estimated cost of ONNX models is 1.00GB.";
+        String expectedMessage = "Allocated memory to JVM in cluster 'container' is too low (0.50GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.";
         assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
     }
 
@@ -112,7 +113,7 @@ class JvmHeapSizeValidatorTest {
 
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
-        @Override public Calculator newCalculator(DeployLogger logger) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
 

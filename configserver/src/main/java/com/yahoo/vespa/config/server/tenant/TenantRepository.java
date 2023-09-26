@@ -11,6 +11,7 @@ import com.yahoo.concurrent.Locks;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -119,6 +120,7 @@ public class TenantRepository {
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Curator.DirectoryCache directoryCache;
     private final ZookeeperServerConfig zookeeperServerConfig;
+    private final OnnxModelCost onnxModelCost;
 
     /**
      * Creates a new tenant repository
@@ -138,7 +140,8 @@ public class TenantRepository {
                             ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig,
-                            FileDirectory fileDirectory) {
+                            FileDirectory fileDirectory,
+                            OnnxModelCost onnxModelCost) {
         this(hostRegistry,
              curator,
              metrics,
@@ -157,7 +160,8 @@ public class TenantRepository {
              configDefinitionRepo,
              configActivationListener,
              tenantListener,
-             zookeeperServerConfig);
+             zookeeperServerConfig,
+             onnxModelCost);
     }
 
     public TenantRepository(HostRegistry hostRegistry,
@@ -178,7 +182,8 @@ public class TenantRepository {
                             ConfigDefinitionRepo configDefinitionRepo,
                             ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
-                            ZookeeperServerConfig zookeeperServerConfig) {
+                            ZookeeperServerConfig zookeeperServerConfig,
+                            OnnxModelCost onnxModelCost) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.curator = curator;
@@ -201,6 +206,7 @@ public class TenantRepository {
         this.zookeeperServerConfig = zookeeperServerConfig;
         // This we should control with a feature flag.
         this.deployHelperExecutor = createModelBuilderExecutor();
+        this.onnxModelCost = onnxModelCost;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -353,7 +359,8 @@ public class TenantRepository {
                                                               curator,
                                                               zone,
                                                               flagSource,
-                                                              secretStore);
+                                                              secretStore,
+                                                              onnxModelCost);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     applicationRepo,
                                                                     sessionPreparer,
@@ -371,7 +378,8 @@ public class TenantRepository {
                                                                     clock,
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo,
-                                                                    zookeeperServerConfig.juteMaxBuffer());
+                                                                    zookeeperServerConfig.juteMaxBuffer(),
+                                                                    onnxModelCost);
         log.log(Level.FINE, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);

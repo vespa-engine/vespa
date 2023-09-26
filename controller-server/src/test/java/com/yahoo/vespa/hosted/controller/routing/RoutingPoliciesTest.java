@@ -598,21 +598,28 @@ public class RoutingPoliciesTest {
 
         app.deploy();
 
-        // TXT records are cleaned up as we go—the last challenge is the last to go here, and we must flush it ourselves.
+        // TXT records are cleaned up when deployments are deactivated.
+        // The last challenge is the last to go here, and we must flush it ourselves.
         assertEquals(List.of("a.t.aws-us-east-33a.vespa.oath.cloud",
                              "challenge--a.t.aws-us-east-33a.vespa.oath.cloud"),
                      tester.recordNames());
         app.flushDnsUpdates();
         assertEquals(Set.of(new Record(Type.CNAME,
                                        RecordName.from("a.t.aws-us-east-33a.vespa.oath.cloud"),
-                                       RecordData.from("lb-0--t.a.default--prod.aws-us-east-33a."))),
+                                       RecordData.from("lb-0--t.a.default--prod.aws-us-east-33a.")),
+                            new Record(Type.TXT,
+                                       RecordName.from("challenge--a.t.aws-us-east-33a.vespa.oath.cloud"),
+                                       RecordData.from("system"))),
                      tester.controllerTester().nameService().records());
 
-
-        tester.tester.controllerTester().serviceRegistry().vpcEndpointService().outcomes
-                .put(RecordName.from("challenge--a.t.aws-us-east-33a.vespa.oath.cloud"), ChallengeState.running);
+        tester.controllerTester().controller().applications().deactivate(app.instanceId(), zone3);
+        app.flushDnsUpdates();
+        assertEquals(Set.of(),
+                     tester.controllerTester().nameService().records());
 
         // Deployment fails because challenge is not answered (immediately).
+        tester.tester.controllerTester().serviceRegistry().vpcEndpointService().outcomes
+                .put(RecordName.from("challenge--a.t.aws-us-east-33a.vespa.oath.cloud"), ChallengeState.running);
         assertEquals("Status of run 2 of production-aws-us-east-33a for t.a ==> expected: <succeeded> but was: <unfinished>",
                      assertThrows(AssertionError.class,
                                   () -> app.submit(appPackage).deploy())

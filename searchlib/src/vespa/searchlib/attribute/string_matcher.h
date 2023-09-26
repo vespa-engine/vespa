@@ -32,6 +32,11 @@ protected:
     const vespalib::Regex& getRegex() const { return _helper.getRegex(); }
     const vespalib::FuzzyMatcher& getFuzzyMatcher() const { return _helper.getFuzzyMatcher(); }
     const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
+
+    template <typename DictionaryConstIteratorType>
+    bool is_fuzzy_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) const {
+        return _helper.is_fuzzy_match(word, itr, data_store);
+    }
 };
 
 }

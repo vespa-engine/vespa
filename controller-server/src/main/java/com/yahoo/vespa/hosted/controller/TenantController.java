@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
+import com.yahoo.vespa.hosted.controller.tenant.CloudAccountInfo;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -162,6 +163,14 @@ public class TenantController {
         try (Mutex lock = lock(tenantName)) {
             var tenant = require(tenantName);
             curator.writeTenant(LockedTenant.of(tenant, lock).with(lastMaintained).get());
+        }
+    }
+
+    public void updateCloudAccounts(TenantName tenantName, List<CloudAccountInfo> cloudAccounts) {
+        try (Mutex lock = lock(tenantName)) {
+            var tenant = require(tenantName);
+            if (tenant.cloudAccounts().equals(cloudAccounts)) return; // no change
+            curator.writeTenant(LockedTenant.of(tenant, lock).withCloudAccounts(cloudAccounts).get());
         }
     }
 

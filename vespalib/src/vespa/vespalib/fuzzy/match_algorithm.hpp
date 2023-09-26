@@ -136,39 +136,37 @@ struct MatchAlgorithm {
      * that has nothing in common with the source altogether.
      *   Example: "gp" -> "hfood" (+1 char value case)
      *
-     * Performance note:
-     * Both the input and successor output strings are in UTF-8 format. To avoid doing
-     * duplicate work, we keep track of the byte length of the string prefix that will be
-     * part of the successor and simply copy it verbatim instead of building the string
-     * from converted UTF-32 -> UTF-8 chars as we go. This optimization cannot be used
-     * when one or more of the prefix characters have been lowercase-transformed.
+     * Note for cased vs. uncased matching: when uncased matching is specified, we always
+     * match "as if" both the target and source strings are lowercased. This means that
+     * successor strings are generated based on this form, _not_ on the original form.
+     * Example: uncased matching for target "food" with input "FOXX". This generates the
+     * successor "foyd" (and _not_ "FOyd"), as the latter would imply a completely different
+     * ordering when compared byte-wise against an implicitly lowercased dictionary.
      *
      * TODO let matcher know if source string is pre-normalized (i.e. lowercased).
-     * TODO consider opportunistically appending prefix as we go instead of only when needed.
      */
     template <DfaMatcher Matcher, typename SuccessorT>
     static MatchResult match(const Matcher& matcher,
                              std::string_view source,
                              SuccessorT& successor_out)
     {
+        successor_out.clear(); // TODO allow for preserving existing prefix
+
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
-        uint32_t n_prefix_u8_bytes = 0;
+        uint32_t n_prefix_chars    = 0;
         uint32_t char_after_prefix = 0;
         StateType last_state_with_higher_out = StateType{};
-        bool can_use_raw_prefix = true;
 
         StateType state = matcher.start();
         while (u8_reader.hasMore()) {
-            const auto u8_pos_before_char = u8_reader.getPos();
-            const uint32_t raw_mch = u8_reader.getChar();
-            const uint32_t mch     = normalized_match_char(raw_mch, matcher.is_cased());
-            if (raw_mch != mch) {
-                can_use_raw_prefix = false; // FIXME this is pessimistic; considers entire string, not just prefix
-            }
+            const auto pos_before_char = static_cast<uint32_t>(successor_out.size());
+            const uint32_t raw_mch     = u8_reader.getChar();
+            const uint32_t mch         = normalized_match_char(raw_mch, matcher.is_cased());
+            append_utf32_char(successor_out, mch);
             if (matcher.has_higher_out_edge(state, mch)) {
                 last_state_with_higher_out = state;
-                n_prefix_u8_bytes = u8_pos_before_char;
+                n_prefix_chars = pos_before_char;
                 char_after_prefix = mch;
             }
             auto maybe_next = matcher.match_input(state, mch);
@@ -176,8 +174,7 @@ struct MatchAlgorithm {
                 state = maybe_next;
             } else {
                 // Can never match; find the successor
-                emit_successor_prefix(successor_out, source, n_prefix_u8_bytes,
-                                      matcher.is_cased() || can_use_raw_prefix);
+                successor_out.resize(n_prefix_chars); // Always <= successor_out.size()
                 assert(matcher.valid_state(last_state_with_higher_out));
                 backtrack_and_emit_greater_suffix(matcher, last_state_with_higher_out,
                                                   char_after_prefix, successor_out);
@@ -188,8 +185,7 @@ struct MatchAlgorithm {
         if (edits <= max_edits()) {
             return MatchResult::make_match(max_edits(), edits);
         }
-        emit_successor_prefix(successor_out, source, source.size(),
-                              matcher.is_cased() || can_use_raw_prefix);
+        // Successor prefix already filled, just need to emit the suffix
         emit_smallest_matching_suffix(matcher, state, successor_out);
         return MatchResult::make_mismatch(max_edits());
     }
@@ -317,48 +313,6 @@ struct MatchAlgorithm {
                 append_utf32_char(str, matcher.edge_to_u32char(smallest_out_edge));
                 state = matcher.edge_to_state(state, smallest_out_edge);
             }
-        }
-    }
-
-    template <typename T>
-    static constexpr bool has_8bit_value_type() noexcept {
-        return sizeof(typename T::value_type) == 1;
-    }
-
-    /**
-     * The successor prefix is the prefix of the source string up to (but not including) the
-     * point where we emit a lexicographically higher character. Ideally we can just copy the
-     * UTF-8 bytes verbatim from the source into the successor. This is possible when one of
-     * the following holds:
-     *
-     *   - DFA uses Cased (i.e. exact) matching, or
-     *   - DFA uses Uncased, but none of the characters in the prefix triggered a lowercase
-     *     transform. This means the prefix is already as-if lowercased, and we can copy it
-     *     verbatim.
-     *
-     * In the case that we can't copy verbatim, we currently have to explicitly normalize the
-     * prefix by converting it to its lowercased form.
-     *
-     * Example: Uncased matching for target "food" with input "FOXX". This generates the
-     * successor "foyd" (and _not_ "FOyd"), as the latter would imply a completely different
-     * ordering when compared byte-wise against an implicitly lowercased dictionary.
-     */
-    template <typename SuccessorT>
-    static void emit_successor_prefix(SuccessorT& successor_out, std::string_view source,
-                                      uint32_t n_prefix_u8_bytes, bool emit_raw_prefix_u8_bytes)
-    {
-        // TODO redesign prefix output wiring
-        if constexpr (has_8bit_value_type<SuccessorT>()) {
-            if (emit_raw_prefix_u8_bytes) {
-                successor_out = source.substr(0, n_prefix_u8_bytes);
-                return;
-            }
-        }
-        // TODO avoid duplicate work...! :I
-        successor_out.clear();
-        Utf8Reader u8_reader(source.data(), source.size());
-        while (u8_reader.getPos() < n_prefix_u8_bytes) {
-            append_utf32_char(successor_out, LowerCase::convert(u8_reader.getChar()));
         }
     }
 

@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.MockSecretStore;
@@ -64,7 +65,8 @@ public class TestTenantRepository extends TenantRepository {
               configDefinitionRepo,
               configActivationListener,
               tenantListener,
-              new ZookeeperServerConfig.Builder().myid(0).build());
+              new ZookeeperServerConfig.Builder().myid(0).build(),
+              OnnxModelCost.disabled());
     }
 
     public static class Builder {

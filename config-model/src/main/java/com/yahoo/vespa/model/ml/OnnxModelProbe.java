@@ -29,6 +29,7 @@ import java.util.Map;
 public class OnnxModelProbe {
 
     private static final String binary = "vespa-analyze-onnx-model";
+    private static final ObjectMapper jsonParser = new ObjectMapper();
 
     static TensorType probeModel(ApplicationPackage app, Path modelPath, String outputName, Map<String, TensorType> inputTypes) {
         TensorType outputType = TensorType.empty;
@@ -41,8 +42,9 @@ public class OnnxModelProbe {
             // Otherwise, run vespa-analyze-onnx-model if the model is available
             if (outputType.equals(TensorType.empty) && app.getFile(modelPath).exists()) {
                 String jsonInput = createJsonInput(app.getFileReference(modelPath).getAbsolutePath(), inputTypes);
-                String jsonOutput = callVespaAnalyzeOnnxModel(jsonInput);
+                var jsonOutput = callVespaAnalyzeOnnxModel(jsonInput);
                 outputType = outputTypeFromJson(jsonOutput, outputName);
+                writeMemoryStats(app, modelPath, MemoryStats.fromJson(jsonOutput));
                 if ( ! outputType.equals(TensorType.empty)) {
                     writeProbedOutputType(app, modelPath, contextKey, outputType);
                 }
@@ -51,6 +53,16 @@ public class OnnxModelProbe {
         } catch (IllegalArgumentException | IOException | InterruptedException ignored) { }
 
         return outputType;
+    }
+
+    private static void writeMemoryStats(ApplicationPackage app, Path modelPath, MemoryStats memoryStats) throws IOException {
+        String path = app.getFileReference(memoryStatsPath(modelPath)).getAbsolutePath();
+        IOUtils.writeFile(path, memoryStats.toJson().toPrettyString(), false);
+    }
+
+    private static Path memoryStatsPath(Path modelPath) {
+        var fileName = OnnxModelInfo.asValidIdentifier(modelPath.getRelative()) + ".memory_stats";
+        return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(fileName);
     }
 
     private static String createContextKey(String onnxName, Map<String, TensorType> inputTypes) {
@@ -95,9 +107,7 @@ public class OnnxModelProbe {
         return TensorType.empty;
     }
 
-    private static TensorType outputTypeFromJson(String json, String outputName) throws IOException {
-        ObjectMapper m = new ObjectMapper();
-        JsonNode root = m.readTree(json);
+    private static TensorType outputTypeFromJson(JsonNode root, String outputName) throws IOException {
         if ( ! root.isObject() || ! root.has("outputs")) {
             return TensorType.empty;
         }
@@ -123,7 +133,7 @@ public class OnnxModelProbe {
         return out.toString();
     }
 
-    private static String callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {
+    private static JsonNode callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {
         StringBuilder output = new StringBuilder();
 
         ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
@@ -148,7 +158,16 @@ public class OnnxModelProbe {
             throw new IllegalArgumentException("Error from '" + binary + "'. Return code: " + returnCode + ". " +
                                                "Output: '" + output + "'");
         }
-        return output.toString();
+        return jsonParser.readTree(output.toString());
+    }
+
+    public record MemoryStats(long vmSize, long vmRss) {
+        static MemoryStats fromJson(JsonNode json) {
+            return new MemoryStats(json.get("vm_size").asLong(), json.get("vm_rss").asLong());
+        }
+        JsonNode toJson() {
+            return jsonParser.createObjectNode().put("vm_size", vmSize).put("vm_rss", vmRss);
+        }
     }
 
 }

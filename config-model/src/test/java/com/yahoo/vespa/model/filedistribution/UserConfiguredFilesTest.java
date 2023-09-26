@@ -7,12 +7,14 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -68,7 +70,10 @@ public class UserConfiguredFilesTest {
     }
 
     private UserConfiguredFiles userConfiguredFiles() {
-        return new UserConfiguredFiles(fileRegistry, new BaseDeployLogger());
+        return new UserConfiguredFiles(fileRegistry,
+                                       new BaseDeployLogger(),
+                                       new TestProperties(),
+                                       new ApplicationContainerCluster.UserConfiguredUrls());
     }
 
     @BeforeEach

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -20,13 +21,15 @@ public abstract class Tenant {
     private final LastLoginInfo lastLoginInfo;
     private final Optional<Contact> contact;
     private final Instant tenantRolesLastMaintained;
+    private final List<CloudAccountInfo> cloudAccounts;
 
-    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact, Instant tenantRolesLastMaintained) {
+    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact, Instant tenantRolesLastMaintained, List<CloudAccountInfo> cloudAccounts) {
         this.name = name;
         this.createdAt = createdAt;
         this.lastLoginInfo = lastLoginInfo;
         this.contact = contact;
         this.tenantRolesLastMaintained = tenantRolesLastMaintained;
+        this.cloudAccounts = cloudAccounts;
     }
 
     /** Name of this tenant */
@@ -51,6 +54,10 @@ public abstract class Tenant {
 
     public Instant tenantRolesLastMaintained() {
         return tenantRolesLastMaintained;
+    }
+
+    public List<CloudAccountInfo> cloudAccounts() {
+        return cloudAccounts;
     }
 
     public abstract Type type();

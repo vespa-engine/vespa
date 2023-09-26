@@ -27,7 +27,7 @@ import java.util.Arrays;
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
 /**
- * A ColBERT embedder implementation that maps text to multiple vectors, one vector per subword id.
+ * A ColBERT embedder implementation that maps text to multiple vectors, one vector per token subword id.
  * This embedder uses a HuggingFace tokenizer to produce a token sequence that is then input to a transformer model.
  *
  * See col-bert-embedder.def for configurable parameters.
@@ -60,10 +60,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         attentionMaskName = config.transformerAttentionMask();
         outputName = config.transformerOutput();
         maxTransformerTokens = config.transformerMaxTokens();
-        if(config.maxDocumentTokens() > maxTransformerTokens)
-            throw new IllegalArgumentException("maxDocumentTokens must be less than or equal to transformerMaxTokens");
-        maxDocumentTokens = config.maxDocumentTokens();
-        maxQueryTokens = config.maxQueryTokens();
+        maxDocumentTokens = Math.min(config.maxDocumentTokens(), maxTransformerTokens);
+        maxQueryTokens = Math.min(config.maxQueryTokens(), maxTransformerTokens);
         startSequenceToken = config.transformerStartSequenceToken();
         endSequenceToken = config.transformerEndSequenceToken();
         maskSequenceToken = config.transformerMaskToken();
@@ -75,7 +73,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
-            // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
+            // Force truncation
+            // to max length accepted by model if tokenizer.json contains no valid truncation configuration
             int maxLength = info.maxLength() > 0 && info.maxLength() <= config.transformerMaxTokens()
                     ? info.maxLength()
                     : config.transformerMaxTokens();
@@ -115,8 +114,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
     @Override
     public Tensor embed(String text, Context context, TensorType tensorType) {
         if(!verifyTensorType(tensorType)) {
-            throw new IllegalArgumentException("Invalid ColBERT embedder tensor destination." +
-                    "Wanted a mixed 2-d mapped-indexed tensor, got " + tensorType.toString());
+            throw new IllegalArgumentException("Invalid ColBERT embedder tensor destination. " +
+                    "Wanted a mixed 2-d mapped-indexed tensor, got " + tensorType);
         }
         if (context.getDestination().startsWith("query")) {
             return embedQuery(text, context, tensorType);
@@ -152,6 +151,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         inputIds.add(Q_TOKEN_ID);
         inputIds.addAll(ids);
         inputIds.add(endSequenceToken);
+
         int length = inputIds.size();
 
         int padding = maxQueryTokens - length;
@@ -177,12 +177,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
             throw new IllegalArgumentException("Token dimensionality does not" +
                     " match indexed dimensionality of " + dims);
         }
-        Tensor.Builder builder = Tensor.Builder.of(tensorType);
-        for (int token = 0; token < result.shape()[0]; token++)
-            for (int d = 0; d < result.shape()[1]; d++)
-                builder.cell(TensorAddress.of(token, d), result.get(TensorAddress.of(token, d)));
+        Tensor resultTensor = toFloatTensor(result, tensorType, inputIds.size());
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
-        return builder.build();
+        return resultTensor;
     }
 
     protected Tensor embedDocument(String text, Context context, TensorType tensorType) {
@@ -193,7 +190,6 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
 
         List<Long> ids = encoding.ids().stream().filter(token
                 -> !PUNCTUATION_TOKEN_IDS.contains(token)).toList();
-        ;
 
         if (ids.size() > maxDocumentTokens - 3)
             ids = ids.subList(0, maxDocumentTokens - 3);
@@ -216,29 +212,29 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         Tensor tokenEmbeddings = outputs.get(outputName);
         IndexedTensor result = (IndexedTensor) tokenEmbeddings.reduce(Reduce.Aggregator.min, "d0");
         Tensor contextualEmbeddings;
+        int retainedTokens = inputIds.size() -1; //Do not retain last PAD
         if(tensorType.valueType() == TensorType.Value.INT8) {
-            contextualEmbeddings = toBitTensor(result, tensorType);
+            contextualEmbeddings = toBitTensor(result, tensorType, retainedTokens);
         } else {
-            contextualEmbeddings = toFloatTensor(result, tensorType);
+            contextualEmbeddings = toFloatTensor(result, tensorType, retainedTokens);
         }
-
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
         return contextualEmbeddings;
     }
 
-    public static Tensor toFloatTensor(IndexedTensor result, TensorType type) {
+    public static Tensor toFloatTensor(IndexedTensor result, TensorType type, int nTokens) {
         int size = type.indexedSubtype().dimensions().size();
         if (size != 1)
             throw new IllegalArgumentException("Indexed tensor must have one dimension");
-        int dims = type.indexedSubtype().dimensions().get(0).size().get().intValue();
-        int resultDim = (int)result.shape()[1];
-        if(resultDim != dims) {
-            throw new IllegalArgumentException("Not possible to map token vector embedding with " + resultDim
-                    + " + dimensions into tensor with " + dims);
+        int wantedDimensionality = type.indexedSubtype().dimensions().get(0).size().get().intValue();
+        int resultDimensionality = (int)result.shape()[1];
+        if(resultDimensionality != wantedDimensionality) {
+            throw new IllegalArgumentException("Not possible to map token vector embedding with " + resultDimensionality
+                    + " + dimensions into tensor with " + wantedDimensionality);
         }
         Tensor.Builder builder = Tensor.Builder.of(type);
-        for (int token = 0; token < result.shape()[0]; token++) {
-            for (int d = 0; d < result.shape()[1]; d++) {
+        for (int token = 0; token < nTokens; token++) {
+            for (int d = 0; d < resultDimensionality; d++) {
                 var value = result.get(TensorAddress.of(token, d));
                 builder.cell(TensorAddress.of(token,d),value);
             }
@@ -246,21 +242,21 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    public static Tensor toBitTensor(IndexedTensor result, TensorType type) {
+    public static Tensor toBitTensor(IndexedTensor result, TensorType type, int nTokens) {
         if (type.valueType() != TensorType.Value.INT8)
             throw new IllegalArgumentException("Only a int8 tensor type can be" +
                     " the destination of bit packing");
         int size = type.indexedSubtype().dimensions().size();
         if (size != 1)
             throw new IllegalArgumentException("Indexed tensor must have one dimension");
-        int dims = type.indexedSubtype().dimensions().get(0).size().get().intValue();
-        int resultDim = (int)result.shape()[1];
-        if(resultDim/8 != dims) {
-            throw new IllegalArgumentException("Not possible to pack " + resultDim
-                    + " + dimensions into " + dims);
+        int wantedDimensionality = type.indexedSubtype().dimensions().get(0).size().get().intValue();
+        int resultDimensionality = (int)result.shape()[1];
+        if(resultDimensionality/8 != wantedDimensionality) {
+            throw new IllegalArgumentException("Not possible to pack " + resultDimensionality
+                    + " + dimensions into " + wantedDimensionality + " dimensions");
         }
         Tensor.Builder builder = Tensor.Builder.of(type);
-        for (int token = 0; token < result.shape()[0]; token++) {
+        for (int token = 0; token < nTokens; token++) {
             BitSet bitSet = new BitSet(8);
             int key = 0;
             for (int d = 0; d < result.shape()[1]; d++) {

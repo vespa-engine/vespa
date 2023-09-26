@@ -62,7 +62,7 @@ public:
     class prime_modulator
     {
     public:
-        prime_modulator(next_t sizeOfHashTable) noexcept : _modulo(sizeOfHashTable) { }
+        explicit prime_modulator(next_t sizeOfHashTable) noexcept : _modulo(sizeOfHashTable) { }
         next_t modulo(next_t hash) const noexcept { return hash % _modulo; }
         next_t getTableSize() const noexcept { return _modulo; }
         static next_t selectHashTableSize(size_t sz) { return hashtable_base::getModuloStl(sz); }
@@ -76,7 +76,7 @@ public:
     class and_modulator
     {
     public:
-        and_modulator(next_t sizeOfHashTable) noexcept : _mask(sizeOfHashTable-1) { }
+        explicit and_modulator(next_t sizeOfHashTable) noexcept : _mask(sizeOfHashTable-1) { }
         next_t modulo(next_t hash) const noexcept { return hash & _mask; }
         next_t getTableSize() const noexcept { return _mask + 1; }
         static next_t selectHashTableSize(size_t sz) noexcept { return hashtable_base::getModuloSimple(sz); }
@@ -198,7 +198,7 @@ public:
         using pointer = Value*;
         using iterator_category = std::forward_iterator_tag;
 
-        constexpr iterator(hashtable * hash) noexcept : _current(0), _hashTable(hash) {
+        constexpr explicit iterator(hashtable * hash) noexcept : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
@@ -242,7 +242,7 @@ public:
         using pointer = const Value*;
         using iterator_category = std::forward_iterator_tag;
 
-        constexpr const_iterator(const hashtable * hash) noexcept : _current(0), _hashTable(hash) {
+        constexpr explicit const_iterator(const hashtable * hash) noexcept : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
@@ -282,7 +282,7 @@ public:
     hashtable & operator = (hashtable &&) noexcept = default;
     hashtable(const hashtable &);
     hashtable & operator = (const hashtable &);
-    hashtable(size_t reservedSpace);
+    explicit hashtable(size_t reservedSpace);
     hashtable(size_t reservedSpace, const Hash & hasher, const Equal & equal);
     virtual ~hashtable();
     constexpr iterator begin()             noexcept { return iterator(this); }

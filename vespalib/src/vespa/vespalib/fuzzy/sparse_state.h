@@ -112,11 +112,11 @@ std::ostream& operator<<(std::ostream& os, const FixedSparseState<MaxEdits>& s) 
         if (i != 0) {
             os << ", ";
         }
-        for (size_t j = last_idx; j < s.indices[i]; ++j) {
+        for (size_t j = last_idx; j < s.index(i); ++j) {
             os << "-, ";
         }
-        last_idx = s.indices[i] + 1;
-        os << static_cast<uint32_t>(s.costs[i]);
+        last_idx = s.index(i) + 1;
+        os << static_cast<uint32_t>(s.cost(i));
     }
     os << "]";
     return os;

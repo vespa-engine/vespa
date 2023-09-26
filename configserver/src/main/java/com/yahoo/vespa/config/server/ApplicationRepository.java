@@ -1030,21 +1030,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         Session session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalArgumentException("Session is active: " + sessionId);
+            throw new IllegalArgumentException("Session " + sessionId + " for '" + tenant.getName() + "' is active");
         }
         return session;
     }
 
     private Session getLocalSession(Tenant tenant, long sessionId) {
         Session session = tenant.getSessionRepository().getLocalSession(sessionId);
-        if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
+        if (session == null) throw new NotFoundException("Local session " + sessionId + " for '" + tenant.getName() + "' was not found");
 
         return session;
     }
 
     private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
         RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
-        if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
+        if (session == null) throw new NotFoundException("Remote session " + sessionId + " for '" + tenant.getName() + "' was not found");
 
         return session;
     }

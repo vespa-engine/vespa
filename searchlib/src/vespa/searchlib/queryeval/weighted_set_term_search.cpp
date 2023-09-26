@@ -21,7 +21,7 @@ private:
 
     struct CmpDocId {
         const uint32_t *termPos;
-        CmpDocId(const uint32_t *tp) : termPos(tp) {}
+        explicit CmpDocId(const uint32_t *tp) : termPos(tp) {}
         bool operator()(const ref_t &a, const ref_t &b) const {
             return (termPos[a] < termPos[b]);
         }
@@ -29,7 +29,7 @@ private:
 
     struct CmpWeight {
         const int32_t *weight;
-        CmpWeight(const int32_t *w) : weight(w) {}
+        explicit CmpWeight(const int32_t *w) : weight(w) {}
         bool operator()(const ref_t &a, const ref_t &b) const {
             return (weight[a] > weight[b]);
         }
@@ -61,7 +61,7 @@ private:
     }
 
 public:
-    WeightedSetTermSearchImpl(search::fef::TermFieldMatchData &tmd,
+    WeightedSetTermSearchImpl(fef::TermFieldMatchData &tmd,
                               bool field_is_filter,
                               const std::vector<int32_t> &weights,
                               IteratorPack &&iteratorPack)
@@ -180,7 +180,7 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
-WeightedSetTermSearch::create(search::fef::TermFieldMatchData &tmd,
+WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               bool field_is_filter,
                               const std::vector<int32_t> &weights,
                               std::vector<DocumentWeightIterator> &&iterators)

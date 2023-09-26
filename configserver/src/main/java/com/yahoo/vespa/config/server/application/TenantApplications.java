@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
@@ -430,11 +431,19 @@ public class TenantApplications implements RequestHandler, HostValidator {
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 
     public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {
-        return RemoveApplicationWaiter.createAndInitialize(curator, applicationId, serverId);
+        var barrierPath = barrierPath(applicationId);
+        return RemoveApplicationWaiter.createAndInitialize(curator, barrierPath, serverId);
     }
 
     public CompletionWaiter getRemoveApplicationWaiter(ApplicationId applicationId) {
-        return RemoveApplicationWaiter.create(curator, applicationId, serverId);
+        var barrierPath = barrierPath(applicationId);
+        return RemoveApplicationWaiter.create(curator, barrierPath, serverId);
+    }
+
+    private Path barrierPath(ApplicationId applicationId) {
+        return TenantRepository.getBarriersPath().append(applicationId.tenant().value())
+                .append("delete-application")
+                .append(applicationId.serializedForm());
     }
 
     /**
@@ -453,14 +462,12 @@ public class TenantApplications implements RequestHandler, HostValidator {
         private final Duration waitForAll;
         private final Clock clock = Clock.systemUTC();
 
-        RemoveApplicationWaiter(Curator curator, ApplicationId applicationId, String serverId) {
-            this(curator, applicationId, serverId, waitForAllDefault);
+        RemoveApplicationWaiter(Curator curator, Path barrierPath, String serverId) {
+            this(curator, barrierPath, serverId, waitForAllDefault);
         }
 
-        RemoveApplicationWaiter(Curator curator, ApplicationId applicationId, String serverId, Duration waitForAll) {
-            this.barrierPath = TenantRepository.getBarriersPath().append(applicationId.tenant().value())
-                                               .append("delete-application")
-                                               .append(applicationId.serializedForm());
+        RemoveApplicationWaiter(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
+            this.barrierPath = barrierPath;
             this.waiterNode = barrierPath.append(serverId);
             this.curator = curator;
             this.waitForAll = waitForAll;
@@ -542,33 +549,28 @@ public class TenantApplications implements RequestHandler, HostValidator {
         @Override
         public String toString() { return "'" + barrierPath + "', " + barrierMemberCount() + " members"; }
 
-        public static CompletionWaiter create(Curator curator, ApplicationId applicationId, String serverId) {
-            return new RemoveApplicationWaiter(curator, applicationId, serverId);
+        public static CompletionWaiter create(Curator curator, Path barrierPath, String serverId) {
+            return new RemoveApplicationWaiter(curator, barrierPath, serverId);
         }
 
-        public static CompletionWaiter create(Curator curator, ApplicationId applicationId, String serverId, Duration waitForAll) {
-            return new RemoveApplicationWaiter(curator, applicationId, serverId, waitForAll);
+        public static CompletionWaiter create(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
+            return new RemoveApplicationWaiter(curator, barrierPath, serverId, waitForAll);
         }
 
-        public static CompletionWaiter createAndInitialize(Curator curator, ApplicationId applicationId, String serverId) {
-            return createAndInitialize(curator, applicationId, serverId, waitForAllDefault);
+        public static CompletionWaiter createAndInitialize(Curator curator, Path barrierPath, String serverId) {
+            return createAndInitialize(curator, barrierPath, serverId, waitForAllDefault);
         }
 
-        public static CompletionWaiter createAndInitialize(Curator curator, ApplicationId applicationId, String serverId, Duration waitForAll) {
-            RemoveApplicationWaiter waiter = new RemoveApplicationWaiter(curator, applicationId, serverId, waitForAll);
-
-            // Cleanup and create a new barrier path
-            Path barrierPath = waiter.barrierPath();
+        public static CompletionWaiter createAndInitialize(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
+            // Note: Should be done atomically, but unable to that when path may not exist before delete
+            // and create should be able to create any missing parent paths
             curator.delete(barrierPath);
-            curator.create(barrierPath.getParentPath());
-            curator.createAtomically(barrierPath);
+            curator.create(barrierPath);
 
-            return waiter;
+            return new RemoveApplicationWaiter(curator, barrierPath, serverId, waitForAll);
         }
 
         private int barrierMemberCount() { return (curator.zooKeeperEnsembleCount() / 2) + 1; /* majority */ }
-
-        private Path barrierPath() { return barrierPath; }
 
     }
 

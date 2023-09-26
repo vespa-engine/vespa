@@ -128,9 +128,9 @@ TEST("test And propagates updated histestimate") {
         const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
         EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f/250, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
 }
 
 TEST("test And Blueprint") {

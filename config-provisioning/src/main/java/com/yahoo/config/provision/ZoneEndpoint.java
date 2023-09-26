@@ -14,9 +14,16 @@ public class ZoneEndpoint {
 
     /**
      * Endpoint service generation.
-     * Bump this to provision new services, whenever we change regional endpoint names.
-     * This will cause new endpoint services to be provisioned, with new domain names.
-     * TODO: wire multiple service IDs to and through the controller.
+     * <p>
+     * This is used to transition to a new set of endpoint services, with new domain names.
+     * The procedure is:
+     * <ol>
+     *     <li>Start using new endpoint names (in controller code), for <em>all</em> applications.</li>
+     *     <li>Bump the generation counter here; this causes new services to be provisioned.</li>
+     *     <li>Controller configures the new services with the new endpoint names.</li>
+     *     <li>Let users migrate to the new endpoint names.</li>
+     *     <li>Currently missing: clean up obsolete, unused endpoint services.</li>
+     * </ol>
      */
     public static final int generation = 0;
     public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of());

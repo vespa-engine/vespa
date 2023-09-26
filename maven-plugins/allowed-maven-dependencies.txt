@@ -35,7 +35,7 @@ org.apache.maven:maven-settings-builder:3.9.4
 org.apache.maven.enforcer:enforcer-api:3.4.1
 org.apache.maven.enforcer:enforcer-rules:3.4.1
 org.apache.maven.plugin-tools:maven-plugin-annotations:3.9.0
-org.apache.maven.plugins:maven-shade-plugin:3.5.0
+org.apache.maven.plugins:maven-shade-plugin:3.5.1
 org.apache.maven.resolver:maven-resolver-api:1.9.14
 org.apache.maven.resolver:maven-resolver-impl:1.9.14
 org.apache.maven.resolver:maven-resolver-named-locks:1.9.14
@@ -63,7 +63,7 @@ org.ow2.asm:asm-tree:9.5
 org.slf4j:slf4j-api:1.7.36
 org.tukaani:xz:1.9
 org.twdata.maven:mojo-executor:2.4.0
-org.vafer:jdependency:2.8.0
+org.vafer:jdependency:2.9.0
 
 #[test-only]
 # Contains dependencies that are used exclusively in 'test' scope

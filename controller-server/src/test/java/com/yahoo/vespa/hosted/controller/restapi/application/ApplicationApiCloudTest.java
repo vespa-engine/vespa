@@ -5,6 +5,7 @@ import ai.vespa.hosted.api.MultiPartStreamer;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.RestApiException;
@@ -26,12 +27,14 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.tenant.CloudAccountInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -369,10 +372,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
                                      .submit()
                                      .deploy();
+        tester.controller().tenants().updateCloudAccounts(tenantName, List.of(new CloudAccountInfo(CloudAccount.from("aws:123456789012"), new Version(1, 2, 4))));
 
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
-                200);
+                new File("tenant-cloud.json"));
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),

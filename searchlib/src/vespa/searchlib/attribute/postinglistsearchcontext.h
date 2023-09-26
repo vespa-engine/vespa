@@ -320,11 +320,7 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(PostingLi
         ++it;
         return false;
     } else if (this->isFuzzy()) {
-        if (this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()))) {
-            return true;
-        }
-        ++it;
-        return false;
+        return this->is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it, _enumStore.get_data_store());
     }
     return true;
 }

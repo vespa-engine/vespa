@@ -18,7 +18,7 @@ class WeightedSetTermBlueprint : public ComplexLeafBlueprint
     std::vector<Blueprint::UP> _terms;
 
 public:
-    WeightedSetTermBlueprint(const FieldSpec &field);
+    explicit WeightedSetTermBlueprint(const FieldSpec &field);
     WeightedSetTermBlueprint(const WeightedSetTermBlueprint &) = delete;
     WeightedSetTermBlueprint &operator=(const WeightedSetTermBlueprint &) = delete;
     ~WeightedSetTermBlueprint() override;
