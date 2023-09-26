@@ -113,6 +113,7 @@ private:
     void match_loop_helper(MatchTools &tools, HitCollector &hits);
 
     search::ResultSet::UP findMatches(MatchTools &tools);
+    void secondPhase(MatchTools & tools, HitCollector & hits);
 
     void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
 
