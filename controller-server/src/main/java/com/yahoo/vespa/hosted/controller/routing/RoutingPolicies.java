@@ -416,7 +416,7 @@ public class RoutingPolicies {
 
     private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         if (loadBalancer.service().isEmpty()) return;
-        // TODO(mpolden): Why is this done? Consider creating private DNS for all auth methods
+        // TODO(mpolden): Model one service for each endpoint (type), to allow private endpoints with tokens.
         boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
             case token -> true;
             case mtls -> false;
@@ -436,10 +436,21 @@ public class RoutingPolicies {
                   });
     }
 
+    /** Deletes all DNS challenges, and corresponding TXT records, for the given deployment. */
+    public void removeDnsChallenges(DeploymentId deploymentId) {
+        try (Mutex lock = db.lockNameServiceQueue()) {
+            for (DnsChallenge challenge : db.readDnsChallenges(deploymentId)) {
+                controller.nameServiceForwarder().removeRecords(Record.Type.TXT, challenge.name(), Priority.normal, ownerOf(deploymentId));
+                db.deleteDnsChallenge(challenge.clusterId());
+            }
+        }
+    }
+
     /** Returns true iff. the given deployment has no incomplete DNS challenges, or throws (and cleans up) on errors. */
     public boolean processDnsChallenges(DeploymentId deploymentId) {
         try (Mutex lock = db.lockNameServiceQueue()) {
             List<DnsChallenge> challenges = new ArrayList<>(db.readDnsChallenges(deploymentId));
+            challenges.removeIf(challenge -> challenge.state() == ChallengeState.done);
             Set<RecordName> pendingRequests = controller.curator().readNameServiceQueue().requests().stream()
                                                         .map(NameServiceRequest::name)
                                                         .collect(Collectors.toSet());
@@ -450,14 +461,8 @@ public class RoutingPolicies {
                         challenge = challenge.withState(ChallengeState.ready);
                     }
                     ChallengeState state = controller.serviceRegistry().vpcEndpointService().process(challenge);
-                    if (state == ChallengeState.done) {
-                        removeDnsChallenge(challenge);
-                        return true;
-                    }
-                    else {
-                        db.writeDnsChallenge(challenge.withState(state));
-                        return false;
-                    }
+                    db.writeDnsChallenge(challenge.withState(state));
+                    return state == ChallengeState.done;
                 });
                 return challenges.isEmpty();
             }

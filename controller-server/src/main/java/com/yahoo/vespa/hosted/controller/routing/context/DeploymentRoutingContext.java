@@ -57,6 +57,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
     /** Deactivate routing configuration for the deployment in this context, using given deployment spec */
     public final void deactivate(DeploymentSpec deploymentSpec) {
         routing.policies().refresh(deployment, deploymentSpec, EndpointList.EMPTY);
+        routing.policies().removeDnsChallenges(deployment);
     }
 
     /** Routing method of this context */
