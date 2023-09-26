@@ -227,7 +227,7 @@ template <typename DataT>
 unsigned int
 PostingListSearchContextT<DataT>::approximateHits() const
 {
-    unsigned int numHits = 0;
+    size_t numHits = 0;
     if (_uniqueValues == 0u) {
     } else if (_uniqueValues == 1u) {
         numHits = singleHits();
@@ -249,7 +249,7 @@ PostingListSearchContextT<DataT>::approximateHits() const
             numHits = countHits();
         }
     }
-    return numHits;
+    return std::min(numHits, size_t(std::numeric_limits<uint32_t>::max()));
 }
 
 
