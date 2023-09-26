@@ -315,7 +315,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-10-01",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-11-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick");
 
@@ -341,14 +341,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2023-10-01",
+            List.of("hmusum"), "2023-07-19", "2023-11-01",
             "Whether to write config server session data in one blob or as individual paths",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
-            "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2023-10-01",
-            "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
@@ -371,12 +365,6 @@ public class Flags {
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
-
-    public static final UnboundBooleanFlag WRITE_APPLICATION_DATA_AS_JSON = defineFeatureFlag(
-            "write-application-data-as-json", true,
-            List.of("hmusum"), "2023-08-27", "2023-10-01",
-            "Whether to write application data (active session id, last deployed session id etc. ) as json",
-            "Takes effect immediately");
 
     public static final UnboundIntFlag MIN_EXCLUSIVE_ADVERTISED_MEMORY_GB = defineIntFlag(
             "min-exclusive-advertised-memory-gb", 8,
@@ -416,7 +404,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "log",
-            List.of("hmusum"), "2023-09-25", "2024-11-01",
+            List.of("hmusum"), "2023-09-25", "2023-11-01",
             "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
             "Takes effect at redeployment",
             INSTANCE_ID);
