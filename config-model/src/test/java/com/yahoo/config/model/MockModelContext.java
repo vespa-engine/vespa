@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -84,4 +85,6 @@ public class MockModelContext implements ModelContext {
     public ExecutorService getExecutor() {
         return new InThreadExecutorService();
     }
+
+    @Override public OnnxModelCost onnxModelCost() { return OnnxModelCost.disabled(); }
 }

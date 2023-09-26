@@ -16,6 +16,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
@@ -69,6 +70,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final Optional<ApplicationVersions> activeApplicationVersions;
     private final Curator curator;
     private final ExecutorService executor;
+    private final OnnxModelCost onnxModelCost;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  FlagSource flagSource,
@@ -85,7 +87,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  PrepareParams params,
                                  Optional<ApplicationVersions> activeApplicationVersions,
                                  ConfigserverConfig configserverConfig,
-                                 Zone zone) {
+                                 Zone zone,
+                                 OnnxModelCost onnxModelCost) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
         this.flagSource = flagSource;
         this.secretStore = secretStore;
@@ -98,6 +101,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.params = params;
         this.activeApplicationVersions = activeApplicationVersions;
         this.executor = executor;
+        this.onnxModelCost = onnxModelCost;
     }
 
     @Override
@@ -123,6 +127,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 provisioned,
                 createModelContextProperties(modelFactory.version(), applicationPackage),
                 getAppDir(applicationPackage),
+                onnxModelCost,
                 wantedDockerImageRepository,
                 modelVersion,
                 wantedNodeVespaVersion);
