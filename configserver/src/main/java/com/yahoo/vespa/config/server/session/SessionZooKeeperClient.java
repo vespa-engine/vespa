@@ -118,21 +118,21 @@ public class SessionZooKeeperClient {
 
     public long sessionId() { return sessionId; }
 
-    public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(getWaiterPath(ACTIVE_BARRIER)); }
+    public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(barrierPath(ACTIVE_BARRIER)); }
 
-    CompletionWaiter createPrepareWaiter() { return createCompletionWaiter(getWaiterPath(PREPARE_BARRIER)); }
+    CompletionWaiter createPrepareWaiter() { return createCompletionWaiter(barrierPath(PREPARE_BARRIER)); }
 
-    CompletionWaiter getPrepareWaiter() { return getCompletionWaiter(getWaiterPath(PREPARE_BARRIER)); }
+    CompletionWaiter getPrepareWaiter() { return getCompletionWaiter(barrierPath(PREPARE_BARRIER)); }
 
-    CompletionWaiter getActiveWaiter() { return getCompletionWaiter(getWaiterPath(ACTIVE_BARRIER)); }
+    CompletionWaiter getActiveWaiter() { return getCompletionWaiter(barrierPath(ACTIVE_BARRIER)); }
 
-    CompletionWaiter getUploadWaiter() { return getCompletionWaiter(getWaiterPath(UPLOAD_BARRIER)); }
+    CompletionWaiter getUploadWaiter() { return getCompletionWaiter(barrierPath(UPLOAD_BARRIER)); }
 
     private static final String PREPARE_BARRIER = "prepareBarrier";
     private static final String ACTIVE_BARRIER = "activeBarrier";
     private static final String UPLOAD_BARRIER = "uploadBarrier";
 
-    private Path getWaiterPath(String barrierName) {
+    private Path barrierPath(String barrierName) {
         return sessionPath.append(barrierName);
     }
 
