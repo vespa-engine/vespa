@@ -606,7 +606,7 @@ public class ApplicationRepositoryTest {
         long sessionId = result.sessionId();
 
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Session is active: 2");
+        exceptionRule.expectMessage("Session 2 for 'test1' is active");
         applicationRepository.prepare(sessionId, prepareParams());
 
         exceptionRule.expect(IllegalArgumentException.class);
