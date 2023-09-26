@@ -18,9 +18,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Optional;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Defers to 'vespa-analyze-onnx-model' to determine the output type given
@@ -56,12 +53,6 @@ public class OnnxModelProbe {
         } catch (IllegalArgumentException | IOException | InterruptedException ignored) { }
 
         return outputType;
-    }
-
-    public static Optional<MemoryStats> probeMemoryStats(ApplicationPackage app, Path modelPath) {
-        return Optional.of(app.getFile(memoryStatsPath(modelPath)))
-                .filter(ApplicationFile::exists)
-                .map(file -> MemoryStats.fromJson(uncheck(() -> jsonParser.readTree(file.createReader()))));
     }
 
     private static void writeMemoryStats(ApplicationPackage app, Path modelPath, MemoryStats memoryStats) throws IOException {
