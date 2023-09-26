@@ -415,7 +415,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
-            "unknonw-config-definition", "log",
+            "unknown-config-definition", "log",
             List.of("hmusum"), "2023-09-25", "2024-11-01",
             "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
             "Takes effect at redeployment",
