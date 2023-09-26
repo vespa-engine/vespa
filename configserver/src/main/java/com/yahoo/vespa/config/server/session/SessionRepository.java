@@ -9,6 +9,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -118,6 +119,7 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
+    private final OnnxModelCost onnxModelCost;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -147,8 +149,10 @@ public class SessionRepository {
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
                              ConfigDefinitionRepo configDefinitionRepo,
-                             int maxNodeSize) {
+                             int maxNodeSize,
+                             OnnxModelCost onnxModelCost) {
         this.tenantName = tenantName;
+        this.onnxModelCost = onnxModelCost;
         sessionCounter = new SessionCounter(curator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
@@ -553,7 +557,8 @@ public class SessionRepository {
                                                                     configserverConfig,
                                                                     zone,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo);
+                                                                    configDefinitionRepo,
+                                                                    onnxModelCost);
         return ApplicationVersions.fromList(builder.buildModels(session.getApplicationId(),
                                                                 session.getDockerImageRepository(),
                                                                 session.getVespaVersion(),

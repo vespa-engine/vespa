@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
@@ -66,6 +67,7 @@ public class ModelContextImpl implements ModelContext {
     private final Optional<? extends Reindexing> reindexing;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
+    private final OnnxModelCost onnxModelCost;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -92,6 +94,7 @@ public class ModelContextImpl implements ModelContext {
                             Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
+                            OnnxModelCost onnxModelCost,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
@@ -109,6 +112,7 @@ public class ModelContextImpl implements ModelContext {
         this.wantedDockerImageRepository = wantedDockerImageRepository;
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
+        this.onnxModelCost = onnxModelCost;
     }
 
     @Override
@@ -149,6 +153,8 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<File> appDir() { return appDir; }
+
+    @Override public OnnxModelCost onnxModelCost() { return onnxModelCost; }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
