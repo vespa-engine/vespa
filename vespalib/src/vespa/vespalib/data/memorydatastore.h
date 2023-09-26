@@ -13,18 +13,19 @@ namespace vespalib {
  * It has the important property that once an object has been allocated it does not move in memory.
  * It will start of by allocating one backing buffer and items stored will be appended here.
  * When limit is exceeded a new buffer is allocated with twice the size of the previous and so it goes.
+ * You can also provide an optional lock to make it thread safe.
  **/
 class MemoryDataStore {
 public:
     class Reference {
     public:
-        Reference(void * data_) noexcept : _data(data_) { }
+        explicit Reference(void * data_) noexcept : _data(data_) { }
         void * data() noexcept { return _data; }
         const char * c_str() const noexcept { return static_cast<const char *>(_data); }
     private:
         void   * _data;
     };
-    MemoryDataStore(alloc::Alloc && initialAlloc=alloc::Alloc::alloc(256), std::mutex * lock=nullptr);
+    MemoryDataStore(alloc::Alloc && initialAlloc, std::mutex * lock);
     MemoryDataStore(const MemoryDataStore &) = delete;
     MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
@@ -33,7 +34,7 @@ public:
      * for the lifetime of this object.
      * @return A pointer/reference to the freshly stored object.
      */
-    Reference push_back(const void * data, const size_t sz);
+    Reference push_back(const void * data, size_t sz);
     void swap(MemoryDataStore & rhs) { _buffers.swap(rhs._buffers); }
     void clear() noexcept {
         _buffers.clear();
