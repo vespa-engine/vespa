@@ -15,11 +15,6 @@ public class BillingReporterMock implements BillingReporter {
     }
 
     @Override
-    public double maintainResources() {
-        return 0;
-    }
-
-    @Override
     public BillingReference maintainTenant(CloudTenant tenant) {
         return new BillingReference(UUID.randomUUID().toString(), clock.instant());
     }

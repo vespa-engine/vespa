@@ -35,7 +35,6 @@ public class BillingReportMaintainer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        reporter.maintainResources();
         maintainTenants();
         return 0.0;
     }
