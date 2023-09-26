@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -47,6 +46,7 @@ public class NotifierTest {
             new ArchiveAccess(),
             Optional.empty(),
             Instant.EPOCH,
+            List.of(),
             Optional.empty());
 
 

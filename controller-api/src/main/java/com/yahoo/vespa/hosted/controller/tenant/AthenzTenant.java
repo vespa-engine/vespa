@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,8 +28,9 @@ public class AthenzTenant extends Tenant {
      * Use {@link #create(TenantName, AthenzDomain, Property, Optional, Instant)}.
      * */
     public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
-                        Optional<Contact> contact, Instant createdAt, LastLoginInfo lastLoginInfo, Instant tenantRolesLastMaintained) {
-        super(name, createdAt, lastLoginInfo, contact, tenantRolesLastMaintained);
+                        Optional<Contact> contact, Instant createdAt, LastLoginInfo lastLoginInfo, Instant tenantRolesLastMaintained,
+                        List<CloudAccountInfo> cloudAccounts) {
+        super(name, createdAt, lastLoginInfo, contact, tenantRolesLastMaintained, cloudAccounts);
         this.domain = Objects.requireNonNull(domain, "domain must be non-null");
         this.property = Objects.requireNonNull(property, "property must be non-null");
         this.propertyId = Objects.requireNonNull(propertyId, "propertyId must be non-null");
@@ -62,7 +64,7 @@ public class AthenzTenant extends Tenant {
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId, Instant createdAt) {
-        return new AthenzTenant(requireName(name), domain, property, propertyId, Optional.empty(), createdAt, LastLoginInfo.EMPTY, Instant.EPOCH);
+        return new AthenzTenant(requireName(name), domain, property, propertyId, Optional.empty(), createdAt, LastLoginInfo.EMPTY, Instant.EPOCH, List.of());
     }
 
     @Override

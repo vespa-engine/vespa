@@ -70,17 +70,7 @@ public class SignatureFilterTest {
         filter = new SignatureFilter(tester.controller());
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
-        tester.curator().writeTenant(new CloudTenant(appId.tenant(),
-                                                     Instant.EPOCH,
-                                                     LastLoginInfo.EMPTY,
-                                                     Optional.empty(),
-                                                     ImmutableBiMap.of(),
-                                                     TenantInfo.empty(),
-                                                     List.of(),
-                                                     new ArchiveAccess(),
-                                                     Optional.empty(),
-                                                     Instant.EPOCH,
-                                       Optional.empty()));
+        tester.curator().writeTenant(CloudTenant.create(appId.tenant(), Instant.EPOCH, null));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -129,6 +119,7 @@ public class SignatureFilterTest {
                 new ArchiveAccess(),
                 Optional.empty(),
                 Instant.EPOCH,
+                List.of(),
                 Optional.empty()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                 new SecurityContext(new SimplePrincipal("user"),

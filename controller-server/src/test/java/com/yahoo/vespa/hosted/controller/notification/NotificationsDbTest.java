@@ -10,7 +10,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -69,6 +68,7 @@ public class NotificationsDbTest {
             new ArchiveAccess(),
             Optional.empty(),
             Instant.EPOCH,
+            List.of(),
             Optional.empty());
     private static final List<Notification> notifications = List.of(
             notification(1001, Type.deployment, Level.error, NotificationSource.from(tenant), "tenant msg"),

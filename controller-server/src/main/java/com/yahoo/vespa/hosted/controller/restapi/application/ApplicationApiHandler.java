@@ -2915,6 +2915,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             }
         }
         tenantMetaDataToSlime(tenant, applications, object.setObject("metaData"));
+
+        if (!tenant.cloudAccounts().isEmpty()) {
+            Cursor cloudAccounts = object.setArray("cloudAccounts");
+            tenant.cloudAccounts().forEach(accountInfo -> {
+                Cursor accountObject = cloudAccounts.addObject();
+                accountObject.setString("cloudAccount", accountInfo.cloudAccount().value());
+                accountObject.setString("templateVersion", accountInfo.templateVersion().toFullString());
+            });
+        }
     }
 
     private void toSlime(ArchiveAccess archiveAccess, Cursor object) {
