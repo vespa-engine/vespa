@@ -2,6 +2,7 @@
 
 #include "weighted_set_term_search.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/attribute/document_weight_or_filter_search.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 
@@ -170,6 +171,10 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
 {
     using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack>;
     using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, SearchIteratorPack>;
+
+    if (field_is_filter && tmd.isNotNeeded()) {
+        return attribute::DocumentWeightOrFilterSearch::create(children, std::move(match_data));
+    }
 
     if (children.size() < 128) {
         return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, SearchIteratorPack(children, std::move(match_data))));

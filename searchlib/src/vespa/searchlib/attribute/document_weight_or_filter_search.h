@@ -3,6 +3,7 @@
 #include "i_document_weight_attribute.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
+namespace search::fef { class MatchData; }
 namespace search::attribute {
 
 /**
@@ -12,12 +13,11 @@ namespace search::attribute {
 class DocumentWeightOrFilterSearch : public queryeval::SearchIterator
 {
 protected:
-    DocumentWeightOrFilterSearch()
-        : queryeval::SearchIterator()
-    {
-    }
+    DocumentWeightOrFilterSearch() = default;
 public:
-    static std::unique_ptr<queryeval::SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
+                                                  std::unique_ptr<fef::MatchData> md);
 };
 
 }

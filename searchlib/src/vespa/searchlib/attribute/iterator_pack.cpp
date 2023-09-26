@@ -5,6 +5,14 @@
 
 namespace search {
 
+AttributeIteratorPack::~AttributeIteratorPack() = default;
+
+AttributeIteratorPack::AttributeIteratorPack(std::vector<DocumentWeightIterator> &&children)
+    : _children(std::move(children))
+{
+    assert(_children.size() < 0x10000);
+}
+
 std::unique_ptr<BitVector>
 AttributeIteratorPack::get_hits(uint32_t begin_id, uint32_t end_id) {
     BitVector::UP result(BitVector::create(begin_id, end_id));

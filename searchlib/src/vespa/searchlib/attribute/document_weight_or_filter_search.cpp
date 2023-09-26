@@ -2,22 +2,27 @@
 
 #include "document_weight_or_filter_search.h"
 #include "iterator_pack.h"
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/queryeval/iterator_pack.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
+using search::queryeval::SearchIteratorPack;
+
 namespace search::attribute {
 
+template<typename IteratorPack>
 class DocumentWeightOrFilterSearchImpl : public DocumentWeightOrFilterSearch
 {
-    AttributeIteratorPack _children;
+    IteratorPack _children;
     void seek_all(uint32_t docId);
 public:
-    explicit DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
+    explicit DocumentWeightOrFilterSearchImpl(IteratorPack&& children);
     ~DocumentWeightOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
     
-    void doUnpack(uint32_t) override;
+    void doUnpack(uint32_t) override { }
 
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
@@ -40,16 +45,19 @@ public:
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-DocumentWeightOrFilterSearchImpl::DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children)
+template<typename IteratorPack>
+DocumentWeightOrFilterSearchImpl<IteratorPack>::DocumentWeightOrFilterSearchImpl(IteratorPack&& children)
     : DocumentWeightOrFilterSearch(),
       _children(std::move(children))
 {
 }
 
-DocumentWeightOrFilterSearchImpl::~DocumentWeightOrFilterSearchImpl() = default;
+template<typename IteratorPack>
+DocumentWeightOrFilterSearchImpl<IteratorPack>::~DocumentWeightOrFilterSearchImpl() = default;
 
+template<typename IteratorPack>
 void
-DocumentWeightOrFilterSearchImpl::seek_all(uint32_t docId) {
+DocumentWeightOrFilterSearchImpl<IteratorPack>::seek_all(uint32_t docId) {
     for (uint16_t i = 0; i < _children.size(); ++i) {
         uint32_t next = _children.get_docid(i);
         if (next < docId) {
@@ -58,8 +66,9 @@ DocumentWeightOrFilterSearchImpl::seek_all(uint32_t docId) {
     }
 }
 
+template<typename IteratorPack>
 void
-DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
+DocumentWeightOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
 {
     uint32_t min_doc_id = endDocId;
     for (uint16_t i = 0; i < _children.size(); ++i) {
@@ -76,11 +85,6 @@ DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
     setDocId(min_doc_id);
 }
 
-void
-DocumentWeightOrFilterSearchImpl::doUnpack(uint32_t)
-{
-}
-
 std::unique_ptr<queryeval::SearchIterator>
 DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& children)
 {
@@ -89,7 +93,20 @@ DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& child
     } else {
         std::sort(children.begin(), children.end(),
                   [](const auto & a, const auto & b) { return a.size() > b.size(); });
-        return std::make_unique<DocumentWeightOrFilterSearchImpl>(AttributeIteratorPack(std::move(children)));
+        using OrFilter = DocumentWeightOrFilterSearchImpl<AttributeIteratorPack>;
+        return std::make_unique<OrFilter>(AttributeIteratorPack(std::move(children)));
+    }
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+DocumentWeightOrFilterSearch::create(const std::vector<SearchIterator *>& children,
+                                     std::unique_ptr<fef::MatchData> md)
+{
+    if (children.empty()) {
+        return std::make_unique<queryeval::EmptySearch>();
+    } else {
+        using OrFilter = DocumentWeightOrFilterSearchImpl<SearchIteratorPack>;
+        return std::make_unique<OrFilter>(SearchIteratorPack(children, std::move(md)));
     }
 }
 
