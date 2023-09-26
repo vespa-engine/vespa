@@ -50,7 +50,7 @@ commons-fileupload:commons-fileupload:1.5
 commons-io:commons-io:2.13.0
 commons-logging:commons-logging:1.2
 io.airlift:airline:0.9
-io.dropwizard.metrics:metrics-core:4.2.19
+io.dropwizard.metrics:metrics-core:4.2.20
 io.jsonwebtoken:jjwt-api:0.11.5
 io.jsonwebtoken:jjwt-impl:0.11.5
 io.jsonwebtoken:jjwt-jackson:0.11.5
