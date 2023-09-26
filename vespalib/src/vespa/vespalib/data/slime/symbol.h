@@ -19,8 +19,8 @@ private:
 public:
     Symbol() noexcept : _value(UNDEFINED) {}
     Symbol(uint32_t v) noexcept : _value(v) {}
-    bool undefined() const { return (_value == UNDEFINED); }
-    uint32_t getValue() const { return _value; }
+    bool undefined() const noexcept { return (_value == UNDEFINED); }
+    uint32_t getValue() const noexcept { return _value; }
     bool operator<(const Symbol &rhs) const noexcept { return (_value < rhs._value); }
     bool operator==(const Symbol &rhs) const noexcept { return (_value == rhs._value); }
 };
