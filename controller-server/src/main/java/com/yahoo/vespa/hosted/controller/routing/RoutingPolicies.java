@@ -439,10 +439,7 @@ public class RoutingPolicies {
     /** Deletes all DNS challenges, and corresponding TXT records, for the given deployment. */
     public void removeDnsChallenges(DeploymentId deploymentId) {
         try (Mutex lock = db.lockNameServiceQueue()) {
-            for (DnsChallenge challenge : db.readDnsChallenges(deploymentId)) {
-                controller.nameServiceForwarder().removeRecords(Record.Type.TXT, challenge.name(), Priority.normal, ownerOf(deploymentId));
-                db.deleteDnsChallenge(challenge.clusterId());
-            }
+            db.readDnsChallenges(deploymentId).forEach(this::removeDnsChallenge);
         }
     }
 
