@@ -22,13 +22,14 @@ private:
     };
     using SymbolMap = hash_map<Memory, Symbol, hasher>;
     using SymbolVector = std::vector<Memory>;
+    Stash        _stash;
     SymbolMap    _symbols;
     SymbolVector _names;
-    Stash        _stash;
 
 public:
     using UP = std::unique_ptr<SymbolTable>;
-    SymbolTable(size_t expectedNumSymbols=16);
+    SymbolTable() : SymbolTable(16) {}
+    explicit SymbolTable(size_t expectedNumSymbols);
     SymbolTable(SymbolTable &&) noexcept = default;
     SymbolTable & operator=(SymbolTable &&) noexcept = default;
     ~SymbolTable();

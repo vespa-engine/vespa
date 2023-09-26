@@ -6,9 +6,9 @@
 namespace vespalib::slime {
 
 SymbolTable::SymbolTable(size_t expectedNumSymbols)
-    : _symbols(3*expectedNumSymbols),
-      _names(),
-      _stash()
+    : _stash(),
+      _symbols(3*expectedNumSymbols),
+      _names()
 {
     _names.reserve(expectedNumSymbols);
 }
@@ -36,6 +36,7 @@ SymbolTable::insert(const Memory &name) {
     }
     return pos->second;
 }
+
 Symbol
 SymbolTable::lookup(const Memory &name) const {
     SymbolMap::const_iterator pos = _symbols.find(name);

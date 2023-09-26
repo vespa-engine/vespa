@@ -63,8 +63,8 @@ public:
         std::unique_ptr<SymbolTable> _symbols;
         size_t                       _chunkSize;
     public:
-        Params() noexcept : Params(4096) {}
-        explicit Params(size_t chunkSize) noexcept : _symbols(std::make_unique<SymbolTable>()), _chunkSize(chunkSize) {}
+        Params() : Params(4096) {}
+        explicit Params(size_t chunkSize) : _symbols(std::make_unique<SymbolTable>()), _chunkSize(chunkSize) {}
         explicit Params(std::unique_ptr<SymbolTable> symbols) noexcept : _symbols(std::move(symbols)), _chunkSize(4096) {}
         Params(Params &&) noexcept = default;
         ~Params() = default;
