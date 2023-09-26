@@ -52,11 +52,12 @@ public class MetricsConsumersTest {
     @Test
     void consumers_are_set_up_for_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
-        assertEquals(4, config.consumer().size());
+        assertEquals(5, config.consumer().size());
         assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
         assertEquals(MetricsConsumer.autoscaling.id(), config.consumer(1).name());
         assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
         assertEquals(MetricsProxyContainerCluster.NEW_DEFAULT_CONSUMER_ID, config.consumer(3).name());
+        assertEquals(MetricsConsumer.vespa9.id(), config.consumer(4).name());
     }
 
     @Test
@@ -124,7 +125,7 @@ public class MetricsConsumersTest {
         );
         VespaModel hostedModel = getModel(services, hosted);
         ConsumersConfig config = consumersConfigFromModel(hostedModel);
-        assertEquals(4, config.consumer().size());
+        assertEquals(5, config.consumer().size());
 
         // All default metrics are retained
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
