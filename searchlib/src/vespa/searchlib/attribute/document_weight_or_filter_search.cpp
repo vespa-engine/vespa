@@ -10,6 +10,7 @@ namespace search::attribute {
 class DocumentWeightOrFilterSearchImpl : public DocumentWeightOrFilterSearch
 {
     AttributeIteratorPack _children;
+    void seek_all(uint32_t docId);
 public:
     explicit DocumentWeightOrFilterSearchImpl(AttributeIteratorPack&& children);
     ~DocumentWeightOrFilterSearchImpl() override;
@@ -32,7 +33,8 @@ public:
     }
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override {
-        return _children.get_hits(std::min(getEndId(), std::max(begin_id, getDocId())), getEndId());
+        seek_all(getDocId());
+        return _children.get_hits(begin_id, getEndId());
     }
 
     Trinary is_strict() const override { return Trinary::True; }
@@ -45,6 +47,16 @@ DocumentWeightOrFilterSearchImpl::DocumentWeightOrFilterSearchImpl(AttributeIter
 }
 
 DocumentWeightOrFilterSearchImpl::~DocumentWeightOrFilterSearchImpl() = default;
+
+void
+DocumentWeightOrFilterSearchImpl::seek_all(uint32_t docId) {
+    for (uint16_t i = 0; i < _children.size(); ++i) {
+        uint32_t next = _children.get_docid(i);
+        if (next < docId) {
+            _children.seek(i, docId);
+        }
+    }
+}
 
 void
 DocumentWeightOrFilterSearchImpl::doSeek(uint32_t docId)
