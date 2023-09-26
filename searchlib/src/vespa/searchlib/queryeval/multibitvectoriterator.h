@@ -6,7 +6,44 @@
 #include "unpackinfo.h"
 #include <vespa/searchlib/common/bitword.h>
 
+namespace vespalib::hwaccelrated { class IAccelrated; }
+
 namespace search::queryeval {
+
+class MultiBitVectorBase {
+public:
+    using Meta = std::pair<const void *, bool>;
+    MultiBitVectorBase(size_t reserved);
+    using Word = BitWord::Word;
+    void reset() {
+        _lastMaxDocIdLimit = 0;
+        _lastMaxDocIdLimitRequireFetch = 0;
+    }
+    void addBitVector(Meta bv, uint32_t docIdLimit);
+protected:
+    uint32_t            _numDocs;
+    uint32_t            _lastMaxDocIdLimit; // next documentid requiring recomputation.
+    uint32_t            _lastMaxDocIdLimitRequireFetch;
+    Word                _lastValue; // Last value computed
+    std::vector<Meta>   _bvs;
+};
+
+template <typename Update>
+class MultiBitVector : public MultiBitVectorBase {
+public:
+    explicit MultiBitVector(size_t reserved);
+    uint32_t strictSeek(uint32_t docId) noexcept;
+    bool seek(uint32_t docId) noexcept;
+    bool acceptExtraFilter() const noexcept { return Update::isAnd(); }
+private:
+    bool updateLastValue(uint32_t docId) noexcept;
+    using IAccelrated = vespalib::hwaccelrated::IAccelrated;
+
+    Update              _update;
+    const IAccelrated & _accel;
+    alignas(64) Word    _lastWords[8];
+    static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
+};
 
 class MultiBitVectorIteratorBase : public MultiSearch
 {
@@ -20,18 +57,9 @@ public:
      */
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
-    using Word = BitWord::Word;
-    MultiBitVectorIteratorBase(Children children);
-    using MetaWord = std::pair<const void *, bool>;
-
-    uint32_t                _numDocs;
-    uint32_t                _lastMaxDocIdLimit; // next documentid requiring recomputation.
-    uint32_t                _lastMaxDocIdLimitRequireFetch;
-    Word                    _lastValue; // Last value computed
-    std::vector<MetaWord>   _bvs;
+    explicit MultiBitVectorIteratorBase(Children children);
 private:
     virtual bool acceptExtraFilter() const noexcept = 0;
-    UP andWith(UP filter, uint32_t estimate) override;
     void doUnpack(uint32_t docid) override;
     static SearchIterator::UP optimizeMultiSearch(SearchIterator::UP parent);
 
