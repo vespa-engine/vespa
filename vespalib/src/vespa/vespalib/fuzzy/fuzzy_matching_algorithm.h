@@ -13,7 +13,8 @@ namespace vespalib {
 enum class FuzzyMatchingAlgorithm {
     BruteForce,
     DfaImplicit,
-    DfaExplicit
+    DfaExplicit,
+    DfaTable
 };
 
 vespalib::string to_string(FuzzyMatchingAlgorithm algo);

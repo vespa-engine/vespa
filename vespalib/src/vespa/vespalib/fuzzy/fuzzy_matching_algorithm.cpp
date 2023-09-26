@@ -9,6 +9,7 @@ namespace {
 const vespalib::string brute_force = "brute_force";
 const vespalib::string dfa_implicit = "dfa_implicit";
 const vespalib::string dfa_explicit = "dfa_explicit";
+const vespalib::string dfa_table = "dfa_table";
 
 }
 
@@ -22,6 +23,8 @@ to_string(FuzzyMatchingAlgorithm algo)
             return dfa_implicit;
         case FuzzyMatchingAlgorithm::DfaExplicit:
             return dfa_explicit;
+        case FuzzyMatchingAlgorithm::DfaTable:
+            return dfa_table;
         default:
             return "";
     }
@@ -37,6 +40,8 @@ fuzzy_matching_algorithm_from_string(const vespalib::string& algo,
         return FuzzyMatchingAlgorithm::DfaImplicit;
     } else if (algo == dfa_explicit) {
         return FuzzyMatchingAlgorithm::DfaExplicit;
+    } else if (algo == dfa_table) {
+        return FuzzyMatchingAlgorithm::DfaTable;
     }
     return default_algo;
 }

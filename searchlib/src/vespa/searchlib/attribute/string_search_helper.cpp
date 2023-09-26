@@ -11,6 +11,28 @@
 
 namespace search::attribute {
 
+using FMA = vespalib::FuzzyMatchingAlgorithm;
+using LDT = vespalib::fuzzy::LevenshteinDfa::DfaType;
+
+namespace {
+
+LDT
+to_dfa_type(FMA algorithm)
+{
+    switch (algorithm) {
+        case FMA::DfaImplicit:
+            return LDT::Implicit;
+        case FMA::DfaExplicit:
+            return LDT::Explicit;
+        case FMA::DfaTable:
+            return LDT::Table;
+        default:
+            return LDT::Implicit;
+    }
+}
+
+}
+
 StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _regex(),
       _fuzzyMatcher(),
@@ -31,15 +53,13 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespali
                                                                  term.getFuzzyMaxEditDistance(),
                                                                  term.getFuzzyPrefixLength(),
                                                                  isCased());
-        using FMA = vespalib::FuzzyMatchingAlgorithm;
-        using LDT = vespalib::fuzzy::LevenshteinDfa::DfaType;
         if ((fuzzy_matching_algorithm != FMA::BruteForce) &&
             (term.getFuzzyMaxEditDistance() <= 2)) {
             _dfa_fuzzy_matcher = std::make_unique<DfaFuzzyMatcher>(term.getTerm(),
                                                                    term.getFuzzyMaxEditDistance(),
                                                                    term.getFuzzyPrefixLength(),
                                                                    isCased(),
-                                                                   (fuzzy_matching_algorithm == FMA::DfaImplicit) ? LDT::Implicit : LDT::Explicit);
+                                                                   to_dfa_type(fuzzy_matching_algorithm));
         }
     } else if (isCased()) {
         _term = term.getTerm();
