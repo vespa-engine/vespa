@@ -482,6 +482,9 @@ DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const TermFieldMatchDat
         _attr.create(r.posting_idx, iterators);
     }
     bool field_is_filter = getState().fields()[0].isFilter();
+    if (field_is_filter && tfmda[0]->isNotNeeded()) {
+        return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+    }
     return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
 }
 

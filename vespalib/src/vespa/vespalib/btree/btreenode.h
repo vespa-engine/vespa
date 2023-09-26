@@ -67,14 +67,14 @@ public:
     using Ref = datastore::EntryRef;
     using ChildRef = datastore::AtomicEntryRef;
 
-    bool isLeaf() const { return _level == 0u; }
-    bool getFrozen() const { return _isFrozen; }
-    void freeze() { _isFrozen = true; }
-    void unFreeze() { _isFrozen = false; }
-    void setLevel(uint8_t level) { _level = level; }
-    uint32_t getLevel() const { return _level; }
-    uint32_t validSlots() const { return _validSlots; }
-    void setValidSlots(uint16_t validSlots_) { _validSlots = validSlots_; }
+    bool isLeaf() const noexcept { return _level == 0u; }
+    bool getFrozen() const noexcept { return _isFrozen; }
+    void freeze() noexcept { _isFrozen = true; }
+    void unFreeze() noexcept { _isFrozen = false; }
+    void setLevel(uint8_t level) noexcept { _level = level; }
+    uint32_t getLevel() const noexcept { return _level; }
+    uint32_t validSlots() const noexcept { return _validSlots; }
+    void setValidSlots(uint16_t validSlots_) noexcept { _validSlots = validSlots_; }
 };
 
 
@@ -358,7 +358,7 @@ public:
     void insert(uint32_t idx, const KeyT & key, BTreeNode::Ref child) {
         insert(idx, key, BTreeNode::ChildRef(child));
     }
-    uint32_t validLeaves() const { return _validLeaves; }
+    uint32_t validLeaves() const noexcept { return _validLeaves; }
     void setValidLeaves(uint32_t newValidLeaves) { _validLeaves = newValidLeaves; }
     void incValidLeaves(uint32_t delta) { _validLeaves += delta; }
     void decValidLeaves(uint32_t delta) { _validLeaves -= delta; }
