@@ -119,6 +119,11 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
     }
 
+    /** Returns a serialized form of tenant:application to be used with e.g Flags */
+    public static String toSerializedForm(TenantName tenant, ApplicationName application) {
+        return tenant.value() + ":" + application.value();
+    }
+
     // TODO: kill this
     /** Returns a very special application id, which is not equal to any other id. */
     public static ApplicationId global() {

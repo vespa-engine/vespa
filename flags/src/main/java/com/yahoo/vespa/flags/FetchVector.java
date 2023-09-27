@@ -22,7 +22,7 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /** Application id on the form tenant:applicationName. */
+        /** Application id from ApplicationId::toSerializedForm(TenantName, ApplicationName) on the form tenant:applicationName. */
         APPLICATION_ID,
 
         /**
