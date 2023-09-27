@@ -29,6 +29,7 @@ import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserCo
  * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
  *
  * @author gjoranv
+ * @author hmusum
  */
 public class UserConfiguredFiles implements Serializable {
 
@@ -57,7 +58,7 @@ public class UserConfiguredFiles implements Serializable {
             try {
                 register(builder, registeredFiles, key);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unable to register file specified in services.xml for config '" + key + "': " +
+                throw new IllegalArgumentException("Invalid config in services.xml for '" + key + "': " +
                                                    Exceptions.toMessageString(e));
             }
         }
@@ -126,8 +127,7 @@ public class UserConfiguredFiles implements Serializable {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
             if (isEmptyOptionalPath(entry, fileEntry)) continue;
             if (fileEntry.getValue() == null || fileEntry.getValue().equals("."))
-                throw new IllegalArgumentException("Unable to register file for field '" + name +
-                                                   "': Invalid config value '" + fileEntry.getValue() + "'");
+                throw new IllegalArgumentException("Invalid config value '" + fileEntry.getValue() + "' for field '" + name);
             registerFileEntry(fileEntry, registeredFiles, isModelType);
         }
     }
