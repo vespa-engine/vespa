@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
-import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
@@ -86,13 +85,6 @@ public class ModelIdResolver {
         else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path")) {
             throw onlyModelIdInHostedException(value.getTagName());
         }
-    }
-
-
-    public static ModelReference resolveToModelReference(Element elem, DeployState state) {
-        return resolveToModelReference(
-                elem.getTagName(), XmlHelper.getOptionalAttribute(elem, "model-id"),
-                XmlHelper.getOptionalAttribute(elem, "url"), XmlHelper.getOptionalAttribute(elem, "path"), state);
     }
 
     public static ModelReference resolveToModelReference(
