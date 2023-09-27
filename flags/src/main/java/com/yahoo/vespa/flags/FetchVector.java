@@ -22,6 +22,9 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
+        /** Application id on the form tenant:applicationName. */
+        APPLICATION_ID,
+
         /**
          * Cloud from com.yahoo.config.provision.CloudName::value, e.g. yahoo, aws, gcp.
          *

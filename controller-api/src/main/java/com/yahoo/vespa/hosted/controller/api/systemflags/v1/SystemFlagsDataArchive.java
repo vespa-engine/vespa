@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
@@ -191,7 +192,7 @@ public class SystemFlagsDataArchive {
         flagData.rules().forEach(rule -> rule.conditions().forEach(condition -> {
             int force_switch_expression_dummy = switch (condition.type()) {
                 case RELATIONAL -> switch (condition.dimension()) {
-                    case INSTANCE_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL,
+                    case APPLICATION_ID, INSTANCE_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL,
                             ENVIRONMENT, HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
                             throw new FlagValidationException(condition.type().toWire() + " " +
                                                               DimensionHelper.toWire(condition.dimension()) +
@@ -206,6 +207,7 @@ public class SystemFlagsDataArchive {
                 };
 
                 case WHITELIST, BLACKLIST -> switch (condition.dimension()) {
+                    case APPLICATION_ID -> validateConditionValues(condition, SystemFlagsDataArchive::validateTenantApplication);
                     case INSTANCE_ID -> validateConditionValues(condition, ApplicationId::fromSerializedForm);
                     case CONSOLE_USER_EMAIL -> validateConditionValues(condition, email -> {
                         if (!email.contains("@"))
@@ -250,23 +252,20 @@ public class SystemFlagsDataArchive {
         return 0;  // dummy to force switch expression
     }
 
+    private static void validateTenantApplication(String application) {
+        String[] parts = application.split(":");
+        if (parts.length != 2)
+            throw new IllegalArgumentException("Applications must be on the form tenant:application, but was %s".formatted(application));
+        TenantName.from(parts[0]);
+        ApplicationName.from(parts[1]);
+    }
+
     private static FlagData parseFlagData(FlagId flagId, String fileContent, ZoneRegistry zoneRegistry, boolean inController) {
         if (fileContent.isBlank()) return new FlagData(flagId);
 
         final JsonNode root;
         try {
             root = mapper.readTree(fileContent);
-            // TODO (mortent): Remove this after completing migration of APPLICATION_ID dimension
-            // replace "application" with "instance" for all dimension fields
-            List<JsonNode> dimensionParents = root.findParents("dimension");
-            for (JsonNode parentNode : dimensionParents) {
-                JsonNode dimension = parentNode.get("dimension");
-                if (dimension.isTextual() && "application".equals(dimension.textValue())) {
-                    ObjectNode parent = (ObjectNode) parentNode;
-                    parent.remove("dimension");
-                    parent.put("dimension", "instance");
-                }
-            }
         } catch (JsonProcessingException e) {
             throw new FlagValidationException("Invalid JSON: " + e.getMessage());
         }

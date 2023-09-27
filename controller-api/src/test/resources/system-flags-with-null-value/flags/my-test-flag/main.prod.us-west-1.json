@@ -5,7 +5,7 @@
             "conditions": [
                 {
                     "type": "whitelist",
-                    "dimension": "application",
+                    "dimension": "instance",
                     "values": ["a:b:c"]
                 }
             ],

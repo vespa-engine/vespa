@@ -30,7 +30,7 @@ public class FlagDataTest {
                                                 },
                                                 {
                                                     "type": "blacklist",
-                                                    "dimension": "application",
+                                                    "dimension": "instance",
                                                     "values": [ "app1", "app2" ]
                                                 }
                                             ],
@@ -51,8 +51,6 @@ public class FlagDataTest {
                                         "zone": "zone1"
                                     }
                                 }""";
-
-    private final String json_with_instance = json.replace("application", "instance");
 
     private final FetchVector vector = new FetchVector();
 
@@ -273,11 +271,6 @@ public class FlagDataTest {
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {
-        verify(json, expectedValue, vector);
-        verify(json_with_instance, expectedValue, vector);
-    }
-
-    private void verify(String json, Optional<String> expectedValue, FetchVector vector) {
         FlagData data = FlagData.deserialize(json);
         assertEquals("id1", data.id().toString());
         Optional<RawFlag> rawFlag = data.resolve(vector);
