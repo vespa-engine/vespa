@@ -179,16 +179,23 @@ public:
      * Attempts to match the source string `source` with the target string this DFA was
      * built with, emitting a successor string into `successor_out` on mismatch.
      *
-     * See `match(source)` for semantics of returned MatchResult.
+     * In the case of a _match_, the following holds:
      *
-     * In the case of a _match_, the contents of `successor_out` is unspecified. It may be
-     * preemptively modified as part of the matching loop itself.
+     *   - The returned MatchResult has the same semantics as `match(source)`.
+     *   - `successor_out` has a _prefix_ equal to its value that was originally passed
+     *     in at the time of match() being called. The _suffix_ of the string is unspecified,
+     *     i.e. it may or may not have been modified.
      *
      * In the case of a _mismatch_, the following holds:
      *
-     *   - `successor_out` contains the next (in byte-wise ordering) possible _matching_
-     *     string S so that there exists no other matching string S' that is greater than
-     *     `source` but smaller than S.
+     *   - `successor_out` has a _prefix_ equal to its value that was originally passed
+     *      in at the time of match() being called.
+     *   - `successor_out` has a _suffix_ that contains the next (in byte-wise ordering)
+     *     possible _matching_ string S so that there exists no other matching string S'
+     *     that is greater than `source` but smaller than S.
+     *     The caller must explicitly be aware of any prefixes it sends in, as it is
+     *     entirely ignored for the purposes of ordering the successor string vis-a-vis
+     *     the input source string.
      *   - `successor_out` contains UTF-8 bytes that are within what UTF-8 can legally
      *     encode in bitwise form, but the _code points_ they encode may not be valid.
      *     In particular, surrogate pair ranges and U+10FFFF+1 may be encoded, neither of

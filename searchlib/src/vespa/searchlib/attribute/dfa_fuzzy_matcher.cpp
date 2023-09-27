@@ -47,7 +47,6 @@ DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uin
     : _dfa(vespalib::fuzzy::LevenshteinDfa::build(extract_suffix(target, prefix_size), max_edits, (cased ? LevenshteinDfa::Casing::Cased : LevenshteinDfa::Casing::Uncased), dfa_type)),
       _successor(),
       _prefix(extract_prefix(target, prefix_size, cased)),
-      _successor_suffix(),
       _prefix_size(prefix_size),
       _cased(cased)
 {
