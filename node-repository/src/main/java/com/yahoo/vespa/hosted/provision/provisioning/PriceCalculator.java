@@ -40,9 +40,9 @@ public class PriceCalculator {
 
     private double supportLevelMultiplier(PricingInfo.SupportLevel supportLevel) {
         return switch (supportLevel) {
-            case STANDARD -> 0.8;
-            case COMMERCIAL -> 1.0;
-            case ENTERPRISE -> 1.4;
+            case STANDARD ->   2.8/3;
+            case COMMERCIAL -> 4.0/3;
+            case ENTERPRISE -> 5.0/3;
         };
     }
 
