@@ -187,7 +187,7 @@ org.slf4j:slf4j-api:1.7.36
 org.slf4j:slf4j-jdk14:1.7.36
 org.slf4j:slf4j-simple:1.7.36
 org.tukaani:xz:1.9
-org.xerial.snappy:snappy-java:1.1.10.4
+org.xerial.snappy:snappy-java:1.1.10.5
 software.amazon.ion:ion-java:1.0.2
 xerces:xercesImpl:2.12.2
 
