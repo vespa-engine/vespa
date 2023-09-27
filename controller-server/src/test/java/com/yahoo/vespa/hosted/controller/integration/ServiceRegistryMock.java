@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingControll
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporterMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
@@ -52,9 +53,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
+import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -316,6 +320,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     @Override
     public BillingReporter billingReporter() {
-        return () -> 0.0;
+        return new BillingReporterMock(clock());
     }
 }
