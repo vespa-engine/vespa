@@ -264,7 +264,7 @@ public class RoutingPolicies {
                 weightedEndpoints = weightedEndpoints.not().generated();
             }
             if (weightedEndpoints.size() != 1) {
-                throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent);
+                throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent + ", got " + weightedEndpoints);
             }
             Endpoint endpoint = weightedEndpoints.first().get();
             RegionEndpoint regionEndpoint = endpoints.computeIfAbsent(endpoint, (k) -> new RegionEndpoint(
