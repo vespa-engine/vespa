@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuildFails;
-import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuilds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 

@@ -13,10 +13,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AssertSearchBuilder {
 
-    public static void assertBuilds(String searchDefinitionFileName) throws IOException, ParseException {
-        assertNotNull(ApplicationBuilder.buildFromFile(searchDefinitionFileName));
-    }
-
     public static void assertBuildFails(String searchDefinitionFileName, String expectedException)
             throws IOException, ParseException {
         try {
