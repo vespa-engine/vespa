@@ -5,7 +5,6 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
-import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuildFails;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
