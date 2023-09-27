@@ -264,9 +264,14 @@ PostingListFoldedSearchContextT<DataT>::
 PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                 bool hasWeight, const PostingList &postingList,
                                 bool useBitVector, const ISearchContext &searchContext)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, useBitVector, searchContext)
+    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, useBitVector, searchContext),
+      _resume_scan_itr(),
+      _posting_indexes()
 {
 }
+
+template <typename DataT>
+PostingListFoldedSearchContextT<DataT>::~PostingListFoldedSearchContextT() = default;
 
 template <typename DataT>
 bool
@@ -283,11 +288,26 @@ PostingListFoldedSearchContextT<DataT>::countHits() const
         return _counted_hits.value();
     }
     size_t sum(0);
-    for (auto it(_lowerDictItr); it != this->_upperDictItr;) {
+    bool overflow = false;
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
         if (use_dictionary_entry(it)) {
-            sum += _postingList.frozenSize(it.getData().load_acquire());
+            auto pidx = it.getData().load_acquire();
+            if (pidx.valid()) {
+                sum += _postingList.frozenSize(pidx);
+                if (!overflow) {
+                    if (_posting_indexes.size() < MAX_POSTING_INDEXES_SIZE) {
+                        _posting_indexes.emplace_back(pidx);
+                    } else {
+                        overflow = true;
+                        _resume_scan_itr = it;
+                    }
+                }
+            }
             ++it;
         }
+    }
+    if (!overflow) {
+        _resume_scan_itr = _upperDictItr;
     }
     _counted_hits = sum;
     return sum;
@@ -297,10 +317,15 @@ template <typename DataT>
 void
 PostingListFoldedSearchContextT<DataT>::fillArray()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+    for (auto pidx : _posting_indexes) {
+        _merger.addToArray(PostingListTraverser<PostingList>(_postingList, pidx));
+    }
+    for (auto it(_resume_scan_itr); it != _upperDictItr;) {
         if (use_dictionary_entry(it)) {
-            _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
-                                                                 it.getData().load_acquire()));
+            auto pidx = it.getData().load_acquire();
+            if (pidx.valid()) {
+                _merger.addToArray(PostingListTraverser<PostingList>(_postingList, pidx));
+            }
             ++it;
         }
     }
@@ -311,10 +336,15 @@ template <typename DataT>
 void
 PostingListFoldedSearchContextT<DataT>::fillBitVector()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+    for (auto pidx : _posting_indexes) {
+        _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, pidx));
+    }
+    for (auto it(_resume_scan_itr); it != _upperDictItr;) {
         if (use_dictionary_entry(it)) {
-            _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
-                                                                     it.getData().load_acquire()));
+            auto pidx = it.getData().load_acquire();
+            if (pidx.valid()) {
+                _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, pidx));
+            }
             ++it;
         }
     }

@@ -153,9 +153,14 @@ protected:
 template <class DataT>
 class PostingListFoldedSearchContextT : public PostingListSearchContextT<DataT>
 {
+public:
+    static constexpr uint32_t MAX_POSTING_INDEXES_SIZE = 10000;
+
 protected:
     using Parent = PostingListSearchContextT<DataT>;
     using Dictionary = typename Parent::Dictionary;
+    using DictionaryConstIterator = Dictionary::ConstIterator;
+    using EntryRef = vespalib::datastore::EntryRef;
     using PostingList = typename Parent::PostingList;
     using Parent::_counted_hits;
     using Parent::_docIdLimit;
@@ -167,9 +172,13 @@ protected:
     using Parent::singleHits;
     using Parent::use_dictionary_entry;
 
+    mutable DictionaryConstIterator _resume_scan_itr;
+    mutable std::vector<EntryRef>   _posting_indexes;
+
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                     bool hasWeight, const PostingList &postingList,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
+    ~PostingListFoldedSearchContextT() override;
 
     bool fallback_to_approx_num_hits() const override;
     size_t countHits() const override;

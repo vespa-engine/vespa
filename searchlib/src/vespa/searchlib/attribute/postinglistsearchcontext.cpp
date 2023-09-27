@@ -27,7 +27,8 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_
       _FSTC(0.0),
       _PLSTC(0.0),
       _hasWeight(hasWeight),
-      _useBitVector(useBitVector)
+      _useBitVector(useBitVector),
+      _counted_hits()
 {
 }
 
