@@ -39,6 +39,8 @@ import com.yahoo.container.jdisc.DataplaneProxyService;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig.Builder;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -658,13 +660,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Setup token filter chain
         var tokenChain = new HttpFilterChain("cloud-token-data-plane-secure", HttpFilterChain.Type.SYSTEM);
-        tokenChain.addInnerComponent(new CloudTokenDataPlaneFilter(cluster, state));
+        var tokenFilter = new CloudTokenDataPlaneFilter(cluster, state);
+        tokenChain.addInnerComponent(tokenFilter);
         cluster.getHttp().getFilterChains().add(tokenChain);
 
         // Set as default filter for token port
         cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
                 .filter(c -> c.getListenPort() == tokenPort).findAny().orElseThrow()
                 .setDefaultRequestFilterChain(tokenChain.getComponentId());
+
+        // Set up handler that tells what fingerprints are known to the container
+        class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
+            CloudTokenDataPlaneHandler() {
+                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "jdisc-security-filters", null));
+                addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "cloud-token-data-plane-fingerprints"));
+            }
+            @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
+        }
+        cluster.addComponent(new CloudTokenDataPlaneHandler());
     }
 
     // Returns the client certificates of the clients defined for an application cluster
