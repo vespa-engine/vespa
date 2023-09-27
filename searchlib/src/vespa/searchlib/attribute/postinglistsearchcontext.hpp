@@ -58,50 +58,41 @@ PostingListSearchContextT<DataT>::lookupSingle()
     }
 }
 
-
 template <typename DataT>
 size_t
 PostingListSearchContextT<DataT>::countHits() const
 {
-    size_t sum(0);
-    for (auto it(_lowerDictItr); it != _upperDictItr;) {
-        if (use_dictionary_entry(it)) {
-            sum += _postingList.frozenSize(it.getData().load_acquire());
-            ++it;
-        }
+    if (_counted_hits.has_value()) {
+        return _counted_hits.value();
     }
+    size_t sum(0);
+    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
+        sum += _postingList.frozenSize(it.getData().load_acquire());
+    }
+    _counted_hits = sum;
     return sum;
 }
-
 
 template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillArray()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr;) {
-        if (use_dictionary_entry(it)) {
-            _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
-                                                                 it.getData().load_acquire()));
-            ++it;
-        }
+    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
+        _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
+                                                             it.getData().load_acquire()));
     }
     _merger.merge();
 }
-
 
 template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillBitVector()
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr;) {
-        if (use_dictionary_entry(it)) {
-            _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
-                                                                     it.getData().load_acquire()));
-            ++it;
-        }
+    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
+        _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
+                                                                 it.getData().load_acquire()));
     }
 }
-
 
 template <typename DataT>
 void
@@ -282,6 +273,51 @@ bool
 PostingListFoldedSearchContextT<DataT>::fallback_to_approx_num_hits() const
 {
     return false;
+}
+
+template <typename DataT>
+size_t
+PostingListFoldedSearchContextT<DataT>::countHits() const
+{
+    if (_counted_hits.has_value()) {
+        return _counted_hits.value();
+    }
+    size_t sum(0);
+    for (auto it(_lowerDictItr); it != this->_upperDictItr;) {
+        if (use_dictionary_entry(it)) {
+            sum += _postingList.frozenSize(it.getData().load_acquire());
+            ++it;
+        }
+    }
+    _counted_hits = sum;
+    return sum;
+}
+
+template <typename DataT>
+void
+PostingListFoldedSearchContextT<DataT>::fillArray()
+{
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+        if (use_dictionary_entry(it)) {
+            _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
+                                                                 it.getData().load_acquire()));
+            ++it;
+        }
+    }
+    _merger.merge();
+}
+
+template <typename DataT>
+void
+PostingListFoldedSearchContextT<DataT>::fillBitVector()
+{
+    for (auto it(_lowerDictItr); it != _upperDictItr;) {
+        if (use_dictionary_entry(it)) {
+            _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
+                                                                     it.getData().load_acquire()));
+            ++it;
+        }
+    }
 }
 
 }

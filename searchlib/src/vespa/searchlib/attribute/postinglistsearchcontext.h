@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <regex>
+#include <optional>
 
 namespace search::attribute {
 
@@ -30,28 +31,30 @@ protected:
     using Dictionary = EnumPostingTree;
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using FrozenDictionary = Dictionary::FrozenView;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
 
     static constexpr long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
     static constexpr long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
     static constexpr long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
-    const IEnumStoreDictionary & _dictionary;
-    const ISearchContext       &_baseSearchCtx;
-    const BitVector            *_bv; // bitvector if _useBitVector has been set
-    const FrozenDictionary  _frozenDictionary;
-    DictionaryConstIterator _lowerDictItr;
-    DictionaryConstIterator _upperDictItr;
-    uint64_t                _numValues; // attr.getStatus().getNumValues();
-    uint32_t                _uniqueValues;
-    uint32_t                _docIdLimit;
-    uint32_t                _dictSize;
-    vespalib::datastore::EntryRef     _pidx;
-    vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
-    float _FSTC;  // Filtering Search Time Constant
-    float _PLSTC; // Posting List Search Time Constant
-    bool                    _hasWeight;
-    bool                    _useBitVector;
+    const IEnumStoreDictionary&   _dictionary;
+    const ISearchContext&         _baseSearchCtx;
+    const BitVector*              _bv; // bitvector if _useBitVector has been set
+    const FrozenDictionary        _frozenDictionary;
+    DictionaryConstIterator       _lowerDictItr;
+    DictionaryConstIterator       _upperDictItr;
+    uint64_t                      _numValues; // attr.getStatus().getNumValues();
+    uint32_t                      _uniqueValues;
+    uint32_t                      _docIdLimit;
+    uint32_t                      _dictSize;
+    EntryRef                      _pidx;
+    EntryRef                      _frozenRoot; // Posting list in tree form
+    float                         _FSTC;  // Filtering Search Time Constant
+    float                         _PLSTC; // Posting List Search Time Constant
+    bool                          _hasWeight;
+    bool                          _useBitVector;
+    mutable std::optional<size_t> _counted_hits; // Snapshot of size of posting lists in range
 
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
                              uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx);
@@ -99,6 +102,9 @@ protected:
                  (calculateApproxNumHits() * MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > _docIdLimit) ||
                  (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION*10)));
     }
+    virtual size_t countHits() const = 0;
+    virtual void fillArray() = 0;
+    virtual void fillBitVector() = 0;
 };
 
 
@@ -126,9 +132,9 @@ protected:
     ~PostingListSearchContextT() override;
 
     void lookupSingle();
-    size_t countHits() const;
-    void fillArray();
-    void fillBitVector();
+    size_t countHits() const override;
+    void fillArray() override;
+    void fillBitVector() override;
 
     void fetchPostings(const queryeval::ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
@@ -151,18 +157,24 @@ protected:
     using Parent = PostingListSearchContextT<DataT>;
     using Dictionary = typename Parent::Dictionary;
     using PostingList = typename Parent::PostingList;
-    using Parent::_lowerDictItr;
-    using Parent::_uniqueValues;
-    using Parent::_postingList;
+    using Parent::_counted_hits;
     using Parent::_docIdLimit;
-    using Parent::countHits;
+    using Parent::_lowerDictItr;
+    using Parent::_merger;
+    using Parent::_postingList;
+    using Parent::_uniqueValues;
+    using Parent::_upperDictItr;
     using Parent::singleHits;
+    using Parent::use_dictionary_entry;
 
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                     bool hasWeight, const PostingList &postingList,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
 
     bool fallback_to_approx_num_hits() const override;
+    size_t countHits() const override;
+    void fillArray() override;
+    void fillBitVector() override;
 };
 
 
