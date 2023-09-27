@@ -150,11 +150,9 @@ struct MatchAlgorithm {
                              std::string_view source,
                              SuccessorT& successor_out)
     {
-        successor_out.clear(); // TODO allow for preserving existing prefix
-
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
-        uint32_t n_prefix_chars    = 0;
+        uint32_t n_prefix_chars    = static_cast<uint32_t>(successor_out.size()); // Don't touch any existing prefix
         uint32_t char_after_prefix = 0;
         StateType last_state_with_higher_out = StateType{};
 
