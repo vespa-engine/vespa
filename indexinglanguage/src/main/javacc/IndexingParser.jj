@@ -99,7 +99,6 @@ public class IndexingParser {
             return new LongFieldValue(new BigInteger(str).longValue());
         }
     }
-}}
 }
 
 PARSER_END(IndexingParser)

@@ -38,6 +38,6 @@ public abstract class AssertIndexingScript {
             String str = actualExp.toString();
             assertTrue(parsedExpected.remove(str), "Unexpected: " + str);
         }
-        assertTrue(parsedExpected.isEmpty(), "Missing: " + parsedExpected.toString());
+        assertTrue(parsedExpected.isEmpty(), "Missing: " + parsedExpected);
     }
 }
