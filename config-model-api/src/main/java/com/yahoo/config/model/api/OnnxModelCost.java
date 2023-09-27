@@ -7,6 +7,8 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 
+import java.net.URI;
+
 /**
  * @author bjorncs
  */
@@ -17,14 +19,16 @@ public interface OnnxModelCost {
     interface Calculator {
         long aggregatedModelCostInBytes();
         void registerModel(ApplicationFile path);
-        void registerModel(ModelReference ref);
+        @Deprecated(forRemoval = true) void registerModel(ModelReference ref); // TODO(bjorncs): remove once no longer in use by old config models
+        void registerModel(URI uri);
     }
 
     static OnnxModelCost disabled() {
         return (__, ___) -> new Calculator() {
             @Override public long aggregatedModelCostInBytes() { return 0; }
             @Override public void registerModel(ApplicationFile path) {}
-            @Override public void registerModel(ModelReference ref) {}
+            @SuppressWarnings("removal") @Override public void registerModel(ModelReference ref) {}
+            @Override public void registerModel(URI uri) {}
         };
     }
 }
