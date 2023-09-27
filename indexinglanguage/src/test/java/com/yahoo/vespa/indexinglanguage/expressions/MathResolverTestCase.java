@@ -93,7 +93,7 @@ public class MathResolverTestCase {
     // --------------------------------------------------------------------------------
 
     private static Expression newInteger(int val) {
-        return new SetValueExpression(new IntegerFieldValue(val));
+        return new ConstantExpression(new IntegerFieldValue(val));
     }
 
     private static int evaluate(Expression exp) {

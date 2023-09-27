@@ -30,7 +30,7 @@ public class ToDoubleTestCase {
         Expression exp = new ToDoubleExpression();
         assertVerify(DataType.INT, exp, DataType.DOUBLE);
         assertVerify(DataType.STRING, exp, DataType.DOUBLE);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     @Test

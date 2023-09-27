@@ -58,8 +58,8 @@ public class SwitchTestCase {
         Expression foo = SimpleExpression.newConversion(DataType.STRING, DataType.INT);
         Expression exp = new SwitchExpression(Collections.singletonMap("foo", foo));
         assertVerify(DataType.STRING, exp, DataType.STRING); // does not touch output
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     @Test
@@ -67,10 +67,10 @@ public class SwitchTestCase {
         Map<String, Expression> cases = new HashMap<>();
         cases.put("foo", SimpleExpression.newRequired(DataType.INT));
         assertVerifyThrows(DataType.STRING, new SwitchExpression(cases),
-                           "Expected int input, got string.");
+                           "Expected int input, got string");
         assertVerifyThrows(DataType.STRING, new SwitchExpression(Collections.<String, Expression>emptyMap(),
                                                                  SimpleExpression.newRequired(DataType.INT)),
-                           "Expected int input, got string.");
+                           "Expected int input, got string");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class SwitchTestCase {
             new SwitchExpression(Collections.<String, Expression>emptyMap()).execute(new IntegerFieldValue(69));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Expected string input, got int.", e.getMessage());
+            assertEquals("Expected string input, got int", e.getMessage());
         }
     }
 
@@ -104,9 +104,9 @@ public class SwitchTestCase {
     @Test
     public void requireThatCorrectExpressionIsExecuted() {
         Map<String, Expression> cases = new HashMap<>();
-        cases.put("foo", new StatementExpression(new SetValueExpression(new StringFieldValue("bar")),
+        cases.put("foo", new StatementExpression(new ConstantExpression(new StringFieldValue("bar")),
                                                  new SetVarExpression("out")));
-        cases.put("baz", new StatementExpression(new SetValueExpression(new StringFieldValue("cox")),
+        cases.put("baz", new StatementExpression(new ConstantExpression(new StringFieldValue("cox")),
                                                  new SetVarExpression("out")));
         Expression exp = new SwitchExpression(cases);
         assertEvaluate(new StringFieldValue("foo"), exp, new StringFieldValue("bar"));
@@ -117,9 +117,9 @@ public class SwitchTestCase {
     @Test
     public void requireThatDefaultExpressionIsExecuted() {
         Map<String, Expression> cases = new HashMap<>();
-        cases.put("foo", new StatementExpression(new SetValueExpression(new StringFieldValue("bar")),
+        cases.put("foo", new StatementExpression(new ConstantExpression(new StringFieldValue("bar")),
                                                  new SetVarExpression("out")));
-        Expression defaultExp = new StatementExpression(new SetValueExpression(new StringFieldValue("cox")),
+        Expression defaultExp = new StatementExpression(new ConstantExpression(new StringFieldValue("cox")),
                                                         new SetVarExpression("out"));
         Expression exp = new SwitchExpression(cases, defaultExp);
         assertEvaluate(new StringFieldValue("foo"), exp, new StringFieldValue("bar"));

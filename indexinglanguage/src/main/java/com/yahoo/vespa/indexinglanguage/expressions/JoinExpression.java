@@ -31,7 +31,7 @@ public final class JoinExpression extends Expression {
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
         if (!(input instanceof Array)) {
-            throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName() + ".");
+            throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName());
         }
         StringBuilder output = new StringBuilder();
         for (Iterator<FieldValue> it = ((Array)input).fieldValueIterator(); it.hasNext(); ) {
@@ -47,7 +47,7 @@ public final class JoinExpression extends Expression {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
         if (!(input instanceof ArrayDataType)) {
-            throw new VerificationException(this, "Expected Array input, got " + input.getName() + ".");
+            throw new VerificationException(this, "Expected Array input, got " + input.getName());
         }
         context.setValueType(createdOutputType());
     }

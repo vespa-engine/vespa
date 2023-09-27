@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
+import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuildFails;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -24,8 +27,8 @@ public class IndexingInputsTestCase {
     @Test
     void requireThatExtraFieldInputImplicitThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_extra_field_input_implicit.sd",
-                "For schema 'indexing_extra_field_input_implicit', field 'foo': Indexing script refers to " +
-                        "field 'foo' which is neither a field in document type 'indexing_extra_field_input_implicit' nor a mutable attribute");
+                "For schema 'indexing_extra_field_input_implicit', field 'foo': " +
+                "For expression '{ tokenize normalize stem:\"BEST\" | index foo; }': Expected string input, but no input is specified");
     }
 
     @Test
@@ -40,6 +43,61 @@ public class IndexingInputsTestCase {
         assertBuildFails("src/test/examples/indexing_extra_field_input_self.sd",
                 "For schema 'indexing_extra_field_input_self', field 'foo': Indexing script refers to field " +
                         "'foo' which is neither a field in document type 'indexing_extra_field_input_self' nor a mutable attribute");
+    }
+
+    @Test
+    void testPlainInputInDerivedField() throws ParseException {
+        var schema = """
+        schema test {
+            document test {
+                field field1 type int {
+                }
+            }
+            field derived1 type int {
+                indexing: input field1 | attribute
+            }
+        }
+        """;
+        ApplicationBuilder.createFromString(schema);
+    }
+
+    @Test
+    void testWrappedInputInDerivedField() throws ParseException {
+        var schema = """
+        schema test {
+            document test {
+                field field1 type int {
+                }
+            }
+            field derived1 type int {
+                indexing: if (input field1 == 0) { 0 } else { 1 } | attribute
+            }
+        }
+        """;
+        ApplicationBuilder.createFromString(schema);
+    }
+
+    @Test
+    void testNoInputInDerivedField() throws ParseException {
+        try {
+            var schema = """
+                    schema test {
+                        document test {
+                            field field1 type int {
+                            }
+                    }
+                        field derived1 type int {
+                            indexing: attribute
+                        }
+                    }
+                    """;
+            ApplicationBuilder.createFromString(schema);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test', field 'derived1': For expression '{ attribute derived1; }': " +
+                         "Expected any input, but no input is specified",
+                         Exceptions.toMessageString(e));
+        }
     }
 
 }

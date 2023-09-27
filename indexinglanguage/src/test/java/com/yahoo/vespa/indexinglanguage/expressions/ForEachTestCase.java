@@ -53,9 +53,9 @@ public class ForEachTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected Array, Struct or WeightedSet input, got int.");
-        assertVerifyThrows(DataType.getArray(DataType.STRING), exp, "Expected int input, got string.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected Array, Struct or WeightedSet input, got int");
+        assertVerifyThrows(DataType.getArray(DataType.STRING), exp, "Expected int input, got string");
     }
 
     @Test
@@ -64,9 +64,9 @@ public class ForEachTestCase {
         type.addField(new Field("foo", DataType.INT));
         assertVerify(type, new ForEachExpression(new SimpleExpression()), type);
         assertVerifyThrows(type, new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)),
-                           "Expected string input, got int.");
+                           "Expected string input, got int");
         assertVerifyThrows(type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
-                           "Expected int output, got string.");
+                           "Expected int output, got string");
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ForEachTestCase {
     @Test
     public void requireThatCreatedOutputTypeDependsOnInnerExpression() {
         assertNull(new ForEachExpression(new SimpleExpression()).createdOutputType());
-        assertNotNull(new ForEachExpression(new SetValueExpression(new IntegerFieldValue(69))).createdOutputType());
+        assertNotNull(new ForEachExpression(new ConstantExpression(new IntegerFieldValue(69))).createdOutputType());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class ForEachTestCase {
             new ForEachExpression(new SimpleExpression()).execute(new StringFieldValue("foo"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Expected Array, Struct or WeightedSet input, got string.", e.getMessage());
+            assertEquals("Expected Array, Struct or WeightedSet input, got string", e.getMessage());
         }
     }
 
@@ -215,7 +215,7 @@ public class ForEachTestCase {
             new ForEachExpression(new ToArrayExpression()).verify(ctx);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Expected int output, got Array<int>.", e.getMessage());
+            assertEquals("Expected int output, got Array<int>", e.getMessage());
         }
     }
 

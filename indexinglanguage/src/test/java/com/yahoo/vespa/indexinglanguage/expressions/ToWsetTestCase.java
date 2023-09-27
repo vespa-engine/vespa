@@ -60,7 +60,7 @@ public class ToWsetTestCase {
                                       DataType.getWeightedSet(DataType.INT, createIfNonExistent, removeIfZero));
         ExpressionAssert.assertVerify(DataType.STRING, exp,
                                       DataType.getWeightedSet(DataType.STRING, createIfNonExistent, removeIfZero));
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     private static void assertConvert(boolean createIfNonExistent, boolean removeIfZero) {

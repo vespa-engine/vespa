@@ -27,7 +27,7 @@ public final class GetFieldExpression extends Expression {
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
         if (!(input instanceof StructuredFieldValue struct)) {
-            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName() + ".");
+            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
         }
         Field field = struct.getField(fieldName);
         if (field == null) {
@@ -41,7 +41,7 @@ public final class GetFieldExpression extends Expression {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
         if (!(input instanceof StructuredDataType)) {
-            throw new VerificationException(this, "Expected structured input, got " + input.getName() + ".");
+            throw new VerificationException(this, "Expected structured input, got " + input.getName());
         }
         Field field = ((StructuredDataType)input).getField(fieldName);
         if (field == null) {

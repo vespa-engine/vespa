@@ -30,7 +30,7 @@ public class ToFloatTestCase {
         Expression exp = new ToFloatExpression();
         assertVerify(DataType.INT, exp, DataType.FLOAT);
         assertVerify(DataType.STRING, exp, DataType.FLOAT);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     @Test

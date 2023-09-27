@@ -19,23 +19,23 @@ public class SetValueTestCase {
     @Test
     public void requireThatAccessorsWork() {
         FieldValue foo = new StringFieldValue("foo");
-        SetValueExpression exp = new SetValueExpression(foo);
+        ConstantExpression exp = new ConstantExpression(foo);
         assertSame(foo, exp.getValue());
     }
 
     @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         FieldValue foo = new StringFieldValue("foo");
-        Expression exp = new SetValueExpression(foo);
+        Expression exp = new ConstantExpression(foo);
         assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new SetValueExpression(new StringFieldValue("bar"))));
-        assertEquals(exp, new SetValueExpression(foo));
-        assertEquals(exp.hashCode(), new SetValueExpression(foo).hashCode());
+        assertFalse(exp.equals(new ConstantExpression(new StringFieldValue("bar"))));
+        assertEquals(exp, new ConstantExpression(foo));
+        assertEquals(exp.hashCode(), new ConstantExpression(foo).hashCode());
     }
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        Expression exp = new SetValueExpression(new StringFieldValue("foo"));
+        Expression exp = new ConstantExpression(new StringFieldValue("foo"));
         assertVerify(null, exp, DataType.STRING);
         assertVerify(DataType.INT, exp, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
@@ -44,7 +44,7 @@ public class SetValueTestCase {
     @Test
     public void requireThatNullValueThrowsException() {
         try {
-            new SetValueExpression(null);
+            new ConstantExpression(null);
             fail();
         } catch (NullPointerException e) {
 
@@ -54,12 +54,12 @@ public class SetValueTestCase {
     @Test
     public void requireThatValueIsSet() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        new SetValueExpression(new StringFieldValue("69")).execute(ctx);
+        new ConstantExpression(new StringFieldValue("69")).execute(ctx);
         assertEquals(new StringFieldValue("69"), ctx.getValue());
     }
 
     @Test
     public void requireThatLongFieldValueGetsATrailingL() {
-        assertEquals("69L", new SetValueExpression(new LongFieldValue(69)).toString());
+        assertEquals("69L", new ConstantExpression(new LongFieldValue(69)).toString());
     }
 }

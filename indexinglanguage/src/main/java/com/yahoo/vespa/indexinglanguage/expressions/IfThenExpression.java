@@ -27,7 +27,7 @@ public final class IfThenExpression extends CompositeExpression {
 
         private final String img;
 
-        private Comparator(String img) {
+        Comparator(String img) {
             this.img = img;
         }
 
@@ -38,77 +38,67 @@ public final class IfThenExpression extends CompositeExpression {
 
     }
 
-    private final Expression lhs;
-    private final Comparator cmp;
-    private final Expression rhs;
+    private final Expression left;
+    private final Comparator comparator;
+    private final Expression right;
     private final Expression ifTrue;
     private final Expression ifFalse;
 
-    public IfThenExpression(Expression lhs, Comparator cmp, Expression rhs, Expression ifTrue) {
-        this(lhs, cmp, rhs, ifTrue, null);
+    public IfThenExpression(Expression lhs, Comparator cmp, Expression right, Expression ifTrue) {
+        this(lhs, cmp, right, ifTrue, null);
     }
 
-    public IfThenExpression(Expression lhs, Comparator cmp, Expression rhs, Expression ifTrue, Expression ifFalse) {
-        super(resolveInputType(lhs, rhs, ifTrue, ifFalse));
-        this.lhs = lhs;
-        this.cmp = cmp;
-        this.rhs = rhs;
+    public IfThenExpression(Expression lhs, Comparator cmp, Expression right, Expression ifTrue, Expression ifFalse) {
+        super(resolveInputType(lhs, right, ifTrue, ifFalse));
+        this.left = lhs;
+        this.comparator = cmp;
+        this.right = right;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
     }
 
     @Override
     public IfThenExpression convertChildren(ExpressionConverter converter) {
-        return new IfThenExpression(converter.branch().convert(lhs),
-                                    cmp,
-                                    converter.branch().convert(rhs),
+        return new IfThenExpression(converter.branch().convert(left),
+                                    comparator,
+                                    converter.branch().convert(right),
                                     converter.branch().convert(ifTrue),
                                     converter.branch().convert(ifFalse));
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        lhs.setStatementOutput(documentType, field);
-        rhs.setStatementOutput(documentType, field);
+        left.setStatementOutput(documentType, field);
+        right.setStatementOutput(documentType, field);
         ifTrue.setStatementOutput(documentType, field);
         ifFalse.setStatementOutput(documentType, field);
     }
 
-    public Expression getLeftHandSide() {
-        return lhs;
-    }
+    public Expression getLeftHandSide() { return left; }
 
-    public Comparator getComparator() {
-        return cmp;
-    }
+    public Comparator getComparator() { return comparator; }
 
-    public Expression getRightHandSide() {
-        return rhs;
-    }
+    public Expression getRightHandSide() { return right; }
 
-    public Expression getIfTrueExpression() {
-        return ifTrue;
-    }
+    public Expression getIfTrueExpression() { return ifTrue; }
 
-    public Expression getIfFalseExpression() {
-        return ifFalse;
-    }
+    public Expression getIfFalseExpression() { return ifFalse; }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
-        FieldValue lhsVal = context.setValue(input).execute(lhs).getValue();
-        if (lhsVal == null) {
+        FieldValue leftValue = context.setValue(input).execute(left).getValue();
+        if (leftValue == null) {
             context.setValue(null);
             return;
         }
-        FieldValue rhsVal = context.setValue(input).execute(rhs).getValue();
-        if (rhsVal == null) {
+        FieldValue rightValue = context.setValue(input).execute(right).getValue();
+        if (rightValue == null) {
             context.setValue(null);
             return;
         }
         context.setValue(input);
-        if (isTrue(lhsVal, cmp, rhsVal)) {
+        if (isTrue(leftValue, comparator, rightValue)) {
             ifTrue.execute(context);
         } else if (ifFalse != null) {
             ifFalse.execute(context);
@@ -118,17 +108,19 @@ public final class IfThenExpression extends CompositeExpression {
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
-        context.setValueType(input).execute(lhs);
-        context.setValueType(input).execute(rhs);
-        context.setValueType(input).execute(ifTrue);
-        context.setValueType(input).execute(ifFalse);
-        context.setValueType(input);
+        context.setValueType(input).execute(left);
+        context.setValueType(input).execute(right);
+        var trueValue = context.setValueType(input).execute(ifTrue);
+        var falseValue = context.setValueType(input).execute(ifFalse);
+        var valueType = trueValue.getValueType().isAssignableFrom(falseValue.getValueType()) ?
+                        trueValue.getValueType() : falseValue.getValueType();
+        context.setValueType(valueType);
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-        select(lhs, predicate, operation);
-        select(rhs, predicate, operation);
+        select(left, predicate, operation);
+        select(right, predicate, operation);
         select(ifTrue, predicate, operation);
         select(ifFalse, predicate, operation);
     }
@@ -146,13 +138,19 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     public DataType createdOutputType() {
-        return null;
+        DataType ifTrueType = ifTrue.createdOutputType();
+        DataType ifFalseType = ifFalse == null ? null : ifFalse.createdOutputType();
+        if (ifTrueType == null || ifFalseType == null) return null;
+        if (ifTrueType.isAssignableFrom(ifFalseType))
+            return ifTrueType;
+        else
+            return ifFalseType;
     }
 
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
-        ret.append("if (").append(lhs).append(" ").append(cmp).append(" ").append(rhs).append(") ");
+        ret.append("if (").append(left).append(" ").append(comparator).append(" ").append(right).append(") ");
         ret.append(toScriptBlock(ifTrue));
         if (ifFalse != null) {
             ret.append(" else ").append(toScriptBlock(ifFalse));
@@ -165,13 +163,13 @@ public final class IfThenExpression extends CompositeExpression {
         if (!(obj instanceof IfThenExpression exp)) {
             return false;
         }
-        if (!lhs.equals(exp.lhs)) {
+        if (!left.equals(exp.left)) {
             return false;
         }
-        if (!cmp.equals(exp.cmp)) {
+        if (!comparator.equals(exp.comparator)) {
             return false;
         }
-        if (!rhs.equals(exp.rhs)) {
+        if (!right.equals(exp.right)) {
             return false;
         }
         if (!ifTrue.equals(exp.ifTrue)) {
@@ -185,7 +183,7 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     public int hashCode() {
-        int ret = getClass().hashCode() + lhs.hashCode() + cmp.hashCode() + rhs.hashCode() + ifTrue.hashCode();
+        int ret = getClass().hashCode() + left.hashCode() + comparator.hashCode() + right.hashCode() + ifTrue.hashCode();
         if (ifFalse != null) {
             ret += ifFalse.hashCode();
         }
@@ -201,7 +199,7 @@ public final class IfThenExpression extends CompositeExpression {
         }
         if (!prev.equals(next)) {
             throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
-                                                                    prev.getName() + " vs " + next.getName() + ".");
+                                                                    prev.getName() + " vs " + next.getName());
         }
         return prev;
     }

@@ -24,6 +24,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,7 +52,8 @@ public class IndexingValidation extends Processor {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
                 }
             } catch (VerificationException e) {
-                fail(schema, field, "For expression '" + e.getExpression() + "': " + e.getMessage());
+                e.printStackTrace();
+                fail(schema, field, "For expression '" + e.getExpression() + "': " + Exceptions.toMessageString(e));
             }
         }
     }

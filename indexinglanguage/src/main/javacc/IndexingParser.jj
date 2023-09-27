@@ -32,7 +32,6 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.Linguistics;
 
@@ -100,6 +99,7 @@ public class IndexingParser {
             return new LongFieldValue(new BigInteger(str).longValue());
         }
     }
+}}
 }
 
 PARSER_END(IndexingParser)
@@ -592,7 +592,7 @@ Expression setValueExp() :
 }
 {
     ( val = fieldValue() )
-    { return new SetValueExpression(val); }
+    { return new ConstantExpression(val); }
 }
 
 Expression setVarExp() :

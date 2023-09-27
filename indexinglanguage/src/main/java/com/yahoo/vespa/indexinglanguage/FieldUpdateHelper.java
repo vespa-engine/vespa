@@ -95,7 +95,7 @@ public abstract class FieldUpdateHelper {
                     return applyUpdate(nestedUpdate, value);
                 }
             } else if (value instanceof MapFieldValue) {
-                throw new UnsupportedOperationException("Can not map into a " + value.getClass().getName() + ".");
+                throw new UnsupportedOperationException("Can not map into a " + value.getClass().getName());
             } else if (value instanceof StructuredFieldValue) {
                 Field field = ((StructuredFieldValue)value).getField(String.valueOf(update.getValue()));
                 if (field == null) {

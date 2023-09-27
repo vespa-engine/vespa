@@ -23,11 +23,11 @@ public final class Base64DecodeExpression extends Expression {
             return;
         }
         if (input.length() > 12) {
-            throw new NumberFormatException("Base64 value '" + input + "' is out of range.");
+            throw new NumberFormatException("Base64 value '" + input + "' is out of range");
         }
         byte[] decoded = Base64.getDecoder().decode(input);
         if (decoded == null || decoded.length == 0) {
-            throw new NumberFormatException("Illegal base64 value '" + input + "'.");
+            throw new NumberFormatException("Illegal base64 value '" + input + "'");
         }
         long output = 0;
         for (int i = decoded.length; --i >= 0;) {

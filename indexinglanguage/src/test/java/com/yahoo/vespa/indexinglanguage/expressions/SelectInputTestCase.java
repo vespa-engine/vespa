@@ -61,16 +61,16 @@ public class SelectInputTestCase {
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
                            "Can not assign string to field 'my_int' which is int.");
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Field 'my_unknown' not found.");
+                           "Field 'my_unknown' not found");
     }
 
     @Test
     public void requireThatSelectedExpressionIsRun() {
-        assertSelect(Arrays.asList("foo", "bar"), Arrays.asList("foo"), "foo");
-        assertSelect(Arrays.asList("foo", "bar"), Arrays.asList("bar"), "bar");
-        assertSelect(Arrays.asList("foo", "bar"), Arrays.asList("foo", "bar"), "foo");
-        assertSelect(Arrays.asList("foo", "bar"), Arrays.asList("bar", "baz"), "bar");
-        assertSelect(Arrays.asList("foo", "bar"), Arrays.asList("baz", "cox"), null);
+        assertSelect(Arrays.asList("foo", "bar"), List.of("foo"), "foo");
+        assertSelect(Arrays.asList("foo", "bar"), List.of("bar"), "bar");
+        assertSelect(Arrays.asList("foo", "bar"), List.of("foo", "bar"), "foo");
+        assertSelect(Arrays.asList("foo", "bar"), List.of("bar", "baz"), "bar");
+        assertSelect(Arrays.asList("foo", "bar"), List.of("baz", "cox"), null);
     }
 
     private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {

@@ -41,7 +41,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         try {
             return input.getDataType().buildFieldPath(fieldName).getResultingDataType();
         } catch (IllegalArgumentException e) {
-            throw new VerificationException(exp, "Input field '" + fieldName + "' not found.");
+            throw new VerificationException(exp, "Input field '" + fieldName + "' not found");
         }
     }
 
@@ -67,12 +67,12 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         Field field = output.getDataType().getField(fieldName);
         if (field == null) {
-            throw new VerificationException(exp, "Field '" + fieldName + "' not found.");
+            throw new VerificationException(exp, "Field '" + fieldName + "' not found");
         }
         DataType fieldType = field.getDataType();
         if (!fieldType.isAssignableFrom(valueType)) {
             throw new VerificationException(exp, "Can not assign " + valueType.getName() + " to field '" +
-                                                 fieldName + "' which is " + fieldType.getName() + ".");
+                                                 fieldName + "' which is " + fieldType.getName());
         }
     }
 
@@ -81,7 +81,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         Field field = output.getField(fieldName);
         if (field == null) {
             throw new IllegalArgumentException("Field '" + fieldName + "' not found in document type '" +
-                                               output.getDataType().getName() + "'.");
+                                               output.getDataType().getName());
         }
         output.setFieldValue(field, fieldValue);
         return this;

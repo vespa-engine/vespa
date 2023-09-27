@@ -31,9 +31,8 @@ public class IndexingInputs extends Processor {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
-            String fieldName = field.getName();
-            script = (ScriptExpression)new DefaultToCurrentField(fieldName).convert(script);
-            script = (ScriptExpression)new EnsureInputExpression(fieldName).convert(script);
+            script = (ScriptExpression)new DefaultToCurrentField(field).convert(script);
+            script = (ScriptExpression)new EnsureInputExpression(field).convert(script);
             if (validate)
                 new VerifyInputExpression(schema, field).visit(script);
 
@@ -43,10 +42,10 @@ public class IndexingInputs extends Processor {
 
     private static class DefaultToCurrentField extends ExpressionConverter {
 
-        final String fieldName;
+        final SDField field;
 
-        DefaultToCurrentField(String fieldName) {
-            this.fieldName = fieldName;
+        DefaultToCurrentField(SDField field) {
+            this.field = field;
         }
 
         @Override
@@ -56,27 +55,28 @@ public class IndexingInputs extends Processor {
 
         @Override
         protected Expression doConvert(Expression exp) {
-            return new InputExpression(fieldName);
+            return new InputExpression(field.getName());
         }
     }
 
     private static class EnsureInputExpression extends ExpressionConverter {
 
-        final String fieldName;
+        final SDField field;
 
-        EnsureInputExpression(String fieldName) {
-            this.fieldName = fieldName;
+        EnsureInputExpression(SDField field) {
+            this.field = field;
         }
 
         @Override
         protected boolean shouldConvert(Expression exp) {
-            return exp instanceof StatementExpression;
+            return exp instanceof StatementExpression
+                   && ( field.isDocumentField() || ( field.getAttribute() != null && field.getAttribute().isMutable()));
         }
 
         @Override
         protected Expression doConvert(Expression exp) {
             if (exp.requiredInputType() != null) {
-                return new StatementExpression(new InputExpression(fieldName), exp);
+                return new StatementExpression(new InputExpression(field.getName()), exp);
             } else {
                 return exp;
             }

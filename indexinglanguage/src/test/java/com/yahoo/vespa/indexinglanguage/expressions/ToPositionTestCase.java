@@ -31,8 +31,8 @@ public class ToPositionTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ToPositionExpression();
         assertVerify(DataType.STRING, exp, PositionDataType.INSTANCE);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     @Test

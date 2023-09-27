@@ -111,14 +111,14 @@ public class ValueTransformProviderTestCase {
 
     @Test
     public void requireThatSelectInputBranchesAreManagedSeparately() {
-        List<Pair<String, Expression>> before = new LinkedList<Pair<String, Expression>>();
-        before.add(new Pair<String, Expression>("a", new IndexExpression("b")));
-        before.add(new Pair<String, Expression>("c", new IndexExpression("d")));
+        List<Pair<String, Expression>> before = new LinkedList<>();
+        before.add(new Pair<>("a", new IndexExpression("b")));
+        before.add(new Pair<>("c", new IndexExpression("d")));
 
-        List<Pair<String, Expression>> after = new LinkedList<Pair<String, Expression>>();
-        after.add(new Pair<String, Expression>("a", new StatementExpression(new LowerCaseExpression(),
+        List<Pair<String, Expression>> after = new LinkedList<>();
+        after.add(new Pair<>("a", new StatementExpression(new LowerCaseExpression(),
                                                                             new IndexExpression("b"))));
-        after.add(new Pair<String, Expression>("c", new StatementExpression(new LowerCaseExpression(),
+        after.add(new Pair<>("c", new StatementExpression(new LowerCaseExpression(),
                                                                             new IndexExpression("d"))));
 
         assertProvided(new StatementExpression(new SelectInputExpression(before),
@@ -130,11 +130,11 @@ public class ValueTransformProviderTestCase {
 
     @Test
     public void requireThatSwitchBranchesAreManagedSeparately() {
-        Map<String, Expression> before = new LinkedHashMap<String, Expression>();
+        Map<String, Expression> before = new LinkedHashMap<>();
         before.put("a", new IndexExpression("b"));
         before.put("c", new IndexExpression("d"));
 
-        Map<String, Expression> after = new LinkedHashMap<String, Expression>();
+        Map<String, Expression> after = new LinkedHashMap<>();
         after.put("a", new StatementExpression(new LowerCaseExpression(),
                                                new IndexExpression("b")));
         after.put("c", new StatementExpression(new LowerCaseExpression(),
@@ -170,4 +170,5 @@ public class ValueTransformProviderTestCase {
             return new LowerCaseExpression();
         }
     }
+
 }

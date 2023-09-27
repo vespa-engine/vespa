@@ -30,7 +30,7 @@ public final class SetVarExpression extends Expression {
         DataType prev = context.getVariable(varName);
         if (prev != null && !prev.equals(next)) {
             throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +
-                                                  "', " + prev.getName() + " vs " + next.getName() + ".");
+                                                  "', " + prev.getName() + " vs " + next.getName());
         }
         context.setVariable(varName, next);
     }

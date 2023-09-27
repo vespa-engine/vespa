@@ -34,7 +34,7 @@ public class ToBoolTestCase {
         Expression exp = new ToBoolExpression();
         assertVerify(DataType.INT, exp, DataType.BOOL);
         assertVerify(DataType.STRING, exp, DataType.BOOL);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     @Test

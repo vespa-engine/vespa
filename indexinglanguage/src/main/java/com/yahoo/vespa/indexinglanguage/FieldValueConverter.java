@@ -49,7 +49,7 @@ public abstract class FieldValueConverter {
                 nextType = nextVal.getDataType();
             } else if (!nextType.isValueCompatible(nextVal)) {
                 throw new IllegalArgumentException("Expected " + nextType.getName() + ", got " +
-                                                   nextVal.getDataType().getName() + ".");
+                                                   nextVal.getDataType().getName());
             }
             next.add(nextVal);
         }
@@ -63,7 +63,7 @@ public abstract class FieldValueConverter {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> val) {
-        Map<FieldValue, FieldValue> next = new LinkedHashMap<FieldValue, FieldValue>();
+        Map<FieldValue, FieldValue> next = new LinkedHashMap<>();
         DataType nextKeyType = null, nextValType = null;
         for (Map.Entry<FieldValue, FieldValue> entry : val.entrySet()) {
             FieldValue prevKey = entry.getKey();
@@ -75,7 +75,7 @@ public abstract class FieldValueConverter {
                 nextKeyType = nextKey.getDataType();
             } else if (!nextKeyType.isValueCompatible(nextKey)) {
                 throw new IllegalArgumentException("Expected " + nextKeyType.getName() + ", got " +
-                                                   nextKey.getDataType().getName() + ".");
+                                                   nextKey.getDataType().getName());
             }
             FieldValue prevVal = entry.getValue();
             FieldValue nextVal = convert(prevVal);
@@ -86,7 +86,7 @@ public abstract class FieldValueConverter {
                 nextValType = nextVal.getDataType();
             } else if (!nextValType.isValueCompatible(nextVal)) {
                 throw new IllegalArgumentException("Expected " + nextValType.getName() + ", got " +
-                                                   nextVal.getDataType().getName() + ".");
+                                                   nextVal.getDataType().getName());
             }
             next.put(nextKey, nextVal);
         }
@@ -100,7 +100,7 @@ public abstract class FieldValueConverter {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertWset(WeightedSet val) {
-        Map<FieldValue, Integer> next = new LinkedHashMap<FieldValue, Integer>();
+        Map<FieldValue, Integer> next = new LinkedHashMap<>();
         DataType nextType = null;
         for (Iterator<FieldValue> it = val.fieldValueIterator(); it.hasNext();) {
             FieldValue prevKey = it.next();
@@ -114,7 +114,7 @@ public abstract class FieldValueConverter {
                 nextType = nextKey.getDataType();
             } else if (!nextType.isValueCompatible(nextKey)) {
                 throw new IllegalArgumentException("Expected " + nextType.getName() + ", got " +
-                                                   nextKey.getDataType().getName() + ".");
+                                                   nextKey.getDataType().getName());
             }
             next.put(nextKey, prevVal);
         }
@@ -143,7 +143,7 @@ public abstract class FieldValueConverter {
     }
 
     /**
-     * Returns whether or not the given {@link FieldValue} should be converted. If this method returns <em>false</em>,
+     * Returns whether the given {@link FieldValue} should be converted. If this method returns <em>false</em>,
      * the converter will proceed to traverse the value itself to see if its internal can be converted.
      *
      * @param value the value to check

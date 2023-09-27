@@ -48,7 +48,7 @@ public class Base64DecodeTestCase {
             new Base64DecodeExpression().execute(new StringFieldValue("abcdefghijlkm"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Base64 value 'abcdefghijlkm' is out of range.", e.getMessage());
+            assertEquals("Base64 value 'abcdefghijlkm' is out of range", e.getMessage());
         }
     }
 
@@ -66,7 +66,7 @@ public class Base64DecodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new Base64DecodeExpression();
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.LONG, exp, "Expected string input, got long.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.LONG, exp, "Expected string input, got long");
     }
 }

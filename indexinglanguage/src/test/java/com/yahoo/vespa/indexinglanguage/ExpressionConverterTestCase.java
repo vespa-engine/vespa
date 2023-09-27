@@ -10,6 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
@@ -32,7 +33,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.RandomExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SelectInputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SetLanguageExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.SetValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SplitExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
@@ -103,7 +103,7 @@ public class ExpressionConverterTestCase {
         assertConvertable(new SelectInputExpression(new Pair<String, Expression>("foo", new IndexExpression("bar")),
                                                     new Pair<String, Expression>("bar", new IndexExpression("foo"))));
         assertConvertable(new SetLanguageExpression());
-        assertConvertable(new SetValueExpression(new IntegerFieldValue(69)));
+        assertConvertable(new ConstantExpression(new IntegerFieldValue(69)));
         assertConvertable(new SetVarExpression("foo"));
         assertConvertable(new SplitExpression("foo"));
         assertConvertable(new StatementExpression(new InputExpression("foo")));
