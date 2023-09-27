@@ -125,4 +125,8 @@ public interface BillingController {
     }
 
     default void updateCache(List<TenantName> tenants) {}
+
+    default String exportBill(Bill.Id billId, String exportMethod) {
+        return "NOT_IMPLEMENTED";
+    }
 }

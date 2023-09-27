@@ -85,6 +85,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
+                .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/export")
+                        .put(Slime.class, self::putAccountantInvoiceExport))
                 .addRoute(RestApi.route("/billing/v2/accountant/plans")
                         .get(self::plans))
                 .addExceptionMapper(RuntimeException.class, (c, e) -> ErrorResponses.logThrowing(c.request(), log, e))
@@ -262,6 +264,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse putAccountantInvoiceExport(RestApi.RequestContext ctx, Slime slime) {
+        var billId = ctx.attributes().get("invoice")
+                .map(id -> Bill.Id.of((String) id))
+                .orElseThrow(() -> new RestApiException.BadRequest("Missing bill ID"));
+        var exportMethod = slime.get().field("method").asString();
+        var result = billing.exportBill(billId, exportMethod);
+        return new MessageResponse("Bill has been exported: " + result);
+    }
 
     // --------- INVOICE RENDERING ----------
 
