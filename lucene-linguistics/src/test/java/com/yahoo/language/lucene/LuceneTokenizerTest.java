@@ -197,4 +197,33 @@ public class LuceneTokenizerTest {
                 .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.ALL, false);
         assertEquals(List.of("and", "Cat"), tokenStrings(tokens));
     }
+
+    @Test
+    public void compositeConfigKey() {
+        String reversingAnalyzerKey = Language.ENGLISH.languageCode()
+                + "/"
+                + StemMode.ALL;
+        LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
+                .analysis(
+                        Map.of(reversingAnalyzerKey,
+                                new LuceneAnalysisConfig.Analysis.Builder().tokenFilters(List.of(
+                                        new LuceneAnalysisConfig
+                                                .Analysis
+                                                .TokenFilters
+                                                .Builder()
+                                                .name("reverseString"))))
+                ).build();
+        LuceneLinguistics linguistics = new LuceneLinguistics(enConfig, new ComponentRegistry<>());
+        // Matching StemMode
+        Iterable<Token> tokens = linguistics
+                .getTokenizer()
+                .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.ALL, false);
+        assertEquals(List.of("sgoD", "dna", "staC"), tokenStrings(tokens));
+        // StemMode is different
+        Iterable<Token> stemModeTokens = linguistics
+                .getTokenizer()
+                .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.BEST, false);
+        assertEquals(List.of("dog", "cat"), tokenStrings(stemModeTokens));
+
+    }
 }
