@@ -72,12 +72,7 @@ public class BillingReportMaintainer extends ControllerMaintainer {
 
     private List<TenantName> billableTenants(List<TenantName> tenants) {
         return billablePlans().stream()
-                .collect(Collectors.toMap(
-                        p -> p,
-                        p -> billing.tenantsWithPlan(tenants, p.id())))
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                .flatMap(p -> billing.tenantsWithPlan(tenants, p.id()).stream())
                 .toList();
     }
 }
