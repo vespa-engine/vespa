@@ -29,8 +29,6 @@ public class ChainedComponent<T extends ChainedComponentModel> extends Component
 
     private ComponentId namespace() {
         var owner = getParent().getParent();
-        return (owner instanceof Chain) ?
-                ((Chain) owner).getGlobalComponentId() :
-                null;
+        return (owner instanceof Chain<?> chain) ? chain.getGlobalComponentId() : null;
     }
 }

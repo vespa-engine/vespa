@@ -240,10 +240,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
+        if ( ! deployState.isHosted()) return;
         // Always add platform bundle. Cannot be controlled by a feature flag as platform bundle cannot change.
-        if(deployState.isHosted()) {
-            cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("jdisc-cloud-aws"));
-        }
+        cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("jdisc-cloud-aws"));
         if (deployState.zone().system().isPublic()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
             Handler handler = new Handler(

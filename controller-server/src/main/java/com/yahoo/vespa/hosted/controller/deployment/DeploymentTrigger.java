@@ -276,7 +276,7 @@ public class DeploymentTrigger {
                 List<RetriggerEntry> retriggerEntries = controller.curator().readRetriggerEntries();
                 List<RetriggerEntry> newList = new ArrayList<>(retriggerEntries);
                 RetriggerEntry requiredEntry = new RetriggerEntry(new JobId(deployment.applicationId(), jobType), run.id().number() + 1);
-                if(newList.stream().noneMatch(entry -> entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun()>=requiredEntry.requiredRun())) {
+                if (newList.stream().noneMatch(entry -> entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun() >= requiredEntry.requiredRun())) {
                     newList.add(requiredEntry);
                 }
                 newList = newList.stream()
