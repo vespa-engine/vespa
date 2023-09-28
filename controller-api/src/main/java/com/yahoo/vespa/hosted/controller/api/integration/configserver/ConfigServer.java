@@ -158,4 +158,7 @@ public interface ConfigServer {
     /** Validates secret store configuration. */
     String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore, String region, String parameterName);
 
+    /** Fingerprints of active data plane tokens, per healthy host with token auth, in the given deployment. */
+    Map<String, List<String>> activeTokenFingerprints(DeploymentId deploymentId);
+
 }

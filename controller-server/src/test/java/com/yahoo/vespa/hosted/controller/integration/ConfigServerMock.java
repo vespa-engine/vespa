@@ -103,6 +103,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
     private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
+    private final Map<String, List<String>> activeTokenFingerprints = new HashMap<>();
     private List<SearchNodeMetrics> searchNodeMetrics;
 
     private Version lastPrepareVersion = null;
@@ -317,6 +318,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     public List<X509Certificate> additionalCertificates(DeploymentId deployment) {
         return additionalCertificates.getOrDefault(deployment, List.of());
+    }
+
+    public void setActiveTokenFingerprints(String hostname, List<String> fingerprints) {
+        activeTokenFingerprints.put(hostname, List.copyOf(fingerprints));
     }
 
     @Override
@@ -583,6 +588,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public String validateSecretStore(DeploymentId deployment, TenantSecretStore tenantSecretStore, String region, String parameterName) {
         return "{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}";
+    }
+
+    @Override
+    public Map<String, List<String>> activeTokenFingerprints(DeploymentId deploymentId) {
+        return Map.copyOf(activeTokenFingerprints);
     }
 
     public static class Application {
