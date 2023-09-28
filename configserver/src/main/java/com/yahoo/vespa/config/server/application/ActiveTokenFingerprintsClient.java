@@ -32,6 +32,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINE
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.slime.SlimeUtils.entriesStream;
 import static com.yahoo.slime.SlimeUtils.jsonToSlime;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -46,7 +47,7 @@ public class ActiveTokenFingerprintsClient implements ActiveTokenFingerprints, A
     }
 
     @Override
-    public Map<String, List<String>> get(ModelResult application) {
+    public Map<String, List<Token>> get(ModelResult application) {
         Set<String> containersWithTokenFilter = application.getModel().applicationClusterInfo().stream()
                                                            .flatMap(cluster -> cluster.endpoints().stream())
                                                            .filter(endpoint -> endpoint.authMethod() == AuthMethod.token)
@@ -60,17 +61,17 @@ public class ActiveTokenFingerprintsClient implements ActiveTokenFingerprints, A
                                           .toList());
     }
 
-    private Map<String, List<String>> getFingerprints(List<ServiceInfo> services) {
-        Map<String, List<String>> fingerprints = new ConcurrentHashMap<>();
+    private Map<String, List<Token>> getFingerprints(List<ServiceInfo> services) {
+        Map<String, List<Token>> tokens = new ConcurrentHashMap<>();
         Phaser phaser = new Phaser(services.size() + 1);
-        for (ServiceInfo service : services) getFingerprints(fingerprints, service, phaser);
+        for (ServiceInfo service : services) getFingerprints(tokens, service, phaser);
         phaser.arriveAndAwaitAdvance();
-        return fingerprints;
+        return tokens;
     }
 
     // A container may be unable to provide its fingerprints for a number of reasons, which may be OK, so
     // we only track those containers which return an OK response, but we do require at least one such response.
-    private void getFingerprints(Map<String, List<String>> hostFingerprints, ServiceInfo service, Phaser phaser) {
+    private void getFingerprints(Map<String, List<Token>> hostTokens, ServiceInfo service, Phaser phaser) {
         URI uri = HttpURL.create(Scheme.http,
                                  DomainName.of(service.getHostName()),
                                  service.getPorts().stream().filter(port -> port.getTags().stream().anyMatch("http"::equals)).findAny().get().getPort(),
@@ -78,7 +79,7 @@ public class ActiveTokenFingerprintsClient implements ActiveTokenFingerprints, A
                          .asURI();
         httpClient.execute(SimpleRequestBuilder.get(uri).build(), new FutureCallback<>() {
             @Override public void completed(SimpleHttpResponse result) {
-                if (result.getCode() == 200) hostFingerprints.put(service.getHostName(), parseFingerprints(result));
+                if (result.getCode() == 200) hostTokens.put(service.getHostName(), parseTokens(result));
                 phaser.arrive();
             }
             @Override public void failed(Exception ex) { phaser.arrive(); }
@@ -86,8 +87,11 @@ public class ActiveTokenFingerprintsClient implements ActiveTokenFingerprints, A
         });
     }
 
-    private static List<String> parseFingerprints(SimpleHttpResponse response) {
-        return entriesStream(jsonToSlime(response.getBodyBytes()).get().field("fingerprints")).map(Inspector::asString).toList();
+    private static List<Token> parseTokens(SimpleHttpResponse response) {
+        return entriesStream(jsonToSlime(response.getBodyBytes()).get().field("tokens"))
+                .map(entry -> new Token(entry.field("id").asString(),
+                                        entriesStream(entry.field("fingerprints")).map(Inspector::asString).toList()))
+                .toList();
     }
 
     private static CloseableHttpAsyncClient createHttpClient() {

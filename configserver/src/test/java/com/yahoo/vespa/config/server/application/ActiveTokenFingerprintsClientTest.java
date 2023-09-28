@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,13 +55,14 @@ public class ActiveTokenFingerprintsClientTest {
             String uriPath = "/data-plane-tokens/v1";
             server1.stubFor(get(urlEqualTo(uriPath)).willReturn(serverError()));
             server2.stubFor(get(urlEqualTo(uriPath)).willReturn(okJson("""
-                                                                       { "fingerprints": [ "foo", "bar", "baz" ] }
+                                                                       { "tokens": [ {"id": "t1", "fingerprints": [ "foo", "bar", "baz" ] } ] }
                                                                        """)));
             server3.stubFor(get(urlEqualTo(uriPath)).willReturn(aResponse().withStatus(503)));
             server4.stubFor(get(urlEqualTo(uriPath)).willReturn(okJson("""
-                                                                       { "fingerprints": [ "quu", "qux", "fez" ] }
+                                                                       { "tokens": [ {"id": "t2", "fingerprints": [ "quu" ] } ] }
                                                                        """)));
-            Map<String, List<String>> expected = Map.of("localhost", List.of("foo", "bar", "baz"));
+            Map<String, List<Token>> expected = Map.of("localhost",
+                                                       List.of(new Token("t1", List.of("foo", "bar", "baz"))));
             assertEquals(expected, client.get(app));
         }
     }

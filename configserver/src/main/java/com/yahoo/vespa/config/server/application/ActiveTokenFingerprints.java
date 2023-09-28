@@ -10,7 +10,9 @@ import java.util.Map;
  */
 public interface ActiveTokenFingerprints {
 
-    /** Lists all active token fingerprints for each token-enabled container host in the application, that is currently up. */
-    Map<String, List<String>> get(ModelResult application);
+    /** Lists all active tokens and their fingerprints for each token-enabled container host in the application, that is currently up. */
+    Map<String, List<Token>> get(ModelResult application);
+
+    record Token(String id, List<String> fingerprints) { }
 
 }

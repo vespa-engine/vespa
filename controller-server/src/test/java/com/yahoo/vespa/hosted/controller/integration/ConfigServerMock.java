@@ -42,6 +42,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -103,7 +105,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
     private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
-    private final Map<String, List<String>> activeTokenFingerprints = new HashMap<>();
+    private final Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokenFingerprints = new HashMap<>();
     private List<SearchNodeMetrics> searchNodeMetrics;
 
     private Version lastPrepareVersion = null;
@@ -320,8 +322,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return additionalCertificates.getOrDefault(deployment, List.of());
     }
 
-    public void setActiveTokenFingerprints(String hostname, List<String> fingerprints) {
-        activeTokenFingerprints.put(hostname, List.copyOf(fingerprints));
+    public void setActiveTokenFingerprints(HostName hostname, Map<TokenId, List<FingerPrint>> tokens) {
+        activeTokenFingerprints.put(hostname, tokens);
     }
 
     @Override
@@ -591,8 +593,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public Map<String, List<String>> activeTokenFingerprints(DeploymentId deploymentId) {
-        return Map.copyOf(activeTokenFingerprints);
+    public Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokenFingerprints(DeploymentId deploymentId) {
+        return activeTokenFingerprints;
     }
 
     public static class Application {

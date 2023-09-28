@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL.Path;
@@ -16,6 +17,8 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.SearchNodeMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
@@ -159,6 +162,6 @@ public interface ConfigServer {
     String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore, String region, String parameterName);
 
     /** Fingerprints of active data plane tokens, per healthy host with token auth, in the given deployment. */
-    Map<String, List<String>> activeTokenFingerprints(DeploymentId deploymentId);
+    Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokenFingerprints(DeploymentId deploymentId);
 
 }

@@ -191,10 +191,15 @@ public class ApplicationHandler extends HttpHandler {
     private HttpResponse activeTokenFingerprints(ApplicationId applicationId) {
         Slime slime = new Slime();
         Cursor hostsArray = slime.setObject().setArray("hosts");
-        applicationRepository.activeTokenFingerprints(applicationId).forEach((host, fingerprints) -> {
+        applicationRepository.activeTokenFingerprints(applicationId).forEach((host, tokens) -> {
             Cursor hostObject = hostsArray.addObject();
             hostObject.setString("host", host);
-            fingerprints.forEach(hostObject.setArray("fingerprints")::addString);
+            Cursor tokensArray = hostObject.setArray("tokens");
+            tokens.forEach(token -> {
+                Cursor tokenObject = tokensArray.addObject();
+                tokenObject.setString("id", token.id());
+                token.fingerprints().forEach(tokenObject.setArray("fingerprints")::addString);
+            });
         });
         return new SlimeJsonResponse(slime);
     }

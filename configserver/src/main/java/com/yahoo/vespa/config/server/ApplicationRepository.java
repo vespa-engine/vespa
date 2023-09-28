@@ -41,6 +41,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprintsClient;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
@@ -241,7 +242,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
         private FlagSource flagSource = new InMemoryFlagSource();
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
-        private Map<String, List<String>> activeTokens = Map.of();
+        private Map<String, List<Token>> activeTokens = Map.of();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -303,7 +304,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
-        public Builder withActiveTokens(Map<String, List<String>> tokens) {
+        public Builder withActiveTokens(Map<String, List<Token>> tokens) {
             this.activeTokens = tokens;
             return this;
         }
@@ -623,7 +624,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return uncheck(() -> clusterReindexingStatusClient.getReindexingStatus(getApplication(applicationId)));
     }
 
-    public Map<String, List<String>> activeTokenFingerprints(ApplicationId applicationId) {
+    public Map<String, List<Token>> activeTokenFingerprints(ApplicationId applicationId) {
         return activeTokenFingerprints.get(getApplication(applicationId));
     }
 
