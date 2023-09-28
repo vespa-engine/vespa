@@ -19,7 +19,7 @@ public final class ClusterSpec {
     private final Type type;
     private final Id id;
 
-    /** The group id of these hosts, or empty if this is represents a request for hosts */
+    /** The group id of these hosts, or empty if this represents a request for hosts */
     private final Optional<Group> groupId;
 
     private final Version vespaVersion;
