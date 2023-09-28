@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -62,7 +63,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -362,21 +362,24 @@ public class InternalStepRunner implements StepRunner {
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
 
         Run run = controller.jobController().run(id);
-        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone()),
-                                                                                                               Optional.of(platform));
+        // In manually deployed zones it is allowed for some model versions not being built (e.g due to incompatibility)
+        // but deployment still succeeding, so we cannot use version when checking for config convergence
+        Optional<Version> platformVersion = id.type().environment().isManuallyDeployed() ? Optional.empty() : Optional.of(platform);
+        Optional<ServiceConvergence> services = configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone()),
+                                                                                  platformVersion);
         if (services.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
             return Optional.empty();
         }
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
-                                                                                             NodeFilter.all()
-                                                                                                       .applications(id.application())
-                                                                                                       .states(active));
+        List<Node> nodes = configServer().nodeRepository().list(id.type().zone(),
+                                                                NodeFilter.all()
+                                                                          .applications(id.application())
+                                                                          .states(active));
 
         Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
-        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
-                                                                                               NodeFilter.all()
-                                                                                                         .hostnames(parentHostnames));
+        List<Node> parents = configServer().nodeRepository().list(id.type().zone(),
+                                                                  NodeFilter.all()
+                                                                            .hostnames(parentHostnames));
         boolean firstTick = run.convergenceSummary().isEmpty();
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         ConvergenceSummary summary = nodeList.summary();
@@ -496,8 +499,8 @@ public class InternalStepRunner implements StepRunner {
         ZoneId zone = id.type().zone();
         ApplicationId testerId = id.tester().id();
 
-        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
-                                                                                                               Optional.of(platform));
+        Optional<ServiceConvergence> services = configServer().serviceConvergence(new DeploymentId(testerId, zone),
+                                                                                  Optional.of(platform));
         if (services.isEmpty()) {
             if (run.stepInfo(installTester).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(30)))) {
                 logger.log(WARNING, "Config status not available after 30 minutes; giving up!");
@@ -508,14 +511,14 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.empty();
             }
         }
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
-                                                                                             NodeFilter.all()
-                                                                                                       .applications(testerId)
-                                                                                                       .states(active, reserved));
+        List<Node> nodes = configServer().nodeRepository().list(zone,
+                                                                NodeFilter.all()
+                                                                          .applications(testerId)
+                                                                          .states(active, reserved));
         Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
-        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(zone,
-                                                                                               NodeFilter.all()
-                                                                                                         .hostnames(parentHostnames));
+        List<Node> parents = configServer().nodeRepository().list(zone,
+                                                                  NodeFilter.all()
+                                                                            .hostnames(parentHostnames));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         logger.log(nodeList.asList().stream()
                            .flatMap(node -> nodeDetails(node, false))
@@ -533,6 +536,8 @@ public class InternalStepRunner implements StepRunner {
 
         return Optional.empty();
     }
+
+    private ConfigServer configServer() { return controller.serviceRegistry().configServer(); }
 
     /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean testerContainersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {

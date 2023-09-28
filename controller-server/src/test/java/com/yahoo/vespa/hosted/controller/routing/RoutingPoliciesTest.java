@@ -1064,40 +1064,47 @@ public class RoutingPoliciesTest {
         int clustersPerZone = 2;
         var zone1 = ZoneId.from("prod", "aws-us-east-1c");
         var zone2 = ZoneId.from("prod", "aws-eu-west-1a");
+        var zone3 = ZoneId.from("prod", "aws-us-east-1a"); // To test global endpoint pointing to two zones in same cloud-native region
         ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                            .region(zone2.region())
+                                                                           .region(zone3.region())
                                                                            .container("c0", AuthMethod.mtls)
                                                                            .container("c1", AuthMethod.mtls, AuthMethod.token)
                                                                            .endpoint("foo", "c0")
                                                                            .applicationEndpoint("bar", "c0", Map.of(zone1.region().value(), Map.of(InstanceName.defaultName(), 1)))
                                                                            .build();
-        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2, zone3);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates generated zone names
         List<String> expectedRecords = List.of(
                 // save me, jebus!
-                "b36bf591.cafed00d.aws-us-east-1.w.vespa-app.cloud",
+                "a6414896.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
                 "b36bf591.cafed00d.z.vespa-app.cloud",
                 "bar.app1.tenant1.a.vespa-app.cloud",
                 "bc50b636.cafed00d.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                "c0.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c33db5ed.cafed00d.z.vespa-app.cloud",
+                "d467800f.cafed00d.z.vespa-app.cloud",
                 "d71005bf.cafed00d.z.vespa-app.cloud",
-                "dd0971b4.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
                 "dd0971b4.cafed00d.z.vespa-app.cloud",
                 "eb48ad53.cafed00d.z.vespa-app.cloud",
+                "ec1e1288.cafed00d.z.vespa-app.cloud",
                 "f2fa41ec.cafed00d.g.vespa-app.cloud",
+                "f411d177.cafed00d.z.vespa-app.cloud",
                 "f4a4d111.cafed00d.a.vespa-app.cloud",
+                "fcf1bd63.cafed00d.aws-us-east-1.w.vespa-app.cloud",
                 "foo.app1.tenant1.g.vespa-app.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(4, tester.policiesOf(context.instanceId()).size());
+        assertEquals(6, tester.policiesOf(context.instanceId()).size());
         ClusterSpec.Id cluster0 = ClusterSpec.Id.from("c0");
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("c1");
         for (var zone : List.of(zone1, zone2)) {
@@ -1114,13 +1121,17 @@ public class RoutingPoliciesTest {
 
         // Ordinary endpoints point to expected targets
         tester.assertTargets(context.instanceId(), EndpointId.of("foo"), cluster0, 0,
-                             Map.of(zone1, 1L, zone2, 1L));
+                             ImmutableMap.of(zone1, 1L,
+                                             zone2, 1L,
+                                             zone3, 1L));
         tester.assertTargets(context.application().id(), EndpointId.of("bar"), cluster0, 0,
                              Map.of(context.deploymentIdIn(zone1), 1));
 
         // Generated endpoints point to expected targets
         tester.assertTargets(context.instanceId(), EndpointId.of("foo"), cluster0, 0,
-                             Map.of(zone1, 1L, zone2, 1L),
+                             ImmutableMap.of(zone1, 1L,
+                                             zone2, 1L,
+                                             zone3, 1L),
                              true);
         tester.assertTargets(context.application().id(), EndpointId.of("bar"), cluster0, 0,
                              Map.of(context.deploymentIdIn(zone1), 1),
@@ -1134,6 +1145,7 @@ public class RoutingPoliciesTest {
         // One endpoint is removed
         applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                         .region(zone2.region())
+                                                        .region(zone3.region())
                                                         .container("c0", AuthMethod.mtls)
                                                         .container("c1", AuthMethod.mtls, AuthMethod.token)
                                                         .applicationEndpoint("bar", "c0", Map.of(zone1.region().value(), Map.of(InstanceName.defaultName(), 1)))
@@ -1145,13 +1157,18 @@ public class RoutingPoliciesTest {
                 "bar.app1.tenant1.a.vespa-app.cloud",
                 "bc50b636.cafed00d.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c0.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c33db5ed.cafed00d.z.vespa-app.cloud",
+                "d467800f.cafed00d.z.vespa-app.cloud",
                 "d71005bf.cafed00d.z.vespa-app.cloud",
                 "dd0971b4.cafed00d.z.vespa-app.cloud",
                 "eb48ad53.cafed00d.z.vespa-app.cloud",
+                "ec1e1288.cafed00d.z.vespa-app.cloud",
+                "f411d177.cafed00d.z.vespa-app.cloud",
                 "f4a4d111.cafed00d.a.vespa-app.cloud"
         ), tester.recordNames());
 
@@ -1275,6 +1292,11 @@ public class RoutingPoliciesTest {
                                   .with(ZoneId.from(Environment.prod, RegionName.from("aws-eu-west-1a")))
                                   .with(CloudName.AWS)
                                   .withCloudNativeRegionName("eu-west-1")
+                                  .build(),
+                       ZoneApiMock.newBuilder()
+                                  .with(ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1a")))
+                                  .with(CloudName.AWS)
+                                  .withCloudNativeRegionName("us-east-1")
                                   .build(),
                        ZoneApiMock.newBuilder()
                                   .with(ZoneId.from(Environment.prod, RegionName.from("gcp-us-south1-b")))

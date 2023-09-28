@@ -44,7 +44,6 @@ public:
     };
     
 private:
-    const void               *_tfa;
     const std::vector<Lookup> _lookup;
     const bool                _is_cased;
 

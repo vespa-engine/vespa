@@ -11,51 +11,13 @@ namespace search::queryeval {
 
 using vespalib::Trinary;
 using vespalib::hwaccelrated::IAccelrated;
+using Meta = MultiBitVectorBase::Meta;
 
 namespace {
 
-template<typename Update>
-class MultiBitVectorIterator : public MultiBitVectorIteratorBase
-{
-public:
-    explicit MultiBitVectorIterator(Children children)
-        : MultiBitVectorIteratorBase(std::move(children)),
-          _update(),
-          _accel(IAccelrated::getAccelerator()),
-          _lastWords()
-    {
-        static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
-        static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
-        memset(_lastWords, 0, sizeof(_lastWords));
-    }
-protected:
-    void updateLastValue(uint32_t docId) noexcept;
-    void strictSeek(uint32_t docId) noexcept;
-private:
-    void doSeek(uint32_t docId) override;
-    Trinary is_strict() const override { return Trinary::False; }
-    bool acceptExtraFilter() const noexcept final { return Update::isAnd(); }
-    Update              _update;
-    const IAccelrated & _accel;
-    alignas(64) Word    _lastWords[8];
-    static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
-};
-
-template<typename Update>
-class MultiBitVectorIteratorStrict final : public MultiBitVectorIterator<Update>
-{
-public:
-    explicit MultiBitVectorIteratorStrict(MultiSearch::Children  children)
-        : MultiBitVectorIterator<Update>(std::move(children))
-    { }
-private:
-    void doSeek(uint32_t docId) override { this->strictSeek(docId); }
-    Trinary is_strict() const override { return Trinary::True; }
-};
-
 struct And {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) noexcept {
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.and64(offset, src, dest);
     }
     static bool isAnd() noexcept { return true; }
@@ -63,19 +25,49 @@ struct And {
 
 struct Or {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) noexcept {
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.or64(offset, src, dest);
     }
     static bool isAnd() noexcept { return false; }
 };
 
+}
+
+MultiBitVectorBase::MultiBitVectorBase(size_t reserved)
+    : _numDocs(std::numeric_limits<uint32_t>::max()),
+      _lastMaxDocIdLimit(0),
+      _lastMaxDocIdLimitRequireFetch(0),
+      _lastValue(0),
+      _bvs()
+{
+    _bvs.reserve(reserved);
+}
+
+void
+MultiBitVectorBase::addBitVector(Meta bv, uint32_t docIdLimit) {
+    _numDocs = std::min(_numDocs, docIdLimit);
+    _bvs.push_back(bv);
+}
+
+template <typename Update>
+MultiBitVector<Update>::MultiBitVector(size_t reserved)
+    : MultiBitVectorBase(reserved),
+      _update(),
+      _accel(IAccelrated::getAccelerator()),
+      _lastWords()
+{
+    static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
+    static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
+    memset(_lastWords, 0, sizeof(_lastWords));
+}
+
 template<typename Update>
-void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId) noexcept
+bool
+MultiBitVector<Update>::updateLastValue(uint32_t docId) noexcept
 {
     if (docId >= _lastMaxDocIdLimit) {
         if (__builtin_expect(docId >= _numDocs, false)) {
-            setAtEnd();
-            return;
+            return true;
         }
         const uint32_t index(BitWord::wordNum(docId));
         if (docId >= _lastMaxDocIdLimitRequireFetch) {
@@ -86,37 +78,104 @@ void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId) noexcept
         _lastValue = _lastWords[index % NumWordsInBatch];
         _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     }
+    return false;
 }
+
+template<typename Update>
+uint32_t
+MultiBitVector<Update>::strictSeek(uint32_t docId) noexcept
+{
+    bool atEnd;
+    for (atEnd = updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
+         (_lastValue == 0) && __builtin_expect(! atEnd, true);
+         atEnd = updateLastValue(_lastMaxDocIdLimit));
+    if (__builtin_expect(!atEnd, true)) {
+        return _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue);
+    }
+    return _numDocs;
+}
+
+template<typename Update>
+bool
+MultiBitVector<Update>::seek(uint32_t docId) noexcept
+{
+    bool atEnd = updateLastValue(docId);
+    if (__builtin_expect( ! atEnd, true)) {
+        if (_lastValue & BitWord::mask(docId)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+namespace {
+
+template<typename Update>
+class MultiBitVectorIterator : public MultiBitVectorIteratorBase
+{
+public:
+    explicit MultiBitVectorIterator(Children children)
+        : MultiBitVectorIteratorBase(std::move(children)),
+          _mbv(getChildren().size() + 1)
+    {
+        for (const auto & child : getChildren()) {
+            const auto * bv = static_cast<const BitVectorIterator *>(child.get());
+            _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
+        }
+    }
+    void initRange(uint32_t beginId, uint32_t endId) override {
+        MultiBitVectorIteratorBase::initRange(beginId, endId);
+        _mbv.reset();
+    }
+    UP andWith(UP filter, uint32_t estimate) override;
+protected:
+    void doSeek(uint32_t docId) override;
+    Trinary is_strict() const override { return Trinary::False; }
+    bool acceptExtraFilter() const noexcept final { return _mbv.acceptExtraFilter(); }
+    MultiBitVector<Update> _mbv;
+};
+
+template<typename Update>
+class MultiBitVectorIteratorStrict final : public MultiBitVectorIterator<Update>
+{
+public:
+    explicit MultiBitVectorIteratorStrict(MultiSearch::Children children)
+        : MultiBitVectorIterator<Update>(std::move(children))
+    { }
+private:
+    void doSeek(uint32_t docId) override {
+        docId = this->_mbv.strictSeek(docId);
+        if (__builtin_expect(docId >= this->getEndId(), false)) {
+            this->setAtEnd();
+        } else {
+            this->setDocId(docId);
+        }
+    }
+    Trinary is_strict() const override { return Trinary::True; }
+};
 
 template<typename Update>
 void
 MultiBitVectorIterator<Update>::doSeek(uint32_t docId)
 {
-    updateLastValue(docId);
-    if (__builtin_expect( ! isAtEnd(), true)) {
-        if (_lastValue & BitWord::mask(docId)) {
-            setDocId(docId);
-        }
+    if (_mbv.seek(docId)) {
+        setDocId(docId);
     }
 }
 
-template<typename Update>
-void
-MultiBitVectorIterator<Update>::strictSeek(uint32_t docId) noexcept
+template <typename Update>
+SearchIterator::UP
+MultiBitVectorIterator<Update>::andWith(UP filter, uint32_t estimate)
 {
-    for (updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
-         (_lastValue == 0) && __builtin_expect(! isAtEnd(), true);
-         updateLastValue(_lastMaxDocIdLimit));
-    if (__builtin_expect(!isAtEnd(), true)) {
-        docId = _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue);
-        if (__builtin_expect(docId >= _numDocs, false)) {
-            setAtEnd();
-        } else {
-            setDocId(docId);
-        }
+    (void) estimate;
+    if (filter->isBitVector() && acceptExtraFilter()) {
+        const auto & bv = static_cast<const BitVectorIterator &>(*filter);
+        _mbv.addBitVector(Meta(bv.getBitValues(), bv.isInverted()), bv.getDocIdLimit());
+        insert(getChildren().size(), std::move(filter));
+        _mbv.reset();
     }
+    return filter;
 }
-
 
 using AndBVIterator = MultiBitVectorIterator<And>;
 using AndBVIteratorStrict = MultiBitVectorIteratorStrict<And>;
@@ -148,20 +207,8 @@ bool canOptimize(const MultiSearch & s) {
 }
 
 MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(Children children) :
-    MultiSearch(std::move(children)),
-    _numDocs(std::numeric_limits<unsigned int>::max()),
-    _lastMaxDocIdLimit(0),
-    _lastMaxDocIdLimitRequireFetch(0),
-    _lastValue(0),
-    _bvs()
-{
-    _bvs.reserve(getChildren().size());
-    for (const auto & child : getChildren()) {
-        const auto * bv = static_cast<const BitVectorIterator *>(child.get());
-        _bvs.emplace_back(bv->getBitValues(), bv->isInverted());
-        _numDocs = std::min(_numDocs, bv->getDocIdLimit());
-    }
-}
+    MultiSearch(std::move(children))
+{ }
 
 MultiBitVectorIteratorBase::~MultiBitVectorIteratorBase() = default;
 
@@ -169,22 +216,6 @@ void
 MultiBitVectorIteratorBase::initRange(uint32_t beginId, uint32_t endId)
 {
     MultiSearch::initRange(beginId, endId);
-    _lastMaxDocIdLimit = 0;
-    _lastMaxDocIdLimitRequireFetch = 0;
-}
-
-SearchIterator::UP
-MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
-{
-    (void) estimate;
-    if (filter->isBitVector() && acceptExtraFilter()) {
-        const auto & bv = static_cast<const BitVectorIterator &>(*filter);
-        _bvs.emplace_back(bv.getBitValues(), bv.isInverted());
-        insert(getChildren().size(), std::move(filter));
-        _lastMaxDocIdLimit = 0;  // force reload
-        _lastMaxDocIdLimitRequireFetch = 0;
-    }
-    return filter;
 }
 
 void

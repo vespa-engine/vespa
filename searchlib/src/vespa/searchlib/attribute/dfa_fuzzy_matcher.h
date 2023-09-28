@@ -20,7 +20,6 @@ private:
     vespalib::fuzzy::LevenshteinDfa _dfa;
     std::vector<uint32_t>           _successor;
     std::vector<uint32_t>           _prefix;
-    std::vector<uint32_t>           _successor_suffix;
     uint32_t                        _prefix_size;
     bool                            _cased;
 
@@ -50,14 +49,14 @@ public:
                 _successor.resize(_prefix.size());
                 _successor.emplace_back(1);
             } else {
-                auto match = _dfa.match(word, _successor_suffix);
+                _successor.resize(_prefix.size());
+                auto match = _dfa.match(word, _successor);
                 if (match.matches()) {
                     return true;
                 }
-                _successor.resize(_prefix.size());
-                _successor.insert(_successor.end(), _successor_suffix.begin(), _successor_suffix.end());
             }
         } else {
+            _successor.clear();
             auto match = _dfa.match(word, _successor);
             if (match.matches()) {
                 return true;

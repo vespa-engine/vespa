@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -25,6 +26,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.hosted.provision.maintenance.SwitchRebalancer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NodeSerializer;
@@ -45,9 +47,10 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -75,8 +78,8 @@ public class RealDataScenarioTest {
 
     @Ignore
     @Test
-    public void test() {
-        ProvisioningTester tester = tester(SystemName.Public, CloudName.AWS, Environment.prod, parseFlavors(Path.of("/tmp/node-flavors.xml")));
+    public void test() throws Exception {
+        ProvisioningTester tester = tester(SystemName.Public, CloudName.AWS, Environment.prod, CloudAccount.empty, parseFlavors(Path.of("/tmp/node-flavors.xml")));
         initFromZk(tester.nodeRepository(), Path.of("/tmp/snapshot"));
 
         ApplicationId app = ApplicationId.from("tenant", "app", "default");
@@ -132,41 +135,34 @@ public class RealDataScenarioTest {
         }
     }
 
-    private static void initFromZk(NodeRepository nodeRepository, Path pathToZkSnapshot) {
+    private static void initFromZk(NodeRepository nodeRepository, Path pathToZkSnapshot) throws Exception {
         NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors());
-        AtomicBoolean nodeNext = new AtomicBoolean(false);
-        Pattern zkNodePathPattern = Pattern.compile(".?/provision/v1/nodes/[a-z0-9.-]+\\.(com|cloud).?");
-        Consumer<String> consumer = input -> {
-            if (nodeNext.get()) {
-                String json = input.substring(input.indexOf("{\""), input.lastIndexOf('}') + 1);
-                Node node = nodeSerializer.fromJson(json.getBytes(UTF_8));
-                nodeRepository.database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system);
-                nodeNext.set(false);
-            } else {
-                if (!zkNodePathPattern.matcher(input).matches()) return;
-                if (nodeNext.getAndSet(true))
-                    throw new IllegalStateException("Expected to find node JSON, but found another node path: " + input);
-            }
-        };
+        Map<Pattern, BiConsumer<byte[], NestedTransaction>> jsonConsumerByPathPattern = Map.of(
+                Pattern.compile(".?/provision/v1/nodes/[a-z0-9.-]+\\.(com|cloud).?"), (json, transaction) -> {
+                    Node node = nodeSerializer.fromJson(json);
+                    nodeRepository.database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system, transaction);
+                },
+                Pattern.compile(".?/provision/v1/applications/[a-z0-9:-]+.?"), (json, transaction) ->
+                        nodeRepository.database().writeApplication(ApplicationSerializer.fromJson(json), transaction));
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(pathToZkSnapshot), UTF_8))) {
-            StringBuilder sb = new StringBuilder(1000);
-            for (int r; (r = reader.read()) != -1; ) {
-                if (r < 0x20 || r >= 0x7F) {
-                    if (sb.length() > 0) {
-                        consumer.accept(sb.toString());
-                        sb.setLength(0);
-                    }
-                } else sb.append((char) r);
+        try (StringsIterator iterator = new StringsIterator(pathToZkSnapshot); NestedTransaction transaction = new NestedTransaction()) {
+            while (iterator.hasNext()) {
+                String s1 = iterator.next();
+                if (!iterator.hasNext()) break;
+                for (var entry : jsonConsumerByPathPattern.entrySet()) {
+                    if (!entry.getKey().matcher(s1).matches()) continue;
+                    String s2 = iterator.next();
+                    byte[] json = s2.substring(s2.indexOf("{\""), s2.lastIndexOf('}') + 1).getBytes(UTF_8);
+                    entry.getValue().accept(json, transaction);
+                    break;
+                }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            transaction.commit();
         }
     }
 
-    private static ProvisioningTester tester(SystemName systemName, CloudName cloudName, Environment environment, List<Flavor> flavors) {
-        Cloud cloud = Cloud.builder().name(cloudName).dynamicProvisioning(cloudName != CloudName.YAHOO).build();
+    private static ProvisioningTester tester(SystemName systemName, CloudName cloudName, Environment environment, CloudAccount cloudAccount, List<Flavor> flavors) {
+        Cloud cloud = Cloud.builder().name(cloudName).dynamicProvisioning(cloudName != CloudName.YAHOO).account(cloudAccount).build();
         NameResolver nameResolver = cloudName == CloudName.YAHOO ? new DnsNameResolver() : new MockNameResolver().mockAnyLookup();
         ProvisioningTester.Builder builder = new ProvisioningTester.Builder()
                 .zone(new Zone(cloud, systemName, environment, RegionName.defaultName()))
@@ -177,6 +173,44 @@ public class RealDataScenarioTest {
             builder.hostProvisioner(new MockHostProvisioner(flavors, (MockNameResolver) nameResolver, 0));
 
         return builder.build();
+    }
+
+    /** Extracts sequences longer than 5 printable characters from a binary file, similar to `strings` command */
+    private static class StringsIterator implements Iterator<String>, AutoCloseable {
+        private final BufferedReader reader;
+        private final StringBuilder sb = new StringBuilder(1000);
+        private StringsIterator(Path path) throws IOException {
+            this.reader = new BufferedReader(new InputStreamReader(Files.newInputStream(path), UTF_8));
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (!sb.isEmpty()) return true;
+            try {
+                for (int r; (r = reader.read()) != -1; ) {
+                    if (r < 0x20 || r >= 0x7F) {
+                        if (sb.isEmpty()) continue; // Still haven't encountered any real data
+                        if (sb.length() > 5) break; // We (probably) found some real data
+                        sb.setLength(0); // Probably some random binary data that happened to be a printable character, reset
+                    } else sb.append((char) r);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return !sb.isEmpty();
+        }
+
+        @Override
+        public String next() {
+            String next = sb.toString();
+            sb.setLength(0);
+            return next;
+        }
+
+        @Override
+        public void close() throws Exception {
+            reader.close();
+        }
     }
 
 }

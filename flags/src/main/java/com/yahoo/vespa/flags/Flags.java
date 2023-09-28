@@ -345,6 +345,12 @@ public class Flags {
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
+            "read-config-server-session-data-as-blob", false,
+            List.of("hmusum"), "2023-07-19", "2023-11-01",
+            "Whether to read config server session data from session data blob or from individual paths",
+            "Takes effect immediately");
+
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
             List.of("andreer"), "2023-08-21", "2023-10-14",
@@ -403,7 +409,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
-            "unknown-config-definition", "log",
+            "unknown-config-definition", "warn",
             List.of("hmusum"), "2023-09-25", "2023-11-01",
             "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
             "Takes effect at redeployment",

@@ -11,9 +11,9 @@ import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -60,13 +60,15 @@ class AnalyzerFactory {
     }
 
     private Analyzer createAnalyzer(AnalyzerKey analyzerKey) {
-        if (null != config.analysis(analyzerKey.languageCode())) {
+        LuceneAnalysisConfig.Analysis analysis = analysisConfig(analyzerKey);
+        if (null != analysis) {
             log.config("Creating analyzer for " + analyzerKey + " from config");
-            return createAnalyzer(analyzerKey, config.analysis(analyzerKey.languageCode()));
+            return createAnalyzer(analyzerKey, analysis);
         }
-        if (null != analyzerComponents.getComponent(analyzerKey.languageCode())) {
+        Analyzer analyzerFromComponents = fromComponents(analyzerKey);
+        if (null != analyzerFromComponents) {
             log.config("Using analyzer for " + analyzerKey + " from components");
-            return analyzerComponents.getComponent(analyzerKey.languageCode());
+            return analyzerFromComponents;
         }
         if (null != defaultAnalyzers.get(analyzerKey.language())) {
             log.config("Using Analyzer for " + analyzerKey + " from a list of default language analyzers");
@@ -75,6 +77,24 @@ class AnalyzerFactory {
         // set the default analyzer for the language
         log.config("StandardAnalyzer is used for " + analyzerKey);
         return defaultAnalyzer;
+    }
+
+    /**
+     * First, checks if more specific (language + stemMode) analysis is configured.
+     * Second, checks if analysis is configured only for a languageCode.
+     */
+    private LuceneAnalysisConfig.Analysis analysisConfig(AnalyzerKey analyzerKey) {
+        LuceneAnalysisConfig.Analysis analysis = config.analysis(analyzerKey.languageCodeAndStemMode());
+        return (null != analysis) ? analysis : config.analysis(analyzerKey.languageCode());
+    }
+
+    /**
+     * First, checks if a component is configured for a languageCode + StemMode.
+     * Second, checks if Analyzer is configured only for a languageCode.
+     */
+    private Analyzer fromComponents(AnalyzerKey analyzerKey) {
+        Analyzer analyzer = analyzerComponents.getComponent(analyzerKey.languageCodeAndStemMode());
+        return (null != analyzer) ? analyzer : analyzerComponents.getComponent(analyzerKey.languageCode());
     }
 
     private Analyzer createAnalyzer(AnalyzerKey analyzerKey, LuceneAnalysisConfig.Analysis analysis) {
@@ -143,9 +163,14 @@ class AnalyzerFactory {
 
     private record AnalyzerKey(Language language, StemMode stemMode, boolean removeAccents) {
 
-        // TODO: Identity here is determined by language only.
-        //       Would it make sense to combine language + stemMode + removeAccents to make
-        //       a composite key so we can have more variations possible?
+        /**
+         * Combines the languageCode and the stemMode.
+         * It allows to specify up to 6 (5 StemModes and only language code) analyzers per language.
+         * The `/` is used so that it doesn't conflict with ComponentRegistry keys.
+         */
+        public String languageCodeAndStemMode() {
+            return language.languageCode() + "/" + stemMode.toString();
+        }
 
         public String languageCode() {
             return language.languageCode();
@@ -155,12 +180,12 @@ class AnalyzerFactory {
         public boolean equals(Object o) {
             if (o == this) return true;
             if ( ! (o instanceof AnalyzerKey other)) return false;
-            return other.language == this.language;
+            return other.language == this.language && other.stemMode == this.stemMode;
         }
 
         @Override
         public int hashCode() {
-            return language.hashCode();
+            return Objects.hash(language, stemMode);
         }
 
     }

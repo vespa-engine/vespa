@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -117,9 +118,11 @@ class JvmHeapSizeValidatorTest {
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
 
+        @SuppressWarnings("removal") @Override public void registerModel(ModelReference ref) {}
+
         @Override
-        public void registerModel(ModelReference ref) {
-            assertEquals("https://my/url/model.onnx", ref.url().orElseThrow().value().toString());
+        public void registerModel(URI uri) {
+            assertEquals("https://my/url/model.onnx", uri.toString());
             totalCost.addAndGet(modelCost);
         }
     }

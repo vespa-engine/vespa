@@ -6,10 +6,8 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
-import static com.yahoo.text.XML.getChild;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -18,8 +16,8 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  */
 public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConfig.Producer {
 
-    private final ModelReference model;
-    private final ModelReference vocab;
+    private final ModelReference modelRef;
+    private final ModelReference vocabRef;
     private final Integer maxTokens;
     private final String transformerInputIds;
     private final String transformerAttentionMask;
@@ -36,8 +34,9 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
 
     public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
-        model = ModelIdResolver.resolveToModelReference(getChild(xml, "transformer-model"), state);
-        vocab = ModelIdResolver.resolveToModelReference(getChild(xml, "tokenizer-vocab"), state);
+        var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
+        modelRef = model.modelReference();
+        vocabRef = Model.fromXml(state, xml, "tokenizer-vocab").orElseThrow().modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
@@ -50,12 +49,12 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
         onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
         onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
-        cluster.onnxModelCost().registerModel(model);
+        model.registerOnnxModelCost(cluster);
     }
 
     @Override
     public void getConfig(BertBaseEmbedderConfig.Builder b) {
-        b.transformerModel(model).tokenizerVocab(vocab);
+        b.transformerModel(modelRef).tokenizerVocab(vocabRef);
         if (maxTokens != null) b.transformerMaxTokens(maxTokens);
         if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
         if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);

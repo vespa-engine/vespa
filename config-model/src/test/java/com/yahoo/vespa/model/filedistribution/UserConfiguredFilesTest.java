@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public class UserConfiguredFilesTest {
 
@@ -268,7 +269,8 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': No such file or directory 'foo.txt'", e.getMessage());
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': No such file or directory 'foo.txt'",
+                         e.getMessage());
         }
     }
 
@@ -281,7 +283,7 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Unable to register file for field 'fileVal': Invalid config value '.'",
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': Invalid config value '.' for field 'fileVal",
                          e.getMessage());
         }
     }
@@ -296,8 +298,7 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Directory '" +
-                                 relativeTempDir + "' is empty",
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': Directory '" + relativeTempDir + "' is empty",
                          e.getMessage());
         }
     }

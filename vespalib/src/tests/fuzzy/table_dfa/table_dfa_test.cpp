@@ -172,20 +172,17 @@ TEST(TableDfaTest, format_bits) {
 }
 
 template <uint8_t N>
-void list_states(bool count_only = false) {
+void list_states() {
     auto repo = make_state_repo<N>();
     EXPECT_EQ(num_states<N>(), repo.size());
     fprintf(stderr, "max_edits: %u, number of states: %zu\n", N, repo.size());
-    if (!count_only) {
-        for (uint32_t i = 0; i < repo.size(); ++i) {
-            fprintf(stderr, "  state %u: %s\n", i, repo.idx_to_state(i).to_string().c_str());
-        }
+    for (uint32_t i = 0; i < repo.size(); ++i) {
+        fprintf(stderr, "  state %u: %s\n", i, repo.idx_to_state(i).to_string().c_str());
     }
 }
 
 TEST(TableDfaTest, list_states_for_max_edits_1) { list_states<1>(); }
 TEST(TableDfaTest, list_states_for_max_edits_2) { list_states<2>(); }
-TEST(TableDfaTest, count_states_for_max_edits_3) { list_states<3>(true); }
 
 template <uint8_t N>
 void list_edits() {
@@ -293,6 +290,106 @@ TEST(TableDfaTest, graphviz_for_food_with_max_edits_1) {
     dfa.dump_as_graphviz(out);
     fprintf(stderr, "memory usage: %zu\n", dfa.memory_usage());
     fprintf(stderr, "%s", out.str().c_str());
+}
+
+template <uint8_t N>
+void verify_inline_tfa() {
+    auto tfa = make_tfa<N>();
+    fprintf(stderr, "verifying TFA for N = %u (byte size: %zu)\n", N, sizeof(*tfa));
+    ASSERT_EQ(tfa->table.size(), num_states<N>());
+    ASSERT_EQ(tfa->edits.size(), num_states<N>());
+    for (size_t state = 0; state < num_states<N>(); ++state) {
+        ASSERT_EQ(tfa->table[state].size(), num_transitions<N>());
+        for (size_t transition = 0; transition < num_transitions<N>(); ++transition) {
+            EXPECT_EQ(tfa->table[state][transition].step, InlineTfa<N>::table[state][transition].step);
+            EXPECT_EQ(tfa->table[state][transition].state, InlineTfa<N>::table[state][transition].state);
+        }
+        ASSERT_EQ(tfa->edits[state].size(), window_size<N>());
+        for (size_t offset = 0; offset < window_size<N>(); ++offset) {
+            EXPECT_EQ(tfa->edits[state][offset], InlineTfa<N>::edits[state][offset]);
+        }
+    }
+}
+
+TEST(TableDfaTest, verify_inline_tfa_with_max_edits_1) {
+    verify_inline_tfa<1>();
+}
+
+TEST(TableDfaTest, verify_inline_tfa_with_max_edits_2) {
+    verify_inline_tfa<2>();
+}
+
+template <uint8_t N>
+void dump_tfa_as_code() {
+    auto tfa = make_tfa<N>();
+    fprintf(stderr, "// start of auto-generated code for N = %u\n", N);
+    fprintf(stderr, "template <> struct InlineTfa<%u> {\n", N);
+    fprintf(stderr, "    static constexpr Transition table[%zu][%zu] = {\n", num_states<N>(), num_transitions<N>());
+    for (size_t state = 0; state < num_states<N>(); ++state) {
+        fprintf(stderr, "        {");
+        for (size_t transition = 0; transition < num_transitions<N>(); ++transition) {
+            if (transition > 0) {
+                fprintf(stderr, ",");
+            }
+            fprintf(stderr, "{%u,%u}", tfa->table[state][transition].step, tfa->table[state][transition].state);
+        }
+        fprintf(stderr, "}%s\n", ((state + 1) < num_states<N>()) ? "," : "");
+    }
+    fprintf(stderr, "    };\n");
+    fprintf(stderr, "    static constexpr uint8_t edits[%zu][%zu] = {\n", num_states<N>(), window_size<N>());
+    for (size_t state = 0; state < num_states<N>(); ++state) {
+        fprintf(stderr, "        {");
+        for (size_t offset = 0; offset < window_size<N>(); ++offset) {
+            if (offset > 0) {
+                fprintf(stderr, ",");
+            }
+            fprintf(stderr, "%u", tfa->edits[state][offset]);
+        }
+        fprintf(stderr, "}%s\n", ((state + 1) < num_states<N>()) ? "," : "");
+    }
+    fprintf(stderr, "    };\n");
+    fprintf(stderr, "};\n");
+    fprintf(stderr, "// end of auto-generated code for N = %u\n", N);
+}
+
+TEST(TableDfaTest, dump_tfa_with_max_edits_1_as_code) {
+    dump_tfa_as_code<1>();
+}
+
+TEST(TableDfaTest, dump_tfa_with_max_edits_2_as_code) {
+    dump_tfa_as_code<2>();
+}
+
+template <uint8_t N>
+void dump_tfa_graph() {
+    auto repo = make_state_repo<N>();
+    fprintf(stderr, "digraph tfa {\n");
+    for (uint32_t idx = 0; idx < repo.size(); ++idx) {
+        fprintf(stderr, "    %u [label=\"%s\"];\n", idx,
+                repo.idx_to_state(idx).to_string().c_str());
+    }
+    // omit transitions from the failure state to itself
+    for (uint32_t idx = 1; idx < repo.size(); ++idx) {
+        const State &state = repo.idx_to_state(idx);
+        for (uint32_t i = 0; i < num_transitions<N>(); ++i) {
+            auto bits = expand_bits<N>(i);
+            State new_state = state.next<N>(bits);
+            uint32_t step = new_state.normalize();
+            uint32_t new_idx = repo.state_to_idx(new_state);
+            ASSERT_LT(new_idx, repo.size());
+            if (bits[0] && idx == new_idx && step == 1) {
+                // omit simple transitions to yourself
+            } else {
+                fprintf(stderr, "    %u -> %u [label=\"%s,%u\"];\n", idx, new_idx,
+                        format_vector(bits, true).c_str(), step);
+            }
+        }
+    }
+    fprintf(stderr, "}\n");
+}
+
+TEST(TableDfaTest, graphviz_for_tfa_with_max_edits_1) {
+    dump_tfa_graph<1>();
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

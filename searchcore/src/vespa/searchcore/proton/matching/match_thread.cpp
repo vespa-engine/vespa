@@ -362,11 +362,9 @@ MatchThread::findMatches(MatchTools &tools)
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     trace->addEvent(4, "Start match and first phase rank");
-    if ( !tools.getDoom().soft_doom()) {
-        match_loop_helper(tools, hits);
-        if (tools.has_second_phase_rank()) {
-            secondPhase(tools, hits);
-        }
+    match_loop_helper(tools, hits);
+    if (tools.has_second_phase_rank()) {
+        secondPhase(tools, hits);
     }
     trace->addEvent(4, "Create result set");
     return hits.getResultSet(fallback_rank_value());

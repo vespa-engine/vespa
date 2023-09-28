@@ -228,7 +228,8 @@ public class RoutingController {
                                           .in(controller.system()));
                 // Only a single region endpoint is needed, not one per auth method
                 if (isProduction && generatedEndpoint.authMethod() == AuthMethod.mtls) {
-                    endpoints.add(regionEndpoint.generatedFrom(generatedEndpoint)
+                    GeneratedEndpoint weightedGeneratedEndpoint = generatedEndpoint.withClusterPart(weightedClusterPart(cluster, deployment));
+                    endpoints.add(regionEndpoint.generatedFrom(weightedGeneratedEndpoint)
                                                 .authMethod(AuthMethod.none)
                                                 .in(controller.system()));
                 }
@@ -474,6 +475,22 @@ public class RoutingController {
                                                           method,
                                                           endpoint))
                      .toList();
+    }
+
+    /** Generate the  cluster part of a {@link GeneratedEndpoint} for use in a {@link Endpoint.Scope#weighted} endpoint */
+    private String weightedClusterPart(ClusterSpec.Id cluster, DeploymentId deployment) {
+        // This ID must be common for a given cluster in all deployments within the same cloud-native region
+        String cloudNativeRegion = controller.zoneRegistry().zones().all().get(deployment.zoneId()).get().getCloudNativeRegionName();
+        HashCode hash = Hashing.sha256().newHasher()
+                               .putString(cluster.value(), StandardCharsets.UTF_8)
+                               .putString(":", StandardCharsets.UTF_8)
+                               .putString(cloudNativeRegion, StandardCharsets.UTF_8)
+                               .putString(":", StandardCharsets.UTF_8)
+                               .putString(deployment.applicationId().serializedForm(), StandardCharsets.UTF_8)
+                               .hash();
+        String alphabet = "abcdef";
+        char letter = alphabet.charAt(Math.abs(hash.asInt()) % alphabet.length());
+        return letter + hash.toString().substring(0, 7);
     }
 
     /** Returns existing generated endpoints, grouped by their {@link Scope#multiDeployment()} endpoint */
