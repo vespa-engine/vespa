@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
+#include <vespa/searchlib/attribute/postinglistsearchcontext.h>
 #include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
@@ -1424,6 +1425,25 @@ SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& 
             }
         }
     }
+
+    // Long range of prefixes with unique strings that causes
+    // PostingListFoldedSearchContextT<DataT>::countHits() to populate
+    // partial vector of posting indexes, with scan resumed by
+    // fillArray or fillBitVector.
+    auto& vec = dynamic_cast<StringAttribute &>(*attr.get());
+    uint32_t old_size = attr->getNumDocs();
+    constexpr uint32_t longrange_values = search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
+    attr->addDocs(longrange_values);
+    DocSet exp_longrange;
+    for (uint32_t i = 0; i < longrange_values; ++i) {
+        vespalib::asciistream ss;
+        ss << "lpref" << i;
+        vespalib::string sss(ss.str());
+        exp_longrange.put(old_size + i);
+        vec.update(old_size + i, vespalib::string(ss.str()).c_str());
+    }
+    attr->commit();
+    performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);
 }
 
 
