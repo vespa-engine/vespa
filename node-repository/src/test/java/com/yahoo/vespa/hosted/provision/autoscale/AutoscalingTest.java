@@ -32,6 +32,25 @@ import static org.junit.Assert.assertTrue;
 public class AutoscalingTest {
 
     @Test
+    public void test_autoscaling_with_gpu() {
+        var resources = new NodeResources(8, 32, 225, 0.1, fast, StorageType.local, NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
+        var min = new ClusterResources( 8, 1, resources);
+        var now = new ClusterResources(12, 1, resources);
+        var max = new ClusterResources(12, 1, resources);
+        var fixture = DynamicProvisioningTester.fixture()
+                .awsProdSetup(true)
+                .clusterType(ClusterSpec.Type.container)
+                .initialResources(Optional.of(now))
+                .capacity(Capacity.from(min, max))
+                .build();
+        fixture.tester.clock().advance(Duration.ofDays(2));
+        fixture.loader().applyLoad(new Load(0.8f, 0.17, 0.12), 1, true, true, 100);
+        var result = fixture.autoscale();
+        assertTrue(result.resources().isEmpty());
+        assertEquals(Autoscaling.Status.insufficient, result.status());
+    }
+
+    @Test
     public void test_autoscaling_nodes_only() {
         var resources = new NodeResources(16, 32, 200, 0.1);
         var min = new ClusterResources( 8, 1, resources);
