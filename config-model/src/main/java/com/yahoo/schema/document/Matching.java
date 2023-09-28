@@ -133,7 +133,7 @@ public class Matching implements Cloneable, Serializable {
         if ( this.exactMatchTerminator == null && other.exactMatchTerminator != null) return false;
         if ( this.exactMatchTerminator != null && ( ! this.exactMatchTerminator.equals(other.exactMatchTerminator)) )
             return false;
-        if ( gramSize != other.gramSize) return false;
+        if ( ! gramSize.equals(other.gramSize)) return false;
         return true;
     }
 
