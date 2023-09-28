@@ -425,7 +425,8 @@ public class RoutingPolicies {
         controller.serviceRegistry().vpcEndpointService()
                   .setPrivateDns(DomainName.of(endpoint.dnsName()),
                                  new ClusterId(deploymentId, endpoint.cluster()),
-                                 loadBalancer.cloudAccount())
+                                 loadBalancer.cloudAccount(),
+                                 endpoint.generated().isPresent())
                   .ifPresent(challenge -> {
                       try (Mutex lock = db.lockNameServiceQueue()) {
                           controller.nameServiceForwarder().createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(deploymentId));

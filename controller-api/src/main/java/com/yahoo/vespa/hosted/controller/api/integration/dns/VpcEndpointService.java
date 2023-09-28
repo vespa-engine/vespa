@@ -38,7 +38,7 @@ public interface VpcEndpointService {
     enum ChallengeState { pending, ready, running, done }
 
     /** Sets the private DNS name for any VPC endpoint for the given cluster, potentially guarded by a challenge. */
-    Optional<DnsChallenge> setPrivateDns(DomainName privateDnsName, ClusterId clusterId, Optional<CloudAccount> account);
+    Optional<DnsChallenge> setPrivateDns(DomainName privateDnsName, ClusterId clusterId, Optional<CloudAccount> account, boolean isGenerated);
 
     /** Attempts to complete the challenge, and returns the updated challenge state. */
     ChallengeState process(DnsChallenge challenge);
