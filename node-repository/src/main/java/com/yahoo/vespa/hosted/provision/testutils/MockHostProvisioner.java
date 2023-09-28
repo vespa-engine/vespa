@@ -79,7 +79,7 @@ public class MockHostProvisioner implements HostProvisioner {
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
                                 .filter(f -> request.sharing() == HostSharing.exclusive ? compatible(f, request.resources())
-                                                                              : f.resources().satisfies(request.resources()))
+                                                                              : satisfies(f, request.resources()))
                                 .filter(f -> realHostResourcesWithinLimits.test(f.resources()))
                                 .findFirst()
                                 .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + request.resources(), true));
@@ -221,6 +221,10 @@ public class MockHostProvisioner implements HostProvisioner {
         if (flavor.resources().bandwidthGbps() >= resources.bandwidthGbps())
             resourcesToVerify = resourcesToVerify.withBandwidthGbps(flavor.resources().bandwidthGbps());
         return flavor.resources().compatibleWith(resourcesToVerify);
+    }
+
+    public boolean satisfies(Flavor flavor, NodeResources resources) {
+        return flavor.resources().satisfies(resources);
     }
 
     private List<HostName> createHostnames(NodeType hostType, Flavor flavor, int hostIndex) {
