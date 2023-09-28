@@ -55,13 +55,15 @@ class Model {
     }
 
     void registerOnnxModelCost(ApplicationContainerCluster c) {
+        var resolvedUrl = resolvedUrl().orElse(null);
         if (file != null) c.onnxModelCost().registerModel(file);
-        else c.onnxModelCost().registerModel(url);
+        else if (resolvedUrl != null) c.onnxModelCost().registerModel(resolvedUrl);
     }
 
     String name() { return paramName; }
     Optional<String> modelId() { return Optional.ofNullable(modelId); }
     Optional<URI> url() { return Optional.ofNullable(url); }
+    Optional<URI> resolvedUrl() { return ref.url().map(u -> URI.create(u.value())); }
     Optional<ApplicationFile> file() { return Optional.ofNullable(file); }
     ModelReference modelReference() { return ref; }
 }
