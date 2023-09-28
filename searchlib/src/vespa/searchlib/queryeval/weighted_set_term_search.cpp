@@ -46,7 +46,7 @@ private:
     ref_t                                         *_data_stash;
     ref_t                                         *_data_end;
     IteratorPack                                   _children;
-    bool                                           _field_is_filter;
+    bool                                           _need_match_data;
 
     void seek_child(ref_t child, uint32_t docId) {
         _termPos[child] = _children.seek(child, docId);
@@ -76,7 +76,7 @@ public:
           _data_stash(nullptr),
           _data_end(nullptr),
           _children(std::move(iteratorPack)),
-          _field_is_filter(field_is_filter)
+          _need_match_data(!field_is_filter && !_tmd.isNotNeeded())
     {
         HEAP::require_left_heap();
         assert(_children.size() > 0);
@@ -87,7 +87,7 @@ public:
         }
         _data_begin = &_data_space[0];
         _data_end = _data_begin + _data_space.size();
-        if (!_field_is_filter && !_tmd.isNotNeeded()) {
+        if (_need_match_data) {
             _tmd.reservePositions(_children.size());
         }
     }
@@ -113,7 +113,7 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        if (!_field_is_filter && !_tmd.isNotNeeded()) {
+        if (_need_match_data) {
             _tmd.reset(docId);
             pop_matching_children(docId);
             std::sort(_data_stash, _data_end, _cmpWeight);
@@ -172,7 +172,7 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
     using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack>;
     using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, SearchIteratorPack>;
 
-    if (field_is_filter && tmd.isNotNeeded()) {
+    if (tmd.isNotNeeded()) {
         return attribute::DocumentWeightOrFilterSearch::create(children, std::move(match_data));
     }
 
