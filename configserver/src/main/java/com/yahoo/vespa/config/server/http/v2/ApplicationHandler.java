@@ -98,6 +98,7 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/logs")) return logs(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/deployment")) return deploymentMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/searchnode")) return searchNodeMetrics(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/quota")) return quotaUsage(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return getReindexingStatus(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/status/{*}")) return serviceStatusPage(applicationId(path), path.get("service"), path.get("hostname"), path.getRest(), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/state/v1/{*}")) return serviceStateV1(applicationId(path), path.get("service"), path.get("hostname"), path.getRest(), request);
@@ -105,7 +106,6 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/tester/{command}")) return testerRequest(applicationId(path), path.get("command"), request);
-        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/quota")) return quotaUsage(applicationId(path));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -150,18 +150,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, HttpURL.Path pathSuffix, HttpRequest request) {
-        HttpURL.Path pathPrefix = HttpURL.Path.empty();
-        switch (service) {
-            case "container-clustercontroller":
-                pathPrefix = pathPrefix.append("clustercontroller-status").append("v1");
-                break;
-            case "distributor":
-            case "storagenode":
-                pathPrefix = pathPrefix.append("contentnode-status").append("v1");
-                break;
-            default:
-                throw new com.yahoo.vespa.config.server.NotFoundException("No status page for service: " + service);
-        }
+        HttpURL.Path pathPrefix = switch (service) {
+            case "container-clustercontroller" -> HttpURL.Path.empty().append("clustercontroller-status").append("v1");
+            case "distributor", "storagenode" -> HttpURL.Path.empty().append("contentnode-status").append("v1");
+            default -> throw new NotFoundException("No status page for service: " + service);
+        };
         return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, pathPrefix.append(pathSuffix), Query.empty().add(request.getJDiscRequest().parameters()), null);
     }
 
@@ -213,19 +206,13 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse testerRequest(ApplicationId applicationId, String command, HttpRequest request) {
-        switch (command) {
-            case "status":
-                return applicationRepository.getTesterStatus(applicationId);
-            case "log":
-                Long after = Long.valueOf(request.getProperty("after"));
-                return applicationRepository.getTesterLog(applicationId, after);
-            case "ready":
-                return applicationRepository.isTesterReady(applicationId);
-            case "report":
-                return applicationRepository.getTestReport(applicationId);
-            default:
-                throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
-        }
+        return switch (command) {
+            case "status" -> applicationRepository.getTesterStatus(applicationId);
+            case "log"    -> applicationRepository.getTesterLog(applicationId, Long.valueOf(request.getProperty("after")));
+            case "ready"  -> applicationRepository.isTesterReady(applicationId);
+            case "report" -> applicationRepository.getTestReport(applicationId);
+            default       -> throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
+        };
     }
 
     private HttpResponse quotaUsage(ApplicationId applicationId) {

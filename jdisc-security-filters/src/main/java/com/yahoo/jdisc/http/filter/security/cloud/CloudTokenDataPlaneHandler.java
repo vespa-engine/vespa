@@ -11,6 +11,9 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+/**
+ * @author jonmv
+ */
 public class CloudTokenDataPlaneHandler extends ThreadedHttpRequestHandler {
 
     private final List<String> fingerprints;

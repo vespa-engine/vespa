@@ -16,6 +16,9 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * @author jonmv
+ */
 public class CloudTokenDataPlaneHandlerTest {
 
     @Test
