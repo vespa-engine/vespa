@@ -135,7 +135,7 @@ public class LoggerEntry {
             return logger.send(new LoggerEntry(this));
         }
 
-        LoggerEntry build() {
+        public LoggerEntry build() {
             return new LoggerEntry(this);
         }
 
