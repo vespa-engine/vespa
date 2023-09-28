@@ -59,7 +59,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
         maintainers.add(new OsVersionStatusUpdater(controller, intervals.osVersionStatusUpdater));
-        maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
+        maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer, successFactorBaseline.contactInformationMaintainerBaseline));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
         maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().resourceDatabase()));
@@ -204,12 +204,14 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Double deploymentMetricsMaintainerBaseline;
         private final Double trafficFractionUpdater;
         private final Double deploymentInfoMaintainerBaseline;
+        private final Double contactInformationMaintainerBaseline;
 
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
             this.deploymentMetricsMaintainerBaseline = 0.90;
             this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
             this.deploymentInfoMaintainerBaseline = system.isCd() ? 0.5 : 0.95;
+            this.contactInformationMaintainerBaseline = 0.95;
         }
 
     }
