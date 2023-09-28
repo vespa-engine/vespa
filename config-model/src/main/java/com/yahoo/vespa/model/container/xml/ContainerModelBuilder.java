@@ -673,7 +673,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
             CloudTokenDataPlaneHandler() {
                 super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "jdisc-security-filters", null));
-                addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "cloud-token-data-plane-fingerprints"));
+                addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "data-plane-tokens/v1"));
             }
             @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
         }
