@@ -158,7 +158,7 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
     assert(getState().numFields() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0];
     bool field_is_filter = getState().fields()[0].isFilter();
-    if (field_is_filter && (_contexts.size() == 1)) {
+    if ((tfmd.isNotNeeded() || field_is_filter) && (_contexts.size() == 1)) {
         return _contexts[0]->createIterator(&tfmd, strict);
     }
     if (strict) { // use generic weighted set search
