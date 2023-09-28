@@ -70,7 +70,6 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
-import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.DataplaneProxy;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
@@ -1143,9 +1142,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (isHostedTenantApplication(context)) {
             bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState));
         }
-        SearchHandler searchHandler = new SearchHandler(cluster,
+        SearchHandler searchHandler = new SearchHandler(deployState, cluster,
                                                         serverBindings(deployState, context, searchElement, bindingPatterns),
-                                                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null));
+                                                        searchElement);
         cluster.addComponent(searchHandler);
 
         // Add as child to SearchHandler to get the correct chains config.
@@ -1186,7 +1185,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
-        return new ContainerDocumentApi(cluster, documentApiOptions,
+        return new ContainerDocumentApi(deployState, cluster, documentApiOptions,
                                         "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context));
     }
 
