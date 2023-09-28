@@ -29,7 +29,7 @@ public class MockVpcEndpointService implements VpcEndpointService {
     }
 
     @Override
-    public synchronized Optional<DnsChallenge> setPrivateDns(DomainName privateDnsName, ClusterId clusterId, Optional<CloudAccount> account) {
+    public synchronized Optional<DnsChallenge> setPrivateDns(DomainName privateDnsName, ClusterId clusterId, Optional<CloudAccount> account, boolean isGenerated) {
         DnsChallenge challenge = new DnsChallenge(RecordName.from("challenge--" + privateDnsName.value()),
                                                   RecordData.from(account.map(CloudAccount::value).orElse("system")),
                                                   clusterId,
