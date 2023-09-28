@@ -220,6 +220,26 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    void threadpool_configuration_allow_new_syntax() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search>",
+                "    <threadpool>",
+                "      <threads boost=\"10.2\">0.4</threads>",
+                "      <queue>50</queue>",
+                "    </threadpool>",
+                "  </search>",
+                nodesXml,
+                "</container>");
+        createModel(root, clusterElem);
+        ContainerThreadpoolConfig config = root.getConfig(
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASSNAME + "/threadpool@search-handler");
+        assertEquals(-10, config.maxThreads());
+        assertEquals(-1, config.minThreads());
+        assertEquals(-50, config.queueSize());
+    }
+
+    @Test
     void ExecutionFactory_gets_same_chains_config_as_SearchHandler() {
         createBasicSearchModel();
         Component<?, ?> executionFactory = ((SearchHandler) getComponent("default", SearchHandler.HANDLER_CLASSNAME))

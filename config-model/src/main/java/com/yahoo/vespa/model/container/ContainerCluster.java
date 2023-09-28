@@ -144,7 +144,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
-    private final ContainerThreadpool defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool();
+    private final ContainerThreadpool defaultHandlerThreadpool;
 
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
@@ -187,6 +187,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addCommonVespaBundles();
         addSimpleComponent(VoidRequestLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
+        defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool(deployState, null);
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");

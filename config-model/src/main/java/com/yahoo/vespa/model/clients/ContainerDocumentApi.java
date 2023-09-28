@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.clients;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
+import org.w3c.dom.Element;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -29,10 +31,11 @@ public class ContainerDocumentApi {
 
     private final boolean ignoreUndefinedFields;
 
-    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields, Set<Integer> portOverride) {
+    public ContainerDocumentApi(DeployState ds, ContainerCluster<?> cluster, HandlerOptions handlerOptions,
+                                boolean ignoreUndefinedFields, Set<Integer> portOverride) {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
         addRestApiHandler(cluster, handlerOptions, portOverride);
-        addFeedHandler(cluster, handlerOptions, portOverride);
+        addFeedHandler(ds, cluster, handlerOptions, portOverride);
         addVespaClientContainerBundle(cluster);
     }
 
@@ -40,9 +43,9 @@ public class ContainerDocumentApi {
         c.addPlatformBundle(VESPACLIENT_CONTAINER_BUNDLE);
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, Set<Integer> portOverride) {
+    private static void addFeedHandler(DeployState ds, ContainerCluster<?> cluster, HandlerOptions handlerOptions, Set<Integer> portOverride) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
-        var executor = new Threadpool("feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
+        var executor = new Threadpool(ds, "feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
         var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler",
                                             bindingSuffix, handlerOptions, executor, portOverride);
         cluster.addComponent(handler);
@@ -104,9 +107,9 @@ public class ContainerDocumentApi {
     public static final class HandlerOptions {
 
         private final Collection<String> bindings;
-        private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
+        private final Element feedApiThreadpoolOptions;
 
-        public HandlerOptions(Collection<String> bindings, ContainerThreadpool.UserOptions feedApiThreadpoolOptions) {
+        public HandlerOptions(Collection<String> bindings, Element feedApiThreadpoolOptions) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
         }
@@ -114,9 +117,7 @@ public class ContainerDocumentApi {
 
     private static class Threadpool extends ContainerThreadpool {
 
-        Threadpool(String name, ContainerThreadpool.UserOptions threadpoolOptions) {
-            super(name, threadpoolOptions);
-        }
+        Threadpool(DeployState ds, String name, Element xml) { super(ds, name, xml); }
 
         @Override
         protected void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {

@@ -126,9 +126,15 @@ SslProvider = element ssl-provider {
 }
 
 Threadpool = element threadpool {
-    element max-threads { xsd:nonNegativeInteger } &
-    element min-threads { xsd:nonNegativeInteger } &
-    element queue-size { xsd:nonNegativeInteger }
+    ((
+        # TODO Vespa 9 Remove max-threads / min-threads / queue-size
+        element max-threads { xsd:nonNegativeInteger } &
+        element min-threads { xsd:nonNegativeInteger } &
+        element queue-size { xsd:nonNegativeInteger }
+    )|(
+        element threads { xsd:double { minExclusive = "0.0" } & attribute boost { xsd:double { minExclusive = "0.0" } }? }? &
+        element queue { xsd:double { minInclusive = "0.0" } }?
+    ))
 }
 
 Clients = element clients {
