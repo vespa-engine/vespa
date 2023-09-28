@@ -34,17 +34,17 @@ public:
         uint64_t      _subqueries;
     };
 private:
-    bool  isRawScore()  const { return _flags & RAW_SCORE_FLAG; }
-    bool  isMultiPos()  const { return _flags & MULTIPOS_FLAG; }
-    bool  empty() const { return _sz == 0; }
-    void  clear() { _sz = 0; }
-    bool  allocated() const { return isMultiPos(); }
-    const TermFieldMatchDataPosition * getFixed() const { return reinterpret_cast<const TermFieldMatchDataPosition *>(_data._position); }
-    TermFieldMatchDataPosition * getFixed() { return reinterpret_cast<TermFieldMatchDataPosition *>(_data._position); }
-    const TermFieldMatchDataPosition * getMultiple() const { return _data._positions._positions; }
-    TermFieldMatchDataPosition * getMultiple() { return _data._positions._positions; }
-    int32_t  getElementWeight() const { return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight(); }
-    uint32_t getMaxElementLength() const { return empty() ? 0 : allocated() ? _data._positions._maxElementLength : getFixed()->getElementLen(); }
+    bool  isRawScore()  const noexcept { return _flags & RAW_SCORE_FLAG; }
+    bool  isMultiPos()  const noexcept { return _flags & MULTIPOS_FLAG; }
+    bool  empty() const noexcept { return _sz == 0; }
+    void  clear() noexcept { _sz = 0; }
+    bool  allocated() const noexcept { return isMultiPos(); }
+    const TermFieldMatchDataPosition * getFixed() const noexcept { return reinterpret_cast<const TermFieldMatchDataPosition *>(_data._position); }
+    TermFieldMatchDataPosition * getFixed() noexcept { return reinterpret_cast<TermFieldMatchDataPosition *>(_data._position); }
+    const TermFieldMatchDataPosition * getMultiple() const noexcept { return _data._positions._positions; }
+    TermFieldMatchDataPosition * getMultiple() noexcept { return _data._positions._positions; }
+    int32_t  getElementWeight() const noexcept { return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight(); }
+    uint32_t getMaxElementLength() const noexcept { return empty() ? 0 : allocated() ? _data._positions._maxElementLength : getFixed()->getElementLen(); }
     void appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos);
     void allocateVector();
     void resizePositionVector(size_t sz) __attribute__((noinline));
@@ -70,8 +70,8 @@ private:
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
-    size_t size() const { return _sz; }
-    size_t capacity() const { return allocated() ? _data._positions._allocated : 1; }
+    size_t size() const noexcept { return _sz; }
+    size_t capacity() const noexcept { return allocated() ? _data._positions._allocated : 1; }
     void reservePositions(size_t sz) {
         if (sz > capacity()) {
             if (!allocated()) {
@@ -114,7 +114,7 @@ public:
      *
      * @return field id
      **/
-    uint32_t getFieldId() const {
+    uint32_t getFieldId() const noexcept {
         return __builtin_expect(_fieldId != ILLEGAL_FIELD_ID, true) ? _fieldId : IllegalFieldId;
     }
 
@@ -125,7 +125,7 @@ public:
      * @return this object (for chaining)
      * @param docId id of the document we are generating match information for
      **/
-    TermFieldMatchData &reset(uint32_t docId) {
+    TermFieldMatchData &reset(uint32_t docId) noexcept {
         _docId = docId;
         _sz = 0;
         _numOccs = 0;
@@ -145,7 +145,7 @@ public:
      * @return this object (for chaining)
      * @param docId id of the document we are generating match information for
      **/
-    TermFieldMatchData &resetOnlyDocId(uint32_t docId) {
+    TermFieldMatchData &resetOnlyDocId(uint32_t docId) noexcept {
         _docId = docId;
         return *this;
     }
@@ -160,13 +160,13 @@ public:
      * @param docId id of the document we have matched
      * @param score a raw score for the matched document
      **/
-    TermFieldMatchData &setRawScore(uint32_t docId, feature_t score) {
+    TermFieldMatchData &setRawScore(uint32_t docId, feature_t score) noexcept {
         resetOnlyDocId(docId);
         enableRawScore();
         _data._rawScore = score;
         return *this;
     }
-    TermFieldMatchData & enableRawScore() {
+    TermFieldMatchData & enableRawScore() noexcept {
         _flags |= RAW_SCORE_FLAG;
         return *this;
     }
@@ -176,16 +176,16 @@ public:
      *
      * @return raw score
      **/
-    feature_t getRawScore() const {
+    feature_t getRawScore() const noexcept {
         return __builtin_expect(isRawScore(), true) ? _data._rawScore : 0.0;
     }
 
-    void setSubqueries(uint32_t docId, uint64_t subqueries) {
+    void setSubqueries(uint32_t docId, uint64_t subqueries) noexcept {
         resetOnlyDocId(docId);
         _data._subqueries = subqueries;
     }
 
-    uint64_t getSubqueries() const {
+    uint64_t getSubqueries() const noexcept {
         if (!empty() || isRawScore()) {
             return 0;
         }
@@ -197,7 +197,7 @@ public:
      *
      * @return document id
      **/
-    uint32_t getDocId() const {
+    uint32_t getDocId() const noexcept {
         return _docId;
     }
 
@@ -208,7 +208,7 @@ public:
      *
      * @return weight
      **/
-    int32_t getWeight() const {
+    int32_t getWeight() const noexcept {
         if (__builtin_expect(_sz == 0, false)) {
             return 1;
         }
@@ -246,8 +246,8 @@ public:
         return FieldPositionsIterator(len != 0 ? len : FieldPositionsIterator::UNKNOWN_LENGTH, begin(), end());
     }
 
-    uint16_t getNumOccs() const { return _numOccs; }
-    uint16_t getFieldLength() const { return _fieldLength; }
+    uint16_t getNumOccs() const noexcept { return _numOccs; }
+    uint16_t getFieldLength() const noexcept { return _fieldLength; }
 
     void setNumOccs(uint16_t value) { _numOccs = value; }
     void setFieldLength(uint16_t value) { _fieldLength = value; }
@@ -256,23 +256,25 @@ public:
      * This indicates if this instance is actually used for ranking or not.
      * @return true if it is not needed.
      */
-    bool isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u); }
+    bool isNotNeeded() const noexcept {
+        return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u);
+    }
 
-    bool needs_normal_features() const { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
+    bool needs_normal_features() const noexcept { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
 
-    bool needs_interleaved_features() const { return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
+    bool needs_interleaved_features() const noexcept{ return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
 
     /**
      * Tag that this instance is not really used for ranking.
      */
-    void tagAsNotNeeded() {
+    void tagAsNotNeeded() noexcept {
         _flags &=  ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG);
     }
 
     /**
      * Tag that this instance is used for ranking (normal features)
      */
-    void setNeedNormalFeatures(bool needed) {
+    void setNeedNormalFeatures(bool needed) noexcept {
         if (needed) {
             _flags |= UNPACK_NORMAL_FEATURES_FLAG;
         } else {
@@ -283,7 +285,7 @@ public:
     /**
      * Tag that this instance is used for ranking (interleaved features)
      */
-    void setNeedInterleavedFeatures(bool needed) {
+    void setNeedInterleavedFeatures(bool needed) noexcept {
         if (needed) {
             _flags |= UNPACK_INTERLEAVED_FEATURES_FLAG;
         } else {
@@ -297,7 +299,7 @@ public:
      *
      * @return constant
      **/
-    static uint32_t invalidId() { return 0xdeadbeefU; }
+    static uint32_t invalidId() noexcept { return 0xdeadbeefU; }
 };
 
 }
