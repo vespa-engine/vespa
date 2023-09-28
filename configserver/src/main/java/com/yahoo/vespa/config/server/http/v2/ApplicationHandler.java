@@ -95,6 +95,7 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}")) return getApplicationResponse(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/content/{*}")) return content(applicationId(path), path.getRest(), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/filedistributionstatus")) return filedistributionStatus(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/active-token-fingerprints")) return activeTokenFingerprints(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/logs")) return logs(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/deployment")) return deploymentMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/searchnode")) return searchNodeMetrics(applicationId(path));
@@ -185,6 +186,17 @@ public class ApplicationHandler extends HttpHandler {
 
     private HttpResponse filedistributionStatus(ApplicationId applicationId, HttpRequest request) {
         return applicationRepository.fileDistributionStatus(applicationId, getTimeoutFromRequest(request));
+    }
+
+    private HttpResponse activeTokenFingerprints(ApplicationId applicationId) {
+        Slime slime = new Slime();
+        Cursor hostsArray = slime.setObject().setArray("hosts");
+        applicationRepository.activeTokenFingerprints(applicationId).forEach((host, fingerprints) -> {
+            Cursor hostObject = hostsArray.addObject();
+            hostObject.setString("host", host);
+            fingerprints.forEach(hostObject.setArray("fingerprints")::addString);
+        });
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {

@@ -41,16 +41,17 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprintsClient;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationData;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
-import com.yahoo.vespa.config.server.application.ApplicationReindexing.Status;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -129,7 +130,6 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
-import static java.util.Comparator.naturalOrder;
 
 /**
  * The API for managing applications.
@@ -159,6 +159,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Metric metric;
     private final SecretStoreValidator secretStoreValidator;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
+    private final ActiveTokenFingerprints activeTokenFingerprints;
     private final FlagSource flagSource;
 
     @Inject
@@ -188,6 +189,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              metric,
              new SecretStoreValidator(secretStore),
              new DefaultClusterReindexingStatusClient(),
+             new ActiveTokenFingerprintsClient(),
              flagSource);
     }
 
@@ -205,6 +207,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Metric metric,
                                   SecretStoreValidator secretStoreValidator,
                                   ClusterReindexingStatusClient clusterReindexingStatusClient,
+                                  ActiveTokenFingerprints activeTokenFingerprints,
                                   FlagSource flagSource) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
@@ -219,7 +222,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
         this.secretStoreValidator = Objects.requireNonNull(secretStoreValidator);
-        this.clusterReindexingStatusClient = clusterReindexingStatusClient;
+        this.clusterReindexingStatusClient = Objects.requireNonNull(clusterReindexingStatusClient);
+        this.activeTokenFingerprints = Objects.requireNonNull(activeTokenFingerprints);
         this.flagSource = flagSource;
     }
 
@@ -237,6 +241,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
         private FlagSource flagSource = new InMemoryFlagSource();
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private Map<String, List<String>> activeTokens = Map.of();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -298,6 +303,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withActiveTokens(Map<String, List<String>> tokens) {
+            this.activeTokens = tokens;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
@@ -313,6 +323,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              metric,
                                              secretStoreValidator,
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE,
+                                             __ -> activeTokens,
                                              flagSource);
         }
 
@@ -610,6 +621,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
         return uncheck(() -> clusterReindexingStatusClient.getReindexingStatus(getApplication(applicationId)));
+    }
+
+    public Map<String, List<String>> activeTokenFingerprints(ApplicationId applicationId) {
+        return activeTokenFingerprints.get(getApplication(applicationId));
     }
 
     public Long getApplicationGeneration(ApplicationId applicationId) {

@@ -117,6 +117,7 @@ public class ApplicationHandlerTest {
     private ManualClock clock;
     private List<Endpoint> expectedEndpoints;
     private Availability availability;
+    private Map<String, List<String>> activeTokenFingerprints;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -140,6 +141,7 @@ public class ApplicationHandlerTest {
                 .build();
         tenantRepository.addTenant(mytenantName);
         orchestrator = new OrchestratorMock();
+        activeTokenFingerprints = new HashMap<>();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withOrchestrator(orchestrator)
@@ -149,6 +151,7 @@ public class ApplicationHandlerTest {
                 .withConfigserverConfig(configserverConfig)
                 .withSecretStoreValidator(secretStoreValidator)
                 .withEndpointsChecker(endpoints -> { assertEquals(expectedEndpoints, endpoints); return availability; })
+                .withActiveTokens(activeTokenFingerprints)
                 .build();
     }
 
@@ -235,6 +238,18 @@ public class ApplicationHandlerTest {
         var renderedString = SessionHandlerTest.getRenderedString(response);
 
         assertEquals("{\"rate\":0.0}", renderedString);
+    }
+
+    @Test
+    public void testGetTokenFingerprints() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        activeTokenFingerprints.putAll(Map.of("host", List.of("fingers", "toes"),
+                                              "toast", List.of()));
+        HttpResponse response = createApplicationHandler().handleGET(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/active-token-fingerprints", GET));
+        assertEquals(200, response.getStatus());
+        assertEquals("""
+                     {"hosts":[{"host":"host","fingerprints":["fingers","toes"]},{"host":"toast","fingerprints":[]}]}""",
+                     getRenderedString(response));
     }
 
     @Test
