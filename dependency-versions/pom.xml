@@ -112,7 +112,7 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.5.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.98.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.99.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.15.1</onnxruntime.vespa.version>
         <opennlp.vespa.version>2.3.0</opennlp.vespa.version>
