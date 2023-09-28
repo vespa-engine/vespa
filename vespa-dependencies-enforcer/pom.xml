@@ -38,7 +38,7 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependenciesAllProjects">
+                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.AllowedDependencies">
                                     <rootProjectId>com.yahoo.vespa:vespa</rootProjectId>
                                     <specFile>allowed-maven-dependencies.txt</specFile>
                                     <ignored>
@@ -47,14 +47,6 @@
                                         <i>com.yahoo.vespa.bundle-plugin:*:*</i>
                                         <i>com.yahoo.vespa.jdisc_core:*:*</i>
                                     </ignored>
-
-                                    <!-- Classifly all dependencies of below modules as 'test' -->
-                                    <testUtilProjects>
-                                        <!-- Misc -->
-                                        <i>com.yahoo.vespa:testutil</i>
-                                        <!-- Bundle plugin integration test -->
-                                        <i>com.yahoo.vespa.bundle-plugin:*</i>
-                                    </testUtilProjects>
                                 </enforceDependencies>
                             </rules>
                             <fail>true</fail>
