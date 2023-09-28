@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -410,19 +411,16 @@ public class RoutingPolicies {
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarder(endpoint).createRecord(record, Priority.normal, ownerOf(deploymentId));
-            setPrivateDns(endpoint, loadBalancer, deploymentId);
         }
+        setPrivateDns(zoneEndpoints, loadBalancer, deploymentId);
     }
 
-    private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
+    private void setPrivateDns(EndpointList endpoints, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         if (loadBalancer.service().isEmpty()) return;
         // TODO(mpolden): Model one service for each endpoint (type), to allow private endpoints with tokens.
-        boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
-            case token -> true;
-            case mtls -> false;
-            case none -> true;
-        };
-        if (skipBasedOnAuthMethod) return;
+        EndpointList mtlsEndpoints = endpoints.authMethod(AuthMethod.mtls);
+        if (mtlsEndpoints.isEmpty()) return;
+        Endpoint endpoint = mtlsEndpoints.generated().first().orElse(mtlsEndpoints.first().get());
         if (endpoint.routingMethod() != RoutingMethod.exclusive) return; // Not supported for this routing method
         controller.serviceRegistry().vpcEndpointService()
                   .setPrivateDns(DomainName.of(endpoint.dnsName()),
