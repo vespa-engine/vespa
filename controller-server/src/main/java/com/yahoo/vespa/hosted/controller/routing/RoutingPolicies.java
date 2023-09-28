@@ -264,6 +264,12 @@ public class RoutingPolicies {
             } else {
                 weightedEndpoints = weightedEndpoints.not().generated();
             }
+            if (generated && weightedEndpoints.isEmpty()) {
+                // Ignore this policy. If an instance has a global endpoint, and is switching from non-generated to
+                // generated endpoints we cannot update global DNS record for a deployment until it has been deployed at
+                // least once (which assigns a generated endpoint).
+                continue;
+            }
             if (weightedEndpoints.size() != 1) {
                 throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent + ", got " + weightedEndpoints);
             }

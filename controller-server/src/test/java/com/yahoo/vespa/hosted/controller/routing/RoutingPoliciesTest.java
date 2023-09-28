@@ -1237,6 +1237,32 @@ public class RoutingPoliciesTest {
         assertEquals(List.of(), tester.recordNames());
     }
 
+    @Test
+    public void generated_endpoint_migration_with_global_endpoint() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+
+        // Deploy application
+        int clustersPerZone = 2;
+        var zone1 = ZoneId.from("prod", "aws-us-east-1c");
+        var zone2 = ZoneId.from("prod", "aws-eu-west-1a");
+        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                           .region(zone2.region())
+                                                                           .container("c0", AuthMethod.mtls)
+                                                                           .endpoint("foo", "c0")
+                                                                           .build();
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.of("foo"), 0, zone1, zone2);
+
+        // Switch to generated
+        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context.instance().id(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"),
+                             0, Map.of(zone1, 1L, zone2, 1L), true);
+    }
+
     private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {
         EndpointCertificate cert = new EndpointCertificate("testKey", "testCert", 1, 0,
                                                            "request-id",
