@@ -85,10 +85,10 @@ public class Spooler {
     public void processFiles(Function<LoggerEntry, Boolean> transport) throws IOException {
         List<Path> files = listFilesInPath(readyPath);
         if (files.size() == 0) {
-            log.log(Level.FINEST, "No files in ready path " + readyPath.toFile().getAbsolutePath());
+            log.log(Level.FINEST, () -> "No files in ready path " + readyPath.toFile().getAbsolutePath());
             return;
         }
-        log.log(Level.FINE, "Files in ready path: " + files.size());
+        log.log(Level.FINE, () -> "Files in ready path: " + files.size());
 
         List<File> fileList = getFiles(files);
         if ( ! fileList.isEmpty()) {
@@ -116,7 +116,7 @@ public class Spooler {
                 List<String> lines = Files.readAllLines(f.toPath());
                 for (String line : lines) {
                     LoggerEntry entry = LoggerEntry.deserialize(line);
-                    log.log(Level.FINE, "Read entry " + entry + " from " + f);
+                    log.log(Level.FINE, () -> "Read entry " + entry + " from " + f);
                     success = transport.apply(entry);
                     if (! success) {
                         throw new RuntimeException("Unable to process file " + f + ": unsuccessful call to transport() for " + entry);
@@ -190,7 +190,7 @@ public class Spooler {
         String fileName = currentFileName();
         Path file = spoolPath.resolve(processingPath).resolve(fileName);
         try {
-            log.log(Level.FINE, "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
+            log.log(Level.FINE, () -> "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
             Files.writeString(file, entry.serialize() + "\n", StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
             firstWriteTimestamp.compareAndExchange(Instant.EPOCH, clock.instant());
             entryCounter.incrementAndGet();
@@ -242,7 +242,7 @@ public class Spooler {
         if (file.exists() && file.canRead() && file.canWrite()) {
             log.log(Level.INFO, "Directory " + path + " already exists");
         } else if (file.mkdirs()) {
-            log.log(Level.FINE, "Created " + path);
+            log.log(Level.FINE, () -> "Created " + path);
         } else {
             log.log(Level.WARNING, "Could not create " + path + ", please check permissions");
         }
