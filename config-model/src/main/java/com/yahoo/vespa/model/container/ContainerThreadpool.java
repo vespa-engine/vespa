@@ -49,7 +49,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
             var threadsElem = XmlHelper.getOptionalChild(threadpoolElem, "threads").orElse(null);
             if (threadsElem != null) {
                 min = parseMultiplier(threadsElem.getTextContent());
-                if (threadsElem.hasAttribute("boost")) max = parseMultiplier(threadsElem.getAttribute("boost"));
+                max = threadsElem.hasAttribute("boost") ? parseMultiplier(threadsElem.getAttribute("boost")) : min;
             } else if (minElem != null) {
                 min = parseFixed(minElem.getTextContent());
             }
