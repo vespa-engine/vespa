@@ -82,7 +82,8 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag randomizedEndpoints;
+    private final BooleanFlag generatedEndpoints;
+    private final BooleanFlag legacyEndpoints;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -90,7 +91,8 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.randomizedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.generatedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.legacyEndpoints = Flags.LEGACY_ENDPOINTS.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -235,7 +237,7 @@ public class RoutingController {
                 }
             }
         }
-        return EndpointList.copyOf(endpoints);
+        return filterEndpoints(deployment.applicationId(), EndpointList.copyOf(endpoints));
     }
 
     /** Read routing policies and return zone- and region-scoped endpoints for given deployment */
@@ -269,7 +271,7 @@ public class RoutingController {
                 endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
             }
         }
-        return EndpointList.copyOf(endpoints);
+        return filterEndpoints(routingId.instance(), EndpointList.copyOf(endpoints));
     }
 
     /** Returns application endpoints pointing to given deployments */
@@ -425,6 +427,13 @@ public class RoutingController {
                                                                        Optional.of(application.id())));
     }
 
+    private EndpointList filterEndpoints(ApplicationId instance, EndpointList endpoints) {
+        if (generatedEndpointsEnabled(instance) && !legacyEndpointsEnabled(instance)) {
+            return endpoints.generated();
+        }
+        return endpoints;
+    }
+
     private void registerRotationEndpointsInDns(PreparedEndpoints prepared) {
         TenantAndApplicationId owner = TenantAndApplicationId.from(prepared.deployment().applicationId());
         EndpointList globalEndpoints = prepared.endpoints().scope(Scope.global);
@@ -542,8 +551,17 @@ public class RoutingController {
     }
 
     public boolean generatedEndpointsEnabled(ApplicationId instance) {
-        return randomizedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
-                                  .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value()).value();
+        return generatedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                                 .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                                 .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                                 .value();
+    }
+
+    public boolean legacyEndpointsEnabled(ApplicationId instance) {
+        return legacyEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                              .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                              .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                              .value();
     }
 
     private static void requireGeneratedEndpoints(GeneratedEndpointList generatedEndpoints, boolean declared) {
