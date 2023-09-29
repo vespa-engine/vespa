@@ -64,13 +64,13 @@ public class ArithmeticTestCase {
                      SimpleExpression.newOutput(DataType.INT), null);
         assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
                            SimpleExpression.newOutput(DataType.INT), null,
-                           "Attempting to perform arithmetic on a null value.");
+                           "Attempting to perform arithmetic on a null value");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                            SimpleExpression.newOutput(null), null,
-                           "Attempting to perform arithmetic on a null value.");
+                           "Attempting to perform arithmetic on a null value");
         assertVerifyThrows(SimpleExpression.newOutput(null), Operator.ADD,
                            SimpleExpression.newOutput(null), null,
-                           "Attempting to perform arithmetic on a null value.");
+                           "Attempting to perform arithmetic on a null value");
         assertVerifyThrows(SimpleExpression.newOutput(DataType.INT), Operator.ADD,
                            SimpleExpression.newOutput(DataType.STRING), null,
                            "Attempting to perform unsupported arithmetic: [int] + [string]");
@@ -95,7 +95,7 @@ public class ArithmeticTestCase {
                      new SimpleExpression(DataType.INT), DataType.INT);
         assertVerifyThrows(new SimpleExpression(DataType.INT), Operator.ADD,
                            new SimpleExpression(DataType.STRING), null,
-                           "Operands require conflicting input types, int vs string.");
+                           "Operands require conflicting input types, int vs string");
     }
 
     @Test
@@ -114,23 +114,23 @@ public class ArithmeticTestCase {
     @Test
     public void requireThatArithmeticWithNullEvaluatesToNull() {
         assertNull(newArithmetic(new SimpleExpression(), Operator.ADD,
-                                 new SetValueExpression(new LongFieldValue(69))).execute());
-        assertNull(newArithmetic(new SetValueExpression(new LongFieldValue(69)), Operator.ADD,
+                                 new ConstantExpression(new LongFieldValue(69))).execute());
+        assertNull(newArithmetic(new ConstantExpression(new LongFieldValue(69)), Operator.ADD,
                                  new SimpleExpression()).execute());
     }
 
     @Test
     public void requireThatNonNumericOperandThrows() {
         try {
-            newArithmetic(new SetValueExpression(new IntegerFieldValue(6)), Operator.ADD,
-                          new SetValueExpression(new StringFieldValue("9"))).execute();
+            newArithmetic(new ConstantExpression(new IntegerFieldValue(6)), Operator.ADD,
+                          new ConstantExpression(new StringFieldValue("9"))).execute();
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Unsupported operation: [int] + [string]", e.getMessage());
         }
         try {
-            newArithmetic(new SetValueExpression(new StringFieldValue("6")), Operator.ADD,
-                          new SetValueExpression(new IntegerFieldValue(9))).execute();
+            newArithmetic(new ConstantExpression(new StringFieldValue("6")), Operator.ADD,
+                          new ConstantExpression(new IntegerFieldValue(9))).execute();
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Unsupported operation: [string] + [int]", e.getMessage());
@@ -156,8 +156,8 @@ public class ArithmeticTestCase {
     }
 
     private void assertResult(FieldValue lhs, Operator op, FieldValue rhs, FieldValue expected) {
-        assertEquals(expected, evaluate(new SetValueExpression(lhs), op,
-                                        new SetValueExpression(rhs)));
+        assertEquals(expected, evaluate(new ConstantExpression(lhs), op,
+                                        new ConstantExpression(rhs)));
     }
 
     private void assertType(DataType lhs, Operator op, DataType rhs, DataType expected) {
@@ -178,15 +178,15 @@ public class ArithmeticTestCase {
     }
 
     private static ArithmeticExpression newArithmetic(FieldValue lhs, Operator op, FieldValue rhs) {
-        return newArithmetic(new SetValueExpression(lhs), op, new SetValueExpression(rhs));
+        return newArithmetic(new ConstantExpression(lhs), op, new ConstantExpression(rhs));
     }
 
     private static ArithmeticExpression newArithmetic(Expression lhs, Operator op, Expression rhs) {
         return new ArithmeticExpression(lhs, op, rhs);
     }
 
-    private static SetValueExpression newLong(long val) {
-        return new SetValueExpression(new LongFieldValue(val));
+    private static ConstantExpression newLong(long val) {
+        return new ConstantExpression(new LongFieldValue(val));
     }
 
     private static void assertVerify(Expression lhs, Operator op, Expression rhs, DataType val) {

@@ -30,7 +30,7 @@ public class ToLongTestCase {
         Expression exp = new ToLongExpression();
         assertVerify(DataType.INT, exp, DataType.LONG);
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     @Test

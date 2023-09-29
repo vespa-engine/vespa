@@ -21,9 +21,9 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
 
     private final List<T> expressions = new LinkedList<T>();
 
-    protected ExpressionList(Iterable<? extends T> lst, DataType inputType) {
+    protected ExpressionList(Iterable<? extends T> expressions, DataType inputType) {
         super(inputType);
-        for (T exp : lst) {
+        for (T exp : expressions) {
             this.expressions.add(exp);
         }
     }

@@ -42,29 +42,29 @@ public class IfThenTestCase {
         Expression exp = newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                           DataType.STRING, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
         assertVerifyThrows(null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
                                                   DataType.STRING, DataType.STRING),
-                           "Operands require conflicting input types, int vs string.");
+                           "Operands require conflicting input types, int vs string");
         assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.INT,
                                                   DataType.STRING, DataType.STRING),
-                           "Operands require conflicting input types, string vs int.");
+                           "Operands require conflicting input types, string vs int");
         assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                                   DataType.INT, DataType.STRING),
-                           "Operands require conflicting input types, string vs int.");
+                           "Operands require conflicting input types, string vs int");
         assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                                   DataType.STRING, DataType.INT),
-                           "Operands require conflicting input types, string vs int.");
+                           "Operands require conflicting input types, string vs int");
     }
 
     @Test
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.STRING, new FlattenExpression(), DataType.STRING);
         assertVerifyThrows(null, new FlattenExpression(),
-                           "Expected string input, got null.");
+                           "Expected string input, but no input is specified");
         assertVerifyThrows(DataType.INT, new FlattenExpression(),
-                           "Expected string input, got int.");
+                           "Expected string input, got int");
     }
 
     @Test
@@ -116,7 +116,7 @@ public class IfThenTestCase {
     @Test
     public void requireThatAllChildrenSeeInputValue() {
         FieldValueAdapter adapter = createTestAdapter();
-        new StatementExpression(new SetValueExpression(new IntegerFieldValue(69)),
+        new StatementExpression(new ConstantExpression(new IntegerFieldValue(69)),
                                 new IfThenExpression(new AttributeExpression("lhs"),
                                                      Comparator.EQ,
                                                      new AttributeExpression("rhs"),
@@ -128,7 +128,7 @@ public class IfThenTestCase {
         assertNull(null, adapter.getInputValue("ifFalse"));
 
         adapter = createTestAdapter();
-        new StatementExpression(new SetValueExpression(new IntegerFieldValue(69)),
+        new StatementExpression(new ConstantExpression(new IntegerFieldValue(69)),
                                 new IfThenExpression(new AttributeExpression("lhs"),
                                                      Comparator.NE,
                                                      new AttributeExpression("rhs"),
@@ -143,10 +143,10 @@ public class IfThenTestCase {
     @Test
     public void requireThatElseExpIsOptional() {
         ExecutionContext ctx = new ExecutionContext();
-        Expression exp = new IfThenExpression(new SetValueExpression(new IntegerFieldValue(6)),
+        Expression exp = new IfThenExpression(new ConstantExpression(new IntegerFieldValue(6)),
                                               Comparator.GT,
-                                              new SetValueExpression(new IntegerFieldValue(9)),
-                                              new SetValueExpression(new StringFieldValue("69")));
+                                              new ConstantExpression(new IntegerFieldValue(9)),
+                                              new ConstantExpression(new StringFieldValue("69")));
         FieldValue val = ctx.setValue(new IntegerFieldValue(96)).execute(exp).getValue();
         assertTrue(val instanceof IntegerFieldValue);
         assertEquals(96, ((IntegerFieldValue)val).getInteger());
@@ -225,8 +225,8 @@ public class IfThenTestCase {
     @Test
     public void requireThatNullLeftOrRightHandSideEvaluatesToNull() {
         Expression exp = new IfThenExpression(new GetVarExpression("lhs"), Comparator.EQ, new GetVarExpression("rhs"),
-                                              new SetValueExpression(new StringFieldValue("true")),
-                                              new SetValueExpression(new StringFieldValue("false")));
+                                              new ConstantExpression(new StringFieldValue("true")),
+                                              new ConstantExpression(new StringFieldValue("false")));
         assertEquals(new StringFieldValue("true"),
                      exp.execute(new ExecutionContext().setVariable("lhs", new IntegerFieldValue(69))
                                                        .setVariable("rhs", new IntegerFieldValue(69))));
@@ -235,6 +235,25 @@ public class IfThenTestCase {
                                                        .setVariable("rhs", new IntegerFieldValue(9))));
         assertNull(exp.execute(new ExecutionContext().setVariable("lhs", new IntegerFieldValue(69))));
         assertNull(exp.execute(new ExecutionContext().setVariable("rhs", new IntegerFieldValue(69))));
+    }
+
+    @Test
+    public void testRequiredInputType() {
+        var ifExpression = new IfThenExpression(new InputExpression("field1"),
+                                                Comparator.EQ,
+                                                new ConstantExpression(new IntegerFieldValue(0)),
+                                                wrapLikeTheParser(new ConstantExpression(new StringFieldValue("true"))),
+                                                wrapLikeTheParser(new ConstantExpression(new StringFieldValue("false"))));
+        assertNull(ifExpression.requiredInputType());
+        assertEquals(DataType.STRING, ifExpression.createdOutputType());
+
+        var expression = new ScriptExpression(new StatementExpression(ifExpression,
+                                                                      new AttributeExpression(null)));
+        assertNull(expression.requiredInputType());
+    }
+
+    private Expression wrapLikeTheParser(Expression expression) {
+        return new ScriptExpression(new StatementExpression(expression));
     }
 
     private static void assertCmpTrue(FieldValue lhs, Comparator cmp, FieldValue rhs) {
@@ -248,8 +267,8 @@ public class IfThenTestCase {
     private static boolean evaluateIfThen(FieldValue lhs, Comparator cmp, FieldValue rhs) {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new StatementExpression(
-                new SetValueExpression(new IntegerFieldValue(1)),
-                new IfThenExpression(new SetValueExpression(lhs), cmp, new SetValueExpression(rhs),
+                new ConstantExpression(new IntegerFieldValue(1)),
+                new IfThenExpression(new ConstantExpression(lhs), cmp, new ConstantExpression(rhs),
                                      new SetVarExpression("true"),
                                      new SetVarExpression("false"))).execute(ctx);
         return ctx.getVariable("true") != null;

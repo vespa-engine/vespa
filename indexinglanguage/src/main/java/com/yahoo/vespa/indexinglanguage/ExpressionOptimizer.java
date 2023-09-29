@@ -70,7 +70,7 @@ public class ExpressionOptimizer extends ExpressionConverter {
         }
         return exp instanceof InputExpression ||
                exp instanceof NowExpression ||
-               exp instanceof SetValueExpression ||
+               exp instanceof ConstantExpression ||
                exp instanceof HostNameExpression ||
                exp instanceof GetVarExpression;
     }

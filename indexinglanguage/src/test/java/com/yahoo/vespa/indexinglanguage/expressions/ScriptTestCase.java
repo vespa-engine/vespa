@@ -54,20 +54,20 @@ public class ScriptTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
-        assertVerify(DataType.INT, exp, DataType.INT); // does not touch output
-        assertVerifyThrows(null, exp, "Expected int input, got null.");
-        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string.");
+        assertVerify(DataType.INT, exp, DataType.STRING);
+        assertVerifyThrows(null, exp, "Expected int input, but no input is specified");
+        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
 
         assertVerifyThrows(null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
                                            newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT))),
-                           "Statements require conflicting input types, int vs string.");
+                           "Statements require conflicting input types, int vs string");
     }
 
     @Test
     public void requireThatInputValueIsAvailableToAllStatements() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("out-1", DataType.INT),
                                                           new Field("out-2", DataType.INT));
-        newStatement(new SetValueExpression(new IntegerFieldValue(69)),
+        newStatement(new ConstantExpression(new IntegerFieldValue(69)),
                      newScript(newStatement(new AttributeExpression("out-1"),
                                             new AttributeExpression("out-2")))).execute(adapter);
         assertEquals(new IntegerFieldValue(69), adapter.getInputValue("out-1"));
@@ -90,8 +90,8 @@ public class ScriptTestCase {
     @Test
     public void requireThatScriptEvaluatesToInputValue() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("out", DataType.INT));
-        newStatement(new SetValueExpression(new IntegerFieldValue(6)),
-                     newScript(newStatement(new SetValueExpression(new IntegerFieldValue(9)))),
+        newStatement(new ConstantExpression(new IntegerFieldValue(6)),
+                     newScript(newStatement(new ConstantExpression(new IntegerFieldValue(9)))),
                      new AttributeExpression("out")).execute(adapter);
         assertEquals(new IntegerFieldValue(6), adapter.getInputValue("out"));
     }
@@ -99,7 +99,7 @@ public class ScriptTestCase {
     @Test
     public void requireThatVariablesAreAvailableInScript() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("out", DataType.INT));
-        newScript(newStatement(new SetValueExpression(new IntegerFieldValue(69)),
+        newScript(newStatement(new ConstantExpression(new IntegerFieldValue(69)),
                                new SetVarExpression("tmp")),
                   newStatement(new GetVarExpression("tmp"),
                                new AttributeExpression("out"))).execute(adapter);
@@ -109,7 +109,7 @@ public class ScriptTestCase {
     @Test
     public void requireThatVariablesAreAvailableOutsideScript() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("out", DataType.INT));
-        newStatement(newScript(newStatement(new SetValueExpression(new IntegerFieldValue(69)),
+        newStatement(newScript(newStatement(new ConstantExpression(new IntegerFieldValue(69)),
                                             new SetVarExpression("tmp"))),
                      new GetVarExpression("tmp"),
                      new AttributeExpression("out")).execute(adapter);
@@ -119,9 +119,9 @@ public class ScriptTestCase {
     @Test
     public void requireThatVariablesReplaceOthersOutsideScript() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("out", DataType.INT));
-        newStatement(new SetValueExpression(new IntegerFieldValue(6)),
+        newStatement(new ConstantExpression(new IntegerFieldValue(6)),
                      new SetVarExpression("tmp"),
-                     newScript(newStatement(new SetValueExpression(new IntegerFieldValue(9)),
+                     newScript(newStatement(new ConstantExpression(new IntegerFieldValue(9)),
                                             new SetVarExpression("tmp"))),
                      new GetVarExpression("tmp"),
                      new AttributeExpression("out")).execute(adapter);

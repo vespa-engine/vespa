@@ -76,21 +76,21 @@ public class OptimizePredicateTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new OptimizePredicateExpression();
-        assertVerifyThrows(null, exp, "Expected predicate input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int.");
-        assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set.");
+        assertVerifyThrows(null, exp, "Expected predicate input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int");
+        assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set");
 
         VerificationContext context = new VerificationContext().setValueType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
-        assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int.");
+        assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int");
         context.setVariable("arity", DataType.INT);
         assertVerifyCtx(context, exp, DataType.PREDICATE);
         context.setVariable("lower_bound", DataType.INT);
-        assertVerifyCtxThrows(context, exp, "Variable 'lower_bound' must have type long.");
+        assertVerifyCtxThrows(context, exp, "Variable 'lower_bound' must have type long");
         context.setVariable("lower_bound", DataType.LONG);
         assertVerifyCtx(context, exp, DataType.PREDICATE);
         context.setVariable("upper_bound", DataType.INT);
-        assertVerifyCtxThrows(context, exp,  "Variable 'upper_bound' must have type long.");
+        assertVerifyCtxThrows(context, exp,  "Variable 'upper_bound' must have type long");
         context.setVariable("upper_bound", DataType.LONG);
         assertVerifyCtx(context, exp, DataType.PREDICATE);
     }

@@ -51,7 +51,7 @@ public class ExpressionTestCase {
         assertExpression(ScriptExpression.class, "{ 1; 2 }");
         assertExpression(SelectInputExpression.class, "select_input { field1: 2; }");
         assertExpression(SetLanguageExpression.class, "set_language");
-        assertExpression(SetValueExpression.class, "1");
+        assertExpression(ConstantExpression.class, "1");
         assertExpression(SetVarExpression.class, "set_var myvar1");
         assertExpression(SplitExpression.class, "split '1'");
         assertExpression(StatementExpression.class, "1 | 2");

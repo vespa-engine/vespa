@@ -30,8 +30,8 @@ public class ZCurveTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ZCurveExpression();
         assertVerify(PositionDataType.INSTANCE, exp, DataType.LONG);
-        assertVerifyThrows(null, exp, "Expected position input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected position input, got int.");
+        assertVerifyThrows(null, exp, "Expected position input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected position input, got int");
     }
 
     @Test

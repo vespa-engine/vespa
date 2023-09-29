@@ -37,8 +37,8 @@ public class SubstringTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SubstringExpression(6, 9);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     @Test

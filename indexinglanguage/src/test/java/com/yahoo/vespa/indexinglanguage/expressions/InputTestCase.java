@@ -40,7 +40,7 @@ public class InputTestCase {
             new InputExpression("bar").verify(adapter);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Field 'bar' not found.", e.getMessage());
+            assertEquals("Field 'bar' not found", e.getMessage());
         }
     }
 

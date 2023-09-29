@@ -75,7 +75,7 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
             if (type == FieldPathEntry.Type.STRUCT_FIELD) {
                 if (!(value instanceof StructuredFieldValue)) {
                     throw new IllegalArgumentException("Expected structured field value, got " +
-                                                       value.getClass().getName() + ".");
+                                                       value.getClass().getName());
                 }
                 for (Iterator<Map.Entry<Field, FieldValue>> it = ((StructuredFieldValue)value).iterator(); it.hasNext();) {
                     Map.Entry<Field, FieldValue> structEntry = it.next();
@@ -84,8 +84,7 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
                     createUpdatesAt(nextPath, structEntry.getValue(), idx + 1, out);
                 }
             } else if (type == FieldPathEntry.Type.MAP_KEY) {
-                if (value instanceof WeightedSet) {
-                    WeightedSet wset = (WeightedSet)value;
+                if (value instanceof WeightedSet wset) {
                     for (Iterator<FieldValue> it = wset.fieldValueIterator(); it.hasNext();) {
                         FieldValue wsetEntry = it.next();
                         List<FieldPathEntry> nextPath = new ArrayList<>(path);
@@ -102,7 +101,7 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
                     }
                 } else {
                     throw new IllegalArgumentException("Expected map or weighted set, got " +
-                                                       value.getClass().getName() + ".");
+                                                       value.getClass().getName());
                 }
             } else {
                 path.add(pathEntry);
@@ -111,7 +110,7 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
         } else if (update instanceof AddFieldPathUpdate) {
             if (!(value instanceof Array)) {
                 throw new IllegalStateException("Expected array, got " +
-                                                value.getClass().getName() + ".");
+                                                value.getClass().getName());
             }
             out.addFieldPathUpdate(new AddFieldPathUpdate(update.getDocumentType(), new FieldPath(path).toString(),
                                                           update.getOriginalWhereClause(), (Array)value));

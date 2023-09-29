@@ -75,8 +75,8 @@ public class ExactTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ExactExpression();
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
     }
 
     private static void assertAnnotation(int expectedFrom, int expectedLen, StringFieldValue expectedVal,
