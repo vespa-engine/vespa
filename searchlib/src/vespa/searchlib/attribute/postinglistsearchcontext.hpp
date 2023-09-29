@@ -306,27 +306,39 @@ PostingListFoldedSearchContextT<DataT>::countHits() const
             ++it;
         }
     }
-    if (!overflow) {
-        _resume_scan_itr = _upperDictItr;
-    }
     _counted_hits = sum;
     return sum;
 }
 
 template <typename DataT>
+template <bool fill_array>
 void
-PostingListFoldedSearchContextT<DataT>::fillArray()
+PostingListFoldedSearchContextT<DataT>::fill_array_or_bitvector_helper(EntryRef pidx)
+{
+    if constexpr (fill_array) {
+        _merger.addToArray(PostingListTraverser<PostingList>(_postingList, pidx));
+    } else {
+        _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, pidx));
+    }
+}
+
+template <typename DataT>
+template <bool fill_array>
+void
+PostingListFoldedSearchContextT<DataT>::fill_array_or_bitvector()
 {
     for (auto pidx : _posting_indexes) {
-        _merger.addToArray(PostingListTraverser<PostingList>(_postingList, pidx));
+        fill_array_or_bitvector_helper<fill_array>(pidx);
     }
-    for (auto it(_resume_scan_itr); it != _upperDictItr;) {
-        if (use_dictionary_entry(it)) {
-            auto pidx = it.getData().load_acquire();
-            if (pidx.valid()) {
-                _merger.addToArray(PostingListTraverser<PostingList>(_postingList, pidx));
+    if (_resume_scan_itr.valid()) {
+        for (auto it(_resume_scan_itr); it != _upperDictItr;) {
+            if (use_dictionary_entry(it)) {
+                auto pidx = it.getData().load_acquire();
+                if (pidx.valid()) {
+                    fill_array_or_bitvector_helper<fill_array>(pidx);
+                }
+                ++it;
             }
-            ++it;
         }
     }
     _merger.merge();
@@ -334,20 +346,16 @@ PostingListFoldedSearchContextT<DataT>::fillArray()
 
 template <typename DataT>
 void
+PostingListFoldedSearchContextT<DataT>::fillArray()
+{
+    fill_array_or_bitvector<true>();
+}
+
+template <typename DataT>
+void
 PostingListFoldedSearchContextT<DataT>::fillBitVector()
 {
-    for (auto pidx : _posting_indexes) {
-        _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, pidx));
-    }
-    for (auto it(_resume_scan_itr); it != _upperDictItr;) {
-        if (use_dictionary_entry(it)) {
-            auto pidx = it.getData().load_acquire();
-            if (pidx.valid()) {
-                _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, pidx));
-            }
-            ++it;
-        }
-    }
+    fill_array_or_bitvector<false>();
 }
 
 }
