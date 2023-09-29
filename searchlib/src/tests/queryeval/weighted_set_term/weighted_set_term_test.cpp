@@ -167,7 +167,7 @@ void run_simple(bool field_is_filter, bool term_is_not_needed, bool singleTerm)
     }
     WS ws;
     if (singleTerm) {
-        ws.add("3", 30).add("100", 1000);
+        ws.add("3", 30);
     } else {
         ws.add("7", 70).add("5", 50).add("3", 30).add("100", 1000);
     }
@@ -197,6 +197,10 @@ TEST("testSimple unranked") {
     TEST_DO(run_simple(false, true, false));
 }
 
+TEST("testSimple unranked filter filed") {
+    TEST_DO(run_simple(true, true, false));
+}
+
 TEST("testSimple single") {
     TEST_DO(run_simple(false, false, true));
 }
@@ -207,6 +211,10 @@ TEST("testSimple single filter field") {
 
 TEST("testSimple single unranked") {
     TEST_DO(run_simple(false, true, true));
+}
+
+TEST("testSimple single unranked filter field") {
+    TEST_DO(run_simple(true, true, true));
 }
 
 void run_multi(bool field_is_filter, bool term_is_not_needed)
