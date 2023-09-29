@@ -43,6 +43,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -560,7 +561,8 @@ public class ApplicationController {
                     store(application.with(job.application().instance(),
                                            i -> i.withNewDeployment(zone, revision, platform,
                                                                     clock.instant(), warningsFrom(dataAndResult.result().log()),
-                                                                    quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty)))));
+                                                                    quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty),
+                                                                    dataAndResult.data.dataPlaneTokens().stream().map(DataplaneTokenVersions::tokenId).toList()))));
             return dataAndResult.result();
         }
     }
@@ -700,12 +702,24 @@ public class ApplicationController {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> cloudAccountOverride.apply(decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec()));
-            List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
             Supplier<DeploymentEndpoints> endpoints = () -> {
                 if (preparedEndpoints == null) return DeploymentEndpoints.none;
                 PreparedEndpoints prepared = preparedEndpoints.get();
                 generatedEndpoints.set(prepared.endpoints().generated());
                 return new DeploymentEndpoints(prepared.containerEndpoints(), prepared.certificate());
+            };
+            Supplier<List<DataplaneTokenVersions>> dataplaneTokenVersions = () -> {
+                Tags tags = applicationPackage.truncatedPackage().deploymentSpec()
+                        .instance(application.instance())
+                        .map(DeploymentInstanceSpec::tags)
+                        .orElse(Tags.empty());
+                BasicServicesXml services = applicationPackage.truncatedPackage().services(deployment, tags);
+                Set<TokenId> referencedTokens = services.containers().stream()
+                                                        .flatMap(container -> container.dataPlaneTokens().stream())
+                                                        .collect(toSet());
+                return controller.dataplaneTokenService().listTokens(application.tenant()).stream()
+                                 .filter(token -> referencedTokens.contains(token.tokenId()))
+                                 .toList();
             };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
                     endpoints, dockerImageRepo, domain, deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);

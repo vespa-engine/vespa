@@ -163,7 +163,7 @@ public class EndpointCertificateMaintainerTest {
 
     private EndpointCertificateMaintainer.EligibleJob makeDeploymentAtAge(int ageInDays) {
         var deployment = new Deployment(ZoneId.defaultId(), CloudAccount.empty, RevisionId.forProduction(1), Version.emptyVersion,
-                Instant.now().minus(ageInDays, ChronoUnit.DAYS), DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty());
+                Instant.now().minus(ageInDays, ChronoUnit.DAYS), DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty(), List.of());
         return new EndpointCertificateMaintainer.EligibleJob(deployment, ApplicationId.defaultId(), JobType.prod("somewhere"));
     }
 

@@ -19,6 +19,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -134,6 +135,7 @@ public class ApplicationSerializer {
     private static final String lastWrittenField = "lastWritten";
     private static final String lastQueriesPerSecondField = "lastQueriesPerSecond";
     private static final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private static final String dataPlaneTokensField = "dataPlaneTokens";
 
     // DeploymentJobs fields
     private static final String jobStatusField = "jobStatus";
@@ -221,6 +223,7 @@ public class ApplicationSerializer {
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
         object.setDouble(quotaUsageRateField, deployment.quota().rate());
         deployment.cost().ifPresent(cost -> object.setDouble(deploymentCostField, cost));
+        deployment.dataPlaneTokens().stream().map(TokenId::value).forEach(object.setArray(dataPlaneTokensField)::addString);
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -433,7 +436,8 @@ public class ApplicationSerializer {
                                                         SlimeUtils.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
                                                         SlimeUtils.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
                               QuotaUsage.create(SlimeUtils.optionalDouble(deploymentObject.field(quotaUsageRateField))),
-                              SlimeUtils.optionalDouble(deploymentObject.field(deploymentCostField)));
+                              SlimeUtils.optionalDouble(deploymentObject.field(deploymentCostField)),
+                              SlimeUtils.entriesStream(deploymentObject.field(dataPlaneTokensField)).map(Inspector::asString).map(TokenId::of).toList());
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {

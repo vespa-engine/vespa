@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.OptionalDouble;
 
@@ -27,9 +29,11 @@ public class Deployment {
     private final DeploymentActivity activity;
     private final QuotaUsage quota;
     private final OptionalDouble cost;
+    private final List<TokenId> dataPlaneTokens;
 
     public Deployment(ZoneId zone, CloudAccount cloudAccount, RevisionId revision, Version version, Instant deployTime,
-                      DeploymentMetrics metrics, DeploymentActivity activity, QuotaUsage quota, OptionalDouble cost) {
+                      DeploymentMetrics metrics, DeploymentActivity activity, QuotaUsage quota, OptionalDouble cost,
+                      List<TokenId> dataPlaneTokens) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
         this.revision = Objects.requireNonNull(revision, "revision cannot be null");
@@ -39,6 +43,7 @@ public class Deployment {
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
         this.quota = Objects.requireNonNull(quota, "usage cannot be null");
         this.cost = Objects.requireNonNull(cost, "cost cannot be null");
+        this.dataPlaneTokens = List.copyOf(dataPlaneTokens);
     }
 
     /** Returns the zone this was deployed to */
@@ -70,23 +75,26 @@ public class Deployment {
     /** Returns cost, in dollars per hour, for this */
     public OptionalDouble cost() { return cost; }
 
+    /** Returns the data plane token IDs referenced by this deployment. */
+    public List<TokenId> dataPlaneTokens() { return dataPlaneTokens; }
+
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics,
-                              activity.recordAt(instant, metrics), quota, cost);
+                              activity.recordAt(instant, metrics), quota, cost, dataPlaneTokens);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, cost);
+        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, cost, dataPlaneTokens);
     }
 
     public Deployment withCost(double cost) {
         if (this.cost.isPresent() && Double.compare(this.cost.getAsDouble(), cost) == 0) return this;
-        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost));
+        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost), dataPlaneTokens);
     }
 
     public Deployment withoutCost() {
         if (cost.isEmpty()) return this;
-        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, OptionalDouble.empty());
+        return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, OptionalDouble.empty(), dataPlaneTokens);
     }
 
     @Override
