@@ -75,11 +75,11 @@ func ParseJvmMemorySpec(spec string) (result AmountOfMemory, err error) {
 	n, err = fmt.Sscanf(spec, "%d%c", &val, &suffix)
 	if n == 2 && err == nil {
 		switch suffix {
-		case 'k':
+		case 'k', 'K':
 			result = KiloBytesOfMemory(val)
-		case 'm':
+		case 'm', 'M':
 			result = MegaBytesOfMemory(int(val))
-		case 'g':
+		case 'g', 'G':
 			result = GigaBytesOfMemory(int(val))
 		default:
 			err = fmt.Errorf("Unknown suffix in JVM memory spec '%s'", spec)
