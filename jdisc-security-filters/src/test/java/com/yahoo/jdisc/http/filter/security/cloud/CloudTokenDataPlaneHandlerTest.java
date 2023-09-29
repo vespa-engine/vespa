@@ -16,6 +16,9 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * @author jonmv
+ */
 public class CloudTokenDataPlaneHandlerTest {
 
     @Test
@@ -46,7 +49,7 @@ public class CloudTokenDataPlaneHandlerTest {
         assertEquals(200,
                      response.getStatus());
         assertEquals("""
-                     {"fingerprints":["index","middle","pinky","ring","thumb","toasty"]}""",
+                     {"tokens":[{"id":"id1","fingerprints":["index","middle","pinky","ring","thumb"]},{"id":"id2","fingerprints":["toasty"]}]}""",
                      new ByteArrayOutputStream() {{ response.render(this); }}.toString(UTF_8));
     }
 

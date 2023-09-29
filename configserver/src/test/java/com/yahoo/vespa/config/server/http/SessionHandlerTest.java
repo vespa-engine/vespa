@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Base class for session handler tests
  *
@@ -52,7 +54,7 @@ public class SessionHandlerTest {
     public static String getRenderedString(HttpResponse response) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        return baos.toString(StandardCharsets.UTF_8);
+        return baos.toString(UTF_8);
     }
 
     public enum Cmd {
