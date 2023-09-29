@@ -124,7 +124,7 @@ public class DataplaneTokenService {
             token.forEach((id, prints) -> {
                 states.merge(id,
                              prints.stream().collect(toMap(print -> print, __ -> true)),
-                             (a, b) -> new HashMap<>() {{
+                             (a, b) -> new HashMap<>() {{ // true iff. present in both, false iff. present in one.
                                  a.forEach((p, s) -> put(p, s && b.getOrDefault(p, false)));
                                  b.forEach((p, s) -> putIfAbsent(p, false));
                              }});

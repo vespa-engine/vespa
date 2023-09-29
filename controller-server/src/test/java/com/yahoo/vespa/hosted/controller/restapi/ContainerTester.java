@@ -143,6 +143,13 @@ public class ContainerTester {
         assertResponse(() -> request, expectedResponse, expectedStatusCode);
     }
 
+    public void assertJsonResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
+        assertResponse(request,
+                       (response) -> assertEquals(SlimeUtils.toJson(SlimeUtils.jsonToSlimeOrThrow(expectedResponse).get(), false),
+                                                  SlimeUtils.toJson(SlimeUtils.jsonToSlimeOrThrow(response.getBodyAsString()).get(), false)),
+                       expectedStatusCode);
+    }
+
     public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
         assertResponse(request,
                        (response) -> assertEquals(expectedResponse, new String(response.getBody(), UTF_8)),
