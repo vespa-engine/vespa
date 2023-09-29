@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <map>
+#include <set>
+#include <queue>
 
 namespace vespalib::fuzzy {
 
@@ -286,24 +288,65 @@ vespalib::string format_vector(const std::vector<T> &vector, bool compact = fals
     return str;
 }
 
+// A table-based state using the InlineTfa tables to simulate stepping
+// a dfa with max edit distance N. The state itself is represented by
+// a number used as offset into these tables (state). Since the state
+// is parametric, we also store the minimal boundary of the state
+// separately (index).
+template <uint8_t N>
+struct TfaState {
+    uint32_t index;
+    uint32_t state;
+    // needed by dfa matcher concept (should use std::declval instead)
+    constexpr TfaState() noexcept : index(0), state(0) {}
+    constexpr TfaState(uint32_t i, uint32_t s) noexcept : index(i), state(s) {}
+    static constexpr TfaState start() { return TfaState(0, 1); }
+    constexpr bool valid() const noexcept { return state != 0; }
+    constexpr TfaState next(uint32_t bits) const noexcept {
+        const auto &entry = InlineTfa<N>::table[state][bits];
+        return TfaState(index + entry.step, entry.state);
+    }
+    constexpr bool is_valid_edge(uint32_t bits) const noexcept {
+        return InlineTfa<N>::table[state][bits].state != 0;
+    }
+    constexpr uint8_t edits(uint32_t end) const noexcept {
+        uint32_t leap = (end - index);
+        return (leap < window_size<N>()) ? InlineTfa<N>::edits[state][leap] : N + 1;
+    }
+    // for pretty graphviz dumping; minimal possible edits given perfect input from here on
+    constexpr uint32_t min_edits() const noexcept {
+        uint8_t res = N + 1;
+        for (uint32_t i = 0; i < window_size<N>(); ++i) {
+            res = std::min(res, InlineTfa<N>::edits[state][i]);
+        }
+        return res;
+    }
+    // for pretty graphviz dumping; actual edits needed to reach the word end from a valid state
+    constexpr uint32_t exact_edits(uint32_t end) const noexcept {
+        assert(valid());
+        uint32_t res = end;
+        for (uint32_t i = 0; i < window_size<N>(); ++i) {
+            if (uint32_t e = InlineTfa<N>::edits[state][i]; e <= N) {
+                res = std::min(res, e + diff(index + i, end));
+            }
+        }
+        return res;
+    }
+    // for pretty graphviz dumping; enable using in map and set
+    bool operator<(const TfaState &rhs) const noexcept {
+        return std::tie(index, state) < std::tie(rhs.index, rhs.state);
+    }
+    // for pretty graphviz dumping; check for redundant edges
+    bool operator==(const TfaState &rhs) const noexcept {
+        return std::tie(index, state) == std::tie(rhs.index, rhs.state);
+    }
+};
+
 template <uint8_t N>
 struct TableMatcher {
-    struct S {
-        uint32_t index;
-        uint32_t state;
-        // needed by dfa matcher concept (should use std::declval instead)
-        constexpr S() noexcept : index(0), state(0) {}
-        constexpr S(uint32_t i, uint32_t s) noexcept : index(i), state(s) {}
-        S next(uint32_t bits) noexcept {
-            const auto &entry = InlineTfa<N>::table[state][bits];
-            return S(index + entry.step, entry.state);
-        }
-        constexpr bool is_valid_edge(uint32_t bits) const noexcept {
-            return InlineTfa<N>::table[state][bits].state != 0;
-        }
-    };
-    using StateType = S;
-    using StateParamType = StateType;
+    using S = TfaState<N>;
+    using StateType = TfaState<N>;
+    using StateParamType = TfaState<N>;
     using EdgeType = uint32_t;
 
     const TableDfa<N>::Lookup *lookup;
@@ -314,16 +357,13 @@ struct TableMatcher {
       noexcept : lookup(lookup_in), end(end_in), cased(cased_in) {}
     
     bool is_cased() const noexcept { return cased; }
-    static constexpr S start() noexcept { return S(0, 1); }
+    static constexpr S start() noexcept { return S::start(); }
 
-    uint8_t match_edit_distance(S s) const noexcept {
-        uint32_t leap = (end - s.index);
-        return (leap < window_size<N>()) ? InlineTfa<N>::edits[s.state][leap] : N + 1;
-    }
-    bool is_match(S s) const noexcept { return match_edit_distance(s) <= N; }
+    uint8_t match_edit_distance(S s) const noexcept { return s.edits(end); }
+    bool is_match(S s) const noexcept { return s.edits(end) <= N; }
 
-    static constexpr bool can_match(S s) noexcept { return (s.state != 0); }
-    static constexpr bool valid_state(S s) noexcept { return (s.state != 0); }
+    static constexpr bool can_match(S s) noexcept { return s.valid(); }
+    static constexpr bool valid_state(S) noexcept { return true; }
 
     S match_wildcard(S s) const noexcept { return s.next(0); }
     S match_input(S s, uint32_t c) const noexcept {
@@ -381,7 +421,7 @@ struct TableMatcher {
         return 0;
     }
     
-    static constexpr bool valid_edge(uint32_t c) noexcept { return c != 0; }
+    static constexpr bool valid_edge(uint32_t) noexcept { return true; }
     static constexpr uint32_t edge_to_u32char(uint32_t c) noexcept { return c; }
     S edge_to_state(S s, uint32_t c) const noexcept { return match_input(s, c); }
 
@@ -476,16 +516,68 @@ template <uint8_t N>
 void
 TableDfa<N>::dump_as_graphviz(std::ostream &os) const
 {
+    using state_t = TfaState<N>;
+    auto id_of = [state_ids = std::map<state_t,uint32_t>()](state_t state) mutable {
+                     return state_ids.emplace(state, state_ids.size()).first->second;
+                 };
+    auto explore = [explored = std::set<state_t>()](state_t state) mutable {
+                       return explored.insert(state).second;
+                   };
+    auto edits = [end = (_lookup.size() - 1)](state_t state) noexcept -> uint32_t {
+                     return state.exact_edits(end);
+                 };
+    struct Edge {
+        uint32_t input;
+        state_t from;
+        state_t to;
+        operator bool() const { return to.valid(); }
+    };
+    auto best_edge = [&](const Edge &a, const Edge &b) {
+                         // inverted due to priority queue
+                         if (a.to.min_edits() == b.to.min_edits()) {
+                             return edits(a.to) > edits(b.to);
+                         }
+                         return a.to.min_edits() > b.to.min_edits();
+                     };
+    auto todo = std::priority_queue<Edge,std::vector<Edge>,decltype(best_edge)>(best_edge);
+    auto handle_state = [&](state_t state) {
+                            if (explore(state)) {
+                                // number states by following the best edges first
+                                auto my_id = id_of(state);
+                                if (edits(state) <= N) {
+                                    os << "    " << my_id << " [label=\"" << my_id << "(" << edits(state) << ")\", style=\"filled\"];\n";
+                                }
+                                auto null_edge = Edge{0, state, state.next(0)};
+                                if (null_edge) {
+                                    todo.push(null_edge);
+                                }
+                                for (auto [c, bits]: _lookup[state.index].list) {
+                                    if (auto edge = Edge{c, state, state.next(bits)}; edge && edge.to != null_edge.to) {
+                                        // only process valid out edges that are not covered by the null_edge
+                                        todo.push(edge);
+                                    }
+                                }
+                            }
+                        };
+    auto handle_edge = [&](Edge edge) {
+                           handle_state(edge.to);
+                           if (edge.input != 0) {
+                               std::string as_utf8;
+                               append_utf32_char(as_utf8, edge.input);
+                               os << "    " << id_of(edge.from) << " -> " << id_of(edge.to) << " [label=\"" << as_utf8 << "\"];\n";
+                           } else {
+                               os << "    " << id_of(edge.from) << " -> " << id_of(edge.to) << " [label=\"*\"];\n";
+                           }
+                       };
     os << std::dec << "digraph table_dfa {\n";
-    for (size_t i = 0; i < _lookup.size(); ++i) {
-        for (size_t j = 0; j < window_size(); ++j) {
-            if (_lookup[i].list[j].input != 0) {
-                std::string as_utf8;
-                append_utf32_char(as_utf8, _lookup[i].list[j].input);
-                os << "    x" << i << " -> " << format_vector(expand_bits<N>(_lookup[i].list[j].match), true) << " [label=\"" << as_utf8 << "\"];\n";
-            }
-        }
-        os << "    x" << i << " -> " << format_vector(expand_bits<N>(0), true) << " [label=\"*\"];\n";
+    os << "    fontname=\"Helvetica,Arial,sans-serif\"\n";
+    os << "    node [shape=circle, fontname=\"Helvetica,Arial,sans-serif\", fixedsize=true];\n";
+    os << "    edge [fontname=\"Helvetica,Arial,sans-serif\"];\n";
+    handle_state(state_t::start());
+    while (!todo.empty()) {
+        auto next_edge = todo.top();
+        todo.pop();
+        handle_edge(next_edge);
     }
     os << "}\n";
 }

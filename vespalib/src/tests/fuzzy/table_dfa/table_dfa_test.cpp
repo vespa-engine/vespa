@@ -284,14 +284,6 @@ TEST(TableDfaTest, minimal_boundary_will_never_exceed_word_end_with_max_edits_2)
     verify_word_end_boundary<2>();
 }
 
-TEST(TableDfaTest, graphviz_for_food_with_max_edits_1) {
-    auto dfa = LevenshteinDfa::build("food", 1, LevenshteinDfa::Casing::Cased, LevenshteinDfa::DfaType::Table);
-    std::ostringstream out;
-    dfa.dump_as_graphviz(out);
-    fprintf(stderr, "memory usage: %zu\n", dfa.memory_usage());
-    fprintf(stderr, "%s", out.str().c_str());
-}
-
 template <uint8_t N>
 void verify_inline_tfa() {
     auto tfa = make_tfa<N>();
@@ -390,6 +382,14 @@ void dump_tfa_graph() {
 
 TEST(TableDfaTest, graphviz_for_tfa_with_max_edits_1) {
     dump_tfa_graph<1>();
+}
+
+TEST(TableDfaTest, graphviz_for_food_with_max_edits_1) {
+    auto dfa = LevenshteinDfa::build("food", 1, LevenshteinDfa::Casing::Cased, LevenshteinDfa::DfaType::Table);
+    std::ostringstream out;
+    dfa.dump_as_graphviz(out);
+    fprintf(stderr, "memory usage: %zu\n", dfa.memory_usage());
+    fprintf(stderr, "%s", out.str().c_str());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
