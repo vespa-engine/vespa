@@ -91,7 +91,7 @@ Blueprint::HitEstimate
 AndNotBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
     if (data.empty()) {
-        return HitEstimate();
+        return {};
     }
     return data[0];
 }
@@ -99,7 +99,7 @@ AndNotBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 AndNotBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -132,7 +132,7 @@ AndNotBlueprint::get_replacement()
     if (childCnt() == 1) {
         return removeChild(0);
     }
-    return Blueprint::UP();
+    return {};
 }
 
 void
@@ -187,7 +187,7 @@ AndBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 AndBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -213,7 +213,7 @@ AndBlueprint::get_replacement()
     if (childCnt() == 1) {
         return removeChild(0);
     }
-    return Blueprint::UP();
+    return {};
 }
 
 void
@@ -304,7 +304,7 @@ OrBlueprint::get_replacement()
     if (childCnt() == 1) {
         return removeChild(0);
     }
-    return Blueprint::UP();
+    return {};
 }
 
 void
@@ -361,7 +361,7 @@ WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 WeakAndBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -391,9 +391,9 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     assert(_weights.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
         // TODO: pass ownership with unique_ptr
-        terms.push_back(wand::Term(sub_searches[i].release(),
-                                   _weights[i],
-                                   getChild(i).getState().estimate().estHits));
+        terms.emplace_back(sub_searches[i].release(),
+                           _weights[i],
+                           getChild(i).getState().estimate().estHits);
     }
     return WeakAndSearch::create(terms, _n, strict);
 }
@@ -415,7 +415,7 @@ NearBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 NearBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -468,7 +468,7 @@ ONearBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 ONearBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -519,7 +519,7 @@ Blueprint::HitEstimate
 RankBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
     if (data.empty()) {
-        return HitEstimate();
+        return {};
     }
     return data[0];
 }
@@ -527,7 +527,7 @@ RankBlueprint::combine(const std::vector<HitEstimate> &data) const
 FieldSpecBaseList
 RankBlueprint::exposeFields() const
 {
-    return FieldSpecBaseList();
+    return {};
 }
 
 void
@@ -547,7 +547,7 @@ RankBlueprint::get_replacement()
     if (childCnt() == 1) {
         return removeChild(0);
     }
-    return Blueprint::UP();
+    return {};
 }
 
 void
@@ -581,7 +581,7 @@ RankBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
             }
         }
         if (require_unpack.size() == 1) {
-            return SearchIterator::UP(std::move(require_unpack[0]));
+            return std::move(require_unpack[0]);
         } else {
             return RankSearch::create(std::move(require_unpack), strict);
         }
@@ -629,7 +629,7 @@ SourceBlenderBlueprint::inheritStrict(size_t) const
 class FindSource : public Blueprint::IPredicate
 {
 public:
-    FindSource(uint32_t sourceId) : _sourceId(sourceId) { }
+    explicit FindSource(uint32_t sourceId) noexcept : _sourceId(sourceId) { }
     bool check(const Blueprint & bp) const override { return bp.getSourceId() == _sourceId; }
 private:
     uint32_t _sourceId;
@@ -655,12 +655,10 @@ SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searc
     assert(sub_searches.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
         // TODO: pass ownership with unique_ptr
-        children.push_back(SourceBlenderSearch::Child(sub_searches[i].release(),
-                                                      getChild(i).getSourceId()));
+        children.emplace_back(sub_searches[i].release(), getChild(i).getSourceId());
         assert(children.back().sourceId != 0xffffffff);
     }
-    return SourceBlenderSearch::create(_selector.createIterator(),
-                                       children, strict);
+    return SourceBlenderSearch::create(_selector.createIterator(), children, strict);
 }
 
 SearchIterator::UP
