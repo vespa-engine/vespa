@@ -228,7 +228,7 @@ public class DeployState implements ConfigDefinitionStore {
     // Mapping from key to something that can create a config definition.
     private Map<ConfigDefinitionKey, UnparsedConfigDefinition> existingConfigDefs = null;
 
-    // Cache of config defs for all [def,version] combinations looked up so far.
+    // Cache of config definitions looked up so far.
     private final Map<ConfigDefinitionKey, ConfigDefinition> defArchive = new LinkedHashMap<>();
 
     public ApplicationPackage getApplicationPackage() {
