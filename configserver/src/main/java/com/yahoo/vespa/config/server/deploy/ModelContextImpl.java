@@ -29,6 +29,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -309,6 +310,7 @@ public class ModelContextImpl implements ModelContext {
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                    .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                     .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
                     .boxedValue();
@@ -321,6 +323,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -333,6 +336,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_ID, clusterId.value())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -409,21 +413,16 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm());
-            this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm())
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.toSerializedFormWithoutInstance());
+            this.allowDisableMtls = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_DISABLE_MTLS);
             this.operatorCertificates = operatorCertificates;
-            this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+            this.tlsCiphersOverride = flagValue(flagSource, applicationId, PermanentFlags.TLS_CIPHERS_OVERRIDE);
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
-            this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+            this.environmentVariables = flagValue(flagSource, applicationId, PermanentFlags.ENVIRONMENT_VARIABLES);
             this.cloudAccount = cloudAccount;
-            this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
-            this.endpointConnectionTtl = Duration.ofSeconds(
-                    PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource)
-                            .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value());
+            this.allowUserFilters = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_USER_FILTERS);
+            this.endpointConnectionTtl = Duration.ofSeconds(flagValue(flagSource, applicationId, PermanentFlags.ENDPOINT_CONNECTION_TTL));
             this.dataplaneTokens = dataplaneTokens;
         }
 
@@ -524,4 +523,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
     }
 
+    private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
+        return flag.bindTo(source)
+                .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                .boxedValue();
+    }
 }
