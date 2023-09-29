@@ -9,7 +9,6 @@
 #include "postingstore.hpp"
 #include "posting_list_traverser.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 
@@ -99,7 +98,7 @@ void
 PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
     if (!_merger.merge_done() && _uniqueValues >= 2u) {
-        if (execInfo.isStrict() && !fallbackToFiltering()) {
+        if ((execInfo.isStrict() || use_posting_list_when_non_strict(execInfo)) && !fallbackToFiltering()) {
             size_t sum(countHits());
             if (sum < _docIdLimit / 64) {
                 _merger.reserveArray(_uniqueValues, sum);

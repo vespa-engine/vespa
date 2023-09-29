@@ -10,8 +10,9 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/util/regexp.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
+#include <vespa/vespalib/util/regexp.h>
 #include <regex>
 #include <optional>
 
@@ -95,6 +96,9 @@ protected:
         // numHits > 1000: make sure that posting lists are unit tested.
         return (numHits > 1000) &&
             (calculateFilteringCost() < calculatePostingListCost(numHits));
+    }
+    virtual bool use_posting_list_when_non_strict(const queryeval::ExecuteInfo&) const {
+        return false;
     }
     virtual bool fallback_to_approx_num_hits() const {
         return ((_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION) &&
@@ -215,6 +219,7 @@ private:
     bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
         return use_dictionary_entry(it);
     }
+    bool use_posting_list_when_non_strict(const queryeval::ExecuteInfo&) const override;
 public:
     StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -350,6 +355,42 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(PostingLi
         return this->is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it, _enumStore.get_data_store());
     }
     return true;
+}
+
+template <typename BaseSC, typename AttrT, typename DataT>
+bool
+StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_list_when_non_strict(const queryeval::ExecuteInfo& info) const
+{
+    if (this->isFuzzy()) {
+        uint32_t exp_doc_hits = this->_docIdLimit * info.hitRate();
+        constexpr uint32_t fuzzy_use_posting_list_doc_limit = 10000;
+        /**
+         * The above constant was derived after a query latency experiment with fuzzy matching
+         * on 2M documents with a dictionary size of 292070.
+         *
+         * Cost per document in dfa-based fuzzy matching (scanning the dictionary and merging posting lists) - strict iterator:
+         *   2.8 ms / 2k = 0.0014 ms
+         *   4.4 ms / 20k = 0.00022 ms
+         *   9.0 ms / 200k = 0.000045 ms
+         *   98 ms / 1M = 0.000098 ms
+         *
+         * Cost per document in lookup-based fuzzy matching - non-strict iterator:
+         *   7.6 ms / 2k = 0.0038 ms
+         *   54 ms / 20k = 0.0027 ms
+         *   529 ms / 200k = 0.0026 ms
+         *
+         * Based on this experiment, we observe that we should avoid lookup-based fuzzy matching
+         * when the number of documents to calculate this on exceeds a number between 2000 - 20000.
+         *
+         * Also note that the cost of scanning the dictionary and performing the fuzzy matching
+         * is already performed at this point.
+         * The only work remaining if returning true is merging the posting lists.
+         */
+        if (exp_doc_hits > fuzzy_use_posting_list_doc_limit) {
+            return true;
+        }
+    }
+    return false;
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>
