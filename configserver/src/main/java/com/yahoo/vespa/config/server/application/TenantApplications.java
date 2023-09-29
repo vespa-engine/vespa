@@ -23,10 +23,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
@@ -38,7 +36,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,6 +60,8 @@ import static java.util.stream.Collectors.toSet;
 public class TenantApplications implements RequestHandler, HostValidator {
 
     private static final Logger log = Logger.getLogger(TenantApplications.class.getName());
+    /* Time to wait for all config servers to get event when an application is removed */
+    private static final Duration waitForAll = Duration.ofSeconds(5);
 
     private final Curator curator;
     private final ApplicationCuratorDatabase database;
@@ -431,147 +430,17 @@ public class TenantApplications implements RequestHandler, HostValidator {
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 
     public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {
-        var barrierPath = barrierPath(applicationId);
-        return RemoveApplicationWaiter.createAndInitialize(curator, barrierPath, serverId);
+        return curator.createCompletionWaiter(barrierPath(applicationId), serverId, waitForAll);
     }
 
     public CompletionWaiter getRemoveApplicationWaiter(ApplicationId applicationId) {
-        var barrierPath = barrierPath(applicationId);
-        return RemoveApplicationWaiter.create(curator, barrierPath, serverId);
+        return curator.getCompletionWaiter(barrierPath(applicationId), serverId, waitForAll);
     }
 
-    private Path barrierPath(ApplicationId applicationId) {
+    private static Path barrierPath(ApplicationId applicationId) {
         return TenantRepository.getBarriersPath().append(applicationId.tenant().value())
                 .append("delete-application")
                 .append(applicationId.serializedForm());
-    }
-
-    /**
-     * Waiter for removing application. Will wait for some time for all servers to remove application,
-     * but will accept the majority of servers to have removed app if it takes a long time.
-     */
-    // TODO: Merge with CuratorCompletionWaiter
-    static class RemoveApplicationWaiter implements CompletionWaiter {
-
-        private static final java.util.logging.Logger log = Logger.getLogger(RemoveApplicationWaiter.class.getName());
-        private static final Duration waitForAllDefault = Duration.ofSeconds(5);
-
-        private final Curator curator;
-        private final Path barrierPath;
-        private final Path waiterNode;
-        private final Duration waitForAll;
-        private final Clock clock = Clock.systemUTC();
-
-        RemoveApplicationWaiter(Curator curator, Path barrierPath, String serverId) {
-            this(curator, barrierPath, serverId, waitForAllDefault);
-        }
-
-        RemoveApplicationWaiter(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
-            this.barrierPath = barrierPath;
-            this.waiterNode = barrierPath.append(serverId);
-            this.curator = curator;
-            this.waitForAll = waitForAll;
-        }
-
-        @Override
-        public void awaitCompletion(Duration timeout) {
-            List<String> respondents;
-            try {
-                respondents = awaitInternal(timeout);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            if (respondents.size() < barrierMemberCount()) {
-                throw new CompletionTimeoutException("Timed out waiting for peer config servers to remove application " +
-                                                     "(waited for barrier " + barrierPath + ")." +
-                                                     "Got response from " + respondents + ", but need response from " +
-                                                     "at least " + barrierMemberCount() + " server(s). " +
-                                                     "Timeout passed as argument was " + timeout.toMillis() + " ms");
-            }
-        }
-
-        private List<String> awaitInternal(Duration timeout) throws Exception {
-            Instant startTime = clock.instant();
-            Instant endTime = startTime.plus(timeout);
-            Instant gotQuorumTime = Instant.EPOCH;
-            List<String> respondents;
-            do {
-                respondents = curator.framework().getChildren().forPath(barrierPath.getAbsolute());
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
-                                        respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
-                }
-
-                // If all config servers responded, return
-                if (respondents.size() == curator.zooKeeperEnsembleCount()) {
-                    logBarrierCompleted(respondents, startTime);
-                    break;
-                }
-
-                // If some are missing, quorum is enough, but wait for all up to 5 seconds before returning
-                if (respondents.size() >= barrierMemberCount()) {
-                    if (gotQuorumTime.isBefore(startTime))
-                        gotQuorumTime = clock.instant();
-
-                    // Give up if more than some time has passed since we got quorum, otherwise continue
-                    if (Duration.between(clock.instant(), gotQuorumTime.plus(waitForAll)).isNegative()) {
-                        logBarrierCompleted(respondents, startTime);
-                        break;
-                    }
-                }
-
-                Thread.sleep(100);
-            } while (clock.instant().isBefore(endTime));
-
-            return respondents;
-        }
-
-        private void logBarrierCompleted(List<String> respondents, Instant startTime) {
-            Duration duration = Duration.between(startTime, Instant.now());
-            Level level = (duration.minus(Duration.ofSeconds(5))).isNegative() ? Level.FINE : Level.INFO;
-            log.log(level, () -> barrierCompletedMessage(respondents, duration));
-        }
-
-        private String barrierCompletedMessage(List<String> respondents, Duration duration) {
-            return barrierPath + " completed in " + duration.toString() +
-                   ", " + respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " + respondents;
-        }
-
-        @Override
-        public void notifyCompletion() {
-            try {
-                curator.framework().create().forPath(waiterNode.getAbsolute());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public String toString() { return "'" + barrierPath + "', " + barrierMemberCount() + " members"; }
-
-        public static CompletionWaiter create(Curator curator, Path barrierPath, String serverId) {
-            return new RemoveApplicationWaiter(curator, barrierPath, serverId);
-        }
-
-        public static CompletionWaiter create(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
-            return new RemoveApplicationWaiter(curator, barrierPath, serverId, waitForAll);
-        }
-
-        public static CompletionWaiter createAndInitialize(Curator curator, Path barrierPath, String serverId) {
-            return createAndInitialize(curator, barrierPath, serverId, waitForAllDefault);
-        }
-
-        public static CompletionWaiter createAndInitialize(Curator curator, Path barrierPath, String serverId, Duration waitForAll) {
-            // Note: Should be done atomically, but unable to that when path may not exist before delete
-            // and create should be able to create any missing parent paths
-            curator.delete(barrierPath);
-            curator.create(barrierPath);
-
-            return new RemoveApplicationWaiter(curator, barrierPath, serverId, waitForAll);
-        }
-
-        private int barrierMemberCount() { return (curator.zooKeeperEnsembleCount() / 2) + 1; /* majority */ }
-
     }
 
 }
