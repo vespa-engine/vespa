@@ -222,6 +222,8 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
+        // Due to some schedulers communicating across threads, it is vital that all complete this
+        // loop. Do not break out.
         if (!softDoomed) {
             uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work, use_rank_drop_limit>(context, tools, docid_range);
             softDoomed = (lastCovered < docid_range.end);
@@ -319,6 +321,11 @@ MatchThread::secondPhase(MatchTools & tools, HitCollector & hits) {
                           : hits.getSortedHitSequence(matchParams.heapSize);
     trace->addEvent(5, "Synchronize before second phase rerank");
     WaitTimer get_second_phase_work_timer(wait_time_s);
+    /**
+     * All, or none of the threads in the bundle should call communicator.get_second_phase_work and
+     * communicator.complete_second_phase.
+     * Avoid early return and handle doom with care.
+     */
     auto my_work = communicator.get_second_phase_work(sorted_hit_seq, thread_id);
     get_second_phase_work_timer.done();
     if (tools.getDoom().hard_doom()) {
@@ -362,6 +369,12 @@ MatchThread::findMatches(MatchTools &tools)
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     trace->addEvent(4, "Start match and first phase rank");
+    /**
+     * All, or none of the threads in the bundle must execute the match loop.
+     * The same goes for secondPhase.
+     * This is due to all the threads in the bundle needs to meet up and exchange information.
+     * If not you will have deadlock.
+     */
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         secondPhase(tools, hits);
@@ -468,6 +481,11 @@ MatchThread::run()
     auto capture_issues = vespalib::Issue::listen(my_issues);
     trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
+    /**
+     * All, or none of the threads in the bundle must call findMatches.
+     * All, or none of the threads in the bundle must call mergeDirector.dualMerge.
+     * Avoid early return and handle doom with care.
+     */
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time_s = vespalib::to_s(match_time.elapsed());
     resultContext = resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey);
@@ -480,6 +498,7 @@ MatchThread::run()
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         bool(resultContext->grouping)));
+        (void) processToken;  // Avoid unused warning
         get_token_timer.done();
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getDoom(), std::move(result), *resultContext);
