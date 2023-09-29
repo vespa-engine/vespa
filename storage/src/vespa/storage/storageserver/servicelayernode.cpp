@@ -5,7 +5,6 @@
 #include "communicationmanager.h"
 #include "changedbucketownershiphandler.h"
 #include "mergethrottler.h"
-#include "opslogger.h"
 #include "statemanager.h"
 #include "priorityconverter.h"
 #include "service_layer_error_listener.h"
@@ -167,7 +166,6 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
     builder.add(std::make_unique<Bouncer>(compReg, _configUri));
-    builder.add(std::make_unique<OpsLogger>(compReg, _configUri));
     auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
     auto merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));

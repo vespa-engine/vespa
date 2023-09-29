@@ -14,7 +14,6 @@ vespa_add_library(storage_storageserver OBJECT
     documentapiconverter.cpp
     fnet_metrics_wrapper.cpp
     mergethrottler.cpp
-    opslogger.cpp
     priorityconverter.cpp
     rpcrequestwrapper.cpp
     service_layer_error_listener.cpp
