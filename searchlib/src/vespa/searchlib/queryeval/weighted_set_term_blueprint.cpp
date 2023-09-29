@@ -96,11 +96,15 @@ SearchIterator::UP
 WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     assert(tfmda.size() == 1);
+    if ((_terms.size() == 1) && tfmda[0]->isNotNeeded() && _terms[0]->isLeaf()) {
+        return static_cast<LeafBlueprint &>(*_terms[0]).createLeafSearch(tfmda, true);
+    }
     fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<SearchIterator*> children(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
+    std::vector<SearchIterator*> children;
+    children.reserve(_terms.size());
+    for (const auto & _term : _terms) {
         // TODO: pass ownership with unique_ptr
-        children[i] = _terms[i]->createSearch(*md, true).release();
+        children.push_back(_term->createSearch(*md, true).release());
     }
     return WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md));
 }

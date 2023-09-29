@@ -251,6 +251,7 @@ public:
     virtual bool isEquiv() const { return false; }
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
+    virtual bool isLeaf() const { return false; }
     virtual bool isAnd() const { return false; }
     virtual bool isAndNot() const { return false; }
     virtual bool isOr() const { return false; }
@@ -396,6 +397,7 @@ public:
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
+    bool isLeaf() const final { return true; }
 
     virtual bool getRange(vespalib::string & from, vespalib::string & to) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const = 0;
