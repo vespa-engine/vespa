@@ -52,7 +52,6 @@ public class IndexingValidation extends Processor {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
                 }
             } catch (VerificationException e) {
-                e.printStackTrace();
                 fail(schema, field, "For expression '" + e.getExpression() + "': " + Exceptions.toMessageString(e));
             }
         }
