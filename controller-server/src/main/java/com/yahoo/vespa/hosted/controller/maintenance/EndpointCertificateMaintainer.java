@@ -67,7 +67,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final EndpointSecretManager endpointSecretManager;
     private final EndpointCertificateProvider endpointCertificateProvider;
     final Comparator<EligibleJob> oldestFirst = Comparator.comparing(e -> e.deployment.at());
-    final BooleanFlag assignRandomizedId;
     private final StringFlag endpointCertificateAlgo;
     private final BooleanFlag useAlternateCertProvider;
     private final IntFlag assignRandomizedIdRate;
@@ -81,7 +80,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.endpointSecretManager = controller.serviceRegistry().secretManager();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
-        this.assignRandomizedId = Flags.ASSIGN_RANDOMIZED_ID.bindTo(controller.flagSource());
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
         this.assignRandomizedIdRate = Flags.ASSIGNED_RANDOMIZED_ID_RATE.bindTo(controller.flagSource());
@@ -283,7 +281,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         assignedCertificates.stream()
                 .filter(c -> c.instance().isPresent())
                 .filter(c -> c.certificate().randomizedId().isEmpty())
-                .filter(c -> assignRandomizedId.with(FetchVector.Dimension.INSTANCE_ID, c.application().instance(c.instance().get()).serializedForm()).value())
                 .filter(c -> controller().applications().getApplication(c.application()).isPresent()) // In case application has been deleted, but certificate is pending deletion
                 .limit(assignRandomizedIdRate.value())
                 .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));

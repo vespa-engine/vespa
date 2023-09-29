@@ -381,7 +381,7 @@ public class Flags {
             INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
-            "assign-randomized-id", false,
+            "assign-randomized-id", true,
             List.of("mortent"), "2023-08-31", "2024-02-01",
             "Whether to assign randomized id to the application",
             "Takes effect immediately",
