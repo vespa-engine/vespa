@@ -102,6 +102,10 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return tenant.value() + ":" + application.value() + ":" + instance.value();
     }
 
+    public String toSerializedFormWithoutInstance() {
+        return tenant.value() + ":" + application.value();
+    }
+
     @Override
     public String toString() { return toShortString(); }
 
