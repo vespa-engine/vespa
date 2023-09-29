@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <map>
+#include <ostream>
 #include <set>
 #include <queue>
 
