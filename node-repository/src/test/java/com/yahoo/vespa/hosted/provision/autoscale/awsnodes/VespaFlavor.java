@@ -23,9 +23,23 @@ public class VespaFlavor {
                        NodeResources.DiskSpeed diskSpeed,
                        NodeResources.StorageType storageType,
                        NodeResources.Architecture architecture) {
+        this(name, advertisedVcpu, realVcpu, advertisedMemoryGb, realMemoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, NodeResources.GpuResources.zero());
+    }
+
+    public VespaFlavor(String name,
+                       double advertisedVcpu,
+                       double realVcpu,
+                       double advertisedMemoryGb,
+                       double realMemoryGb,
+                       double diskGb,
+                       double bandwidthGbps,
+                       NodeResources.DiskSpeed diskSpeed,
+                       NodeResources.StorageType storageType,
+                       NodeResources.Architecture architecture,
+                       NodeResources.GpuResources gpuResources) {
         this.name = name;
-        this.realResources = new NodeResources(realVcpu, realMemoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
-        this.advertisedResources = new NodeResources(advertisedVcpu, advertisedMemoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        this.realResources = new NodeResources(realVcpu, realMemoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        this.advertisedResources = new NodeResources(advertisedVcpu, advertisedMemoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public String name() { return name; }

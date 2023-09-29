@@ -289,6 +289,11 @@ public class DynamicProvisioningTester {
             return flavorResources.compatibleWith(resources);
         }
 
+        @Override
+        public boolean satisfies(Flavor flavor, NodeResources resources) {
+            return hostResourcesCalculator.advertisedResourcesOf(flavor).satisfies(resources);
+        }
+
     }
 
 }

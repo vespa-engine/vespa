@@ -160,7 +160,7 @@ public class AllocatableResources {
         for (Node node : nodes) {
             sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
         }
-        return nodes.get(0).allocation().get().requestedResources().justNonNumbers()
+        return nodes.get(0).allocation().get().requestedResources()
                                        .withVcpu(sum.vcpu() / nodes.size())
                                        .withMemoryGb(sum.memoryGb() / nodes.size())
                                        .withDiskGb(sum.diskGb() / nodes.size())
