@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <iosfwd>
+#include <cstddef>
 #include <cstdint>
+#include <iosfwd>
 
 namespace vespalib {
 
