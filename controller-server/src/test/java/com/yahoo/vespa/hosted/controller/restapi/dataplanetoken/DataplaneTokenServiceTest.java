@@ -85,6 +85,14 @@ public class DataplaneTokenServiceTest {
         dataplaneTokenService.triggerTokenChangeDeployments();
         assertEquals(List.of(), deploymentTester.jobs().active());
 
+        // Some unused token version is added, so do _not_ re-trigger.
+        tester.clock().advance(Duration.ofSeconds(1));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        dataplaneTokenService.generateToken(tenantName, TokenId.of("token-3"), null, principal);
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
         // One token version is deleted, so re-trigger.
         tester.clock().advance(Duration.ofSeconds(1));
         dataplaneTokenService.triggerTokenChangeDeployments();
