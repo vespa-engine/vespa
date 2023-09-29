@@ -109,6 +109,9 @@ public interface BillingController {
     /** Get all bills from the system */
     List<Bill> getBills();
 
+    /** Get the bill with the given id */
+    Bill getBill(Bill.Id billId);
+
     /** Get the bill collection method for the given tenant */
     default CollectionMethod getCollectionMethod(TenantName tenant) {
         return CollectionMethod.NONE;
