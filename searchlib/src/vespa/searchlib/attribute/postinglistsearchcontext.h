@@ -182,6 +182,10 @@ protected:
 
     bool fallback_to_approx_num_hits() const override;
     size_t countHits() const override;
+    template <bool fill_array>
+    void fill_array_or_bitvector_helper(EntryRef pidx);
+    template <bool fill_array>
+    void fill_array_or_bitvector();
     void fillArray() override;
     void fillBitVector() override;
 };
