@@ -268,8 +268,13 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var billId = ctx.attributes().get("invoice")
                 .map(id -> Bill.Id.of((String) id))
                 .orElseThrow(() -> new RestApiException.BadRequest("Missing bill ID"));
+
+        // TODO: try to find a way to retrieve the cloud tenant from BillingControllerImpl
+        var bill = billing.getBill(billId);
+        var cloudTenant = tenants.require(bill.tenant(), CloudTenant.class);
+
         var exportMethod = slime.get().field("method").asString();
-        var result = billing.exportBill(billId, exportMethod);
+        var result = billing.exportBill(bill, exportMethod, cloudTenant);
         return new MessageResponse("Bill has been exported: " + result);
     }
 

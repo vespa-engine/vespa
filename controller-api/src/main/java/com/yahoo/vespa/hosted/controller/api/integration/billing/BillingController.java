@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -129,7 +130,7 @@ public interface BillingController {
 
     default void updateCache(List<TenantName> tenants) {}
 
-    default String exportBill(Bill.Id billId, String exportMethod) {
+    default String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
         return "NOT_IMPLEMENTED";
     }
 }
