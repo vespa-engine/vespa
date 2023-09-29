@@ -74,7 +74,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
-import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -165,7 +164,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.StringJoiner;
-import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -982,7 +980,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("state", valueOf(states.get(tokenVersion.fingerPrint())));
             }
             states.forEach((print, state) -> {
-                if (state != State.DEACTIVATING) return;
+                if (state != State.REVOKING) return;
                 Cursor fingerprintObject = fingerprintsArray.addObject();
                 fingerprintObject.setString("fingerprint", print.value());
                 fingerprintObject.setString("state", valueOf(state));
@@ -993,9 +991,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String valueOf(DataplaneTokenService.State state) {
         return switch (state) {
+            case UNUSED: yield "unused";
             case DEPLOYING: yield "deploying";
             case ACTIVE: yield "active";
-            case DEACTIVATING: yield "deactivating";
+            case REVOKING: yield "revoking";
         };
     }
 

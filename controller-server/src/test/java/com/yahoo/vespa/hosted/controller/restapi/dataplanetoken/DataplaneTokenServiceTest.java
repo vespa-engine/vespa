@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.dataplanetoken;
 
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -20,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import java.security.Principal;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,16 +44,18 @@ public class DataplaneTokenServiceTest {
         DeploymentContext app = deploymentTester.newDeploymentContext(tenantName.value(), "app", "default");
         app.submit().deploy();
 
-        TokenId[] id = new TokenId[4];
-        FingerPrint[][] print = new FingerPrint[4][3];
+        TokenId[] id = new TokenId[5];
+        FingerPrint[][] print = new FingerPrint[5][3];
         for (int i = 0; i < id.length; i++) {
             id[i] = TokenId.of("id" + i);
             for (int j = 0; j < 3; j++) {
                 print[i][j] = dataplaneTokenService.generateToken(tenantName, id[i], null, principal).fingerPrint();
             }
         }
-        dataplaneTokenService.deleteToken(tenantName, id[2], print[2][0]);
-        dataplaneTokenService.deleteToken(tenantName, id[2], print[2][1]);
+        for (int j = 0; j < 2; j++) {
+            dataplaneTokenService.deleteToken(tenantName, id[2], print[2][j]);
+            dataplaneTokenService.deleteToken(tenantName, id[4], print[4][j]);
+        }
         for (int j = 0; j < 3; j++) {
             dataplaneTokenService.deleteToken(tenantName, id[3], print[3][j]);
         }
@@ -78,16 +77,18 @@ public class DataplaneTokenServiceTest {
         // The first and last fingerprints of token 1 are missing from one host each, so these are activating.
         // The first fingerprints of token 2 are no longer current, but the second is found on a host; both deactivating.
         // The whole of token 3 is forgotten, but the last fingerprint is found on a host; deactivating.
+        // Only the last fingerprint of token 4 remains, but this token is not used anywhere; unused.
         assertEquals(new TreeMap<>(Map.of(id[0], new TreeMap<>(Map.of(print[0][0], State.ACTIVE,
                                                                       print[0][1], State.ACTIVE,
                                                                       print[0][2], State.ACTIVE)),
                                           id[1], new TreeMap<>(Map.of(print[1][0], State.DEPLOYING,
                                                                       print[1][1], State.ACTIVE,
                                                                       print[1][2], State.DEPLOYING)),
-                                          id[2], new TreeMap<>(Map.of(print[2][0], State.DEACTIVATING,
-                                                                      print[2][1], State.DEACTIVATING,
+                                          id[2], new TreeMap<>(Map.of(print[2][0], State.REVOKING,
+                                                                      print[2][1], State.REVOKING,
                                                                       print[2][2], State.ACTIVE)),
-                                          id[3], new TreeMap<>(Map.of(print[3][2], State.DEACTIVATING)))),
+                                          id[3], new TreeMap<>(Map.of(print[3][2], State.REVOKING)),
+                                          id[4], new TreeMap<>(Map.of(print[4][2], State.UNUSED)))),
                      new TreeMap<>(dataplaneTokenService.listTokensWithState(tenantName).entrySet().stream()
                                                         .collect(toMap(tokens -> tokens.getKey().tokenId(),
                                                                        tokens -> new TreeMap<>(tokens.getValue())))));

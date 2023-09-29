@@ -509,7 +509,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                             "created": "2020-09-13T12:26:40Z",
                                             "author": "user@test",
                                             "expiration": "2020-10-13T12:26:40Z",
-                                            "state": "deploying"
+                                            "state": "unused"
                                           }
                                         ]
                                       }
@@ -543,7 +543,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                           },
                                           {
                                             "fingerprint": "ff:01",
-                                            "state": "deactivating"
+                                            "state": "revoking"
                                           }
                                         ]
                                       }

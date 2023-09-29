@@ -25,10 +25,12 @@ import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -65,25 +67,29 @@ public class DataplaneTokenService {
         return controller.curator().readDataplaneTokens(tenantName);
     }
 
-    public enum State { DEPLOYING, ACTIVE, DEACTIVATING }
+    public enum State { UNUSED, DEPLOYING, ACTIVE, REVOKING }
 
     /** List all known tokens for a tenant, with the state of each token version (both current and deactivating). */
     public Map<DataplaneTokenVersions, Map<FingerPrint, State>> listTokensWithState(TenantName tenantName) {
         List<DataplaneTokenVersions> currentTokens = listTokens(tenantName);
-        Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens = listActiveTokens(tenantName);
+        Set<TokenId> usedTokens = new HashSet<>();
+        Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens = listActiveTokens(tenantName, usedTokens);
         Map<TokenId, Map<FingerPrint, Boolean>> activeFingerprints = computeStates(activeTokens);
         Map<DataplaneTokenVersions, Map<FingerPrint, State>> tokens = new TreeMap<>(comparing(DataplaneTokenVersions::tokenId));
         for (DataplaneTokenVersions token : currentTokens) {
             Map<FingerPrint, State> states = new TreeMap<>();
             // Current tokens are active iff. they are active everywhere.
             for (Version version : token.tokenVersions()) {
+                // If the token was not seen anywhere, it is deploying or unused.
+                // Otherwise, it is active iff. it is active everywhere.
+                Boolean isActive = activeFingerprints.getOrDefault(token.tokenId(), Map.of()).get(version.fingerPrint());
                 states.put(version.fingerPrint(),
-                           activeFingerprints.getOrDefault(token.tokenId(), Map.of())
-                                             .getOrDefault(version.fingerPrint(), false) ? State.ACTIVE : State.DEPLOYING);
+                           isActive == null ? usedTokens.contains(token.tokenId()) ? State.DEPLOYING : State.UNUSED
+                                            : isActive ? State.ACTIVE : State.DEPLOYING);
             }
             // Active, non-current token versions are deactivating.
             for (FingerPrint print : activeFingerprints.getOrDefault(token.tokenId(), Map.of()).keySet()) {
-                states.putIfAbsent(print, State.DEACTIVATING);
+                states.putIfAbsent(print, State.REVOKING);
             }
             tokens.put(token, states);
         }
@@ -91,26 +97,27 @@ public class DataplaneTokenService {
         activeFingerprints.forEach((id, prints) -> {
             if (currentTokens.stream().noneMatch(token -> token.tokenId().equals(id))) {
                 Map<FingerPrint, State> states = new TreeMap<>();
-                for (FingerPrint print : prints.keySet()) states.put(print, State.DEACTIVATING);
+                for (FingerPrint print : prints.keySet()) states.put(print, State.REVOKING);
                 tokens.put(new DataplaneTokenVersions(id, List.of()), states);
             }
         });
         return tokens;
     }
 
-    private Map<HostName, Map<TokenId, List<FingerPrint>>> listActiveTokens(TenantName tenantName) {
+    private Map<HostName, Map<TokenId, List<FingerPrint>>> listActiveTokens(TenantName tenantName, Set<TokenId> usedTokens) {
         Map<HostName, Map<TokenId, List<FingerPrint>>> tokens = new ConcurrentHashMap<>();
         Phaser phaser = new Phaser(1);
         for (Application application : controller.applications().asList(tenantName)) {
             for (Instance instance : application.instances().values()) {
-                for (ZoneId zone : instance.deployments().keySet()) {
-                    DeploymentId deployment = new DeploymentId(instance.id(), zone);
+                instance.deployments().forEach((zone, deployment) -> {
+                    DeploymentId id = new DeploymentId(instance.id(), zone);
+                    usedTokens.addAll(deployment.dataPlaneTokens());
                     phaser.register();
                     executor.execute(() -> {
-                        try { tokens.putAll(controller.serviceRegistry().configServer().activeTokenFingerprints(deployment)); }
+                        try { tokens.putAll(controller.serviceRegistry().configServer().activeTokenFingerprints(id)); }
                         finally { phaser.arrive(); }
                     });
-                }
+                });
             }
         }
         phaser.arriveAndAwaitAdvance();
