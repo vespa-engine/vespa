@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
@@ -312,7 +313,7 @@ public class Flags {
             "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-10-14",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
-            INSTANCE_ID);
+            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-11-01",
@@ -414,6 +415,12 @@ public class Flags {
             "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
             "Takes effect at redeployment",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag LEGACY_ENDPOINTS = defineFeatureFlag(
+            "legacy-endpoints", true, List.of("mpolden", "tokle"), "2023-09-29", "2024-03-01",
+            "Whether legacy (non-anonymized) endpoints should be created in DNS",
+            "Takes effect on redeployment through controller",
+            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

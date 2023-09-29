@@ -1181,6 +1181,35 @@ public class RoutingPoliciesTest {
     }
 
     @Test
+    public void generated_endpoints_only() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        tester.controllerTester().flagSource()
+              .withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true)
+              .withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
+        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+
+        // Deploy application
+        var zone1 = ZoneId.from("prod", "aws-us-east-1c");
+        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                           .container("c0", AuthMethod.mtls)
+                                                                           .endpoint("foo", "c0")
+                                                                           .build();
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1);
+        // ConfigServerMock provisions a load balancer for the "default" cluster, but in this scenario we need full
+        // control over the load balancer name because "default" has no special treatment when using generated endpoints
+        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
+        tester.assertTargets(context.instance().id(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"),
+                             0, Map.of(zone1, 1L), true);
+        assertEquals(List.of("a9c8c045.cafed00d.g.vespa-app.cloud",
+                             "ebd395b6.cafed00d.z.vespa-app.cloud",
+                             "fcf1bd63.cafed00d.aws-us-east-1.w.vespa-app.cloud"),
+                     tester.recordNames());
+    }
+
+    @Test
     public void generated_endpoints_multi_instance() {
         var tester = new RoutingPoliciesTester(SystemName.Public);
         var context0 = tester.newDeploymentContext("tenant1", "app1", "default");
