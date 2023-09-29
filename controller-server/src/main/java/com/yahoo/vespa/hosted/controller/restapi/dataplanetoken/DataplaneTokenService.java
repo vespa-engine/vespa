@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.dataplanetoken;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -19,6 +20,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.Dataplan
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.security.Principal;
@@ -36,9 +40,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -98,7 +105,7 @@ public class DataplaneTokenService {
             if (currentTokens.stream().noneMatch(token -> token.tokenId().equals(id))) {
                 Map<FingerPrint, State> states = new TreeMap<>();
                 for (FingerPrint print : prints.keySet()) states.put(print, State.REVOKING);
-                tokens.put(new DataplaneTokenVersions(id, List.of()), states);
+                tokens.put(new DataplaneTokenVersions(id, List.of(), Instant.EPOCH), states);
             }
         });
         return tokens;
@@ -111,7 +118,7 @@ public class DataplaneTokenService {
             for (Instance instance : application.instances().values()) {
                 instance.deployments().forEach((zone, deployment) -> {
                     DeploymentId id = new DeploymentId(instance.id(), zone);
-                    usedTokens.addAll(deployment.dataPlaneTokens());
+                    usedTokens.addAll(deployment.dataPlaneTokens().keySet());
                     phaser.register();
                     executor.execute(() -> {
                         try { tokens.putAll(controller.serviceRegistry().configServer().activeTokenFingerprints(id)); }
@@ -140,6 +147,37 @@ public class DataplaneTokenService {
         return states;
     }
 
+    /** Triggers redeployment of all applications which reference a token which has changed. */
+    public void triggerTokenChangeDeployments() {
+        controller.applications().asList().stream()
+                .collect(groupingBy(application -> application.id().tenant()))
+                .forEach((tenant, applications) -> {
+                    List<DataplaneTokenVersions> currentTokens = listTokens(tenant);
+                    for (Application application : applications) {
+                        for (Instance instance : application.instances().values()) {
+                            instance.deployments().forEach((zone, deployment) -> {
+                                if (zone.environment().isTest()) return;
+                                if (deployment.dataPlaneTokens().isEmpty()) return;
+                                boolean needsRetrigger = false;
+                                // If a token has a newer change than the deployed token data, we need to re-trigger.
+                                for (DataplaneTokenVersions token : currentTokens)
+                                    needsRetrigger |= deployment.dataPlaneTokens().getOrDefault(token.tokenId(), Instant.MAX).isBefore(token.lastUpdated());
+
+                                // If a token is no longer current, but was deployed with at least one version, we need to re-trigger.
+                                for (var entry : deployment.dataPlaneTokens().entrySet())
+                                    needsRetrigger |=    ! Instant.EPOCH.equals(entry.getValue())
+                                                      &&   currentTokens.stream().noneMatch(token -> token.tokenId().equals(entry.getKey()));
+
+                                if (needsRetrigger && controller.jobController().last(instance.id(), JobType.deploymentTo(zone)).map(Run::hasEnded).orElse(true))
+                                    controller.applications().deploymentTrigger().reTrigger(instance.id(),
+                                                                                            JobType.deploymentTo(zone),
+                                                                                            "Data plane tokens changed");
+                            });
+                        }
+                    }
+                });
+    }
+
     /**
      * Generates a token using tenant name as the check access context.
      * Persists the token fingerprint and check access hash, but not the token value
@@ -154,10 +192,11 @@ public class DataplaneTokenService {
         TokenDomain tokenDomain = TokenDomain.of("Vespa Cloud tenant data plane:%s".formatted(tenantName.value()));
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
         TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
+        Instant now = controller.clock().instant();
         DataplaneTokenVersions.Version newTokenVersion = new DataplaneTokenVersions.Version(
                 FingerPrint.of(token.fingerprint().toDelimitedHexString()),
                 checkHash.toHexString(),
-                controller.clock().instant(),
+                now,
                 Optional.ofNullable(expiration),
                 principal.getName());
 
@@ -173,18 +212,18 @@ public class DataplaneTokenService {
                         .toList();
                 dataplaneTokenVersions = Stream.concat(
                                 dataplaneTokenVersions.stream().filter(t -> !Objects.equals(t.tokenId(), tokenId)),
-                                Stream.of(new DataplaneTokenVersions(tokenId, versions)))
+                                Stream.of(new DataplaneTokenVersions(tokenId, versions, now)))
                         .toList();
             } else {
-                DataplaneTokenVersions newToken = new DataplaneTokenVersions(tokenId, List.of(newTokenVersion));
+                DataplaneTokenVersions newToken = new DataplaneTokenVersions(tokenId, List.of(newTokenVersion), now);
                 dataplaneTokenVersions = Stream.concat(dataplaneTokenVersions.stream(), Stream.of(newToken)).toList();
             }
             curator.writeDataplaneTokens(tenantName, dataplaneTokenVersions);
-
-            // Return the data plane token including the secret token.
-            return new DataplaneToken(tokenId, FingerPrint.of(token.fingerprint().toDelimitedHexString()),
-                                      token.secretTokenString(), Optional.ofNullable(expiration));
         }
+
+        // Return the data plane token including the secret token.
+        return new DataplaneToken(tokenId, FingerPrint.of(token.fingerprint().toDelimitedHexString()),
+                                  token.secretTokenString(), Optional.ofNullable(expiration));
     }
 
     /**
@@ -202,9 +241,13 @@ public class DataplaneTokenService {
                 if (versions.isEmpty()) {
                     dataplaneTokenVersions = dataplaneTokenVersions.stream().filter(t -> !Objects.equals(t.tokenId(), tokenId)).toList();
                 } else {
-                    boolean fingerPrintExists = existingToken.get().tokenVersions().stream().anyMatch(v -> v.fingerPrint().equals(tokenFingerprint));
-                    if (fingerPrintExists) {
-                        dataplaneTokenVersions = Stream.concat(dataplaneTokenVersions.stream().filter(t -> !Objects.equals(t.tokenId(), tokenId)), Stream.of(new DataplaneTokenVersions(tokenId, versions))).toList();
+                    Optional<Version> existingVersion = existingToken.get().tokenVersions().stream().filter(v -> v.fingerPrint().equals(tokenFingerprint)).findAny();
+                    if (existingVersion.isPresent()) {
+                        Instant now = controller.clock().instant();
+                        // If we removed an expired token, we keep the old lastUpdated timestamp.
+                        Instant lastUpdated = existingVersion.get().expiration().map(now::isAfter).orElse(false) ? existingToken.get().lastUpdated() : now;
+                        dataplaneTokenVersions = Stream.concat(dataplaneTokenVersions.stream().filter(t -> !Objects.equals(t.tokenId(), tokenId)),
+                                                               Stream.of(new DataplaneTokenVersions(tokenId, versions, lastUpdated))).toList();
                     } else {
                         throw new IllegalArgumentException("Fingerprint does not exist: " + tokenFingerprint);
                     }

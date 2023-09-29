@@ -503,6 +503,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                     "tokens": [
                                       {
                                         "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
                                         "versions": [
                                           {
                                             "fingerprint": "%s",
@@ -533,6 +534,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                     "tokens": [
                                       {
                                         "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
                                         "versions": [
                                           {
                                             "fingerprint": "%s",

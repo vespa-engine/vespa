@@ -9,7 +9,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
@@ -29,11 +31,11 @@ public class Deployment {
     private final DeploymentActivity activity;
     private final QuotaUsage quota;
     private final OptionalDouble cost;
-    private final List<TokenId> dataPlaneTokens;
+    private final Map<TokenId, Instant> dataPlaneTokens;
 
     public Deployment(ZoneId zone, CloudAccount cloudAccount, RevisionId revision, Version version, Instant deployTime,
                       DeploymentMetrics metrics, DeploymentActivity activity, QuotaUsage quota, OptionalDouble cost,
-                      List<TokenId> dataPlaneTokens) {
+                      Map<TokenId, Instant> dataPlaneTokens) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount cannot be null");
         this.revision = Objects.requireNonNull(revision, "revision cannot be null");
@@ -43,7 +45,7 @@ public class Deployment {
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
         this.quota = Objects.requireNonNull(quota, "usage cannot be null");
         this.cost = Objects.requireNonNull(cost, "cost cannot be null");
-        this.dataPlaneTokens = List.copyOf(dataPlaneTokens);
+        this.dataPlaneTokens = Map.copyOf(dataPlaneTokens);
     }
 
     /** Returns the zone this was deployed to */
@@ -75,8 +77,8 @@ public class Deployment {
     /** Returns cost, in dollars per hour, for this */
     public OptionalDouble cost() { return cost; }
 
-    /** Returns the data plane token IDs referenced by this deployment. */
-    public List<TokenId> dataPlaneTokens() { return dataPlaneTokens; }
+    /** Returns the data plane token IDs referenced by this deployment, and the last update time of this token at the time of deployment. */
+    public Map<TokenId, Instant> dataPlaneTokens() { return dataPlaneTokens; }
 
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, cloudAccount, revision, version, deployTime, metrics,
@@ -102,20 +104,21 @@ public class Deployment {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Deployment that = (Deployment) o;
-        return zone.equals(that.zone) &&
-               cloudAccount.equals(that.cloudAccount) &&
-               revision.equals(that.revision) &&
-               version.equals(that.version) &&
-               deployTime.equals(that.deployTime) &&
-               metrics.equals(that.metrics) &&
-               activity.equals(that.activity) &&
-               quota.equals(that.quota) &&
-               cost.equals(that.cost);
+        return    Objects.equals(zone, that.zone)
+               && Objects.equals(cloudAccount, that.cloudAccount)
+               && Objects.equals(revision, that.revision)
+               && Objects.equals(version, that.version)
+               && Objects.equals(deployTime, that.deployTime)
+               && Objects.equals(metrics, that.metrics)
+               && Objects.equals(activity, that.activity)
+               && Objects.equals(quota, that.quota)
+               && Objects.equals(cost, that.cost)
+               && Objects.equals(dataPlaneTokens, that.dataPlaneTokens);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, cost);
+        return Objects.hash(zone, cloudAccount, revision, version, deployTime, metrics, activity, quota, cost, dataPlaneTokens);
     }
 
     @Override

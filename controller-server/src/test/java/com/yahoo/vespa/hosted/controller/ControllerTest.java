@@ -1088,6 +1088,7 @@ public class ControllerTest {
         tester.controllerTester().zoneRegistry()
                 .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
         tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-1"), null, () -> "foo");
+        tester.clock().advance(Duration.ofSeconds(1));
         tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-2"), null, () -> "foo");
 
         var applicationPackageBuilder = new ApplicationPackageBuilder()
@@ -1111,7 +1112,7 @@ public class ControllerTest {
                                 "application.tenant." + zone.region().value() + ".vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)),
                     "Expected container endpoints in " + zone);
-            assertEquals(List.of(TokenId.of("token-1")),
+            assertEquals(Map.of(TokenId.of("token-1"), tester.clock().instant().minusSeconds(1)),
                          context.deployment(zone).dataPlaneTokens());
         }
         assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",

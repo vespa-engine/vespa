@@ -970,6 +970,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.dataplaneTokenService().listTokensWithState(TenantName.from(tenant)).forEach((token, states) -> {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
+            tokenObject.setLong("lastUpdatedMillis", token.lastUpdated().toEpochMilli());
             Cursor fingerprintsArray = tokenObject.setArray("versions");
             for (var tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();

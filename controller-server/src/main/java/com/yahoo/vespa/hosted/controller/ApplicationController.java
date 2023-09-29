@@ -121,6 +121,7 @@ import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.low;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
@@ -562,7 +563,7 @@ public class ApplicationController {
                                            i -> i.withNewDeployment(zone, revision, platform,
                                                                     clock.instant(), warningsFrom(dataAndResult.result().log()),
                                                                     quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty),
-                                                                    dataAndResult.data.dataPlaneTokens().stream().map(DataplaneTokenVersions::tokenId).toList()))));
+                                                                    dataAndResult.data.dataPlaneTokens()))));
             return dataAndResult.result();
         }
     }
@@ -717,9 +718,14 @@ public class ApplicationController {
                 Set<TokenId> referencedTokens = services.containers().stream()
                                                         .flatMap(container -> container.dataPlaneTokens().stream())
                                                         .collect(toSet());
-                return controller.dataplaneTokenService().listTokens(application.tenant()).stream()
-                                 .filter(token -> referencedTokens.contains(token.tokenId()))
-                                 .toList();
+                List<DataplaneTokenVersions> currentTokens = controller.dataplaneTokenService().listTokens(application.tenant()).stream()
+                                                                      .filter(token -> referencedTokens.contains(token.tokenId()))
+                                                                      .toList();
+                return Stream.concat(currentTokens.stream(),
+                                     referencedTokens.stream()
+                                                     .filter(token -> currentTokens.stream().noneMatch(t -> t.tokenId().equals(token)))
+                                                     .map(token -> new DataplaneTokenVersions(token, List.of(), Instant.EPOCH)))
+                             .toList();
             };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
                     endpoints, dockerImageRepo, domain, deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);

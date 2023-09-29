@@ -122,7 +122,7 @@ public class ApplicationSerializerTest {
         ApplicationVersion applicationVersion2 = new ApplicationVersion(id, Optional.of(source), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochMilli(496)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), Optional.empty(), 0);
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, CloudAccount.empty, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
-                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty(), List.of(TokenId.of("foo"))));
+                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty(), Map.of(TokenId.of("foo"), Instant.ofEpochMilli(333))));
         deployments.add(new Deployment(zone2, CloudAccount.from("001122334455"), applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
@@ -130,7 +130,7 @@ public class ApplicationSerializerTest {
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
                                                                  OptionalDouble.of(200), OptionalDouble.of(10)),
                                        QuotaUsage.create(OptionalDouble.of(23.5)),
-                                       OptionalDouble.of(12.3), List.of()));
+                                       OptionalDouble.of(12.3), Map.of()));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                 new RotationStatus.Targets(

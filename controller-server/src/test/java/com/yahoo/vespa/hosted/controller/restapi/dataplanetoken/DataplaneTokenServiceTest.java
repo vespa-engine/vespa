@@ -4,12 +4,16 @@ package com.yahoo.vespa.hosted.controller.restapi.dataplanetoken;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService.State;
@@ -37,6 +41,68 @@ public class DataplaneTokenServiceTest {
     private final Principal principal = new SimplePrincipal("user");
     private final TokenId tokenId = TokenId.of("myTokenId");
     private final Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens = tester.configServer().activeTokenFingerprints(null);
+
+    @Test
+    void triggers_token_redeployments() {
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        DeploymentContext app = deploymentTester.newDeploymentContext(tenantName.value(), "app", "default");
+        ApplicationPackage appPackage = new ApplicationPackageBuilder().region("aws-us-east-1c")
+                                                                       .container("default", AuthMethod.token, AuthMethod.token)
+                                                                       .build();
+        app.submit(appPackage).deploy();
+
+        // First token version is added after deployment, so re-trigger.
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        FingerPrint print1 = dataplaneTokenService.generateToken(tenantName, TokenId.of("token-1"), null, principal).fingerPrint();
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        app.runJob(JobType.prod("aws-us-east-1c"));
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
+        // New token version is added, so re-trigger.
+        tester.clock().advance(Duration.ofSeconds(1));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        FingerPrint print2 = dataplaneTokenService.generateToken(tenantName, TokenId.of("token-1"), null, principal).fingerPrint();
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        app.runJob(JobType.prod("aws-us-east-1c"));
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
+        // Another token version is added, so re-trigger.
+        tester.clock().advance(Duration.ofSeconds(1));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        FingerPrint print3 = dataplaneTokenService.generateToken(tenantName, TokenId.of("token-1"), tester.clock().instant().plusSeconds(10), principal).fingerPrint();
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        app.runJob(JobType.prod("aws-us-east-1c"));
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
+        // An expired token version is deleted, so do _not_ re-trigger.
+        tester.clock().advance(Duration.ofSeconds(11));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        dataplaneTokenService.deleteToken(tenantName, TokenId.of("token-1"), print3);
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
+        // One token version is deleted, so re-trigger.
+        tester.clock().advance(Duration.ofSeconds(1));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        dataplaneTokenService.deleteToken(tenantName, TokenId.of("token-1"), print2);
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        app.runJob(JobType.prod("aws-us-east-1c"));
+        assertEquals(List.of(), deploymentTester.jobs().active());
+
+        // Last token version is deleted, the token is no longer known, so re-trigger.
+        tester.clock().advance(Duration.ofSeconds(1));
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        assertEquals(List.of(), deploymentTester.jobs().active());
+        dataplaneTokenService.deleteToken(tenantName, TokenId.of("token-1"), print1);
+        dataplaneTokenService.triggerTokenChangeDeployments();
+        app.runJob(JobType.prod("aws-us-east-1c"));
+        assertEquals(List.of(), deploymentTester.jobs().active());
+    }
 
     @Test
     void computes_aggregate_state() {
