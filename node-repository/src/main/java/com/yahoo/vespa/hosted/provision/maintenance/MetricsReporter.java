@@ -176,6 +176,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         if (allocation.isPresent()) {
             ApplicationId applicationId = allocation.get().owner();
             Map<String, String> dimensions = new HashMap<>(dimensions(applicationId));
+            dimensions.put("state", node.state().name());
             dimensions.put("host", node.hostname());
             dimensions.put("clustertype", allocation.get().membership().cluster().type().name());
             dimensions.put("clusterid", allocation.get().membership().cluster().id().value());
@@ -202,7 +203,8 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 metric.set(ConfigServerMetrics.HAS_WIRE_GUARD_KEY.baseName(), node.wireguardPubKey().isPresent() ? 1 : 0, context);
             }
         } else {
-            context = getContext(Map.of("host", node.hostname()));
+            context = getContext(Map.of("state", node.state().name(),
+                                        "host", node.hostname()));
         }
 
         Optional<Version> currentVersion = node.status().vespaVersion();
