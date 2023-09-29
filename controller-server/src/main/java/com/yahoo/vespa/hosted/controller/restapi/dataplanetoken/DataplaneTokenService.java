@@ -1,15 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.dataplanetoken;
 
+import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.token.Token;
 import com.yahoo.security.token.TokenCheckHash;
 import com.yahoo.security.token.TokenDomain;
 import com.yahoo.security.token.TokenGenerator;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -17,10 +24,20 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 import java.util.stream.Stream;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Service to list, generate and delete data plane tokens
@@ -34,7 +51,7 @@ public class DataplaneTokenService {
     private static final int CHECK_HASH_BYTES = 32;
     public static final Duration DEFAULT_TTL = Duration.ofDays(30);
 
-
+    private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("dataplane-token-service-"));
     private final Controller controller;
 
     public DataplaneTokenService(Controller controller) {
@@ -46,6 +63,74 @@ public class DataplaneTokenService {
      */
     public List<DataplaneTokenVersions> listTokens(TenantName tenantName) {
         return controller.curator().readDataplaneTokens(tenantName);
+    }
+
+    public enum State { DEPLOYING, ACTIVE, DEACTIVATING }
+
+    /** List all known tokens for a tenant, with the state of each token version (both current and deactivating). */
+    public Map<DataplaneTokenVersions, Map<FingerPrint, State>> listTokensWithState(TenantName tenantName) {
+        List<DataplaneTokenVersions> currentTokens = listTokens(tenantName);
+        Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens = listActiveTokens(tenantName);
+        Map<TokenId, Map<FingerPrint, Boolean>> activeFingerprints = computeStates(activeTokens);
+        Map<DataplaneTokenVersions, Map<FingerPrint, State>> tokens = new TreeMap<>(comparing(DataplaneTokenVersions::tokenId));
+        for (DataplaneTokenVersions token : currentTokens) {
+            Map<FingerPrint, State> states = new TreeMap<>();
+            // Current tokens are active iff. they are active everywhere.
+            for (Version version : token.tokenVersions()) {
+                states.put(version.fingerPrint(),
+                           activeFingerprints.getOrDefault(token.tokenId(), Map.of())
+                                             .getOrDefault(version.fingerPrint(), false) ? State.ACTIVE : State.DEPLOYING);
+            }
+            // Active, non-current token versions are deactivating.
+            for (FingerPrint print : activeFingerprints.getOrDefault(token.tokenId(), Map.of()).keySet()) {
+                states.putIfAbsent(print, State.DEACTIVATING);
+            }
+            tokens.put(token, states);
+        }
+        // Active, non-current tokens are also deactivating.
+        activeFingerprints.forEach((id, prints) -> {
+            if (currentTokens.stream().noneMatch(token -> token.tokenId().equals(id))) {
+                Map<FingerPrint, State> states = new TreeMap<>();
+                for (FingerPrint print : prints.keySet()) states.put(print, State.DEACTIVATING);
+                tokens.put(new DataplaneTokenVersions(id, List.of()), states);
+            }
+        });
+        return tokens;
+    }
+
+    private Map<HostName, Map<TokenId, List<FingerPrint>>> listActiveTokens(TenantName tenantName) {
+        Map<HostName, Map<TokenId, List<FingerPrint>>> tokens = new ConcurrentHashMap<>();
+        Phaser phaser = new Phaser(1);
+        for (Application application : controller.applications().asList(tenantName)) {
+            for (Instance instance : application.instances().values()) {
+                for (ZoneId zone : instance.deployments().keySet()) {
+                    DeploymentId deployment = new DeploymentId(instance.id(), zone);
+                    phaser.register();
+                    executor.execute(() -> {
+                        try { tokens.putAll(controller.serviceRegistry().configServer().activeTokenFingerprints(deployment)); }
+                        finally { phaser.arrive(); }
+                    });
+                }
+            }
+        }
+        phaser.arriveAndAwaitAdvance();
+        return tokens;
+    }
+
+    /** Computes whether each print is active on all hosts where its token is present. */
+    private Map<TokenId, Map<FingerPrint, Boolean>> computeStates(Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens) {
+        Map<TokenId, Map<FingerPrint, Boolean>> states = new HashMap<>();
+        for (Map<TokenId, List<FingerPrint>> token : activeTokens.values()) {
+            token.forEach((id, prints) -> {
+                states.merge(id,
+                             prints.stream().collect(toMap(print -> print, __ -> true)),
+                             (a, b) -> new HashMap<>() {{
+                                 a.forEach((p, s) -> put(p, s && b.getOrDefault(p, false)));
+                                 b.forEach((p, s) -> putIfAbsent(p, false));
+                             }});
+            });
+        }
+        return states;
     }
 
     /**

@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.dataplanetoken;
 
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -9,25 +12,86 @@ import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.Dataplan
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService.State;
 import org.junit.jupiter.api.Test;
 
 import java.security.Principal;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DataplaneTokenServiceTest {
+
     private final ControllerTester tester = new ControllerTester(SystemName.Public);
     private final DataplaneTokenService dataplaneTokenService = new DataplaneTokenService(tester.controller());
     private final TenantName tenantName = TenantName.from("tenant");
-    Principal principal = new SimplePrincipal("user");
+    private final Principal principal = new SimplePrincipal("user");
     private final TokenId tokenId = TokenId.of("myTokenId");
+    private final Map<HostName, Map<TokenId, List<FingerPrint>>> activeTokens = tester.configServer().activeTokenFingerprints(null);
+
+    @Test
+    void computes_aggregate_state() {
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        DeploymentContext app = deploymentTester.newDeploymentContext(tenantName.value(), "app", "default");
+        app.submit().deploy();
+
+        TokenId[] id = new TokenId[4];
+        FingerPrint[][] print = new FingerPrint[4][3];
+        for (int i = 0; i < id.length; i++) {
+            id[i] = TokenId.of("id" + i);
+            for (int j = 0; j < 3; j++) {
+                print[i][j] = dataplaneTokenService.generateToken(tenantName, id[i], null, principal).fingerPrint();
+            }
+        }
+        dataplaneTokenService.deleteToken(tenantName, id[2], print[2][0]);
+        dataplaneTokenService.deleteToken(tenantName, id[2], print[2][1]);
+        for (int j = 0; j < 3; j++) {
+            dataplaneTokenService.deleteToken(tenantName, id[3], print[3][j]);
+        }
+        // "host1" has all versions of all current tokens, except the first versions of tokens 1 and 2.
+        activeTokens.put(HostName.of("host1"),
+                         Map.of(id[0], List.of(print[0]),
+                                id[1], List.of(print[1][1], print[1][2]),
+                                id[2], List.of(print[2][1], print[2][2])));
+        // "host2" has all versions of all current tokens, except the last version of token 1.
+        activeTokens.put(HostName.of("host2"),
+                         Map.of(id[0], List.of(print[0]),
+                                id[1], List.of(print[1][0], print[1][1]),
+                                id[2], List.of(print[2])));
+        // "host3" has no current tokens at all, but has the last version of token 3
+        activeTokens.put(HostName.of("host3"),
+                         Map.of(id[3], List.of(print[3][2])));
+
+        // All fingerprints of token 0 are active on all hosts where token 0 is found, so they are all active.
+        // The first and last fingerprints of token 1 are missing from one host each, so these are activating.
+        // The first fingerprints of token 2 are no longer current, but the second is found on a host; both deactivating.
+        // The whole of token 3 is forgotten, but the last fingerprint is found on a host; deactivating.
+        assertEquals(new TreeMap<>(Map.of(id[0], new TreeMap<>(Map.of(print[0][0], State.ACTIVE,
+                                                                      print[0][1], State.ACTIVE,
+                                                                      print[0][2], State.ACTIVE)),
+                                          id[1], new TreeMap<>(Map.of(print[1][0], State.DEPLOYING,
+                                                                      print[1][1], State.ACTIVE,
+                                                                      print[1][2], State.DEPLOYING)),
+                                          id[2], new TreeMap<>(Map.of(print[2][0], State.DEACTIVATING,
+                                                                      print[2][1], State.DEACTIVATING,
+                                                                      print[2][2], State.ACTIVE)),
+                                          id[3], new TreeMap<>(Map.of(print[3][2], State.DEACTIVATING)))),
+                     new TreeMap<>(dataplaneTokenService.listTokensWithState(tenantName).entrySet().stream()
+                                                        .collect(toMap(tokens -> tokens.getKey().tokenId(),
+                                                                       tokens -> new TreeMap<>(tokens.getValue())))));
+    }
 
     @Test
     void generates_and_persists_token() {
@@ -82,4 +146,5 @@ public class DataplaneTokenServiceTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> dataplaneTokenService.deleteToken(tenantName, tokenId, dataplaneToken.fingerPrint()));
         assertEquals("Token does not exist: " + tokenId, exception.getMessage());
     }
+
 }
