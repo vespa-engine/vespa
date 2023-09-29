@@ -182,6 +182,29 @@ TEST("attribute_weighted_set_test") {
     test_tokens(false, {3});
 }
 
+namespace {
+
+void
+normalize_class_name_helper(vespalib::string& class_name, const vespalib::string& old, const vespalib::string& replacement)
+{
+    for (;;) {
+        auto pos = class_name.find(old);
+        if (pos == vespalib::string::npos) {
+            break;
+        }
+        class_name.replace(pos, old.size(), replacement);
+    }
+}
+
+vespalib::string normalize_class_name(vespalib::string class_name)
+{
+    normalize_class_name_helper(class_name, "long long", "long");
+    normalize_class_name_helper(class_name, ">>", "> >");
+    return class_name;
+}
+
+}
+
 TEST("attribute_weighted_set_single_token_filter_lifted_out") {
     MockAttributeManager manager;
     setupAttributeManager(manager, true);
@@ -191,13 +214,13 @@ TEST("attribute_weighted_set_single_token_filter_lifted_out") {
     WS ws = WS(manager).add("3", 30);
 
     EXPECT_EQUAL("search::FilterAttributeIteratorStrict<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
-                 ws.createSearch(adapter, "integer", true)->getClassName());
+                 normalize_class_name(ws.createSearch(adapter, "integer", true)->getClassName()));
     EXPECT_EQUAL("search::FilterAttributeIteratorT<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
-                 ws.createSearch(adapter, "integer", false)->getClassName());
+                 normalize_class_name(ws.createSearch(adapter, "integer", false)->getClassName()));
     EXPECT_EQUAL("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
-                 ws.createSearch(adapter, "string", true)->getClassName());
+                 normalize_class_name(ws.createSearch(adapter, "string", true)->getClassName()));
     EXPECT_EQUAL("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
-                 ws.createSearch(adapter, "string", false)->getClassName());
+                 normalize_class_name(ws.createSearch(adapter, "string", false)->getClassName()));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));
 
