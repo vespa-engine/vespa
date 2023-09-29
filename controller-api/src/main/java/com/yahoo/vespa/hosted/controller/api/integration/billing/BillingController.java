@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -109,6 +110,9 @@ public interface BillingController {
     /** Get all bills from the system */
     List<Bill> getBills();
 
+    /** Get the bill with the given id */
+    Bill getBill(Bill.Id billId);
+
     /** Get the bill collection method for the given tenant */
     default CollectionMethod getCollectionMethod(TenantName tenant) {
         return CollectionMethod.NONE;
@@ -125,4 +129,8 @@ public interface BillingController {
     }
 
     default void updateCache(List<TenantName> tenants) {}
+
+    default String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
+        return "NOT_IMPLEMENTED";
+    }
 }
