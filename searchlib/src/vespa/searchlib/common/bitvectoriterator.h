@@ -23,7 +23,7 @@ private:
     void doUnpack(uint32_t docId) override final {
         _tfmd.resetOnlyDocId(docId);
     }
-    bool isBitVector() const override { return true; }
+    BitVectorIterator * asBitVector() noexcept override { return this; }
     fef::TermFieldMatchData  &_tfmd;
 public:
     virtual bool isInverted() const = 0;

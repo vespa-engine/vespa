@@ -55,6 +55,9 @@ public:
     BitVector::UP get_hits(uint32_t begin_id) override {
         return _wrapped_search->get_hits(begin_id);
     }
+    BitVectorIterator * asBitVector() noexcept override {
+        return _wrapped_search->asBitVector();
+    }
     Trinary is_strict() const override {
         return _wrapped_search->is_strict();
     }

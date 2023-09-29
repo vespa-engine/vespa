@@ -15,7 +15,10 @@ namespace vespalib::slime {
     struct Inserter;
 }
 
-namespace search { class BitVector; }
+namespace search {
+    class BitVector;
+    class BitVectorIterator;
+}
 namespace search::attribute { class ISearchContext; }
 
 namespace search::queryeval {
@@ -331,7 +334,8 @@ public:
     /**
      * @return true if it is a bitvector
      */
-    virtual bool isBitVector() const { return false; }
+    bool isBitVector() noexcept { return asBitVector() != nullptr; }
+    virtual BitVectorIterator * asBitVector() noexcept { return nullptr; }
     /**
      * @return true if it is a source blender
      */

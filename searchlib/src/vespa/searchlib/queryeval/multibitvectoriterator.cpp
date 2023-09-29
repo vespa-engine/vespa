@@ -119,7 +119,7 @@ public:
           _mbv(getChildren().size() + 1)
     {
         for (const auto & child : getChildren()) {
-            const auto * bv = static_cast<const BitVectorIterator *>(child.get());
+            const auto * bv = child->asBitVector();
             _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
         }
     }
@@ -168,9 +168,9 @@ SearchIterator::UP
 MultiBitVectorIterator<Update>::andWith(UP filter, uint32_t estimate)
 {
     (void) estimate;
-    if (filter->isBitVector() && acceptExtraFilter()) {
-        const auto & bv = static_cast<const BitVectorIterator &>(*filter);
-        _mbv.addBitVector(Meta(bv.getBitValues(), bv.isInverted()), bv.getDocIdLimit());
+    const BitVectorIterator * bv = filter->asBitVector();
+    if (bv && acceptExtraFilter()) {
+        _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
         insert(getChildren().size(), std::move(filter));
         _mbv.reset();
     }
@@ -225,9 +225,7 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
         MultiSearch::doUnpack(docid);
     } else {
         auto &children = getChildren();
-        _unpackInfo.each([&children,docid](size_t i) {
-                static_cast<BitVectorIterator *>(children[i].get())->unpack(docid);
-            }, children.size());
+        _unpackInfo.each([&children,docid](size_t i) { children[i]->unpack(docid); }, children.size());
     }
 }
 
