@@ -2,7 +2,6 @@
 #pragma once
 
 #include <atomic>
-#include <cstdio>
 #include <mutex>
 #include <unordered_map>
 
