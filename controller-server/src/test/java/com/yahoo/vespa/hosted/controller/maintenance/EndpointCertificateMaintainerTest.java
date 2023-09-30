@@ -254,8 +254,8 @@ public class EndpointCertificateMaintainerTest {
 
     @Test
     void deploy_to_other_manual_zone_refreshes_cert() {
-        String devSan = "*.manual.tenant.us-east-1.dev.vespa.oath.cloud";
-        String perfSan = "*.manual.tenant.us-east-3.perf.vespa.oath.cloud";
+        String devSan = "*.foo.manual.tenant.us-east-1.dev.vespa.oath.cloud";
+        String perfSan = "*.foo.manual.tenant.us-east-3.perf.vespa.oath.cloud";
 
         var devApp = ApplicationId.from("tenant", "manual", "foo");
         DeploymentTester deploymentTester = new DeploymentTester(tester);
