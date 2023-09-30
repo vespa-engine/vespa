@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -38,10 +39,13 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.perfUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -248,9 +252,64 @@ public class EndpointCertificateMaintainerTest {
         assertEquals(3, randomizedNames.size());
     }
 
+    @Test
+    void deploy_to_other_manual_zone_refreshes_cert() {
+        String devSan = "*.foo.manual.tenant.us-east-1.dev.vespa.oath.cloud";
+        String perfSan = "*.foo.manual.tenant.us-east-3.perf.vespa.oath.cloud";
+
+        var devApp = ApplicationId.from("tenant", "manual", "foo");
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        deployToAssignCert(deploymentTester, devApp, List.of(devUsEast1), Optional.empty());
+        assertEquals(1, tester.curator().readAssignedCertificates().size());
+        maintainer.maintain();
+        Optional<AssignedCertificate> devCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(devApp), Optional.of(devApp.instance()));
+        List<String> devSans = devCertificate.get().certificate().requestedDnsSans();
+        Assertions.assertThat(devSans).contains(devSan);
+        Assertions.assertThat(devSans).doesNotContain(perfSan);
+
+        // Deploy to perf and verify that the certs are refreshed
+        deployToAssignCert(deploymentTester, devApp, List.of(perfUsEast3), Optional.empty());
+        Optional<AssignedCertificate> devAndPerfCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(devApp), Optional.of(devApp.instance()));
+        List<String> devAndPerfSans = devAndPerfCertificate.get().certificate().requestedDnsSans();
+
+        assertNotEquals(devSans, devAndPerfSans);
+        Assertions.assertThat(devAndPerfSans).contains(devSan);
+        Assertions.assertThat(devAndPerfSans).contains(perfSan);
+    }
+
+    @Test
+    void deploy_to_other_prod_zone_refreshes_cert() {
+        String westSan = "*.prod.tenant.us-west-1.vespa.oath.cloud";
+        String centralSan = "*.prod.tenant.us-central-1.vespa.oath.cloud";
+
+        var prodApp = ApplicationId.from("tenant", "prod", "default");
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        deployToAssignCert(deploymentTester, prodApp, List.of(systemTest, stagingTest, productionUsWest1), Optional.empty());
+        assertEquals(1, tester.curator().readAssignedCertificates().size());
+        maintainer.maintain();
+        Optional<AssignedCertificate> usWestCert = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(prodApp), Optional.of(prodApp.instance()));
+        List<String> usWestSans = usWestCert.get().certificate().requestedDnsSans();
+        Assertions.assertThat(usWestSans).contains(westSan);
+        Assertions.assertThat(usWestSans).doesNotContain(centralSan);
+
+        // Deploy to perf and verify that the certs are refreshed
+        deployToAssignCert(deploymentTester, prodApp, List.of(systemTest, stagingTest, productionUsWest1, productionUsCentral1), Optional.empty());
+        Optional<AssignedCertificate> usCentralWestCert = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(prodApp), Optional.of(prodApp.instance()));
+        List<String> usCentralWestSans = usCentralWestCert.get().certificate().requestedDnsSans();
+        assertNotEquals(usWestSans, usCentralWestSans);
+        Assertions.assertThat(usCentralWestSans).contains(westSan);
+        Assertions.assertThat(usCentralWestSans).contains(centralSan);
+    }
+
+    private void deploy() {
+
+    }
+
     private void deployToAssignCert(DeploymentTester tester, ApplicationId applicationId, List<JobType> jobTypes, Optional<String> instances) {
-        var applicationPackageBuilder = new ApplicationPackageBuilder()
-                .region("us-west-1");
+
+        var applicationPackageBuilder = new ApplicationPackageBuilder();
+        jobTypes.stream().filter(JobType::isProduction).map(job -> job.zone().region().value()).forEach(applicationPackageBuilder::region);
+
         instances.map(applicationPackageBuilder::instances);
         var applicationPackage = applicationPackageBuilder.build();
 
