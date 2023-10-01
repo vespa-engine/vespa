@@ -14,7 +14,9 @@ func (opts *Options) getOrSetHeapSize(prefix string, heapSize AmountOfMemory) Am
 	var missing bool = true
 	for _, x := range opts.jvmArgs {
 		if strings.HasPrefix(x, prefix) {
-			val, err := ParseJvmMemorySpec(strings.TrimPrefix(x, prefix))
+			x = strings.TrimPrefix(x, prefix)
+			x = strings.TrimPrefix(x, ":")
+			val, err := ParseJvmMemorySpec(x)
 			if err == nil {
 				missing = false
 				heapSize = val

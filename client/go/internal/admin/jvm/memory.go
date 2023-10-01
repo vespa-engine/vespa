@@ -56,6 +56,7 @@ func (v AmountOfMemory) AsJvmSpec() string {
 	}
 	return fmt.Sprintf("%d%s", val, suffix)
 }
+
 func (v AmountOfMemory) String() string {
 	val := v.numBytes
 	idx := 0
