@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ClusterResources;
 
 import java.util.List;
+import static java.lang.Math.min;
 
 /**
  * Calculates the cost of an application.
@@ -15,24 +16,26 @@ public class PriceCalculator {
     private final double maxDiscount = 0.5;
     private final double enclaveDiscount = 0.2;
     private final double maxEnclaveDiscount = 0.80;
-    private final double costGivingMaxDiscount = 200; // 70 nodes with resources 16, 64, 800
+    private final double priceGivingMaxDiscount = 200; // 70 nodes with resources 16, 64, 800
     private final double minimalMonthlyEnclaveCost = 10_000;
 
     /** Calculates the price of this application in USD per hour. */
-    public double cost(List<ClusterResources> clusters, PricingInfo pricingInfo) {
+    public double price(List<ClusterResources> clusters, PricingInfo pricingInfo) {
         double cost = clusters.stream()
                               .mapToDouble(cluster -> cluster.cost())
                               .sum();
-        cost = supportLevelMultiplier(pricingInfo.supportLevel) * cost;
+        return price(cost, pricingInfo.enclave, pricingInfo.supportLevel);
+    }
 
-        cost = pricingInfo.enclave ? cost * (1 - enclaveDiscount) : cost;
+    private double price(double cost, boolean enclave, PricingInfo.SupportLevel supportLevel) {
+        double price = supportLevelMultiplier(supportLevel) * cost;
 
-        double volumeDiscount = pricingInfo.enclave
-                                ? maxEnclaveDiscount * Math.min(1, cost / costGivingMaxDiscount)
-                                : maxDiscount * Math.min(1, cost / costGivingMaxDiscount);
-        double price = cost * (1 - volumeDiscount);
+        price = enclave ? price * (1 - enclaveDiscount) : price;
 
-        if (pricingInfo.enclave && price * 24 * 30 < minimalMonthlyEnclaveCost)
+        var volumeDiscount = ( enclave ? maxEnclaveDiscount: maxDiscount ) * min(1, price / priceGivingMaxDiscount);
+        price = price * (1 - volumeDiscount);
+
+        if (enclave && price * 24 * 30 < minimalMonthlyEnclaveCost)
             price = minimalMonthlyEnclaveCost / (24 * 30);
 
         return price;
