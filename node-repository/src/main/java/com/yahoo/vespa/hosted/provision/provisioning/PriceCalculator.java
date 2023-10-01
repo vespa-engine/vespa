@@ -4,6 +4,7 @@ import com.yahoo.config.provision.ClusterResources;
 
 import java.util.List;
 import static java.lang.Math.min;
+import static java.lang.Math.max;
 
 /**
  * Calculates the cost of an application.
@@ -18,22 +19,28 @@ public class PriceCalculator {
     private final double maxEnclaveDiscount = 0.80;
     private final double priceGivingMaxDiscount = 200; // 70 nodes with resources 16, 64, 800
     private final double minimalMonthlyEnclavePrice = 10_000;
+    private final double committedDiscount = 0.15;
 
     /** Calculates the price of this application in USD per hour. */
     public double price(List<ClusterResources> clusters, PricingInfo pricingInfo) {
         double cost = clusters.stream()
                               .mapToDouble(cluster -> cluster.cost())
                               .sum();
-        return price(cost, pricingInfo.enclave, pricingInfo.supportLevel);
+        return price(cost, pricingInfo.enclave, pricingInfo.supportLevel, pricingInfo.committedHourlyAmount);
     }
 
-    private double price(double cost, boolean enclave, PricingInfo.SupportLevel supportLevel) {
+    private double price(double cost, boolean enclave, PricingInfo.SupportLevel supportLevel, double committedAmount) {
         double price = supportLevelMultiplier(supportLevel) * cost;
 
         price = enclave ? price * (1 - enclaveDiscount) : price;
 
+        price = min(price, committedAmount) * (1 - committedDiscount) + max(0, price - committedAmount);
+
         var volumeDiscount = ( enclave ? maxEnclaveDiscount: maxDiscount ) * min(1, price / priceGivingMaxDiscount);
         price = price * (1 - volumeDiscount);
+
+        if (price < committedAmount)
+            price = committedAmount;
 
         if (enclave && price * 24 * 30 < minimalMonthlyEnclavePrice)
             price = minimalMonthlyEnclavePrice / (24 * 30);
@@ -49,11 +56,11 @@ public class PriceCalculator {
         };
     }
 
-    public record PricingInfo(boolean enclave, SupportLevel supportLevel) {
+    public record PricingInfo(boolean enclave, SupportLevel supportLevel, double committedHourlyAmount) {
 
         public enum SupportLevel { STANDARD, COMMERCIAL, ENTERPRISE }
 
-        public static PricingInfo empty() { return new PricingInfo(false, SupportLevel.COMMERCIAL); }
+        public static PricingInfo empty() { return new PricingInfo(false, SupportLevel.COMMERCIAL, 0); }
 
     }
 
