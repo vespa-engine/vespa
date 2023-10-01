@@ -17,7 +17,7 @@ public class PriceCalculator {
     private final double enclaveDiscount = 0.2;
     private final double maxEnclaveDiscount = 0.80;
     private final double priceGivingMaxDiscount = 200; // 70 nodes with resources 16, 64, 800
-    private final double minimalMonthlyEnclaveCost = 10_000;
+    private final double minimalMonthlyEnclavePrice = 10_000;
 
     /** Calculates the price of this application in USD per hour. */
     public double price(List<ClusterResources> clusters, PricingInfo pricingInfo) {
@@ -35,8 +35,8 @@ public class PriceCalculator {
         var volumeDiscount = ( enclave ? maxEnclaveDiscount: maxDiscount ) * min(1, price / priceGivingMaxDiscount);
         price = price * (1 - volumeDiscount);
 
-        if (enclave && price * 24 * 30 < minimalMonthlyEnclaveCost)
-            price = minimalMonthlyEnclaveCost / (24 * 30);
+        if (enclave && price * 24 * 30 < minimalMonthlyEnclavePrice)
+            price = minimalMonthlyEnclavePrice / (24 * 30);
 
         return price;
     }
