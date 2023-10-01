@@ -14,11 +14,11 @@ import static java.lang.Math.max;
  */
 public class PriceCalculator {
 
-    private final double maxDiscount = 0.5;
+    private final double maxVolumeDiscount = 0.5;
+    private final double maxEnclaveVolumeDiscount = 0.84;
     private final double enclaveDiscount = 0.2;
-    private final double maxEnclaveDiscount = 0.80;
-    private final double priceGivingMaxDiscount = 200; // 70 nodes with resources 16, 64, 800
-    private final double minimalMonthlyEnclavePrice = 10_000;
+    private final double priceGivingMaxVolumeDiscount = 200; // 70 nodes with resources 16, 64, 800
+    private final double minimalMonthlyEnclavePrice = 10_000; // 13.89 per hour
     private final double committedDiscount = 0.15;
 
     /** Calculates the price of this application in USD per hour. */
@@ -34,10 +34,11 @@ public class PriceCalculator {
 
         price = enclave ? price * (1 - enclaveDiscount) : price;
 
-        price = min(price, committedAmount) * (1 - committedDiscount) + max(0, price - committedAmount);
-
-        var volumeDiscount = ( enclave ? maxEnclaveDiscount: maxDiscount ) * min(1, price / priceGivingMaxDiscount);
+        var volumeDiscount = (enclave ? maxEnclaveVolumeDiscount : maxVolumeDiscount)
+                             * min(1, price / priceGivingMaxVolumeDiscount);
         price = price * (1 - volumeDiscount);
+
+        price = min(price, committedAmount) * (1 - committedDiscount) + max(0, price - committedAmount);
 
         if (price < committedAmount)
             price = committedAmount;
