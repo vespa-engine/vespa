@@ -50,7 +50,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     @Override
     public FieldValue getInputValue(String fieldName) {
         if (adapter == null) {
-            throw new IllegalStateException("Can not get field '" + fieldName + "' because adapter is null.");
+            throw new IllegalStateException("Can not get field '" + fieldName + "' because adapter is null");
         }
         return adapter.getInputValue(fieldName);
     }
@@ -58,7 +58,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     @Override
     public FieldValue getInputValue(FieldPath fieldPath) {
         if (adapter == null) {
-            throw new IllegalStateException("Can not get field '" + fieldPath + "' because adapter is null.");
+            throw new IllegalStateException("Can not get field '" + fieldPath + "' because adapter is null");
         }
         return adapter.getInputValue(fieldPath);
     }
@@ -71,7 +71,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         if (adapter == null)
-            throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null.");
+            throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null");
         adapter.setOutputValue(exp, fieldName, fieldValue);
         return this;
     }

@@ -21,6 +21,7 @@
 #include "symbol.h"
 #include "symbol_inserter.h"
 #include "symbol_lookup.h"
+#include "symbol_table.h"
 #include "type.h"
 #include "value.h"
 #include "value_factory.h"
@@ -51,32 +52,30 @@ private:
     using Cursor = slime::Cursor;
     using Inspector = slime::Inspector;
 
-    std::unique_ptr<SymbolTable>   _names;
-    std::unique_ptr<Stash>         _stash;
-    RootValue                      _root;
+    std::unique_ptr<SymbolTable> _names;
+    std::unique_ptr<Stash>       _stash;
+    RootValue                    _root;
 
 public:
     using UP = std::unique_ptr<Slime>;
     class Params {
     private:
-        std::unique_ptr<SymbolTable>  _symbols;
-        size_t                        _chunkSize;
+        std::unique_ptr<SymbolTable> _symbols;
+        size_t                       _chunkSize;
     public:
-        Params();
-        explicit Params(std::unique_ptr<SymbolTable> symbols) noexcept;
-        Params(Params &&) noexcept;
-        ~Params();
-        Params & setChunkSize(size_t chunkSize) {
-            _chunkSize = chunkSize;
-            return *this;
-        }
-        size_t getChunkSize() const { return _chunkSize; }
-        std::unique_ptr<SymbolTable> detachSymbols();
+        Params() : Params(4096) {}
+        explicit Params(size_t chunkSize) : _symbols(std::make_unique<SymbolTable>()), _chunkSize(chunkSize) {}
+        explicit Params(std::unique_ptr<SymbolTable> symbols) noexcept : _symbols(std::move(symbols)), _chunkSize(4096) {}
+        Params(Params &&) noexcept = default;
+        ~Params() = default;
+        size_t getChunkSize() const noexcept { return _chunkSize; }
+        std::unique_ptr<SymbolTable> detachSymbols() noexcept { return std::move(_symbols); }
     };
     /**
      * Construct an initially empty Slime object.
      **/
-    explicit Slime(Params params = Params());
+    explicit Slime() : Slime(Params()) {}
+    explicit Slime(Params params);
 
     ~Slime();
 
@@ -88,13 +87,13 @@ public:
 
     static std::unique_ptr<SymbolTable> reclaimSymbols(Slime &&rhs);
 
-    size_t symbols() const noexcept;
+    size_t symbols() const noexcept { return _names->symbols(); }
 
-    Memory inspect(Symbol symbol) const;
+    Memory inspect(Symbol symbol) const { return _names->inspect(symbol); }
 
-    Symbol insert(Memory name);
+    Symbol insert(Memory name) { return _names->insert(name); }
 
-    Symbol lookup(Memory name) const;
+    Symbol lookup(Memory name) const { return _names->lookup(name); }
 
     Cursor &get() noexcept { return _root.get(); }
 

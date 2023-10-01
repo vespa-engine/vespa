@@ -29,8 +29,8 @@ public class HexDecodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new HexDecodeExpression();
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows(null, exp, "Expected string input, got null.");
-        assertVerifyThrows(DataType.LONG, exp, "Expected string input, got long.");
+        assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
+        assertVerifyThrows(DataType.LONG, exp, "Expected string input, got long");
     }
 
     @Test
@@ -67,7 +67,7 @@ public class HexDecodeTestCase {
             new HexDecodeExpression().execute(new StringFieldValue("1ffffffffffffffff"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Hex value '1ffffffffffffffff' is out of range.", e.getMessage());
+            assertEquals("Hex value '1ffffffffffffffff' is out of range", e.getMessage());
         }
     }
 
@@ -77,7 +77,7 @@ public class HexDecodeTestCase {
             new HexDecodeExpression().execute(new StringFieldValue("???"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Illegal hex value '???'.", e.getMessage());
+            assertEquals("Illegal hex value '???'", e.getMessage());
         }
     }
 }

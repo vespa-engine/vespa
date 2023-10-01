@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStoreValidator;
 import com.yahoo.vespa.config.server.MockTesterClient;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
@@ -117,6 +118,7 @@ public class ApplicationHandlerTest {
     private ManualClock clock;
     private List<Endpoint> expectedEndpoints;
     private Availability availability;
+    private Map<String, List<Token>> activeTokenFingerprints;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -140,6 +142,7 @@ public class ApplicationHandlerTest {
                 .build();
         tenantRepository.addTenant(mytenantName);
         orchestrator = new OrchestratorMock();
+        activeTokenFingerprints = new HashMap<>();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withOrchestrator(orchestrator)
@@ -149,6 +152,7 @@ public class ApplicationHandlerTest {
                 .withConfigserverConfig(configserverConfig)
                 .withSecretStoreValidator(secretStoreValidator)
                 .withEndpointsChecker(endpoints -> { assertEquals(expectedEndpoints, endpoints); return availability; })
+                .withActiveTokens(activeTokenFingerprints)
                 .build();
     }
 
@@ -235,6 +239,19 @@ public class ApplicationHandlerTest {
         var renderedString = SessionHandlerTest.getRenderedString(response);
 
         assertEquals("{\"rate\":0.0}", renderedString);
+    }
+
+    @Test
+    public void testGetTokenFingerprints() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        activeTokenFingerprints.putAll(Map.of("host", List.of(new Token("t1", List.of("fingers", "toes")),
+                                                              new Token("t2", List.of())),
+                                              "toast", List.of()));
+        HttpResponse response = createApplicationHandler().handleGET(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/active-token-fingerprints", GET));
+        assertEquals(200, response.getStatus());
+        assertEquals("""
+                     {"hosts":[{"host":"host","tokens":[{"id":"t1","fingerprints":["fingers","toes"]},{"id":"t2","fingerprints":[]}]},{"host":"toast","tokens":[]}]}""",
+                     getRenderedString(response));
     }
 
     @Test

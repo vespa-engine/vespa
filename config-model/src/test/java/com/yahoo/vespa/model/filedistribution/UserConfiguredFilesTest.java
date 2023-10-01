@@ -7,12 +7,14 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public class UserConfiguredFilesTest {
 
@@ -68,7 +71,10 @@ public class UserConfiguredFilesTest {
     }
 
     private UserConfiguredFiles userConfiguredFiles() {
-        return new UserConfiguredFiles(fileRegistry, new BaseDeployLogger());
+        return new UserConfiguredFiles(fileRegistry,
+                                       new BaseDeployLogger(),
+                                       new TestProperties(),
+                                       new ApplicationContainerCluster.UserConfiguredUrls());
     }
 
     @BeforeEach
@@ -263,7 +269,8 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': No such file or directory 'foo.txt'", e.getMessage());
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': No such file or directory 'foo.txt'",
+                         e.getMessage());
         }
     }
 
@@ -276,7 +283,7 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Unable to register file for field 'fileVal': Invalid config value '.'",
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': Invalid config value '.' for field 'fileVal",
                          e.getMessage());
         }
     }
@@ -291,8 +298,7 @@ public class UserConfiguredFilesTest {
             userConfiguredFiles().register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Unable to register file specified in services.xml for config 'mynamespace.myname': Directory '" +
-                                 relativeTempDir + "' is empty",
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': Directory '" + relativeTempDir + "' is empty",
                          e.getMessage());
         }
     }

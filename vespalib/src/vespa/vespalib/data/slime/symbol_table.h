@@ -4,8 +4,8 @@
 
 #include "symbol.h"
 #include <vespa/vespalib/data/memory.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/data/memorydatastore.h>
 
 namespace vespalib::slime {
 
@@ -21,21 +21,24 @@ private:
         }
     };
     using SymbolMap = hash_map<Memory, Symbol, hasher>;
-    using SymbolVector = VariableSizeVector;
+    using SymbolVector = std::vector<Memory>;
+    Stash        _stash;
     SymbolMap    _symbols;
     SymbolVector _names;
 
 public:
     using UP = std::unique_ptr<SymbolTable>;
-    SymbolTable(size_t expectedNumSymbols=16);
+    SymbolTable() : SymbolTable(16) {}
+    explicit SymbolTable(size_t expectedNumSymbols);
+    SymbolTable(SymbolTable &&) noexcept = default;
+    SymbolTable & operator=(SymbolTable &&) noexcept = default;
     ~SymbolTable();
     size_t symbols() const noexcept { return _names.size(); }
     Memory inspect(const Symbol &symbol) const {
         if (symbol.getValue() > _names.size()) {
             return Memory();
         }
-        SymbolVector::Reference r(_names[symbol.getValue()]);
-        return Memory(r.c_str(), r.size());
+        return _names[symbol.getValue()];
     }
     Symbol insert(const Memory &name);
     Symbol lookup(const Memory &name) const;

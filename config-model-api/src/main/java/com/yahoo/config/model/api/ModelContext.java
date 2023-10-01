@@ -47,6 +47,7 @@ public interface ModelContext {
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
+    OnnxModelCost onnxModelCost();
 
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
     default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
@@ -117,6 +118,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableNestedMultivalueGrouping() { return false; }
         @ModelFeatureFlag(owners = {"jonmv"}) default boolean useReconfigurableDispatcher() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "log"; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

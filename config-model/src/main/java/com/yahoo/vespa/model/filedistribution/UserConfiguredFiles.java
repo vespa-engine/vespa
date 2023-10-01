@@ -5,12 +5,14 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
+
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -21,19 +23,28 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserConfiguredUrls;
+
 /**
  * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
  *
  * @author gjoranv
+ * @author hmusum
  */
 public class UserConfiguredFiles implements Serializable {
 
     private final FileRegistry fileRegistry;
     private final DeployLogger logger;
+    private final UserConfiguredUrls userConfiguredUrls;
+    private final String unknownConfigDefinition;
 
-    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger) {
+    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger,
+                               ModelContext.FeatureFlags featureFlags,
+                               UserConfiguredUrls userConfiguredUrls) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
+        this.userConfiguredUrls = userConfiguredUrls;
+        this.unknownConfigDefinition = featureFlags.unknownConfigDefinition();
     }
 
     /**
@@ -47,7 +58,7 @@ public class UserConfiguredFiles implements Serializable {
             try {
                 register(builder, registeredFiles, key);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unable to register file specified in services.xml for config '" + key + "': " +
+                throw new IllegalArgumentException("Invalid config in services.xml for '" + key + "': " +
                                                    Exceptions.toMessageString(e));
             }
         }
@@ -56,9 +67,12 @@ public class UserConfiguredFiles implements Serializable {
     private void register(ConfigPayloadBuilder builder, Map<Path, FileReference> registeredFiles, ConfigDefinitionKey key) {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
-            // TODO: throw new IllegalArgumentException("Unable to find config definition for " + builder);
-            logger.logApplicationPackage(Level.INFO, "Unable to find config definition " + key +
-                                                     ". Will not register files for file distribution for this config");
+            String message = "Unable to find config definition " + key + ". Will not register files for file distribution for this config";
+            switch (unknownConfigDefinition) {
+                case "log" -> logger.logApplicationPackage(Level.INFO, message);
+                case "warning" -> logger.logApplicationPackage(Level.WARNING, message);
+                case "fail" -> throw new IllegalArgumentException("Unable to find config definition for " + key);
+            }
             return;
         }
 
@@ -113,8 +127,7 @@ public class UserConfiguredFiles implements Serializable {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
             if (isEmptyOptionalPath(entry, fileEntry)) continue;
             if (fileEntry.getValue() == null || fileEntry.getValue().equals("."))
-                throw new IllegalArgumentException("Unable to register file for field '" + name +
-                                                   "': Invalid config value '" + fileEntry.getValue() + "'");
+                throw new IllegalArgumentException("Invalid config value '" + fileEntry.getValue() + "' for field '" + name);
             registerFileEntry(fileEntry, registeredFiles, isModelType);
         }
     }
@@ -133,7 +146,10 @@ public class UserConfiguredFiles implements Serializable {
         Path path;
         if (isModelType) {
             var modelReference = ModelReference.valueOf(builder.getValue());
-            if (modelReference.path().isEmpty()) return;
+            if (modelReference.path().isEmpty()) {
+                modelReference.url().ifPresent(url -> userConfiguredUrls.add(url.value()));
+                return;
+            }
             path = Path.fromString(modelReference.path().get().value());
         }
         else {

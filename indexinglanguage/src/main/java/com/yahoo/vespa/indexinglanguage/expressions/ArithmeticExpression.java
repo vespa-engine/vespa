@@ -42,28 +42,28 @@ public final class ArithmeticExpression extends CompositeExpression {
         }
     }
 
-    private final Expression lhs;
+    private final Expression left;
     private final Operator op;
-    private final Expression rhs;
+    private final Expression right;
 
-    public ArithmeticExpression(Expression lhs, Operator op, Expression rhs) {
-        super(requiredInputType(lhs, rhs));
-        lhs.getClass(); // throws NullPointerException
+    public ArithmeticExpression(Expression left, Operator op, Expression right) {
+        super(requiredInputType(left, right));
+        left.getClass(); // throws NullPointerException
         op.getClass();
-        rhs.getClass();
-        this.lhs = lhs;
+        right.getClass();
+        this.left = left;
         this.op = op;
-        this.rhs = rhs;
+        this.right = right;
     }
 
     @Override
     public ArithmeticExpression convertChildren(ExpressionConverter converter) {
         // TODO: branch()?
-        return new ArithmeticExpression(converter.convert(lhs), op, converter.convert(rhs));
+        return new ArithmeticExpression(converter.convert(left), op, converter.convert(right));
     }
 
     public Expression getLeftHandSide() {
-        return lhs;
+        return left;
     }
 
     public Operator getOperator() {
@@ -71,21 +71,21 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     public Expression getRightHandSide() {
-        return rhs;
+        return right;
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
-        context.setValue(evaluate(context.setValue(input).execute(lhs).getValue(),
-                                  context.setValue(input).execute(rhs).getValue()));
+        context.setValue(evaluate(context.setValue(input).execute(left).getValue(),
+                                  context.setValue(input).execute(right).getValue()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
-        context.setValueType(evaluate(context.setValueType(input).execute(lhs).getValueType(),
-                                      context.setValueType(input).execute(rhs).getValueType()));
+        context.setValueType(evaluate(context.setValueType(input).execute(left).getValueType(),
+                                      context.setValueType(input).execute(right).getValueType()));
     }
 
     private static DataType requiredInputType(Expression lhs, Expression rhs) {
@@ -99,7 +99,7 @@ public final class ArithmeticExpression extends CompositeExpression {
         }
         if (!lhsType.equals(rhsType)) {
             throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
-                                                  lhsType.getName() + " vs " + rhsType.getName() + ".");
+                                                                        lhsType.getName() + " vs " + rhsType.getName());
         }
         return lhsType;
     }
@@ -111,7 +111,7 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     public String toString() {
-        return lhs + " " + op + " " + rhs;
+        return left + " " + op + " " + right;
     }
 
     @Override
@@ -120,13 +120,13 @@ public final class ArithmeticExpression extends CompositeExpression {
             return false;
         }
         ArithmeticExpression exp = (ArithmeticExpression)obj;
-        if (!lhs.equals(exp.lhs)) {
+        if (!left.equals(exp.left)) {
             return false;
         }
         if (!op.equals(exp.op)) {
             return false;
         }
-        if (!rhs.equals(exp.rhs)) {
+        if (!right.equals(exp.right)) {
             return false;
         }
         return true;
@@ -134,12 +134,12 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + lhs.hashCode() + op.hashCode() + rhs.hashCode();
+        return getClass().hashCode() + left.hashCode() + op.hashCode() + right.hashCode();
     }
 
     private DataType evaluate(DataType lhs, DataType rhs) {
         if (lhs == null || rhs == null) {
-            throw new VerificationException(this, "Attempting to perform arithmetic on a null value.");
+            throw new VerificationException(this, "Attempting to perform arithmetic on a null value");
         }
         if (!(lhs instanceof NumericDataType) ||
             !(rhs instanceof NumericDataType))
@@ -210,12 +210,12 @@ public final class ArithmeticExpression extends CompositeExpression {
             return BigDecimal.valueOf(((LongFieldValue)value).getLong());
         }
         throw new IllegalArgumentException("Unsupported numeric field value type '" +
-                                           value.getClass().getName() + "'.");
+                                           value.getClass().getName() + "'");
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-        lhs.select(predicate, operation);
-        rhs.select(predicate, operation);
+        left.select(predicate, operation);
+        right.select(predicate, operation);
     }
 }

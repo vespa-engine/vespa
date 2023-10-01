@@ -102,6 +102,10 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return tenant.value() + ":" + application.value() + ":" + instance.value();
     }
 
+    public String toSerializedFormWithoutInstance() {
+        return tenant.value() + ":" + application.value();
+    }
+
     @Override
     public String toString() { return toShortString(); }
 
@@ -117,6 +121,11 @@ public class ApplicationId implements Comparable<ApplicationId> {
     /** Returns an application id where all fields are "default" */
     public static ApplicationId defaultId() {
         return new ApplicationId(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
+    }
+
+    /** Returns a serialized form of tenant:application to be used with e.g Flags */
+    public static String toSerializedForm(TenantName tenant, ApplicationName application) {
+        return tenant.value() + ":" + application.value();
     }
 
     // TODO: kill this

@@ -29,8 +29,8 @@ public class ContactInformationMaintainer extends ControllerMaintainer {
 
     private final ContactRetriever contactRetriever;
 
-    public ContactInformationMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
+    public ContactInformationMaintainer(Controller controller, Duration interval, Double successFactorBaseline) {
+        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)), successFactorBaseline);
         this.contactRetriever = controller.serviceRegistry().contactRetriever();
     }
 

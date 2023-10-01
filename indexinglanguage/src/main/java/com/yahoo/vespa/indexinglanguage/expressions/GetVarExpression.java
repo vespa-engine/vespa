@@ -28,7 +28,7 @@ public final class GetVarExpression extends Expression {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getVariable(varName);
         if (input == null) {
-            throw new VerificationException(this, "Variable '" + varName + "' not found.");
+            throw new VerificationException(this, "Variable '" + varName + "' not found");
         }
         context.setValueType(input);
     }

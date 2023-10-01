@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.document;
 
+import com.yahoo.schema.processing.NGramMatch;
+
 import java.io.Serializable;
+import java.util.OptionalInt;
 
 /**
  * Defines how a field should be matched.
@@ -23,8 +26,8 @@ public class Matching implements Cloneable, Serializable {
 
     private boolean algorithmUserSet = false;
 
-    /** The gram size is the n in n-gram, or -1 if not set. Should only be set with gram matching. */
-    private int gramSize = -1;
+    /** The gram size is the n in n-gram, or empty if not set. Should only be set with gram matching. */
+    private OptionalInt gramSize = OptionalInt.empty();
 
     /** Maximum number of characters to consider when searching in this field. Used for limiting resources, especially in streaming search. */
     private Integer maxLength;
@@ -67,10 +70,10 @@ public class Matching implements Cloneable, Serializable {
 
     public boolean isSuffix() { return algorithm == MatchAlgorithm.SUFFIX; }
 
-    /** Returns the gram size, or -1 if not set. Should only be set with gram matching. */
-    public int getGramSize() { return gramSize; }
+    /** Returns the gram size, or empty if not set. Should only be set with gram matching. */
+    public OptionalInt getGramSize() { return gramSize; }
 
-    public void setGramSize(int gramSize) { this.gramSize=gramSize; }
+    public void setGramSize(int gramSize) { this.gramSize = OptionalInt.of(gramSize); }
 
     /**
      * Merge data from another matching object
@@ -107,10 +110,11 @@ public class Matching implements Cloneable, Serializable {
 
     @Override
     public String toString() {
-        return type + " matching [" + (type==MatchType.GRAM ? "gram size " + gramSize : "supports " + algorithm) +
-               "], [exact-terminator "+exactMatchTerminator+"]";
+        return type + " matching [" + (type == MatchType.GRAM ? "gram size " + gramSize.orElse(NGramMatch.DEFAULT_GRAM_SIZE) : "supports " + algorithm) +
+               "], [exact-terminator " + exactMatchTerminator + "]";
     }
 
+    @Override
     public Matching clone() {
         try {
             return (Matching)super.clone();
@@ -129,7 +133,7 @@ public class Matching implements Cloneable, Serializable {
         if ( this.exactMatchTerminator == null && other.exactMatchTerminator != null) return false;
         if ( this.exactMatchTerminator != null && ( ! this.exactMatchTerminator.equals(other.exactMatchTerminator)) )
             return false;
-        if ( gramSize != other.gramSize) return false;
+        if ( ! gramSize.equals(other.gramSize)) return false;
         return true;
     }
 

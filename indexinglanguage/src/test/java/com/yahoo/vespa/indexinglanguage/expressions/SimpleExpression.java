@@ -64,29 +64,14 @@ final class SimpleExpression extends Expression {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SimpleExpression)) {
-            return false;
-        }
-        SimpleExpression rhs = (SimpleExpression)obj;
-        if (hasExecuteValue != rhs.hasExecuteValue) {
-            return false;
-        }
-        if (!equals(executeValue, rhs.executeValue)) {
-            return false;
-        }
-        if (hasVerifyValue != rhs.hasVerifyValue) {
-            return false;
-        }
-        if (!equals(verifyValue, rhs.verifyValue)) {
-            return false;
-        }
-        if (!equals(requiredInputType(), rhs.requiredInputType())) {
-            return false;
-        }
-        if (!equals(createdOutput, rhs.createdOutput)) {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (!(o instanceof SimpleExpression other)) return false;
+        if (hasExecuteValue != other.hasExecuteValue) return false;
+        if (!equals(executeValue, other.executeValue)) return false;
+        if (hasVerifyValue != other.hasVerifyValue) return false;
+        if (!equals(verifyValue, other.verifyValue)) return false;
+        if (!equals(requiredInputType(), other.requiredInputType())) return false;
+        if (!equals(createdOutput, other.createdOutput)) return false;
         return true;
     }
 

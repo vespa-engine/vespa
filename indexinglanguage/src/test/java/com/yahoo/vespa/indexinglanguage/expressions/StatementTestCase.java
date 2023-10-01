@@ -90,9 +90,9 @@ public class StatementTestCase {
     public void requireThatInternalVerificationIsPerformed() {
         Expression exp = newStatement(SimpleExpression.newOutput(DataType.STRING),
                                       SimpleExpression.newConversion(DataType.INT, DataType.STRING));
-        assertVerifyThrows(null, exp, "Expected int input, got string.");
-        assertVerifyThrows(DataType.INT, exp, "Expected int input, got string.");
-        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string.");
+        assertVerifyThrows(null, exp, "Expected int input, got string");
+        assertVerifyThrows(DataType.INT, exp, "Expected int input, got string");
+        assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string");
 
         exp = newStatement(SimpleExpression.newOutput(DataType.INT),
                            SimpleExpression.newConversion(DataType.INT, DataType.STRING));
@@ -104,7 +104,7 @@ public class StatementTestCase {
     @Test
     public void requireThatStatementIsExecuted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        StatementExpression statement = newStatement(new SetValueExpression(new IntegerFieldValue(69)));
+        StatementExpression statement = newStatement(new ConstantExpression(new IntegerFieldValue(69)));
         newStatement(statement).execute(ctx);
 
         FieldValue val = ctx.getValue();

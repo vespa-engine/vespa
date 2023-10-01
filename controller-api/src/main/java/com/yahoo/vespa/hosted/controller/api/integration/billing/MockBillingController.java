@@ -171,6 +171,15 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
+    public Bill getBill(Bill.Id billId) {
+        return committedBills.values().stream()
+                .flatMap(Collection::stream)
+                .filter(bill -> bill.id().equals(billId))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Override
     public CollectionMethod getCollectionMethod(TenantName tenant) {
         return collectionMethod.getOrDefault(tenant, CollectionMethod.AUTO);
     }

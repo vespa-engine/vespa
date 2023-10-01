@@ -7,6 +7,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -602,7 +603,7 @@ public class CuratorDb {
 
     public List<DnsChallenge> readDnsChallenges(DeploymentId id) {
         return curator.getChildren(dnsChallengePath(id)).stream()
-                      .map(cluster -> readDnsChallenge(new ClusterId(id, ClusterSpec.Id.from(cluster))))
+                      .map(cluster -> readDnsChallenge(new ClusterId(id, Id.from(cluster))))
                       .toList();
     }
 

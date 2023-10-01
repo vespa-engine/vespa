@@ -27,27 +27,23 @@ public class GetWireguardResponse {
     public static class Configserver {
 
         @JsonProperty("hostname")
-        public final String hostname;
+        public String hostname;
 
         @JsonProperty("ipAddresses")
-        public final List<String> ipAddresses;
+        public List<String> ipAddresses;
 
+        @JsonProperty("wireguard")
+        public NodeRepositoryNode.WireguardKeyWithTimestamp wireguardKeyWithTimestamp;
+
+
+        // TODO wg: remove when all nodes use new key+timestamp format
         @JsonProperty("wireguardPubkey")
-        public final String wireguardPubkey;
-
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        public String wireguardPubkey;
         @JsonProperty("wireguardKeyTimestamp")
-        public final Long wireguardKeyTimestamp;
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        public Long wireguardKeyTimestamp;
 
-        @JsonCreator
-        public Configserver(@JsonProperty("hostname") String hostname,
-                            @JsonProperty("ipAddresses") List<String> ipAddresses,
-                            @JsonProperty("wireguardPubkey") String wireguardPubkey,
-                            @JsonProperty("wireguardKeyTimestamp") Long wireguardKeyTimestamp) {
-            this.hostname = hostname;
-            this.ipAddresses = ipAddresses;
-            this.wireguardPubkey = wireguardPubkey;
-            this.wireguardKeyTimestamp = wireguardKeyTimestamp;
-        }
     }
 
 }

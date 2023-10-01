@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Attribute settings
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 

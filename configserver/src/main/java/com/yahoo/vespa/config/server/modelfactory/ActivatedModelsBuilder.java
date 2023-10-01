@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
@@ -58,6 +59,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final ExecutorService executor;
+    private final OnnxModelCost onnxModelCost;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
@@ -72,7 +74,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   ConfigserverConfig configserverConfig,
                                   Zone zone,
                                   ModelFactoryRegistry modelFactoryRegistry,
-                                  ConfigDefinitionRepo configDefinitionRepo) {
+                                  ConfigDefinitionRepo configDefinitionRepo,
+                                  OnnxModelCost onnxModelCost) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, new SilentDeployLogger());
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
@@ -84,6 +87,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.executor = executor;
+        this.onnxModelCost = onnxModelCost;
     }
 
     @Override
@@ -108,6 +112,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 provisioned,
                 modelContextProperties,
                 Optional.empty(),
+                onnxModelCost,
                 wantedDockerImageRepository,
                 modelFactory.version(),
                 wantedNodeVespaVersion);

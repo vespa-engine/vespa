@@ -7,8 +7,8 @@ import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -197,7 +197,8 @@ public class VespaModelFactory implements ModelFactory {
             .zone(zone)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
-            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo());
+            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
+            .onnxModelCost(modelContext.onnxModelCost());
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

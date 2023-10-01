@@ -30,7 +30,7 @@ protected:
     const attribute::IAttributeVector &attribute() const { return _attr; }
 
 public:
-    UseAttr(const attribute::IAttributeVector & attr)
+    explicit UseAttr(const attribute::IAttributeVector & attr)
         : _attr(attr) {}
 };
 
@@ -40,7 +40,7 @@ class UseStringEnum : public UseAttr
 {
 public:
     using TokenT = uint32_t;
-    UseStringEnum(const IAttributeVector & attr)
+    explicit UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
     auto mapToken(const ISearchContext &context) const {
         return attribute().findFoldedEnums(context.queryTerm()->getTerm());
@@ -56,7 +56,7 @@ class UseInteger : public UseAttr
 {
 public:
     using TokenT = uint64_t;
-    UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
+    explicit UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
     std::vector<int64_t> mapToken(const ISearchContext &context) const {
         std::vector<int64_t> result;
         Int64Range range(context.getAsIntegerTerm());
@@ -157,6 +157,10 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0];
+    bool field_is_filter = getState().fields()[0].isFilter();
+    if ((tfmd.isNotNeeded() || field_is_filter) && (_contexts.size() == 1)) {
+        return _contexts[0]->createIterator(&tfmd, strict);
+    }
     if (strict) { // use generic weighted set search
         fef::MatchDataLayout layout;
         auto handle = layout.allocTermField(tfmd.getFieldId());
@@ -167,7 +171,6 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
             // TODO: pass ownership with unique_ptr
             children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
-        bool field_is_filter = getState().fields()[0].isFilter();
         return queryeval::WeightedSetTermSearch::create(children, tfmd, field_is_filter, _weights, std::move(match_data));
     } else { // use attribute filter optimization
         bool isString = (_attr.isStringType() && _attr.hasEnum());
@@ -182,18 +185,16 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
 }
 
 queryeval::SearchIterator::UP
-AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint) const
 {
-    (void) constraint;
     std::vector<std::unique_ptr<queryeval::SearchIterator>> children;
     children.reserve(_contexts.size());
     for (auto& context : _contexts) {
-        auto wrapper = std::make_unique<search::queryeval::FilterWrapper>(1);
+        auto wrapper = std::make_unique<queryeval::FilterWrapper>(1);
         wrapper->wrap(context->createIterator(wrapper->tfmda()[0], strict));
         children.emplace_back(std::move(wrapper));
     }
-    search::queryeval::UnpackInfo unpack_info;
-    return search::queryeval::OrSearch::create(std::move(children), strict, unpack_info);
+    return queryeval::OrSearch::create(std::move(children), strict, queryeval::UnpackInfo());
 }
 
 void

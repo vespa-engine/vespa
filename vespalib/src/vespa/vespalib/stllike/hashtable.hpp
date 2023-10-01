@@ -53,8 +53,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t rese
     _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize())),
     _hasher(hasher),
     _equal(equal)
-{
-}
+{ }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(const hashtable &) = default;
@@ -130,7 +129,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V && 
         _count++;
         return insert_result(iterator(this, h), true);
     }
-    return insert_internal_cold(std::move(node), h);
+    return insert_internal_cold(std::forward<V>(node), h);
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >

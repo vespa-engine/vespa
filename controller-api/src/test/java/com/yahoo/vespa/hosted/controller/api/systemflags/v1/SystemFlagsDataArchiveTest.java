@@ -246,8 +246,18 @@ public class SystemFlagsDataArchiveTest {
                                      "conditions": [
                                        {
                                          "type": "whitelist",
-                                         "dimension": "application",
+                                         "dimension": "instance",
                                          "values": [ "f:o:o" ]
+                                       }
+                                     ],
+                                     "value": true
+                                   },
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "whitelist",
+                                         "dimension": "application",
+                                         "values": [ "f:o" ]
                                        }
                                      ],
                                      "value": true
@@ -288,8 +298,18 @@ public class SystemFlagsDataArchiveTest {
                                        {
                                          "comment": "bar",
                                          "type": "whitelist",
-                                         "dimension": "application",
+                                         "dimension": "instance",
                                          "values": [ "f:o:o" ]
+                                       }
+                                     ],
+                                     "value": true
+                                   },
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "whitelist",
+                                         "dimension": "application",
+                                         "values": [ "f:o" ]
                                        }
                                      ],
                                      "value": true
@@ -308,8 +328,7 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void normalize_json_succeed_on_valid_values() {
-        addFile(Condition.Type.WHITELIST, "application", "a:b:c");
-//        addFile(Condition.Type.WHITELIST, "instance", "a:b:c");
+        addFile(Condition.Type.WHITELIST, "application", "a:b");
         addFile(Condition.Type.WHITELIST, "cloud", "yahoo");
         addFile(Condition.Type.WHITELIST, "cloud", "aws");
         addFile(Condition.Type.WHITELIST, "cloud", "gcp");
@@ -322,6 +341,7 @@ public class SystemFlagsDataArchiveTest {
         addFile(Condition.Type.WHITELIST, "environment", "staging");
         addFile(Condition.Type.WHITELIST, "environment", "test");
         addFile(Condition.Type.WHITELIST, "hostname", "2080046-v6-11.ostk.bm2.prod.gq1.yahoo.com");
+        addFile(Condition.Type.WHITELIST, "instance", "a:b:c");
         addFile(Condition.Type.WHITELIST, "node-type", "tenant");
         addFile(Condition.Type.WHITELIST, "node-type", "host");
         addFile(Condition.Type.WHITELIST, "node-type", "config");
@@ -363,12 +383,13 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void normalize_json_fail_on_invalid_values() {
-        failAddFile(Condition.Type.WHITELIST, "application", "a.b.c", "In file flags/temporary/foo/default.json: Invalid application 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
+        failAddFile(Condition.Type.WHITELIST, "application", "a.b", "In file flags/temporary/foo/default.json: Invalid application 'a.b' in whitelist condition: Applications must be on the form tenant:application, but was a.b");
         failAddFile(Condition.Type.WHITELIST, "cloud", "foo", "In file flags/temporary/foo/default.json: Unknown cloud: foo");
         // cluster-id: any String is valid
         failAddFile(Condition.Type.WHITELIST, "cluster-type", "foo", "In file flags/temporary/foo/default.json: Invalid cluster-type 'foo' in whitelist condition: Illegal cluster type 'foo'");
         failAddFile(Condition.Type.WHITELIST, "console-user-email", "not-valid-email-address", "In file flags/temporary/foo/default.json: Invalid email address: not-valid-email-address");
         failAddFile(Condition.Type.WHITELIST, "environment", "foo", "In file flags/temporary/foo/default.json: Invalid environment 'foo' in whitelist condition: 'foo' is not a valid environment identifier");
+        failAddFile(Condition.Type.WHITELIST, "instance", "a.b.c", "In file flags/temporary/foo/default.json: Invalid instance 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
         failAddFile(Condition.Type.WHITELIST, "hostname", "not:a:hostname", "In file flags/temporary/foo/default.json: Invalid hostname 'not:a:hostname' in whitelist condition: hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
         failAddFile(Condition.Type.WHITELIST, "node-type", "footype", "In file flags/temporary/foo/default.json: Invalid node-type 'footype' in whitelist condition: No enum constant com.yahoo.config.provision.NodeType.footype");
         failAddFile(Condition.Type.WHITELIST, "system", "bar", "In file flags/temporary/foo/default.json: Invalid system 'bar' in whitelist condition: 'bar' is not a valid system");

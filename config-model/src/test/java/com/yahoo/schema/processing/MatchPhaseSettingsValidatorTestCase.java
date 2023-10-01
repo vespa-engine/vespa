@@ -1,9 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
-import static com.yahoo.schema.processing.AssertSearchBuilder.assertBuildFails;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MatchPhaseSettingsValidatorTestCase {
 
@@ -13,25 +16,109 @@ public class MatchPhaseSettingsValidatorTestCase {
 
     @Test
     void requireThatAttributeMustExists() throws Exception {
-        assertBuildFails("src/test/examples/matchphase/non_existing_attribute.sd",
-                getMessagePrefix() + "does not exists");
+        try {
+            var schema = """
+                    search test {
+                      document test {
+                        field foo type int {
+                          indexing: summary
+                        }
+                      }
+                      rank-profile default {
+                        match-phase {
+                          attribute: foo
+                          max-hits: 100
+                        }
+                      }
+                    }
+                    """;
+            ApplicationBuilder.createFromString(schema);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(getMessagePrefix() + "does not exists", Exceptions.toMessageString(e));
+        }
     }
 
     @Test
     void requireThatAttributeMustBeNumeric() throws Exception {
-        assertBuildFails("src/test/examples/matchphase/wrong_data_type_attribute.sd",
-                getMessagePrefix() + "must be single value numeric, but it is 'string'");
+        try {
+            var schema = """
+                    search test {
+                      document test {
+                        field foo type string {
+                          indexing: attribute
+                        }
+                      }
+                      rank-profile default {
+                        match-phase {
+                          attribute: foo
+                          max-hits: 100
+                        }
+                      }
+                    }
+                    """;
+            ApplicationBuilder.createFromString(schema);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(getMessagePrefix() + "must be single value numeric, but it is 'string'",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
     void requireThatAttributeMustBeSingleValue() throws Exception {
-        assertBuildFails("src/test/examples/matchphase/wrong_collection_type_attribute.sd",
-                getMessagePrefix() + "must be single value numeric, but it is 'Array<int>'");
+        try {
+            var schema = """
+                    search test {
+                      document test {
+                        field foo type array<int> {
+                          indexing: attribute
+                        }
+                      }
+                      rank-profile default {
+                        match-phase {
+                          attribute: foo
+                          max-hits: 100
+                        }
+                      }
+                    }
+                    """;
+            ApplicationBuilder.createFromString(schema);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(getMessagePrefix() + "must be single value numeric, but it is 'Array<int>'",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
     void requireThatAttributeMustHaveFastSearch() throws Exception {
-        assertBuildFails("src/test/examples/matchphase/non_fast_search_attribute.sd",
-                getMessagePrefix() + "must be fast-search, but it is not");
+        try {
+            var schema = """
+                    search test {
+                      document test {
+                        field foo type int {
+                          indexing: attribute
+                        }
+                      }
+                      rank-profile default {
+                        match-phase {
+                          attribute: foo
+                          max-hits: 100
+                        }
+                      }
+                    }
+                    """;
+            ApplicationBuilder.createFromString(schema);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(getMessagePrefix() + "must be fast-search, but it is not",
+                         Exceptions.toMessageString(e));
+        }
     }
+
 }

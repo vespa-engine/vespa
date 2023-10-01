@@ -69,7 +69,7 @@ public class ScriptTestCase {
             fail();
         } catch (VerificationException e) {
             assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Expected any input, got null.", e.getMessage());
+            assertEquals("Expected any input, but no input is specified", e.getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void requireThatIfExpressionPassesOriginalInputAlong() throws ParseException {
+    public void requireThatIfExpressionReturnsTheProducedType() throws ParseException {
         Document input = new Document(type, "id:scheme:mytype::");
         Document output = Expression.execute(Expression.fromString("'foo' | if (1 < 2) { 'bar' | index 'out-1' } else { 'baz' | index 'out-1' } | index 'out-1'"), input);
         assertNotNull(output);

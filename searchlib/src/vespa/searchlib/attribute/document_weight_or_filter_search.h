@@ -3,21 +3,21 @@
 #include "i_document_weight_attribute.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
+namespace search::fef { class MatchData; }
 namespace search::attribute {
 
 /**
  * Filter iterator on top of document weight iterators with OR semantics used during
  * calculation of global filter for weighted set terms, wand terms and dot product terms.
  */
-class DocumentWeightOrFilterSearch : public search::queryeval::SearchIterator
+class DocumentWeightOrFilterSearch : public queryeval::SearchIterator
 {
 protected:
-    DocumentWeightOrFilterSearch()
-        : search::queryeval::SearchIterator()
-    {
-    }
+    DocumentWeightOrFilterSearch() = default;
 public:
-    static std::unique_ptr<search::queryeval::SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
+                                                  std::unique_ptr<fef::MatchData> md);
 };
 
 }

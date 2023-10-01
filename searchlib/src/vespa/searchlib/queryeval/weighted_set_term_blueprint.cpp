@@ -33,10 +33,8 @@ WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(con
       _search()
 {
     _tfmda.add(&_tfmd);
-    auto generic_search = bp.createLeafSearch(_tfmda, false);
-    auto weighted_set_term_search = dynamic_cast<WeightedSetTermSearch *>(generic_search.get());
-    generic_search.release();
-    _search.reset(weighted_set_term_search);
+    _search.reset(static_cast<WeightedSetTermSearch *>(bp.createLeafSearch(_tfmda, false).release()));
+
 }
 
 WeightedSetTermMatchingElementsSearch::~WeightedSetTermMatchingElementsSearch() = default;
@@ -94,7 +92,6 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
     _terms.push_back(std::move(term));
 }
 
-
 SearchIterator::UP
 WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
@@ -120,16 +117,16 @@ WeightedSetTermBlueprint::create_matching_elements_search(const MatchingElements
     if (fields.has_field(_children_field.getName())) {
         return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, _children_field.getName(), _terms);
     } else {
-        return std::unique_ptr<MatchingElementsSearch>();
+        return {};
     }
 }
 
 void
 WeightedSetTermBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(childInfo);
+    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo);
+    for (const auto & _term : _terms) {
+        _term->fetchPostings(childInfo);
     }
 }
 

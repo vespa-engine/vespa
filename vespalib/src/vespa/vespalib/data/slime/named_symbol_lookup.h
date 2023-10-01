@@ -20,7 +20,7 @@ private:
     const Memory &_name;
 
 public:
-    NamedSymbolLookup(const SymbolTable &table, const Memory &name)
+    NamedSymbolLookup(const SymbolTable &table, const Memory &name) noexcept
         : _table(table), _name(name) {}
     Symbol lookup() const override;
 };

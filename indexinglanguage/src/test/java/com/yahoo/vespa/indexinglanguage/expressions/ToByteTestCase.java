@@ -30,7 +30,7 @@ public class ToByteTestCase {
         Expression exp = new ToByteExpression();
         assertVerify(DataType.INT, exp, DataType.BYTE);
         assertVerify(DataType.STRING, exp, DataType.BYTE);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
     }
 
     @Test

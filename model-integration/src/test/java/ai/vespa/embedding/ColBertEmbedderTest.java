@@ -31,7 +31,7 @@ public class ColBertEmbedderTest {
                         "[1, 1, 1, 1, 1, 1, 1, 1]" +
                         "]",
                     TensorType.fromSpec("tensor<int8>(dt{},x[1])"),
-                "tensor<int8>(dt{},x[1]):{0:1.0, 1:5.0, 2:3.0, 3:127.0, 4:-128.0, 5:-1.0}"
+                "tensor<int8>(dt{},x[1]):{0:1.0, 1:5.0, 2:3.0, 3:127.0, 4:-128.0, 5:-1.0}", 6
         );
         assertPackedRight(
                 "" +
@@ -41,7 +41,7 @@ public class ColBertEmbedderTest {
                         "[0, 0, 0, 0, 0, 1, 0, 1,   0, 0, 0, 0, 0, 0, 0, 1]" +
                         "]",
                 TensorType.fromSpec("tensor<int8>(dt{},x[2])"),
-                "tensor<int8>(dt{},x[2]):{0:[1.0, -128.0], 1:[5.0, 1.0]}"
+                "tensor<int8>(dt{},x[2]):{0:[1.0, -128.0], 1:[5.0, 1.0]}",2
         );
     }
 
@@ -75,18 +75,18 @@ public class ColBertEmbedderTest {
         }
         String text = sb.toString();
         Tensor fullFloat = assertEmbed("tensor<float>(dt{},x[128])", text, indexingContext);
-        assertEquals(512*128,fullFloat.size());
+        assertEquals(511*128,fullFloat.size());
 
         Tensor query = assertEmbed("tensor<float>(dt{},x[128])", text, queryContext);
         assertEquals(32*128,query.size());
 
         Tensor binaryRep = assertEmbed("tensor<int8>(dt{},x[16])", text, indexingContext);
-        assertEquals(512*16,binaryRep.size());
+        assertEquals(511*16,binaryRep.size());
 
         Tensor shortDoc = assertEmbed("tensor<int8>(dt{},x[16])", "annoyance", indexingContext);
-        // 4 tokens, 16 bytes each = 64 bytes
-        //because of CLS, special, sequence, SEP
-        assertEquals(4*16,shortDoc.size());;
+        // 3 tokens, 16 bytes each = 48 bytes
+        //CLS [unused1] sequence
+        assertEquals(3*16,shortDoc.size());;
     }
 
     static Tensor assertEmbed(String tensorSpec, String text, Embedder.Context context) {
@@ -100,8 +100,8 @@ public class ColBertEmbedderTest {
         return result;
     }
 
-    static void assertPackedRight(String numbers, TensorType destination,String  expected) {
-        Tensor packed = ColBertEmbedder.toBitTensor((IndexedTensor) Tensor.from(numbers), destination);
+    static void assertPackedRight(String numbers, TensorType destination,String  expected, int size) {
+        Tensor packed = ColBertEmbedder.toBitTensor((IndexedTensor) Tensor.from(numbers), destination, size);
         assertEquals(expected,packed.toString());
     }
 

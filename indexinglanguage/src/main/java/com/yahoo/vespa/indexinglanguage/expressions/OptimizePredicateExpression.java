@@ -54,10 +54,10 @@ public final class OptimizePredicateExpression extends Expression {
         DataType input = ctx.getVariable(var);
         if (input == null) {
             if (required) {
-                throw new VerificationException(this, "Variable '" + var + "' must be set.");
+                throw new VerificationException(this, "Variable '" + var + "' must be set");
             }
         } else if (input != type) {
-            throw new VerificationException(this, "Variable '" + var + "' must have type " + type.getName() + ".");
+            throw new VerificationException(this, "Variable '" + var + "' must have type " + type.getName());
         }
     }
 

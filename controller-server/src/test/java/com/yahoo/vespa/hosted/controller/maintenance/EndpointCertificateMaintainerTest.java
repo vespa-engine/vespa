@@ -11,7 +11,9 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProviderMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -24,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -36,10 +39,13 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.perfUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,12 +106,15 @@ public class EndpointCertificateMaintainerTest {
 
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         var cert = tester.curator().readAssignedCertificate(appId).orElseThrow().certificate();
-        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(cert.rootRequestId()); // cert should not be deleted, the app is deployed!
+        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(cert.leafRequestId().get()); // cert should not be deleted, the app is deployed!
     }
 
     @Test
     void refreshed_certificate_is_discovered_and_after_four_days_deployed() {
-        var appId = ApplicationId.from("tenant", "application", "default");
+        prepareCertificatePool(1);
+
+        var instanceId = ApplicationId.from("tenant", "application", "default");
+        var applicationId = TenantAndApplicationId.from(instanceId);
 
         DeploymentTester deploymentTester = new DeploymentTester(tester);
 
@@ -115,22 +124,25 @@ public class EndpointCertificateMaintainerTest {
 
         DeploymentContext deploymentContext = deploymentTester.newDeploymentContext("tenant", "application", "default");
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
-        var assignedCertificate = tester.curator().readAssignedCertificate(appId).orElseThrow();
+        var assignedCertificate = tester.curator().readAssignedCertificate(applicationId, Optional.empty()).orElseThrow();
 
         // cert should not be deleted, the app is deployed!
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertEquals(tester.curator().readAssignedCertificate(appId), Optional.of(assignedCertificate));
+        assertEquals(tester.curator().readAssignedCertificate(applicationId, Optional.empty()).map(c->c.certificate().rootRequestId()), Optional.of(assignedCertificate.certificate().rootRequestId()));
         tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(assignedCertificate.certificate().rootRequestId());
+        // TODO: Remove this line when we have removed assignment of randomized id to application certificates
+        //assignedCertificate = tester.curator().readAssignedCertificate().orElseThrow();
 
         // This simulates a cert refresh performed 3 days later
         tester.clock().advance(Duration.ofDays(3));
         secretStore.setSecret(assignedCertificate.certificate().keyName(), "foo", 1);
         secretStore.setSecret(assignedCertificate.certificate().certName(), "bar", 1);
-        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId.toFullString(), assignedCertificate.certificate().requestedDnsSans(), Optional.of(assignedCertificate.certificate()), "rsa_2048", false);
+        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate("preprovisioned." + assignedCertificate.certificate().randomizedId().get(), assignedCertificate.certificate().requestedDnsSans(), Optional.of(assignedCertificate.certificate()), "rsa_2048", false);
+
         // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertNotRunning(productionUsWest1);
-        var updatedCert = tester.curator().readAssignedCertificate(appId).orElseThrow().certificate();
+        var updatedCert = tester.curator().readAssignedCertificate(applicationId, Optional.empty()).orElseThrow().certificate();
         assertNotEquals(assignedCertificate.certificate().leafRequestId().orElseThrow(), updatedCert.leafRequestId().orElseThrow());
         assertEquals(updatedCert.version(), assignedCertificate.certificate().version() + 1);
 
@@ -179,24 +191,12 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    void certificates_are_not_assigned_random_id_when_flag_disabled() {
-        var app = ApplicationId.from("tenant", "app", "default");
-        DeploymentTester deploymentTester = new DeploymentTester(tester);
-        deployToAssignCert(deploymentTester, app, List.of(systemTest, stagingTest, productionUsWest1), Optional.empty());
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-
-        maintainer.maintain();
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-    }
-
-    @Test
     void production_deployment_certificates_are_assigned_random_id() {
         var app = ApplicationId.from("tenant", "app", "default");
         DeploymentTester deploymentTester = new DeploymentTester(tester);
         deployToAssignCert(deploymentTester, app, List.of(systemTest, stagingTest, productionUsWest1), Optional.empty());
         assertEquals(1, tester.curator().readAssignedCertificates().size());
 
-        ((InMemoryFlagSource)deploymentTester.controller().flagSource()).withBooleanFlag(Flags.ASSIGN_RANDOMIZED_ID.id(), true);
         maintainer.maintain();
         assertEquals(2, tester.curator().readAssignedCertificates().size());
 
@@ -223,7 +223,6 @@ public class EndpointCertificateMaintainerTest {
         DeploymentTester deploymentTester = new DeploymentTester(tester);
         deployToAssignCert(deploymentTester, instance1, List.of(systemTest, stagingTest,productionUsWest1),Optional.of("instance1"));
         assertEquals(1, tester.curator().readAssignedCertificates().size());
-        ((InMemoryFlagSource)deploymentTester.controller().flagSource()).withBooleanFlag(Flags.ASSIGN_RANDOMIZED_ID.id(), true);
         maintainer.maintain();
 
         String randomId = tester.curator().readAssignedCertificate(instance1).get().certificate().randomizedId().get();
@@ -241,7 +240,6 @@ public class EndpointCertificateMaintainerTest {
         DeploymentTester deploymentTester = new DeploymentTester(tester);
         deployToAssignCert(deploymentTester, devApp, List.of(devUsEast1), Optional.empty());
         assertEquals(1, tester.curator().readAssignedCertificates().size());
-        ((InMemoryFlagSource)deploymentTester.controller().flagSource()).withBooleanFlag(Flags.ASSIGN_RANDOMIZED_ID.id(), true);
         List<String> originalRequestedSans = tester.curator().readAssignedCertificate(devApp).get().certificate().requestedDnsSans();
         maintainer.maintain();
         assertEquals(1, tester.curator().readAssignedCertificates().size());
@@ -254,9 +252,64 @@ public class EndpointCertificateMaintainerTest {
         assertEquals(3, randomizedNames.size());
     }
 
+    @Test
+    void deploy_to_other_manual_zone_refreshes_cert() {
+        String devSan = "*.foo.manual.tenant.us-east-1.dev.vespa.oath.cloud";
+        String perfSan = "*.foo.manual.tenant.us-east-3.perf.vespa.oath.cloud";
+
+        var devApp = ApplicationId.from("tenant", "manual", "foo");
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        deployToAssignCert(deploymentTester, devApp, List.of(devUsEast1), Optional.empty());
+        assertEquals(1, tester.curator().readAssignedCertificates().size());
+        maintainer.maintain();
+        Optional<AssignedCertificate> devCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(devApp), Optional.of(devApp.instance()));
+        List<String> devSans = devCertificate.get().certificate().requestedDnsSans();
+        Assertions.assertThat(devSans).contains(devSan);
+        Assertions.assertThat(devSans).doesNotContain(perfSan);
+
+        // Deploy to perf and verify that the certs are refreshed
+        deployToAssignCert(deploymentTester, devApp, List.of(perfUsEast3), Optional.empty());
+        Optional<AssignedCertificate> devAndPerfCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(devApp), Optional.of(devApp.instance()));
+        List<String> devAndPerfSans = devAndPerfCertificate.get().certificate().requestedDnsSans();
+
+        assertNotEquals(devSans, devAndPerfSans);
+        Assertions.assertThat(devAndPerfSans).contains(devSan);
+        Assertions.assertThat(devAndPerfSans).contains(perfSan);
+    }
+
+    @Test
+    void deploy_to_other_prod_zone_refreshes_cert() {
+        String westSan = "*.prod.tenant.us-west-1.vespa.oath.cloud";
+        String centralSan = "*.prod.tenant.us-central-1.vespa.oath.cloud";
+
+        var prodApp = ApplicationId.from("tenant", "prod", "default");
+        DeploymentTester deploymentTester = new DeploymentTester(tester);
+        deployToAssignCert(deploymentTester, prodApp, List.of(systemTest, stagingTest, productionUsWest1), Optional.empty());
+        assertEquals(1, tester.curator().readAssignedCertificates().size());
+        maintainer.maintain();
+        Optional<AssignedCertificate> usWestCert = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(prodApp), Optional.of(prodApp.instance()));
+        List<String> usWestSans = usWestCert.get().certificate().requestedDnsSans();
+        Assertions.assertThat(usWestSans).contains(westSan);
+        Assertions.assertThat(usWestSans).doesNotContain(centralSan);
+
+        // Deploy to perf and verify that the certs are refreshed
+        deployToAssignCert(deploymentTester, prodApp, List.of(systemTest, stagingTest, productionUsWest1, productionUsCentral1), Optional.empty());
+        Optional<AssignedCertificate> usCentralWestCert = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(prodApp), Optional.of(prodApp.instance()));
+        List<String> usCentralWestSans = usCentralWestCert.get().certificate().requestedDnsSans();
+        assertNotEquals(usWestSans, usCentralWestSans);
+        Assertions.assertThat(usCentralWestSans).contains(westSan);
+        Assertions.assertThat(usCentralWestSans).contains(centralSan);
+    }
+
+    private void deploy() {
+
+    }
+
     private void deployToAssignCert(DeploymentTester tester, ApplicationId applicationId, List<JobType> jobTypes, Optional<String> instances) {
-        var applicationPackageBuilder = new ApplicationPackageBuilder()
-                .region("us-west-1");
+
+        var applicationPackageBuilder = new ApplicationPackageBuilder();
+        jobTypes.stream().filter(JobType::isProduction).map(job -> job.zone().region().value()).forEach(applicationPackageBuilder::region);
+
         instances.map(applicationPackageBuilder::instances);
         var applicationPackage = applicationPackageBuilder.build();
 
@@ -279,4 +332,23 @@ public class EndpointCertificateMaintainerTest {
         return new AssignedCertificate(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), certificate);
     }
 
+    private void prepareCertificatePool(int numCertificates) {
+        ((InMemoryFlagSource)tester.controller().flagSource()).withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), numCertificates);
+        ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+
+        // Provision certificates
+        for (int i = 0; i < numCertificates; i++) {
+            certificatePoolMaintainer.maintain();
+        }
+
+        // Make certificate ready
+        EndpointCertificateProviderMock endpointCertificateProvider = (EndpointCertificateProviderMock) tester.controller().serviceRegistry().endpointCertificateProvider();
+        List<EndpointCertificateRequest> endpointCertificateRequests = endpointCertificateProvider.listCertificates();
+        endpointCertificateRequests.forEach(cert -> {
+            EndpointCertificateDetails details = endpointCertificateProvider.certificateDetails(cert.requestId());
+            secretStore.setSecret(details.privateKeyKeyname(), "foo", 0);
+            secretStore.setSecret(details.certKeyKeyname(), "bar", 0);
+        });
+        certificatePoolMaintainer.maintain();
+    }
 }

@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -132,7 +133,8 @@ public class SessionPreparerTest {
                 curator,
                 zone,
                 flagSource,
-                secretStore);
+                secretStore,
+                OnnxModelCost.disabled());
     }
 
     @Test(expected = InvalidApplicationException.class)

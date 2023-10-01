@@ -196,6 +196,8 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         return isExtraField;
     }
 
+    public boolean isDocumentField() { return ! isExtraField; }
+
     @Override
     public boolean isImportedField() {
         return false;
@@ -613,11 +615,8 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     @Override
     public RankType getRankType() { return this.rankType; }
 
-    /**
-     * Returns the search-time attribute settings of this field or null if none is set.
-     *
-     * <p>TODO: Make unmodifiable.</p>
-     */
+    /** Returns the search-time attribute settings of this field or null if none is set. */
+     // TODO: Make unmodifiable
     @Override
     public Map<String, Attribute> getAttributes() { return attributes; }
 

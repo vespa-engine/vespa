@@ -6,16 +6,6 @@
 
 namespace vespalib {
 
-Slime::Params::Params() : Params(std::make_unique<SymbolTable>()) { }
-Slime::Params::Params(std::unique_ptr<SymbolTable> symbols) noexcept : _symbols(std::move(symbols)), _chunkSize(4096) { }
-Slime::Params::Params(Params &&) noexcept = default;
-Slime::Params::~Params() = default;
-
-std::unique_ptr<slime::SymbolTable>
-Slime::Params::detachSymbols() {
-    return std::move(_symbols);
-}
-
 Slime::Slime(Params params)
     : _names(params.detachSymbols()),
       _stash(std::make_unique<Stash>(params.getChunkSize())),
@@ -31,26 +21,6 @@ Slime::reclaimSymbols(Slime &&rhs) {
     rhs._stash.reset();
     rhs._root = RootValue(nullptr);
     return std::move(rhs._names);
-}
-
-size_t
-Slime::symbols() const noexcept {
-    return _names->symbols();
-}
-
-Memory
-Slime::inspect(Symbol symbol) const {
-    return _names->inspect(symbol);
-}
-
-slime::Symbol
-Slime::insert(Memory name) {
-    return _names->insert(name);
-}
-
-slime::Symbol
-Slime::lookup(Memory name) const {
-    return _names->lookup(name);
 }
 
 bool operator == (const Slime & a, const Slime & b) noexcept

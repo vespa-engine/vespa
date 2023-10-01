@@ -3,7 +3,6 @@
 #include "distributornode.h"
 #include "bouncer.h"
 #include "communicationmanager.h"
-#include "opslogger.h"
 #include "statemanager.h"
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
@@ -96,7 +95,6 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     std::unique_ptr<StateManager> stateManager(releaseStateManager());
 
     builder.add(std::make_unique<Bouncer>(dcr, _configUri));
-    builder.add(std::make_unique<OpsLogger>(dcr, _configUri));
     // Distributor instance registers a host info reporter with the state
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.

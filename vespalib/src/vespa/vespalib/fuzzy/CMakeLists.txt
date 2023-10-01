@@ -7,6 +7,7 @@ vespa_add_library(vespalib_vespalib_fuzzy OBJECT
         implicit_levenshtein_dfa.cpp
         levenshtein_dfa.cpp
         levenshtein_distance.cpp
+        table_dfa.cpp
         unicode_utils.cpp
     DEPENDS
 )

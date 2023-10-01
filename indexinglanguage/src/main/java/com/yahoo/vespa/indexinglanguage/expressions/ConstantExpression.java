@@ -7,17 +7,18 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
 
+import java.util.Objects;
+
 /**
  * @author Simon Thoresen Hult
  */
-public final class SetValueExpression extends Expression {
+public final class ConstantExpression extends Expression {
 
     private final FieldValue value;
 
-    public SetValueExpression(FieldValue value) {
+    public ConstantExpression(FieldValue value) {
         super(null);
-        value.getClass(); // throws NullPointerException
-        this.value = value;
+        this.value = Objects.requireNonNull(value);
     }
 
     public FieldValue getValue() {
@@ -52,7 +53,7 @@ public final class SetValueExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SetValueExpression rhs)) return false;
+        if (!(obj instanceof ConstantExpression rhs)) return false;
         if (!value.equals(rhs.value)) return false;
         return true;
     }

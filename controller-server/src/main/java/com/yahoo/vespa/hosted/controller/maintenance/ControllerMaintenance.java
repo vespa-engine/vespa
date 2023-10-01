@@ -59,7 +59,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
         maintainers.add(new OsVersionStatusUpdater(controller, intervals.osVersionStatusUpdater));
-        maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
+        maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer, successFactorBaseline.contactInformationMaintainerBaseline));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
         maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().resourceDatabase()));
@@ -85,6 +85,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
         maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer));
         maintainers.add(new BillingReportMaintainer(controller, intervals.billingReportMaintainer));
+        maintainers.add(new CloudAccountVerifier(controller, intervals.cloudAccountVerifier));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -147,6 +148,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration meteringMonitorMaintainer;
         private final Duration certificatePoolMaintainer;
         private final Duration billingReportMaintainer;
+        private final Duration cloudAccountVerifier;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -184,6 +186,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.meteringMonitorMaintainer = duration(30, MINUTES);
             this.certificatePoolMaintainer = duration(15, MINUTES);
             this.billingReportMaintainer = duration(60, MINUTES);
+            this.cloudAccountVerifier = duration(10, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {
@@ -201,12 +204,14 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Double deploymentMetricsMaintainerBaseline;
         private final Double trafficFractionUpdater;
         private final Double deploymentInfoMaintainerBaseline;
+        private final Double contactInformationMaintainerBaseline;
 
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
             this.deploymentMetricsMaintainerBaseline = 0.90;
             this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
             this.deploymentInfoMaintainerBaseline = system.isCd() ? 0.5 : 0.95;
+            this.contactInformationMaintainerBaseline = 0.95;
         }
 
     }

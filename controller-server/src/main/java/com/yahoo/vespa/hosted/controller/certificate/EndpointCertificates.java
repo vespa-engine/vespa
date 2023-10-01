@@ -11,6 +11,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -57,6 +58,7 @@ public class EndpointCertificates {
     private final EndpointCertificateValidator certificateValidator;
     private final BooleanFlag useAlternateCertProvider;
     private final StringFlag endpointCertificateAlgo;
+    private final BooleanFlag assignLegacyNames;
     private final static Duration GCP_CERTIFICATE_EXPIRY_TIME = Duration.ofDays(100); // 100 days, 10 more than notAfter time
 
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
@@ -64,6 +66,7 @@ public class EndpointCertificates {
         this.controller = controller;
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
+        this.assignLegacyNames = Flags.LEGACY_ENDPOINTS.bindTo(controller.flagSource());
         this.curator = controller.curator();
         this.clock = controller.clock();
         this.certificateProvider = certificateProvider;
@@ -140,10 +143,11 @@ public class EndpointCertificates {
             }
             try (NestedTransaction transaction = new NestedTransaction()) {
                 curator.removeUnassignedCertificate(candidate.get(), transaction);
-                curator.writeAssignedCertificate(new AssignedCertificate(application, instanceName, candidate.get().certificate()),
+                EndpointCertificate certificate = candidate.get().certificate().withLastRequested(clock.instant().getEpochSecond());
+                curator.writeAssignedCertificate(new AssignedCertificate(application, instanceName, certificate),
                                                  transaction);
                 transaction.commit();
-                return candidate.get().certificate();
+                return certificate;
             }
         }
     }
@@ -174,9 +178,12 @@ public class EndpointCertificates {
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
-        // Skip this validation for now if the cert has a randomized id
+        // Skip this validation for now if the cert has a randomized id and should not provision legacy names
         Optional<EndpointCertificate> currentCertificate = assignedCertificate.map(AssignedCertificate::certificate);
-        var requiredSansForZone = currentCertificate.get().randomizedId().isEmpty() ?
+        boolean legacyNames = assignLegacyNames.with(FetchVector.Dimension.INSTANCE_ID, instance.id().serializedForm())
+                .with(FetchVector.Dimension.APPLICATION_ID, instance.id().toSerializedFormWithoutInstance()).value();
+
+        var requiredSansForZone = legacyNames || currentCertificate.get().randomizedId().isEmpty() ?
                 controller.routing().certificateDnsNames(deployment, deploymentSpec) :
                 List.<String>of();
 

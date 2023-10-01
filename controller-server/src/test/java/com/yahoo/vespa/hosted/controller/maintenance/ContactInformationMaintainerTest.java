@@ -30,7 +30,7 @@ public class ContactInformationMaintainerTest {
     @BeforeEach
     public void before() {
         tester = new ControllerTester();
-        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1));
+        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1), 1.0);
     }
 
     @Test

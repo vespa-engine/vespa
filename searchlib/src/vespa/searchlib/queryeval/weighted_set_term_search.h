@@ -10,12 +10,9 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-namespace fef {
-class TermFieldMatchData;
-}  // namespace fef
+namespace search::fef { class TermFieldMatchData; }
 
-namespace queryeval {
+namespace search::queryeval {
 
 class Blueprint;
 
@@ -26,7 +23,7 @@ class Blueprint;
 class WeightedSetTermSearch : public SearchIterator
 {
 protected:
-    WeightedSetTermSearch() {}
+    WeightedSetTermSearch() = default;
 
 public:
     // TODO: pass ownership with unique_ptr
@@ -47,6 +44,4 @@ public:
     virtual void find_matching_elements(uint32_t docid, const std::vector<std::unique_ptr<Blueprint>> &child_blueprints, std::vector<uint32_t> &dst) = 0;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
-
+}

@@ -7,6 +7,7 @@ import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.NormalizeLevel;
 import com.yahoo.schema.document.Stemming;
+import com.yahoo.schema.processing.NGramMatch;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -89,7 +90,7 @@ public class IndexingScriptChangeMessageBuilder {
         MatchType type = matching.getType();
         String retval = type.getName();
         if (type == MatchType.GRAM) {
-            retval += " (size " + matching.getGramSize() + ")";
+            retval += " (size " + matching.getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE) + ")";
         }
         return retval;
     }

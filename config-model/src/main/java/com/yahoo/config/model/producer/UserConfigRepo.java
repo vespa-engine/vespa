@@ -2,7 +2,6 @@
 package com.yahoo.config.model.producer;
 
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 
 import java.util.LinkedHashMap;
@@ -16,29 +15,11 @@ import java.util.Set;
  * @author Ulf Lilleengen
  */
 public class UserConfigRepo {
+
     private final Map<ConfigDefinitionKey, ConfigPayloadBuilder> userConfigsMap;
 
     public UserConfigRepo() {
         this.userConfigsMap = new LinkedHashMap<>();
-    }
-
-    @Override
-    public UserConfigRepo clone() {
-        return new UserConfigRepo(copyBuilders(userConfigsMap));
-    }
-
-    /**
-     * Must copy the builder, because the merge method on {@link TreeConfigProducer} might override the row's builders otherwise
-     */
-    private Map<ConfigDefinitionKey, ConfigPayloadBuilder> copyBuilders(Map<ConfigDefinitionKey, ConfigPayloadBuilder> source) {
-        Map<ConfigDefinitionKey, ConfigPayloadBuilder> ret = new LinkedHashMap<>();
-        for (Map.Entry<ConfigDefinitionKey, ConfigPayloadBuilder> e : source.entrySet()) {
-            ConfigDefinitionKey key = e.getKey();
-            ConfigPayloadBuilder sourceVal = e.getValue();
-            ConfigPayloadBuilder destVal = new ConfigPayloadBuilder(ConfigPayload.fromBuilder(sourceVal));
-            ret.put(key, destVal);
-        }
-        return ret;
     }
 
     public UserConfigRepo(Map<ConfigDefinitionKey, ConfigPayloadBuilder> map) {

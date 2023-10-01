@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/query/tree/range.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 
@@ -98,7 +99,7 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool st
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
-        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch));
+        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, &_requestContext.getDoom()));
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();
     }

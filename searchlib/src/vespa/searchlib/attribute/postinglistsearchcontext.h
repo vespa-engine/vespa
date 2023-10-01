@@ -10,9 +10,11 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/util/regexp.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
+#include <vespa/vespalib/util/regexp.h>
 #include <regex>
+#include <optional>
 
 namespace search::attribute {
 
@@ -30,24 +32,30 @@ protected:
     using Dictionary = EnumPostingTree;
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using FrozenDictionary = Dictionary::FrozenView;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
 
-    const IEnumStoreDictionary & _dictionary;
-    const ISearchContext       &_baseSearchCtx;
-    const BitVector            *_bv; // bitvector if _useBitVector has been set
-    const FrozenDictionary  _frozenDictionary;
-    DictionaryConstIterator _lowerDictItr;
-    DictionaryConstIterator _upperDictItr;
-    uint64_t                _numValues; // attr.getStatus().getNumValues();
-    uint32_t                _uniqueValues;
-    uint32_t                _docIdLimit;
-    uint32_t                _dictSize;
-    vespalib::datastore::EntryRef     _pidx;
-    vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
-    float _FSTC;  // Filtering Search Time Constant
-    float _PLSTC; // Posting List Search Time Constant
-    bool                    _hasWeight;
-    bool                    _useBitVector;
+    static constexpr long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
+    static constexpr long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
+    static constexpr long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
+
+    const IEnumStoreDictionary&   _dictionary;
+    const ISearchContext&         _baseSearchCtx;
+    const BitVector*              _bv; // bitvector if _useBitVector has been set
+    const FrozenDictionary        _frozenDictionary;
+    DictionaryConstIterator       _lowerDictItr;
+    DictionaryConstIterator       _upperDictItr;
+    uint64_t                      _numValues; // attr.getStatus().getNumValues();
+    uint32_t                      _uniqueValues;
+    uint32_t                      _docIdLimit;
+    uint32_t                      _dictSize;
+    EntryRef                      _pidx;
+    EntryRef                      _frozenRoot; // Posting list in tree form
+    float                         _FSTC;  // Filtering Search Time Constant
+    float                         _PLSTC; // Posting List Search Time Constant
+    bool                          _hasWeight;
+    bool                          _useBitVector;
+    mutable std::optional<size_t> _counted_hits; // Snapshot of size of posting lists in range
 
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
                              uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx);
@@ -89,6 +97,18 @@ protected:
         return (numHits > 1000) &&
             (calculateFilteringCost() < calculatePostingListCost(numHits));
     }
+    virtual bool use_posting_list_when_non_strict(const queryeval::ExecuteInfo&) const {
+        return false;
+    }
+    virtual bool fallback_to_approx_num_hits() const {
+        return ((_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION) &&
+                ((_uniqueValues * MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > static_cast<int>(_docIdLimit)) ||
+                 (calculateApproxNumHits() * MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > _docIdLimit) ||
+                 (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION*10)));
+    }
+    virtual size_t countHits() const = 0;
+    virtual void fillArray() = 0;
+    virtual void fillBitVector() = 0;
 };
 
 
@@ -110,19 +130,15 @@ protected:
      */
     PostingListMerger<DataT> _merger;
 
-    static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
-    static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
-    static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
-
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                               bool hasWeight, const PostingList &postingList,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
     void lookupSingle();
-    size_t countHits() const;
-    void fillArray();
-    void fillBitVector();
+    size_t countHits() const override;
+    void fillArray() override;
+    void fillBitVector() override;
 
     void fetchPostings(const queryeval::ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
@@ -141,22 +157,41 @@ protected:
 template <class DataT>
 class PostingListFoldedSearchContextT : public PostingListSearchContextT<DataT>
 {
+public:
+    static constexpr uint32_t MAX_POSTING_INDEXES_SIZE = 10000;
+
 protected:
     using Parent = PostingListSearchContextT<DataT>;
     using Dictionary = typename Parent::Dictionary;
+    using DictionaryConstIterator = Dictionary::ConstIterator;
+    using EntryRef = vespalib::datastore::EntryRef;
     using PostingList = typename Parent::PostingList;
-    using Parent::_lowerDictItr;
-    using Parent::_uniqueValues;
-    using Parent::_postingList;
+    using Parent::_counted_hits;
     using Parent::_docIdLimit;
-    using Parent::countHits;
+    using Parent::_lowerDictItr;
+    using Parent::_merger;
+    using Parent::_postingList;
+    using Parent::_uniqueValues;
+    using Parent::_upperDictItr;
     using Parent::singleHits;
+    using Parent::use_dictionary_entry;
+
+    mutable DictionaryConstIterator _resume_scan_itr;
+    mutable std::vector<EntryRef>   _posting_indexes;
 
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                     bool hasWeight, const PostingList &postingList,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
+    ~PostingListFoldedSearchContextT() override;
 
-    unsigned int approximateHits() const override;
+    bool fallback_to_approx_num_hits() const override;
+    size_t countHits() const override;
+    template <bool fill_array>
+    void fill_array_or_bitvector_helper(EntryRef pidx);
+    template <bool fill_array>
+    void fill_array_or_bitvector();
+    void fillArray() override;
+    void fillBitVector() override;
 };
 
 
@@ -188,6 +223,7 @@ private:
     bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
         return use_dictionary_entry(it);
     }
+    bool use_posting_list_when_non_strict(const queryeval::ExecuteInfo&) const override;
 public:
     StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -320,13 +356,45 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(PostingLi
         ++it;
         return false;
     } else if (this->isFuzzy()) {
-        if (this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()))) {
-            return true;
-        }
-        ++it;
-        return false;
+        return this->is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it, _enumStore.get_data_store());
     }
     return true;
+}
+
+template <typename BaseSC, typename AttrT, typename DataT>
+bool
+StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_list_when_non_strict(const queryeval::ExecuteInfo& info) const
+{
+    if (this->isFuzzy()) {
+        uint32_t exp_doc_hits = this->_docIdLimit * info.hitRate();
+        constexpr uint32_t fuzzy_use_posting_list_doc_limit = 10000;
+        /**
+         * The above constant was derived after a query latency experiment with fuzzy matching
+         * on 2M documents with a dictionary size of 292070.
+         *
+         * Cost per document in dfa-based fuzzy matching (scanning the dictionary and merging posting lists) - strict iterator:
+         *   2.8 ms / 2k = 0.0014 ms
+         *   4.4 ms / 20k = 0.00022 ms
+         *   9.0 ms / 200k = 0.000045 ms
+         *   98 ms / 1M = 0.000098 ms
+         *
+         * Cost per document in lookup-based fuzzy matching - non-strict iterator:
+         *   7.6 ms / 2k = 0.0038 ms
+         *   54 ms / 20k = 0.0027 ms
+         *   529 ms / 200k = 0.0026 ms
+         *
+         * Based on this experiment, we observe that we should avoid lookup-based fuzzy matching
+         * when the number of documents to calculate this on exceeds a number between 2000 - 20000.
+         *
+         * Also note that the cost of scanning the dictionary and performing the fuzzy matching
+         * is already performed at this point.
+         * The only work remaining if returning true is merging the posting lists.
+         */
+        if (exp_doc_hits > fuzzy_use_posting_list_doc_limit) {
+            return true;
+        }
+    }
+    return false;
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>

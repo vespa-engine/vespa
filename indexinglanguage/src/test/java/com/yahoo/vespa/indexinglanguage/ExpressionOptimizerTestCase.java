@@ -1,14 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -26,7 +22,7 @@ public class ExpressionOptimizerTestCase {
     public void requireThatStatementsBeforeOneThatIgnoresInputAreRemoved() {
         checkStatementThatIgnoresInput(new InputExpression("foo"));
         checkStatementThatIgnoresInput(new NowExpression());
-        checkStatementThatIgnoresInput(new SetValueExpression(new IntegerFieldValue(42)));
+        checkStatementThatIgnoresInput(new ConstantExpression(new IntegerFieldValue(42)));
         checkStatementThatIgnoresInput(new HostNameExpression());
         checkStatementThatIgnoresInput(new RandomExpression(42));
         checkStatementThatIgnoresInput(new ArithmeticExpression(

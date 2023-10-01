@@ -28,8 +28,8 @@ public abstract class Expression extends Selectable {
      * Creates an expression
      *
      * @param inputType the type of the input this expression can work with.
-     *        UnresolvedDataType.INSTANCE if it works with any type,
-     *        and null if it does not consume any input.
+     *                  UnresolvedDataType.INSTANCE if it works with any type,
+     *                  and null if it does not consume any input.
      */
     protected Expression(DataType inputType) {
         this.inputType = inputType;
@@ -93,7 +93,7 @@ public abstract class Expression extends Selectable {
             }
             if (!inputType.isValueCompatible(input)) {
                 throw new IllegalArgumentException("Expression '" + this + "' expected " + inputType.getName() +
-                                                   " input, got " + input.getDataType().getName() + ".");
+                                                   " input, got " + input.getDataType().getName());
             }
         }
         doExecute(context);
@@ -102,7 +102,7 @@ public abstract class Expression extends Selectable {
             FieldValue output = context.getValue();
             if (output != null && !outputType.isValueCompatible(output)) {
                 throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
-                                                " output, got " + output.getDataType().getName() + ".");
+                                                " output, got " + output.getDataType().getName());
             }
         }
         return context.getValue();
@@ -163,14 +163,14 @@ public abstract class Expression extends Selectable {
         if (inputType != null) {
             DataType input = context.getValueType();
             if (input == null) {
-                throw new VerificationException(this, "Expected " + inputType.getName() + " input, got null.");
+                throw new VerificationException(this, "Expected " + inputType.getName() + " input, but no input is specified");
             }
             if (input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
-                throw new VerificationException(this, "Failed to resolve input type.");
+                throw new VerificationException(this, "Failed to resolve input type");
             }
             if (!inputType.isAssignableFrom(input)) {
                 throw new VerificationException(this, "Expected " + inputType.getName() + " input, got " +
-                                                      input.getName() + ".");
+                                                      input.getName());
             }
         }
         doVerify(context);
@@ -178,14 +178,13 @@ public abstract class Expression extends Selectable {
         if (outputType != null) {
             DataType output = context.getValueType();
             if (output == null) {
-                throw new VerificationException(this, "Expected " + outputType.getName() + " output, got null.");
+                throw new VerificationException(this, "Expected " + outputType.getName() + " output, but no output is specified");
             }
             if (output.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
-                throw new VerificationException(this, "Failed to resolve output type.");
+                throw new VerificationException(this, "Failed to resolve output type");
             }
             if (!outputType.isAssignableFrom(output)) {
-                throw new VerificationException(this, "Expected " + outputType.getName() + " output, got " +
-                                                      output.getName() + ".");
+                throw new VerificationException(this, "Expected " + outputType.getName() + " output, got " + output.getName());
             }
         }
         return context.getValueType();

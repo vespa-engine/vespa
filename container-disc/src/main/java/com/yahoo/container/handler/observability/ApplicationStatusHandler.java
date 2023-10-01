@@ -15,6 +15,8 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.Container;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -82,22 +84,18 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
     }
 
     @Override
-    public ContentChannel handleRequest(com.yahoo.jdisc.Request request, ResponseHandler handler) {
-        FastContentWriter writer = new FastContentWriter(new ResponseDispatch() {
-            @Override
-            protected com.yahoo.jdisc.Response newResponse() {
-                com.yahoo.jdisc.Response response = new com.yahoo.jdisc.Response(com.yahoo.jdisc.Response.Status.OK);
+    public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+        try (FastContentWriter writer = new FastContentWriter(new ResponseDispatch() {
+            @Override protected Response newResponse() {
+                Response response = new Response(Response.Status.OK);
                 response.headers().add("Content-Type", List.of("application/json"));
                 return response;
             }
-        }.connect(handler));
-
-        try {
+        }.connect(handler))) {
             writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(render()));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Invalid JSON: " + e.getMessage(), e);
         }
-        writer.close();
 
         return new IgnoredContent();
     }

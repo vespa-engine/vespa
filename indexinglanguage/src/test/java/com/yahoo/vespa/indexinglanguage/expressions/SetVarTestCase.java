@@ -36,13 +36,13 @@ public class SetVarTestCase {
         Expression exp = new SetVarExpression("foo");
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows(null, exp, "Expected any input, got null.");
+        assertVerifyThrows(null, exp, "Expected any input, but no input is specified");
 
         try {
             new VerificationContext().setVariable("foo", DataType.INT).setValueType(DataType.STRING).execute(exp);
             fail();
         } catch (VerificationException e) {
-            assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string.", e.getMessage());
+            assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string", e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class SetVarTestCase {
             fail();
         } catch (VerificationException e) {
             assertTrue(e.getExpressionType().equals(SetVarExpression.class));
-            assertEquals("Attempting to assign conflicting types to variable 'out', int vs string.", e.getMessage());
+            assertEquals("Attempting to assign conflicting types to variable 'out', int vs string", e.getMessage());
         }
     }
 

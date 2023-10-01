@@ -15,7 +15,7 @@ public class CompositeExpressionTestCase {
 
     @Test
     public void requireThatToScriptBlockOutputIsParsable() throws ParseException {
-        Expression exp = new SetValueExpression(new IntegerFieldValue(69));
+        Expression exp = new ConstantExpression(new IntegerFieldValue(69));
         assertScript("{ 69; }", exp);
         assertScript("{ 69; }", new StatementExpression(exp));
         assertScript("{ 69; }", new ScriptExpression(new StatementExpression(exp)));

@@ -58,8 +58,8 @@ namespace vespalib::fuzzy {
  * ====== Unicode support ======
  *
  * Matching and successor generation is fully Unicode-aware. All input strings are expected
- * to be in UTF-8, and the generated successor is also encoded as UTF-8 (with some caveats;
- * see the documentation for match()).
+ * to be in UTF-8, and the generated successor is encoded as UTF-8 (with some caveats; see
+ * the documentation for match()) or UTF-32, depending on the chosen `match()` overload.
  *
  * Internally, matching is done on UTF-32 code points and the DFA itself is built around
  * UTF-32. This is unlike Lucene, which converts a UTF-32 DFA to an equivalent UTF-8 DFA.
@@ -159,7 +159,7 @@ public:
 
     /**
      * Attempts to match the source string `source` with the target string this DFA was
-     * built with, emitting a successor string on mismatch if `successor_out` != nullptr.
+     * built with.
      *
      * `source` must not contain any null UTF-8 chars.
      *
@@ -179,13 +179,23 @@ public:
      * Attempts to match the source string `source` with the target string this DFA was
      * built with, emitting a successor string into `successor_out` on mismatch.
      *
-     * See `match(source)` for semantics of returned MatchResult.
+     * In the case of a _match_, the following holds:
+     *
+     *   - The returned MatchResult has the same semantics as `match(source)`.
+     *   - `successor_out` has a _prefix_ equal to its value that was originally passed
+     *     in at the time of match() being called. The _suffix_ of the string is unspecified,
+     *     i.e. it may or may not have been modified.
      *
      * In the case of a _mismatch_, the following holds:
      *
-     *   - `successor_out` is modified to contain the next (in byte-wise ordering) possible
-     *     _matching_ string S so that there exists no other matching string S' that is
-     *     greater than `source` but smaller than S.
+     *   - `successor_out` has a _prefix_ equal to its value that was originally passed
+     *      in at the time of match() being called.
+     *   - `successor_out` has a _suffix_ that contains the next (in byte-wise ordering)
+     *     possible _matching_ string S so that there exists no other matching string S'
+     *     that is greater than `source` but smaller than S.
+     *     The caller must explicitly be aware of any prefixes it sends in, as it is
+     *     entirely ignored for the purposes of ordering the successor string vis-a-vis
+     *     the input source string.
      *   - `successor_out` contains UTF-8 bytes that are within what UTF-8 can legally
      *     encode in bitwise form, but the _code points_ they encode may not be valid.
      *     In particular, surrogate pair ranges and U+10FFFF+1 may be encoded, neither of
@@ -203,12 +213,8 @@ public:
      * is what is passed to the DFA match() function.
      *
      * Memory allocation:
-     * This function does not directly or indirectly allocate any heap memory if either:
-     *
-     *   - the input string is within the max edit distance, or
-     *   - `successor_out` is nullptr, or
-     *   - `successor_out` has sufficient capacity to hold the generated successor
-     *
+     * This function does not directly or indirectly allocate any heap memory if the
+     * `successor_out` string provided is large enough to fit any generated successor.
      * By reusing the successor string across many calls, this therefore amortizes memory
      * allocations down to near zero per invocation.
      */
@@ -220,7 +226,8 @@ public:
      * internally, and is therefore expected to be more efficient.
      *
      * The code point ordering of the UTF-32 successor string is identical to that its UTF-8
-     * equivalent.
+     * equivalent. This includes the special cases where the successor may contain code points
+     * outside the legal Unicode range.
      */
     [[nodiscard]] MatchResult match(std::string_view source, std::vector<uint32_t>& successor_out) const;
 
@@ -231,7 +238,8 @@ public:
 
     enum class DfaType {
         Implicit,
-        Explicit
+        Explicit,
+        Table
     };
 
     /**

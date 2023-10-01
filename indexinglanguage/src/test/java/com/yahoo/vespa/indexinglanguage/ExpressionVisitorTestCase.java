@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
@@ -33,7 +33,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.RandomExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SelectInputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SetLanguageExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.SetValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SplitExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
@@ -100,7 +99,7 @@ public class ExpressionVisitorTestCase {
         assertCount(3, new SelectInputExpression(new Pair<String, Expression>("foo", new IndexExpression("bar")),
                                                  new Pair<String, Expression>("bar", new IndexExpression("foo"))));
         assertCount(1, new SetLanguageExpression());
-        assertCount(1, new SetValueExpression(new IntegerFieldValue(69)));
+        assertCount(1, new ConstantExpression(new IntegerFieldValue(69)));
         assertCount(1, new SetVarExpression("foo"));
         assertCount(1, new SplitExpression("foo"));
         assertCount(2, new StatementExpression(new InputExpression("foo")));

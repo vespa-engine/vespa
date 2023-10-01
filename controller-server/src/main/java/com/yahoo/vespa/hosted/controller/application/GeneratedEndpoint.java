@@ -38,6 +38,11 @@ public record GeneratedEndpoint(String clusterPart, String applicationPart, Auth
         return !declared();
     }
 
+    /** Returns a copy of this with cluster part set to given value */
+    public GeneratedEndpoint withClusterPart(String clusterPart) {
+        return new GeneratedEndpoint(clusterPart, applicationPart, authMethod, endpoint);
+    }
+
     /** Create a new endpoint part, using random as a source of randomness */
     public static String createPart(RandomGenerator random) {
         String alphabet = "abcdef0123456789";

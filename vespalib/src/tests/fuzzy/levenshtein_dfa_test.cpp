@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using namespace ::testing;
 using namespace vespalib::fuzzy;
@@ -82,7 +83,8 @@ INSTANTIATE_TEST_SUITE_P(AllCasingAndDfaTypes,
                          Combine(Values(LevenshteinDfa::Casing::Uncased,
                                         LevenshteinDfa::Casing::Cased),
                                  Values(LevenshteinDfa::DfaType::Explicit,
-                                        LevenshteinDfa::DfaType::Implicit)),
+                                        LevenshteinDfa::DfaType::Implicit,
+                                        LevenshteinDfa::DfaType::Table)),
                          LevenshteinDfaTest::stringify_params);
 
 // Same as existing non-DFA Levenshtein tests, but with some added instantiations
@@ -122,8 +124,10 @@ TEST_P(LevenshteinDfaTest, distance_is_in_utf32_code_point_space) {
     EXPECT_EQ(calculate(u8"カラオケ", u8"カラoke", 2), std::nullopt);
 }
 
-void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source, std::string_view expected_successor) {
-    std::string successor;
+void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source,
+                        std::string_view expected_successor, std::string_view successor_prefix)
+{
+    std::string successor(successor_prefix);
     auto m = dfa.match(source, successor);
     if (m.matches()) {
         FAIL() << "Expected '" << source << "' to emit a successor, but it "
@@ -131,13 +135,19 @@ void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source, std:
                << " edits (of max " << static_cast<uint32_t>(m.max_edits()) <<  " edits)";
     }
     EXPECT_EQ(successor, expected_successor);
-    EXPECT_TRUE(dfa.match(successor).matches());
+    // Must skip any caller-provided successor prefix before checking if it matches the target
+    auto successor_suffix = successor.substr(successor_prefix.size());
+    EXPECT_TRUE(dfa.match(successor_suffix).matches());
 
     // Make sure the UTF-32 successor output is codepoint-wise identical to the UTF-8 successor
-    std::vector<uint32_t> u32successor;
+    std::vector<uint32_t> u32successor(utf8_string_to_utf32(successor_prefix));
     m = dfa.match(source, u32successor);
     EXPECT_FALSE(m.matches());
     expect_utf32_string_code_point_equal_to_utf8(u32successor, successor);
+}
+
+void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source, std::string_view expected_successor) {
+    test_dfa_successor(dfa, source, expected_successor, {});
 }
 
 TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings) {
@@ -201,6 +211,28 @@ TEST_P(LevenshteinDfaTest, successor_is_well_defined_for_empty_target) {
     test_dfa_successor(dfa, "vespa", "w");
 }
 
+TEST_P(LevenshteinDfaTest, caller_provided_successor_prefix_is_preserved_on_mismatch) {
+    auto dfa = LevenshteinDfa::build("food", 1, casing(), dfa_type());
+
+    // Same inputs as existing successor tests, but with a preserved prefix in the generated successor
+    test_dfa_successor(dfa, "",       "yolo\x01""food", "yolo");
+    test_dfa_successor(dfa, "faa",    "xyzfaod",        "xyz");
+    test_dfa_successor(dfa, "fooooo", "ABCfoop",        "ABC");
+    test_dfa_successor(dfa, "ooof",   "ABCpfood",       "ABC");
+    test_dfa_successor(dfa, "gp",     "yolohfood",      "yolo");
+
+    dfa = LevenshteinDfa::build("", 1, casing(), dfa_type());
+    test_dfa_successor(dfa, "aa", "foob", "foo");
+}
+
+TEST_P(LevenshteinDfaTest, caller_provided_successor_prefix_is_preserved_on_match) {
+    auto dfa = LevenshteinDfa::build("food", 1, casing(), dfa_type());
+    std::string successor = "bar";
+    auto m = dfa.match("mood", successor);
+    EXPECT_TRUE(m.matches());
+    EXPECT_THAT(successor, StartsWith("bar"));
+}
+
 // We should normally be able to rely on higher-level components to ensure we
 // only receive valid UTF-8, but make sure we don't choke on it if we do get it.
 TEST_P(LevenshteinDfaTest, malformed_utf8_is_replaced_with_placeholder_char) {
@@ -233,7 +265,8 @@ struct LevenshteinDfaCasingTest : TestWithParam<LevenshteinDfa::DfaType> {
 INSTANTIATE_TEST_SUITE_P(AllDfaTypes,
                          LevenshteinDfaCasingTest,
                          Values(LevenshteinDfa::DfaType::Explicit,
-                                LevenshteinDfa::DfaType::Implicit),
+                                LevenshteinDfa::DfaType::Implicit,
+                                LevenshteinDfa::DfaType::Table),
                          PrintToStringParamName());
 
 TEST_P(LevenshteinDfaCasingTest, uncased_edge_cases_have_correct_edit_distance) {
@@ -315,7 +348,8 @@ INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
                          Combine(Values(LevenshteinDfa::Casing::Uncased,
                                         LevenshteinDfa::Casing::Cased),
                                  Values(LevenshteinDfa::DfaType::Explicit,
-                                        LevenshteinDfa::DfaType::Implicit),
+                                        LevenshteinDfa::DfaType::Implicit,
+                                        LevenshteinDfa::DfaType::Table),
                                  Values(1, 2)),
                          LevenshteinDfaSuccessorTest::stringify_params);
 
@@ -342,6 +376,7 @@ TEST_P(LevenshteinDfaSuccessorTest, exhaustive_successor_test) {
         std::string skip_to, successor;
         for (uint32_t j = 0; j < 256; ++j) {
             const auto source = bits_to_str(static_cast<uint8_t>(j));
+            successor.clear();
             auto maybe_match = target_dfa.match(source, successor);
             if (maybe_match.matches() && !skip_to.empty()) {
                 ASSERT_GE(source, skip_to);
@@ -597,6 +632,7 @@ TEST_P(LevenshteinBenchmarkTest, benchmark_skipping_dictionary_scan) {
                 auto end = dict.cend();
                 std::string successor;
                 while (iter != end) {
+                    successor.clear();
                     auto maybe_match = dfa.match(*iter, successor);
                     if (maybe_match.matches()) {
                         ++iter;

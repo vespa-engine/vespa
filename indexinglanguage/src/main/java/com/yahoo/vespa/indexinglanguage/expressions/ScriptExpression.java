@@ -29,12 +29,12 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
         this(Collections.emptyList());
     }
 
-    public ScriptExpression(StatementExpression... lst) {
-        this(Arrays.asList(lst));
+    public ScriptExpression(StatementExpression... statements) {
+        this(Arrays.asList(statements));
     }
 
-    public ScriptExpression(Collection<? extends StatementExpression> lst) {
-        super(lst, resolveInputType(lst));
+    public ScriptExpression(Collection<? extends StatementExpression> statements) {
+        super(statements, resolveInputType(statements));
     }
 
     @Override
@@ -67,10 +67,8 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
-        for (Expression exp : this) {
+        for (Expression exp : this)
             context.setValueType(input).execute(exp);
-        }
-        context.setValueType(input);
     }
 
     private static DataType resolveInputType(Collection<? extends StatementExpression> list) {
@@ -81,7 +79,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
                 prev = next;
             } else if (next != null && !prev.isAssignableFrom(next)) {
                 throw new VerificationException(ScriptExpression.class, "Statements require conflicting input types, " +
-                                                                        prev.getName() + " vs " + next.getName() + ".");
+                                                                        prev.getName() + " vs " + next.getName());
             }
         }
         return prev;
@@ -89,7 +87,9 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     public DataType createdOutputType() {
-        return null;
+        var expressions = asList();
+        if (expressions.isEmpty()) return null;
+        return (expressions.get(expressions.size() - 1)).createdOutputType();
     }
 
     @Override

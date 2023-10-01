@@ -44,22 +44,22 @@ public class CatTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(new SetValueExpression(new StringFieldValue("foo")),
-                     new SetValueExpression(new StringFieldValue("bar")), null);
+        assertVerify(new ConstantExpression(new StringFieldValue("foo")),
+                     new ConstantExpression(new StringFieldValue("bar")), null);
         assertVerify(new SimpleExpression(DataType.STRING),
                      new SimpleExpression(DataType.STRING), DataType.STRING);
         assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
                            new SimpleExpression().setCreatedOutput(DataType.STRING), null,
-                           "Attempting to concatenate a null value ");
+                           "Attempting to concatenate a null value");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.INT), null,
-                           "Operands require conflicting input types, string vs int.");
+                           "Operands require conflicting input types, string vs int");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
-                           "Expected string input, got null.");
+                           "Expected string input, but no input is specified");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), DataType.INT,
-                           "Expected string input, got int.");
+                           "Expected string input, got int");
     }
 
     @Test
@@ -89,16 +89,16 @@ public class CatTestCase {
     @Test
     public void requireThatInputValueIsAvailableToAllInnerExpressions() {
         assertEquals(new StringFieldValue("foobarfoo"),
-                     new StatementExpression(new SetValueExpression(new StringFieldValue("foo")),
+                     new StatementExpression(new ConstantExpression(new StringFieldValue("foo")),
                                              new CatExpression(new ThisExpression(),
-                                                               new SetValueExpression(new StringFieldValue("bar")),
+                                                               new ConstantExpression(new StringFieldValue("bar")),
                                                                new ThisExpression())).execute());
     }
 
     @Test
     public void requiredThatRequiredInputTypeAllowsNull() {
-         assertVerify(new SetValueExpression(new StringFieldValue("foo")), new TrimExpression(), DataType.STRING);
-         assertVerify(new TrimExpression(), new SetValueExpression(new StringFieldValue("foo")), DataType.STRING);
+         assertVerify(new ConstantExpression(new StringFieldValue("foo")), new TrimExpression(), DataType.STRING);
+         assertVerify(new TrimExpression(), new ConstantExpression(new StringFieldValue("foo")), DataType.STRING);
     }
 
     @Test

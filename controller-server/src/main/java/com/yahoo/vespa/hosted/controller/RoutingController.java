@@ -82,7 +82,8 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag randomizedEndpoints;
+    private final BooleanFlag generatedEndpoints;
+    private final BooleanFlag legacyEndpoints;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -90,7 +91,8 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.randomizedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.generatedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.legacyEndpoints = Flags.LEGACY_ENDPOINTS.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -228,13 +230,14 @@ public class RoutingController {
                                           .in(controller.system()));
                 // Only a single region endpoint is needed, not one per auth method
                 if (isProduction && generatedEndpoint.authMethod() == AuthMethod.mtls) {
-                    endpoints.add(regionEndpoint.generatedFrom(generatedEndpoint)
+                    GeneratedEndpoint weightedGeneratedEndpoint = generatedEndpoint.withClusterPart(weightedClusterPart(cluster, deployment));
+                    endpoints.add(regionEndpoint.generatedFrom(weightedGeneratedEndpoint)
                                                 .authMethod(AuthMethod.none)
                                                 .in(controller.system()));
                 }
             }
         }
-        return EndpointList.copyOf(endpoints);
+        return filterEndpoints(deployment.applicationId(), EndpointList.copyOf(endpoints));
     }
 
     /** Read routing policies and return zone- and region-scoped endpoints for given deployment */
@@ -268,7 +271,7 @@ public class RoutingController {
                 endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
             }
         }
-        return EndpointList.copyOf(endpoints);
+        return filterEndpoints(routingId.instance(), EndpointList.copyOf(endpoints));
     }
 
     /** Returns application endpoints pointing to given deployments */
@@ -424,6 +427,13 @@ public class RoutingController {
                                                                        Optional.of(application.id())));
     }
 
+    private EndpointList filterEndpoints(ApplicationId instance, EndpointList endpoints) {
+        if (generatedEndpointsEnabled(instance) && !legacyEndpointsEnabled(instance)) {
+            return endpoints.generated();
+        }
+        return endpoints;
+    }
+
     private void registerRotationEndpointsInDns(PreparedEndpoints prepared) {
         TenantAndApplicationId owner = TenantAndApplicationId.from(prepared.deployment().applicationId());
         EndpointList globalEndpoints = prepared.endpoints().scope(Scope.global);
@@ -476,6 +486,22 @@ public class RoutingController {
                      .toList();
     }
 
+    /** Generate the  cluster part of a {@link GeneratedEndpoint} for use in a {@link Endpoint.Scope#weighted} endpoint */
+    private String weightedClusterPart(ClusterSpec.Id cluster, DeploymentId deployment) {
+        // This ID must be common for a given cluster in all deployments within the same cloud-native region
+        String cloudNativeRegion = controller.zoneRegistry().zones().all().get(deployment.zoneId()).get().getCloudNativeRegionName();
+        HashCode hash = Hashing.sha256().newHasher()
+                               .putString(cluster.value(), StandardCharsets.UTF_8)
+                               .putString(":", StandardCharsets.UTF_8)
+                               .putString(cloudNativeRegion, StandardCharsets.UTF_8)
+                               .putString(":", StandardCharsets.UTF_8)
+                               .putString(deployment.applicationId().serializedForm(), StandardCharsets.UTF_8)
+                               .hash();
+        String alphabet = "abcdef";
+        char letter = alphabet.charAt(Math.abs(hash.asInt()) % alphabet.length());
+        return letter + hash.toString().substring(0, 7);
+    }
+
     /** Returns existing generated endpoints, grouped by their {@link Scope#multiDeployment()} endpoint */
     private Map<EndpointId, GeneratedEndpointList> readDeclaredGeneratedEndpoints(TenantAndApplicationId application) {
         Map<EndpointId, GeneratedEndpointList> endpoints = new HashMap<>();
@@ -525,7 +551,17 @@ public class RoutingController {
     }
 
     public boolean generatedEndpointsEnabled(ApplicationId instance) {
-        return randomizedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm()).value();
+        return generatedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                                 .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                                 .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                                 .value();
+    }
+
+    public boolean legacyEndpointsEnabled(ApplicationId instance) {
+        return legacyEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                              .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                              .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                              .value();
     }
 
     private static void requireGeneratedEndpoints(GeneratedEndpointList generatedEndpoints, boolean declared) {

@@ -18,6 +18,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -93,6 +94,7 @@ public class SessionPreparer {
     private final FlagSource flagSource;
     private final ExecutorService executor;
     private final BooleanFlag writeSessionData;
+    private final OnnxModelCost onnxModelCost;
 
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
@@ -103,7 +105,8 @@ public class SessionPreparer {
                            Curator curator,
                            Zone zone,
                            FlagSource flagSource,
-                           SecretStore secretStore) {
+                           SecretStore secretStore,
+                           OnnxModelCost onnxModelCost) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -115,6 +118,7 @@ public class SessionPreparer {
         this.flagSource = flagSource;
         this.executor = executor;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
+        this.onnxModelCost = onnxModelCost;
     }
 
     ExecutorService getExecutor() { return executor; }
@@ -134,7 +138,8 @@ public class SessionPreparer {
         ApplicationId applicationId = params.getApplicationId();
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationVersions,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
-                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
+                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
+                                                  onnxModelCost);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -186,7 +191,7 @@ public class SessionPreparer {
         Preparation(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationVersions> activeApplicationVersions, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
-                    SessionZooKeeperClient sessionZooKeeperClient) {
+                    SessionZooKeeperClient sessionZooKeeperClient, OnnxModelCost onnxModelCost) {
             this.logger = logger;
             this.params = params;
             this.applicationPackage = applicationPackage;
@@ -219,7 +224,8 @@ public class SessionPreparer {
                                                                    params,
                                                                    activeApplicationVersions,
                                                                    configserverConfig,
-                                                                   zone);
+                                                                   zone,
+                                                                   onnxModelCost);
         }
 
         void checkTimeout(String step) {

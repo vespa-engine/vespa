@@ -34,6 +34,9 @@
       "name": "ChangeRequestMaintainer"
     },
     {
+      "name": "CloudAccountVerifier"
+    },
+    {
       "name": "CloudDatabaseMaintainer"
     },
     {
@@ -130,7 +133,5 @@
       "name": "VersionStatusUpdater"
     }
   ],
-  "inactive": [
-    "DeploymentExpirer"
-  ]
+  "inactive": ["DeploymentExpirer"]
 }

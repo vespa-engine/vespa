@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.parser;
 
+import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.SetValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ public class ScriptTestCase {
 
     @Test
     public void requireThatRootProductionIsFlexible() throws ParseException {
-        assertRoot(SetValueExpression.class, "1");
+        assertRoot(ConstantExpression.class, "1");
         assertRoot(StatementExpression.class, "1 | echo");
         assertRoot(StatementExpression.class, "{ 1 | echo }");
         assertRoot(StatementExpression.class, "{ 1 | echo; }");

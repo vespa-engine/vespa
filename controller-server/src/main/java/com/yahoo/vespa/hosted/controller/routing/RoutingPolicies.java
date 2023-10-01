@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -263,8 +264,14 @@ public class RoutingPolicies {
             } else {
                 weightedEndpoints = weightedEndpoints.not().generated();
             }
+            if (generated && weightedEndpoints.isEmpty()) {
+                // Ignore this policy. If an instance has a global endpoint, and is switching from non-generated to
+                // generated endpoints we cannot update global DNS record for a deployment until it has been deployed at
+                // least once (which assigns a generated endpoint).
+                continue;
+            }
             if (weightedEndpoints.size() != 1) {
-                throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent);
+                throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent + ", got " + weightedEndpoints);
             }
             Endpoint endpoint = weightedEndpoints.first().get();
             RegionEndpoint regionEndpoint = endpoints.computeIfAbsent(endpoint, (k) -> new RegionEndpoint(
@@ -410,24 +417,22 @@ public class RoutingPolicies {
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarder(endpoint).createRecord(record, Priority.normal, ownerOf(deploymentId));
-            setPrivateDns(endpoint, loadBalancer, deploymentId);
         }
+        setPrivateDns(zoneEndpoints, loadBalancer, deploymentId);
     }
 
-    private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
+    private void setPrivateDns(EndpointList endpoints, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         if (loadBalancer.service().isEmpty()) return;
-        // TODO(mpolden): Why is this done? Consider creating private DNS for all auth methods
-        boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
-            case token -> true;
-            case mtls -> false;
-            case none -> true;
-        };
-        if (skipBasedOnAuthMethod) return;
+        // TODO(mpolden): Model one service for each endpoint (type), to allow private endpoints with tokens.
+        EndpointList mtlsEndpoints = endpoints.authMethod(AuthMethod.mtls);
+        if (mtlsEndpoints.isEmpty()) return;
+        Endpoint endpoint = mtlsEndpoints.generated().first().orElse(mtlsEndpoints.first().get());
         if (endpoint.routingMethod() != RoutingMethod.exclusive) return; // Not supported for this routing method
         controller.serviceRegistry().vpcEndpointService()
                   .setPrivateDns(DomainName.of(endpoint.dnsName()),
                                  new ClusterId(deploymentId, endpoint.cluster()),
-                                 loadBalancer.cloudAccount())
+                                 loadBalancer.cloudAccount(),
+                                 endpoint.generated().isPresent())
                   .ifPresent(challenge -> {
                       try (Mutex lock = db.lockNameServiceQueue()) {
                           controller.nameServiceForwarder().createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(deploymentId));
@@ -436,10 +441,18 @@ public class RoutingPolicies {
                   });
     }
 
+    /** Deletes all DNS challenges, and corresponding TXT records, for the given deployment. */
+    public void removeDnsChallenges(DeploymentId deploymentId) {
+        try (Mutex lock = db.lockNameServiceQueue()) {
+            db.readDnsChallenges(deploymentId).forEach(this::removeDnsChallenge);
+        }
+    }
+
     /** Returns true iff. the given deployment has no incomplete DNS challenges, or throws (and cleans up) on errors. */
     public boolean processDnsChallenges(DeploymentId deploymentId) {
         try (Mutex lock = db.lockNameServiceQueue()) {
             List<DnsChallenge> challenges = new ArrayList<>(db.readDnsChallenges(deploymentId));
+            challenges.removeIf(challenge -> challenge.state() == ChallengeState.done);
             Set<RecordName> pendingRequests = controller.curator().readNameServiceQueue().requests().stream()
                                                         .map(NameServiceRequest::name)
                                                         .collect(Collectors.toSet());
@@ -450,14 +463,8 @@ public class RoutingPolicies {
                         challenge = challenge.withState(ChallengeState.ready);
                     }
                     ChallengeState state = controller.serviceRegistry().vpcEndpointService().process(challenge);
-                    if (state == ChallengeState.done) {
-                        removeDnsChallenge(challenge);
-                        return true;
-                    }
-                    else {
-                        db.writeDnsChallenge(challenge.withState(state));
-                        return false;
-                    }
+                    db.writeDnsChallenge(challenge.withState(state));
+                    return state == ChallengeState.done;
                 });
                 return challenges.isEmpty();
             }

@@ -302,22 +302,22 @@ public:
     /**
      * Get key at current iterator location.
      */
-    const KeyType & getKey() const { return _leaf.getKey(); }
+    const KeyType & getKey() const noexcept { return _leaf.getKey(); }
 
     /**
      * Get data at current iterator location.
      */
-    const DataType & getData() const { return _leaf.getData(); }
+    const DataType & getData() const noexcept { return _leaf.getData(); }
 
     /**
      * Check if iterator is at a valid element, i.e. not at end.
      */
-    bool valid() const { return _leaf.valid(); }
+    bool valid() const noexcept{ return _leaf.valid(); }
 
     /**
      * Return the number of elements in the tree.
      */
-    size_t size() const;
+    size_t size() const noexcept;
 
 
     /**
@@ -333,7 +333,7 @@ public:
     /**
      * Return if the tree has data or not (e.g. keys and data or only keys).
      */
-    static bool hasData() { return LeafNodeType::hasData(); }
+    static bool hasData() noexcept { return LeafNodeType::hasData(); }
 
     /**
      * Move the iterator directly to end.  Used by findHelper method in BTree.

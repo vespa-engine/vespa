@@ -269,7 +269,6 @@ public class SchemaParserTestCase {
         checkFileParses("src/test/examples/implicitsummaryfields.sd");
         checkFileParses("src/test/examples/incorrectrankingexpressionfileref.sd");
         checkFileParses("src/test/examples/indexing_extra.sd");
-        checkFileParses("src/test/examples/indexing_modify_field_no_output.sd");
         checkFileParses("src/test/examples/indexing.sd");
         checkFileParses("src/test/examples/indexrewrite.sd");
         checkFileParses("src/test/examples/indexsettings.sd");

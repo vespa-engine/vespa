@@ -5,13 +5,9 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.ColBertEmbedderConfig;
-import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
-import com.yahoo.vespa.model.container.xml.ModelIdResolver;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import java.util.Optional;
-
-import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalChild;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -20,8 +16,8 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  * @author bergum
  */
 public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderConfig.Producer {
-    private final ModelReference model;
-    private final ModelReference vocab;
+    private final ModelReference modelRef;
+    private final ModelReference vocabRef;
 
     private final Integer maxQueryTokens;
 
@@ -40,13 +36,13 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     private final Integer onnxIntraopThreads;
     private final Integer onnxGpuDevice;
 
-    public ColBertEmbedder(Element xml, DeployState state) {
+    public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
-        var transformerModelElem = getOptionalChild(xml, "transformer-model").orElseThrow();
-        model = ModelIdResolver.resolveToModelReference(transformerModelElem, state);
-        vocab = getOptionalChild(xml, "tokenizer-model")
-                .map(elem -> ModelIdResolver.resolveToModelReference(elem, state))
-                .orElseGet(() -> resolveDefaultVocab(transformerModelElem, state));
+        var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
+        modelRef = model.modelReference();
+        vocabRef = Model.fromXml(state, xml, "tokenizer-model")
+                .map(Model::modelReference)
+                .orElseGet(() -> resolveDefaultVocab(model, state));
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         maxQueryTokens = getChildValue(xml, "max-query-tokens").map(Integer::parseInt).orElse(null);
         maxDocumentTokens = getChildValue(xml, "max-document-tokens").map(Integer::parseInt).orElse(null);
@@ -60,21 +56,20 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
         onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
         onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
-
+        model.registerOnnxModelCost(cluster);
     }
 
-    private static ModelReference resolveDefaultVocab(Element model, DeployState state) {
-        if (state.isHosted() && model.hasAttribute("model-id")) {
-            var implicitVocabId = model.getAttribute("model-id") + "-vocab";
-            return ModelIdResolver.resolveToModelReference(
-                    "tokenizer-model", Optional.of(implicitVocabId), Optional.empty(), Optional.empty(), state);
+    private static ModelReference resolveDefaultVocab(Model model, DeployState state) {
+        var modelId = model.modelId().orElse(null);
+        if (state.isHosted() && modelId != null) {
+            return Model.fromParams(state, model.name(), modelId + "-vocab", null, null).modelReference();
         }
         throw new IllegalArgumentException("'tokenizer-model' must be specified");
     }
 
     @Override
     public void getConfig(ColBertEmbedderConfig.Builder b) {
-        b.transformerModel(model).tokenizerPath(vocab);
+        b.transformerModel(modelRef).tokenizerPath(vocabRef);
         if (maxTokens != null) b.transformerMaxTokens(maxTokens);
         if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
         if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);

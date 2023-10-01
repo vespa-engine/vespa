@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "string_search_helper.h"
+#include "dfa_fuzzy_matcher.h"
+#include "i_enum_store_dictionary.h"
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -9,9 +11,32 @@
 
 namespace search::attribute {
 
+using FMA = vespalib::FuzzyMatchingAlgorithm;
+using LDT = vespalib::fuzzy::LevenshteinDfa::DfaType;
+
+namespace {
+
+LDT
+to_dfa_type(FMA algorithm)
+{
+    switch (algorithm) {
+        case FMA::DfaImplicit:
+            return LDT::Implicit;
+        case FMA::DfaExplicit:
+            return LDT::Explicit;
+        case FMA::DfaTable:
+            return LDT::Table;
+        default:
+            return LDT::Implicit;
+    }
+}
+
+}
+
 StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _regex(),
       _fuzzyMatcher(),
+      _dfa_fuzzy_matcher(),
       _term(),
       _termLen(),
       _isPrefix(term.isPrefix()),
@@ -24,12 +49,18 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespali
                 ? vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None)
                 : vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
     } else if (isFuzzy()) {
-        (void) fuzzy_matching_algorithm;
-        // TODO: Select implementation based on algorithm.
         _fuzzyMatcher = std::make_unique<vespalib::FuzzyMatcher>(term.getTerm(),
                                                                  term.getFuzzyMaxEditDistance(),
                                                                  term.getFuzzyPrefixLength(),
                                                                  isCased());
+        if ((fuzzy_matching_algorithm != FMA::BruteForce) &&
+            (term.getFuzzyMaxEditDistance() <= 2)) {
+            _dfa_fuzzy_matcher = std::make_unique<DfaFuzzyMatcher>(term.getTerm(),
+                                                                   term.getFuzzyMaxEditDistance(),
+                                                                   term.getFuzzyPrefixLength(),
+                                                                   isCased(),
+                                                                   to_dfa_type(fuzzy_matching_algorithm));
+        }
     } else if (isCased()) {
         _term = term.getTerm();
         _termLen = strlen(_term);
@@ -48,7 +79,7 @@ StringSearchHelper::isMatch(const char *src) const noexcept {
         return getRegex().valid() && getRegex().partial_match(std::string_view(src));
     }
     if (__builtin_expect(isFuzzy(), false)) {
-        return getFuzzyMatcher().isMatch(src);
+        return _dfa_fuzzy_matcher ? _dfa_fuzzy_matcher->is_match(src) : getFuzzyMatcher().isMatch(src);
     }
     if (__builtin_expect(isCased(), false)) {
         int res = strncmp(_term, src, _termLen);
@@ -66,5 +97,28 @@ StringSearchHelper::isMatch(const char *src) const noexcept {
     }
     return (_ucs4[j] == 0 && (val == 0 || isPrefix()));
 }
+
+template <typename DictionaryConstIteratorType>
+bool
+StringSearchHelper::is_fuzzy_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) const
+{
+    if (_dfa_fuzzy_matcher) {
+        return _dfa_fuzzy_matcher->is_match(word, itr, data_store);
+    } else {
+        if (_fuzzyMatcher->isMatch(word)) {
+            return true;
+        }
+        ++itr;
+        return false;
+    }
+}
+
+template
+bool
+StringSearchHelper::is_fuzzy_match(const char*, EnumPostingTree::ConstIterator&, const DfaStringComparator::DataStoreType&) const;
+
+template
+bool
+StringSearchHelper::is_fuzzy_match(const char*, EnumTree::ConstIterator&, const DfaStringComparator::DataStoreType&) const;
 
 }

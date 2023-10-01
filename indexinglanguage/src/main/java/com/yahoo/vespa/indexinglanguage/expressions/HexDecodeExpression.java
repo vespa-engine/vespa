@@ -28,12 +28,12 @@ public final class HexDecodeExpression extends Expression {
         try {
             output = new BigInteger(input, 16);
         } catch (NumberFormatException e) {
-            throw new NumberFormatException("Illegal hex value '" + input + "'.");
+            throw new NumberFormatException("Illegal hex value '" + input + "'");
         }
         if (output.bitLength() > 64) {
-            throw new NumberFormatException("Hex value '" + input + "' is out of range.");
+            throw new NumberFormatException("Hex value '" + input + "' is out of range");
         }
-        if (output.compareTo(BigInteger.ZERO) == 1 && output.bitLength() == 64) {
+        if (output.compareTo(BigInteger.ZERO) > 0 && output.bitLength() == 64) {
             output = output.subtract(ULONG_MAX); // flip to negative
         }
         context.setValue(new LongFieldValue(output.longValue()));

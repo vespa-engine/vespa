@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
@@ -28,6 +29,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -66,6 +68,7 @@ public class ModelContextImpl implements ModelContext {
     private final Optional<? extends Reindexing> reindexing;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
+    private final OnnxModelCost onnxModelCost;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -92,6 +95,7 @@ public class ModelContextImpl implements ModelContext {
                             Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
+                            OnnxModelCost onnxModelCost,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
@@ -109,6 +113,7 @@ public class ModelContextImpl implements ModelContext {
         this.wantedDockerImageRepository = wantedDockerImageRepository;
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
+        this.onnxModelCost = onnxModelCost;
     }
 
     @Override
@@ -149,6 +154,8 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<File> appDir() { return appDir; }
+
+    @Override public OnnxModelCost onnxModelCost() { return onnxModelCost; }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
@@ -201,6 +208,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableNestedMultivalueGrouping;
         private final boolean useReconfigurableDispatcher;
         private final int contentLayerMetadataFeatureLevel;
+        private final boolean dynamicHeapSize;
+        private final String unknownConfigDefinition;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -243,6 +252,8 @@ public class ModelContextImpl implements ModelContext {
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
             this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
+            this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
+            this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -293,10 +304,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
         @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
+        @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
+        @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                    .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                     .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
                     .boxedValue();
@@ -309,6 +323,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -321,6 +336,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_ID, clusterId.value())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -397,21 +413,16 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm());
-            this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm())
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.toSerializedFormWithoutInstance());
+            this.allowDisableMtls = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_DISABLE_MTLS);
             this.operatorCertificates = operatorCertificates;
-            this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+            this.tlsCiphersOverride = flagValue(flagSource, applicationId, PermanentFlags.TLS_CIPHERS_OVERRIDE);
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
-            this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
+            this.environmentVariables = flagValue(flagSource, applicationId, PermanentFlags.ENVIRONMENT_VARIABLES);
             this.cloudAccount = cloudAccount;
-            this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
-            this.endpointConnectionTtl = Duration.ofSeconds(
-                    PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource)
-                            .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value());
+            this.allowUserFilters = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_USER_FILTERS);
+            this.endpointConnectionTtl = Duration.ofSeconds(flagValue(flagSource, applicationId, PermanentFlags.ENDPOINT_CONNECTION_TTL));
             this.dataplaneTokens = dataplaneTokens;
         }
 
@@ -512,4 +523,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
     }
 
+    private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
+        return flag.bindTo(source)
+                .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                .boxedValue();
+    }
 }

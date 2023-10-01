@@ -62,7 +62,7 @@ public final class CatExpression extends ExpressionList<Expression> {
             DataType val = context.setValueType(input).execute(exp).getValueType();
             types.add(val);
             if (val == null) {
-                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ").");
+                throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ")");
             }
         }
         context.setValueType(resolveOutputType(types));
@@ -78,7 +78,7 @@ public final class CatExpression extends ExpressionList<Expression> {
                 prev = next;
             } else if (!prev.isAssignableFrom(next)) {
                 throw new VerificationException(CatExpression.class, "Operands require conflicting input types, " +
-                                                                      prev.getName() + " vs " + next.getName() + ".");
+                                                                      prev.getName() + " vs " + next.getName());
             }
         }
         return prev;

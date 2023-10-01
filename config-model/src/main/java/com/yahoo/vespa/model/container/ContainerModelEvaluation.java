@@ -45,10 +45,6 @@ public class ContainerModelEvaluation implements
     private final RankProfileList rankProfileList;
     private final FileDistributedOnnxModels onnxModels;  // For cluster specific ONNX model settings
 
-    public ContainerModelEvaluation(ApplicationContainerCluster cluster, RankProfileList rankProfileList) {
-        this(cluster, rankProfileList, null);
-    }
-
     public ContainerModelEvaluation(ApplicationContainerCluster cluster,
                                     RankProfileList rankProfileList, FileDistributedOnnxModels onnxModels) {
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");

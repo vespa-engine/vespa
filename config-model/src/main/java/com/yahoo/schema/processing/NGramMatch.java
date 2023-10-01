@@ -31,7 +31,7 @@ public class NGramMatch extends Processor {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getMatching().getType().equals(MatchType.GRAM))
                 implementGramMatch(schema, field, validate);
-            else if (validate && field.getMatching().getGramSize() >= 0)
+            else if (validate && field.getMatching().getGramSize().isPresent())
                 throw new IllegalArgumentException("gram-size can only be set when the matching mode is 'gram'");
         }
     }
@@ -40,9 +40,7 @@ public class NGramMatch extends Processor {
         if (validate && field.doesAttributing() && ! field.doesIndexing())
             throw new IllegalArgumentException("gram matching is not supported with attributes, use 'index' in indexing");
 
-        int n = field.getMatching().getGramSize();
-        if (n < 0)
-            n = DEFAULT_GRAM_SIZE; // not set - use default gram size
+        int n = field.getMatching().getGramSize().orElse(DEFAULT_GRAM_SIZE);
         if (validate && n == 0)
             throw new IllegalArgumentException("Illegal gram size in " + field + ": Must be at least 1");
         field.getNormalizing().inferCodepoint();

@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.monitoring;
 
 import ai.vespa.metrics.set.Metric;
 import ai.vespa.metrics.set.MetricSet;
+import ai.vespa.metrics.set.Vespa9VespaMetricSet;
 import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 
@@ -40,6 +41,9 @@ public class MetricsConsumer {
 
     public static final MetricsConsumer vespaCloud =
             consumer("vespa-cloud", vespaMetricSet, systemMetricSet, networkMetricSet);
+
+    public static final MetricsConsumer vespa9 =
+            consumer("Vespa9", Vespa9VespaMetricSet.vespa9vespaMetricSet, systemMetricSet, networkMetricSet);
 
     private final String id;
     private final MetricSet metricSet;
