@@ -2223,7 +2223,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor array = slime.setObject().setArray("globalrotationoverride");
         Optional<Endpoint> primaryEndpoint = controller.routing().readDeclaredEndpointsOf(deploymentId.applicationId())
                                                        .requiresRotation()
-                                                       .primary();
+                                                       .first();
         if (primaryEndpoint.isPresent()) {
             DeploymentRoutingContext context = controller.routing().of(deploymentId);
             RoutingStatus status = context.routingStatus();
