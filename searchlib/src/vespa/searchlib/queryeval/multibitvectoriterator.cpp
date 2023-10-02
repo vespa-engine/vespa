@@ -119,8 +119,10 @@ public:
           _mbv(getChildren().size() + 1)
     {
         for (const auto & child : getChildren()) {
-            const auto * bv = child->asBitVector();
-            _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
+            BitVectorMeta bv = child->asBitVector();
+            if (bv.valid()) {
+                _mbv.addBitVector(Meta(bv.vector()->getStart(), bv.inverted()), bv.getDocidLimit());
+            }
         }
     }
     void initRange(uint32_t beginId, uint32_t endId) override {
@@ -168,9 +170,9 @@ SearchIterator::UP
 MultiBitVectorIterator<Update>::andWith(UP filter, uint32_t estimate)
 {
     (void) estimate;
-    const BitVectorIterator * bv = filter->asBitVector();
-    if (bv && acceptExtraFilter()) {
-        _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
+    BitVectorMeta bv = filter->asBitVector();
+    if (bv.valid() && acceptExtraFilter()) {
+        _mbv.addBitVector(Meta(bv.vector()->getStart(), bv.inverted()), bv.getDocidLimit());
         insert(getChildren().size(), std::move(filter));
         _mbv.reset();
     }
