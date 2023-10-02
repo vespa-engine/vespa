@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMoc
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
@@ -1086,12 +1087,15 @@ public class ControllerTest {
         var zone3 = ZoneId.from("prod", "eu-west-1");
         tester.controllerTester().zoneRegistry()
                 .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
+        tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-1"), null, () -> "foo");
+        tester.clock().advance(Duration.ofSeconds(1));
+        tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-2"), null, () -> "foo");
 
         var applicationPackageBuilder = new ApplicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
-                .container("qrs", AuthMethod.mtls)
+                .container("qrs", AuthMethod.mtls, AuthMethod.token)
                 .container("default", AuthMethod.mtls)
                 .endpoint("default", "default")
                 .endpoint("foo", "qrs")
@@ -1108,6 +1112,8 @@ public class ControllerTest {
                                 "application.tenant." + zone.region().value() + ".vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)),
                     "Expected container endpoints in " + zone);
+            assertEquals(Map.of(TokenId.of("token-1"), tester.clock().instant().minusSeconds(1)),
+                         context.deployment(zone).dataPlaneTokens());
         }
         assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
                             "foo.application.tenant.global.vespa.oath.cloud",
@@ -1548,7 +1554,7 @@ public class ControllerTest {
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
                                                            () -> DeploymentEndpoints.none, Optional.empty(), Optional.empty(),
-                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(), false);
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, () -> List.of(), false);
         tester.configServer().deploy(deploymentData);
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());

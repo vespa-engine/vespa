@@ -74,7 +74,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
-import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -112,6 +111,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService.State;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -175,6 +175,7 @@ import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource.APPLICATION_TEST_ZIP;
 import static com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource.APPLICATION_ZIP;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -964,25 +965,38 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse listTokens(String tenant, HttpRequest request) {
-        var tokens = controller.dataplaneTokenService().listTokens(TenantName.from(tenant))
-                .stream().sorted(Comparator.comparing(DataplaneTokenVersions::tokenId)).toList();
         Slime slime = new Slime();
         Cursor tokensArray = slime.setObject().setArray("tokens");
-        for (DataplaneTokenVersions token : tokens) {
+        controller.dataplaneTokenService().listTokensWithState(TenantName.from(tenant)).forEach((token, states) -> {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
+            tokenObject.setLong("lastUpdatedMillis", token.lastUpdated().toEpochMilli());
             Cursor fingerprintsArray = tokenObject.setArray("versions");
-            var versions = token.tokenVersions().stream()
-                    .sorted(Comparator.comparing(DataplaneTokenVersions.Version::creationTime)).toList();
-            for (var tokenVersion : versions) {
+            for (var tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
                 fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("none"));
+                fingerprintObject.setString("state", valueOf(states.get(tokenVersion.fingerPrint())));
             }
-        }
+            states.forEach((print, state) -> {
+                if (state != State.REVOKING) return;
+                Cursor fingerprintObject = fingerprintsArray.addObject();
+                fingerprintObject.setString("fingerprint", print.value());
+                fingerprintObject.setString("state", valueOf(state));
+            });
+        });
         return new SlimeJsonResponse(slime);
+    }
+
+    private static String valueOf(DataplaneTokenService.State state) {
+        return switch (state) {
+            case UNUSED: yield "unused";
+            case DEPLOYING: yield "deploying";
+            case ACTIVE: yield "active";
+            case REVOKING: yield "revoking";
+        };
     }
 
 

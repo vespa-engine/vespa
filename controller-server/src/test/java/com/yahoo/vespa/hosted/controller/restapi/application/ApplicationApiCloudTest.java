@@ -6,14 +6,19 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.RestApiException;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -35,8 +40,10 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
@@ -470,16 +477,82 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                       .roles(Role.developer(tenantName)),
                               "{\"tokens\":[]}", 200);
 
-        String regexGenerateToken = "\\{\"id\":\"myTokenId\",\"token\":\"vespa_cloud_.*\",\"fingerprint\":\".*\"}";
+        AtomicReference<String> tokenValue = new AtomicReference<>();
+        AtomicReference<String> fingerprint = new AtomicReference<>();
         tester.assertResponse(request("/application/v4/tenant/scoober/token/myTokenId", POST).roles(Role.developer(tenantName)),
-                       (response) -> assertTrue(new String(response.getBody(), UTF_8).matches(regexGenerateToken)),
-                       200);
-
-        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\"}]}]}";
-        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
-                                      .roles(Role.developer(tenantName)),
-                              (response) -> assertTrue(new String(response.getBody(), UTF_8).matches(regexListTokens)),
+                              (response) -> {
+                                  Cursor root = SlimeUtils.jsonToSlimeOrThrow(response.getBody()).get();
+                                  tokenValue.set(root.field("token").asString());
+                                  fingerprint.set(root.field("fingerprint").asString());
+                                  assertEquals("""
+                                               {
+                                                 "id": "myTokenId",
+                                                 "token": "%s",
+                                                 "fingerprint": "%s",
+                                                 "expiration": "2020-10-13T12:26:40Z"
+                                               }
+                                               """.formatted(tokenValue.get(), fingerprint.get()),
+                                               SlimeUtils.toJson(root, false));
+                              },
                               200);
+
+        tester.assertJsonResponse(request("/application/v4/tenant/scoober/token", GET)
+                                          .roles(Role.developer(tenantName)),
+                                  """
+                                  {
+                                    "tokens": [
+                                      {
+                                        "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
+                                        "versions": [
+                                          {
+                                            "fingerprint": "%s",
+                                            "created": "2020-09-13T12:26:40Z",
+                                            "author": "user@test",
+                                            "expiration": "2020-10-13T12:26:40Z",
+                                            "state": "unused"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                  """.formatted(fingerprint.get()),
+                                  200);
+
+        ControllerTester wrapped = new ControllerTester(tester);
+        wrapped.upgradeSystem(Version.fromString("7.1"));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                                     .submit()
+                                     .deploy();
+        wrapped.serviceRegistry().configServer().activeTokenFingerprints(null)
+               .put(HostName.of("host1"), Map.of(TokenId.of("myTokenId"), List.of(FingerPrint.of(fingerprint.get()), FingerPrint.of("ff:01"))));
+
+        tester.assertJsonResponse(request("/application/v4/tenant/scoober/token", GET)
+                                          .roles(Role.developer(tenantName)),
+                                  """
+                                  {
+                                    "tokens": [
+                                      {
+                                        "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
+                                        "versions": [
+                                          {
+                                            "fingerprint": "%s",
+                                            "created": "2020-09-13T12:26:40Z",
+                                            "author": "user@test",
+                                            "expiration": "2020-10-13T12:26:40Z",
+                                            "state": "active"
+                                          },
+                                          {
+                                            "fingerprint": "ff:01",
+                                            "state": "revoking"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                  """.formatted(fingerprint.get()),
+                                  200);
 
         // Rejects invalid tokenIds on create
         tester.assertResponse(request("/application/v4/tenant/scoober/token/foo+bar", POST).roles(Role.developer(tenantName)),

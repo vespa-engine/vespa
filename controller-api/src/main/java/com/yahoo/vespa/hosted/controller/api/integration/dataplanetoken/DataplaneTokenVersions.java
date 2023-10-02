@@ -10,7 +10,7 @@ import java.util.Optional;
  *
  * @author mortent
  */
-public record DataplaneTokenVersions(TokenId tokenId, List<Version> tokenVersions) {
+public record DataplaneTokenVersions(TokenId tokenId, List<Version> tokenVersions, Instant lastUpdated) {
     public record Version(FingerPrint fingerPrint, String checkAccessHash, Instant creationTime,
                           Optional<Instant> expiration, String author) {
     }
