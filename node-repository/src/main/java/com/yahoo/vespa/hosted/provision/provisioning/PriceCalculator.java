@@ -14,12 +14,16 @@ import static java.lang.Math.max;
  */
 public class PriceCalculator {
 
-    private final double maxVolumeDiscount = 0.5;
-    private final double maxEnclaveVolumeDiscount = 0.84;
     private final double enclaveDiscount = 0.2;
+
+    private final double maxVolumeDiscount = 0.5;
+    private final double maxVolumeDiscountEnclave = 0.83;
     private final double priceGivingMaxVolumeDiscount = 200; // 70 nodes with resources 16, 64, 800
-    private final double minimalMonthlyEnclavePrice = 10_000; // 13.89 per hour
+
     private final double committedDiscount = 0.15;
+    private final double committedDiscountEnclave = 0.08;
+
+    private final double minimalMonthlyEnclavePrice = 10_000; // 13.89 per hour
 
     /** Calculates the price of this application in USD per hour. */
     public double price(List<ClusterResources> clusters, PricingInfo pricingInfo) {
@@ -34,14 +38,13 @@ public class PriceCalculator {
 
         price = enclave ? price * (1 - enclaveDiscount) : price;
 
-        var volumeDiscount = (enclave ? maxEnclaveVolumeDiscount : maxVolumeDiscount)
+        var volumeDiscount = (enclave ? maxVolumeDiscountEnclave : maxVolumeDiscount)
                              * min(1, price / priceGivingMaxVolumeDiscount);
         price = price * (1 - volumeDiscount);
 
-        price = min(price, committedAmount) * (1 - committedDiscount) + max(0, price - committedAmount);
-
-        if (price < committedAmount)
-            price = committedAmount;
+        price = min(price, committedAmount) * (1 - ( enclave ? committedDiscountEnclave : committedDiscount))
+                + max(0, price - committedAmount);
+        price = max(price, committedAmount);
 
         if (enclave && price * 24 * 30 < minimalMonthlyEnclavePrice)
             price = minimalMonthlyEnclavePrice / (24 * 30);

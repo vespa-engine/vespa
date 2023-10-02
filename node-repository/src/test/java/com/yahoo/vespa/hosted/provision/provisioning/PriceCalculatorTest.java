@@ -34,7 +34,7 @@ public class PriceCalculatorTest {
                                                               NodeResources.Architecture.x86_64,
                                                               new NodeResources.GpuResources(2, 40)));
         var pricingInfo = new PricingInfo(true, PricingInfo.SupportLevel.ENTERPRISE, 0);
-        assertEquals(35.70, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
+        assertEquals(35.80, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class PriceCalculatorTest {
                                                               NodeResources.Architecture.x86_64,
                                                               new NodeResources.GpuResources(2, 40)));
         var pricingInfo = new PricingInfo(true, PricingInfo.SupportLevel.ENTERPRISE, 30);
-        assertEquals(31.20, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
+        assertEquals(33.40, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
     }
 
     @Test
@@ -78,10 +78,10 @@ public class PriceCalculatorTest {
                                                                NodeResources.DiskSpeed.fast, NodeResources.StorageType.local,
                                                                NodeResources.Architecture.x86_64,
                                                                new NodeResources.GpuResources(2, 40)));
-        var pricingInfo = new PriceCalculator.PricingInfo(true, PricingInfo.SupportLevel.STANDARD, 35);
+        var pricingInfo = new PriceCalculator.PricingInfo(true, PricingInfo.SupportLevel.STANDARD, 40);
         System.out.println("Cost:  " + 24*365*(c1.cost() + c2.cost()));
         System.out.println("Price: " + 24*365*calculator.price(List.of(c1, c2), pricingInfo));
-        assertEquals(35.61, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
+        assertEquals(40.21, calculator.price(List.of(c1, c2), pricingInfo), 0.01);
     }
 
 }
