@@ -119,8 +119,10 @@ public:
           _mbv(getChildren().size() + 1)
     {
         for (const auto & child : getChildren()) {
-            const auto * bv = static_cast<const BitVectorIterator *>(child.get());
-            _mbv.addBitVector(Meta(bv->getBitValues(), bv->isInverted()), bv->getDocIdLimit());
+            BitVectorMeta bv = child->asBitVector();
+            if (bv.valid()) {
+                _mbv.addBitVector(Meta(bv.vector()->getStart(), bv.inverted()), bv.getDocidLimit());
+            }
         }
     }
     void initRange(uint32_t beginId, uint32_t endId) override {
@@ -168,9 +170,9 @@ SearchIterator::UP
 MultiBitVectorIterator<Update>::andWith(UP filter, uint32_t estimate)
 {
     (void) estimate;
-    if (filter->isBitVector() && acceptExtraFilter()) {
-        const auto & bv = static_cast<const BitVectorIterator &>(*filter);
-        _mbv.addBitVector(Meta(bv.getBitValues(), bv.isInverted()), bv.getDocIdLimit());
+    BitVectorMeta bv = filter->asBitVector();
+    if (bv.valid() && acceptExtraFilter()) {
+        _mbv.addBitVector(Meta(bv.vector()->getStart(), bv.inverted()), bv.getDocidLimit());
         insert(getChildren().size(), std::move(filter));
         _mbv.reset();
     }
@@ -225,9 +227,7 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
         MultiSearch::doUnpack(docid);
     } else {
         auto &children = getChildren();
-        _unpackInfo.each([&children,docid](size_t i) {
-                static_cast<BitVectorIterator *>(children[i].get())->unpack(docid);
-            }, children.size());
+        _unpackInfo.each([&children,docid](size_t i) { children[i]->unpack(docid); }, children.size());
     }
 }
 
