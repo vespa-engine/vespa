@@ -265,9 +265,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     }
 
     private HttpResponse putAccountantInvoiceExport(RestApi.RequestContext ctx, Slime slime) {
-        var billId = ctx.attributes().get("invoice")
-                .map(id -> Bill.Id.of((String) id))
-                .orElseThrow(() -> new RestApiException.BadRequest("Missing bill ID"));
+        var billId = Bill.Id.of(ctx.pathParameters().getStringOrThrow("invoice"));
 
         // TODO: try to find a way to retrieve the cloud tenant from BillingControllerImpl
         var bill = billing.getBill(billId);
