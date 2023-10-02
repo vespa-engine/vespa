@@ -498,7 +498,6 @@ MatchThread::run()
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         bool(resultContext->grouping)));
-        (void) processToken;  // Avoid unused warning
         get_token_timer.done();
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getDoom(), std::move(result), *resultContext);
