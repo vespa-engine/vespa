@@ -229,6 +229,8 @@ public class SessionZooKeeperClient {
         return SessionData.fromSlime(SlimeUtils.jsonToSlime(curator.getData(sessionPath.append(SESSION_DATA_PATH)).orElseThrow()));
     }
 
+    public boolean sessionDataExists() { return curator.exists(sessionPath.append(SESSION_DATA_PATH)); }
+
     public Version readVespaVersion() {
         Optional<byte[]> data = curator.getData(versionPath());
         // TODO: Empty version should not be possible any more - verify and remove

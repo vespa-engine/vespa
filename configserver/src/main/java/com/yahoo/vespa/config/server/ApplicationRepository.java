@@ -501,7 +501,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Session session = getLocalSession(tenant, sessionId);
         Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
-        return session.getApplicationId();
+        return sessionRepository(tenant).read(session).applicationId();
     }
 
     public Transaction deactivateCurrentActivateNew(Optional<Session> active, Session prepared, boolean force) {
@@ -556,6 +556,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                   currentActiveSessionId + ")");
         }
     }
+
+    private static SessionRepository sessionRepository(Tenant tenant) { return tenant.getSessionRepository(); }
 
     // ---------------- Application operations ----------------------------------------------------------------
 

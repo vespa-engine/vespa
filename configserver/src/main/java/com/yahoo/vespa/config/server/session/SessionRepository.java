@@ -131,6 +131,7 @@ public class SessionRepository {
     private final int maxNodeSize;
     private final LongFlag expiryTimeFlag;
     private final BooleanFlag writeSessionData;
+    private final BooleanFlag readSessionData;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -176,6 +177,7 @@ public class SessionRepository {
         this.maxNodeSize = maxNodeSize;
         this.expiryTimeFlag = PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.bindTo(flagSource);
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
+        this.readSessionData = Flags.READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -605,6 +607,10 @@ public class SessionRepository {
                                 existingSession.getCloudAccount(),
                                 existingSession.getDataplaneTokens(),
                                 writeSessionData);
+    }
+
+    public SessionData read(Session session) {
+        return new SessionSerializer().read(session.getSessionZooKeeperClient(), readSessionData);
     }
 
     // ---------------- Common stuff ----------------------------------------------------------------
