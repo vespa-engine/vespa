@@ -29,18 +29,18 @@ public class Analyze {
 
 
     static ClassFileMetaData analyzeClass(File classFile) {
-        return analyzeClass(classFile, null, JdkVersionCheck.DISABLED);
+        return analyzeClass(classFile, JdkVersionCheck.DISABLED, null);
     }
 
-    public static ClassFileMetaData analyzeClass(File classFile, ArtifactVersion artifactVersion, JdkVersionCheck jdkVersionCheck) {
+    public static ClassFileMetaData analyzeClass(File classFile, JdkVersionCheck jdkVersionCheck, ArtifactVersion artifactVersion) {
         try {
-            return analyzeClass(new FileInputStream(classFile), artifactVersion, jdkVersionCheck);
+            return analyzeClass(new FileInputStream(classFile), jdkVersionCheck, artifactVersion);
         } catch (Exception e) {
             throw new RuntimeException("An error occurred when analyzing " + classFile.getPath(), e);
         }
     }
 
-    public static ClassFileMetaData analyzeClass(InputStream inputStream, ArtifactVersion artifactVersion, JdkVersionCheck jdkVersionCheck) {
+    public static ClassFileMetaData analyzeClass(InputStream inputStream, JdkVersionCheck jdkVersionCheck, ArtifactVersion artifactVersion) {
         try {
             AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactVersion, jdkVersionCheck);
             new ClassReader(inputStream).accept(visitor, ClassReader.SKIP_DEBUG);
