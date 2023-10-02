@@ -276,14 +276,6 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
         feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
     }
-    // Special case for messages storage nodes are expected to get during
-    // initializing. Request bucket info will be queued so storage can
-    // answer them at the moment they are done initializing
-    if (*state == lib::State::INITIALIZING &&
-        type.getId() == api::MessageType::REQUESTBUCKETINFO_ID)
-    {
-        return false;
-    }
     // Special case for point lookup Gets while node is in maintenance mode
     // to allow reads to complete during two-phase cluster state transitions
     if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp(*cluster_state)) {
