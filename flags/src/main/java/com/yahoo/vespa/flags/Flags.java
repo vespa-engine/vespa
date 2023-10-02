@@ -335,7 +335,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_RECONFIGURABLE_DISPATCHER = defineFeatureFlag(
             "use-reconfigurable-dispatcher", false,
-            List.of("jonmv"), "2023-07-14", "2023-10-01",
+            List.of("jonmv"), "2023-07-14", "2023-11-01",
             "Whether to set up a ReconfigurableDispatcher with config self-sub for backend nodes",
             "Takes effect at redeployment",
             INSTANCE_ID);
