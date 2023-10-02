@@ -77,7 +77,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
         return Stream.concat(allDescendantFiles(new File(project.getBuild().getOutputDirectory())),
                              allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
                      .filter(file -> file.getName().endsWith(".class"))
-                     .map(classFile -> Analyze.analyzeClass(classFile, null))
+                     .map(classFile -> Analyze.analyzeClass(classFile, null, Analyze.JdkVersionCheck.DISABLED))
                      .toList();
     }
 

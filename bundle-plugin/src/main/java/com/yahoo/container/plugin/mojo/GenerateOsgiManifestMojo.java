@@ -337,7 +337,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory)
                 .filter(file -> file.getName().endsWith(".class"))
-                .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion)))
+                .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion), Analyze.JdkVersionCheck.ENABLED))
                 .toList();
 
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);

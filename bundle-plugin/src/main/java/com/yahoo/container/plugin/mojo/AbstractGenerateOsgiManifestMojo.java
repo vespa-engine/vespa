@@ -206,7 +206,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
 
     private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry, ArtifactVersion version) throws MojoExecutionException {
         try {
-            return Analyze.analyzeClass(jarFile.getInputStream(entry), version);
+            return Analyze.analyzeClass(jarFile.getInputStream(entry), version, Analyze.JdkVersionCheck.DISABLED);
         } catch (Exception e) {
             throw new MojoExecutionException(
                     String.format("While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);

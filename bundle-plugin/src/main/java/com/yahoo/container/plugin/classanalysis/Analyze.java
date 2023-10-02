@@ -18,24 +18,31 @@ import java.util.Optional;
  *
  * @author Tony Vaagenes
  * @author ollivir
+ * @author gjoranv
  */
 public class Analyze {
 
-    static ClassFileMetaData analyzeClass(File classFile) {
-        return analyzeClass(classFile, null);
+    public enum JdkVersionCheck {
+        ENABLED,
+        DISABLED
     }
 
-    public static ClassFileMetaData analyzeClass(File classFile, ArtifactVersion artifactVersion) {
+
+    static ClassFileMetaData analyzeClass(File classFile) {
+        return analyzeClass(classFile, null, JdkVersionCheck.DISABLED);
+    }
+
+    public static ClassFileMetaData analyzeClass(File classFile, ArtifactVersion artifactVersion, JdkVersionCheck jdkVersionCheck) {
         try {
-            return analyzeClass(new FileInputStream(classFile), artifactVersion);
+            return analyzeClass(new FileInputStream(classFile), artifactVersion, jdkVersionCheck);
         } catch (Exception e) {
             throw new RuntimeException("An error occurred when analyzing " + classFile.getPath(), e);
         }
     }
 
-    public static ClassFileMetaData analyzeClass(InputStream inputStream, ArtifactVersion artifactVersion) {
+    public static ClassFileMetaData analyzeClass(InputStream inputStream, ArtifactVersion artifactVersion, JdkVersionCheck jdkVersionCheck) {
         try {
-            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactVersion);
+            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactVersion, jdkVersionCheck);
             new ClassReader(inputStream).accept(visitor, ClassReader.SKIP_DEBUG);
             return visitor.result();
         } catch (IOException e) {
