@@ -169,8 +169,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
      * NB: Keep this metric set in sync with internal configserver metric pre-aggregation
      */
     private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
+        if (node.state() != State.active)
+            return;
         Metric.Context context;
-
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent()) {
             ApplicationId applicationId = allocation.get().owner();

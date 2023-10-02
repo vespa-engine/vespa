@@ -87,8 +87,10 @@ public class MetricsReporterTest {
                 HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).orchestrator(orchestrator).build();
         NodeRepository nodeRepository = tester.nodeRepository();
-        tester.makeProvisionedNodes(1, "default", NodeType.tenant, 0);
-        tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0);
+        tester.makeProvisionedNodes(1, "default", NodeType.tenant, 0)
+                .forEach(node -> tester.move(Node.State.active, node));
+        tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0)
+                .forEach(node -> tester.move(Node.State.active, node));
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
         expectedMetrics.put("zone.working", 1);
@@ -102,11 +104,11 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.failedHosts", 0);
         expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.breakfixedHosts", 0);
-        expectedMetrics.put("hostedVespa.provisionedNodes", 1);
+        expectedMetrics.put("hostedVespa.provisionedNodes", 0);
         expectedMetrics.put("hostedVespa.parkedNodes", 0);
         expectedMetrics.put("hostedVespa.readyNodes", 0);
         expectedMetrics.put("hostedVespa.reservedNodes", 0);
-        expectedMetrics.put("hostedVespa.activeNodes", 0);
+        expectedMetrics.put("hostedVespa.activeNodes", 1);
         expectedMetrics.put("hostedVespa.inactiveNodes", 0);
         expectedMetrics.put("hostedVespa.dirtyNodes", 0);
         expectedMetrics.put("hostedVespa.failedNodes", 0);
