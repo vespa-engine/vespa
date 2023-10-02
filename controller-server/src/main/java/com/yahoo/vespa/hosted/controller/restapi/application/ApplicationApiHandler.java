@@ -2061,19 +2061,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
-    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeHidden) {
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeWeighted) {
         EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).direct();
         EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application).targets(deploymentId);
         EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
-        EndpointList generatedEndpoints = endpoints.generated();
-        if (!includeHidden) {
-            // If we have generated endpoints, hide non-generated
-            if (!generatedEndpoints.isEmpty()) {
-                endpoints = endpoints.generated();
-            }
-            // Hide legacy and weighted endpoints
-            endpoints = endpoints.not().legacy()
-                                 .not().scope(Endpoint.Scope.weighted);
+        if (!includeWeighted) {
+            endpoints = endpoints.not().scope(Endpoint.Scope.weighted);
         }
         return endpoints;
     }
