@@ -63,9 +63,8 @@ public class SessionSerializer {
             try {
                 return zooKeeperClient.readSessionData();
             } catch (Exception e) {
-                log.log(WARNING, "Unable to read session dato for session " + zooKeeperClient.sessionId() +
+                log.log(WARNING, "Unable to read session data for session " + zooKeeperClient.sessionId() +
                         ": " + Exceptions.toMessageString(e));
-                readSessionDataFromLegacyPaths(zooKeeperClient);
             }
 
         return readSessionDataFromLegacyPaths(zooKeeperClient);
