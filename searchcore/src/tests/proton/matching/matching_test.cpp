@@ -1167,16 +1167,16 @@ struct AttributeBlueprintParamsFixture {
    }
 };
 
-TEST_F("attribute blueprint params are extracted from rank profile", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::BruteForce))
+TEST_F("attribute blueprint params are extracted from rank profile", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::DfaTable))
 {
     auto params = f.extract();
     EXPECT_EQUAL(0.2, params.global_filter_lower_limit);
     EXPECT_EQUAL(0.8, params.global_filter_upper_limit);
     EXPECT_EQUAL(5.0, params.target_hits_max_adjustment_factor);
-    EXPECT_EQUAL(FMA::BruteForce, params.fuzzy_matching_algorithm);
+    EXPECT_EQUAL(FMA::DfaTable, params.fuzzy_matching_algorithm);
 }
 
-TEST_F("attribute blueprint params are extracted from query", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::BruteForce))
+TEST_F("attribute blueprint params are extracted from query", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::DfaTable))
 {
     f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit");
     auto params = f.extract();
@@ -1186,7 +1186,7 @@ TEST_F("attribute blueprint params are extracted from query", AttributeBlueprint
     EXPECT_EQUAL(FMA::DfaExplicit, params.fuzzy_matching_algorithm);
 }
 
-TEST_F("global filter params are scaled with active hit ratio", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::BruteForce))
+TEST_F("global filter params are scaled with active hit ratio", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0, FMA::DfaTable))
 {
     auto params = f.extract(5, 10);
     EXPECT_EQUAL(0.12, params.global_filter_lower_limit);
