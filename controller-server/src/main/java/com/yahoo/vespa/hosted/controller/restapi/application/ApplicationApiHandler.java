@@ -978,7 +978,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
                 fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("none"));
-                fingerprintObject.setString("state", valueOf(states.get(tokenVersion.fingerPrint())));
+                String tokenState = tokenVersion.expiration().map(controller.clock().instant()::isAfter).orElse(false)
+                                    ? "expired"
+                                    : valueOf(states.get(tokenVersion.fingerPrint()));
+                fingerprintObject.setString("state", tokenState);
             }
             states.forEach((print, state) -> {
                 if (state != State.REVOKING) return;
