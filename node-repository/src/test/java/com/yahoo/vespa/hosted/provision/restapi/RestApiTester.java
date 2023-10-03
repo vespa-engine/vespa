@@ -8,6 +8,7 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.ComparisonFailure;
 
@@ -56,6 +57,30 @@ public class RestApiTester {
         String response = container.handleRequest(request).getBodyAsString();
         assertEquals(String.format("Expected response to " + (match ? " " : "not ") + "contain: %s\nResponse: %s",
                                    responseSnippet, response), match, response.contains(responseSnippet));
+    }
+
+    public void assertJsonFile(Request request, String responseFile) throws IOException {
+        String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
+        JsonTestHelper.Options options = new JsonTestHelper.Options().setCompact(true);
+        expectedResponse = include(expectedResponse);
+        expectedResponse = JsonTestHelper.normalize(options, expectedResponse);
+        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
+        String responseString = container.handleRequest(request).getBodyAsString();
+        responseString = JsonTestHelper.normalize(options, responseString);
+        if (expectedResponse.contains("(ignore)")) {
+            // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
+            // until the first stop character
+            String stopCharacters = "[^,:\\\\[\\\\]{}]";
+            String expectedResponsePattern = Pattern.quote(expectedResponse)
+                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
+                                                                                      stopCharacters + "*\\\\Q");
+            if (!Pattern.matches(expectedResponsePattern, responseString)) {
+                throw new ComparisonFailure(responseFile + " (with ignored fields)", expectedResponsePattern,
+                                            responseString);
+            }
+        } else {
+            assertEquals(responseFile, expectedResponse, responseString);
+        }
     }
 
     public void assertFile(Request request, String responseFile) throws IOException {

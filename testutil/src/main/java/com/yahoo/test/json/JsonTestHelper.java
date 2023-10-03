@@ -30,7 +30,20 @@ public class JsonTestHelper {
      * <p>*) No effort is done to normalize decimals and may cause false non-equality,
      * e.g. 1.2e1 is not equal to 12.  This may be fixed at a later time if needed.</p>
      */
-    public static String normalize(String json) {
+    public static String normalize(String json) { return normalize(new Options(), json); }
+
+    public static class Options {
+        private boolean compact = false;
+
+        public Options() {}
+
+        public Options setCompact(boolean compact) {
+            this.compact = compact;
+            return this;
+        }
+    }
+
+    public static String normalize(Options options, String json) {
         JsonNode jsonNode;
         try {
             jsonNode = mapper.readTree(json);
@@ -38,7 +51,7 @@ public class JsonTestHelper {
             throw new IllegalArgumentException("Invalid JSON", e);
         }
 
-        return JsonNodeFormatter.toNormalizedJson(jsonNode, false);
+        return JsonNodeFormatter.toNormalizedJson(jsonNode, options.compact);
     }
 
     /**
