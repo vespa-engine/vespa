@@ -2,6 +2,7 @@
 package com.yahoo.container.plugin.mojo;
 
 import com.yahoo.container.plugin.classanalysis.Analyze;
+import com.yahoo.container.plugin.classanalysis.Analyze.JdkVersionCheck;
 import com.yahoo.container.plugin.classanalysis.ClassFileMetaData;
 import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
@@ -77,7 +78,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
         return Stream.concat(allDescendantFiles(new File(project.getBuild().getOutputDirectory())),
                              allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
                      .filter(file -> file.getName().endsWith(".class"))
-                     .map(classFile -> Analyze.analyzeClass(classFile, null))
+                     .map(classFile -> Analyze.analyzeClass(classFile, JdkVersionCheck.DISABLED, null))
                      .toList();
     }
 
