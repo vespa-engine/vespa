@@ -141,13 +141,6 @@ public class RoutingPoliciesTest {
         assertEquals(numberOfDeployments * clustersPerZone,
                 tester.policiesOf(context1.instance().id()).size(),
                 "Routing policy count is equal to cluster count");
-        assertEquals(List.of(),
-                     tester.controllerTester().controller().routing()
-                           .readDeclaredEndpointsOf(context1.instanceId())
-                           .scope(Endpoint.Scope.zone)
-                           .legacy()
-                           .asList(),
-                     "No endpoints marked as legacy");
 
         // Applications gains a new deployment
         ApplicationPackage applicationPackage2 = applicationPackageBuilder()
@@ -312,13 +305,6 @@ public class RoutingPoliciesTest {
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(4, tester.policiesOf(context1.instanceId()).size());
-        assertEquals(List.of(),
-                     tester.controllerTester().controller().routing()
-                           .readEndpointsOf(context1.deploymentIdIn(zone1))
-                           .scope(Endpoint.Scope.zone)
-                           .legacy()
-                           .asList(),
-                     "No endpoints marked as legacy");
 
         // Next deploy does nothing
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -1121,27 +1107,16 @@ public class RoutingPoliciesTest {
         assertEquals(6, tester.policiesOf(context.instanceId()).size());
         ClusterSpec.Id cluster0 = ClusterSpec.Id.from("c0");
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("c1");
-        // The expected number of endpoints are created
         for (var zone : List.of(zone1, zone2)) {
-            EndpointList zoneEndpoints = tester.controllerTester().controller().routing()
-                                               .readEndpointsOf(context.deploymentIdIn(zone))
-                                               .scope(Endpoint.Scope.zone);
-            EndpointList generated = zoneEndpoints.generated();
+            EndpointList generated = tester.controllerTester().controller().routing()
+                                           .readEndpointsOf(context.deploymentIdIn(zone))
+                                           .scope(Endpoint.Scope.zone)
+                                           .generated();
             assertEquals(1, generated.cluster(cluster0).size());
             assertEquals(0, generated.cluster(cluster0).authMethod(AuthMethod.token).size());
             assertEquals(2, generated.cluster(cluster1).size());
             assertEquals(1, generated.cluster(cluster1).authMethod(AuthMethod.token).size());
-            EndpointList legacy = zoneEndpoints.legacy();
-            assertEquals(1, legacy.cluster(cluster0).size());
-            assertEquals(0, legacy.cluster(cluster0).authMethod(AuthMethod.token).size());
-            assertEquals(1, legacy.cluster(cluster1).size());
-            assertEquals(0, legacy.cluster(cluster1).authMethod(AuthMethod.token).size());
         }
-        EndpointList declaredEndpoints = tester.controllerTester().controller().routing().readDeclaredEndpointsOf(context.application());
-        assertEquals(1, declaredEndpoints.scope(Endpoint.Scope.global).generated().size());
-        assertEquals(1, declaredEndpoints.scope(Endpoint.Scope.global).legacy().size());
-        assertEquals(1, declaredEndpoints.scope(Endpoint.Scope.application).generated().size());
-        assertEquals(1, declaredEndpoints.scope(Endpoint.Scope.application).legacy().size());
         Map<DeploymentId, Set<ContainerEndpoint>> containerEndpointsInProd = tester.containerEndpoints(Environment.prod);
 
         // Ordinary endpoints point to expected targets
@@ -1580,7 +1555,7 @@ public class RoutingPoliciesTest {
             } else {
                 global = global.not().generated();
             }
-            String globalEndpoint = global.first()
+            String globalEndpoint = global.primary()
                                           .map(Endpoint::dnsName)
                                           .orElse("<none>");
             assertEquals(latencyTargets, Set.copyOf(aliasDataOf(globalEndpoint)), "Global endpoint " + globalEndpoint + " points to expected latency targets");

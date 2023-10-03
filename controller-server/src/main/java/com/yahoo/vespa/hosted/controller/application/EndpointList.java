@@ -28,6 +28,11 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         }
     }
 
+    /** Returns the primary (non-legacy) endpoint, if any */
+    public Optional<Endpoint> primary() {
+        return not().legacy().asList().stream().findFirst();
+    }
+
     /** Returns the subset of endpoints named according to given ID and scope */
     public EndpointList named(EndpointId id, Endpoint.Scope scope) {
         return matching(endpoint -> endpoint.scope() == scope && // ID is only unique within a scope
