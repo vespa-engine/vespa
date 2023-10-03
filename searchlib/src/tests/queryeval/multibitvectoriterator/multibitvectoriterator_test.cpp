@@ -573,6 +573,22 @@ TEST_F("testThatOptimizePreservesUnpack", Fixture) {
     f.template testThatOptimizePreservesUnpack<AndSearch>();
 }
 
+TEST_F("test that short vectors don't spin at end", Fixture) {
+    TermFieldMatchData tfmd;
+    MultiSearch::Children children;
+    children.push_back(f.createIter(0, false, tfmd, true));
+    children.push_back(f.createIter(1, false, tfmd, true));
+    SearchIterator::UP s = AndSearch::create(std::move(children), false);
+    s = MultiBitVectorIteratorBase::optimize(std::move(s));
+    EXPECT_TRUE(s);
+    s->initRange(1, f._bvs[0]->size());
+    uint32_t seekCount = 0;
+    for (uint32_t docId = s->seekFirst(1); !s->isAtEnd(); docId = s->seekNext(docId+1)) {
+        seekCount++;
+    }
+    EXPECT_EQUAL(2459u, seekCount);
+}
+
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
     Verifier(size_t numBv, bool is_and);
