@@ -578,7 +578,7 @@ createDual(Fixture & f, TermFieldMatchData & tfmd, int32_t docIdLimit) {
     MultiSearch::Children children;
     children.push_back(f.createIter(0, false, tfmd, true));
     children.push_back(f.createIter(1, false, tfmd, true));
-    SearchIterator::UP s = AndSearch::create(std::move(children), false);
+    SearchIterator::UP s = AndSearch::create(std::move(children), true);
     s = MultiBitVectorIteratorBase::optimize(std::move(s));
     EXPECT_TRUE(s);
     if (docIdLimit < 0) {
@@ -612,12 +612,11 @@ TEST_F("test that short vectors don't spin at end", Fixture) {
     countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size()));
     countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size()));
 
-    // Below fails with eternal loop
-    //countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size() + 1));
-    //countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+    countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+    countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size() + 1));
 
-    //countUntilDocId(*createDual(f, tfmd, -1));
-    //countUntilEnd(*createDual(f, tfmd, -1));
+    countUntilDocId(*createDual(f, tfmd, -1));
+    countUntilEnd(*createDual(f, tfmd, -1));
 }
 
 class Verifier : public search::test::SearchIteratorVerifier {

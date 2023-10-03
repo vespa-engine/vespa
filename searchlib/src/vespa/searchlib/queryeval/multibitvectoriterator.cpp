@@ -66,7 +66,7 @@ bool
 MultiBitVector<Update>::updateLastValue(uint32_t docId) noexcept
 {
     if (docId >= _lastMaxDocIdLimit) {
-        if (__builtin_expect(docId >= _numDocs, false)) {
+        if (__builtin_expect(isAtEnd(docId), false)) {
             return true;
         }
         const uint32_t index(BitWord::wordNum(docId));
@@ -147,7 +147,7 @@ public:
 private:
     void doSeek(uint32_t docId) override {
         docId = this->_mbv.strictSeek(docId);
-        if (__builtin_expect(docId >= this->getEndId(), false)) {
+        if (__builtin_expect(this->_mbv.isAtEnd(docId), false)) {
             this->setAtEnd();
         } else {
             this->setDocId(docId);
