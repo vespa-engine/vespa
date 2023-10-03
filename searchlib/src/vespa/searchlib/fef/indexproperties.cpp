@@ -439,7 +439,7 @@ TargetHitsMaxAdjustmentFactor::lookup(const Properties& props, double defaultVal
 }
 
 const vespalib::string FuzzyAlgorithm::NAME("vespa.matching.fuzzy.algorithm");
-const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::BruteForce);
+const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::DfaTable);
 
 vespalib::FuzzyMatchingAlgorithm
 FuzzyAlgorithm::lookup(const Properties& props)
