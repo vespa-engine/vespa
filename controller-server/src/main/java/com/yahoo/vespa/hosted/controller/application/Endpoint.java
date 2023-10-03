@@ -122,7 +122,7 @@ public class Endpoint {
         return scope;
     }
 
-    /** Returns whether this is considered a legacy DNS name intended to be removed at some point */
+    /** Returns whether this is considered a legacy DNS name that is due for removal */
     public boolean legacy() {
         return legacy;
     }
@@ -557,9 +557,9 @@ public class Endpoint {
             return this;
         }
 
-        /** Set whether this is a legacy endpoint */
-        public EndpointBuilder legacy(boolean legacy) {
-            this.legacy = legacy;
+        /** Marks this as a legacy endpoint */
+        public EndpointBuilder legacy() {
+            this.legacy = true;
             return this;
         }
 
