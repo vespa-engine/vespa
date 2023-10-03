@@ -573,20 +573,51 @@ TEST_F("testThatOptimizePreservesUnpack", Fixture) {
     f.template testThatOptimizePreservesUnpack<AndSearch>();
 }
 
-TEST_F("test that short vectors don't spin at end", Fixture) {
-    TermFieldMatchData tfmd;
+SearchIterator::UP
+createDual(Fixture & f, TermFieldMatchData & tfmd, int32_t docIdLimit) {
     MultiSearch::Children children;
     children.push_back(f.createIter(0, false, tfmd, true));
     children.push_back(f.createIter(1, false, tfmd, true));
     SearchIterator::UP s = AndSearch::create(std::move(children), false);
     s = MultiBitVectorIteratorBase::optimize(std::move(s));
     EXPECT_TRUE(s);
-    s->initRange(1, f._bvs[0]->size());
+    if (docIdLimit < 0) {
+        s->initFullRange();
+    } else {
+        s->initRange(1, docIdLimit);
+    }
+    return s;
+}
+
+void
+countUntilEnd(SearchIterator & s) {
     uint32_t seekCount = 0;
-    for (uint32_t docId = s->seekFirst(1); !s->isAtEnd(); docId = s->seekNext(docId+1)) {
+    for (uint32_t docId = s.seekFirst(1); !s.isAtEnd(); docId = s.seekNext(docId+1)) {
         seekCount++;
     }
     EXPECT_EQUAL(2459u, seekCount);
+}
+
+void
+countUntilDocId(SearchIterator & s) {
+    uint32_t seekCount = 0;
+    for (uint32_t docId = s.seekFirst(1), endId = s.getEndId(); docId < endId; docId = s.seekNext(docId+1)) {
+        seekCount++;
+    }
+    EXPECT_EQUAL(2459u, seekCount);
+}
+
+TEST_F("test that short vectors don't spin at end", Fixture) {
+    TermFieldMatchData tfmd;
+    countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size()));
+    countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size()));
+
+    // Below fails with eternal loop
+    //countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+    //countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+
+    //countUntilDocId(*createDual(f, tfmd, -1));
+    //countUntilEnd(*createDual(f, tfmd, -1));
 }
 
 class Verifier : public search::test::SearchIteratorVerifier {
