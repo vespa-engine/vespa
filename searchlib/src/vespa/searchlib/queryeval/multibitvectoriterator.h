@@ -19,6 +19,7 @@ public:
         _lastMaxDocIdLimit = 0;
         _lastMaxDocIdLimitRequireFetch = 0;
     }
+    bool isAtEnd(uint32_t docId) const noexcept { return docId >= _numDocs; }
     void addBitVector(Meta bv, uint32_t docIdLimit);
 protected:
     uint32_t            _numDocs;
