@@ -11,7 +11,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -121,8 +120,7 @@ public class SignatureFilterTest {
                 Optional.empty(),
                 Instant.EPOCH,
                 List.of(),
-                Optional.empty(),
-                PlanId.from("none")));
+                Optional.empty()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                 new SecurityContext(new SimplePrincipal("user"),
                         Set.of(Role.reader(id.tenant()),

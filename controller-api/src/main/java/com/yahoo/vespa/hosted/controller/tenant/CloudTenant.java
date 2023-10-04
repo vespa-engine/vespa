@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.tenant;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 
@@ -29,15 +28,13 @@ public class CloudTenant extends Tenant {
     private final ArchiveAccess archiveAccess;
     private final Optional<Instant> invalidateUserSessionsBefore;
     private final Optional<BillingReference> billingReference;
-    private final PlanId planId;
 
     /** Public for the serialization layer — do not use! */
     public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                        BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
                        List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess,
                        Optional<Instant> invalidateUserSessionsBefore, Instant tenantRoleLastMaintained,
-                       List<CloudAccountInfo> cloudAccounts, Optional<BillingReference> billingReference,
-                       PlanId planId) {
+                       List<CloudAccountInfo> cloudAccounts, Optional<BillingReference> billingReference) {
         super(name, createdAt, lastLoginInfo, Optional.empty(), tenantRoleLastMaintained, cloudAccounts);
         this.creator = creator;
         this.developerKeys = developerKeys;
@@ -46,7 +43,6 @@ public class CloudTenant extends Tenant {
         this.archiveAccess = Objects.requireNonNull(archiveAccess);
         this.invalidateUserSessionsBefore = invalidateUserSessionsBefore;
         this.billingReference = Objects.requireNonNull(billingReference);
-        this.planId = Objects.requireNonNull(planId);
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
@@ -56,7 +52,7 @@ public class CloudTenant extends Tenant {
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator).map(SimplePrincipal::of),
                                ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(),
-                               Instant.EPOCH, List.of(), Optional.empty(), PlanId.from("none"));
+                               Instant.EPOCH, List.of(), Optional.empty());
     }
 
     /** The user that created the tenant */
@@ -95,8 +91,6 @@ public class CloudTenant extends Tenant {
     public Optional<BillingReference> billingReference() {
         return billingReference;
     }
-
-    public PlanId planId() { return planId; }
 
     @Override
     public Type type() {

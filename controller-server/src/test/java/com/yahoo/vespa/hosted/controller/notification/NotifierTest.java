@@ -8,7 +8,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -48,8 +47,7 @@ public class NotifierTest {
             Optional.empty(),
             Instant.EPOCH,
             List.of(),
-            Optional.empty(),
-            PlanId.from("none"));
+            Optional.empty());
 
 
     MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
