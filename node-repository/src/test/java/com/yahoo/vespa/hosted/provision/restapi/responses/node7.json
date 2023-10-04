@@ -47,7 +47,7 @@
       "agent": "system"
     }
   ],
-  "ipAddresses": ["127.0.7.1", "::7:1"],
+  "ipAddresses": ["::7:1", "127.0.7.1"],
   "additionalIpAddresses": [],
   "cloudAccount": "aws:111222333444"
 }

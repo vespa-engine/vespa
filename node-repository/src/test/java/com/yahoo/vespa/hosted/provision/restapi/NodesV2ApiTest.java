@@ -874,7 +874,7 @@ public class NodesV2ApiTest {
 
         // dockerhost1 displays both values.
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"),
-                       "dockerhost1-with-firmware-data.json");
+                   "dockerhost1-with-firmware-data.json");
 
         // host1 has no wantedFirmwareCheck, as it's not a docker host.
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
@@ -899,11 +899,11 @@ public class NodesV2ApiTest {
         String requestUriTemplate = "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=%s";
 
         assertFile(new Request(String.format(requestUriTemplate,
-                String.join(",", hostsToRemove.subList(0, 3)))),
-                "capacity-hostremoval-possible.json");
+                                             String.join(",", hostsToRemove.subList(0, 3)))),
+                   "capacity-hostremoval-possible.json");
         assertFile(new Request(String.format(requestUriTemplate,
-                String.join(",", hostsToRemove))),
-                "capacity-hostremoval-impossible.json");
+                                             String.join(",", hostsToRemove))),
+                   "capacity-hostremoval-impossible.json");
     }
 
 

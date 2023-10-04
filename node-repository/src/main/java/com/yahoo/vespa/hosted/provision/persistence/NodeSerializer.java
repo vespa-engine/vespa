@@ -237,7 +237,7 @@ public class NodeSerializer {
     private void toSlime(List<String> addresses, Cursor array, boolean dummyDueToErasure) {
         // Validating IP address string literals is expensive, so we do it at serialization time instead of Node
         // construction time
-        addresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
+        addresses.stream().map(IP::parse).map(IP::asString).forEach(array::addString);
     }
 
     private void toSlime(List<HostName> hostnames, Cursor object) {

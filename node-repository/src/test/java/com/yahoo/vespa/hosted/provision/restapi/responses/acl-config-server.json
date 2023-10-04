@@ -81,7 +81,7 @@
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
-      "ipAddress": "127.0.13.1",
+      "ipAddress": "::13:1",
       "ports": [
         19070
       ],
@@ -90,7 +90,7 @@
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
-      "ipAddress": "::13:1",
+      "ipAddress": "127.0.13.1",
       "ports": [
         19070
       ],
