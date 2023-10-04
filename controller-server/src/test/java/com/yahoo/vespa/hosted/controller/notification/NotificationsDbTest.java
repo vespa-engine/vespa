@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import org.apache.zookeeper.Op;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
