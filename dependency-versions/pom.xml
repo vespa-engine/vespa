@@ -137,7 +137,7 @@
         <junit.platform.vespa.tenant.version>1.8.1</junit.platform.vespa.tenant.version>
 
         <!-- Maven plugins -->
-        <clover-maven-plugin.vespa.version>4.4.1</clover-maven-plugin.vespa.version>
+        <clover-maven-plugin.vespa.version>4.5.0</clover-maven-plugin.vespa.version>
         <maven-antrun-plugin.vespa.version>3.1.0</maven-antrun-plugin.vespa.version>
         <maven-assembly-plugin.vespa.version>3.6.0</maven-assembly-plugin.vespa.version>
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
