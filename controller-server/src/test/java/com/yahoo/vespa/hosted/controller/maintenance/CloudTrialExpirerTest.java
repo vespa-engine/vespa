@@ -37,7 +37,7 @@ public class CloudTrialExpirerTest {
 
     @Test
     void tombstone_inactive_none() {
-        registerTenant("none-tenant", "none", Duration.ofDays(183).plusMillis(1));
+        registerTenant("none-tenant", "none", Duration.ofDays(91).plusMillis(1));
         assertEquals(1.0, expirer.maintain());
         assertEquals(Tenant.Type.deleted, tester.controller().tenants().get(TenantName.from("none-tenant"), true).get().type());
     }
