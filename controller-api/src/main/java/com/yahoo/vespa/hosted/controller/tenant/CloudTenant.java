@@ -28,13 +28,15 @@ public class CloudTenant extends Tenant {
     private final ArchiveAccess archiveAccess;
     private final Optional<Instant> invalidateUserSessionsBefore;
     private final Optional<BillingReference> billingReference;
+    private final Optional<String> planId;
 
     /** Public for the serialization layer — do not use! */
     public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                        BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
                        List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess,
                        Optional<Instant> invalidateUserSessionsBefore, Instant tenantRoleLastMaintained,
-                       List<CloudAccountInfo> cloudAccounts, Optional<BillingReference> billingReference) {
+                       List<CloudAccountInfo> cloudAccounts, Optional<BillingReference> billingReference,
+                       Optional<String> planId) {
         super(name, createdAt, lastLoginInfo, Optional.empty(), tenantRoleLastMaintained, cloudAccounts);
         this.creator = creator;
         this.developerKeys = developerKeys;
@@ -43,6 +45,7 @@ public class CloudTenant extends Tenant {
         this.archiveAccess = Objects.requireNonNull(archiveAccess);
         this.invalidateUserSessionsBefore = invalidateUserSessionsBefore;
         this.billingReference = Objects.requireNonNull(billingReference);
+        this.planId = Objects.requireNonNull(planId);
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
@@ -52,7 +55,7 @@ public class CloudTenant extends Tenant {
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator).map(SimplePrincipal::of),
                                ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(),
-                               Instant.EPOCH, List.of(), Optional.empty());
+                               Instant.EPOCH, List.of(), Optional.empty(), Optional.empty());
     }
 
     /** The user that created the tenant */
@@ -91,6 +94,8 @@ public class CloudTenant extends Tenant {
     public Optional<BillingReference> billingReference() {
         return billingReference;
     }
+
+    public Optional<String> planId() { return planId; }
 
     @Override
     public Type type() {

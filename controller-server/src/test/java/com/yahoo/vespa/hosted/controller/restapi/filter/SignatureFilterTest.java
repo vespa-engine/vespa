@@ -120,6 +120,7 @@ public class SignatureFilterTest {
                 Optional.empty(),
                 Instant.EPOCH,
                 List.of(),
+                Optional.empty(),
                 Optional.empty()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                 new SecurityContext(new SimplePrincipal("user"),

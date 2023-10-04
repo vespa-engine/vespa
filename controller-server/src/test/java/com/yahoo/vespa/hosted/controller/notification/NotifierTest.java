@@ -47,6 +47,7 @@ public class NotifierTest {
             Optional.empty(),
             Instant.EPOCH,
             List.of(),
+            Optional.empty(),
             Optional.empty());
 
 
