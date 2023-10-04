@@ -117,12 +117,12 @@ public class EndpointCertificates {
         // * Use per application certificate if it exits and is assigned a randomized id
         // * Assign from pool
 
-        Optional<AssignedCertificate> perInstanceAssignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.name()));
+        TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
+        Optional<AssignedCertificate> perInstanceAssignedCertificate = curator.readAssignedCertificate(application, Optional.of(instance.name()));
         if (perInstanceAssignedCertificate.isPresent() && perInstanceAssignedCertificate.get().certificate().randomizedId().isPresent()) {
             return updateLastRequested(perInstanceAssignedCertificate.get()).certificate();
-        } else if (! zone.environment().isManuallyDeployed()){
-            TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
-            Optional<AssignedCertificate> perApplicationAssignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty());
+        } else if (! zone.environment().isManuallyDeployed()) {
+            Optional<AssignedCertificate> perApplicationAssignedCertificate = curator.readAssignedCertificate(application, Optional.empty());
             if (perApplicationAssignedCertificate.isPresent() && perApplicationAssignedCertificate.get().certificate().randomizedId().isPresent()) {
                 return updateLastRequested(perApplicationAssignedCertificate.get()).certificate();
             }
@@ -132,8 +132,6 @@ public class EndpointCertificates {
         // Assign certificate per instance only in manually deployed environments. In other environments, we share the
         // certificate because application endpoints can span instances
         Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
-        TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
-
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Optional<UnassignedCertificate> candidate = curator.readUnassignedCertificates().stream()
                                                                .filter(pc -> pc.state() == State.ready)

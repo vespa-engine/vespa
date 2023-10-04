@@ -197,19 +197,22 @@ public class RoutingController {
     /** Returns the zone- and region-scoped endpoints of given deployment */
     public EndpointList endpointsOf(DeploymentId deployment, ClusterSpec.Id cluster, GeneratedEndpointList generatedEndpoints) {
         requireGeneratedEndpoints(generatedEndpoints, false);
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         boolean tokenSupported = !generatedEndpoints.authMethod(AuthMethod.token).isEmpty();
-        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         boolean isProduction = deployment.zoneId().environment().isProduction();
+        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         List<Endpoint> endpoints = new ArrayList<>();
         Endpoint.EndpointBuilder zoneEndpoint = Endpoint.of(deployment.applicationId())
                                                         .routingMethod(routingMethod)
                                                         .on(Port.fromRoutingMethod(routingMethod))
+                                                        .legacy(generatedEndpointsAvailable)
                                                         .target(cluster, deployment);
         endpoints.add(zoneEndpoint.in(controller.system()));
         ZoneApi zone = controller.zoneRegistry().zones().all().get(deployment.zoneId()).get();
         Endpoint.EndpointBuilder regionEndpoint = Endpoint.of(deployment.applicationId())
                                                           .routingMethod(routingMethod)
                                                           .on(Port.fromRoutingMethod(routingMethod))
+                                                          .legacy(generatedEndpointsAvailable)
                                                           .targetRegion(cluster,
                                                                         zone.getCloudNativeRegionName(),
                                                                         zone.getCloudName());
@@ -226,12 +229,14 @@ public class RoutingController {
             };
             if (include) {
                 endpoints.add(zoneEndpoint.generatedFrom(generatedEndpoint)
+                                          .legacy(false)
                                           .authMethod(generatedEndpoint.authMethod())
                                           .in(controller.system()));
                 // Only a single region endpoint is needed, not one per auth method
                 if (isProduction && generatedEndpoint.authMethod() == AuthMethod.mtls) {
                     GeneratedEndpoint weightedGeneratedEndpoint = generatedEndpoint.withClusterPart(weightedClusterPart(cluster, deployment));
                     endpoints.add(regionEndpoint.generatedFrom(weightedGeneratedEndpoint)
+                                                .legacy(false)
                                                 .authMethod(AuthMethod.none)
                                                 .in(controller.system()));
                 }
@@ -257,6 +262,7 @@ public class RoutingController {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var availableRoutingMethods = routingMethodsOfAll(deployments);
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
@@ -265,10 +271,11 @@ public class RoutingController {
             Endpoint.EndpointBuilder builder = Endpoint.of(routingId.instance())
                                                        .target(routingId.endpointId(), cluster, deployments)
                                                        .on(Port.fromRoutingMethod(method))
+                                                       .legacy(generatedEndpointsAvailable)
                                                        .routingMethod(method);
             endpoints.add(builder.in(controller.system()));
             for (var ge : generatedEndpoints) {
-                endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
+                endpoints.add(builder.generatedFrom(ge).legacy(false).authMethod(ge.authMethod()).in(controller.system()));
             }
         }
         return filterEndpoints(routingId.instance(), EndpointList.copyOf(endpoints));
@@ -280,16 +287,18 @@ public class RoutingController {
         requireGeneratedEndpoints(generatedEndpoints, true);
         ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
         RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         Endpoint.EndpointBuilder builder = Endpoint.of(application)
                                                    .targetApplication(endpoint,
                                                                       cluster,
                                                                       deployments)
                                                    .routingMethod(routingMethod)
+                                                   .legacy(generatedEndpointsAvailable)
                                                    .on(Port.fromRoutingMethod(routingMethod));
         List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(builder.in(controller.system()));
         for (var ge : generatedEndpoints) {
-            endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
+            endpoints.add(builder.generatedFrom(ge).legacy(false).authMethod(ge.authMethod()).in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }

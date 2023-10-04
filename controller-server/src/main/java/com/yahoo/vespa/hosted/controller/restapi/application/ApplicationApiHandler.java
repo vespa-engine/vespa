@@ -175,7 +175,6 @@ import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource.APPLICATION_TEST_ZIP;
 import static com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource.APPLICATION_ZIP;
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -2000,10 +1999,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("region", deploymentId.zoneId().region().value());
         addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-        boolean includeAllEndpoints = request.getBooleanProperty("includeAllEndpoints") ||
-                                      request.getBooleanProperty("includeLegacyEndpoints");
+        boolean includeAllEndpoints = request.getBooleanProperty("includeAllEndpoints");
+        boolean includeWeightedEndpoints = includeAllEndpoints || request.getBooleanProperty("includeWeightedEndpoints");
+        boolean includeLegacyEndpoints  = includeAllEndpoints || request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : endpointsOf(deploymentId, application, includeAllEndpoints)) {
+        for (var endpoint : endpointsOf(deploymentId, application, includeLegacyEndpoints, includeWeightedEndpoints)) {
             toSlime(endpoint, endpointArray.addObject());
         }
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
@@ -2078,19 +2078,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
-    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeHidden) {
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeLegacy, boolean includeWeighted) {
         EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).direct();
         EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application).targets(deploymentId);
         EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
-        EndpointList generatedEndpoints = endpoints.generated();
-        if (!includeHidden) {
-            // If we have generated endpoints, hide non-generated
-            if (!generatedEndpoints.isEmpty()) {
-                endpoints = endpoints.generated();
-            }
-            // Hide legacy and weighted endpoints
-            endpoints = endpoints.not().legacy()
-                                 .not().scope(Endpoint.Scope.weighted);
+        if (!includeLegacy) {
+            endpoints = endpoints.not().legacy();
+        }
+        if (!includeWeighted) {
+            endpoints = endpoints.not().scope(Endpoint.Scope.weighted);
         }
         return endpoints;
     }
@@ -2240,7 +2236,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor array = slime.setObject().setArray("globalrotationoverride");
         Optional<Endpoint> primaryEndpoint = controller.routing().readDeclaredEndpointsOf(deploymentId.applicationId())
                                                        .requiresRotation()
-                                                       .primary();
+                                                       .first();
         if (primaryEndpoint.isPresent()) {
             DeploymentRoutingContext context = controller.routing().of(deploymentId);
             RoutingStatus status = context.routingStatus();
