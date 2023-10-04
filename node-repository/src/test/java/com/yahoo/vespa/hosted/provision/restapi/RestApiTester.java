@@ -59,35 +59,12 @@ public class RestApiTester {
                                    responseSnippet, response), match, response.contains(responseSnippet));
     }
 
-    public void assertJsonFile(Request request, String responseFile) throws IOException {
-        String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
-        JsonTestHelper.Options options = new JsonTestHelper.Options().setCompact(true);
-        expectedResponse = include(expectedResponse);
-        expectedResponse = JsonTestHelper.normalize(options, expectedResponse);
-        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
-        String responseString = container.handleRequest(request).getBodyAsString();
-        responseString = JsonTestHelper.normalize(options, responseString);
-        if (expectedResponse.contains("(ignore)")) {
-            // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
-            // until the first stop character
-            String stopCharacters = "[^,:\\\\[\\\\]{}]";
-            String expectedResponsePattern = Pattern.quote(expectedResponse)
-                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
-                                                                                      stopCharacters + "*\\\\Q");
-            if (!Pattern.matches(expectedResponsePattern, responseString)) {
-                throw new ComparisonFailure(responseFile + " (with ignored fields)", expectedResponsePattern,
-                                            responseString);
-            }
-        } else {
-            assertEquals(responseFile, expectedResponse, responseString);
-        }
-    }
-
     public void assertFile(Request request, String responseFile) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
         expectedResponse = include(expectedResponse);
-        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
+        expectedResponse = JsonTestHelper.normalize(expectedResponse);
         String responseString = container.handleRequest(request).getBodyAsString();
+        responseString = JsonTestHelper.normalize(responseString);
         if (expectedResponse.contains("(ignore)")) {
             // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
             // until the first stop character

@@ -14,7 +14,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,44 +32,6 @@ public class IPTest {
 
     private IP.Allocation.Context contextOf(boolean exclave) {
         return IP.Allocation.Context.from(CloudName.AWS, exclave, resolver);
-    }
-
-    @Test
-    public void test_natural_order() {
-        Set<String> ipAddresses = Set.of(
-                "192.168.254.1",
-                "192.168.254.254",
-                "127.7.3.1",
-                "127.5.254.1",
-                "172.16.100.1",
-                "172.16.254.2",
-                "2001:db8:0:0:0:0:0:ffff",
-                "2001:db8:95a3:0:0:0:0:7334",
-                "2001:db8:85a3:0:0:8a2e:370:7334",
-                "::1",
-                "::10",
-                "::20");
-
-        assertEquals(
-                List.of(
-                        "127.5.254.1",
-                        "127.7.3.1",
-                        "172.16.100.1",
-                        "172.16.254.2",
-                        "192.168.254.1",
-                        "192.168.254.254",
-                        "::1",
-                        "::10",
-                        "::20",
-                        "2001:db8::ffff",
-                        "2001:db8:85a3::8a2e:370:7334",
-                        "2001:db8:95a3::7334"),
-                ipAddresses.stream()
-                           .map(IP::parse)
-                           .sorted(IP.NATURAL_ORDER)
-                           .map(IP::asString)
-                           .toList()
-        );
     }
 
     @Test

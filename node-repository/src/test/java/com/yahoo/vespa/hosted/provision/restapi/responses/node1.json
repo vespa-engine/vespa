@@ -112,7 +112,7 @@
       "agent": "application"
     }
   ],
-  "ipAddresses": ["127.0.1.1", "::1:1"],
+  "ipAddresses": ["::1:1", "127.0.1.1"],
   "additionalIpAddresses": [],
   "cloudAccount": "aws:111222333444"
 }

@@ -54,26 +54,26 @@ public class NodesV2ApiTest {
     @Test
     public void test_requests() throws Exception {
         // GET
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/"), "root.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/state/"), "states.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/state/?recursive=true"), "states-recursive.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/state/active?recursive=true"), "active-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/"), "nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true"), "nodes-recursive.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&includeDeprovisioned=true"), "nodes-recursive-include-deprovisioned.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?enclave=true"), "enclave-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&enclave=true"), "enclave-nodes-recursive.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/wireguard/"), "wireguard.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/"), "root.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/state/"), "states.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/state/?recursive=true"), "states-recursive.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/state/active?recursive=true"), "active-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/"), "nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true"), "nodes-recursive.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&includeDeprovisioned=true"), "nodes-recursive-include-deprovisioned.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?enclave=true"), "enclave-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&enclave=true"), "enclave-nodes-recursive.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/wireguard/"), "wireguard.json");
 
         // GET with filters
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "content-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterId=id2"), "application2-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&application=tenant2.application2.instance2"), "application2-nodes.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=dockerhost1.yahoo.com"), "child-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "content-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterId=id2"), "application2-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&application=tenant2.application2.instance2"), "application2-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=dockerhost1.yahoo.com"), "child-nodes.json");
 
         // POST restart command
         assertRestart(1, new Request("http://localhost:8080/nodes/v2/command/restart?hostname=host2.yahoo.com",
@@ -105,10 +105,10 @@ public class NodesV2ApiTest {
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                        "{\"message\":\"Added 4 nodes to the provisioned state\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com"), "node8.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com"), "node9.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com"), "node8.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com"), "node9.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
         // POST duplicate node
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -235,7 +235,7 @@ public class NodesV2ApiTest {
         ((OrchestratorMock) tester.container().components().getComponent(OrchestratorMock.class.getName()))
                 .suspend(new HostName("host4.yahoo.com"));
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
 
         // Park and remove host
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/dockerhost1.yahoo.com",
@@ -265,11 +265,11 @@ public class NodesV2ApiTest {
 
     @Test
     public void test_application_requests() throws Exception {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/application/"), "applications.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1"),
-                       "application1.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
-                       "application2.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/"), "applications.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1"),
+                   "application1.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
+                   "application2.json");
 
         // Update (PATCH) an application
         assertResponse(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1",
@@ -375,24 +375,24 @@ public class NodesV2ApiTest {
 
     @Test
     public void patch_hostnames() throws IOException {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"additionalHostnames\": [\"a\",\"b\"]}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-with-hostnames.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-with-hostnames.json");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"additionalHostnames\": []}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
     }
 
     @Test
     public void patch_wireguard_pubkey() throws IOException {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
 
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"wireguardPubkey\": \"not a wg key\"}"), Request.Method.PATCH), 400,
@@ -402,7 +402,7 @@ public class NodesV2ApiTest {
                         Utf8.toBytes("{\"wireguardPubkey\": \"lololololololololololololololololololololoo=\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");
     }
 
     @Test
@@ -415,7 +415,7 @@ public class NodesV2ApiTest {
                                    Request.Method.POST),
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/controller1.yahoo.com"), "controller1.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/controller1.yahoo.com"), "controller1.json");
     }
 
     @Test
@@ -460,12 +460,12 @@ public class NodesV2ApiTest {
 
     @Test
     public void acls_for_inclave_tenant_host() throws Exception {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/acl/host5.yahoo.com"), "acl-tenant-node.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/host5.yahoo.com"), "acl-tenant-node.json");
     }
 
     @Test
     public void acl_request_by_config_server() throws Exception {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/acl/cfg1.yahoo.com"), "acl-config-server.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/cfg1.yahoo.com"), "acl-config-server.json");
     }
 
     @Test
@@ -588,7 +588,7 @@ public class NodesV2ApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated host5.yahoo.com\"}");
 
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), "node5-after-changes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), "node5-after-changes.json");
     }
 
     @Test
@@ -616,7 +616,7 @@ public class NodesV2ApiTest {
                                 "}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
 
         // Patching with an empty reports is no-op
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -624,7 +624,7 @@ public class NodesV2ApiTest {
                                           Request.Method.PATCH),
                               200,
                               "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports.json");
 
         // Patching existing report overwrites
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -638,21 +638,21 @@ public class NodesV2ApiTest {
                                           Request.Method.PATCH),
                               200,
                               "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-2.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-2.json");
 
         // Clearing one report
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                         Utf8.toBytes("{\"reports\": { \"diskSpace\": null } }"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-3.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-3.json");
 
         // Clearing all reports
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                         Utf8.toBytes("{\"reports\": null }"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-4.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-4.json");
     }
 
     @Test
@@ -835,7 +835,7 @@ public class NodesV2ApiTest {
                                    Utf8.toBytes("{\"currentOsVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-os-upgrade-complete.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-os-upgrade-complete.json");
 
         // Override wantedOsVersion
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -873,12 +873,12 @@ public class NodesV2ApiTest {
                        "{\"message\":\"Will request firmware checks on all hosts.\"}");
 
         // dockerhost1 displays both values.
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"),
-                       "dockerhost1-with-firmware-data.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"),
+                   "dockerhost1-with-firmware-data.json");
 
         // host1 has no wantedFirmwareCheck, as it's not a docker host.
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
-                       "node1.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+                   "node1.json");
 
         // Cancel the firmware check.
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/firmware", new byte[0], Request.Method.DELETE),
@@ -887,8 +887,8 @@ public class NodesV2ApiTest {
 
     @Test
     public void test_capacity() throws Exception {
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/capacity/?json=true"), "capacity-zone.json");
-        assertJsonFile(new Request("http://localhost:8080/nodes/v2/capacity?json=true"), "capacity-zone.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/capacity/?json=true"), "capacity-zone.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/capacity?json=true"), "capacity-zone.json");
 
         List<String> hostsToRemove = List.of(
                 "dockerhost1.yahoo.com",
@@ -898,12 +898,12 @@ public class NodesV2ApiTest {
         );
         String requestUriTemplate = "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=%s";
 
-        assertJsonFile(new Request(String.format(requestUriTemplate,
-                                                 String.join(",", hostsToRemove.subList(0, 3)))),
-                       "capacity-hostremoval-possible.json");
-        assertJsonFile(new Request(String.format(requestUriTemplate,
-                                                 String.join(",", hostsToRemove))),
-                       "capacity-hostremoval-impossible.json");
+        assertFile(new Request(String.format(requestUriTemplate,
+                                             String.join(",", hostsToRemove.subList(0, 3)))),
+                   "capacity-hostremoval-possible.json");
+        assertFile(new Request(String.format(requestUriTemplate,
+                                             String.join(",", hostsToRemove))),
+                   "capacity-hostremoval-impossible.json");
     }
 
 
@@ -912,7 +912,7 @@ public class NodesV2ApiTest {
     public void test_single_node_rendering() throws Exception {
         for (int i = 1; i <= 14; i++) {
             if (i == 8 || i == 9 || i == 11 || i == 12) continue; // these nodes are added later
-            assertJsonFile(new Request("http://localhost:8080/nodes/v2/node/host" + i + ".yahoo.com"), "node" + i + ".json");
+            assertFile(new Request("http://localhost:8080/nodes/v2/node/host" + i + ".yahoo.com"), "node" + i + ".json");
         }
     }
 
@@ -1116,8 +1116,8 @@ public class NodesV2ApiTest {
         tester.assertResponse(request, 200, "{\"message\":\"Scheduled reboot of " + rebootCount + " matching nodes\"}");
     }
 
-    private void assertJsonFile(Request request, String file) throws IOException {
-        tester.assertJsonFile(request, file);
+    private void assertFile(Request request, String file) throws IOException {
+        tester.assertFile(request, file);
     }
 
     private void assertResponse(Request request, String response) throws IOException {
