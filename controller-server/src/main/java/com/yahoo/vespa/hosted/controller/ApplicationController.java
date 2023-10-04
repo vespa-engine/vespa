@@ -121,7 +121,6 @@ import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.low;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
@@ -577,17 +576,7 @@ public class ApplicationController {
                                       .orElseGet(Tags::empty);
         Optional<EndpointCertificate> certificate = endpointCertificates.get(instance, deployment.zoneId(), applicationPackage.truncatedPackage().deploymentSpec());
         certificate.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
-        BasicServicesXml services;
-        try {
-            services = applicationPackage.truncatedPackage().services(deployment, tags);
-        } catch (Exception e) {
-            // If the basic parsing done by the controller fails, we ignore the exception here so that
-            // complete parsing errors are propagated from the config server. Otherwise, throwing here
-            // will interrupt the request while it's being streamed to the config server
-            log.warning("Ignoring failure to parse services.xml for deployment " + deployment +
-                        " while streaming application package: " + Exceptions.toMessageString(e));
-            services = BasicServicesXml.empty;
-        }
+        BasicServicesXml services = applicationPackage.truncatedPackage().services(deployment, tags);
         return controller.routing().of(deployment).prepare(services, certificate, application);
     }
 
