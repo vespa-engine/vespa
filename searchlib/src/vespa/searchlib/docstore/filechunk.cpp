@@ -126,15 +126,6 @@ FileChunk::TmpChunkMeta::fill(vespalib::nbostream & is) {
 }
 
 void
-FileChunk::verifyOrAssert(const TmpChunkMetaV & v)
-{
-    for (auto prev(v.begin()), it(prev); it != v.end(); ++it) {
-        assert(prev->getLastSerial() <= it->getLastSerial());
-        prev = it;
-    }
-}
-
-void
 FileChunk::erase()
 {
     _file.reset();
@@ -149,69 +140,56 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
 
     FastOS_File idxFile(_idxFileName.c_str());
     idxFile.enableMemoryMap(0);
-    if (idxFile.OpenReadOnly()) {
-        if (idxFile.IsMemoryMapped()) {
-            const int64_t fileSize = idxFile.getSize();
-            if (_idxHeaderLen == 0) {
-                _idxHeaderLen = readIdxHeader(idxFile, _docIdLimit);
-            }
-            vespalib::nbostream is(static_cast<const char *>(idxFile.MemoryMapPtr(0)) + _idxHeaderLen,
-                                   fileSize - _idxHeaderLen);
-            TmpChunkMetaV tempVector;
-            tempVector.reserve(fileSize/(sizeof(ChunkMeta)+sizeof(LidMeta)));
-            while ( ! is.empty() && is.good()) {
-                const int64_t lastKnownGoodPos = _idxHeaderLen + is.rp();
-                tempVector.emplace_back();
-                TmpChunkMeta & chunkMeta(tempVector.back());
-                try {
-                    chunkMeta.deserialize(is);
-                    chunkMeta.fill(is);
-                } catch (const vespalib::IllegalStateException & e) {
-                    LOG(warning, "Exception deserializing idx file : %s", e.what());
-                    LOG(warning, "File '%s' seems to be partially truncated. Will truncate from size=%" PRId64 " to %" PRId64,
-                                 _idxFileName.c_str(), fileSize, lastKnownGoodPos);
-                    FastOS_File toTruncate(_idxFileName.c_str());
-                    if ( toTruncate.OpenReadWrite()) {
-                        if (toTruncate.SetSize(lastKnownGoodPos)) {
-                            tempVector.resize(tempVector.size() - 1);
-                        } else {
-                            throw SummaryException("SetSize() failed.", toTruncate, VESPA_STRLOC);
-                        }
-                    } else {
-                        throw SummaryException("Open for truncation failed.", toTruncate, VESPA_STRLOC);
-                    }
-                    break;
-                }
-            }
-            if ( ! tempVector.empty()) {
-                verifyOrAssert(tempVector);
-                if (tempVector[0].getLastSerial() < serialNum) {
-                    LOG(warning,
-                        "last serial num(%" PRIu64 ") from previous file is "
-                        "bigger than my first(%" PRIu64 "). That is odd."
-                        "Current filename is '%s'",
-                        serialNum, tempVector[0].getLastSerial(),
-                        _idxFileName.c_str());
-                    serialNum = tempVector[0].getLastSerial();
-                }
-                BucketDensityComputer globalBucketMap(_bucketizer);
-                // Guard comes from the same bucketizer so the same guard can be used
-                // for both local and global BucketDensityComputer
-                vespalib::GenerationHandler::Guard bucketizerGuard = globalBucketMap.getGuard();
-                for (const TmpChunkMeta & chunkMeta : tempVector) {
-                    assert(serialNum <= chunkMeta.getLastSerial());
-                    serialNum = handleChunk(guard, ds, docIdLimit, bucketizerGuard, globalBucketMap, chunkMeta);
-                    assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
-                    _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
-                }
-                _numUniqueBuckets = globalBucketMap.getNumBuckets();
-            }
-        } else {
-            assert(idxFile.getSize() == 0);
-        }
-    } else {
+    if ( ! idxFile.OpenReadOnly()) {
         LOG_ABORT("should not reach here");
     }
+    if ( ! idxFile.IsMemoryMapped()) {
+        assert(idxFile.getSize() == 0);
+        return;
+    }
+    const int64_t fileSize = idxFile.getSize();
+    if (_idxHeaderLen == 0) {
+        _idxHeaderLen = readIdxHeader(idxFile, _docIdLimit);
+    }
+    BucketDensityComputer globalBucketMap(_bucketizer);
+    // Guard comes from the same bucketizer so the same guard can be used
+    // for both local and global BucketDensityComputer
+    vespalib::GenerationHandler::Guard bucketizerGuard = globalBucketMap.getGuard();
+    vespalib::nbostream is(static_cast<const char *>(idxFile.MemoryMapPtr(0)) + _idxHeaderLen,
+                           fileSize - _idxHeaderLen);
+    for (size_t count=0; ! is.empty() && is.good(); count++) {
+        const int64_t lastKnownGoodPos = _idxHeaderLen + is.rp();
+        TmpChunkMeta chunkMeta;
+        try {
+            chunkMeta.deserialize(is);
+            chunkMeta.fill(is);
+            if ((count == 0) && (chunkMeta.getLastSerial() < serialNum)) {
+                LOG(warning, "last serial num(%" PRIu64 ") from previous file is bigger than my first(%" PRIu64
+                             "). That is odd.Current filename is '%s'",
+                    serialNum, chunkMeta.getLastSerial(), _idxFileName.c_str());
+                serialNum = chunkMeta.getLastSerial();
+            }
+            assert(serialNum <= chunkMeta.getLastSerial());
+            serialNum = handleChunk(guard, ds, docIdLimit, bucketizerGuard, globalBucketMap, chunkMeta);
+            assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
+            _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
+        } catch (const vespalib::IllegalStateException & e) {
+            LOG(warning, "Exception deserializing idx file : %s", e.what());
+            LOG(warning, "File '%s' seems to be partially truncated. Will truncate from size=%" PRId64 " to %" PRId64,
+                         _idxFileName.c_str(), fileSize, lastKnownGoodPos);
+            FastOS_File toTruncate(_idxFileName.c_str());
+            if ( toTruncate.OpenReadWrite()) {
+                if (toTruncate.SetSize(lastKnownGoodPos)) {
+                } else {
+                    throw SummaryException("SetSize() failed.", toTruncate, VESPA_STRLOC);
+                }
+            } else {
+                throw SummaryException("Open for truncation failed.", toTruncate, VESPA_STRLOC);
+            }
+            break;
+        }
+    }
+    _numUniqueBuckets = globalBucketMap.getNumBuckets();
 }
 
 uint64_t
@@ -578,8 +556,7 @@ FileChunk::getStats() const
     uint64_t serialNum = getLastPersistedSerialNum();
     uint32_t docIdLimit = getDocIdLimit();
     uint64_t nameId = getNameId().getId();
-    return DataStoreFileChunkStats(diskFootprint, diskBloat, bucketSpread,
-                                   serialNum, serialNum, docIdLimit, nameId);
+    return {diskFootprint, diskBloat, bucketSpread, serialNum, serialNum, docIdLimit, nameId};
 }
 
 } // namespace search

@@ -47,7 +47,7 @@ public:
 class BucketDensityComputer
 {
 public:
-    BucketDensityComputer(const IBucketizer * bucketizer) : _bucketizer(bucketizer), _count(0) { }
+    explicit BucketDensityComputer(const IBucketizer * bucketizer) : _bucketizer(bucketizer), _count(0) { }
     void recordLid(const vespalib::GenerationHandler::Guard & guard, uint32_t lid, uint32_t dataSize) {
         if (_bucketizer && (dataSize > 0)) {
             recordLid(_bucketizer->getBucketOf(guard, lid));
@@ -118,7 +118,7 @@ public:
     virtual size_t getMemoryMetaFootprint() const;
     virtual vespalib::MemoryUsage getMemoryUsage() const;
 
-    virtual size_t getDiskHeaderFootprint(void) const { return _dataHeaderLen + _idxHeaderLen; }
+    virtual size_t getDiskHeaderFootprint() const { return _dataHeaderLen + _idxHeaderLen; }
     size_t getDiskBloat() const {
         return (_addedBytes == 0)
                ? getDiskFootprint()
@@ -205,9 +205,7 @@ private:
     public:
         void fill(vespalib::nbostream & is);
     };
-    using TmpChunkMetaV = std::vector<TmpChunkMeta, vespalib::allocator_large<TmpChunkMeta>>;
     using BucketizerGuard = vespalib::GenerationHandler::Guard;
-    static void verifyOrAssert(const TmpChunkMetaV & v);
     uint64_t handleChunk(const unique_lock &guard, ISetLid &lidMap, uint32_t docIdLimit,
                          const BucketizerGuard & bucketizerGuard, BucketDensityComputer & global,
                          const TmpChunkMeta & chunkMeta);
