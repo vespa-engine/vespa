@@ -51,7 +51,6 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -135,7 +134,7 @@ public class RoutingController {
         }
 
         // Add zone-scoped endpoints
-        Map<EndpointId, GeneratedEndpointList> generatedForDeclaredEndpoints = new HashMap<>();
+        Map<EndpointId, List<GeneratedEndpoint>> generatedForDeclaredEndpoints = new HashMap<>();
         Set<ClusterSpec.Id> clustersWithToken = new HashSet<>();
         boolean generatedEndpointsEnabled = generatedEndpointsEnabled(deployment.applicationId());
         RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
@@ -149,9 +148,10 @@ public class RoutingController {
             Optional<RoutingPolicy> clusterPolicy = deploymentPolicies.cluster(clusterId).first();
             List<GeneratedEndpoint> generatedForCluster = clusterPolicy.map(policy -> policy.generatedEndpoints().cluster().asList())
                                                                        .orElseGet(List::of);
-            // Generate endpoints if cluster does not have any
-            if (generatedForCluster.isEmpty()) {
-                generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
+            // Generate endpoint for each auth method, if not present
+            generatedForCluster = generateEndpoints(AuthMethod.mtls, certificate, Optional.empty(), generatedForCluster);
+            if (tokenSupported) {
+                generatedForCluster = generateEndpoints(AuthMethod.token, certificate, Optional.empty(), generatedForCluster);
             }
             GeneratedEndpointList generatedEndpoints = generatedEndpointsEnabled ? GeneratedEndpointList.copyOf(generatedForCluster) : GeneratedEndpointList.EMPTY;
             endpoints = endpoints.and(endpointsOf(deployment, clusterId, generatedEndpoints).scope(Scope.zone));
@@ -162,18 +162,34 @@ public class RoutingController {
             ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
             applicationPolicies.cluster(clusterId).asList().stream()
                                .flatMap(policy -> policy.generatedEndpoints().declared().asList().stream())
-                               .forEach(ge -> generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> GeneratedEndpointList.of(ge)));
+                               .forEach(ge -> {
+                                   List<GeneratedEndpoint> generated = generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> new ArrayList<>());
+                                   if (!generated.contains(ge)) {
+                                       generated.add(ge);
+                                   }
+                               });
         }
         // Generate endpoints if declared endpoint does not have any
         Stream.concat(spec.endpoints().stream(), spec.instances().stream().flatMap(i -> i.endpoints().stream()))
               .forEach(endpoint -> {
                   EndpointId endpointId = EndpointId.of(endpoint.endpointId());
-                  generatedForDeclaredEndpoints.computeIfAbsent(endpointId, (k) -> {
+                  generatedForDeclaredEndpoints.compute(endpointId, (k, old) -> {
+                      if (old == null) {
+                          old = List.of();
+                      }
+                      List<GeneratedEndpoint> generatedEndpoints = generateEndpoints(AuthMethod.mtls, certificate, Optional.of(endpointId), old);
                       boolean tokenSupported = clustersWithToken.contains(ClusterSpec.Id.from(endpoint.containerId()));
-                      return generatedEndpointsEnabled ? GeneratedEndpointList.copyOf(generateEndpoints(tokenSupported, certificate, Optional.of(endpointId))) : null;
+                      if (tokenSupported){
+                          generatedEndpoints = generateEndpoints(AuthMethod.token, certificate, Optional.of(endpointId), generatedEndpoints);
+                      }
+                      return generatedEndpoints;
                   });
               });
-        Map<EndpointId, GeneratedEndpointList> generatedEndpoints = generatedEndpointsEnabled ? generatedForDeclaredEndpoints : Map.of();
+        Map<EndpointId, GeneratedEndpointList> generatedEndpoints = generatedEndpointsEnabled
+                ? generatedForDeclaredEndpoints.entrySet()
+                                               .stream()
+                                               .collect(Collectors.toMap(Map.Entry::getKey, kv -> GeneratedEndpointList.copyOf(kv.getValue())))
+                : Map.of();
         endpoints = endpoints.and(declaredEndpointsOf(application.get().id(), spec, generatedEndpoints).targets(deployment));
         PreparedEndpoints prepared = new PreparedEndpoints(deployment,
                                                            endpoints,
@@ -184,12 +200,6 @@ public class RoutingController {
         registerRotationEndpointsInDns(prepared);
 
         return prepared;
-    }
-
-    private List<GeneratedEndpoint> generateEndpoints(boolean tokenSupported, Optional<EndpointCertificate> certificate, Optional<EndpointId> endpoint) {
-        return certificate.flatMap(EndpointCertificate::randomizedId)
-                          .map(id -> generateEndpoints(id, tokenSupported, endpoint))
-                          .orElseGet(List::of);
     }
 
     // -------------- Implicit endpoints (scopes 'zone' and 'weighted') --------------
@@ -480,19 +490,22 @@ public class RoutingController {
         }
     }
 
-    /** Generate endpoints for all authentication methods, using given application part */
-    private List<GeneratedEndpoint> generateEndpoints(String applicationPart, boolean token, Optional<EndpointId> endpoint) {
-        return Arrays.stream(AuthMethod.values())
-                     .filter(method -> switch (method) {
-                         case token -> token;
-                         case mtls -> true;
-                         case none -> false;
-                     })
-                     .map(method -> new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
-                                                          applicationPart,
-                                                          method,
-                                                          endpoint))
-                     .toList();
+    /** Returns generated endpoints. A new endpoint is generated if no matching endpoint already exists */
+    private List<GeneratedEndpoint> generateEndpoints(AuthMethod authMethod, Optional<EndpointCertificate> certificate,
+                                                      Optional<EndpointId> declaredEndpoint,
+                                                      List<GeneratedEndpoint> current) {
+        if (current.stream().anyMatch(e -> e.authMethod() == authMethod && e.endpoint().equals(declaredEndpoint))) {
+            return current;
+        }
+        Optional<String> applicationPart = certificate.flatMap(EndpointCertificate::randomizedId);
+        if (applicationPart.isPresent()) {
+            current = new ArrayList<>(current);
+            current.add(new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
+                                              applicationPart.get(),
+                                              authMethod,
+                                              declaredEndpoint));
+        }
+        return current;
     }
 
     /** Generate the  cluster part of a {@link GeneratedEndpoint} for use in a {@link Endpoint.Scope#weighted} endpoint */
