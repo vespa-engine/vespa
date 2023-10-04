@@ -35,7 +35,7 @@ public class EndpointCertificateSerializer {
     private final static String issuerField = "issuer";
     private final static String expiryField = "expiry";
     private final static String lastRefreshedField = "lastRefreshed";
-    private final static String randomizedIdField = "randomizedId";
+    private final static String generatedIdField = "randomizedId";
 
     public static Slime toSlime(EndpointCertificate cert) {
         Slime slime = new Slime();
@@ -56,7 +56,7 @@ public class EndpointCertificateSerializer {
         object.setString(issuerField, cert.issuer());
         cert.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
         cert.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
-        cert.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
+        cert.generatedId().ifPresent(id -> object.setString(generatedIdField, id));
     }
 
     public static EndpointCertificate fromSlime(Inspector inspector) {
@@ -79,8 +79,8 @@ public class EndpointCertificateSerializer {
                 inspector.field(lastRefreshedField).valid() ?
                         Optional.of(inspector.field(lastRefreshedField).asLong()) :
                         Optional.empty(),
-                inspector.field(randomizedIdField).valid() ?
-                        Optional.of(inspector.field(randomizedIdField).asString()) :
+                inspector.field(generatedIdField).valid() ?
+                        Optional.of(inspector.field(generatedIdField).asString()) :
                         Optional.empty());
     }
 

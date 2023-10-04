@@ -497,7 +497,7 @@ public class RoutingController {
         if (current.stream().anyMatch(e -> e.authMethod() == authMethod && e.endpoint().equals(declaredEndpoint))) {
             return current;
         }
-        Optional<String> applicationPart = certificate.flatMap(EndpointCertificate::randomizedId);
+        Optional<String> applicationPart = certificate.flatMap(EndpointCertificate::generatedId);
         if (applicationPart.isPresent()) {
             current = new ArrayList<>(current);
             current.add(new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
