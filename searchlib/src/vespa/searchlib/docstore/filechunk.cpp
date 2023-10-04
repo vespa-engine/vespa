@@ -129,7 +129,8 @@ public:
     }
 };
 
-using TmpChunkMetaV = std::vector<TmpChunkMeta>;
+using TmpChunkMetaV = std::vector<TmpChunkMeta, vespalib::allocator_large<TmpChunkMeta>>;
+static_assert(sizeof(TmpChunkMeta) == 48);
 
 namespace {
 
