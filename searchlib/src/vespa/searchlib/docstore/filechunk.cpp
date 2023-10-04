@@ -6,13 +6,11 @@
 #include "randreaders.h"
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/small_vector.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/file.h>
 #include <filesystem>
