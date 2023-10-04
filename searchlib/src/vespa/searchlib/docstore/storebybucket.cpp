@@ -42,9 +42,8 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
         });
         _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     }
-    Index idx(bucketId, _current->getId(), chunkId, lid);
     _current->append(lid, buffer, sz);
-    _where[bucketId.toKey()].push_back(idx);
+    _where.emplace_back(bucketId, _current->getId(), chunkId, lid);
 }
 
 Chunk::UP
@@ -88,14 +87,34 @@ StoreByBucket::waitAllProcessed() {
 }
 
 void
-StoreByBucket::drain(IWrite & drainer)
-{
+StoreByBucket::close() {
     incChunksPosted();
     auto task = makeLambdaTask([this, chunk=std::move(_current)]() mutable {
         closeChunk(std::move(chunk));
     });
     _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     waitAllProcessed();
+    std::sort(_where.begin(), _where.end());
+}
+
+size_t
+StoreByBucket::getBucketCount() const {
+    if (_where.empty()) return 0;
+
+    size_t count = 0;
+    BucketId prev = _where.front()._bucketId;
+    for (const auto & lid : _where) {
+        if (lid._bucketId != prev) {
+            count++;
+            prev = lid._bucketId;
+        }
+    }
+    return count + 1;
+}
+
+void
+StoreByBucket::drain(IWrite & drainer)
+{
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());
     for (const auto & it : _chunks) {
@@ -103,12 +122,9 @@ StoreByBucket::drain(IWrite & drainer)
         chunks[it.first] = std::make_unique<Chunk>(it.first, buf.data(), buf.size());
     }
     _chunks.clear();
-    for (auto & it : _where) {
-        std::sort(it.second.begin(), it.second.end());
-        for (Index idx : it.second) {
-            vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
-            drainer.write(idx._bucketId, idx._chunkId, idx._lid, data.c_str(), data.size());
-        }
+    for (auto & idx : _where) {
+        vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
+        drainer.write(idx._bucketId, idx._chunkId, idx._lid, data.c_str(), data.size());
     }
 }
 

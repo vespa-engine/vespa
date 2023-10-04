@@ -79,7 +79,8 @@ BucketCompacter::close()
     size_t lidCount1(0);
     size_t bucketCount(0);
     size_t chunkCount(0);
-    for (const StoreByBucket & store : _tmpStore) {
+    for (StoreByBucket & store : _tmpStore) {
+        store.close();
         lidCount1 += store.getLidCount();
         bucketCount += store.getBucketCount();
         chunkCount += store.getChunkCount();
