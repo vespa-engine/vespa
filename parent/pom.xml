@@ -455,6 +455,11 @@
             <!-- Please keep this list lexically sorted by groupId, then artifactId.-->
 
             <dependency>
+                <groupId>ai.djl.huggingface</groupId>
+                <artifactId>tokenizers</artifactId>
+                <version>${huggingface.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${aws-sdk.vespa.version}</version>
