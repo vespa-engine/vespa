@@ -12,8 +12,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/fastos/file.h>
 #include <filesystem>
 #include <future>
@@ -117,32 +117,21 @@ FileChunk::addNumBuckets(size_t numBucketsInChunk)
     }
 }
 
-class TmpChunkMeta : public ChunkMeta,
-                     public std::vector<LidMeta>
-{
-public:
-    void fill(vespalib::nbostream & is) {
-        resize(getNumEntries());
-        for (LidMeta & lm : *this) {
-            lm.deserialize(is);
-        }
+void
+FileChunk::TmpChunkMeta::fill(vespalib::nbostream & is) {
+    resize(getNumEntries());
+    for (LidMeta & lm : *this) {
+        lm.deserialize(is);
     }
-};
-
-using TmpChunkMetaV = std::vector<TmpChunkMeta, vespalib::allocator_large<TmpChunkMeta>>;
-static_assert(sizeof(TmpChunkMeta) == 48);
-
-namespace {
+}
 
 void
-verifyOrAssert(const TmpChunkMetaV & v)
+FileChunk::verifyOrAssert(const TmpChunkMetaV & v)
 {
     for (auto prev(v.begin()), it(prev); it != v.end(); ++it) {
         assert(prev->getLastSerial() <= it->getLastSerial());
         prev = it;
     }
-}
-
 }
 
 void
@@ -153,10 +142,9 @@ FileChunk::erase()
     std::filesystem::remove(std::filesystem::path(_dataFileName));
 }
 
-size_t
+void
 FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
-    size_t sz(0);
     assert(_chunkInfo.empty());
 
     FastOS_File idxFile(_idxFileName.c_str());
@@ -212,25 +200,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
                 vespalib::GenerationHandler::Guard bucketizerGuard = globalBucketMap.getGuard();
                 for (const TmpChunkMeta & chunkMeta : tempVector) {
                     assert(serialNum <= chunkMeta.getLastSerial());
-                    BucketDensityComputer bucketMap(_bucketizer);
-                    for (size_t i(0), m(chunkMeta.getNumEntries()); i < m; i++) {
-                        const LidMeta & lidMeta(chunkMeta[i]);
-                        if (lidMeta.getLid() < docIdLimit) {
-                            if (_bucketizer && (lidMeta.size() > 0)) {
-                                document::BucketId bucketId = _bucketizer->getBucketOf(bucketizerGuard, lidMeta.getLid());
-                                bucketMap.recordLid(bucketId);
-                                globalBucketMap.recordLid(bucketId);
-                            }
-                            ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
-                            _numLids++;
-                        } else {
-                            remove(lidMeta.getLid(), lidMeta.size());
-                        }
-                        _addedBytes += adjustSize(lidMeta.size());
-                    }
-                    serialNum = chunkMeta.getLastSerial();
-                    addNumBuckets(bucketMap.getNumBuckets());
-                    _chunkInfo.emplace_back(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial());
+                    serialNum = handleChunk(guard, ds, docIdLimit, bucketizerGuard, globalBucketMap, chunkMeta);
                     assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
                     _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
                 }
@@ -242,8 +212,34 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
     } else {
         LOG_ABORT("should not reach here");
     }
-    return sz;
 }
+
+uint64_t
+FileChunk::handleChunk(const unique_lock &guard, ISetLid &ds, uint32_t docIdLimit,
+                       const vespalib::GenerationHandler::Guard & bucketizerGuard, BucketDensityComputer &globalBucketMap,
+                       const TmpChunkMeta & chunkMeta) {
+    BucketDensityComputer bucketMap(_bucketizer);
+    for (size_t i(0), m(chunkMeta.getNumEntries()); i < m; i++) {
+        const LidMeta & lidMeta(chunkMeta[i]);
+        if (lidMeta.getLid() < docIdLimit) {
+            if (_bucketizer && (lidMeta.size() > 0)) {
+                document::BucketId bucketId = _bucketizer->getBucketOf(bucketizerGuard, lidMeta.getLid());
+                bucketMap.recordLid(bucketId);
+                globalBucketMap.recordLid(bucketId);
+            }
+            ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+            _numLids++;
+        } else {
+            remove(lidMeta.getLid(), lidMeta.size());
+        }
+        _addedBytes += adjustSize(lidMeta.size());
+    }
+    uint64_t serialNum = chunkMeta.getLastSerial();
+    addNumBuckets(bucketMap.getNumBuckets());
+    _chunkInfo.emplace_back(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial());
+    return serialNum;
+}
+
 
 void
 FileChunk::enableRead()

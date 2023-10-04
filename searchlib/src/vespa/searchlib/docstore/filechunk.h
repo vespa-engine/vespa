@@ -109,7 +109,7 @@ public:
               const IBucketizer *bucketizer);
     virtual ~FileChunk();
 
-    virtual size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
+    virtual void updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);
@@ -199,6 +199,18 @@ public:
     static vespalib::string createIdxFileName(const vespalib::string & name);
     static vespalib::string createDatFileName(const vespalib::string & name);
 private:
+    class TmpChunkMeta : public ChunkMeta,
+                         public std::vector<LidMeta>
+    {
+    public:
+        void fill(vespalib::nbostream & is);
+    };
+    using TmpChunkMetaV = std::vector<TmpChunkMeta, vespalib::allocator_large<TmpChunkMeta>>;
+    using BucketizerGuard = vespalib::GenerationHandler::Guard;
+    static void verifyOrAssert(const TmpChunkMetaV & v);
+    uint64_t handleChunk(const unique_lock &guard, ISetLid &lidMap, uint32_t docIdLimit,
+                         const BucketizerGuard & bucketizerGuard, BucketDensityComputer & global,
+                         const TmpChunkMeta & chunkMeta);
     using File = std::unique_ptr<FileRandRead>;
     const FileId           _fileId;
     const NameId           _nameId;
