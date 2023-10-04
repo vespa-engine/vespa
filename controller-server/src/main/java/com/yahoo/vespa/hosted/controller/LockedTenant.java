@@ -10,6 +10,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -151,14 +152,14 @@ public abstract class LockedTenant {
         private final ArchiveAccess archiveAccess;
         private final Optional<Instant> invalidateUserSessionsBefore;
         private final Optional<BillingReference> billingReference;
-        private final Optional<String> planId;
+        private final PlanId planId;
 
         private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                       BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess,
                       Optional<Instant> invalidateUserSessionsBefore, Instant tenantRolesLastMaintained,
                       List<CloudAccountInfo> cloudAccounts, Optional<BillingReference> billingReference,
-                      Optional<String> planId) {
+                      PlanId planId) {
             super(name, createdAt, lastLoginInfo, tenantRolesLastMaintained, cloudAccounts);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
@@ -265,10 +266,10 @@ public abstract class LockedTenant {
                              Optional.of(billingReference), planId);
         }
 
-        public Cloud withPlanId(String planId) {
+        public Cloud withPlanId(PlanId planId) {
             return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess,
                              invalidateUserSessionsBefore, tenantRolesLastMaintained, cloudAccounts,
-                             billingReference, Optional.ofNullable(planId));
+                             billingReference, planId);
         }
     }
 

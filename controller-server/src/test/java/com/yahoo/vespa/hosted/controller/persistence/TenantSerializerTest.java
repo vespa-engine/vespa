@@ -12,6 +12,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -115,13 +116,13 @@ public class TenantSerializerTest {
                 Instant.EPOCH,
                 List.of(),
                 Optional.empty(),
-                Optional.empty());
+                PlanId.from("none"));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
         assertEquals(tenant.createdAt(), serialized.createdAt());
-        assertTrue(serialized.planId().isEmpty());
+        assertEquals("none", serialized.planId().value());
     }
 
     @Test
@@ -142,7 +143,7 @@ public class TenantSerializerTest {
                 Instant.EPOCH,
                 List.of(),
                 Optional.empty(),
-                Optional.empty());
+                PlanId.from("none"));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
         assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
@@ -197,7 +198,7 @@ public class TenantSerializerTest {
                 List.of(new CloudAccountInfo(CloudAccount.from("aws:123456789012"), Version.fromString("1.2.3")),
                         new CloudAccountInfo(CloudAccount.from("gcp:my-project"), Version.fromString("3.2.1"))),
                 Optional.empty(),
-                Optional.empty());
+                PlanId.from("none"));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
         assertEquals(serialized.archiveAccess().gcpMember().get(), "user:foo@example.com");
@@ -271,7 +272,7 @@ public class TenantSerializerTest {
                                              Instant.EPOCH,
                                              List.of(),
                                              Optional.empty(),
-                                             Optional.of("pay-as-you-go"));
+                                             PlanId.from("pay-as-you-go"));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -320,7 +321,7 @@ public class TenantSerializerTest {
                 Instant.EPOCH,
                 List.of(),
                 Optional.of(reference),
-                Optional.empty());
+                PlanId.from("none"));
         var slime = serializer.toSlime(tenant);
         var deserialized = serializer.tenantFrom(slime);
         assertEquals(tenant, deserialized);

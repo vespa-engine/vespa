@@ -15,6 +15,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -138,7 +139,7 @@ public class TenantSerializer {
         toSlime(tenant.archiveAccess(), root);
         tenant.billingReference().ifPresent(b -> toSlime(b, root));
         tenant.invalidateUserSessionsBefore().ifPresent(instant -> root.setLong(invalidateUserSessionsBeforeField, instant.toEpochMilli()));
-        tenant.planId().ifPresent(id -> root.setString(planIdField, id));
+        root.setString(planIdField, tenant.planId().value());
     }
 
     private void toSlime(ArchiveAccess archiveAccess, Cursor root) {
@@ -217,7 +218,7 @@ public class TenantSerializer {
         Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
         List<CloudAccountInfo> cloudAccountInfos = cloudAccountsFromSlime(tenantObject.field(cloudAccountsField));
         Optional<BillingReference> billingReference = billingReferenceFrom(tenantObject.field(billingReferenceField));
-        Optional<String> planId = planId(tenantObject.field(planIdField));
+        PlanId planId = planId(tenantObject.field(planIdField));
         return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores,
                                archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained,
                                cloudAccountInfos, billingReference, planId);
@@ -381,10 +382,10 @@ public class TenantSerializer {
                 SlimeUtils.instant(object.field("updated"))));
     }
 
-    private Optional<String> planId(Inspector object) {
-        if (! object.valid()) return Optional.empty();
+    private PlanId planId(Inspector object) {
+        if (! object.valid()) return PlanId.from("none");
 
-        return Optional.of(object.asString());
+        return PlanId.from(object.asString());
     }
 
     private TenantContacts tenantContactsFrom(Inspector object) {

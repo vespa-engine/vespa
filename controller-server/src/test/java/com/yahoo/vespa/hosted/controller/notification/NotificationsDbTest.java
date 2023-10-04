@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -70,7 +71,7 @@ public class NotificationsDbTest {
             Instant.EPOCH,
             List.of(),
             Optional.empty(),
-            Optional.empty());
+            PlanId.from("none"));
     private static final List<Notification> notifications = List.of(
             notification(1001, Type.deployment, Level.error, NotificationSource.from(tenant), "tenant msg"),
             notification(1101, Type.applicationPackage, Level.warning, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),
