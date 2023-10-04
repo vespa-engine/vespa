@@ -106,7 +106,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
             curator.readAssignedCertificates().stream()
                    .map(AssignedCertificate::certificate)
-                   .map(EndpointCertificate::randomizedId)
+                   .map(EndpointCertificate::generatedId)
                    .forEach(id -> id.ifPresent(existingNames::add));
 
             String id = generateRandomId();
@@ -122,7 +122,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                             Optional.empty(),
                             endpointCertificateAlgo.value(),
                             useAlternateCertProvider.value())
-                                                               .withRandomizedId(id);
+                                                               .withGeneratedId(id);
 
             UnassignedCertificate certificate = new UnassignedCertificate(f, UnassignedCertificate.State.requested);
             curator.writeUnassignedCertificate(certificate);

@@ -11,7 +11,6 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -280,7 +279,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             */
         assignedCertificates.stream()
                 .filter(c -> c.instance().isPresent())
-                .filter(c -> c.certificate().randomizedId().isEmpty())
+                .filter(c -> c.certificate().generatedId().isEmpty())
                 .filter(c -> controller().applications().getApplication(c.application()).isPresent()) // In case application has been deleted, but certificate is pending deletion
                 .limit(assignRandomizedIdRate.value())
                 .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));
@@ -300,7 +299,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             log.log(Level.INFO, "Assigned certificate missing for " + tenantAndApplicationId.instance(instanceName).toFullString() + " when assigning randomized id");
         }
         // Verify that the assigned certificate still does not have randomized id assigned
-        if (assignedCertificate.get().certificate().randomizedId().isPresent()) return;
+        if (assignedCertificate.get().certificate().generatedId().isPresent()) return;
 
         controller().applications().lockApplicationOrThrow(tenantAndApplicationId, application -> {
             DeploymentSpec deploymentSpec = application.get().deploymentSpec();
@@ -320,7 +319,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             EndpointCertificate withRandomNames = requestRandomNames(
                     tenantAndApplicationId,
                     instanceLevelAssignedCertificate.instance(),
-                    applicationLevelAssignedCertificate.get().certificate().randomizedId()
+                    applicationLevelAssignedCertificate.get().certificate().generatedId()
                             .orElseThrow(() -> new IllegalArgumentException("Application certificate already assigned to " + tenantAndApplicationId.toString() + ", but random id is missing")),
                     Optional.of(instanceLevelAssignedCertificate.certificate()));
             AssignedCertificate assignedCertWithRandomNames = instanceLevelAssignedCertificate.with(withRandomNames);
@@ -365,12 +364,12 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         previousRequest,
                         endpointCertificateAlgo.value(),
                         useAlternateCertProvider.value())
-                .withRandomizedId(randomId);
+                .withGeneratedId(randomId);
     }
 
     private String generateRandomId() {
         List<String> unassignedIds = curator.readUnassignedCertificates().stream().map(UnassignedCertificate::id).toList();
-        List<String> assignedIds = curator.readAssignedCertificates().stream().map(AssignedCertificate::certificate).map(EndpointCertificate::randomizedId).filter(Optional::isPresent).map(Optional::get).toList();
+        List<String> assignedIds = curator.readAssignedCertificates().stream().map(AssignedCertificate::certificate).map(EndpointCertificate::generatedId).filter(Optional::isPresent).map(Optional::get).toList();
         Set<String> allIds = Stream.concat(unassignedIds.stream(), assignedIds.stream()).collect(Collectors.toSet());
         String randomId;
         do {

@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.perfUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
@@ -138,7 +137,7 @@ public class EndpointCertificateMaintainerTest {
         tester.clock().advance(Duration.ofDays(3));
         secretStore.setSecret(assignedCertificate.certificate().keyName(), "foo", 1);
         secretStore.setSecret(assignedCertificate.certificate().certName(), "bar", 1);
-        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate("preprovisioned." + assignedCertificate.certificate().randomizedId().get(), assignedCertificate.certificate().requestedDnsSans(), Optional.of(assignedCertificate.certificate()), "rsa_2048", false);
+        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate("preprovisioned." + assignedCertificate.certificate().generatedId().get(), assignedCertificate.certificate().requestedDnsSans(), Optional.of(assignedCertificate.certificate()), "rsa_2048", false);
 
         // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
@@ -206,7 +205,7 @@ public class EndpointCertificateMaintainerTest {
         assertTrue(applicationCertificate.isPresent());
         Optional<AssignedCertificate> instanceCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(app), Optional.of(app.instance()));
         assertTrue(instanceCertificate.isPresent());
-        assertEquals(instanceCertificate.get().certificate().randomizedId(), applicationCertificate.get().certificate().randomizedId());
+        assertEquals(instanceCertificate.get().certificate().generatedId(), applicationCertificate.get().certificate().generatedId());
 
         // Verify the 3 wildcard random names are same in all certs
         List<String> appWildcardSans = applicationCertificate.get().certificate().requestedDnsSans();
@@ -226,13 +225,13 @@ public class EndpointCertificateMaintainerTest {
         assertEquals(1, tester.curator().readAssignedCertificates().size());
         maintainer.maintain();
 
-        String randomId = tester.curator().readAssignedCertificate(instance1).get().certificate().randomizedId().get();
+        String randomId = tester.curator().readAssignedCertificate(instance1).get().certificate().generatedId().get();
 
         deployToAssignCert(deploymentTester, instance2, List.of(productionUsWest1), Optional.of("instance1,instance2"));
         maintainer.maintain();
         assertEquals(3, tester.curator().readAssignedCertificates().size());
 
-        assertEquals(randomId, tester.curator().readAssignedCertificate(instance1).get().certificate().randomizedId().get());
+        assertEquals(randomId, tester.curator().readAssignedCertificate(instance1).get().certificate().generatedId().get());
     }
 
     @Test
@@ -247,7 +246,7 @@ public class EndpointCertificateMaintainerTest {
 
         // Verify certificate is assigned random id and 3 new names
         Optional<AssignedCertificate> assignedCertificate = tester.curator().readAssignedCertificate(devApp);
-        assertTrue(assignedCertificate.get().certificate().randomizedId().isPresent());
+        assertTrue(assignedCertificate.get().certificate().generatedId().isPresent());
         List<String> newRequestedSans = assignedCertificate.get().certificate().requestedDnsSans();
         List<String> randomizedNames = newRequestedSans.stream().filter(san -> !originalRequestedSans.contains(san)).toList();
         assertEquals(3, randomizedNames.size());
