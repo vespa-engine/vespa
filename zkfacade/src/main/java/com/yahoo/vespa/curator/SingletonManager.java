@@ -425,7 +425,8 @@ class SingletonManager {
                 finally {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(ACTIVATION_MILLIS, durationMillis, context);
-                    logger.log(INFO, "Activation completed in %.3f seconds".formatted(durationMillis * 1e-3));
+                    logger.log(INFO, "Activation completed " + (failed ? "un" : "") +
+                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
                     else isActive = true;
                     ping();
@@ -447,7 +448,8 @@ class SingletonManager {
                 finally {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(DEACTIVATION_MILLIS, durationMillis, context);
-                    logger.log(INFO, "Deactivation completed in %.3f seconds".formatted(durationMillis * 1e-3));
+                    logger.log(INFO, "Deactivation completed " + (failed ? "un" : "") +
+                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
                     isActive = false;
                     ping();
