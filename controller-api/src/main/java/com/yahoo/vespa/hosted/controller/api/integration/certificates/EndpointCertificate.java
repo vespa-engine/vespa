@@ -135,4 +135,27 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.generatedId);
     }
 
+    /** Returns whether given DNS name matches any of the requested SANs in this */
+    public boolean sanMatches(String dnsName) {
+        return sanMatches(dnsName, requestedDnsSans);
+    }
+
+    static boolean sanMatches(String dnsName, List<String> sanDnsNames) {
+        return sanDnsNames.stream().anyMatch(sanDnsName -> sanMatches(dnsName, sanDnsName));
+    }
+
+    private static boolean sanMatches(String dnsName, String sanDnsName) {
+        String[] sanNameParts = sanDnsName.split("\\.");
+        String[] dnsNameParts = dnsName.split("\\.");
+        if (sanNameParts.length != dnsNameParts.length || sanNameParts.length == 0) {
+            return false;
+        }
+        for (int i = 0; i < sanNameParts.length; i++) {
+            if (!sanNameParts[i].equals("*") && !sanNameParts[i].equals(dnsNameParts[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

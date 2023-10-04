@@ -34,6 +34,7 @@ public record PreparedEndpoints(DeploymentId deployment,
         this.endpoints = Objects.requireNonNull(endpoints);
         this.rotations = List.copyOf(Objects.requireNonNull(rotations));
         this.certificate = Objects.requireNonNull(certificate);
+        certificate.ifPresent(endpointCertificate -> requireMatchingSans(endpointCertificate, endpoints));
     }
 
     /** Returns the endpoints contained in this as {@link com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint} */
@@ -98,6 +99,15 @@ public record PreparedEndpoints(DeploymentId deployment,
             case weighted -> "weighted";
             case zone -> "zone";
         };
+    }
+
+    private static void requireMatchingSans(EndpointCertificate certificate, EndpointList endpoints) {
+        for (var endpoint : endpoints.not().scope(Endpoint.Scope.weighted)) { // Weighted endpoints are not present in certificate
+            if (!certificate.sanMatches(endpoint.dnsName())) {
+                throw new IllegalArgumentException(endpoint + " has no matching SAN. Certificate contains " +
+                                                   certificate.requestedDnsSans());
+            }
+        }
     }
 
 }
