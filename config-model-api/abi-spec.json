@@ -1289,7 +1289,8 @@
       "public boolean useReconfigurableDispatcher()",
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
-      "public java.lang.String unknownConfigDefinition()"
+      "public java.lang.String unknownConfigDefinition()",
+      "public int searchHandlerThreadpool()"
     ],
     "fields" : [ ]
   },
