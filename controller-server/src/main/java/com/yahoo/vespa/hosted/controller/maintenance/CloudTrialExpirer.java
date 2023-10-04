@@ -40,7 +40,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     protected double maintain() {
         var a = tombstoneNonePlanTenants();
         var b = moveInactiveTenantsToNonePlan();
-        return (a ? 0.5 : 0.0) + (b ? 0.5 : 0.0);
+        return (a ? 0.0 : -0.5) + (b ? 0.0 : -0.5);
     }
 
     private boolean moveInactiveTenantsToNonePlan() {
