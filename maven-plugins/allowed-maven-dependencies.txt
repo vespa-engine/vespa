@@ -26,11 +26,11 @@ org.apache.maven.enforcer:enforcer-api:${maven-enforcer-plugin.vespa.version}
 org.apache.maven.enforcer:enforcer-rules:${maven-enforcer-plugin.vespa.version}
 org.apache.maven.plugin-tools:maven-plugin-annotations:${maven-plugin-tools.vespa.version}
 org.apache.maven.plugins:maven-shade-plugin:${maven-shade-plugin.vespa.version}
-org.apache.maven.resolver:maven-resolver-api:1.9.14
-org.apache.maven.resolver:maven-resolver-impl:1.9.14
-org.apache.maven.resolver:maven-resolver-named-locks:1.9.14
-org.apache.maven.resolver:maven-resolver-spi:1.9.14
-org.apache.maven.resolver:maven-resolver-util:1.9.14
+org.apache.maven.resolver:maven-resolver-api:${maven-resolver.vespa.version}
+org.apache.maven.resolver:maven-resolver-impl:${maven-resolver.vespa.version}
+org.apache.maven.resolver:maven-resolver-named-locks:${maven-resolver.vespa.version}
+org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
+org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
 org.apache.maven.shared:maven-dependency-tree:3.2.1
 org.apache.maven.shared:maven-shared-utils:3.3.4
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
