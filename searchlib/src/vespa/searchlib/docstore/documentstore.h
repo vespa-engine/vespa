@@ -85,6 +85,7 @@ public:
     DataStoreStorageStats getStorageStats() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
+    size_t getCacheCapacity() const;
 
     /**
      * Implements common::ICompactableLidSpace

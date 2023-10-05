@@ -291,13 +291,17 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitializerResu
     _lastConfiguredCompactionStrategy = dms->getConfig().getCompactionStrategy();
 }
 
+namespace {
+
 search::LogDocumentStore::Config
-createStoreConfig(const search::LogDocumentStore::Config & original, SubDbType subDbType) {
+createStoreConfig(const search::LogDocumentStore::Config &original, SubDbType subDbType) {
     search::LogDocumentStore::Config cfg = original;
     if (subDbType == SubDbType::REMOVED) {
         cfg.disableCache();
     }
     return cfg;
+}
+
 }
 
 DocumentSubDbInitializer::UP
@@ -310,7 +314,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
-    auto summaryTask = createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
+    auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,
                                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
                                                        result->result().documentMetaStore()->documentMetaStore(),
