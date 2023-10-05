@@ -82,7 +82,7 @@ class ProcessingFactory {
         String componentId = typeConfig.factorycomponent(); // Class name of the factory
         AbstractConcreteDocumentFactory cdf = docFactoryRegistry.getComponent(new ComponentId(componentId));
         if (cdf == null) {
-            log.fine("Unable to get document factory component '" + componentId + "' from document factory registry.");
+            log.fine(() -> "Unable to get document factory component '" + componentId + "' from document factory registry.");
             return document;
         }
         return cdf.getDocumentCopy(document.getDataType().getName(), document, document.getId());

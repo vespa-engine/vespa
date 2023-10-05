@@ -38,6 +38,7 @@ public class FilterBindingsProvider implements Provider<FilterBindings> {
             FilterBindings.Builder builder = new FilterBindings.Builder();
             configureLegacyFilters(builder, componentId, legacyRequestFilters);
             configureFilters(builder, config, filterChainRepository);
+            builder.setStrictFiltering(config.strictFiltering());
             this.filterBindings = builder.build();
         } catch (Exception e) {
             throw new RuntimeException(

@@ -53,7 +53,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static final int STD_INDENT = 4;
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
     /**
