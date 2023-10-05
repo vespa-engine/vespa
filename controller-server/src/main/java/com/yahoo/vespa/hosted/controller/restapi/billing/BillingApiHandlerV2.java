@@ -273,7 +273,10 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
         var exportMethod = slime.get().field("method").asString();
         var result = billing.exportBill(bill, exportMethod, cloudTenant);
-        return new MessageResponse("Bill has been exported: " + result);
+
+        var responseSlime = new Slime();
+        responseSlime.setObject().setString("invoiceId", result);
+        return new SlimeJsonResponse(responseSlime);
     }
 
     // --------- INVOICE RENDERING ----------
