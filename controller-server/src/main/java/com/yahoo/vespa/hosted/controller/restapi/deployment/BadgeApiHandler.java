@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -53,7 +54,8 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
         Method method = request.getMethod();
         try {
             return switch (method) {
-                case GET -> get(request);
+                case OPTIONS -> new SvgHttpResponse("") {{ headers().add("Allow", "GET, HEAD, OPTIONS"); }};
+                case HEAD, GET -> get(request);
                 default -> ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
             };
         } catch (IllegalArgumentException|IllegalStateException e) {
@@ -98,20 +100,20 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private HttpResponse cachedResponse(Key key, Instant now, Supplier<String> badge)  {
-        return svgResponse(badgeCache.compute(key, (__, value) -> {
+        return new SvgHttpResponse(badgeCache.compute(key, (__, value) -> {
             return value != null && value.expiry.isAfter(now) ? value : new Value(badge.get(), now);
         }).badgeSvg);
     }
 
-    private static HttpResponse svgResponse(String svg) {
-        return new HttpResponse(200) {
-            @Override public void render(OutputStream outputStream) throws IOException {
-                outputStream.write(svg.getBytes(UTF_8));
-            }
-            @Override public String getContentType() {
-                return "image/svg+xml; charset=UTF-8";
-            }
-        };
+    private static class SvgHttpResponse extends HttpResponse {
+        private final String svg;
+        SvgHttpResponse(String svg) { super(200); this.svg = svg; }
+        @Override public void render(OutputStream outputStream) throws IOException {
+            outputStream.write(svg.getBytes(UTF_8));
+        }
+        @Override public String getContentType() {
+            return "image/svg+xml";
+        }
     }
 
 
