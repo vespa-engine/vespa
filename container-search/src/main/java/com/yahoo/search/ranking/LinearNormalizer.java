@@ -8,18 +8,20 @@ class LinearNormalizer extends Normalizer {
     }
 
     void normalize() {
-        double min = data[0];
-        double max = data[0];
-        for (int i = 1; i < size; i++) {
-            min = Math.min(min, data[i]);
-            max = Math.max(max, data[i]);
+        double min = Float.MAX_VALUE;
+        double max = -Float.MAX_VALUE;
+        for (int i = 0; i < size; i++) {
+            double val = data[i];
+            if (val < Float.MAX_VALUE && val > -Float.MAX_VALUE) {
+                min = Math.min(min, data[i]);
+                max = Math.max(max, data[i]);
+            }
         }
-        min = Math.max(min, -Float.MAX_VALUE);
-        max = Math.min(max, Float.MAX_VALUE);
         double scale = 0.0;
-        double midpoint = (min + max) * 0.5;
+        double midpoint = 0.0;
         if (max > min) {
             scale = 1.0 / (max - min);
+            midpoint = (min + max) * 0.5;
         }
         for (int i = 0; i < size; i++) {
             double old = data[i];

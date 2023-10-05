@@ -28,6 +28,31 @@ public class NormalizerTestCase {
     }
 
     @Test
+    void requireLinearHandlesInfinity() {
+        var n = new LinearNormalizer("foo", "bar", 10);
+        assertEquals(0, n.addInput(Double.NEGATIVE_INFINITY));
+        assertEquals(1, n.addInput(1.0));
+        assertEquals(2, n.addInput(9.0));
+        assertEquals(3, n.addInput(5.0));
+        assertEquals(4, n.addInput(Double.NaN));
+        assertEquals(5, n.addInput(3.0));
+        assertEquals(6, n.addInput(Double.POSITIVE_INFINITY));
+        assertEquals(7, n.addInput(8.0));
+        n.normalize();
+        assertEquals(Double.NEGATIVE_INFINITY, n.getOutput(0));
+        assertEquals(0.0, n.getOutput(1));
+        assertEquals(1.0, n.getOutput(2));
+        assertEquals(0.5, n.getOutput(3));
+        assertEquals(Double.NaN, n.getOutput(4));
+        assertEquals(0.25, n.getOutput(5));
+        assertEquals(Double.POSITIVE_INFINITY, n.getOutput(6));
+        assertEquals(0.875, n.getOutput(7));
+        assertEquals("foo", n.name());
+        assertEquals("bar", n.input());
+        assertEquals("linear", n.normalizing());
+    }
+
+    @Test
     void requireReciprocalNormalizing() {
         var n = new ReciprocalRankNormalizer("foo", "bar", 10, 0.0);
         assertEquals(0, n.addInput(-4.1));
@@ -59,6 +84,32 @@ public class NormalizerTestCase {
         assertEquals("foo", n.name());
         assertEquals("bar", n.input());
         assertEquals("reciprocal-rank{k:4.2}", n.normalizing());
+    }
+
+    @Test
+    void requireReciprocalInfinities() {
+        var n = new ReciprocalRankNormalizer("foo", "bar", 10, 0.0);
+        assertEquals(0, n.addInput(Double.NEGATIVE_INFINITY));
+        assertEquals(1, n.addInput(1.0));
+        assertEquals(2, n.addInput(9.0));
+        assertEquals(3, n.addInput(5.0));
+        assertEquals(4, n.addInput(Double.NaN));
+        assertEquals(5, n.addInput(3.0));
+        assertEquals(6, n.addInput(Double.POSITIVE_INFINITY));
+        assertEquals(7, n.addInput(8.0));
+        n.normalize();
+        assertEquals(1.0/7.0, n.getOutput(0));
+        assertEquals(1.0/6.0, n.getOutput(1));
+        assertEquals(1.0/2.0, n.getOutput(2));
+        assertEquals(1.0/4.0, n.getOutput(3));
+        assertEquals(1.0/8.0, n.getOutput(4));
+        assertEquals(1.0/5.0, n.getOutput(5));
+        assertEquals(1.0/1.0, n.getOutput(6));
+        assertEquals(1.0/3.0, n.getOutput(7));
+        n.normalize();
+        assertEquals("foo", n.name());
+        assertEquals("bar", n.input());
+        assertEquals("reciprocal-rank{k:0.0}", n.normalizing());
     }
 
 }

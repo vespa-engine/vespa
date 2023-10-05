@@ -9,7 +9,7 @@ class ReciprocalRankNormalizer extends Normalizer {
 
     ReciprocalRankNormalizer(String name, String input, int maxSize, double k) {
         super(name, input, maxSize);
-	this.k = k;
+        this.k = k;
     }
 
     static record IdxScore(int index, double score) {}
@@ -18,7 +18,9 @@ class ReciprocalRankNormalizer extends Normalizer {
         if (size < 1) return;
         IdxScore[] temp = new IdxScore[size];
         for (int i = 0; i < size; i++) {
-            temp[i] = new IdxScore(i, data[i]);
+            double val = data[i];
+            if (Double.isNaN(val)) val = Double.NEGATIVE_INFINITY;
+            temp[i] = new IdxScore(i, val);
         }
         Arrays.sort(temp, (a, b) -> Double.compare(b.score, a.score));
         for (int i = 0; i < size; i++) {
