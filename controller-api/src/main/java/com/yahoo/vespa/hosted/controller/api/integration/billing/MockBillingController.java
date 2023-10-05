@@ -28,7 +28,7 @@ public class MockBillingController implements BillingController {
     Map<TenantName, PlanId> plans = new HashMap<>();
     Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
     Map<TenantName, List<Bill>> committedBills = new HashMap<>();
-    Map<TenantName, Bill> uncommittedBills = new HashMap<>();
+    public Map<TenantName, Bill> uncommittedBills = new HashMap<>();
     Map<TenantName, List<Bill.LineItem>> unusedLineItems = new HashMap<>();
     Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
 

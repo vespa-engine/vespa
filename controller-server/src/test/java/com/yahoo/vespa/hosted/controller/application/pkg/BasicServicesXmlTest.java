@@ -18,11 +18,13 @@ class BasicServicesXmlTest {
     public void parse() {
         assertServices(new BasicServicesXml(List.of()), "<services/>");
         assertServices(new BasicServicesXml(List.of(new Container("foo", List.of(Container.AuthMethod.mtls), List.of()),
-                                                    new Container("bar", List.of(Container.AuthMethod.mtls), List.of()))),
+                                                    new Container("bar", List.of(Container.AuthMethod.mtls), List.of()),
+                                                    new Container("container", List.of(Container.AuthMethod.mtls), List.of()))),
                        """
                                <services>
                                  <container id="foo"/>
                                  <container id="bar"/>
+                                 <container/>
                                </services>
                                """);
         assertServices(new BasicServicesXml(List.of(

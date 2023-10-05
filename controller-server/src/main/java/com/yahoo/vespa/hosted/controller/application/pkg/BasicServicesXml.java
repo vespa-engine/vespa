@@ -9,7 +9,6 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.TreeSet;
 
 /**
  * A partially parsed variant of services.xml, for use by the {@link com.yahoo.vespa.hosted.controller.Controller}.
@@ -40,7 +39,9 @@ public record BasicServicesXml(List<Container> containers) {
         for (var childNode : XML.getChildren(root)) {
             if (childNode.getTagName().equals(CONTAINER_TAG)) {
                 String id = childNode.getAttribute("id");
-                if (id.isEmpty()) throw new IllegalArgumentException(CONTAINER_TAG + " tag requires 'id' attribute");
+                if (id.isEmpty()) {
+                    id = CONTAINER_TAG; // ID defaults to tag name when unset. See ConfigModelBuilder::getIdString
+                }
                 List<Container.AuthMethod> methods = new ArrayList<>();
                 List<TokenId> tokens = new ArrayList<>();
                 parseAuthMethods(childNode, methods, tokens);

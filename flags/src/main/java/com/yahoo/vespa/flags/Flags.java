@@ -422,6 +422,13 @@ public class Flags {
             "Takes effect on redeployment through controller",
             INSTANCE_ID, APPLICATION_ID, TENANT_ID);
 
+    public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
+            "search-handler-threadpool", 2,
+            List.of("bjorncs", "baldersheim"), "2023-10-01", "2024-01-01",
+            "Adjust search handler threadpool size",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

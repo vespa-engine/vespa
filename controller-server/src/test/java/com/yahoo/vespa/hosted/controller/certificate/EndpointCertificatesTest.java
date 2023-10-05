@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.maintenance.EndpointCertificateMaintainer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -296,7 +295,7 @@ public class EndpointCertificatesTest {
         // Initial certificate is requested directly from provider
         Optional<EndpointCertificate> certFromProvider = endpointCertificates.get(instance, prodZone, DeploymentSpec.empty);
         assertTrue(certFromProvider.isPresent());
-        assertFalse(certFromProvider.get().randomizedId().isPresent());
+        assertFalse(certFromProvider.get().generatedId().isPresent());
 
         // Pooled certificates become available
         tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
@@ -315,8 +314,8 @@ public class EndpointCertificatesTest {
             String certId = "pool-cert-1";
             addCertificateToPool(certId, UnassignedCertificate.State.ready);
             Optional<EndpointCertificate> cert = endpointCertificates.get(instance, prodZone, DeploymentSpec.empty);
-            assertEquals(certId, cert.get().randomizedId().get());
-            assertEquals(certId, tester.curator().readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty()).get().certificate().randomizedId().get(), "Certificate is assigned at application-level");
+            assertEquals(certId, cert.get().generatedId().get());
+            assertEquals(certId, tester.curator().readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty()).get().certificate().generatedId().get(), "Certificate is assigned at application-level");
             assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
             assertEquals(clock.instant().getEpochSecond(), cert.get().lastRequested());
         }
@@ -326,8 +325,8 @@ public class EndpointCertificatesTest {
             addCertificateToPool(certId, UnassignedCertificate.State.ready);
             ZoneId devZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
             Optional<EndpointCertificate> cert = endpointCertificates.get(instance, devZone, DeploymentSpec.empty);
-            assertEquals(certId, cert.get().randomizedId().get());
-            assertEquals(certId, tester.curator().readAssignedCertificate(instance.id()).get().certificate().randomizedId().get(), "Certificate is assigned at instance-level");
+            assertEquals(certId, cert.get().generatedId().get());
+            assertEquals(certId, tester.curator().readAssignedCertificate(instance.id()).get().certificate().generatedId().get(), "Certificate is assigned at instance-level");
             assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
             assertEquals(clock.instant().getEpochSecond(), cert.get().lastRequested());
         }
@@ -338,7 +337,7 @@ public class EndpointCertificatesTest {
         // Initial certificate is requested directly from provider
         Optional<EndpointCertificate> certFromProvider = endpointCertificates.get(instance, prodZone, DeploymentSpec.empty);
         assertTrue(certFromProvider.isPresent());
-        assertFalse(certFromProvider.get().randomizedId().isPresent());
+        assertFalse(certFromProvider.get().generatedId().isPresent());
 
         // Simulate endpoint certificate maintainer to assign random id
         TenantAndApplicationId tenantAndApplicationId = TenantAndApplicationId.from(instance.id());
@@ -346,7 +345,7 @@ public class EndpointCertificatesTest {
         Optional<AssignedCertificate> assignedCertificate = tester.controller().curator().readAssignedCertificate(tenantAndApplicationId, instanceName);
         assertTrue(assignedCertificate.isPresent());
         String assignedRandomId = "randomid";
-        AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withRandomizedId(assignedRandomId));
+        AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withGeneratedId(assignedRandomId));
         tester.controller().curator().writeAssignedCertificate(updated);
 
         // Pooled certificates become available
@@ -358,12 +357,12 @@ public class EndpointCertificatesTest {
 
         // Request cert for app
         Optional<EndpointCertificate> cert = endpointCertificates.get(instance, prodZone, DeploymentSpec.empty);
-        assertEquals(assignedRandomId, cert.get().randomizedId().get());
+        assertEquals(assignedRandomId, cert.get().generatedId().get());
 
         // Pooled cert remains unassigned
         List<String> unassignedCertificateIds = tester.curator().readUnassignedCertificates().stream()
                 .map(UnassignedCertificate::certificate)
-                .map(EndpointCertificate::randomizedId)
+                .map(EndpointCertificate::generatedId)
                 .map(Optional::get)
                 .toList();
         assertEquals(List.of(certId), unassignedCertificateIds);

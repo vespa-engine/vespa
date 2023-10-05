@@ -174,16 +174,15 @@ WriteableFileChunk::~WriteableFileChunk()
     }
 }
 
-size_t
+void
 WriteableFileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
-    size_t sz = FileChunk::updateLidMap(guard, ds, serialNum, docIdLimit);
+    FileChunk::updateLidMap(guard, ds, serialNum, docIdLimit);
     _nextChunkId = _chunkInfo.size();
     _active = std::make_unique<Chunk>(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes()));
     _serialNum = getLastPersistedSerialNum();
     _firstChunkIdToBeWritten = _active->getId();
     setDiskFootprint(0);
-    return sz;
 }
 
 void

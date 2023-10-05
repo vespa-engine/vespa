@@ -119,11 +119,11 @@ public class EndpointCertificates {
 
         TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
         Optional<AssignedCertificate> perInstanceAssignedCertificate = curator.readAssignedCertificate(application, Optional.of(instance.name()));
-        if (perInstanceAssignedCertificate.isPresent() && perInstanceAssignedCertificate.get().certificate().randomizedId().isPresent()) {
+        if (perInstanceAssignedCertificate.isPresent() && perInstanceAssignedCertificate.get().certificate().generatedId().isPresent()) {
             return updateLastRequested(perInstanceAssignedCertificate.get()).certificate();
         } else if (! zone.environment().isManuallyDeployed()) {
             Optional<AssignedCertificate> perApplicationAssignedCertificate = curator.readAssignedCertificate(application, Optional.empty());
-            if (perApplicationAssignedCertificate.isPresent() && perApplicationAssignedCertificate.get().certificate().randomizedId().isPresent()) {
+            if (perApplicationAssignedCertificate.isPresent() && perApplicationAssignedCertificate.get().certificate().generatedId().isPresent()) {
                 return updateLastRequested(perApplicationAssignedCertificate.get()).certificate();
             }
         }
@@ -181,7 +181,7 @@ public class EndpointCertificates {
         boolean legacyNames = assignLegacyNames.with(FetchVector.Dimension.INSTANCE_ID, instance.id().serializedForm())
                 .with(FetchVector.Dimension.APPLICATION_ID, instance.id().toSerializedFormWithoutInstance()).value();
 
-        var requiredSansForZone = legacyNames || currentCertificate.get().randomizedId().isEmpty() ?
+        var requiredSansForZone = legacyNames || currentCertificate.get().generatedId().isEmpty() ?
                 controller.routing().certificateDnsNames(deployment, deploymentSpec) :
                 List.<String>of();
 
