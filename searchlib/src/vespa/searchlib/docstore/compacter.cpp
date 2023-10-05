@@ -41,9 +41,8 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
     _bucketizerGuard(),
     _stat()
 {
-    _tmpStore.reserve(256);
-    for (size_t i(0); i < 256; i++) {
-        _tmpStore.emplace_back(_backingMemory, executor, compression);
+    for (size_t i(0); i < _tmpStore.size(); i++) {
+        _tmpStore[i] = std::make_unique<StoreByBucket>(_backingMemory, executor, compression);
     }
 }
 
@@ -62,7 +61,7 @@ BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const vo
     guard.unlock();
     BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
     uint64_t sortableBucketId = bucketId.toKey();
-    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
+    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()]->add(bucketId, chunkId, lid, buffer, sz);
     if ((_writeCount % 1000) == 0) {
         _bucketizerGuard = _bucketizer.getGuard();
         vespalib::steady_time now = vespalib::steady_clock::now();
@@ -79,19 +78,21 @@ BucketCompacter::close()
     size_t lidCount1(0);
     size_t bucketCount(0);
     size_t chunkCount(0);
-    for (StoreByBucket & store : _tmpStore) {
-        store.close();
-        lidCount1 += store.getLidCount();
-        bucketCount += store.getBucketCount();
-        chunkCount += store.getChunkCount();
+    for (const auto & store : _tmpStore) {
+        store->close();
+        lidCount1 += store->getLidCount();
+        bucketCount += store->getBucketCount();
+        chunkCount += store->getChunkCount();
     }
     LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks."
               " Max bucket guard held for %" PRId64 " us, and last before close for %" PRId64 " us",
               lidCount1, bucketCount, chunkCount, vespalib::count_us(_maxBucketGuardDuration), vespalib::count_us(lastBucketGuardDuration));
 
-    for (StoreByBucket & store : _tmpStore) {
-        store.drain(*this);
+    for (auto & store_ref : _tmpStore) {
+        auto store = std::move(store_ref);
+        store->drain(*this);
     }
+    // All partitions using _backingMemory should be destructed before clearing.
     _backingMemory.clear();
 
     size_t lidCount(0);

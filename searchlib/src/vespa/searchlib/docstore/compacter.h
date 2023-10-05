@@ -41,7 +41,9 @@ public:
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
     void close() override;
 private:
+    static constexpr size_t NUM_PARTITIONS = 256;
     using GenerationHandler = vespalib::GenerationHandler;
+    using Partitions = std::array<std::unique_ptr<StoreByBucket>, NUM_PARTITIONS>;
     FileId getDestinationId(const LockGuard & guard) const;
     size_t                     _unSignificantBucketBits;
     FileId                     _sourceFileId;
@@ -53,7 +55,7 @@ private:
     vespalib::steady_time      _lastSample;
     std::mutex                 _lock;
     vespalib::MemoryDataStore  _backingMemory;
-    std::vector<StoreByBucket> _tmpStore;
+    Partitions                 _tmpStore;
     GenerationHandler::Guard   _lidGuard;
     GenerationHandler::Guard   _bucketizerGuard;
     vespalib::hash_map<uint64_t, uint32_t> _stat;
