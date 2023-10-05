@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  */
 public record GeneratedEndpoint(String clusterPart, String applicationPart, AuthMethod authMethod, Optional<EndpointId> endpoint) {
 
-    private static final Pattern PART_PATTERN = Pattern.compile("^[a-f][a-f0-9]{7}$");
+    private static final Pattern CLUSTER_PART_PATTERN = Pattern.compile("^([a-f][a-f0-9]{7}|\\*)$");
+    private static final Pattern APPLICATION_PART_PATTERN = Pattern.compile("^[a-f][a-f0-9]{7}$");
 
     public GeneratedEndpoint {
         Objects.requireNonNull(clusterPart);
@@ -24,8 +25,8 @@ public record GeneratedEndpoint(String clusterPart, String applicationPart, Auth
         Objects.requireNonNull(authMethod);
         Objects.requireNonNull(endpoint);
 
-        Validation.requireMatch(clusterPart, "Cluster part", PART_PATTERN);
-        Validation.requireMatch(applicationPart, "Application part", PART_PATTERN);
+        Validation.requireMatch(clusterPart, "Cluster part", CLUSTER_PART_PATTERN);
+        Validation.requireMatch(applicationPart, "Application part", APPLICATION_PART_PATTERN);
     }
 
     /** Returns whether this was generated for an endpoint declared in {@link com.yahoo.config.application.api.DeploymentSpec} */
