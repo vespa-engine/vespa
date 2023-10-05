@@ -26,7 +26,7 @@ class StoreByBucket
 public:
     StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, CompressionConfig compression) noexcept;
     //TODO Putting the below move constructor into cpp file fails for some unknown reason. Needs to be resolved.
-    StoreByBucket(StoreByBucket &&) noexcept = default;
+    StoreByBucket(StoreByBucket &&) noexcept = delete;
     StoreByBucket(const StoreByBucket &) = delete;
     StoreByBucket & operator=(StoreByBucket &&) noexcept = delete;
     StoreByBucket & operator = (const StoreByBucket &) = delete;
@@ -72,8 +72,8 @@ private:
     std::map<uint64_t, IndexVector>              _where;
     MemoryDataStore                            & _backingMemory;
     Executor                                   & _executor;
-    std::unique_ptr<std::mutex>                  _lock;
-    std::unique_ptr<std::condition_variable>     _cond;
+    mutable std::mutex                           _lock;
+    std::condition_variable                      _cond;
     size_t                                       _numChunksPosted;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
     CompressionConfig                            _compression;

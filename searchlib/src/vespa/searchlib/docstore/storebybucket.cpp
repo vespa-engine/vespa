@@ -19,8 +19,8 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executo
       _where(),
       _backingMemory(backingMemory),
       _executor(executor),
-      _lock(std::make_unique<std::mutex>()),
-      _cond(std::make_unique<std::condition_variable>()),
+      _lock(),
+      _cond(),
       _numChunksPosted(0),
       _chunks(),
       _compression(compression)
@@ -55,7 +55,7 @@ StoreByBucket::createChunk()
 
 size_t
 StoreByBucket::getChunkCount() const {
-    std::lock_guard guard(*_lock);
+    std::lock_guard guard(_lock);
     return _chunks.size();
 }
 
@@ -66,24 +66,24 @@ StoreByBucket::closeChunk(Chunk::UP chunk)
     chunk->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
     ConstBufferRef bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
-    std::lock_guard guard(*_lock);
+    std::lock_guard guard(_lock);
     _chunks[chunk->getId()] = bufferRef;
     if (_numChunksPosted == _chunks.size()) {
-        _cond->notify_one();
+        _cond.notify_one();
     }
 }
 
 void
 StoreByBucket::incChunksPosted() {
-    std::lock_guard guard(*_lock);
+    std::lock_guard guard(_lock);
     _numChunksPosted++;
 }
 
 void
 StoreByBucket::waitAllProcessed() {
-    std::unique_lock guard(*_lock);
+    std::unique_lock guard(_lock);
     while (_numChunksPosted != _chunks.size()) {
-        _cond->wait(guard);
+        _cond.wait(guard);
     }
 }
 
