@@ -225,7 +225,7 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
             LOG(error, "Could not open schema '%s'", schemaName.c_str());
         }
         if (trimmedSchema != d->getSchema()) {
-            std::shared_ptr<IDiskIndex> newIndex(reloadDiskIndex(*d));
+            auto newIndex(reloadDiskIndex(*d));
             coll.replace(coll.getSourceId(i), newIndex);
             hasReopenedAnything = true;
         }
@@ -280,10 +280,10 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
         if (!activeFusionSchema)
             return;	// No active fusion
         if (!activeFusionPrunedSchema) {
-            std::unique_ptr<Schema> newSchema = Schema::intersect(*activeFusionSchema, schema);
+            auto newSchema = Schema::intersect(*activeFusionSchema, schema);
             newActiveFusionPrunedSchema = std::move(newSchema);
         } else {
-            std::unique_ptr<Schema> newSchema = Schema::intersect(*activeFusionPrunedSchema, schema);
+            auto newSchema = Schema::intersect(*activeFusionPrunedSchema, schema);
             newActiveFusionPrunedSchema = std::move(newSchema);
         }
         {
@@ -360,7 +360,7 @@ IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
     // Called by a flush worker thread
     const string flushDir = getFlushDir(indexId);
     memoryIndex.flushToDisk(flushDir, docIdLimit, serialNum);
-    std::shared_ptr<Schema> prunedSchema(memoryIndex.getPrunedSchema());
+    auto prunedSchema(memoryIndex.getPrunedSchema());
     if (prunedSchema) {
         updateDiskIndexSchema(flushDir, *prunedSchema, noSerialNumHigh);
     }
@@ -416,7 +416,7 @@ IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSea
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
-    std::unique_ptr<ISearchableIndexCollection> indexes = createNewSourceCollection(lock);
+    auto indexes = createNewSourceCollection(lock);
     indexes->replace(sourceId, source);
     swapInNewIndex(lock, std::move(indexes), *source);
 }
@@ -969,7 +969,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         set_current_serial_num(std::max(current_serial_num(), serialNum));
     }
 
-    std::shared_ptr<IMemoryIndex> new_index(_operations.createMemoryIndex(getSchema(), *_current_index, current_serial_num()));
+    auto new_index(_operations.createMemoryIndex(getSchema(), *_current_index, current_serial_num()));
     FlushArgs args;
     args.stats = stats;
     // Ensure that all index thread tasks accessing memory index have completed.
@@ -1114,12 +1114,12 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     }
 
     const string new_fusion_dir = getFusionDir(new_fusion_id);
-    std::shared_ptr<Schema> prunedSchema = getActiveFusionPrunedSchema();
+    auto prunedSchema = getActiveFusionPrunedSchema();
     if (prunedSchema) {
         updateDiskIndexSchema(new_fusion_dir, *prunedSchema, noSerialNumHigh);
     }
     ChangeGens changeGens = getChangeGens();
-    std::shared_ptr<IDiskIndex> new_index(loadDiskIndex(new_fusion_dir));
+    auto new_index(loadDiskIndex(new_fusion_dir));
     remove_fusion_index_guard.reset();
 
     // Post processing after fusion operation has completed and new disk
@@ -1314,7 +1314,7 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
-    std::shared_ptr<IMemoryIndex> new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
+    auto new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
     SetSchemaArgs args;
 
     args._newSchema = schema;
@@ -1331,7 +1331,7 @@ IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     std::shared_ptr<ISearchableIndexCollection> new_source_list;
-    std::shared_ptr<IIndexCollection> coll = getSourceCollection();
+    auto coll = getSourceCollection();
     updateIndexSchemas(*coll, schema, serialNum);
     updateActiveFusionPrunedSchema(schema);
     {
