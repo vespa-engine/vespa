@@ -268,11 +268,11 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
 
 
 void
-StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP dmsResult)
+StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitializerResult & dmsResult)
 {
     vespalib::string baseDir(_baseDir + "/documentmetastore");
     vespalib::string name = DocumentMetaStore::getFixedName();
-    DocumentMetaStore::SP dms(dmsResult->documentMetaStore());
+    DocumentMetaStore::SP dms(dmsResult.documentMetaStore());
     if (dms->isLoaded()) {
         _flushedDocumentMetaStoreSerialNum = dms->getStatus().getLastSyncToken();
     }
@@ -281,7 +281,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     LOG(debug, "Added document meta store '%s' with flushed serial num %" PRIu64,
                name.c_str(), _flushedDocumentMetaStoreSerialNum);
     _dms = dms;
-    _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(dms, _tlsSyncer, baseDir, dmsResult->tuneFile(),
+    _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(dms, _tlsSyncer, baseDir, dmsResult.tuneFile(),
                                                                      _fileHeaderContext, _hwInfo);
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
@@ -289,6 +289,19 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
                                                                    Component::ATTRIBUTE, _flushedDocumentMetaStoreSerialNum,
                                                                    _dmsFlushTarget->getLastFlushTime(), dms);
     _lastConfiguredCompactionStrategy = dms->getConfig().getCompactionStrategy();
+}
+
+namespace {
+
+search::LogDocumentStore::Config
+createStoreConfig(const search::LogDocumentStore::Config &original, SubDbType subDbType) {
+    search::LogDocumentStore::Config cfg = original;
+    if (subDbType == SubDbType::REMOVED) {
+        cfg.disableCache();
+    }
+    return cfg;
+}
+
 }
 
 DocumentSubDbInitializer::UP
@@ -301,7 +314,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
-    auto summaryTask = createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
+    auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,
                                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
                                                        result->result().documentMetaStore()->documentMetaStore(),
@@ -316,7 +329,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
 void
 StoreOnlyDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
 {
-    setupDocumentMetaStore(initResult.documentMetaStore());
+    setupDocumentMetaStore(*initResult.documentMetaStore());
     setupSummaryManager(initResult.summaryManager());
 }
 

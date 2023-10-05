@@ -121,6 +121,10 @@ DocumentStore::Config::operator == (const Config &rhs) const {
             (_compression == rhs._compression);
 }
 
+size_t
+DocumentStore::getCacheCapacity() const {
+    return _cache->capacityBytes();
+}
 
 DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
