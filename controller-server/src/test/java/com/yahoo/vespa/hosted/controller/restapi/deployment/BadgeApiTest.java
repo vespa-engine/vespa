@@ -89,7 +89,9 @@ public class BadgeApiTest extends ControllerContainerTest {
                               200);
 
         tester.assertResponse(() -> authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default", "", Method.OPTIONS),
-                              response -> Assertions.assertEquals(List.of(Map.entry("Allow", "GET, HEAD, OPTIONS"),
+                              response -> Assertions.assertEquals(List.of(Map.entry("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"),
+                                                                          Map.entry("Access-Control-Allow-Origin", "*"),
+                                                                          Map.entry("Allow", "GET, HEAD, OPTIONS"),
                                                                           Map.entry("Content-Type", "image/svg+xml; charset=UTF-8")),
                                                                   response.getHeaders().entries()),
                               200);

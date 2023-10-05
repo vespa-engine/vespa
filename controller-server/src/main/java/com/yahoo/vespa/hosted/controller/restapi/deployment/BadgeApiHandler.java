@@ -54,7 +54,11 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
         Method method = request.getMethod();
         try {
             return switch (method) {
-                case OPTIONS -> new SvgHttpResponse("") {{ headers().add("Allow", "GET, HEAD, OPTIONS"); }};
+                case OPTIONS -> new SvgHttpResponse("") {{
+                    headers().add("Allow", "GET, HEAD, OPTIONS");
+                    headers().add("Access-Control-Allow-Origin", "*");
+                    headers().add("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+                }};
                 case HEAD, GET -> get(request);
                 default -> ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
             };
