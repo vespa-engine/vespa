@@ -11,7 +11,6 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.writeablefilechunk");
@@ -418,7 +417,7 @@ WriteableFileChunk::computeChunkMeta(const unique_lock & guard,
     assert((size_t(tmp.getBuf().getData())%_alignment) == 0);
     assert((dataLen%_alignment) == 0);
     auto pcsp = std::make_shared<PendingChunk>(active.getLastSerial(), offset, dataLen);
-    PendingChunk &pc(*pcsp.get());
+    PendingChunk &pc(*pcsp);
     nbostream &os(pc.getSerializedIdx());
     cmeta.serialize(os);
     BucketDensityComputer bucketMap(_bucketizer);
@@ -722,21 +721,21 @@ WriteableFileChunk::waitForAllChunksFlushedToDisk() const
 }
 
 LidInfo
-WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len,
+WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, vespalib::ConstBufferRef data,
                            CpuUsage::Category cpu_category)
 {
     assert( !frozen() );
-    if ( ! _active->hasRoom(len)) {
+    if ( ! _active->hasRoom(data.size())) {
         flush(false, _serialNum, cpu_category);
     }
     assert(serialNum >= _serialNum);
     _serialNum = serialNum;
-    _addedBytes += adjustSize(len);
+    _addedBytes += adjustSize(data.size());
     _numLids++;
     size_t oldSz(_active->size());
-    LidMeta lm = _active->append(lid, buffer, len);
+    LidMeta lm = _active->append(lid, data);
     setDiskFootprint(FileChunk::getDiskFootprint() - oldSz + _active->size());
-    return LidInfo(getFileId().getId(), _active->getId(), lm.size());
+    return {getFileId().getId(), _active->getId(), lm.size()};
 }
 
 
@@ -896,7 +895,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
                 break;
             std::shared_ptr<PendingChunk> pcsp = std::move(_pendingChunks.front());
             _pendingChunks.pop_front();
-            const PendingChunk &pc(*pcsp.get());
+            const PendingChunk &pc(*pcsp);
             assert(_pendingIdx >= pc.getIdxLen());
             assert(_pendingDat >= pc.getDataLen());
             assert(datFileLen >= pc.getDataOffset() + pc.getDataLen());
@@ -932,9 +931,9 @@ WriteableFileChunk::getStats() const
 {
     DataStoreFileChunkStats stats = FileChunk::getStats();
     uint64_t serialNum = getSerialNum();
-    return DataStoreFileChunkStats(stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
-                                   serialNum, stats.lastFlushedSerialNum(), stats.docIdLimit(), stats.nameId());
-};
+    return {stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
+            serialNum, stats.lastFlushedSerialNum(), stats.docIdLimit(), stats.nameId()};
+}
 
 PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen)
     : _idx(),

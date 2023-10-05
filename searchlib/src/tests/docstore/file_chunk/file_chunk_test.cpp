@@ -43,10 +43,10 @@ struct BucketizerObserver : public IBucketizer {
     document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
         (void) guard;
         lids.push_back(lid);
-        return document::BucketId();
+        return {};
     }
     vespalib::GenerationHandler::Guard getGuard() const override {
-        return vespalib::GenerationHandler::Guard();
+        return {};
     }
 };
 
@@ -129,7 +129,7 @@ struct WriteFixture : public FixtureBase {
     }
     WriteFixture &append(uint32_t lid) {
         vespalib::string data = getData(lid);
-        chunk.append(nextSerialNum(), lid, data.c_str(), data.size(), CpuUsage::Category::WRITE);
+        chunk.append(nextSerialNum(), lid, {data.c_str(), data.size()}, CpuUsage::Category::WRITE);
         return *this;
     }
     void updateLidMap(uint32_t docIdLimit) {

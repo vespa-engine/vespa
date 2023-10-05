@@ -28,12 +28,12 @@ class DataStoreFileChunkStats;
 class IWriteData
 {
 public:
-    using UP = std::unique_ptr<IWriteData>;
     using LockGuard = std::unique_lock<std::mutex>;
+    using ConstBufferRef = vespalib::ConstBufferRef;
 
     virtual ~IWriteData() = default;
 
-    virtual void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
+    virtual void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) = 0;
     virtual void close() = 0;
 };
 

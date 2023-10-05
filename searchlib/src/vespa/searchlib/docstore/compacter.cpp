@@ -18,10 +18,10 @@ namespace {
 }
 
 void
-Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
+Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) {
     (void) chunkId;
-    FileChunk::FileId fileId= _ds.getActiveFileId(guard);
-    _ds.write(std::move(guard), fileId, lid, buffer, sz);
+    FileChunk::FileId fileId = _ds.getActiveFileId(guard);
+    _ds.write(std::move(guard), fileId, lid, data);
 }
 
 BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionConfig compression, LogDataStore & ds,
@@ -41,8 +41,8 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
     _bucketizerGuard(),
     _stat()
 {
-    for (size_t i(0); i < _tmpStore.size(); i++) {
-        _tmpStore[i] = std::make_unique<StoreByBucket>(_backingMemory, executor, compression);
+    for (auto & partition : _tmpStore) {
+        partition = std::make_unique<StoreByBucket>(_backingMemory, executor, compression);
     }
 }
 
@@ -52,16 +52,16 @@ BucketCompacter::getDestinationId(const LockGuard & guard) const {
 }
 
 void
-BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data)
 {
     if (_writeCount++ == 0) {
         _bucketizerGuard = _bucketizer.getGuard();
         _lastSample = vespalib::steady_clock::now();
     }
     guard.unlock();
-    BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
+    BucketId bucketId = (data.size() > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
     uint64_t sortableBucketId = bucketId.toKey();
-    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()]->add(bucketId, chunkId, lid, buffer, sz);
+    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()]->add(bucketId, chunkId, lid, data);
     if ((_writeCount % 1000) == 0) {
         _bucketizerGuard = _bucketizer.getGuard();
         vespalib::steady_time now = vespalib::steady_clock::now();
@@ -103,14 +103,14 @@ BucketCompacter::close()
 }
 
 void
-BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data)
 {
     _stat[bucketId.getId()]++;
     LockGuard guard(_ds.getLidGuard(lid));
-    LidInfo lidInfo(_sourceFileId.getId(), chunkId, sz);
+    LidInfo lidInfo(_sourceFileId.getId(), chunkId, data.size());
     if (_ds.getLid(_lidGuard, lid) == lidInfo) {
         FileId fileId = getDestinationId(guard);
-        _ds.write(std::move(guard), fileId, lid, buffer, sz);
+        _ds.write(std::move(guard), fileId, lid, data);
     }
 }
 

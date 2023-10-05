@@ -31,9 +31,9 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executo
 StoreByBucket::~StoreByBucket() = default;
 
 void
-StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data)
 {
-    if ( ! _current->hasRoom(sz)) {
+    if ( ! _current->hasRoom(data.size())) {
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
         incChunksPosted();
@@ -42,7 +42,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
         });
         _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     }
-    _current->append(lid, buffer, sz);
+    _current->append(lid, data);
     _where.emplace_back(bucketId, _current->getId(), chunkId, lid);
 }
 
@@ -124,7 +124,7 @@ StoreByBucket::drain(IWrite & drainer)
     _chunks.clear();
     for (auto & idx : _where) {
         vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
-        drainer.write(idx._bucketId, idx._chunkId, idx._lid, data.c_str(), data.size());
+        drainer.write(idx._bucketId, idx._chunkId, idx._lid, data);
     }
 }
 

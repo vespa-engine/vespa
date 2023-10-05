@@ -285,9 +285,9 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
         if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
             auto guard(args->db.getLidGuard(e.getLid()));
             if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
-                // I am still in use so I need to taken care of.
+                // I am still in use, so I need to be taken care of.
                 vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));
-                args->dest.write(std::move(guard), chunk->getId(), e.getLid(), data.c_str(), data.size());
+                args->dest.write(std::move(guard), chunk->getId(), e.getLid(), data);
             }
         }
     }

@@ -17,8 +17,9 @@ class Compacter : public IWriteData
 {
 public:
     Compacter(LogDataStore & ds) : _ds(ds) { }
-    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void close() override { }
+
 private:
     LogDataStore & _ds;
 };
@@ -37,8 +38,8 @@ public:
     using FileId = FileChunk::FileId;
     BucketCompacter(size_t maxSignificantBucketBits, CompressionConfig compression, LogDataStore & ds,
                     Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination);
-    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
-    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void close() override;
 private:
     static constexpr size_t NUM_PARTITIONS = 256;
