@@ -176,7 +176,7 @@ protected:
                                        const search::TuneFileAttributes &tuneFile,
                                        std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
-    void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
+    void setupDocumentMetaStore(const DocumentMetaStoreInitializerResult & dmsResult);
     void initFeedView(const DocumentDBConfig &configSnapshot);
     virtual IFlushTargetList getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);

@@ -37,6 +37,7 @@ public:
         { }
         CompressionConfig getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
+        Config & disableCache() { _maxCacheBytes = 0; return *this; }
         Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
         UpdateStrategy updateStrategy() const { return _updateStrategy; }
         bool operator == (const Config &) const;
