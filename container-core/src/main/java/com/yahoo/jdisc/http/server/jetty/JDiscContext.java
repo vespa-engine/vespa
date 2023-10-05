@@ -5,27 +5,17 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 
-public class JDiscContext {
-    final FilterResolver filterResolver;
-    final CurrentContainer container;
-    final Janitor janitor;
-    final Metric metric;
-    final ServerConfig serverConfig;
+record JDiscContext(FilterResolver filterResolver,
+                    CurrentContainer container,
+                    Janitor janitor,
+                    Metric metric,
+                    boolean developerMode,
+                    boolean removeRawPostBodyForWwwUrlEncodedPost) {
 
-    public JDiscContext(FilterBindings filterBindings,
-                        CurrentContainer container,
-                        Janitor janitor,
-                        Metric metric,
-                        ServerConfig serverConfig) {
-
-        this.filterResolver = new FilterResolver(filterBindings, metric, serverConfig.strictFiltering());
-        this.container = container;
-        this.janitor = janitor;
-        this.metric = metric;
-        this.serverConfig = serverConfig;
+    public static JDiscContext of(FilterBindings filterBindings, CurrentContainer container,
+                                  Janitor janitor, Metric metric, ServerConfig config) {
+        return new JDiscContext(new FilterResolver(filterBindings, metric), container, janitor,
+                                metric, config.developerMode(), config.removeRawPostBodyForWwwUrlEncodedPost());
     }
 
-    public boolean developerMode() {
-        return serverConfig.developerMode();
-    }
 }
