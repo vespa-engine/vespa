@@ -3,6 +3,7 @@
 #include "indexmanager.h"
 #include "diskindexwrapper.h"
 #include "memoryindexwrapper.h"
+#include <vespa/searchcorespi/index/indexmaintainerconfig.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/index/schemautil.h>
