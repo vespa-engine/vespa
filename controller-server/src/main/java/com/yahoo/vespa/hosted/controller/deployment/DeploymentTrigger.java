@@ -430,6 +430,7 @@ public class DeploymentTrigger {
 
     private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
+        if (status.application().get(instance).map(Instance::change).map(Change::isRevisionPinned).orElse(false)) return false;
         if ( ! status.jobs().failingWithBrokenRevisionSince(revision, clock.instant().minus(maxFailingRevisionTime))
                      .isEmpty()) return false; // Don't deploy a broken revision.
         boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();
