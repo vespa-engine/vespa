@@ -456,7 +456,7 @@ IndexMaintainer::appendSource(uint32_t sourceId, const std::shared_ptr<IndexSear
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
-    std::unique_ptr<ISearchableIndexCollection> indexes = createNewSourceCollection(lock);
+    auto indexes = createNewSourceCollection(lock);
     indexes->append(sourceId, source);
     swapInNewIndex(lock, std::move(indexes), *source);
 }
@@ -464,7 +464,7 @@ IndexMaintainer::appendSource(uint32_t sourceId, const std::shared_ptr<IndexSear
 std::unique_ptr<ISearchableIndexCollection>
 IndexMaintainer::createNewSourceCollection(const LockGuard &newSearchLock)
 {
-    std::shared_ptr<ISearchableIndexCollection> currentLeaf(getLeaf(newSearchLock, _source_list));
+    auto currentLeaf(getLeaf(newSearchLock, _source_list));
     return std::make_unique<IndexCollection>(_selector, *currentLeaf);
 }
 
@@ -606,10 +606,10 @@ IndexMaintainer::flushMemoryIndex(FlushArgs &args,
     // Called by a flush worker thread
     ChangeGens changeGens = getChangeGens();
     IMemoryIndex &memoryIndex = *args.old_index;
-    std::shared_ptr<Schema> prunedSchema = memoryIndex.getPrunedSchema();
-    std::shared_ptr<IDiskIndex> diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id,
-                                                             docIdLimit, args.flush_serial_num,
-                                                             saveInfo);
+    auto prunedSchema = memoryIndex.getPrunedSchema();
+    auto diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id,
+                                      docIdLimit, args.flush_serial_num,
+                                      saveInfo);
     // Post processing after memory index has been written to disk and
     // opened as disk index.
     args._changeGens = changeGens;
@@ -633,12 +633,12 @@ IndexMaintainer::reconfigureAfterFlush(FlushArgs &args, std::shared_ptr<IDiskInd
             return;
         }
         ChangeGens changeGens = getChangeGens();
-        std::shared_ptr<Schema> prunedSchema = args.old_index->getPrunedSchema();
+        auto prunedSchema = args.old_index->getPrunedSchema();
         const string indexDir = getFlushDir(args.old_absolute_id);
         if (prunedSchema) {
             updateDiskIndexSchema(indexDir, *prunedSchema, noSerialNumHigh);
         }
-        std::shared_ptr<IDiskIndex> reloadedDiskIndex = reloadDiskIndex(*diskIndex);
+        auto reloadedDiskIndex = reloadDiskIndex(*diskIndex);
         diskIndex = reloadedDiskIndex;
         args._changeGens = changeGens;
         args._prunedSchema = prunedSchema;
@@ -718,8 +718,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, std::shared_ptr<IDiskIndex>* new_i
         LockGuard lock(_new_search_lock);
         currentLeaf = getLeaf(lock, _source_list);
     }
-    std::unique_ptr<ISearchableIndexCollection> fsc =
-        IndexCollection::replaceAndRenumber(_selector, *currentLeaf, id_diff, *new_index);
+    auto fsc = IndexCollection::replaceAndRenumber(_selector, *currentLeaf, id_diff, *new_index);
     fsc->setCurrentIndex(_current_index_id);
 
     {
