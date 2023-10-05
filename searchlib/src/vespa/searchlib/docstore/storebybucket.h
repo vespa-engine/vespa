@@ -7,7 +7,6 @@
 #include <vespa/vespalib/data/memorydatastore.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <map>
 #include <condition_variable>
 
 namespace search::docstore {
@@ -34,19 +33,18 @@ public:
     class IWrite {
     public:
         using BucketId=document::BucketId;
-        virtual ~IWrite() { }
+        virtual ~IWrite() = default;
         virtual void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
     };
     void add(document::BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
+    void close();
+    /// close() must have been called prior to calling getBucketCount() or drain()
     void drain(IWrite & drain);
+    size_t getBucketCount() const;
+
     size_t getChunkCount() const;
-    size_t getBucketCount() const { return _where.size(); }
     size_t getLidCount() const {
-        size_t lidCount(0);
-        for (const auto & it : _where) {
-            lidCount += it.second.size();
-        }
-        return lidCount;
+        return _where.size();
     }
 private:
     void incChunksPosted();
@@ -69,7 +67,7 @@ private:
     using IndexVector = std::vector<Index, vespalib::allocator_large<Index>>;
     uint64_t                                     _chunkSerial;
     Chunk::UP                                    _current;
-    std::map<uint64_t, IndexVector>              _where;
+    IndexVector                                  _where;
     MemoryDataStore                            & _backingMemory;
     Executor                                   & _executor;
     mutable std::mutex                           _lock;

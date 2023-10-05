@@ -39,6 +39,7 @@ public enum ControllerMetrics implements VespaMetrics {
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),
     CERTIFICATE_POOL_AVAILABLE("certificate_pool_available", Unit.FRACTION, "Available certificates in the pool, fraction of configured size"),
+    BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),

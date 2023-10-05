@@ -53,7 +53,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static final int STD_INDENT = 4;
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
     /**
@@ -564,7 +564,7 @@ public class DocumentGenMojo extends AbstractMojo {
             out.write(ind(ind)+"public "+className+"(com.yahoo.document.datatypes.StructuredFieldValue src) {\n"+
                     ind(ind+1)+"super("+className+".type);\n");
         }
-        out.write(ind() + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();\n");
+        out.write(ind(ind+1) + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();\n");
         out.write(
                 ind(ind+1)+"for (java.util.Iterator<java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>>i=src.iterator() ; i.hasNext() ; ) {\n" +
                 ind(ind+2)+"java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> e = i.next();\n" +

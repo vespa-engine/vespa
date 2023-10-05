@@ -116,7 +116,16 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
 
         var accountantRequest = request("/billing/v2/accountant").roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, """
-                {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":null,"unbilled":"0.00"}]}""");
+                {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"1970-01-01","unbilled":"0.00"}]}""");
+    }
+
+    @Test
+    void require_accountant_preview() {
+        var accountantRequest = request("/billing/v2/accountant/preview").roles(Role.hostedAccountant());
+        billingController.uncommittedBills.put(tenant, BillingApiHandlerTest.createBill());
+
+        tester.assertResponse(accountantRequest, """
+                        {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"2020-05-23","unbilled":"123.00"}]}""");
     }
 
     @Test

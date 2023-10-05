@@ -7,7 +7,7 @@ package com.yahoo.jdisc.http.server.jetty;
  * ensures some extra information is automatically added to the contents of
  * getMessage().
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ExceptionWrapper extends RuntimeException {
     private final String message;

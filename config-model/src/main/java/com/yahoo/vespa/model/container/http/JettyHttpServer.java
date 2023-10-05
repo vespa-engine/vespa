@@ -32,9 +32,11 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
         this.isHostedVespa = deployState.isHosted();
         this.cluster = cluster;
-        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
+        FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
-        inject(filterBindingsProviderComponent);
+        addChild(new SimpleComponent(childComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext.class.getName())) {
+            { inject(filterBindingsProviderComponent); }
+        });
         for (String agent : deployState.featureFlags().ignoredHttpUserAgents()) {
             addIgnoredUserAgent(agent);
         }
@@ -79,7 +81,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         }
     }
 
-    static ComponentModel providerComponentModel(String parentId, String className) {
+    static ComponentModel childComponentModel(String parentId, String className) {
         final ComponentSpecification classNameSpec = new ComponentSpecification(
                 className);
         return new ComponentModel(new BundleInstantiationSpecification(
@@ -90,9 +92,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
 
     public static final class FilterBindingsProviderComponent extends SimpleComponent {
         public FilterBindingsProviderComponent(String parentId) {
-            super(providerComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
+            super(childComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
         }
-
     }
 
 }

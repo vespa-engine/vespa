@@ -79,6 +79,7 @@ BucketCompacter::close()
     size_t bucketCount(0);
     size_t chunkCount(0);
     for (const auto & store : _tmpStore) {
+        store->close();
         lidCount1 += store->getLidCount();
         bucketCount += store->getBucketCount();
         chunkCount += store->getChunkCount();

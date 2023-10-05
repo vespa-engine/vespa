@@ -77,23 +77,27 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    void verifyThatJettyHttpServerHasFilterBindingsProvider() {
+    void verifyThatJettyHttpServerContextHasFilterBindingsProvider() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 nodesXml,
                 "</container>");
         createModel(root, clusterElem);
 
-        final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
+        ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
                 containerComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName());
         assertNotNull(jettyHttpServerComponent);
 
-        final ComponentsConfig.Components filterBindingsProviderComponent = extractComponentByClassName(
+        ComponentsConfig.Components jettyHttpServerContextComponent = extractComponentByClassName(
+                containerComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext.class.getName());
+        assertNotNull(jettyHttpServerContextComponent);
+
+        ComponentsConfig.Components filterBindingsProviderComponent = extractComponentByClassName(
                 containerComponentsConfig(), FilterBindingsProvider.class.getName());
         assertNotNull(filterBindingsProviderComponent);
 
-        final ComponentsConfig.Components.Inject filterBindingsProviderInjection = extractInjectionById(
-                jettyHttpServerComponent, filterBindingsProviderComponent.id());
+        ComponentsConfig.Components.Inject filterBindingsProviderInjection = extractInjectionById(
+                jettyHttpServerContextComponent, filterBindingsProviderComponent.id());
         assertNotNull(filterBindingsProviderInjection);
     }
 
@@ -112,12 +116,16 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 clusterComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName());
         assertNotNull(jettyHttpServerComponent);
 
+        final ComponentsConfig.Components jettyHttpServerContextComponent = extractComponentByClassName(
+                clusterComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext.class.getName());
+        assertNotNull(jettyHttpServerContextComponent);
+
         final ComponentsConfig.Components filterBindingsProviderComponent = extractComponentByClassName(
                 clusterComponentsConfig(), FilterBindingsProvider.class.getName());
         assertNotNull(filterBindingsProviderComponent);
 
         final ComponentsConfig.Components.Inject filterBindingsProviderInjection = extractInjectionById(
-                jettyHttpServerComponent, filterBindingsProviderComponent.id());
+                jettyHttpServerContextComponent, filterBindingsProviderComponent.id());
         assertNotNull(filterBindingsProviderInjection);
     }
 
