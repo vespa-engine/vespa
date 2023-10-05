@@ -31,7 +31,9 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -82,6 +84,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                  */
                 .addRoute(RestApi.route("/billing/v2/accountant")
                         .get(self::accountant))
+                .addRoute(RestApi.route("/billing/v2/accountant/preview")
+                        .get(self::accountantPreview))
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
@@ -202,21 +206,39 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
+        var response = new Slime();
+        var tenantsResponse = response.setObject().setArray("tenants");
+
+        tenants.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
+            var tenantResponse = tenantsResponse.addObject();
+            tenantResponse.setString("tenant", tenant.name().value());
+            toSlime(tenantResponse.setObject("plan"), planFor(tenant.name()));
+            toSlime(tenantResponse.setObject("quota"), billing.getQuota(tenant.name()));
+            tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
+            tenantResponse.setString("lastBill", LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE));
+            tenantResponse.setString("unbilled", "0.00");
+        });
+
+        return response;
+    }
+
+    private Slime accountantPreview(RestApi.RequestContext requestContext) {
         var untilAt = untilParameter(requestContext);
         var usagePerTenant = billing.createUncommittedBills(untilAt);
 
         var response = new Slime();
         var tenantsResponse = response.setObject().setArray("tenants");
 
-        tenants.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
-            var usage = Optional.ofNullable(usagePerTenant.get(tenant.name()));
+        usagePerTenant.entrySet().stream().sorted(Comparator.comparing(x -> x.getValue().sum())).forEachOrdered(x -> {
+            var tenant = x.getKey();
+            var usage = x.getValue();
             var tenantResponse = tenantsResponse.addObject();
-            tenantResponse.setString("tenant", tenant.name().value());
-            toSlime(tenantResponse.setObject("plan"), planFor(tenant.name()));
-            toSlime(tenantResponse.setObject("quota"), billing.getQuota(tenant.name()));
-            tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
-            tenantResponse.setString("lastBill", usage.map(Bill::getStartDate).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
-            tenantResponse.setString("unbilled", usage.map(Bill::sum).map(BigDecimal::toPlainString).orElse("0.00"));
+            tenantResponse.setString("tenant", tenant.value());
+            toSlime(tenantResponse.setObject("plan"), planFor(tenant));
+            toSlime(tenantResponse.setObject("quota"), billing.getQuota(tenant));
+            tenantResponse.setString("collection", billing.getCollectionMethod(tenant).name());
+            tenantResponse.setString("lastBill", usage.getStartDate().format(DateTimeFormatter.ISO_DATE));
+            tenantResponse.setString("unbilled", usage.sum().toPlainString());
         });
 
         return response;
