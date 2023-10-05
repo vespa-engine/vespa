@@ -4,7 +4,6 @@
 #include "logdatastore.h"
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/array.hpp>
-#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
@@ -31,14 +30,10 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
     _destinationFileId(destination),
     _ds(ds),
     _bucketizer(bucketizer),
-    _writeCount(0),
-    _maxBucketGuardDuration(vespalib::duration::zero()),
-    _lastSample(vespalib::steady_clock::now()),
     _lock(),
     _backingMemory(Alloc::alloc(INITIAL_BACKING_BUFFER_SIZE), &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
-    _bucketizerGuard(),
     _stat()
 {
     for (auto & partition : _tmpStore) {
@@ -54,27 +49,15 @@ BucketCompacter::getDestinationId(const LockGuard & guard) const {
 void
 BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data)
 {
-    if (_writeCount++ == 0) {
-        _bucketizerGuard = _bucketizer.getGuard();
-        _lastSample = vespalib::steady_clock::now();
-    }
     guard.unlock();
-    BucketId bucketId = (data.size() > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
+    BucketId bucketId = (data.size() > 0) ? _bucketizer.getBucketOf(_bucketizer.getGuard(), lid) : BucketId();
     uint64_t sortableBucketId = bucketId.toKey();
     _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()]->add(bucketId, chunkId, lid, data);
-    if ((_writeCount % 1000) == 0) {
-        _bucketizerGuard = _bucketizer.getGuard();
-        vespalib::steady_time now = vespalib::steady_clock::now();
-        _maxBucketGuardDuration = std::max(_maxBucketGuardDuration, now - _lastSample);
-        _lastSample = now;
-    }
 }
 
 void
 BucketCompacter::close()
 {
-    _bucketizerGuard = GenerationHandler::Guard();
-    vespalib::duration lastBucketGuardDuration = vespalib::steady_clock::now() - _lastSample;
     size_t lidCount1(0);
     size_t bucketCount(0);
     size_t chunkCount(0);
@@ -84,9 +67,8 @@ BucketCompacter::close()
         bucketCount += store->getBucketCount();
         chunkCount += store->getChunkCount();
     }
-    LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks."
-              " Max bucket guard held for %" PRId64 " us, and last before close for %" PRId64 " us",
-              lidCount1, bucketCount, chunkCount, vespalib::count_us(_maxBucketGuardDuration), vespalib::count_us(lastBucketGuardDuration));
+    LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks.",
+              lidCount1, bucketCount, chunkCount);
 
     for (auto & store_ref : _tmpStore) {
         auto store = std::move(store_ref);

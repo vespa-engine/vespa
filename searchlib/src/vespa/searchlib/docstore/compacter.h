@@ -51,14 +51,10 @@ private:
     FileId                     _destinationFileId;
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
-    uint64_t                   _writeCount;
-    vespalib::duration         _maxBucketGuardDuration;
-    vespalib::steady_time      _lastSample;
     std::mutex                 _lock;
     vespalib::MemoryDataStore  _backingMemory;
     Partitions                 _tmpStore;
     GenerationHandler::Guard   _lidGuard;
-    GenerationHandler::Guard   _bucketizerGuard;
     vespalib::hash_map<uint64_t, uint32_t> _stat;
 };
 
