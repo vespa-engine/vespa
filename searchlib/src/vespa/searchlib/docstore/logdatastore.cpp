@@ -22,8 +22,8 @@ namespace fs = std::filesystem;
 namespace search {
 
 namespace {
-    constexpr size_t DEFAULT_MAX_FILESIZE = 1000000000ul;
-    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32_Mi;
+    constexpr size_t DEFAULT_MAX_FILESIZE = 256_Mi;
+    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 1_Mi;
 }
 
 using common::FileHeaderContext;
@@ -462,8 +462,8 @@ void LogDataStore::compactFile(FileId fileId)
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
-        compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this, _executor,
-                                            *_bucketizer, fc->getFileId(), destinationFileId);
+        compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this,
+                                                      _executor, *_bucketizer, fc->getFileId(), destinationFileId);
     } else {
         compacter = std::make_unique<docstore::Compacter>(*this);
     }
