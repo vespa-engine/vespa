@@ -133,6 +133,7 @@ Prod = element prod {
 }
 
 ProdTest = element test {
+   attribute empty-host-ttl { xsd:string }? &
    text
 }
 
