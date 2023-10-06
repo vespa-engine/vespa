@@ -27,14 +27,13 @@ import java.util.stream.Collectors;
 public record PreparedEndpoints(DeploymentId deployment,
                                 EndpointList endpoints,
                                 List<AssignedRotation> rotations,
-                                Optional<EndpointCertificate> certificate) {
+                                EndpointCertificate certificate) {
 
-    public PreparedEndpoints(DeploymentId deployment, EndpointList endpoints, List<AssignedRotation> rotations, Optional<EndpointCertificate> certificate) {
+    public PreparedEndpoints(DeploymentId deployment, EndpointList endpoints, List<AssignedRotation> rotations, EndpointCertificate certificate) {
         this.deployment = Objects.requireNonNull(deployment);
         this.endpoints = Objects.requireNonNull(endpoints);
         this.rotations = List.copyOf(Objects.requireNonNull(rotations));
-        this.certificate = Objects.requireNonNull(certificate);
-        certificate.ifPresent(endpointCertificate -> requireMatchingSans(endpointCertificate, endpoints));
+        this.certificate = requireMatchingSans(certificate, endpoints);
     }
 
     /** Returns the endpoints contained in this as {@link com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint} */
@@ -101,13 +100,15 @@ public record PreparedEndpoints(DeploymentId deployment,
         };
     }
 
-    private static void requireMatchingSans(EndpointCertificate certificate, EndpointList endpoints) {
+    private static EndpointCertificate requireMatchingSans(EndpointCertificate certificate, EndpointList endpoints) {
+        Objects.requireNonNull(certificate);
         for (var endpoint : endpoints.not().scope(Endpoint.Scope.weighted)) { // Weighted endpoints are not present in certificate
             if (!certificate.sanMatches(endpoint.dnsName())) {
                 throw new IllegalArgumentException(endpoint + " has no matching SAN. Certificate contains " +
                                                    certificate.requestedDnsSans());
             }
         }
+        return certificate;
     }
 
 }

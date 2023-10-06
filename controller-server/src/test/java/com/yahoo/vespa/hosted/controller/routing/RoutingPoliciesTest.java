@@ -1068,11 +1068,9 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void generated_endpoints() {
-        var tester = new RoutingPoliciesTester(SystemName.Public);
+    public void combined_endpoint_config() {
+        var tester = new RoutingPoliciesTester(SystemName.Public).setEndpointConfig(EndpointConfig.combined);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
         int clustersPerZone = 2;
@@ -1093,10 +1091,10 @@ public class RoutingPoliciesTest {
         // Deployment creates generated zone names
         List<String> expectedRecords = List.of(
                 // save me, jebus!
-                "a6414896.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
-                "b36bf591.cafed00d.z.vespa-app.cloud",
+                "a6414896.f5549014.aws-eu-west-1.w.vespa-app.cloud",
+                "aa7591aa.f5549014.z.vespa-app.cloud",
                 "bar.app1.tenant1.a.vespa-app.cloud",
-                "bc50b636.cafed00d.z.vespa-app.cloud",
+                "bc50b636.f5549014.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
@@ -1105,16 +1103,16 @@ public class RoutingPoliciesTest {
                 "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                "c33db5ed.cafed00d.z.vespa-app.cloud",
-                "d467800f.cafed00d.z.vespa-app.cloud",
-                "d71005bf.cafed00d.z.vespa-app.cloud",
-                "dd0971b4.cafed00d.z.vespa-app.cloud",
-                "eb48ad53.cafed00d.z.vespa-app.cloud",
-                "ec1e1288.cafed00d.z.vespa-app.cloud",
-                "f2fa41ec.cafed00d.g.vespa-app.cloud",
-                "f411d177.cafed00d.z.vespa-app.cloud",
-                "f4a4d111.cafed00d.a.vespa-app.cloud",
-                "fcf1bd63.cafed00d.aws-us-east-1.w.vespa-app.cloud",
+                "c33db5ed.f5549014.z.vespa-app.cloud",
+                "d467800f.f5549014.z.vespa-app.cloud",
+                "d71005bf.f5549014.z.vespa-app.cloud",
+                "dd0971b4.f5549014.g.vespa-app.cloud",
+                "eb48ad53.f5549014.z.vespa-app.cloud",
+                "ec1e1288.f5549014.z.vespa-app.cloud",
+                "f2fa41ec.f5549014.a.vespa-app.cloud",
+                "f411d177.f5549014.z.vespa-app.cloud",
+                "f4a4d111.f5549014.z.vespa-app.cloud",
+                "fcf1bd63.f5549014.aws-us-east-1.w.vespa-app.cloud",
                 "foo.app1.tenant1.g.vespa-app.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
@@ -1178,23 +1176,23 @@ public class RoutingPoliciesTest {
                                                         .build();
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(List.of(
-                "b36bf591.cafed00d.z.vespa-app.cloud",
+                "aa7591aa.f5549014.z.vespa-app.cloud",
                 "bar.app1.tenant1.a.vespa-app.cloud",
-                "bc50b636.cafed00d.z.vespa-app.cloud",
+                "bc50b636.f5549014.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1a.z.vespa-app.cloud",
                 "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                "c33db5ed.cafed00d.z.vespa-app.cloud",
-                "d467800f.cafed00d.z.vespa-app.cloud",
-                "d71005bf.cafed00d.z.vespa-app.cloud",
-                "dd0971b4.cafed00d.z.vespa-app.cloud",
-                "eb48ad53.cafed00d.z.vespa-app.cloud",
-                "ec1e1288.cafed00d.z.vespa-app.cloud",
-                "f411d177.cafed00d.z.vespa-app.cloud",
-                "f4a4d111.cafed00d.a.vespa-app.cloud"
+                "c33db5ed.f5549014.z.vespa-app.cloud",
+                "d467800f.f5549014.z.vespa-app.cloud",
+                "d71005bf.f5549014.z.vespa-app.cloud",
+                "eb48ad53.f5549014.z.vespa-app.cloud",
+                "ec1e1288.f5549014.z.vespa-app.cloud",
+                "f2fa41ec.f5549014.a.vespa-app.cloud",
+                "f411d177.f5549014.z.vespa-app.cloud",
+                "f4a4d111.f5549014.z.vespa-app.cloud"
         ), tester.recordNames());
 
         // Removing application removes all records
@@ -1206,11 +1204,9 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void generated_endpoints_enable_token() {
-        var tester = new RoutingPoliciesTester(SystemName.Public);
+    public void generated_endpoint_config_with_token() {
+        var tester = new RoutingPoliciesTester(SystemName.Public).setEndpointConfig(EndpointConfig.generated);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application without token
@@ -1270,12 +1266,9 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void generated_endpoints_only() {
-        var tester = new RoutingPoliciesTester(SystemName.Public);
+    public void generated_endpoint_config() {
+        var tester = new RoutingPoliciesTester(SystemName.Public).setEndpointConfig(EndpointConfig.generated);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        tester.controllerTester().flagSource()
-              .withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true)
-              .withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
@@ -1317,12 +1310,10 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void generated_endpoints_multi_instance() {
-        var tester = new RoutingPoliciesTester(SystemName.Public);
+    public void combined_endpoint_config_with_multiple_instances() {
+        var tester = new RoutingPoliciesTester(SystemName.Public).setEndpointConfig(EndpointConfig.combined);
         var context0 = tester.newDeploymentContext("tenant1", "app1", "default");
         var context1 = tester.newDeploymentContext("tenant1", "app1", "beta");
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
         int clustersPerZone = 1;
@@ -1338,11 +1329,11 @@ public class RoutingPoliciesTest {
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1);
         context0.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(List.of("a0.app1.tenant1.a.vespa-app.cloud",
-                             "a9c8c045.cafed00d.z.vespa-app.cloud",
                              "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                              "c0.beta.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                             "e144a11b.cafed00d.z.vespa-app.cloud",
-                             "ee82b867.cafed00d.a.vespa-app.cloud"),
+                             "cbff1506.f5549014.z.vespa-app.cloud",
+                             "e144a11b.f5549014.a.vespa-app.cloud",
+                             "ee82b867.f5549014.z.vespa-app.cloud"),
                      tester.recordNames());
         tester.assertTargets(context0.application().id(), EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(context0.deploymentIdIn(zone1), 1, context1.deploymentIdIn(zone1), 1));
@@ -1356,11 +1347,11 @@ public class RoutingPoliciesTest {
                                                         .build();
         context0.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(List.of("a0.app1.tenant1.a.vespa-app.cloud",
-                             "a9c8c045.cafed00d.z.vespa-app.cloud",
                              "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                              "c0.beta.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                             "e144a11b.cafed00d.z.vespa-app.cloud",
-                             "ee82b867.cafed00d.a.vespa-app.cloud"),
+                             "cbff1506.f5549014.z.vespa-app.cloud",
+                             "e144a11b.f5549014.a.vespa-app.cloud",
+                             "ee82b867.f5549014.z.vespa-app.cloud"),
                      tester.recordNames());
         tester.assertTargets(context0.application().id(), EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(context1.deploymentIdIn(zone1), 1));
@@ -1374,10 +1365,9 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void generated_endpoint_migration_with_global_endpoint() {
-        var tester = new RoutingPoliciesTester(SystemName.Public);
+    public void migrate_legacy_to_combined_endpoint_config_with_global_endpoint() {
+        var tester = new RoutingPoliciesTester(SystemName.Public).setEndpointConfig(EndpointConfig.legacy);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
         int clustersPerZone = 2;
@@ -1392,8 +1382,8 @@ public class RoutingPoliciesTest {
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context.instanceId(), EndpointId.of("foo"), 0, zone1, zone2);
 
-        // Switch to generated
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        // Switch to combined
+        tester.setEndpointConfig(EndpointConfig.combined);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context.instance().id(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"),
                              0, Map.of(zone1, 1L, zone2, 1L), true);
@@ -1403,9 +1393,13 @@ public class RoutingPoliciesTest {
         EndpointCertificate cert = new EndpointCertificate("testKey", "testCert", 1, 0,
                                                            "request-id",
                                                            Optional.of("leaf-request-uuid"),
-                                                           List.of("name1", "name2"),
-                                                           "", Optional.empty(),
-                                                           Optional.empty(), Optional.of(id));
+                                                           List.of("*." + id + ".z.vespa-app.cloud",
+                                                                   "*." + id + ".g.vespa-app.cloud",
+                                                                   "*." + id + ".a.vespa-app.cloud"),
+                                                           "",
+                                                           Optional.empty(),
+                                                           Optional.empty(),
+                                                           Optional.of(id));
         UnassignedCertificate pooledCert = new UnassignedCertificate(cert, state);
         tester.controllerTester().controller().curator().writeUnassignedCertificate(pooledCert);
     }
@@ -1519,6 +1513,12 @@ public class RoutingPoliciesTest {
             return tester.controllerTester().configServer().containerEndpoints().entrySet().stream()
                          .filter(kv -> kv.getKey().zoneId().environment() == environment)
                          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+
+        public RoutingPoliciesTester setEndpointConfig(EndpointConfig config) {
+            tester.controllerTester().flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), config.supportsLegacy());
+            tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), config.supportsGenerated());
+            return this;
         }
 
         public RoutingPolicies routingPolicies() {

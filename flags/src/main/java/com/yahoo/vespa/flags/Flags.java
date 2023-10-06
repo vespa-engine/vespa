@@ -429,6 +429,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
+            "endpoint-config", "legacy",
+            List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
+            "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
+            "Takes effect on next deployment through controller",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
