@@ -358,7 +358,7 @@ StorageNode::shutdown()
 {
     // Try to shut down in opposite order of initialize. Bear in mind that
     // we might be shutting down after init exception causing only parts
-    // of the server to have initialize
+    // of the server to have been initialized
     LOG(debug, "Shutting down storage node of type %s", getNodeType().toString().c_str());
     if (!attemptedStopped()) {
         LOG(debug, "Storage killed before requestShutdown() was called. No "
