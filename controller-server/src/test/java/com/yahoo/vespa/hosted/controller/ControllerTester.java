@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -20,6 +18,7 @@ import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
@@ -54,7 +53,6 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.concurrent.Sleeper;
@@ -289,14 +287,6 @@ public final class ControllerTester {
         return controller().clock().instant().atOffset(ZoneOffset.UTC).getHour();
     }
 
-    public ZoneId toZone(Environment environment) {
-        return switch (environment) {
-            case dev, test -> ZoneId.from(environment, RegionName.from("us-east-1"));
-            case staging -> ZoneId.from(environment, RegionName.from("us-east-3"));
-            default -> ZoneId.from(environment, RegionName.from("us-west-1"));
-        };
-    }
-
     public AthenzDomain createDomainWithAdmin(String domainName, AthenzUser user) {
         AthenzDomain domain = new AthenzDomain(domainName);
         athenzDb.getOrCreateDomain(domain).admin(user);
@@ -405,7 +395,7 @@ public final class ControllerTester {
         RotationsConfig.Builder builder = new RotationsConfig.Builder();
         for (int i = 1; i <= availableRotations; i++) {
             String id = Text.format("%02d", i);
-            builder = builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
+            builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
         }
         return new RotationsConfig(builder);
     }
