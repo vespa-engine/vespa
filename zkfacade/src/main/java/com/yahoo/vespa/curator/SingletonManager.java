@@ -38,6 +38,8 @@ import static java.util.logging.Level.WARNING;
 class SingletonManager {
 
     private static final Logger logger = Logger.getLogger(SingletonManager.class.getName());
+    private static final String partPattern = "[a-zA-Z0-9$_]([a-zA-Z0-9$_-]+){0,63}";
+    private static final Pattern idPattern = Pattern.compile(partPattern + "(\\." + partPattern + ")*");
 
     private final Curator curator;
     private final Clock clock;
@@ -55,7 +57,8 @@ class SingletonManager {
     }
 
     synchronized CompletableFuture<?> register(String singletonId, SingletonWorker singleton) {
-        Validation.requireMatch(singletonId, "Singleton ID", Pattern.compile("[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}"));
+        Validation.requireMatch(singletonId, "Singleton ID", idPattern);
+        Validation.requireLength(singletonId, "Singleton ID", 1, 255);
         String old = registrations.putIfAbsent(singleton, singletonId);
         if (old != null) throw new IllegalArgumentException(singleton + " already registered with ID " + old);
         count.merge(singletonId, 1, Integer::sum);
