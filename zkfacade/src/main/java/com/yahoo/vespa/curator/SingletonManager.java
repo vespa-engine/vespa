@@ -1,5 +1,6 @@
 package com.yahoo.vespa.curator;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
@@ -53,9 +55,7 @@ class SingletonManager {
     }
 
     synchronized CompletableFuture<?> register(String singletonId, SingletonWorker singleton) {
-        if (singletonId.isEmpty() || singletonId.contains("/") || singletonId.contains("..")) {
-            throw new IllegalArgumentException("singleton ID must be non-empty, and may not contain '/' or '..', but got " + singletonId);
-        }
+        Validation.requireMatch(singletonId, "Singleton ID", Pattern.compile("[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}"));
         String old = registrations.putIfAbsent(singleton, singletonId);
         if (old != null) throw new IllegalArgumentException(singleton + " already registered with ID " + old);
         count.merge(singletonId, 1, Integer::sum);
