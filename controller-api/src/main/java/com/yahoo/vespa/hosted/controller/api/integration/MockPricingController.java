@@ -6,13 +6,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformatio
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class MockPricingController implements PricingController {
 
     @Override
     public PriceInformation price(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
-        return new PriceInformation(2 * clusterResources.size());
+        return new PriceInformation(new BigDecimal(2 * clusterResources.size()), BigDecimal.ZERO);
     }
 
 }
