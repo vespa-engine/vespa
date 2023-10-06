@@ -34,9 +34,9 @@ public:
     public:
         using BucketId=document::BucketId;
         virtual ~IWrite() = default;
-        virtual void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
+        virtual void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) = 0;
     };
-    void add(document::BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
+    void add(document::BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data);
     void close();
     /// close() must have been called prior to calling getBucketCount() or drain()
     void drain(IWrite & drain);

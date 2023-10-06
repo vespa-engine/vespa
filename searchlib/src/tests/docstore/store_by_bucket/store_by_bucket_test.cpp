@@ -35,13 +35,13 @@ add(StoreByBucket & sbb, size_t i) {
     EXPECT_EQUAL(userId(i), docId.getGlobalId().getLocationSpecificBits());
     b.setUsedBits(USED_BITS);
     vespalib::string s = createPayload(b);
-    sbb.add(b, i%10, i, s.c_str(), s.size());
+    sbb.add(b, i%10, i, {s.c_str(), s.size()});
 }
 
 class VerifyBucketOrder : public StoreByBucket::IWrite {
 public:
     VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
-    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, vespalib::ConstBufferRef data) override {
         (void) chunkId;
         EXPECT_LESS_EQUAL(_lastBucketId.toKey(), bucketId.toKey());
         if (_lastBucketId != bucketId) {
@@ -54,7 +54,7 @@ public:
         }
         _lastLid = lid;
         _lastBucketId = bucketId;
-        EXPECT_EQUAL(0, memcmp(buffer, createPayload(bucketId).c_str(), sz));
+        EXPECT_EQUAL(0, memcmp(data.data(), createPayload(bucketId).c_str(), data.size()));
     }
     ~VerifyBucketOrder() override;
 private:

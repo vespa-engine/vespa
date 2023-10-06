@@ -1066,8 +1066,7 @@ DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint3
 vespalib::GenerationHandler::Guard
 DocumentMetaStore::getGuard() const
 {
-    const vespalib::GenerationHandler & genHandler = getGenerationHandler();
-    return genHandler.takeGuard();
+    return getGenerationHandler().takeGuard();
 }
 
 uint64_t

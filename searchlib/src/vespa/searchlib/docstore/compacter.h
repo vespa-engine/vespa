@@ -17,8 +17,9 @@ class Compacter : public IWriteData
 {
 public:
     Compacter(LogDataStore & ds) : _ds(ds) { }
-    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void close() override { }
+
 private:
     LogDataStore & _ds;
 };
@@ -37,8 +38,8 @@ public:
     using FileId = FileChunk::FileId;
     BucketCompacter(size_t maxSignificantBucketBits, CompressionConfig compression, LogDataStore & ds,
                     Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination);
-    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
-    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void close() override;
 private:
     static constexpr size_t NUM_PARTITIONS = 256;
@@ -50,14 +51,10 @@ private:
     FileId                     _destinationFileId;
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
-    uint64_t                   _writeCount;
-    vespalib::duration         _maxBucketGuardDuration;
-    vespalib::steady_time      _lastSample;
     std::mutex                 _lock;
     vespalib::MemoryDataStore  _backingMemory;
     Partitions                 _tmpStore;
     GenerationHandler::Guard   _lidGuard;
-    GenerationHandler::Guard   _bucketizerGuard;
     vespalib::hash_map<uint64_t, uint32_t> _stat;
 };
 
