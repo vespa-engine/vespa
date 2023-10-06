@@ -126,17 +126,11 @@ public class Call implements Cloneable {
 
 
     private void unwrapSchemaMapping(Processing processing) {
-        final List<DocumentOperation> documentOperations = processing.getDocumentOperations();
-
+        List<DocumentOperation> documentOperations = processing.getDocumentOperations();
         for (int i = 0; i < documentOperations.size(); i++) {
-            DocumentOperation documentOperation = documentOperations.get(i);
-
-            if (documentOperation instanceof DocumentPut) {
-                DocumentPut putOperation = (DocumentPut) documentOperation;
-
-                if (putOperation.getDocument() instanceof DocumentOperationWrapper) {
-                    DocumentOperationWrapper proxy = (DocumentOperationWrapper) putOperation.getDocument();
-                    documentOperations.set(i, new DocumentPut(putOperation, ((DocumentPut)proxy.getWrappedDocumentOperation()).getDocument()));
+            if (documentOperations.get(i) instanceof DocumentPut putOperation) {
+                if (putOperation.getDocument() instanceof DocumentOperationWrapper proxy) {
+                    documentOperations.set(i, new DocumentPut(putOperation, ((DocumentPut) proxy.getWrappedDocumentOperation()).getDocument()));
                 }
             }
         }

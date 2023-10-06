@@ -26,7 +26,7 @@ public final class LongFieldValue extends NumericFieldValue {
     private long value;
 
     public LongFieldValue() {
-        this(0l);
+        this(0L);
     }
 
     public LongFieldValue(long value) {
@@ -50,7 +50,7 @@ public final class LongFieldValue extends NumericFieldValue {
 
     @Override
     public void clear() {
-        value = 0l;
+        value = 0L;
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.util.HashSet;
 
 
 /**
- * Vespa map. Backed by and and parametrized by FieldValue
+ * Vespa map. Backed by and parametrized by FieldValue
  *
  * @author vegardh
  */

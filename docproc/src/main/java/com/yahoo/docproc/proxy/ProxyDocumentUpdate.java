@@ -20,13 +20,13 @@ import java.util.Map;
  */
 public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOperationWrapper {
 
-    private DocumentUpdate docU;
+    private final DocumentUpdate docU;
 
     /**
      * The field name map for schema mapping. The key is the field name that the docproc uses. 
      * The value is the actual name of the field in the document.
      */
-    private Map<String, String> fieldMap;
+    private final Map<String, String> fieldMap;
 
     public ProxyDocumentUpdate(DocumentUpdate docUpd, Map<String, String> fieldMap) {
         super(docUpd.getType(), docUpd.getId().toString()+"-schemamappedupdate");

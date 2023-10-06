@@ -46,7 +46,7 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     private final Map<String, String> fieldMap;
     private final Set<String> fieldsAllowed = new HashSet<>();
     private final String docProcName;
-    private Document doc;
+    private final Document doc;
 
     public ProxyDocument(DocumentProcessor docProc, Document doc, Map<String, String> fieldMap) {
         super(doc);
