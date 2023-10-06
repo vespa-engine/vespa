@@ -7,7 +7,7 @@ import static java.lang.Character.MAX_SURROGATE;
 import static java.lang.Character.MIN_SURROGATE;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.14
  */
 public class StringFieldValueTestCase {
@@ -17,16 +17,13 @@ public class StringFieldValueTestCase {
         new StringFieldValue("\t");
         new StringFieldValue("\r");
         new StringFieldValue("\n");
-        for (int c = 0x20; c < 0xFDD0; c++) {
-            new StringFieldValue("" + Character.toChars(c));
-        }
         for (int c = 0x20; c < MIN_SURROGATE; c++) {
             new StringFieldValue("" + Character.toChars(c)[0]);
         }
-        for (int c = MAX_SURROGATE; c < 0xFDD0; c++) {
+        for (int c = MAX_SURROGATE + 1; c < 0xFDD0; c++) {
             new StringFieldValue("" + Character.toChars(c)[0]);
         }
-        for (int c = 0xFDE0; c < 0xFFFF; c++) {
+        for (int c = 0xFDE0; c < 0xFFFE; c++) {
             new StringFieldValue("" + Character.toChars(c)[0]);
         }
         for (int c = 0x10000; c < 0x1FFFE; c++) {
@@ -270,6 +267,14 @@ public class StringFieldValueTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void requireThatControlCharFailsFDDF() {
         new StringFieldValue("\uFDDF");
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void requireThatControlCharFailsFFFE() {
+        new StringFieldValue("\uFFFE");
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void requireThatControlCharFailsFFFF() {
+        new StringFieldValue("\uFFFF");
     }
     @Test(expected = IllegalArgumentException.class)
     public void requireThatControlCharFails1FFFE() {
