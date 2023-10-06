@@ -42,6 +42,8 @@ public:
     // To be called after all RPC handlers have been registered.
     void start_server_and_register_slobrok(vespalib::stringref my_handle);
 
+    void sync_all_threads();
+
     void shutdown();
     [[nodiscard]] int listen_port() const noexcept; // Only valid if server has been started
 
