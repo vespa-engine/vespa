@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.MockPricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
@@ -36,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
@@ -53,12 +55,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
-import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
-import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -102,6 +101,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
+    private final MockPricingController pricingController = new MockPricingController();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -322,4 +322,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public BillingReporter billingReporter() {
         return new BillingReporterMock(clock());
     }
+
+    @Override
+    public PricingController pricingController() { return pricingController; }
+
 }
