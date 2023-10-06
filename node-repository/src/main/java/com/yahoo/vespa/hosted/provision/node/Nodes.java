@@ -618,17 +618,9 @@ public class Nodes {
      * @return the nodes in their new state
      */
     public List<Node> restartActive(Predicate<Node> filter) {
-        return restart(NodeFilter.in(Set.of(Node.State.active)).and(filter));
-    }
-
-    /**
-     * Increases the restart generation of the any nodes matching given filter.
-     *
-     * @return the nodes in their new state
-     */
-    public List<Node> restart(Predicate<Node> filter) {
-        return performOn(filter, (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
-                                                       lock));
+        return performOn(NodeFilter.in(Set.of(State.active)).and(filter),
+                         (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
+                                               lock));
     }
 
     /**
