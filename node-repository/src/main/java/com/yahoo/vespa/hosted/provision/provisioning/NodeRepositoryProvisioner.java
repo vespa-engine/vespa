@@ -15,7 +15,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
@@ -145,7 +144,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        nodeRepository.nodes().restartActive(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
+        List<Node> updated = nodeRepository.nodes().restartActive(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
+        if (updated.isEmpty()) {
+            throw new IllegalArgumentException("No matching nodes found");
+        }
     }
 
     @Override
