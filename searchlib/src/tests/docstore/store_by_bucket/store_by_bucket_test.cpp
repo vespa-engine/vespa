@@ -40,7 +40,8 @@ add(StoreByBucket & sbb, size_t i) {
 
 class VerifyBucketOrder : public StoreByBucket::IWrite {
 public:
-    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
+    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket(){ }
+    ~VerifyBucketOrder() override;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, vespalib::ConstBufferRef data) override {
         (void) chunkId;
         EXPECT_LESS_EQUAL(_lastBucketId.toKey(), bucketId.toKey());
@@ -56,22 +57,48 @@ public:
         _lastBucketId = bucketId;
         EXPECT_EQUAL(0, memcmp(data.data(), createPayload(bucketId).c_str(), data.size()));
     }
-    ~VerifyBucketOrder() override;
+
 private:
     uint32_t _lastLid;
     BucketId _lastBucketId;
     vespalib::hash_set<uint32_t> _uniqueUser;
     vespalib::hash_set<uint64_t> _uniqueBucket;
+
 };
 
 VerifyBucketOrder::~VerifyBucketOrder() = default;
+
+struct StoreIndex : public StoreByBucket::StoreIndex {
+    ~StoreIndex() override;
+    void store(const StoreByBucket::Index &index) override {
+        _where.push_back(index);
+    }
+    std::vector<StoreByBucket::Index> _where;
+};
+StoreIndex::~StoreIndex() = default;
+
+struct Iterator : public StoreByBucket::IndexIterator {
+    Iterator(const std::vector<StoreByBucket::Index> & where) : _where(where), _current(0) {}
+
+    bool has_next() noexcept override {
+        return _current < _where.size();
+    }
+
+    StoreByBucket::Index next() noexcept override {
+        return _where[_current++];
+    }
+
+    const std::vector<StoreByBucket::Index> & _where;
+    uint32_t _current;
+};
 
 TEST("require that StoreByBucket gives bucket by bucket and ordered within")
 {
     std::mutex backing_lock;
     vespalib::MemoryDataStore backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
     vespalib::ThreadStackExecutor executor(8);
-    StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
+    StoreIndex storeIndex;
+    StoreByBucket sbb(storeIndex, backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);
     }
@@ -79,10 +106,12 @@ TEST("require that StoreByBucket gives bucket by bucket and ordered within")
         add(sbb, i);
     }
     sbb.close();
-    EXPECT_EQUAL(32u, sbb.getBucketCount());
-    EXPECT_EQUAL(1000u, sbb.getLidCount());
+    std::sort(storeIndex._where.begin(), storeIndex._where.end());
+    //EXPECT_EQUAL(32u, sbb.getBucketCount());
+    EXPECT_EQUAL(1000u, storeIndex._where.size());
     VerifyBucketOrder vbo;
-    sbb.drain(vbo);
+    Iterator all(storeIndex._where);
+    sbb.drain(vbo, all);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

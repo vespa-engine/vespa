@@ -13,10 +13,10 @@ using document::BucketId;
 using vespalib::CpuUsage;
 using vespalib::makeLambdaTask;
 
-StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, CompressionConfig compression) noexcept
+StoreByBucket::StoreByBucket(StoreIndex & storeIndex, MemoryDataStore & backingMemory, Executor & executor, CompressionConfig compression) noexcept
     : _chunkSerial(0),
       _current(),
-      _where(),
+      _storeIndex(storeIndex),
       _backingMemory(backingMemory),
       _executor(executor),
       _lock(),
@@ -43,7 +43,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBuffe
         _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     }
     _current->append(lid, data);
-    _where.emplace_back(bucketId, _current->getId(), chunkId, lid);
+    _storeIndex.store(Index(bucketId, _current->getId(), chunkId, lid));
 }
 
 Chunk::UP
@@ -53,7 +53,7 @@ StoreByBucket::createChunk()
 }
 
 size_t
-StoreByBucket::getChunkCount() const {
+StoreByBucket::getChunkCount() const noexcept {
     std::lock_guard guard(_lock);
     return _chunks.size();
 }
@@ -94,26 +94,10 @@ StoreByBucket::close() {
     });
     _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     waitAllProcessed();
-    std::sort(_where.begin(), _where.end());
-}
-
-size_t
-StoreByBucket::getBucketCount() const {
-    if (_where.empty()) return 0;
-
-    size_t count = 0;
-    BucketId prev = _where.front()._bucketId;
-    for (const auto & lid : _where) {
-        if (lid._bucketId != prev) {
-            count++;
-            prev = lid._bucketId;
-        }
-    }
-    return count + 1;
 }
 
 void
-StoreByBucket::drain(IWrite & drainer)
+StoreByBucket::drain(IWrite & drainer, IndexIterator & indexIterator)
 {
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());
@@ -122,7 +106,8 @@ StoreByBucket::drain(IWrite & drainer)
         chunks[it.first] = std::make_unique<Chunk>(it.first, buf.data(), buf.size());
     }
     _chunks.clear();
-    for (auto & idx : _where) {
+    while (indexIterator.has_next()) {
+        Index idx = indexIterator.next();
         vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
         drainer.write(idx._bucketId, idx._chunkId, idx._lid, data);
     }

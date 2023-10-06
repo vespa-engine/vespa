@@ -37,7 +37,7 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
     _stat()
 {
     for (auto & partition : _tmpStore) {
-        partition = std::make_unique<StoreByBucket>(_backingMemory, executor, compression);
+        partition = std::make_unique<StoreByBucket>(*this, _backingMemory, executor, compression);
     }
 }
 
@@ -51,28 +51,61 @@ BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBuf
 {
     guard.unlock();
     BucketId bucketId = (data.size() > 0) ? _bucketizer.getBucketOf(_bucketizer.getGuard(), lid) : BucketId();
-    uint64_t sortableBucketId = bucketId.toKey();
-    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()]->add(bucketId, chunkId, lid, data);
+    _tmpStore[toPartitionId(bucketId)]->add(bucketId, chunkId, lid, data);
+}
+
+void
+BucketCompacter::store(const StoreByBucket::Index & index) {
+    _where.push_back(index);
+}
+
+size_t
+BucketCompacter::getBucketCount() const noexcept {
+    if (_where.empty()) return 0;
+
+    size_t count = 0;
+    BucketId prev = _where.front()._bucketId;
+    for (const auto & lid : _where) {
+        if (lid._bucketId != prev) {
+            count++;
+            prev = lid._bucketId;
+        }
+    }
+    return count + 1;
+}
+
+BucketCompacter::LidIterator::LidIterator(const BucketCompacter & bc, size_t partitionId)
+    : _bc(bc),
+      _partitionId(partitionId),
+      _current(_bc._where.begin())
+{}
+
+bool
+BucketCompacter::LidIterator::has_next() noexcept {
+    for (;(_current != _bc._where.end()) && (_bc.toPartitionId(_current->_bucketId) != _partitionId); _current++);
+    return (_current != _bc._where.end()) && (_bc.toPartitionId(_current->_bucketId) == _partitionId);
+}
+
+StoreByBucket::Index
+BucketCompacter::LidIterator::next() noexcept {
+    return *_current++;
 }
 
 void
 BucketCompacter::close()
 {
-    size_t lidCount1(0);
-    size_t bucketCount(0);
     size_t chunkCount(0);
     for (const auto & store : _tmpStore) {
         store->close();
-        lidCount1 += store->getLidCount();
-        bucketCount += store->getBucketCount();
         chunkCount += store->getChunkCount();
     }
+    std::sort(_where.begin(), _where.end());
     LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks.",
-              lidCount1, bucketCount, chunkCount);
+              _where.size(), getBucketCount(), chunkCount);
 
-    for (auto & store_ref : _tmpStore) {
-        auto store = std::move(store_ref);
-        store->drain(*this);
+    for (size_t partId(0); partId < _tmpStore.size(); partId++) {
+        LidIterator partIterator(*this, partId);
+        _tmpStore[partId]->drain(*this, partIterator);
     }
     // All partitions using _backingMemory should be destructed before clearing.
     _backingMemory.clear();
