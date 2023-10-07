@@ -65,7 +65,7 @@ private TensorDimension ::= WordWrapper (('{' '}') | ('[' INTEGER_REG ']'))
 
 SchemaFieldBody ::= ( DocumentFieldBodyOptions | NL )* // Fields of schemas and documents defined the same way here
 
-DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal)? BlockStart DocumentSummaryBody BlockEnd
+DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal (COMMA IdentifierWithDashVal)*)? BlockStart DocumentSummaryBody BlockEnd
                               { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                 implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                                }
