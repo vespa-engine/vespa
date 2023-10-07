@@ -1461,10 +1461,8 @@ void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
     String name;
 }
 {
-    <INHERITS> name = identifierWithDash()
-    {
-        documentSummary.inherit(name);
-    }
+    <INHERITS> name = identifierWithDash() { documentSummary.inherit(name); }
+    ( <COMMA>  name = identifierWithDash() { documentSummary.inherit(name); } )*
 }
 
 /**

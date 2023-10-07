@@ -7,6 +7,7 @@ import com.yahoo.schema.document.TypedKey;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -223,23 +224,18 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         return true;
     }
 
-    private String getDestinationString()
-    {
-        StringBuilder destinationString = new StringBuilder("destinations(");
-        for (String destination : destinations) {
-            destinationString.append(destination).append(" ");
-        }
-        destinationString.append(")");
-        return destinationString.toString();
+    private String getDestinationString() {
+        return destinations.stream().map(destination -> "document summary '" + destination + "'").collect(Collectors.joining(", "));
     }
 
+    @Override
     public String toString() {
         return "summary field '" + getName() + "'";
     }
 
     /** Returns a string which aids locating this field in the source search definition */
     public String toLocateString() {
-        return "'summary " + getName() + " type " + toLowerCase(getDataType().getName()) + "' in '" + getDestinationString() + "'";
+        return "summary " + getName() + " type " + toLowerCase(getDataType().getName()) + " in " + getDestinationString();
     }
 
     @Override

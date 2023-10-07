@@ -2,9 +2,13 @@
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.Schema;
+import com.yahoo.searchlib.rankingexpression.Reference;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,10 +23,9 @@ import java.util.logging.Level;
  */
 public class DocumentSummary extends FieldView {
 
-    private int id;
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
-    private Optional<String> inherited = Optional.empty();
+    private List<String> inherited = new ArrayList<>();
 
     private final Schema owner;
 
@@ -31,8 +34,6 @@ public class DocumentSummary extends FieldView {
         super(name);
         this.owner = owner;
     }
-
-    public int id() { return id; }
 
     public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
 
@@ -63,15 +64,23 @@ public class DocumentSummary extends FieldView {
         var field = (SummaryField)get(name);
         if (field != null) return field;
         if (inherited().isEmpty()) return null;
-        return inherited().get().getSummaryField(name);
+        for (var inheritedSummary : inherited()) {
+            var inheritedField = inheritedSummary.getSummaryField(name);
+            if (inheritedField != null)
+                return inheritedField;
+        }
+        return null;
     }
 
     public Map<String, SummaryField> getSummaryFields() {
-        var fields = new LinkedHashMap<String, SummaryField>(getFields().size());
-        inherited().ifPresent(inherited -> fields.putAll(inherited.getSummaryFields()));
+        var allFields = new LinkedHashMap<String, SummaryField>(getFields().size());
+        for (var inheritedSummary : inherited()) {
+            if (inheritedSummary == null) continue;
+            allFields.putAll(inheritedSummary.getSummaryFields());
+        }
         for (var field : getFields())
-            fields.put(field.getName(), (SummaryField) field);
-        return fields;
+            allFields.put(field.getName(), (SummaryField) field);
+        return allFields;
     }
 
     /**
@@ -99,14 +108,14 @@ public class DocumentSummary extends FieldView {
         }
     }
 
-    /** Sets the parent of this. Both summaries must be present in the same search definition */
-    public void setInherited(String inherited) {
-        this.inherited = Optional.of(inherited);
+    /** Adds a parent of this. Both summaries must be present in the same schema, or a parent schema. */
+    public void addInherited(String inherited) {
+        this.inherited.add(inherited);
     }
 
     /** Returns the parent of this, if any */
-    public Optional<DocumentSummary> inherited() {
-        return inherited.map(name -> owner.getSummary(name));
+    public List<DocumentSummary> inherited() {
+        return inherited.stream().map(name -> owner.getSummary(name)).toList();
     }
 
     @Override
@@ -115,16 +124,12 @@ public class DocumentSummary extends FieldView {
     }
 
     public void validate(DeployLogger logger) {
-        if (inherited.isPresent()) {
-            if ( ! owner.getSummaries().containsKey(inherited.get())) {
-                logger.log(Level.WARNING,
-                           this + " inherits " + inherited.get() + " but this" + " is not present in " + owner);
+        for (var inheritedName : inherited) {
+            var inheritedSummary = owner.getSummary(inheritedName);
+            if (inheritedSummary == null) {
+                // TODO Vespa 9: Throw IllegalArgumentException instead
                 logger.logApplicationPackage(Level.WARNING,
-                                             this + " inherits " + inherited.get() + " but this" + " is not present in " + owner);
-                // TODO: When safe, replace the above by
-                // throw new IllegalArgumentException(this + " inherits " + inherited.get() + " but this" +
-                //                                   " is not present in " + owner);
-                // ... and update SummaryTestCase.testValidationOfInheritedSummary
+                                             this + " inherits '" + inheritedName + "' but this" + " is not present in " + owner);
             }
         }
 
