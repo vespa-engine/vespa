@@ -234,6 +234,7 @@ enum PathGroup {
                "/badge/v1/{*}",     // Badges for deployment jobs.
                "/zone/v1/{*}",      // Lists environment and regions.
                "/cli/v1/{*}",       // Public information for Vespa CLI.
+               "/pricing/v1/{*}",   // Pricing information
                "/.well-known/{*}"),
 
     /** Paths used for deploying system-wide feature flags. */

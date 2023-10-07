@@ -77,6 +77,7 @@ public class ControllerContainerTest {
                  <component id='com.yahoo.vespa.hosted.controller.Controller'/>
                  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>
                  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>
+                 <component id='com.yahoo.vespa.hosted.controller.api.integration.MockPricingController'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>
                  <component id='com.yahoo.vespa.hosted.controller.integration.SecretStoreMock'/>
@@ -116,6 +117,9 @@ public class ControllerContainerTest {
                  </handler>
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.changemanagement.ChangeManagementApiHandler'>
                    <binding>http://localhost/changemanagement/v1/*</binding>
+                 </handler>
+                 <handler id='com.yahoo.vespa.hosted.controller.restapi.pricing.PricingApiHandler'>
+                   <binding>http://localhost/pricing/v1/*</binding>
                  </handler>
                %s
                </container>
