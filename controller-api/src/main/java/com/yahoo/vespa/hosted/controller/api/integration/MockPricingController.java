@@ -16,7 +16,6 @@ public class MockPricingController implements PricingController {
     public PriceInformation price(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
         return new PriceInformation(
                 BigDecimal.valueOf(clusterResources.stream()
-                                           .peek(System.out::println)
                                            .mapToDouble(resources -> resources.nodes() *
                                                    (resources.nodeResources().vcpu() * 1000 +
                                                            resources.nodeResources().memoryGb() * 100 +
