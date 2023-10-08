@@ -17,7 +17,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
-import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
@@ -46,8 +45,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("unused") // Handler
 public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
-    private final static Logger log = Logger.getLogger(PricingApiHandler.class.getName());
-    private static final BigDecimal SCALED_ZERO = new BigDecimal("0.00");
+    private static final Logger log = Logger.getLogger(PricingApiHandler.class.getName());
+    private static final BigDecimal SCALED_ZERO = BigDecimal.ZERO.setScale(2);
 
     private final Controller controller;
 
@@ -138,13 +137,10 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         return new ClusterResources(nodes, 1, nodeResources);
     }
 
-    private static String getKeyAndValue(String element, int index) {
-        return element.substring(0, index);
-    }
-
     private List<Pair<String, String>> keysAndValues(String[] elements) {
         return Arrays.stream(elements).map(element -> {
                     var index = element.indexOf("=");
+                    if (index <= 0 ) throw new IllegalArgumentException("Error in query parameter, expected '=' between key and value: " + element);
                     return new Pair<>(element.substring(0, index), element.substring(index + 1));
                 })
                 .collect(Collectors.toList());

@@ -29,16 +29,30 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                               200);
     }
 
+    @Test
+    void testPricingInfoWithIncompleteParameter() {
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        assertEquals(SystemName.Public, tester.controller().system());
+
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationWithMissingValueInResourcs());
+        tester.assertResponse(request,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: resources\"}",
+                              400);
+    }
+
     /**
      * 2 clusters, with each having 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation() {
-        var parameters = "supportLevel=standard&committedSpend=0&enclave=false" +
-                "&resources=nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0" +
-                "&resources=nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0";
+        String resources = URLEncoder.encode("nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0", UTF_8);
+        return "supportLevel=standard&committedSpend=0&enclave=false" +
+                "&resources=" + resources +
+                "&resources=" + resources;
+    }
 
-        return URLEncoder.encode(parameters, UTF_8);
+    String urlEncodedPriceInformationWithMissingValueInResourcs() {
+        return URLEncoder.encode("supportLevel=standard&committedSpend=0&enclave=false&resources", UTF_8);
     }
 
 }
