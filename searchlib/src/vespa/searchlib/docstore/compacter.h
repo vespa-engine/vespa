@@ -29,7 +29,7 @@ public:
     ~BucketIndexStore() override;
     size_t toPartitionId(document::BucketId bucketId) const noexcept {
         uint64_t sortableBucketId = bucketId.toKey();
-        return (sortableBucketId >> _unSignificantBucketBits) % _numPartitions;
+        return (sortableBucketId >> _inSignificantBucketBits) % _numPartitions;
     }
     void store(const StoreByBucket::Index & index) override;
     size_t getBucketCount() const noexcept;
@@ -48,7 +48,7 @@ private:
         size_t                        _partitionId;
         IndexVector::const_iterator   _current;
     };
-    size_t       _unSignificantBucketBits;
+    size_t       _inSignificantBucketBits;
     IndexVector  _where;
     uint32_t     _numPartitions;
     bool         _readyForIterate;

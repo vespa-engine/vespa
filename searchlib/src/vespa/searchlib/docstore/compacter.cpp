@@ -25,7 +25,7 @@ Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef
 }
 
 BucketIndexStore::BucketIndexStore(size_t maxSignificantBucketBits, uint32_t numPartitions) noexcept
-    : _unSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
+    : _inSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
       _where(),
       _numPartitions(numPartitions),
       _readyForIterate(true)
