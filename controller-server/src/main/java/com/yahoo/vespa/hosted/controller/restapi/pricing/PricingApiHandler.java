@@ -153,8 +153,16 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private static SlimeJsonResponse response(PriceInformation priceInfo) {
         var slime = new Slime();
         Cursor cursor = slime.setObject();
-        cursor.setString("listPrice", SCALED_ZERO.add(priceInfo.listPrice()).toPlainString());
-        cursor.setString("volumeDiscount", SCALED_ZERO.add(priceInfo.volumeDiscount()).toPlainString());
+
+        var array = cursor.setArray("priceInfo");
+
+        array.addObject().setString("listPrice", SCALED_ZERO.add(priceInfo.listPrice()).toPlainString());
+        array.addObject().setString("volumeDiscount", SCALED_ZERO.add(priceInfo.volumeDiscount()).toPlainString());
+        array.addObject().setString("committedAmountDiscount", SCALED_ZERO.add(priceInfo.committedAmountDiscount()).toPlainString());
+        array.addObject().setString("enclaveDiscount", SCALED_ZERO.add(priceInfo.enclaveDiscount()).toPlainString());
+
+        cursor.setString("totalAmount", priceInfo.totalAmount().toPlainString());
+
         return new SlimeJsonResponse(slime);
     }
 

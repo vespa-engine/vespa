@@ -14,14 +14,18 @@ public class MockPricingController implements PricingController {
 
     @Override
     public PriceInformation price(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
-        return new PriceInformation(
-                BigDecimal.valueOf(clusterResources.stream()
-                                           .mapToDouble(resources -> resources.nodes() *
-                                                   (resources.nodeResources().vcpu() * 1000 +
-                                                           resources.nodeResources().memoryGb() * 100 +
-                                                           resources.nodeResources().diskGb() * 10))
-                                           .sum())
-                        .setScale(2, RoundingMode.HALF_UP), BigDecimal.ZERO);
+        BigDecimal listPrice = BigDecimal.valueOf(clusterResources.stream()
+                                                          .mapToDouble(resources -> resources.nodes() *
+                                                                  (resources.nodeResources().vcpu() * 1000 +
+                                                                          resources.nodeResources().memoryGb() * 100 +
+                                                                          resources.nodeResources().diskGb() * 10))
+                                                          .sum())
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal volumeDiscount = new BigDecimal("5.00");
+        BigDecimal committedAmountDiscount = new BigDecimal("0.00");
+        BigDecimal enclaveDiscount = new BigDecimal("0.00");
+        BigDecimal totalAmount = listPrice.subtract(volumeDiscount);
+        return new PriceInformation(listPrice, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
     }
 
 }
