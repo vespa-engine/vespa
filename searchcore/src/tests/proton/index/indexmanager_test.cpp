@@ -31,6 +31,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
+#include <ostream>
 #include <set>
 #include <thread>
 
@@ -87,9 +88,9 @@ const uint32_t docid = 1;
 
 auto add_fields = [](auto& header) { header.addField(field_name, document::DataType::T_STRING); };
 
-Schema getSchema() {
+Schema getSchema(std::optional<bool> interleaved_features) {
     DocBuilder db(add_fields);
-    return SchemaBuilder(db).add_all_indexes().build();
+    return SchemaBuilder(db).add_all_indexes(interleaved_features).build();
 }
 
 void removeTestData() {
@@ -117,7 +118,7 @@ struct IndexManagerTest : public ::testing::Test {
     DummyFileHeaderContext _fileHeaderContext;
     TransportAndExecutorService _service;
     std::unique_ptr<IndexManager> _index_manager;
-    Schema _schema;
+    std::optional<bool> _interleaved_features;
     DocBuilder _builder;
 
     IndexManagerTest()
@@ -126,7 +127,7 @@ struct IndexManagerTest : public ::testing::Test {
           _fileHeaderContext(),
           _service(1),
           _index_manager(),
-          _schema(getSchema()),
+          _interleaved_features(),
           _builder(add_fields)
     {
         removeTestData();
@@ -139,7 +140,7 @@ struct IndexManagerTest : public ::testing::Test {
     }
 
     template <class FunctionType>
-    inline void runAsMaster(FunctionType &&function) {
+    void runAsMaster(FunctionType &&function) {
         vespalib::Gate gate;
         _service.write().master().execute(makeLambdaTask([&gate,function = std::move(function)]() {
             function();
@@ -148,7 +149,7 @@ struct IndexManagerTest : public ::testing::Test {
         gate.await();
     }
     template <class FunctionType>
-    inline void runAsIndex(FunctionType &&function) {
+    void runAsIndex(FunctionType &&function) {
         vespalib::Gate gate;
         _service.write().index().execute(makeLambdaTask([&gate,function = std::move(function)]() {
             function();
@@ -157,8 +158,9 @@ struct IndexManagerTest : public ::testing::Test {
         gate.await();
     }
     void flushIndexManager();
+    void run_fusion();
     Document::UP addDocument(uint32_t docid);
-    void resetIndexManager();
+    void resetIndexManager(SerialNum serial_num = 1);
     void removeDocument(uint32_t docId, SerialNum serialNum) {
         vespalib::Gate gate;
         runAsIndex([&]() {
@@ -177,12 +179,23 @@ struct IndexManagerTest : public ::testing::Test {
     }
     void assertStats(uint32_t expNumDiskIndexes,
                      uint32_t expNumMemoryIndexes,
-                     SerialNum expLastiskIndexSerialNum,
+                     SerialNum expLastDiskIndexSerialNum,
                      SerialNum expLastMemoryIndexSerialNum);
 
     IIndexCollection::SP get_source_collection() const {
         return _index_manager->getMaintainer().getSourceCollection();
     }
+    void set_schema(const Schema& schema, SerialNum serial_num)
+    {
+        runAsMaster([&]() { _index_manager->setSchema(schema, serial_num); });
+    }
+
+    bool has_pending_urgent_flush() const {
+        return _index_manager->has_pending_urgent_flush();
+    }
+    bool has_urgent_memory_index_flush() const;
+    bool has_urgent_fusion() const;
+    void assert_urgent(const vespalib::string& label, bool pending, bool flush, bool fusion);
 };
 
 void
@@ -195,6 +208,31 @@ IndexManagerTest::flushIndexManager()
     if (task.get()) {
         task->run();
     }
+}
+
+void
+IndexManagerTest::run_fusion()
+{
+    IndexFusionTarget target(_index_manager->getMaintainer());
+    std::unique_ptr<vespalib::Executor::Task> task;
+    runAsMaster([&]() { task = target.initFlush(0, std::make_shared<search::FlushToken>()); });
+    if (task) {
+        task->run();
+    }
+}
+
+bool
+IndexManagerTest::has_urgent_memory_index_flush() const
+{
+    IndexFlushTarget target(_index_manager->getMaintainer());
+    return target.needUrgentFlush();
+}
+
+bool
+IndexManagerTest::has_urgent_fusion() const
+{
+    IndexFusionTarget target(_index_manager->getMaintainer());
+    return target.needUrgentFlush();
 }
 
 Document::UP
@@ -211,12 +249,13 @@ IndexManagerTest::addDocument(uint32_t id)
 }
 
 void
-IndexManagerTest::resetIndexManager()
+IndexManagerTest::resetIndexManager(SerialNum serial_num)
 {
     _index_manager.reset();
-    _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(), 1,
+    _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(_interleaved_features), serial_num,
                              _reconfigurer, _service.write(), _service.shared(),
                              TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
+    _serial_num = std::max(serial_num, _index_manager->getFlushedSerialNum());
 }
 
 void
@@ -238,6 +277,15 @@ IndexManagerTest::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryI
     EXPECT_EQ(expNumMemoryIndexes, memoryIndexes.size());
     EXPECT_EQ(expLastDiskIndexSerialNum, lastDiskIndexSerialNum);
     EXPECT_EQ(expLastMemoryIndexSerialNum, lastMemoryIndexSerialNum);
+}
+
+void
+IndexManagerTest::assert_urgent(const vespalib::string& label, bool pending, bool flush, bool fusion)
+{
+    SCOPED_TRACE(label);
+    EXPECT_EQ(pending, has_pending_urgent_flush());
+    EXPECT_EQ(flush, has_urgent_memory_index_flush());
+    EXPECT_EQ(fusion, has_urgent_fusion());
 }
 
 TEST_F(IndexManagerTest, require_that_empty_memory_index_is_not_flushed)
@@ -295,10 +343,11 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         IndexFlushTarget target(_index_manager->getMaintainer());
         EXPECT_EQ(vespalib::system_time(), target.getLastFlushTime());
         vespalib::Executor::Task::UP flushTask;
-        runAsMaster([&]() { flushTask = target.initFlush(1, std::make_shared<search::FlushToken>()); });
+        runAsMaster([&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
         EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         sources = get_source_collection();
         EXPECT_EQ(2u, sources->getSourceCount());
@@ -317,14 +366,15 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
         EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         // updated serial number & flush time when nothing to flush
         std::this_thread::sleep_for(2s);
         std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
         vespalib::Executor::Task::UP task;
-        runAsMaster([&]() { task = target.initFlush(2, std::make_shared<search::FlushToken>()); });
+        runAsMaster([&]() { task = target.initFlush(3, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
-        EXPECT_EQ(2u, target.getFlushedSerialNum());
+        EXPECT_EQ(3u, target.getFlushedSerialNum());
         EXPECT_LT(stat._modifiedTime, target.getLastFlushTime());
         EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 2);
     }
@@ -408,7 +458,7 @@ VESPA_THREAD_STACK_TAG(push_executor)
 
 TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 {
-    Schema schema(getSchema());
+    Schema schema(getSchema(_interleaved_features));
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
@@ -773,11 +823,11 @@ TEST_F(IndexManagerTest, require_that_indexes_manager_stats_can_be_generated)
 {
     assertStats(0, 1, 0, 0);
     addDocument(1);
-    assertStats(0, 1, 0, 1);
+    assertStats(0, 1, 0, 2);
     flushIndexManager();
-    assertStats(1, 1, 1, 1);
+    assertStats(1, 1, 2, 2);
     addDocument(2);
-    assertStats(1, 1, 1, 2);
+    assertStats(1, 1, 2, 3);
 }
 
 TEST_F(IndexManagerTest, require_that_compact_lid_space_works)
@@ -878,6 +928,126 @@ TEST_F(IndexManagerTest, fusion_can_be_stopped)
     EXPECT_EQ(1u, spec.flush_ids[0]);
     EXPECT_EQ(2u, spec.flush_ids[1]);
 }
+
+struct EnableInterleavedFeaturesParam
+{
+    vespalib::string name = "no_restart";
+    bool restart1 = false;      // Restart after flushing 1st memory index without interleaved features
+    bool doc2 = false;          // Feed second doc
+    bool restart2 = false;      // Restart after flushing 2nd memory index with interleaved fatures
+    bool pruned_config = false; // Original config has been pruned
+
+    EnableInterleavedFeaturesParam restart() && {
+        name = "restart";
+        restart1 = true;
+        return *this;
+    }
+    EnableInterleavedFeaturesParam new_doc_restart() && {
+        name = "new_doc_restart";
+        restart1 = true;
+        doc2 = true;
+        return *this;
+    }
+    EnableInterleavedFeaturesParam new_doc_multiple_restarts() && {
+        name = "new_doc_multiple_restart";
+        restart1 = true;
+        doc2 = true;
+        restart2 = true;
+        return *this;
+    }
+    EnableInterleavedFeaturesParam new_doc_pruned_config() && {
+        name = "new_doc_pruned_config";
+        restart1 = true;
+        doc2 = true;
+        restart2 = true;
+        pruned_config = true;
+        return *this;
+    }
+    EnableInterleavedFeaturesParam new_doc_multiple_restarts_pruned_config() && {
+        name = "new_doc_multiple_restarts_pruned_config";
+        restart1 = true;
+        doc2 = true;
+        restart2 = true;
+        pruned_config = true;
+        return *this;
+    }
+};
+
+std::ostream& operator<<(std::ostream& os, const EnableInterleavedFeaturesParam& param)
+{
+    os << param.name;
+    return os;
+}
+
+class IndexManagerEnableInterleavedFeaturesTest : public IndexManagerTest,
+                         public testing::WithParamInterface<EnableInterleavedFeaturesParam>
+{
+protected:
+    void enable_interleaved_features(const vespalib::string& label, bool flushed_interleaved_features, std::optional<SerialNum> serial_num = std::nullopt);
+};
+
+void
+IndexManagerEnableInterleavedFeaturesTest::enable_interleaved_features(const vespalib::string& label, bool flushed_interleaved_features, std::optional<SerialNum> serial_num)
+{
+    if (!serial_num.has_value()) {
+        serial_num = ++_serial_num;
+    }
+    set_schema(getSchema(true), serial_num.value());
+    assert_urgent(label, true, !flushed_interleaved_features, flushed_interleaved_features);
+}
+
+TEST_P(IndexManagerEnableInterleavedFeaturesTest, enable_interleaved_features)
+{
+    const auto& params = GetParam();
+    _interleaved_features = false;
+    SerialNum config_gen = 1;
+    resetIndexManager(config_gen);
+    // Feed first doc to memory index without interleaved features
+    addDocument(docid);
+    assert_urgent("setup", false, false, false);
+    flushIndexManager();
+    assert_urgent("after 1st flush", false, false, false);
+    enable_interleaved_features("enable interleaved features", false);
+    auto schema_change_serial_num = _serial_num;
+    EXPECT_EQ(3, schema_change_serial_num);
+    if (params.restart1) {
+        // Restart after flushing 1st memory index without interleaved features
+        resetIndexManager(config_gen);
+        assert_urgent("after restart1", false, false, false);
+        EXPECT_EQ(schema_change_serial_num, _serial_num + 1);
+        enable_interleaved_features("replay enable interleaved features after restart1", false);
+    }
+    if (params.doc2) {
+        // Feed second doc to memory index with interleaved features
+        addDocument(docid + 1);
+    }
+    SerialNum disk2_serial_num = schema_change_serial_num + (params.doc2 ? 1 : 0);
+    EXPECT_EQ(disk2_serial_num, _serial_num);
+    flushIndexManager();
+    assert_urgent("after 2nd flush", true, false, true);
+    if (params.pruned_config) {
+        // Original config has been pruned
+        _interleaved_features = true;
+        config_gen = 3;
+    }
+    if (params.restart2) {
+        // Restart after flushing 2nd memory index with interleaved fatures
+        resetIndexManager(config_gen);
+        assert_urgent("after restart2", true, false, true);
+        EXPECT_EQ(disk2_serial_num, _serial_num);
+        enable_interleaved_features("replay enable interleaved features after restart2", true, schema_change_serial_num);
+    }
+    run_fusion();
+    assert_urgent("after fusion", false, false, false);
+}
+
+auto test_values = testing::Values(EnableInterleavedFeaturesParam(),
+                                   EnableInterleavedFeaturesParam().restart(),
+                                   EnableInterleavedFeaturesParam().new_doc_restart(),
+                                   EnableInterleavedFeaturesParam().new_doc_multiple_restarts(),
+                                   EnableInterleavedFeaturesParam().new_doc_multiple_restarts_pruned_config());
+
+INSTANTIATE_TEST_SUITE_P(MultiIndexManagerEnableInterleavedFeaturesTest, IndexManagerEnableInterleavedFeaturesTest, test_values, testing::PrintToStringParamName());
 
 }  // namespace
 

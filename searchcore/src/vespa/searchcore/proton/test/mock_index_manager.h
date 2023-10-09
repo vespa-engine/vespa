@@ -29,6 +29,7 @@ struct MockIndexManager : public searchcorespi::IIndexManager
     void heartBeat(SerialNum) override {}
     void compactLidSpace(uint32_t, SerialNum) override {}
     void setMaxFlushed(uint32_t) override { }
+    bool has_pending_urgent_flush() const override { return false; }
 };
 
 }

@@ -76,6 +76,7 @@ IndexManagerExplorer::get_state(const Inserter &inserter, bool full) const
     object.setLong("lastSerialNum", _mgr->getCurrentSerialNum());
     if (full) {
         IndexManagerStats stats(*_mgr);
+        object.setBool("pending_urgent_flush", _mgr->has_pending_urgent_flush());
         Cursor &diskIndexArrayCursor = object.setArray("diskIndexes");
         for (const auto &diskIndex : stats.getDiskIndexes()) {
             insertDiskIndex(diskIndexArrayCursor, diskIndex);

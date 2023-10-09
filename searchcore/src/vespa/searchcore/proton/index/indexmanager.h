@@ -129,6 +129,9 @@ public:
     void setMaxFlushed(uint32_t maxFlushed) override {
         _maintainer.setMaxFlushed(maxFlushed);
     }
+    bool has_pending_urgent_flush() const override {
+        return _maintainer.has_pending_urgent_flush();
+    }
 };
 
 } // namespace proton
