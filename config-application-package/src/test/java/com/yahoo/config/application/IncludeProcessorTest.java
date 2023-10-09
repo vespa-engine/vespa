@@ -29,7 +29,7 @@ public class IncludeProcessorTest {
         String expected =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. --><services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. --><services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
                     <preprocess:properties>
                         <qrs.port>4099</qrs.port>
                         <qrs.port>5000</qrs.port>
