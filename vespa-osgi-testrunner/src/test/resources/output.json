@@ -1,61 +1,7 @@
 {
   "logRecords": [
     {
-      "id": 2,
-      "at": 0,
-      "type": "info",
-      "message": "spam"
-    },
-    {
-      "id": 5,
-      "at": 0,
-      "type": "info",
-      "message": "spam"
-    },
-    {
-      "id": 6,
-      "at": 0,
-      "type": "error",
-      "message": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:87)\n"
-    },
-    {
-      "id": 9,
-      "at": 0,
-      "type": "info",
-      "message": "spam"
-    },
-    {
-      "id": 10,
-      "at": 0,
-      "type": "info",
-      "message": "I have a bad feeling about this"
-    },
-    {
-      "id": 11,
-      "at": 0,
-      "type": "error",
-      "message": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n"
-    },
-    {
-      "id": 15,
-      "at": 0,
-      "type": "info",
-      "message": "spam"
-    },
-    {
-      "id": 16,
-      "at": 0,
-      "type": "info",
-      "message": "I'm here with Erwin today; Erwin, what can you tell us about your cat?"
-    },
-    {
-      "id": 17,
-      "at": 0,
-      "type": "warning",
-      "message": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
-    },
-    {
-      "id": 20,
+      "id": 18,
       "at": 0,
       "type": "info",
       "message": "spam"
@@ -64,70 +10,124 @@
       "id": 21,
       "at": 0,
       "type": "info",
-      "message": "<body />"
+      "message": "spam"
     },
     {
       "id": 22,
       "at": 0,
-      "type": "info",
-      "message": "Very informative: \"\\n\": \n"
+      "type": "error",
+      "message": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:88)\n"
     },
     {
-      "id": 23,
-      "at": 0,
-      "type": "warning",
-      "message": "Oh no\njava.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:75)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n"
-    },
-    {
-      "id": 27,
+      "id": 25,
       "at": 0,
       "type": "info",
       "message": "spam"
     },
     {
-      "id": 30,
+      "id": 26,
       "at": 0,
       "type": "info",
-      "message": "Catch me if you can!"
+      "message": "I have a bad feeling about this"
     },
     {
-      "id": 34,
+      "id": 27,
       "at": 0,
       "type": "error",
-      "message": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
+      "message": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:82)\n"
+    },
+    {
+      "id": 31,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 32,
+      "at": 0,
+      "type": "info",
+      "message": "I'm here with Erwin today; Erwin, what can you tell us about your cat?"
+    },
+    {
+      "id": 33,
+      "at": 0,
+      "type": "warning",
+      "message": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:94)\n"
+    },
+    {
+      "id": 36,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 37,
+      "at": 0,
+      "type": "info",
+      "message": "<body />"
     },
     {
       "id": 38,
       "at": 0,
       "type": "info",
+      "message": "Very informative: \"\\n\": \n"
+    },
+    {
+      "id": 39,
+      "at": 0,
+      "type": "warning",
+      "message": "Oh no\njava.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:76)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n"
+    },
+    {
+      "id": 43,
+      "at": 0,
+      "type": "info",
       "message": "spam"
     },
     {
-      "id": 67,
+      "id": 46,
       "at": 0,
-      "type": "error",
-      "message": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n"
+      "type": "info",
+      "message": "Catch me if you can!"
     },
     {
-      "id": 69,
+      "id": 50,
       "at": 0,
       "type": "error",
-      "message": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:13)\n"
+      "message": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:106)\n"
     },
     {
-      "id": 72,
+      "id": 54,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 2,
+      "at": 0,
+      "type": "error",
+      "message": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:20)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:17)\n"
+    },
+    {
+      "id": 4,
+      "at": 0,
+      "type": "error",
+      "message": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:14)\n"
+    },
+    {
+      "id": 7,
       "at": 0,
       "type": "error",
       "message": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n"
     },
     {
-      "id": 76,
+      "id": 11,
       "at": 0,
       "type": "error",
-      "message": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+      "message": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:20)\n"
     },
     {
-      "id": 80,
+      "id": 15,
       "at": 12000,
       "type": "error",
       "message": "java.lang.ClassNotFoundException: School's out all summer!\n"
