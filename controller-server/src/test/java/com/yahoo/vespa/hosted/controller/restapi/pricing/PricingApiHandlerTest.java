@@ -46,13 +46,13 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      */
     String urlEncodedPriceInformation() {
         String resources = URLEncoder.encode("nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0", UTF_8);
-        return "supportLevel=standard&committedSpend=0&enclave=false" +
+        return "supportLevel=basic&committedSpend=0&enclave=false" +
                 "&resources=" + resources +
                 "&resources=" + resources;
     }
 
     String urlEncodedPriceInformationWithMissingValueInResourcs() {
-        return URLEncoder.encode("supportLevel=standard&committedSpend=0&enclave=false&resources", UTF_8);
+        return URLEncoder.encode("supportLevel=basic&committedSpend=0&enclave=false&resources", UTF_8);
     }
 
 }

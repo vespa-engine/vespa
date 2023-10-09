@@ -88,7 +88,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         String[] elements = URLDecoder.decode(rawQuery, UTF_8).split("&");
         if (elements.length == 0) throw new IllegalArgumentException("no price information found in query");
 
-        var supportLevel = SupportLevel.STANDARD;
+        var supportLevel = SupportLevel.BASIC;
         var enclave = false;
         var committedSpend = 0d;
         var plan = controller.serviceRegistry().planRegistry().defaultPlan();  // fallback to default plan if not supplied
