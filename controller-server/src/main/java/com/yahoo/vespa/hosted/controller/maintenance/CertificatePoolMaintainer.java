@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Manages pool of ready-to-use randomized endpoint certificates
+ * Manages a pool of ready-to-use endpoint certificates.
  *
  * @author andreer
  */
@@ -72,10 +72,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             metric.set(ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.baseName(), (poolSize > 0 ? ((double)available/poolSize) : 1.0), metric.createContext(Map.of()));
 
             if (certificatePool.size() < poolSize) {
-                provisionRandomizedCertificate();
+                provisionCertificate();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Exception caught while maintaining pool of unused randomized endpoint certs", e);
+            log.log(Level.SEVERE, "Failed to maintain certificate pool", e);
             return 1.0;
         }
         return 0.0;
@@ -90,17 +90,17 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                     OptionalInt maxCertVersion = secretStore.listSecretVersions(cert.certificate().certName()).stream().mapToInt(i -> i).max();
                     if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
                         curator.writeUnassignedCertificate(cert.withState(UnassignedCertificate.State.ready));
-                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(cert.id()));
+                        log.log(Level.INFO, "Readied certificate %s".formatted(cert.id()));
                     }
                 } catch (SecretNotFoundException s) {
                     // Likely because the certificate is very recently provisioned - ignore till next time - should we log?
-                    log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(cert.id()));
+                    log.log(Level.INFO, "Cannot ready certificate %s yet, will retry in %s".formatted(cert.id(), interval()));
                 }
             }
         }
     }
 
-    private void provisionRandomizedCertificate() {
+    private void provisionCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Set<String> existingNames = controller.curator().readUnassignedCertificates().stream().map(UnassignedCertificate::id).collect(Collectors.toSet());
 
@@ -109,27 +109,26 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                    .map(EndpointCertificate::generatedId)
                    .forEach(id -> id.ifPresent(existingNames::add));
 
-            String id = generateRandomId();
-            while (existingNames.contains(id)) id = generateRandomId();
+            String id = generateId();
+            while (existingNames.contains(id)) id = generateId();
 
-            EndpointCertificate f = endpointCertificateProvider.requestCaSignedCertificate(
-                            "preprovisioned.%s".formatted(id),
-                            List.of(
-                                    "*.%s.z%s".formatted(id, dnsSuffix),
-                                    "*.%s.g%s".formatted(id, dnsSuffix),
-                                    "*.%s.a%s".formatted(id, dnsSuffix)
-                            ),
-                            Optional.empty(),
-                            endpointCertificateAlgo.value(),
-                            useAlternateCertProvider.value())
-                                                               .withGeneratedId(id);
+            EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
+                    "preprovisioned.%s".formatted(id),
+                    List.of(
+                            "*.%s.z%s".formatted(id, dnsSuffix),
+                            "*.%s.g%s".formatted(id, dnsSuffix),
+                            "*.%s.a%s".formatted(id, dnsSuffix)
+                    ),
+                    Optional.empty(),
+                    endpointCertificateAlgo.value(),
+                    useAlternateCertProvider.value()).withGeneratedId(id);
 
-            UnassignedCertificate certificate = new UnassignedCertificate(f, UnassignedCertificate.State.requested);
+            UnassignedCertificate certificate = new UnassignedCertificate(cert, UnassignedCertificate.State.requested);
             curator.writeUnassignedCertificate(certificate);
         }
     }
 
-    private String generateRandomId() {
+    private String generateId() {
         return GeneratedEndpoint.createPart(controller.random(true));
     }
 
