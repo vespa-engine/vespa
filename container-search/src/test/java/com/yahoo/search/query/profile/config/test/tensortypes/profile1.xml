@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="profile1" type="type1">
     <field name="mykey">key1</field>
     <field name="ranking.features.query(tensor_4)">{{key:"pre_%{mykey}_post"}:1.0}</field>

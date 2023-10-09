@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 // TODO: Keep the set of metrics in this set stable until Vespa 9.
 // TODO: Vespa 9: Let this class be replaced by Vespa9DefaultMetricSet.

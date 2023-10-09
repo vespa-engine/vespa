@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <filesystem>

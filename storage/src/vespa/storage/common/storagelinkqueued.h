@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * Storage link implementing a separate thread for dispatching replies.
  * Using this class you can use dispatchReply instead of sendReply to have the

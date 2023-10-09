@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <page id="includer" description="Demonstrates the various include cases">
     <section id="case1" description="No choices">
         <include idref="header"/>

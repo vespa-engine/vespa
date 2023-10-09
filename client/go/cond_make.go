@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // This is a wrapper around make that runs the given target conditionally, i.e. only when considered necessary.
 //
 // For example, the Homebrew target only bumps the formula for vespa-cli if no pull request has previously been made

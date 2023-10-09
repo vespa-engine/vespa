@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="multiprofileDimensions">
     <!-- Names of the request parameters defining the variant profiles of this. Order matters as described below.
          Each individual value looked up in this profile is resolved from the most specific matching virtual

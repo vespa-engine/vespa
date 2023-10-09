@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Levenshtein distance algorithm is based off Java implementation from apache commons-text library licensed under the Apache 2.0 license.
 
 #include "levenshtein_distance.h"

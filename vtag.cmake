@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/dist/vtag.map")
     message(FATAL_ERROR "dist/vtag.map does not exist, please run bootstrap.sh before configuring cmake" )
 endif()

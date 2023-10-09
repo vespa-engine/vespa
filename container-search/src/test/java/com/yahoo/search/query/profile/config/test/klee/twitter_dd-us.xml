@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="twitter_dd-us" inherits ="twitter_dd">
     <field name="model.filter">+yst_tweet_language:en +yst_tweet_adult_score:0</field>
 </query-profile>

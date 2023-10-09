@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/tensor/hnsw_multi_best_neighbors.h>
 #include <vespa/searchlib/tensor/hnsw_single_best_neighbors.h>

@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ACCEL_FILES "avx2.cpp" "avx512.cpp")

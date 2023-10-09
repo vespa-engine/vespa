@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 file(MAKE_DIRECTORY classes)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/java_code_compiled
                    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../binref/compilejava -d classes *.java

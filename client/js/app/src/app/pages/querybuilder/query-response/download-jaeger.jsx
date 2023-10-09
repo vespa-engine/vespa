@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 import { Button } from '@mantine/core';
 import React from 'react';
 import { errorMessage } from 'app/libs/notification';

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_zstar_compressed_posting_list.
 
 #include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>

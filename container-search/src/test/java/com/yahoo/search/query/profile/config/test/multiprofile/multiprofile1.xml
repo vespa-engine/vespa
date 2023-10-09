@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="multiprofile1" inherits="multiprofileDimensions"> <!-- A regular profile may define "virtual" children within itself -->
 
     <!-- Values may be set in the profile itself as usual, this becomes the default values given no matching

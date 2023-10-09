@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>

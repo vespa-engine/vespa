@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 base=$1
 
 echo "No threads test. Test difference of static linkage, shared and debug versus glibc"

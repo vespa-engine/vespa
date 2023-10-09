@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <!-- Component which can import some ml model.
      This is included into the config server services.xml to enable it to translate
      model pseudo features in ranking expressions during config model building.
