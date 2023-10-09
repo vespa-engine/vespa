@@ -800,7 +800,7 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex
             _frozenMemoryIndexes.emplace_back(args._oldIndex, freezeSerialNum, std::move(saveInfo), oldAbsoluteId);
         }
         _current_index = newIndex;
-        if (serial_num > flush_serial_num()) {
+        if (serial_num > flush_serial_num() && get_absolute_id() > 1) {
             consider_urgent_flush(args._oldSchema, args._newSchema, get_absolute_id());
         }
         // If schema changes triggered a need for urgent flush then we must

@@ -33,6 +33,7 @@
 #include <filesystem>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -931,43 +932,39 @@ TEST_F(IndexManagerTest, fusion_can_be_stopped)
 
 struct EnableInterleavedFeaturesParam
 {
+    enum class Restart {
+        NONE,
+        RESTART1,
+        RESTART2
+    };
     vespalib::string name = "no_restart";
+    Restart restart = Restart::NONE;
     bool restart1 = false;      // Restart after flushing 1st memory index without interleaved features
-    bool doc2 = false;          // Feed second doc
+    bool doc = false;          // Feed doc after enabling interleaved fatures
     bool restart2 = false;      // Restart after flushing 2nd memory index with interleaved fatures
     bool pruned_config = false; // Original config has been pruned
 
-    EnableInterleavedFeaturesParam restart() && {
-        name = "restart";
-        restart1 = true;
+    EnableInterleavedFeaturesParam no_doc_restart1() && {
+        name = "restart1";
+        restart = Restart::RESTART1;
         return *this;
     }
-    EnableInterleavedFeaturesParam new_doc_restart() && {
-        name = "new_doc_restart";
-        restart1 = true;
-        doc2 = true;
+    EnableInterleavedFeaturesParam doc_restart1() && {
+        name = "doc_restart1";
+        restart = Restart::RESTART1;
+        doc = true;
         return *this;
     }
-    EnableInterleavedFeaturesParam new_doc_multiple_restarts() && {
-        name = "new_doc_multiple_restart";
-        restart1 = true;
-        doc2 = true;
-        restart2 = true;
+    EnableInterleavedFeaturesParam doc_restart2() && {
+        name = "doc_restart2";
+        restart = Restart::RESTART2;
+        doc = true;
         return *this;
     }
-    EnableInterleavedFeaturesParam new_doc_pruned_config() && {
-        name = "new_doc_pruned_config";
-        restart1 = true;
-        doc2 = true;
-        restart2 = true;
-        pruned_config = true;
-        return *this;
-    }
-    EnableInterleavedFeaturesParam new_doc_multiple_restarts_pruned_config() && {
-        name = "new_doc_multiple_restarts_pruned_config";
-        restart1 = true;
-        doc2 = true;
-        restart2 = true;
+    EnableInterleavedFeaturesParam doc_restart2_pruned_config() && {
+        name = "doc_restart2_pruned_config";
+        restart = Restart::RESTART2;
+        doc = true;
         pruned_config = true;
         return *this;
     }
@@ -979,75 +976,106 @@ std::ostream& operator<<(std::ostream& os, const EnableInterleavedFeaturesParam&
     return os;
 }
 
+std::string
+param_as_string(const testing::TestParamInfo<std::tuple<bool, bool, EnableInterleavedFeaturesParam>>& info)
+{
+    std::ostringstream os;
+    auto& param = info.param;
+    os << (std::get<0>(param) ? "disk_" : "");
+    os << (std::get<1>(param) ? "m1_" : "m0_");
+    os << std::get<2>(param);
+    return os.str();
+}
+
 class IndexManagerEnableInterleavedFeaturesTest : public IndexManagerTest,
-                         public testing::WithParamInterface<EnableInterleavedFeaturesParam>
+                                                  public testing::WithParamInterface<std::tuple<bool, bool, EnableInterleavedFeaturesParam>>
 {
 protected:
-    void enable_interleaved_features(const vespalib::string& label, bool flushed_interleaved_features, std::optional<SerialNum> serial_num = std::nullopt);
+    void enable_interleaved_features(const vespalib::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num = std::nullopt);
 };
 
 void
-IndexManagerEnableInterleavedFeaturesTest::enable_interleaved_features(const vespalib::string& label, bool flushed_interleaved_features, std::optional<SerialNum> serial_num)
+IndexManagerEnableInterleavedFeaturesTest::enable_interleaved_features(const vespalib::string& label, bool old_config_docs, bool flushed_interleaved_features, std::optional<SerialNum> serial_num)
 {
     if (!serial_num.has_value()) {
         serial_num = ++_serial_num;
     }
     set_schema(getSchema(true), serial_num.value());
-    assert_urgent(label, true, !flushed_interleaved_features, flushed_interleaved_features);
+    assert_urgent(label, old_config_docs, old_config_docs && !flushed_interleaved_features, old_config_docs && flushed_interleaved_features);
 }
 
 TEST_P(IndexManagerEnableInterleavedFeaturesTest, enable_interleaved_features)
 {
+    using Restart = EnableInterleavedFeaturesParam::Restart;
     const auto& params = GetParam();
+    // State before enabling interleaved features
+    bool initial_disk_index = std::get<0>(params);
+    bool nonempty_memory_index = std::get<1>(params);
+    // State for after enabling interleaved features
+    const auto& enable_params = std::get<2>(params);
+    bool old_config_docs = false;
+
     _interleaved_features = false;
-    SerialNum config_gen = 1;
-    resetIndexManager(config_gen);
-    // Feed first doc to memory index without interleaved features
-    addDocument(docid);
-    assert_urgent("setup", false, false, false);
-    flushIndexManager();
-    assert_urgent("after 1st flush", false, false, false);
-    enable_interleaved_features("enable interleaved features", false);
-    auto schema_change_serial_num = _serial_num;
-    EXPECT_EQ(3, schema_change_serial_num);
-    if (params.restart1) {
-        // Restart after flushing 1st memory index without interleaved features
-        resetIndexManager(config_gen);
-        assert_urgent("after restart1", false, false, false);
-        EXPECT_EQ(schema_change_serial_num, _serial_num + 1);
-        enable_interleaved_features("replay enable interleaved features after restart1", false);
+    SerialNum config_serial_num = 1;
+    resetIndexManager(config_serial_num);
+    if (initial_disk_index) {
+        // Feed doc to memory index without interleaved features and flush
+        // memory index to disk
+        addDocument(docid);
+        old_config_docs = true;
+        flushIndexManager();
     }
-    if (params.doc2) {
-        // Feed second doc to memory index with interleaved features
+    if (nonempty_memory_index) {
+        // Feed doc to memory index without interleaved features
         addDocument(docid + 1);
+        old_config_docs = true;
     }
-    SerialNum disk2_serial_num = schema_change_serial_num + (params.doc2 ? 1 : 0);
+    assert_urgent("setup", false, false, false);
+    enable_interleaved_features("enable interleaved features", old_config_docs, false);
+    auto schema_change_serial_num = _serial_num;
+    EXPECT_EQ(2 + (initial_disk_index ? 1 : 0) + (nonempty_memory_index ? 1 : 0), schema_change_serial_num);
+    if (enable_params.restart == Restart::RESTART1) {
+        // Restart after flushing 1st memory index without interleaved features
+        resetIndexManager(config_serial_num);
+        assert_urgent("after restart1", false, false, false);
+        if (nonempty_memory_index) {
+            addDocument(docid + 1);
+        }
+        EXPECT_EQ(schema_change_serial_num, _serial_num + 1);
+        enable_interleaved_features("replay enable interleaved features after restart1", old_config_docs, false);
+    }
+    if (enable_params.doc) {
+        // Feed second doc to memory index with interleaved features
+        addDocument(docid + 2);
+    }
+    SerialNum disk2_serial_num = schema_change_serial_num + (enable_params.doc ? 1 : 0);
     EXPECT_EQ(disk2_serial_num, _serial_num);
     flushIndexManager();
-    assert_urgent("after 2nd flush", true, false, true);
-    if (params.pruned_config) {
+    assert_urgent("after 2nd flush", old_config_docs, false, old_config_docs);
+    if (enable_params.pruned_config) {
         // Original config has been pruned
         _interleaved_features = true;
-        config_gen = 3;
+        config_serial_num = schema_change_serial_num;
     }
-    if (params.restart2) {
+    if (enable_params.restart == Restart::RESTART2) {
         // Restart after flushing 2nd memory index with interleaved fatures
-        resetIndexManager(config_gen);
-        assert_urgent("after restart2", true, false, true);
+        resetIndexManager(config_serial_num);
+        assert_urgent("after restart2", old_config_docs, false, old_config_docs);
         EXPECT_EQ(disk2_serial_num, _serial_num);
-        enable_interleaved_features("replay enable interleaved features after restart2", true, schema_change_serial_num);
+        enable_interleaved_features("replay enable interleaved features after restart2", old_config_docs, true, schema_change_serial_num);
     }
     run_fusion();
     assert_urgent("after fusion", false, false, false);
 }
 
-auto test_values = testing::Values(EnableInterleavedFeaturesParam(),
-                                   EnableInterleavedFeaturesParam().restart(),
-                                   EnableInterleavedFeaturesParam().new_doc_restart(),
-                                   EnableInterleavedFeaturesParam().new_doc_multiple_restarts(),
-                                   EnableInterleavedFeaturesParam().new_doc_multiple_restarts_pruned_config());
+auto test_values = testing::Combine(testing::Bool(), testing::Bool(),
+                                    testing::Values(EnableInterleavedFeaturesParam(),
+                                                    EnableInterleavedFeaturesParam().no_doc_restart1(),
+                                                    EnableInterleavedFeaturesParam().doc_restart1(),
+                                                    EnableInterleavedFeaturesParam().doc_restart2(),
+                                                    EnableInterleavedFeaturesParam().doc_restart2_pruned_config()));
 
-INSTANTIATE_TEST_SUITE_P(MultiIndexManagerEnableInterleavedFeaturesTest, IndexManagerEnableInterleavedFeaturesTest, test_values, testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(MultiIndexManagerEnableInterleavedFeaturesTest, IndexManagerEnableInterleavedFeaturesTest, test_values, param_as_string);
 
 }  // namespace
 
