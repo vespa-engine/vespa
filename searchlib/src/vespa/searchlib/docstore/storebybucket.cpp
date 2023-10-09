@@ -108,7 +108,7 @@ StoreByBucket::drain(IWrite & drainer, IndexIterator & indexIterator)
     _chunks.clear();
     while (indexIterator.has_next()) {
         Index idx = indexIterator.next();
-        vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
+        vespalib::ConstBufferRef data(chunks[idx._localChunkId]->getLid(idx._lid));
         drainer.write(idx._bucketId, idx._chunkId, idx._lid, data);
     }
 }

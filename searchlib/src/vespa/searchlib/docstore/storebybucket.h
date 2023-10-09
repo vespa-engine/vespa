@@ -25,14 +25,14 @@ class StoreByBucket
 public:
     struct Index {
         using BucketId=document::BucketId;
-        Index(BucketId bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) noexcept :
-                _bucketId(bucketId), _id(id), _chunkId(chunkId), _lid(entry)
+        Index(BucketId bucketId, uint32_t localChunkId, uint32_t chunkId, uint32_t entry) noexcept :
+                _bucketId(bucketId), _localChunkId(localChunkId), _chunkId(chunkId), _lid(entry)
         { }
         bool operator < (const Index & b) const noexcept {
             return BucketId::bucketIdToKey(_bucketId.getRawId()) < BucketId::bucketIdToKey(b._bucketId.getRawId());
         }
         BucketId _bucketId;
-        uint32_t _id;
+        uint32_t _localChunkId;
         uint32_t _chunkId;
         uint32_t _lid;
     };
