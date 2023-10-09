@@ -91,6 +91,7 @@ public class Nginx implements Router {
     private void loadConfig(int upstreamCount) throws IOException {
         Path configPath = NginxPath.config.in(fileSystem);
         Path tempConfigPath = NginxPath.temporaryConfig.in(fileSystem);
+        String routingDiff = "";
         try {
             String currentConfig = Files.readString(configPath);
             String newConfig = Files.readString(tempConfigPath);
@@ -98,6 +99,8 @@ public class Nginx implements Router {
                 Files.deleteIfExists(tempConfigPath);
                 return;
             }
+            if(outputRoutingDiff)
+                routingDiff = " with diff:\n" + getDiff(configPath, tempConfigPath);
             Path rotatedConfig = NginxPath.config.rotatedIn(fileSystem, clock.instant());
             atomicCopy(configPath, rotatedConfig);
         } catch (NoSuchFileException ignored) {
@@ -106,7 +109,7 @@ public class Nginx implements Router {
         Files.move(tempConfigPath, configPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         metric.add(CONFIG_RELOADS_METRIC, 1, null);
         // Retry reload. Same rationale for retrying as in testConfig()
-        LOG.info("Loading new configuration file from " + configPath + (outputRoutingDiff ? " with diff:\n" + getDiff(configPath, tempConfigPath) : ""));
+        LOG.info("Loading new configuration file from " + configPath + routingDiff);
         retryingExec("/usr/bin/sudo /opt/vespa/bin/vespa-reload-nginx");
         metric.add(OK_CONFIG_RELOADS_METRIC, 1, null);
         metric.set(GENERATED_UPSTREAMS_METRIC, upstreamCount, null);

@@ -51,7 +51,6 @@ public class NginxTest {
               .assertLoadedConfig(true)
               .assertConfigContents("nginx.conf")
               .assertTemporaryConfigRemoved(true)
-              .assertProducedDiff()
               .assertMetric(Nginx.CONFIG_RELOADS_METRIC, 1)
               .assertMetric(Nginx.OK_CONFIG_RELOADS_METRIC, 1)
               .assertMetric(Nginx.GENERATED_UPSTREAMS_METRIC, 5);
