@@ -12,3 +12,6 @@ configserverAthenzServiceName string
 # Auto detected if empty (from VESPA_CONFIG_SOURCES)
 # E.g.: tcp/cfg1.example.com:19070
 configserver[] string
+
+# Whether to output the diff when loading new config
+outputRoutingDiff bool default=false

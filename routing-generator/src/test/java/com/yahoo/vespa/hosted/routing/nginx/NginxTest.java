@@ -120,7 +120,7 @@ public class NginxTest {
         private final RoutingStatusMock routingStatus = new RoutingStatusMock();
         private final ProcessExecuterMock processExecuter = new ProcessExecuterMock();
         private final MockMetric metric = new MockMetric();
-        private final Nginx nginx = new Nginx(fileSystem, processExecuter, Sleeper.NOOP, clock, routingStatus, metric);
+        private final Nginx nginx = new Nginx(fileSystem, processExecuter, Sleeper.NOOP, clock, routingStatus, metric, true);
 
         public NginxTester load(RoutingTable table) {
             processExecuter.clearHistory();

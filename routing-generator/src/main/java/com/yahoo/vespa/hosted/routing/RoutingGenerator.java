@@ -66,7 +66,8 @@ public class RoutingGenerator extends AbstractComponent {
                                                                        Sleeper.DEFAULT,
                                                                        Clock.systemUTC(),
                                                                        routingStatus,
-                                                                       metric),
+                                                                       metric,
+                                                                       zoneConfig.outputRoutingDiff()),
              Clock.systemUTC());
     }
 

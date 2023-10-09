@@ -48,16 +48,18 @@ public class Nginx implements Router {
     private final Clock clock;
     private final RoutingStatus routingStatus;
     private final Metric metric;
+    private final boolean outputRoutingDiff;
 
     private final Object monitor = new Object();
 
-    public Nginx(FileSystem fileSystem, ProcessExecuter processExecuter, Sleeper sleeper, Clock clock, RoutingStatus routingStatus, Metric metric) {
+    public Nginx(FileSystem fileSystem, ProcessExecuter processExecuter, Sleeper sleeper, Clock clock, RoutingStatus routingStatus, Metric metric, boolean outputRoutingDiff) {
         this.fileSystem = Objects.requireNonNull(fileSystem);
         this.processExecuter = Objects.requireNonNull(processExecuter);
         this.sleeper = Objects.requireNonNull(sleeper);
         this.clock = Objects.requireNonNull(clock);
         this.routingStatus = Objects.requireNonNull(routingStatus);
         this.metric = Objects.requireNonNull(metric);
+        this.outputRoutingDiff = outputRoutingDiff;
     }
 
     @Override
@@ -104,7 +106,7 @@ public class Nginx implements Router {
         Files.move(tempConfigPath, configPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         metric.add(CONFIG_RELOADS_METRIC, 1, null);
         // Retry reload. Same rationale for retrying as in testConfig()
-        LOG.info("Loading new configuration file from " + configPath + " with diff:\n" + getDiff(configPath, tempConfigPath));
+        LOG.info("Loading new configuration file from " + configPath + (outputRoutingDiff ? " with diff:\n" + getDiff(configPath, tempConfigPath) : ""));
         retryingExec("/usr/bin/sudo /opt/vespa/bin/vespa-reload-nginx");
         metric.add(OK_CONFIG_RELOADS_METRIC, 1, null);
         metric.set(GENERATED_UPSTREAMS_METRIC, upstreamCount, null);
