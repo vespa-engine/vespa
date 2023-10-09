@@ -67,11 +67,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         msg.setContext(seqId);
         synchronized (this) {
             if (seqMap.containsKey(seqId)) {
-                Queue<Message> queue = seqMap.get(seqId);
-                if (queue == null) {
-                    queue = new LinkedList<>();
-                    seqMap.put(seqId, queue);
-                }
+                Queue<Message> queue = seqMap.computeIfAbsent(seqId, k -> new LinkedList<>());
                 if (msg.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
                     msg.getTrace().trace(TraceLevel.COMPONENT,
                                          "Sequencer queued message with sequence id '" + seqId + "'.");
@@ -137,6 +133,12 @@ public class Sequencer implements MessageHandler, ReplyHandler {
             reply.getTrace().trace(TraceLevel.COMPONENT,
                                    "Sequencer received reply with sequence id '" + seqId + "'.");
         }
+        ReplyHandler handler = reply.popHandler();
+        handler.handleReply(reply);
+        sendNextInSequence(seqId);
+    }
+
+    private void sendNextInSequence(long seqId) {
         Message msg = null;
         synchronized (this) {
             Queue<Message> queue = seqMap.get(seqId);
@@ -149,8 +151,6 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         if (msg != null) {
             sequencedSend(msg);
         }
-        ReplyHandler handler = reply.popHandler();
-        handler.handleReply(reply);
     }
 
 }
