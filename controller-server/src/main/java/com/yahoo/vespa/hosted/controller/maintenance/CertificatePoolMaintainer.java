@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import ai.vespa.metrics.ControllerMetrics;
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
@@ -11,9 +14,9 @@ import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
@@ -44,7 +47,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final Metric metric;
     private final Controller controller;
     private final IntFlag certPoolSize;
-    private final String dnsSuffix;
     private final StringFlag endpointCertificateAlgo;
     private final BooleanFlag useAlternateCertProvider;
 
@@ -58,7 +60,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         this.curator = controller.curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
-        this.dnsSuffix = Endpoint.dnsSuffix(controller.system());
     }
 
     protected double maintain() {
@@ -111,14 +112,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
             String id = generateId();
             while (existingNames.contains(id)) id = generateId();
-
+            List<String> dnsNames = wildcardDnsNames(id);
             EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
                     "preprovisioned.%s".formatted(id),
-                    List.of(
-                            "*.%s.z%s".formatted(id, dnsSuffix),
-                            "*.%s.g%s".formatted(id, dnsSuffix),
-                            "*.%s.a%s".formatted(id, dnsSuffix)
-                    ),
+                    dnsNames,
                     Optional.empty(),
                     endpointCertificateAlgo.value(),
                     useAlternateCertProvider.value()).withGeneratedId(id);
@@ -126,6 +123,14 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             UnassignedCertificate certificate = new UnassignedCertificate(cert, UnassignedCertificate.State.requested);
             curator.writeUnassignedCertificate(certificate);
         }
+    }
+
+    private List<String> wildcardDnsNames(String id) {
+        DeploymentId defaultDeployment = new DeploymentId(ApplicationId.defaultId(), ZoneId.defaultId());
+        return controller.routing().certificateDnsNames(defaultDeployment,    // Not used for non-legacy names
+                                                        DeploymentSpec.empty, // Not used for non-legacy names
+                                                        id,
+                                                        false);
     }
 
     private String generateId() {
