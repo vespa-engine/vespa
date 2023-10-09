@@ -1,3 +1,4 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vectors = ["sv-num-new", "mv-num-new", "sv-string-new", "mv-string-new"]#, "sv-num-old", "mv-num-old", "sv-string-old", "mv-string-old"]
 num_docs = [500000, 1000000, 2000000, 4000000, 8000000, 16000000]
