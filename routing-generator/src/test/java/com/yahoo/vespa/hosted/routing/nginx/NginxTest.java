@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -37,6 +36,8 @@ import static org.junit.Assert.fail;
  * @author mpolden
  */
 public class NginxTest {
+
+    private static final String diffCommand = "diff -U1 /opt/vespa/var/vespa-hosted/routing/nginxl4.conf /opt/vespa/var/vespa-hosted/routing/nginxl4.conf.tmp";
 
     @Test
     public void load_routing_table() {
@@ -50,6 +51,7 @@ public class NginxTest {
               .assertLoadedConfig(true)
               .assertConfigContents("nginx.conf")
               .assertTemporaryConfigRemoved(true)
+              .assertProducedDiff()
               .assertMetric(Nginx.CONFIG_RELOADS_METRIC, 1)
               .assertMetric(Nginx.OK_CONFIG_RELOADS_METRIC, 1)
               .assertMetric(Nginx.GENERATED_UPSTREAMS_METRIC, 5);
@@ -93,6 +95,7 @@ public class NginxTest {
               .assertLoadedConfig(true)
               .assertConfigContents("nginx-updated.conf")
               .assertTemporaryConfigRemoved(true)
+              .assertProducedDiff()
               .assertRotatedFiles("nginxl4.conf-2022-01-01-15:00:00.000")
               .assertMetric(Nginx.CONFIG_RELOADS_METRIC, 2)
               .assertMetric(Nginx.OK_CONFIG_RELOADS_METRIC, 2);
@@ -102,6 +105,7 @@ public class NginxTest {
         tester.load(table0);
         tester.clock.advance(Duration.ofDays(4).plusSeconds(1));
         tester.load(table1)
+              .assertProducedDiff()
               .assertRotatedFiles("nginxl4.conf-2022-01-04-15:00:00.000",
                                   "nginxl4.conf-2022-01-08-15:00:01.000");
         tester.clock.advance(Duration.ofDays(4));
@@ -158,6 +162,12 @@ public class NginxTest {
             return this;
         }
 
+
+        public NginxTester assertProducedDiff() {
+            assertTrue(processExecuter.history.contains(diffCommand));
+            return this;
+        }
+
         public NginxTester assertLoadedConfig(boolean loaded) {
             String reloadCommand = "/usr/bin/sudo /opt/vespa/bin/vespa-reload-nginx";
             if (loaded) {
@@ -198,6 +208,15 @@ public class NginxTest {
             history.add(command);
             int exitCode = 0;
             String out = "";
+            if(command.equals(diffCommand))
+                return new Pair<>(1, """
+                        --- /opt/vespa/var/vespa-hosted/routing/nginxl4.conf	2023-10-09 05:28:09.815315000 +0000
+                        +++ /opt/vespa/var/vespa-hosted/routing/nginxl4.conf.tmp	2023-10-09 05:28:27.223030000 +0000
+                        @@ -45,7 +45,6 @@
+                              server 123.example.com:4443;
+                           -  server 456.example.com:4443;
+                              server 789.example.com:4443;""");
+
             if (++currentFailCount <= wantedFailCount) {
                 exitCode = 1;
                 out = "failing to unit test";

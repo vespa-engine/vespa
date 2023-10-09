@@ -104,10 +104,15 @@ public class Nginx implements Router {
         Files.move(tempConfigPath, configPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         metric.add(CONFIG_RELOADS_METRIC, 1, null);
         // Retry reload. Same rationale for retrying as in testConfig()
-        LOG.info("Loading new configuration file from " + configPath);
+        LOG.info("Loading new configuration file from " + configPath + " with diff:\n" + getDiff(configPath, tempConfigPath));
         retryingExec("/usr/bin/sudo /opt/vespa/bin/vespa-reload-nginx");
         metric.add(OK_CONFIG_RELOADS_METRIC, 1, null);
         metric.set(GENERATED_UPSTREAMS_METRIC, upstreamCount, null);
+    }
+
+    private String getDiff(Path configPath, Path tempConfigPath) throws IOException {
+        Pair<Integer, String> executed = processExecuter.exec("diff -U1 " + configPath + " " + tempConfigPath);
+        return executed.getSecond();
     }
 
     /** Remove old config files */
