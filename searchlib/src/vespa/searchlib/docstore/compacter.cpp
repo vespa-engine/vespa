@@ -41,6 +41,8 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
     }
 }
 
+BucketCompacter::~BucketCompacter() = default;
+
 FileChunk::FileId
 BucketCompacter::getDestinationId(const LockGuard & guard) const {
     return (_destinationFileId.isActive()) ? _ds.getActiveFileId(guard) : _destinationFileId;

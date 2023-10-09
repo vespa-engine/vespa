@@ -16,10 +16,9 @@ namespace search::docstore {
 class Compacter : public IWriteData
 {
 public:
-    Compacter(LogDataStore & ds) : _ds(ds) { }
+    explicit Compacter(LogDataStore & ds) : _ds(ds) { }
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void close() override { }
-
 private:
     LogDataStore & _ds;
 };
@@ -40,16 +39,17 @@ public:
     using FileId = FileChunk::FileId;
     BucketCompacter(size_t maxSignificantBucketBits, CompressionConfig compression, LogDataStore & ds,
                     Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination);
+    ~BucketCompacter() override;
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void store(const StoreByBucket::Index & index) override;
+    void close() override;
+    size_t getBucketCount() const noexcept;
+private:
     size_t toPartitionId(BucketId bucketId) const noexcept {
         uint64_t sortableBucketId = bucketId.toKey();
         return (sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size();
     }
-    void close() override;
-private:
-    size_t getBucketCount() const noexcept;
     static constexpr size_t NUM_PARTITIONS = 256;
     using GenerationHandler = vespalib::GenerationHandler;
     using Partitions = std::array<std::unique_ptr<StoreByBucket>, NUM_PARTITIONS>;
