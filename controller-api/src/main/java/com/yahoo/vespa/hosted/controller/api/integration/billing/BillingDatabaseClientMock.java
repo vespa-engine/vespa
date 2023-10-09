@@ -178,4 +178,11 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
 
     @Override
     public void maintain() {}
+
+    @Override
+    public void setExportedInvoiceId(Bill.Id billId, String invoiceId) { }
+
+    @Override
+    public void setExportedInvoiceItemId(String lineItemId, String invoiceItemId) { }
+
 }

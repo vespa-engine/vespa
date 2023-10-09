@@ -144,4 +144,15 @@ public interface BillingDatabaseClient {
      * Performs necessary maintenance operations
      */
     void maintain();
+
+    /**
+     * Set the invoice id from an external system for the given bill
+     */
+    void setExportedInvoiceId(Bill.Id billId, String invoiceId);
+
+    /**
+     * Set the invoice item id from an external system for the given line item
+     */
+    void setExportedInvoiceItemId(String lineItemId, String invoiceItemId);
+
 }
