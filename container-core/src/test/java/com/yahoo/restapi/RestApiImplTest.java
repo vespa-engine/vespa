@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.restapi;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.restapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.container.jdisc.AclMapping;
