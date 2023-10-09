@@ -23,6 +23,37 @@ private:
     LogDataStore & _ds;
 };
 
+class BucketIndexStore : public StoreByBucket::StoreIndex {
+public:
+    BucketIndexStore(size_t maxSignificantBucketBits, uint32_t numPartitions) noexcept;
+    ~BucketIndexStore() override;
+    size_t toPartitionId(document::BucketId bucketId) const noexcept {
+        uint64_t sortableBucketId = bucketId.toKey();
+        return (sortableBucketId >> _unSignificantBucketBits) % _numPartitions;
+    }
+    void store(const StoreByBucket::Index & index) override;
+    size_t getBucketCount() const noexcept;
+    size_t getLidCount() const noexcept { return _where.size(); }
+    void prepareForIterate();
+    std::unique_ptr<StoreByBucket::IndexIterator> createIterator(uint32_t partitionId) const;
+private:
+    using IndexVector = std::vector<StoreByBucket::Index, vespalib::allocator_large<StoreByBucket::Index>>;
+    class LidIterator : public StoreByBucket::IndexIterator {
+    public:
+        LidIterator(const BucketIndexStore & bc, size_t partitionId);
+        bool has_next() noexcept override;
+        StoreByBucket::Index next() noexcept override;
+    private:
+        const BucketIndexStore       & _store;
+        size_t                        _partitionId;
+        IndexVector::const_iterator   _current;
+    };
+    size_t       _unSignificantBucketBits;
+    IndexVector  _where;
+    uint32_t     _numPartitions;
+    bool         _readyForIterate;
+};
+
 /**
  * This will split the incoming data into buckets.
  * The buckets data will then be written out in bucket order.
@@ -30,8 +61,7 @@ private:
  * All data are kept compressed to minimize memory usage.
  **/
 class BucketCompacter : public IWriteData,
-                        public StoreByBucket::IWrite,
-                        public StoreByBucket::StoreIndex
+                        public StoreByBucket::IWrite
 {
     using CompressionConfig = vespalib::compression::CompressionConfig;
     using Executor = vespalib::Executor;
@@ -42,37 +72,19 @@ public:
     ~BucketCompacter() override;
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override;
-    void store(const StoreByBucket::Index & index) override;
     void close() override;
-    size_t getBucketCount() const noexcept;
 private:
-    size_t toPartitionId(BucketId bucketId) const noexcept {
-        uint64_t sortableBucketId = bucketId.toKey();
-        return (sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size();
-    }
     static constexpr size_t NUM_PARTITIONS = 256;
     using GenerationHandler = vespalib::GenerationHandler;
     using Partitions = std::array<std::unique_ptr<StoreByBucket>, NUM_PARTITIONS>;
-    using IndexVector = std::vector<StoreByBucket::Index, vespalib::allocator_large<StoreByBucket::Index>>;
-    class LidIterator : public StoreByBucket::IndexIterator {
-    public:
-        LidIterator(const BucketCompacter & bc, size_t partitionId);
-        bool has_next() noexcept override;
-        StoreByBucket::Index next() noexcept override;
-    private:
-        const BucketCompacter       & _bc;
-        size_t                        _partitionId;
-        IndexVector::const_iterator   _current;
-    };
     FileId getDestinationId(const LockGuard & guard) const;
-    size_t                                 _unSignificantBucketBits;
     FileId                                 _sourceFileId;
     FileId                                 _destinationFileId;
     LogDataStore                         & _ds;
     const IBucketizer                    & _bucketizer;
     std::mutex                             _lock;
     vespalib::MemoryDataStore              _backingMemory;
-    IndexVector                            _where;
+    BucketIndexStore                       _bucketIndexStore;
     Partitions                             _tmpStore;
     GenerationHandler::Guard               _lidGuard;
     vespalib::hash_map<uint64_t, uint32_t> _stat;
