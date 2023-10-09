@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -62,9 +64,9 @@ public class ResourceMeterMaintainerTest {
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().cost().getAsDouble())));
 
         List<ResourceSnapshot> resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, resources(12, 34, 56), Instant.EPOCH, z1, 0),
-                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0),
-                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0));
+                new ResourceSnapshot(app1, resources(12, 34, 56), Instant.EPOCH, z1, 0, CloudAccount.empty),
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0, CloudAccount.empty),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0, CloudAccount.empty));
 
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z1, 1.72, z2, 3.05));
@@ -72,9 +74,9 @@ public class ResourceMeterMaintainerTest {
 
         // Remove a region from app1 and add region to app2
         resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0),
-                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0),
-                new ResourceSnapshot(app2, resources(45, 67, 89), Instant.EPOCH, z2, 0));
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0, CloudAccount.empty),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0, CloudAccount.empty),
+                new ResourceSnapshot(app2, resources(45, 67, 89), Instant.EPOCH, z2, 0, CloudAccount.empty));
 
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 3.05));
