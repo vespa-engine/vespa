@@ -50,13 +50,12 @@ public final class Text {
 
         return (codepoint < 0x80)
                 ? allowedAsciiChars[codepoint]
-                : (codepoint <  Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
+                : (codepoint < Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
     }
     private static boolean isTextCharAboveMinSurrogate(int codepoint) {
-        if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
+        if (codepoint <= Character.MAX_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
-        if (codepoint <  0x10000)  return true;
         if (codepoint >= 0x10FFFE) return false;
         return (codepoint & 0xffff) < 0xFFFE;
     }
@@ -75,7 +74,7 @@ public final class Text {
             if (Character.isHighSurrogate(string.charAt(i))) {
                 if ( charCount == 1) {
                     return OptionalInt.of(string.codePointAt(i));
-                } else if ( !Character.isLowSurrogate(string.charAt(i+1))) {
+                } else if ( ! Character.isLowSurrogate(string.charAt(i+1))) {
                     return OptionalInt.of(string.codePointAt(i+1));
                 }
             }
