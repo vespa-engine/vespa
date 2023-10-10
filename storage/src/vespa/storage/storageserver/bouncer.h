@@ -41,7 +41,6 @@ class Bouncer : public StorageLink,
     const lib::State* _clusterState;
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::unique_ptr<BouncerMetrics> _metrics;
-    bool _closed;
 
 public:
     Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri);
@@ -61,12 +60,11 @@ private:
     void abortCommandDueToClusterDown(api::StorageMessage&, const lib::State&);
     void rejectDueToInsufficientPriority(api::StorageMessage&, api::StorageMessage::Priority);
     void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
-    void reject_due_to_node_shutdown(api::StorageMessage&);
     static bool clusterIsUp(const lib::State& cluster_state);
     bool isDistributor() const;
-    static bool isExternalLoad(const api::MessageType&) noexcept;
-    static bool isExternalWriteOperation(const api::MessageType&) noexcept;
-    static bool priorityRejectionIsEnabled(int configuredPriority) noexcept {
+    bool isExternalLoad(const api::MessageType&) const noexcept;
+    bool isExternalWriteOperation(const api::MessageType&) const noexcept;
+    bool priorityRejectionIsEnabled(int configuredPriority) const noexcept {
         return (configuredPriority != -1);
     }
 
@@ -74,7 +72,7 @@ private:
      * If msg is a command containing a mutating timestamp (put, remove or
      * update commands), return that timestamp. Otherwise, return 0.
      */
-    static uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
+    uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     void handleNewState() noexcept override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;

@@ -278,25 +278,25 @@ CommunicationManager::onClose()
     // Avoid getting config during shutdown
     _configFetcher.reset();
 
-    _closed.store(true, std::memory_order_seq_cst);
+    _closed = true;
+
+    if (_mbus) {
+        if (_messageBusSession) {
+            _messageBusSession->close();
+        }
+    }
+
+    // TODO remove? this no longer has any particularly useful semantics
     if (_cc_rpc_service) {
-        _cc_rpc_service->close(); // Auto-abort all incoming CC RPC requests from now on
+        _cc_rpc_service->close();
     }
-    // Sync all RPC threads to ensure that any subsequent RPCs must observe the closed-flags we just set
+    // TODO do this after we drain queues?
     if (_shared_rpc_resources) {
-        _shared_rpc_resources->sync_all_threads();
+        _shared_rpc_resources->shutdown();
     }
 
-    if (_mbus && _messageBusSession) {
-        // Closing the mbus session unregisters the destination session and syncs the worker
-        // thread(s), so once this call returns we should not observe further incoming requests
-        // through this pipeline. Previous messages may already be in flight internally; these
-        // will be handled by flushing-phases.
-        _messageBusSession->close();
-    }
-
-    // Stopping internal message dispatch thread should stop all incoming _async_ messages
-    // from being processed. _Synchronously_ dispatched RPCs are still passing through.
+    // Stopping pumper thread should stop all incoming messages from being
+    // processed.
     if (_thread) {
         _thread->interrupt();
         _eventQueue.signal();
@@ -305,37 +305,15 @@ CommunicationManager::onClose()
     }
 
     // Emptying remaining queued messages
+    // FIXME but RPC/mbus is already shut down at this point...! Make sure we handle this
     std::shared_ptr<api::StorageMessage> msg;
     api::ReturnCode code(api::ReturnCode::ABORTED, "Node shutting down");
     while (_eventQueue.size() > 0) {
         assert(_eventQueue.getNext(msg, 0ms));
         if (!msg->getType().isReply()) {
-            std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(*msg).makeReply());
+            std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(*msg).makeReply());
             reply->setResult(code);
             sendReply(reply);
-        }
-    }
-}
-
-void
-CommunicationManager::onFlush(bool downwards)
-{
-    if (downwards) {
-        // Sync RPC threads once more (with feeling!) to ensure that any closing done by other components
-        // during the storage chain onClose() is visible to these.
-        if (_shared_rpc_resources) {
-            _shared_rpc_resources->sync_all_threads();
-        }
-        // By this point, no inbound RPCs (requests and responses) should be allowed any further down
-        // than the Bouncer component, where they will be, well, bounced.
-    } else {
-        // All components further down the storage chain should now be completely closed
-        // and flushed, and all message-dispatching threads should have been shut down.
-        // It's possible that the RPC threads are still butting heads up against the Bouncer
-        // component, so we conclude the shutdown ceremony by taking down the RPC subsystem.
-        // This transitively waits for all RPC threads to complete.
-        if (_shared_rpc_resources) {
-            _shared_rpc_resources->shutdown();
         }
     }
 }
@@ -460,15 +438,11 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
     }
 }
 
-// Called directly by RPC threads
 void CommunicationManager::dispatch_sync(std::shared_ptr<api::StorageMessage> msg) {
     LOG(spam, "Direct dispatch of storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
-    // If process is shutting down, msg will be synchronously aborted by the Bouncer component
     process(msg);
 }
 
-// Called directly by RPC threads (for incoming CC requests) and by any other request-dispatching
-// threads (i.e. calling sendUp) when address resolution fails and an internal error response is generated.
 void CommunicationManager::dispatch_async(std::shared_ptr<api::StorageMessage> msg) {
     LOG(spam, "Enqueued dispatch of storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
     _eventQueue.enqueue(std::move(msg));
