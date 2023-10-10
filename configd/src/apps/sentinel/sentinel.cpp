@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "manager.h"
+#include "platform-specific.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -57,6 +58,8 @@ main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     setlocale(LC_ALL, "C");
+
+    platform_specific::pledge_no_new_privileges_if_env_configured(); // Affects all launched subprocesses
 
     sentinel::Env environment;
     LOG(debug, "Reading configuration");
