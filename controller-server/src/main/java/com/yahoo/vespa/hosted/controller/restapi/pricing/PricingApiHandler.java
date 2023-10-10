@@ -166,7 +166,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private static void addItem(Cursor array, String name, BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+        if (amount.compareTo(BigDecimal.ZERO) != 0) {
             var o = array.addObject();
             o.setString("description", name);
             o.setString("amount", SCALED_ZERO.add(amount).toPlainString());
