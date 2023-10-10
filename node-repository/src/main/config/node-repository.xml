@@ -1,5 +1,5 @@
 <!-- services.xml snippet for the node repository. Included in config server services.xml if the package is installed-->
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <component id="com.yahoo.vespa.hosted.provision.provisioning.InfraDeployerImpl" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.autoscale.MetricsV2MetricsFetcher" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.autoscale.QuestMetricsDb" bundle="node-repository"/>

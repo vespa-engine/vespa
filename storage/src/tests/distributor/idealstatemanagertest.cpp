@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummy_cluster_context.h"
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.application.TestBase;
@@ -43,7 +43,7 @@ public class FilesApplicationPackageTest {
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = """
                                   <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                                  <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                                  <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
                                   <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
                                       <admin version="2.0">
                                           <adminserver hostalias="node0"/>
@@ -69,7 +69,7 @@ public class FilesApplicationPackageTest {
         TestBase.assertDocument(expectedServices, processed.getServices());
         String expectedHosts = """
                                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                               <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                               <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
                                <hosts xmlns:deploy="vespa" xmlns:preprocess="properties">
                                    <host name="bar.yahoo.com">
                                        <alias>node1</alias>

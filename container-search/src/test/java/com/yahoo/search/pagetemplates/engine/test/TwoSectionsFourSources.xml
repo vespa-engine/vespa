@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <page id="TwoSectionsFourSources" layout="twoColumns">
     <section source="source3 source1" order="[source]" max="8" region="left"/>
     <section source="source4 source2" order="-[rank]" max="10" region="right"/>

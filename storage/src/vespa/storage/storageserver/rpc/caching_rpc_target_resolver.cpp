@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "caching_rpc_target_resolver.h"
 #include "shared_rpc_resources.h"
 #include <vespa/fnet/frt/target.h>

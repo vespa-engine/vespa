@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // start of auto-generated code for N = 1
 template <> struct InlineTfa<1> {
     static constexpr Transition table[6][8] = {

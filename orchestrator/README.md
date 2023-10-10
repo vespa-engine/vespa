@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Orchestrator, a.k.a. Maestro
 A service to facilitate safe and staggered restart and upgrades of services in a Vespa instance.
 It uses consolidated information from Slobrok and the application model to decide if a hosts

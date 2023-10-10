@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 prog server cpp1 "" "./messagebus_test_cpp-server-trace_app server/cpp/1/A"
 prog server cpp2 "" "./messagebus_test_cpp-server-trace_app server/cpp/2/A"
 prog server cpp3 "" "./messagebus_test_cpp-server-trace_app server/cpp/2/B"

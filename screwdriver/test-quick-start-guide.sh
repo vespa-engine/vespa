@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # This test will test the quick start guide that use the vespaengine/vespa:latest image. To test a locally
 # generated image, make sure that the image is tagged as vespaengine/vespa:latest.

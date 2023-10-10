@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * This algorithm is adapted from the Lucene code base which is Copyright 2008 Apache Software Foundation and Licensed
  * under the terms of the Apache License, Version 2.0, which was adapted from

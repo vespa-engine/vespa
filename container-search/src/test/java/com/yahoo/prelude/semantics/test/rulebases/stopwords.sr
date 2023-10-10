@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 @default
 
 [stopword] :- the, to, a,i,and,is,of,in,you,it,for,what,that,do,can,have,on,are,or,if,with,how,my,be,but,not,s,this,your,t,get,like,they,me,there,so,know,from,just,as,will,at,all,one,about,when,out,an,would,was,any,has,who,some,good,want,up,by,think,does,no,why,don,more,go,them,then,he,where,need,time,people,other,am,should,we,find,make,help,also,really,because,only,best,which,m,way,their,now,than,see,been,much,could,had,com,very,most ,its,anyone,him,many,use,first,take,his,well,even,say,her,she,work,try,u,too,please,something,were,did,someone,after,question,here,back,give,right,over,going,still,new,http,www,it's,doesn't,what's,that's,can't,how's,there's,when's;

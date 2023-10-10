@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 import React from 'react';
 import { Header as MantineHeader } from '@mantine/core';
 import { HeaderLogo } from 'app/components/layout/header-logo';

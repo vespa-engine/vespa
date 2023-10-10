@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Uses security-env to call curl with paths to credentials.
 # This script should be installed in libexec only. It is not public api.

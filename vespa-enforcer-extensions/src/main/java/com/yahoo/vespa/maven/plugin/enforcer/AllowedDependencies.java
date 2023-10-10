@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
@@ -217,7 +218,7 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
         resolved.matchedRules().forEach(r -> content.add(r.asString()));
         resolved.unmatchedDeps().forEach(d -> content.add(d.asString(guessVersion ? project.getProperties() : null)));
         try (var out = Files.newBufferedWriter(specFile)) {
-            out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n\n");
+            out.write("# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n\n");
             for (var line : content) {
                 out.write(line); out.write('\n');
             }

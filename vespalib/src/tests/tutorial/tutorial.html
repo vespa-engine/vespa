@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Vespa Test Framework Tutorial</title>
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
   <style type="text/css">
 
     body {
@@ -80,7 +80,7 @@ The minimal test application looks like this:
 <div class="example" id="minimal">
 <h2>minimal_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 
 TEST_MAIN() {}
@@ -109,7 +109,7 @@ Example with two tests, each containing a single check:
 <div class="example" id="simple">
 <h2>simple_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 
 TEST(&quot;require something&quot;) {
@@ -150,7 +150,7 @@ terminate execution of the current test if it fails.
 <div class="example" id="checks">
 <h2>checks_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 #include &lt;stdexcept&gt;
 
@@ -227,7 +227,7 @@ an object.
 <div class="example" id="fixtures">
 <h2>fixtures_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 
 struct Fixture {
@@ -285,7 +285,7 @@ thread invoking it until all threads have invoked it.
 <div class="example" id="threads">
 <h2>threads_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 
 TEST_MT_F(&quot;multiple threads&quot;, 2, std::vector&lt;size_t&gt;(num_threads)) {
@@ -324,7 +324,7 @@ threads_test.cpp: info:  CONCLUSION: PASS
 <div class="example" id="../box">
 <h2>box_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 #include &lt;vespa/vespalib/util/box.h&gt;
 
@@ -371,7 +371,7 @@ box_test.cpp: info:  CONCLUSION: PASS
 <div class="example" id="../barrier">
 <h2>barrier_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 #include &lt;vespa/vespalib/util/barrier.h&gt;
 
@@ -446,7 +446,7 @@ barrier_test.cpp: info:  CONCLUSION: PASS
 <div class="example" id="../dual_merge_director">
 <h2>dual_merge_director_test.cpp</h2>
 <pre class="prettyprint linenums">
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include &lt;vespa/vespalib/testkit/test_kit.h&gt;
 #include &lt;vespa/vespalib/util/dual_merge_director.h&gt;
 

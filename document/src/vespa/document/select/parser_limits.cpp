@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "parser_limits.h"
 #include "parsing_failed_exception.h"
 #include <vespa/vespalib/util/stringfmt.h>

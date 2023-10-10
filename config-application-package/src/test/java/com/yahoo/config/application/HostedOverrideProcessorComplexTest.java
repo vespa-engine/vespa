@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -22,11 +23,11 @@ public class HostedOverrideProcessorComplexTest {
     private static final String servicesFile = "src/test/resources/complex-app/services.xml";
 
     @Test
-    public void testProdBetaUsWest2a() throws TransformerException, IOException {
+    public void testProdBetaUsWest2a() throws TransformerException {
         String expected =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. --><services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
                     <container id="docsgateway" version="1.0">
                         <nodes count="3">
                             <resources disk="1800Gb" disk-speed="fast" memory="96Gb" storage-type="local" vcpu="48"/>
@@ -65,11 +66,11 @@ public class HostedOverrideProcessorComplexTest {
     }
 
     @Test
-    public void testProdBetaUsEast1b() throws TransformerException, IOException {
+    public void testProdBetaUsEast1b() throws TransformerException {
         String expected =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. --><services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
                     <container id="docsgateway" version="1.0">
                         <nodes count="3">
                             <resources disk="1800Gb" disk-speed="fast" memory="96Gb" storage-type="local" vcpu="48"/>
