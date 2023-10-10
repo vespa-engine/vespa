@@ -5,6 +5,7 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.objects.FieldBase;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -67,7 +68,7 @@ public class SummaryTestCase {
                      "Fields [foo2] references non-attribute fields: " +
                      "Using this summary will cause disk accesses. " +
                      "Set 'from-disk' on this summary class to silence this warning.",
-                logger.entries.get(0).message);
+                     logger.entries.get(0).message);
     }
 
     @Test
@@ -176,9 +177,13 @@ public class SummaryTestCase {
             var actualFields = testValue.summary.getSummaryFields().values().stream()
                     .map(FieldBase::getName)
                     .toList();
-            assertEquals(Optional.ofNullable(testValue.parent),
-                    testValue.summary.inherited(),
-                    testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()));
+            if (testValue.parent != null)
+                assertEquals(testValue.parent, testValue.summary.inherited().get(0),
+                             testValue.summary.getName() + " inherits " + testValue.parent.getName());
+            else
+                assertTrue(testValue.summary.inherited().isEmpty(),
+                           testValue.summary.getName() + " does not inherit anything");
+
             assertEquals(testValue.fields, actualFields, "Summary " + testValue.summary.getName() + " has expected fields");
         });
     }
@@ -229,14 +234,86 @@ public class SummaryTestCase {
                             "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             ApplicationBuilder.createFromStrings(logger, schema);
-            assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
-                    logger.entries.get(0).message);
+            assertEquals("document summary 'test_summary' inherits 'nonesuch' but this is not present in schema 'test'",
+                         logger.entries.get(0).message);
             // fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
+            fail();
             // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
             //             e.getMessage());
         }
+    }
+
+    @Test
+    void testInheritingTwoSummariesWithConflictingFieldsFails() throws ParseException {
+        try {
+            String schema = """
+                schema test {
+                  document test {
+                    field field1 type string {
+                      indexing: summary | index | attribute
+                    }
+                    field field2 type int {
+                      indexing: summary | attribute
+                    }
+                  }
+                  document-summary parent1 {
+                    summary s1 type string {
+                        source: field1
+                    }
+                  }
+                  document-summary parent2 {
+                    summary field1 type int {
+                        source: field2
+                    }
+                  }
+                  document-summary child inherits parent1, parent2 {
+                  }
+                }
+                """;
+            DeployLoggerStub logger = new DeployLoggerStub();
+            ApplicationBuilder.createFromStrings(logger, schema);
+            fail("Expected failure");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("summary field1 type string in document summary 'default' is inconsistent with " +
+                         "summary field1 type int in document summary 'parent2': " +
+                         "All declarations of the same summary field must have the same type",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
+    void testInheritingTwoSummariesWithNonConflictingFieldsWorks() throws ParseException {
+        String schema = """
+                schema test {
+                  document test {
+                    field field1 type string {
+                      indexing: summary | index | attribute
+                    }
+                    field field2 type int {
+                      indexing: summary | attribute
+                    }
+                  }
+                  document-summary parent1 {
+                    summary s1 type string {
+                        source: field1
+                    }
+                  }
+                  document-summary parent2 {
+                    summary field1 type string {
+                        source: field1
+                    }
+                  }
+                  document-summary child inherits parent1, parent2 {
+                  }
+                }
+                """;
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, schema);
+        System.out.println("logger.entries = " + logger.entries);
+        assertTrue(logger.entries.isEmpty());
     }
 
     @Test
@@ -265,8 +342,7 @@ public class SummaryTestCase {
                         "}");
         DeployLoggerStub logger = new DeployLoggerStub();
         ApplicationBuilder.createFromStrings(logger, parent, child);
-        logger.entries.forEach(e -> System.out.println(e));
-        //assertTrue(logger.entries.isEmpty());
+        assertTrue(logger.entries.isEmpty());
     }
 
     private static class TestValue {

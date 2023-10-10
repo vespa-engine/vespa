@@ -10,8 +10,9 @@ import java.util.Map;
  * This class holds the extracted information after parsing a
  * "document-summary" block, using simple data structures as far as
  * possible.  Do not put advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 class ParsedDocumentSummary extends ParsedBlock {
 
     private boolean omitSummaryFeatures;
@@ -45,4 +46,5 @@ class ParsedDocumentSummary extends ParsedBlock {
     void inherit(String other) {
         inherited.add(other);
     }
+
 }

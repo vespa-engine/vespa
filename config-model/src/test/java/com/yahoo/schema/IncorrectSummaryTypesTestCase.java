@@ -30,7 +30,7 @@ public class IncorrectSummaryTypesTestCase extends AbstractSchemaTestCase {
                             "}\n");
             fail("processing should have failed");
         } catch (RuntimeException e) {
-            assertEquals("'summary somestring type string' in 'destinations(default )' is inconsistent with 'summary somestring type int' in 'destinations(incorrect )': All declarations of the same summary field must have the same type", e.getMessage());
+            assertEquals("summary somestring type string in document summary 'default' is inconsistent with summary somestring type int in document summary 'incorrect': All declarations of the same summary field must have the same type", e.getMessage());
         }
     }
 

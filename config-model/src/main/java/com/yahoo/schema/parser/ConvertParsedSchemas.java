@@ -139,12 +139,7 @@ public class ConvertParsedSchemas {
 
     private void convertDocumentSummary(Schema schema, ParsedDocumentSummary parsed, TypeResolver typeContext) {
         var docsum = new DocumentSummary(parsed.name(), schema);
-        var inheritList = parsed.getInherited();
-        if (inheritList.size() == 1) {
-            docsum.setInherited(inheritList.get(0));
-        } else if (inheritList.size() != 0) {
-            throw new IllegalArgumentException("document-summary "+parsed.name()+" cannot inherit more than once");
-        }
+        parsed.getInherited().forEach(inherited -> docsum.addInherited(inherited));
         if (parsed.getFromDisk()) {
             docsum.setFromDisk(true);
         }
