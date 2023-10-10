@@ -731,6 +731,24 @@ public class NodeAgentImplTest {
     }
 
     @Test
+    void resume_during_first_warmup() {
+        InOrder inOrder = inOrder(orchestrator, nodeRepository);
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true, Duration.ofSeconds(30));
+        mockGetContainer(dockerImage, ContainerResources.from(2, 2, 16), true);
+
+        // Warmup period prevents resume when node has a current docker image, i.e., already existed.
+        nodeAgent.converge(createContext(nodeBuilder(NodeState.active).wantedDockerImage(dockerImage).currentDockerImage(dockerImage).build()));
+        inOrder.verifyNoMoreInteractions();
+
+        nodeAgent.converge(createContext(nodeBuilder(NodeState.active).wantedDockerImage(dockerImage).build()));
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)
+                                                                                                 .withRebootGeneration(0)
+                                                                                                 .withVespaVersion(Version.fromString("7.1.1"))));
+        inOrder.verifyNoMoreInteractions();
+    }
+
+
+    @Test
     void drop_all_documents() {
         InOrder inOrder = inOrder(orchestrator, nodeRepository);
         BiFunction<NodeState, DropDocumentsReport, NodeSpec> specBuilder = (state, report) -> (report == null ?
