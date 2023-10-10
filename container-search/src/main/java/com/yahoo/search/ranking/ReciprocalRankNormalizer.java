@@ -7,8 +7,8 @@ class ReciprocalRankNormalizer extends Normalizer {
 
     private final double k;
 
-    ReciprocalRankNormalizer(String name, String input, int maxSize, double k) {
-        super(name, input, maxSize);
+    ReciprocalRankNormalizer(int maxSize, double k) {
+        super(maxSize);
         this.k = k;
     }
 

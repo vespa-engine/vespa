@@ -3,14 +3,10 @@ package com.yahoo.search.ranking;
 
 abstract class Normalizer {
 
-    private final String name;
-    private final String needInput;
     protected final double[] data;
     protected int size = 0;
 
-    Normalizer(String name, String needInput, int maxSize) {
-        this.name = name;
-        this.needInput = needInput;
+    Normalizer(int maxSize) {
         this.data = new double[maxSize];
     }
 
@@ -20,10 +16,6 @@ abstract class Normalizer {
     }
 
     double getOutput(int index) { return data[index]; }
-
-    String name() { return name; }
-
-    String input() { return needInput; }
 
     abstract void normalize();
 

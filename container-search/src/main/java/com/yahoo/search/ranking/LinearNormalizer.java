@@ -3,8 +3,8 @@ package com.yahoo.search.ranking;
 
 class LinearNormalizer extends Normalizer {
 
-    LinearNormalizer(String name, String input, int maxSize) {
-        super(name, input, maxSize);
+    LinearNormalizer(int maxSize) {
+        super(maxSize);
     }
 
     void normalize() {
