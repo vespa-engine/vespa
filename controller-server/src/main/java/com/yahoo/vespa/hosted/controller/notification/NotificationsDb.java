@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +32,8 @@ import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
  * @author freva
  */
 public class NotificationsDb {
+
+    private static final Logger log = Logger.getLogger(NotificationsDb.class.getName());
 
     private final Clock clock;
     private final CuratorDb curatorDb;
@@ -78,7 +81,10 @@ public class NotificationsDb {
             notifications.add(notification);
             curatorDb.writeNotifications(source.tenant(), notifications);
         }
-        changed.ifPresent(notifier::dispatch);
+        changed.ifPresent(c -> {
+            log.fine(() -> "New notification %s".formatted(c));
+            notifier.dispatch(c);
+        });
     }
 
     /** Remove the notification with the given source and type */
@@ -156,9 +162,11 @@ public class NotificationsDb {
     private boolean notificationExists(Notification notification, List<Notification> existing, boolean mindHigherLevel) {
         // Be conservative for now, only dispatch notifications if they are from new source or with new type.
         // the message content and level is ignored for now
-        return existing.stream().anyMatch(e ->
-                notification.source().contains(e.source()) && notification.type().equals(e.type()) &&
+        boolean exists = existing.stream()
+                .anyMatch(e -> notification.source().contains(e.source()) && notification.type().equals(e.type()) &&
                         (!mindHigherLevel || notification.level().ordinal() <= e.level().ordinal()));
+        log.fine(() -> "%s in %s == %b".formatted(notification, existing, exists));
+        return exists;
     }
 
     private static Optional<Notification> createFeedBlockNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
