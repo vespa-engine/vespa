@@ -66,7 +66,7 @@ public class RPCNetwork implements Network, MethodHandler {
     private final Mirror mirror;
     private final Register register;
     private final TreeMap<Version, RPCSendAdapter> sendAdapters = new TreeMap<>();
-    private NetworkOwner owner;
+    private volatile NetworkOwner owner;
     private final SlobrokConfigSubscriber slobroksConfig;
     private final LinkedHashMap<String, Route> lruRouteMap = new LinkedHashMap<>(10000, 0.5f, true);
     private final ExecutorService executor =
