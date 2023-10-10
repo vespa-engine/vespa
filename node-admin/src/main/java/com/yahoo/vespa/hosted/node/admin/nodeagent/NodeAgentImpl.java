@@ -526,7 +526,8 @@ public class NodeAgentImpl implements NodeAgent {
                         firstSuccessfulHealthCheckInstant = Optional.of(timer.currentTime());
 
                     Duration timeLeft = Duration.between(timer.currentTime(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
-                    if (!container.get().resources().equalsCpu(getContainerResources(context)))
+                    if (   ! container.get().resources().equalsCpu(getContainerResources(context))
+                        &&   context.node().currentDockerImage().isPresent()) // Immediately resume first-time deployments, when healthy.
                         throw ConvergenceException.ofTransient("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
