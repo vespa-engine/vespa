@@ -939,9 +939,7 @@ struct EnableInterleavedFeaturesParam
     };
     vespalib::string name = "no_restart";
     Restart restart = Restart::NONE;
-    bool restart1 = false;      // Restart after flushing 1st memory index without interleaved features
     bool doc = false;          // Feed doc after enabling interleaved fatures
-    bool restart2 = false;      // Restart after flushing 2nd memory index with interleaved fatures
     bool pruned_config = false; // Original config has been pruned
 
     EnableInterleavedFeaturesParam no_doc_restart1() && {
