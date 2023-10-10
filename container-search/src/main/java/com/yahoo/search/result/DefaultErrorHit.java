@@ -75,6 +75,7 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
 
     /** Add all errors from another error hit to this */
     public void addErrors(ErrorHit errorHit) {
+        if (this == errorHit) return;
         for (Iterator<? extends ErrorMessage> i = errorHit.errorIterator(); i.hasNext();) {
             addError(i.next());
         }
