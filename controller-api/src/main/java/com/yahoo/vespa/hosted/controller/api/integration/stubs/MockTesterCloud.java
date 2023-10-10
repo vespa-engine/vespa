@@ -57,7 +57,7 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints) {
+    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints, boolean initialDeployment) {
         return endpointsChecker.endpointsAvailable(endpoints);
     }
 
