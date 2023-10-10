@@ -2,12 +2,8 @@
 
 #include "field_inverter.h"
 #include "ordered_field_index_inserter.h"
-#include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -30,9 +26,7 @@ LOG_SETUP(".searchlib.memoryindex.fieldinverter");
 
 namespace search::memoryindex {
 
-using document::AlternateSpanList;
 using document::Annotation;
-using document::AnnotationType;
 using document::ArrayFieldValue;
 using document::DataType;
 using document::Document;
@@ -40,79 +34,24 @@ using document::DocumentType;
 using document::Field;
 using document::FieldValue;
 using document::IntFieldValue;
-using document::SimpleSpanList;
 using document::Span;
-using document::SpanList;
-using document::SpanNode;
-using document::SpanTree;
-using document::SpanTreeVisitor;
 using document::StringFieldValue;
 using document::StructFieldValue;
 using document::WeightedSetFieldValue;
 using index::DocIdAndPosOccFeatures;
 using index::Schema;
 using search::index::schema::CollectionType;
+using search::linguistics::TokenExtractor;
 using search::util::URL;
 using vespalib::make_string;
 using vespalib::datastore::Aligner;
-
-namespace documentinverterkludge::linguistics {
-
-const vespalib::string SPANTREE_NAME("linguistics");
-
-}
-
-using namespace documentinverterkludge;
-
-namespace {
-
-class SpanFinder : public SpanTreeVisitor {
-public:
-    int32_t begin_pos;
-    int32_t end_pos;
-
-    SpanFinder() : begin_pos(0x7fffffff), end_pos(-1) {}
-    Span span() { return Span(begin_pos, end_pos - begin_pos); }
-
-    void visit(const Span &node) override {
-        begin_pos = std::min(begin_pos, node.from());
-        end_pos = std::max(end_pos, node.from() + node.length());
-    }
-    void visit(const SpanList &node) override {
-        for (const auto & span_ : node) {
-            const_cast<SpanNode *>(span_)->accept(*this);
-        }
-    }
-    void visit(const SimpleSpanList &node) override {
-        for (const auto & span_ : node) {
-            const_cast<Span &>(span_).accept(*this);
-        }
-    }
-    void visit(const AlternateSpanList &node) override {
-        for (size_t i = 0; i < node.getNumSubtrees(); ++i) {
-            visit(node.getSubtree(i));
-        }
-    }
-};
-
-Span
-getSpan(const SpanNode &span_node)
-{
-    SpanFinder finder;
-    // The SpanNode will not be changed.
-    const_cast<SpanNode &>(span_node).accept(finder);
-    return finder.span();
-}
-
-}
 
 void
 FieldInverter::processAnnotations(const StringFieldValue &value, const Document& doc)
 {
     _terms.clear();
-    StringFieldValue::SpanTrees spanTrees = value.getSpanTrees();
-    const SpanTree *tree = StringFieldValue::findTree(spanTrees, linguistics::SPANTREE_NAME);
-    if (tree == nullptr) {
+    auto span_trees = value.getSpanTrees();
+    if (!TokenExtractor::extract(false, _terms, span_trees)) {
         /* This is wrong unless field is exact match */
         const vespalib::string &text = value.getValue();
         if (text.empty()) {
@@ -126,19 +65,6 @@ FieldInverter::processAnnotations(const StringFieldValue &value, const Document&
         return;
     }
     const vespalib::string &text = value.getValue();
-    for (const Annotation & annotation : *tree) {
-        const SpanNode *span = annotation.getSpanNode();
-        if ((span != nullptr) && annotation.valid() &&
-            (annotation.getType() == *AnnotationType::TERM))
-        {
-            Span sp = getSpan(*span);
-            if (sp.length() != 0) {
-                _terms.push_back(std::make_pair(sp,
-                                                annotation.getFieldValue()));
-            }
-        }
-    }
-    std::sort(_terms.begin(), _terms.end());
     auto it  = _terms.begin();
     auto ite = _terms.end();
     uint32_t wordRef;

@@ -7,6 +7,7 @@
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/text/utf8.h>
 
@@ -22,14 +23,9 @@ using document::SpanNode;
 using document::SpanTree;
 using vespalib::Utf8Reader;
 using vespalib::Utf8Writer;
+using search::linguistics::SPANTREE_NAME;
 
 namespace search::test {
-
-namespace {
-
-const vespalib::string SPANTREE_NAME("linguistics");
-
-}
 
 StringFieldBuilder::StringFieldBuilder(const DocBuilder& doc_builder)
     : _value(),

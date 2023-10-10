@@ -5,6 +5,7 @@
 #include "i_field_index_remove_listener.h"
 #include <vespa/document/annotation/span.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <limits>
@@ -179,9 +180,8 @@ private:
     index::DocIdAndPosOccFeatures  _features;
     UInt32Vector                   _wordRefs;
 
-    using SpanTerm = std::pair<document::Span, const document::FieldValue *>;
-    using SpanTermVector = std::vector<SpanTerm>;
-    SpanTermVector                      _terms;
+    using SpanTerm = linguistics::TokenExtractor::SpanTerm;
+    std::vector<SpanTerm>          _terms;
 
     // Info about aborted and pending documents.
     std::vector<PositionRange>                  _abortedDocs;

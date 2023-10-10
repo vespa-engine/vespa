@@ -13,10 +13,12 @@ vespa_add_library(searchlib_util OBJECT
     filesizecalculator.cpp
     fileutil.cpp
     foldedstringcompare.cpp
+    linguisticsannotation.cpp
     logutil.cpp
     rawbuf.cpp
     slime_output_raw_buf_adapter.cpp
     state_explorer_utils.cpp
+    token_extractor.cpp
     url.cpp
     DEPENDS
 )
