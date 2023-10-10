@@ -21,7 +21,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
     private final MessageHandler sender;
     private final Map<Long, Queue<Message>> seqMap = new HashMap<>();
     private final Messenger msn;
-    private final static ThreadLocal<Boolean> isSending = new ThreadLocal<>();
+    private final static ThreadLocal<Boolean> isSending = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     /**
      * Constructs a new sequencer on top of the given async sender.
@@ -163,7 +163,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         }
         if (msg != null) {
             Boolean alreadySending = isSending.get();
-            if ((alreadySending == Boolean.TRUE) && (msn != null)) {
+            if (alreadySending && (msn != null)) {
                 // Dispatch in another thread to break possibly very long recursion.
                 msn.enqueue(new SequencedSendTask(msg));
             } else {
