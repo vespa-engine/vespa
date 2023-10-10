@@ -30,7 +30,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                           {"description": "List price", "amount": "2400.00"},
                                           {"description": "Volume discount", "amount": "5.00"}
                                         ],
-                                        "Total": "2395.00"
+                                        "totalAmount": "2395.00"
                                       }
                                       """,
                               200);
