@@ -87,6 +87,7 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc, size_t UNUSED(minBlocks))
 {
     ChunkSList * csl = getFree(sc);
+    validate(csl);
     USE_STAT2(_stat[sc]._getFree.fetch_add(1, std::memory_order_relaxed));
     return csl;
 }
@@ -97,8 +98,10 @@ AllocPoolT<MemBlockPtrT>::exchangeFree(SizeClassT sc, typename AllocPoolT<MemBlo
 {
     PARANOID_CHECK1( if (csl->empty() || (csl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     AllocFree & af = _scList[sc];
+    validate(af._full.load(std::memory_order_relaxed)._ptr);
     ChunkSList::linkIn(af._full, csl, csl);
     ChunkSList *ncsl = getFree(sc);
+    validate(ncsl);
     USE_STAT2(_stat[sc]._exchangeFree.fetch_add(1, std::memory_order_relaxed));
     return ncsl;
 }
@@ -109,11 +112,19 @@ AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT sc, typename AllocPoolT<MemBl
 {
     PARANOID_CHECK1( if ( ! csl->empty()) { *(int*)0 = 0; } );
     AllocFree & af = _scList[sc];
+    validate(af._empty.load(std::memory_order_relaxed)._ptr);
     ChunkSList::linkIn(af._empty, csl, csl);
     ChunkSList * ncsl = getAlloc(sc);
+    validate(ncsl);
     USE_STAT2(_stat[sc]._exchangeAlloc.fetch_add(1, std::memory_order_relaxed));
     PARANOID_CHECK1( if (ncsl->empty() || (ncsl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     return ncsl;
+}
+
+template <typename MemBlockPtrT>
+void
+AllocPoolT<MemBlockPtrT>::validate(const void * ptr) const noexcept {
+    assert((ptr == nullptr) || _dataSegment.containsPtr(ptr));
 }
 
 template <typename MemBlockPtrT>
