@@ -185,6 +185,8 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         msn.start();
     }
 
+    Messenger messenger() { return msn; }
+
     /**
      * <p>Sets the destroyed flag to true. The very first time this method is
      * called, it cleans up all its dependencies. Even if you retain a reference
