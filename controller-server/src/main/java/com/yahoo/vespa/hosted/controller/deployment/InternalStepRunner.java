@@ -408,7 +408,7 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            Availability availability = endpointsAvailable(id.application(), id.type().zone(), deployment.get(), logger);
+            Availability availability = endpointsAvailable(id.application(), id.type().zone(), deployment.get(), run.versions().sourceRevision().isEmpty(), logger);
             if (availability.status() == Status.available) {
                 if (controller.routing().policies().processDnsChallenges(new DeploymentId(id.application(), id.type().zone()))) {
                     logger.log("Installation succeeded!");
@@ -479,7 +479,7 @@ public class InternalStepRunner implements StepRunner {
                                      .toList());
 
         controller.jobController().locked(id, lockedRun -> {
-            Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
+            Instant noNodesDownSince = nodeList.allowedDown().isEmpty() ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
             return lockedRun.noNodesDownSince(noNodesDownSince).withSummary(summary);
         });
 
@@ -550,7 +550,7 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, DualLogger logger) {
+    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, boolean initialDeployment, DualLogger logger) {
         DeploymentId deploymentId = new DeploymentId(id, zone);
         Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readStepRunnerEndpointsOf(Set.of(deploymentId));
         logEndpoints(endpoints, logger);
@@ -570,7 +570,8 @@ public class InternalStepRunner implements StepRunner {
                                                                   policy.canonicalName().filter(__ -> resolveEndpoints),
                                                                   policy.isPublic(),
                                                                   deployment.cloudAccount());
-                         }).toList());
+                         }).toList(),
+                initialDeployment);
     }
 
     private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {

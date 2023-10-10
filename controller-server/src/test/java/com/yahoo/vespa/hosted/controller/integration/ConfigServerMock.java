@@ -386,7 +386,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> zoneEndpoints) {
-        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints); // Wraps the same name service mock, which is updated by test harness.
+        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints, false); // Wraps the same name service mock, which is updated by test harness.
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */

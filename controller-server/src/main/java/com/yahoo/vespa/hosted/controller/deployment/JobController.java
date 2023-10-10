@@ -771,9 +771,10 @@ public class JobController {
 
             controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             controller.applications().store(application.withRevisions(revisions -> revisions.with(version)));
+            Optional<Deployment> existing = application.get().get(id.instance()).map(instance -> instance.deployments().get(type.zone()));
             start(id,
                   type,
-                  new Versions(targetPlatform, version.id(), lastRun.map(run -> run.versions().targetPlatform()), lastRun.map(run -> run.versions().targetRevision())),
+                  new Versions(targetPlatform, version.id(), existing.map(Deployment::version), existing.map(Deployment::revision)),
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
                   Reason.empty());
