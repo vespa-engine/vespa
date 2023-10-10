@@ -476,10 +476,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .flatMap(ApplicationData::lastDeployedSession);
         if (lastDeployedSession.isEmpty()) return activationTime(application);
 
-        Instant createTime = getRemoteSession(tenant, lastDeployedSession.get()).getCreateTime();
+        Optional<Instant> createTime;
+        try {
+            createTime = Optional.of(getRemoteSession(tenant, lastDeployedSession.get()).getCreateTime());
+        }
+        catch (Exception e) {
+            // Fallback to activation time, e.g. when last deployment failed before writing session data for new session
+            createTime = activationTime(application);
+        }
         log.log(Level.FINEST, application + " last deployed " + createTime);
 
-        return Optional.of(createTime);
+        return createTime;
     }
 
     @Override

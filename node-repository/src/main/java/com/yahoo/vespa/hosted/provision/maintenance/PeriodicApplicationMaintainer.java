@@ -11,10 +11,12 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Map;
 
+import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -38,10 +40,16 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        return deployer().deployTime(application)
-                         .map(lastDeployTime ->    lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments))
-                                                || deployer().readiedReindexingAfter(application, lastDeployTime))
-                         .orElse(false);
+        try {
+            return deployer().deployTime(application)
+                    .map(lastDeployTime ->    lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments))
+                            || deployer().readiedReindexingAfter(application, lastDeployTime))
+                    .orElse(false);
+        }
+        catch (Exception e) {
+            log.log(INFO, () -> "Failed finding last deploy time or reindexing status for " + application + Exceptions.toMessageString(e));
+            throw e;
+        }
     }
 
     @Override
