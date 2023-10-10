@@ -2,29 +2,21 @@
 
 #include "annotation_converter.h"
 #include "i_juniper_converter.h"
-#include "linguisticsannotation.h"
-#include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/annotation/spantreevisitor.h>
-#include <vespa/document/datatype/annotationtype.h>
+#include <vespa/document/annotation/span.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/juniper/juniper_separators.h>
+#include <vespa/searchlib/util/linguisticsannotation.h>
+#include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <utility>
 
-using document::AlternateSpanList;
 using document::Annotation;
-using document::AnnotationType;
 using document::FieldValue;
-using document::SimpleSpanList;
 using document::Span;
-using document::SpanList;
-using document::SpanNode;
-using document::SpanTree;
-using document::SpanTreeVisitor;
 using document::StringFieldValue;
+using search::linguistics::TokenExtractor;
 
 namespace search::docsummary {
 
@@ -34,40 +26,6 @@ vespalib::stringref
 getSpanString(vespalib::stringref s, const Span &span)
 {
     return {s.data() + span.from(), static_cast<size_t>(span.length())};
-}
-
-struct SpanFinder : SpanTreeVisitor {
-    int32_t begin_pos;
-    int32_t end_pos;
-
-    SpanFinder() : begin_pos(0x7fffffff), end_pos(-1) {}
-    Span span() { return Span(begin_pos, end_pos - begin_pos); }
-
-    void visit(const Span &node) override {
-        begin_pos = std::min(begin_pos, node.from());
-        end_pos = std::max(end_pos, node.from() + node.length());
-    }
-    void visit(const SpanList &node) override {
-        for (const auto & span_ : node) {
-            span_->accept(*this);
-        }
-    }
-    void visit(const SimpleSpanList &node) override {
-        for (const auto & span_ : node) {
-            span_.accept(*this);
-        }
-    }
-    void visit(const AlternateSpanList &node) override {
-        for (size_t i = 0; i < node.getNumSubtrees(); ++i) {
-            visit(node.getSubtree(i));
-        }
-    }
-};
-
-Span getSpan(const SpanNode &span_node) {
-    SpanFinder finder;
-    span_node.accept(finder);
-    return finder.span();
 }
 
 const StringFieldValue &ensureStringFieldValue(const FieldValue &value) __attribute__((noinline));
@@ -125,28 +83,16 @@ AnnotationConverter::annotateSpans(const document::Span& span, ForwardIt it, For
 void
 AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
 {
-    StringFieldValue::SpanTrees trees = value.getSpanTrees();
-    const SpanTree *tree = StringFieldValue::findTree(trees, linguistics::SPANTREE_NAME);
-    using SpanTerm = std::pair<Span, const FieldValue *>;
-    using SpanTermVector = std::vector<SpanTerm>;
-    if (!tree) {
+    using SpanTerm = TokenExtractor::SpanTerm;
+    std::vector<SpanTerm> terms;
+    auto span_trees = value.getSpanTrees();
+    if (!TokenExtractor::extract(true, terms, span_trees)) {
         // Treat a string without annotations as a single span.
         SpanTerm str(Span(0, _text.size()),
                      static_cast<const FieldValue*>(nullptr));
         handleAnnotations(str.first, &str, &str + 1);
         return;
     }
-    SpanTermVector terms;
-    for (const Annotation& annotation : *tree) {
-        // For now, skip any composite spans.
-        const auto *span = dynamic_cast<const Span*>(annotation.getSpanNode());
-        if ((span != nullptr) && annotation.valid() &&
-            (annotation.getType() == *AnnotationType::TERM)) {
-            terms.push_back(std::make_pair(getSpan(*span),
-                                           annotation.getFieldValue()));
-        }
-    }
-    sort(terms.begin(), terms.end());
     auto it = terms.begin();
     auto ite = terms.end();
     int32_t endPos = 0;
