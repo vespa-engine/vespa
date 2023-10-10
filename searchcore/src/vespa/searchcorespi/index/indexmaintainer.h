@@ -86,6 +86,7 @@ class IndexMaintainer : public IIndexManager,
     uint32_t               _last_fusion_id;   // Protected by SL + IUL
     uint32_t               _next_id;          // Protected by SL + IUL
     uint32_t               _current_index_id; // Protected by SL + IUL
+    uint32_t               _urgent_flush_id;  // Protected by SL + IUL
     std::shared_ptr<IMemoryIndex> _current_index;    // Protected by SL + IUL
     bool                   _flush_empty_current_index;
     std::atomic<SerialNum> _current_serial_num;// Writes protected by IUL
@@ -243,7 +244,7 @@ class IndexMaintainer : public IIndexManager,
         ~SetSchemaArgs();
     };
 
-    void doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex);
+    void doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex, SerialNum serial_num);
 
     Schema getSchema(void) const;
     std::shared_ptr<Schema> getActiveFusionPrunedSchema() const;
@@ -368,6 +369,12 @@ public:
     IFlushTarget::List getFlushTargets() override;
     void setSchema(const Schema & schema, SerialNum serialNum) override ;
     void setMaxFlushed(uint32_t maxFlushed) override;
+    void consider_urgent_flush(const Schema& old_schema, const Schema& new_schema, uint32_t flush_id);
+    void consider_initial_urgent_flush();
+    uint32_t get_urgent_flush_id() const;
+    bool urgent_memory_index_flush() const;
+    bool urgent_disk_index_fusion() const;
+    bool has_pending_urgent_flush() const override;
 };
 
 }
