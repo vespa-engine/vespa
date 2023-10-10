@@ -241,6 +241,7 @@ public class Bill {
             this.architecture = architecture;
             this.majorVersion = majorVersion;
             this.gpuCost = gpuCost;
+            this.exportedId = exportedId;
         }
 
         /** The opaque ID of this */
