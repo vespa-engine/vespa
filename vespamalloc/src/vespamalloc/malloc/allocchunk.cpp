@@ -33,7 +33,7 @@ AFListBase::linkOut(AtomicHeadPtr & head) noexcept
         return nullptr;
     }
     HeadPtr newHead(csl->_next, oldHead._tag + 1);
-    // linkIn/linkOut performs a release/aquire pair
+    // linkIn/linkOut performs a release/acquire pair
     while ( __builtin_expect(! head.compare_exchange_weak(oldHead, newHead, std::memory_order_acquire, std::memory_order_relaxed), false) ) {
         csl = static_cast<AFListBase *>(oldHead._ptr);
         if (csl == nullptr) {
