@@ -19,7 +19,7 @@ public class SequencerTestCase {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);
-        Sequencer seq = new Sequencer(sender, null);
+        Sequencer seq = new Sequencer(sender);
 
         seq.handleMessage(src.createMessage(false, 0));
         seq.handleMessage(src.createMessage(false, 0));
@@ -51,7 +51,7 @@ public class SequencerTestCase {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);
-        Sequencer seq = new Sequencer(sender, null);
+        Sequencer seq = new Sequencer(sender);
 
         seq.handleMessage(src.createMessage(true, 1L));
         seq.handleMessage(src.createMessage(true, 2L));

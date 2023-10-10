@@ -33,6 +33,9 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         this.sender = sender;
         this.msn = msn;
     }
+    public Sequencer(MessageHandler sender) {
+        this(sender, null);
+    }
 
     /**
      * Sets the destroyed flag to true. The very first time this method is called, it cleans up all its dependencies.
