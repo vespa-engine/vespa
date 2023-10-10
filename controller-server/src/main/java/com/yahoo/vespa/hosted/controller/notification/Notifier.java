@@ -8,7 +8,6 @@ import com.yahoo.restapi.UriBuilder;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
@@ -99,6 +98,8 @@ public class Notifier {
 
     private void dispatch(Notification notification, Collection<TenantContacts.EmailContact> contacts) {
         try {
+            log.fine(() -> "Sending notification " + notification + " to " +
+                    contacts.stream().map(c -> c.email().getEmailAddress()).toList());
             var content = formatter.format(notification);
             mailer.send(mailOf(content, contacts.stream()
                     .filter(c -> c.email().isVerified())
