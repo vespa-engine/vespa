@@ -158,7 +158,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
-            hostFlavorUpgraderInterval = Duration.ofMinutes(30);
+            hostFlavorUpgraderInterval = Duration.ofHours(1);
             // CD, test and staging (de)provisions hosts frequently. Expire deprovisioned ones earlier
             deprovisionedExpiry = (isCdZone || isTest) ? Duration.ofDays(3) : Duration.ofDays(30);
 
