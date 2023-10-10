@@ -62,9 +62,9 @@ public class JobRunner extends ControllerMaintainer {
     public void awaitShutdown() {
         super.awaitShutdown();
         try {
-            if ( ! executors.awaitTermination(10, TimeUnit.SECONDS)) {
+            if ( ! executors.awaitTermination(40, TimeUnit.SECONDS)) {
                 executors.shutdownNow();
-                if ( ! executors.awaitTermination(40, TimeUnit.SECONDS))
+                if ( ! executors.awaitTermination(10, TimeUnit.SECONDS))
                     throw new IllegalStateException("Failed shutting down " + JobRunner.class.getName());
             }
         }
