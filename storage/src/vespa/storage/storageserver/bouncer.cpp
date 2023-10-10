@@ -30,19 +30,19 @@ Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & co
       _derivedNodeStates(),
       _clusterState(&lib::State::UP),
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
-      _metrics(std::make_unique<BouncerMetrics>()),
-      _closed(false)
+      _metrics(std::make_unique<BouncerMetrics>())
 {
     _component.getStateUpdater().addStateListener(*this);
     _component.registerMetric(*_metrics);
     // Register for config. Normally not critical, so catching config
     // exception allowing program to continue if missing/faulty config.
-    try {
+    try{
         if (!configUri.empty()) {
             _configFetcher->subscribe<vespa::config::content::core::StorBouncerConfig>(configUri.getConfigId(), this);
             _configFetcher->start();
         } else {
-            LOG(info, "No config id specified. Using defaults rather than config");
+            LOG(info, "No config id specified. Using defaults rather than "
+                      "config");
         }
     } catch (config::InvalidConfigException& e) {
         LOG(info, "Bouncer failed to load config '%s'. This "
@@ -70,8 +70,6 @@ Bouncer::onClose()
 {
     _configFetcher->close();
     _component.getStateUpdater().removeStateListener(*this);
-    std::lock_guard guard(_lock);
-    _closed = true;
 }
 
 void
@@ -88,7 +86,8 @@ const BouncerMetrics& Bouncer::metrics() const noexcept {
 }
 
 void
-Bouncer::validateConfig(const vespa::config::content::core::StorBouncerConfig& newConfig) const
+Bouncer::validateConfig(
+        const vespa::config::content::core::StorBouncerConfig& newConfig) const
 {
     if (newConfig.feedRejectionPriorityThreshold != -1) {
         if (newConfig.feedRejectionPriorityThreshold
@@ -113,11 +112,12 @@ void Bouncer::append_node_identity(std::ostream& target_stream) const {
 }
 
 void
-Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg, const lib::State& state)
+Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg,
+                                        const lib::State& state)
 {
     // If we're not up or retired, fail due to this nodes state.
     std::shared_ptr<api::StorageReply> reply(
-            static_cast<api::StorageCommand&>(msg).makeReply());
+            static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "We don't allow command of type " << msg.getType()
         << " when node is in state " << state.toString(true);
@@ -128,7 +128,8 @@ Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg, const lib::Sta
 }
 
 void
-Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds)
+Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
+                                          int maxClockSkewInSeconds)
 {
     auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
@@ -139,7 +140,7 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxCloc
           as_cmd.getSourceIndex(), ost.str().c_str());
     _metrics->clock_skew_aborts.inc();
 
-    std::shared_ptr<api::StorageReply> reply(as_cmd.makeReply());
+    std::shared_ptr<api::StorageReply> reply(as_cmd.makeReply().release());
     reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.str()));
     sendUp(reply);
 }
@@ -147,7 +148,8 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxCloc
 void
 Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg, const lib::State& cluster_state)
 {
-    std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
+    std::shared_ptr<api::StorageReply> reply(
+            static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "We don't allow external load while cluster is in state "
         << cluster_state.toString(true);
@@ -170,35 +172,35 @@ uint64_t
 Bouncer::extractMutationTimestampIfAny(const api::StorageMessage& msg)
 {
     switch (msg.getType().getId()) {
-    case api::MessageType::PUT_ID:
-        return static_cast<const api::PutCommand&>(msg).getTimestamp();
-    case api::MessageType::REMOVE_ID:
-        return static_cast<const api::RemoveCommand&>(msg).getTimestamp();
-    case api::MessageType::UPDATE_ID:
-        return static_cast<const api::UpdateCommand&>(msg).getTimestamp();
-    default:
-        return 0;
+        case api::MessageType::PUT_ID:
+            return static_cast<const api::PutCommand&>(msg).getTimestamp();
+        case api::MessageType::REMOVE_ID:
+            return static_cast<const api::RemoveCommand&>(msg).getTimestamp();
+        case api::MessageType::UPDATE_ID:
+            return static_cast<const api::UpdateCommand&>(msg).getTimestamp();
+        default:
+            return 0;
     }
 }
 
 bool
-Bouncer::isExternalLoad(const api::MessageType& type) noexcept
+Bouncer::isExternalLoad(const api::MessageType& type) const noexcept
 {
     switch (type.getId()) {
-    case api::MessageType::PUT_ID:
-    case api::MessageType::REMOVE_ID:
-    case api::MessageType::UPDATE_ID:
-    case api::MessageType::GET_ID:
-    case api::MessageType::VISITOR_CREATE_ID:
-    case api::MessageType::STATBUCKET_ID:
-        return true;
-    default:
-        return false;
+        case api::MessageType::PUT_ID:
+        case api::MessageType::REMOVE_ID:
+        case api::MessageType::UPDATE_ID:
+        case api::MessageType::GET_ID:
+        case api::MessageType::VISITOR_CREATE_ID:
+        case api::MessageType::STATBUCKET_ID:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool
-Bouncer::isExternalWriteOperation(const api::MessageType& type) noexcept {
+Bouncer::isExternalWriteOperation(const api::MessageType& type) const noexcept {
     switch (type.getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
@@ -214,7 +216,8 @@ Bouncer::rejectDueToInsufficientPriority(
         api::StorageMessage& msg,
         api::StorageMessage::Priority feedPriorityLowerBound)
 {
-    std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
+    std::shared_ptr<api::StorageReply> reply(
+            static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "Operation priority (" << int(msg.getPriority())
         << ") is lower than currently configured threshold ("
@@ -228,7 +231,8 @@ Bouncer::rejectDueToInsufficientPriority(
 
 void
 Bouncer::reject_due_to_too_few_bucket_bits(api::StorageMessage& msg) {
-    std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(msg).makeReply());
+    std::shared_ptr<api::StorageReply> reply(
+            dynamic_cast<api::StorageCommand&>(msg).makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED,
                                      vespalib::make_string("Operation bucket %s has too few bits used (%u < minimum of %u)",
                                                            msg.getBucketId().toString().c_str(),
@@ -237,22 +241,31 @@ Bouncer::reject_due_to_too_few_bucket_bits(api::StorageMessage& msg) {
     sendUp(reply);
 }
 
-void
-Bouncer::reject_due_to_node_shutdown(api::StorageMessage& msg) {
-    std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(msg).makeReply());
-    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Node is shutting down"));
-    sendUp(reply);
-}
-
 bool
 Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
+    const api::MessageType& type(msg->getType());
+    // All replies can come in.
+    if (type.isReply()) {
+        return false;
+    }
+
+    switch (type.getId()) {
+        case api::MessageType::SETNODESTATE_ID:
+        case api::MessageType::GETNODESTATE_ID:
+        case api::MessageType::SETSYSTEMSTATE_ID:
+        case api::MessageType::ACTIVATE_CLUSTER_STATE_VERSION_ID:
+        case api::MessageType::NOTIFYBUCKETCHANGE_ID:
+            // state commands are always ok
+            return false;
+        default:
+            break;
+    }
     const lib::State* state;
     int maxClockSkewInSeconds;
     bool isInAvailableState;
     bool abortLoadWhenClusterDown;
-    bool closed;
-    const lib::State* cluster_state;
+    const lib::State *cluster_state;
     int feedPriorityLowerBound;
     {
         std::lock_guard lock(_lock);
@@ -262,34 +275,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         cluster_state            = _clusterState;
         isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
         feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
-        closed                   = _closed;
     }
-    const api::MessageType& type = msg->getType();
-    // If the node is shutting down, we want to prevent _any_ messages from reaching
-    // components further down the call chain. This means this case must be handled
-    // _before_ any logic that explicitly allows through certain message types.
-    if (closed) [[unlikely]] {
-        if (!type.isReply()) {
-            reject_due_to_node_shutdown(*msg);
-        } // else: swallow all replies
-        return true;
-    }
-    // All replies can come in.
-    if (type.isReply()) {
-        return false;
-    }
-    switch (type.getId()) {
-    case api::MessageType::SETNODESTATE_ID:
-    case api::MessageType::GETNODESTATE_ID:
-    case api::MessageType::SETSYSTEMSTATE_ID:
-    case api::MessageType::ACTIVATE_CLUSTER_STATE_VERSION_ID:
-    case api::MessageType::NOTIFYBUCKETCHANGE_ID:
-        // state commands are always ok
-        return false;
-    default:
-        break;
-    }
-
     // Special case for point lookup Gets while node is in maintenance mode
     // to allow reads to complete during two-phase cluster state transitions
     if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp(*cluster_state)) {

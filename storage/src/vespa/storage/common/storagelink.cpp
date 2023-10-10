@@ -281,14 +281,15 @@ Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration tim
 
 void
 Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
-    std::lock_guard sync(_lock);
-    _queue.emplace(std::move(msg));
+    {
+        std::lock_guard sync(_lock);
+        _queue.emplace(std::move(msg));
+    }
     _cond.notify_one();
 }
 
 void
 Queue::signal() {
-    std::lock_guard sync(_lock);
     _cond.notify_one();
 }
 
