@@ -914,10 +914,10 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BOOL.equals(dt)) return "java.lang.Boolean";
         if (DataType.TAG.equals(dt)) return "java.lang.String";
         if (dt instanceof StructDataType) return className(dt.getName());
-        if (dt instanceof WeightedSetDataType) return "java.util.Map<"+toJavaType(((WeightedSetDataType)dt).getNestedType())+",java.lang.Integer>";
-        if (dt instanceof ArrayDataType) return "java.util.List<"+toJavaType(((ArrayDataType)dt).getNestedType())+">";
-        if (dt instanceof MapDataType) return "java.util.Map<"+toJavaType(((MapDataType)dt).getKeyType())+","+toJavaType(((MapDataType)dt).getValueType())+">";
-        if (dt instanceof AnnotationReferenceDataType) return className(((AnnotationReferenceDataType) dt).getAnnotationType().getName());
+        if (dt instanceof WeightedSetDataType wdt) return "java.util.Map<"+toJavaType(wdt.getNestedType())+",java.lang.Integer>";
+        if (dt instanceof ArrayDataType adt) return "java.util.List<"+toJavaType(adt.getNestedType())+">";
+        if (dt instanceof MapDataType mdt) return "java.util.Map<"+toJavaType(mdt.getKeyType())+","+toJavaType((mdt).getValueType())+">";
+        if (dt instanceof AnnotationReferenceDataType ardt) return className(ardt.getAnnotationType().getName());
         if (dt instanceof NewDocumentReferenceDataType) {
             return "com.yahoo.document.DocumentId";
         }
@@ -942,22 +942,22 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
         if (dt instanceof StructDataType) return  className(dt.getName()) +".type";
-        if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+
-            ((WeightedSetDataType)dt).createIfNonExistent()+", "+ ((WeightedSetDataType)dt).removeIfZero()+","+dt.getId()+")";
-        if (dt instanceof ArrayDataType) return "new com.yahoo.document.ArrayDataType("+toJavaReference(((ArrayDataType)dt).getNestedType())+")";
-        if (dt instanceof MapDataType) return "new com.yahoo.document.MapDataType("+toJavaReference(((MapDataType)dt).getKeyType())+", "+
-            toJavaReference(((MapDataType)dt).getValueType())+", "+dt.getId()+")";
+        if (dt instanceof WeightedSetDataType wdt) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(wdt.getNestedType())+", "+
+            wdt.createIfNonExistent()+", "+ wdt.removeIfZero()+","+dt.getId()+")";
+        if (dt instanceof ArrayDataType adt) return "new com.yahoo.document.ArrayDataType("+toJavaReference(adt.getNestedType())+")";
+        if (dt instanceof MapDataType mdt) return "new com.yahoo.document.MapDataType("+toJavaReference(mdt.getKeyType())+", "+
+            toJavaReference(mdt.getValueType())+", "+dt.getId()+")";
         // For annotation references and generated types, the references are to the actual objects of the correct types, so most likely this is never needed,
         // but there might be scenarios where we want to look up the AnnotationType in the AnnotationTypeRegistry here instead.
-        if (dt instanceof AnnotationReferenceDataType) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+((AnnotationReferenceDataType)dt).getAnnotationType().getName()+"\"))";
-        if (dt instanceof NewDocumentReferenceDataType) {
+        if (dt instanceof AnnotationReferenceDataType adt) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+adt.getAnnotationType().getName()+"\"))";
+        if (dt instanceof NewDocumentReferenceDataType nrdt) {
             // All concrete document types have a public `type` constant with their DocumentType.
             return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
-                    className(((NewDocumentReferenceDataType) dt).getTargetType().getName()), dt.getId());
+                    className(nrdt.getTargetType().getName()), dt.getId());
         }
-        if (dt instanceof TensorDataType) {
+        if (dt instanceof TensorDataType tdt) {
             return String.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",
-                    ((TensorDataType)dt).getTensorType().toString());
+                    tdt.getTensorType().toString());
         }
         return "com.yahoo.document.DataType.RAW";
     }

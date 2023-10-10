@@ -77,7 +77,7 @@ public class ArrayTestCase {
 
     @Test
     public void testWrappedList() {
-        Array<StringFieldValue> array = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
+        Array<StringFieldValue> array = new Array<>(DataType.getArray(DataType.STRING));
         List<String> list = new ArrayList<>();
         list.add("foo");
         list.add("bar");
@@ -217,10 +217,10 @@ public class ArrayTestCase {
         assertEquals(new StringFieldValue("apple"), subArray.get(1));
 
 
-        assertEquals(false, array.containsAll(Arrays.<StringFieldValue>asList(new StringFieldValue("bob"))));
-        assertEquals(true, array.containsAll(Arrays.<StringFieldValue>asList(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
+        assertEquals(false, array.containsAll(Arrays.asList(new StringFieldValue("bob"))));
+        assertEquals(true, array.containsAll(Arrays.asList(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
 
-        array.removeAll(Arrays.<StringFieldValue>asList(new StringFieldValue("foo"), new StringFieldValue("boo")));
+        array.removeAll(Arrays.asList(new StringFieldValue("foo"), new StringFieldValue("boo")));
 
         assertEquals(1, array.size());
         assertEquals(1, list.size());
@@ -249,7 +249,7 @@ public class ArrayTestCase {
             assertFalse(it.hasNext());
         }
 
-        array.addAll(Arrays.<StringFieldValue>asList(new StringFieldValue("microsoft"), new StringFieldValue("google")));
+        array.addAll(Arrays.asList(new StringFieldValue("microsoft"), new StringFieldValue("google")));
 
         assertEquals(4, array.size());
         assertEquals(4, list.size());
