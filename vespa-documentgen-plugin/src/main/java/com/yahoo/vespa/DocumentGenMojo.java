@@ -851,14 +851,50 @@ public class DocumentGenMojo extends AbstractMojo {
         for (Field field: fields) {
             DataType dt = field.getDataType();
             out.write(
-            ind(ind)+"public "+toJavaType(dt)+" "+getter(field.getName())+"() { return "+field.getName()+"; }\n"+
-            ind(ind)+"public "+className+" "+setter(field.getName())+"("+toJavaType(dt)+" "+field.getName()+") { this."+field.getName()+"="+field.getName()+"; return this; }\n");
+                    ind(ind) + "public " + toJavaType(dt) + " " + getter(field.getName()) + "() { return " + field.getName() + "; }\n" +
+                    ind(ind) + "public " + className + " " + setter(field.getName()) + "(" + toJavaType(dt) + " " + field.getName() + ") {\n" +
+                    validateArgument(field.getDataType(), field.getName(), ind + 1) +
+                    ind(ind+1) + "this." + field.getName() + "=" + field.getName() + ";\n" +
+                    ind(ind+1) + "return this;\n" +
+                    ind(ind) + "}\n");
             if (spanTrees && dt.equals(DataType.STRING)) {
                 out.write(ind(ind)+"public java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> "+spanTreeGetter(field.getName())+"() { return "+field.getName()+"SpanTrees; }\n" +
                         ind(ind)+"public void "+spanTreeSetter(field.getName())+"(java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> spanTrees) { this."+field.getName()+"SpanTrees=spanTrees; }\n");
             }
         }
         out.write("\n");
+    }
+
+    private static String validateArgument(DataType type, String variable, int ind) {
+        if (type instanceof MapDataType mdt) {
+            return validateWrapped(mdt.getKeyType(), variable, variable + ".keySet()", ind) +
+                   validateWrapped(mdt.getValueType(), variable, variable + ".values()", ind);
+        }
+        else if (type instanceof CollectionDataType cdt) {
+            String elements = cdt instanceof WeightedSetDataType ? variable + ".keySet()" : variable;
+            return validateWrapped(cdt.getNestedType(), variable, elements, ind);
+        }
+        else if (   DataType.STRING.equals(type)
+                 || DataType.URI.equals(type)
+                 || type instanceof AnnotationReferenceDataType
+                 || type instanceof NewDocumentReferenceDataType) {
+            return ind(ind) + "if (" + variable + " != null) {\n" +
+                   ind(ind+1) + toJavaReference(type) + ".createFieldValue(" + variable + ");\n" +
+                   ind(ind) + "}\n";
+        }
+        else {
+            return "";
+        }
+    }
+
+    private static String validateWrapped(DataType type, String variable, String elements, int ind) {
+        String wrappedValidation = validateArgument(type, variable + "$", ind + 2);
+        if (wrappedValidation.isBlank()) return "";
+        return ind(ind) + "if (" + variable + " != null) {\n" +
+               ind(ind+1) + "for (" + toJavaType(type) + " " + variable + "$ : " + elements + ") {\n" +
+               wrappedValidation +
+               ind(ind+1) + "}\n" +
+               ind(ind) + "}\n";
     }
 
     private static String spanTreeSetter(String field) {
