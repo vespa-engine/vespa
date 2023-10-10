@@ -5,7 +5,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.query.Sorting;
-import com.yahoo.search.ranking.RankProfilesEvaluator.GlobalPhaseData;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
@@ -33,8 +32,8 @@ public class GlobalPhaseRanker {
     }
 
     public Optional<ErrorMessage> validateNoSorting(Query query, String schema) {
-        var data = globalPhaseDataFor(query, schema).orElse(null);
-        if (data == null) return Optional.empty();
+        var setup = globalPhaseSetupFor(query, schema).orElse(null);
+        if (setup == null) return Optional.empty();
         var sorting = query.getRanking().getSorting();
         if (sorting == null || sorting.fieldOrders() == null) return Optional.empty();
         for (var fieldOrder : sorting.fieldOrders()) {
@@ -47,23 +46,32 @@ public class GlobalPhaseRanker {
     }
 
     public void rerankHits(Query query, Result result, String schema) {
-        var data = globalPhaseDataFor(query, schema).orElse(null);
-        if (data == null) return;
-        var functionEvaluatorSource = data.functionEvaluatorSource();
-        var prepared = findFromQuery(query, data.needInputs());
+        var setup = globalPhaseSetupFor(query, schema).orElse(null);
+        if (setup == null) return;
+        var mainSrc = withQueryPrep(setup.globalPhaseEvalCtx, query);
+        var mainMF = setup.globalPhaseEvalCtx.fromMF();
+        int rerankCount = setup.rerankCount;
+        var normalizers = new ArrayList<NormalizerContext>();
+        for (var nSetup : setup.normalizers) {
+            var normEvalSrc = withQueryPrep(nSetup.evalCtx(), query);
+            normalizers.add(new NormalizerContext(nSetup.name(), nSetup.supplier().get(), normEvalSrc, nSetup.evalCtx().fromMF()));
+        }
+        var rescorer = new HitRescorer(mainSrc, mainMF, normalizers);
+        var reranker = new ResultReranker(rescorer, rerankCount);
+        reranker.rerankHits(result);
+        hideImplicitMatchFeatures(result, setup.matchFeaturesToHide);
+    }
+
+    static Supplier<Evaluator> withQueryPrep(FunEvalCtx evalCtx, Query query) {
+        var prepared = PreparedInput.findFromQuery(query, evalCtx.fromQuery());
         Supplier<Evaluator> supplier = () -> {
-            var evaluator = functionEvaluatorSource.get();
-            var simple = new SimpleEvaluator(evaluator);
+            var result = evalCtx.evalSrc().get();
             for (var entry : prepared) {
-                simple.bind(entry.name(), entry.value());
+                result.bind(entry.name(), entry.value());
             }
-            return simple;
+            return result;
         };
-        int rerankCount = data.rerankCount();
-        if (rerankCount < 0)
-            rerankCount = 100;
-        ResultReranker.rerankHits(result, new HitRescorer(supplier), rerankCount);
-        hideImplicitMatchFeatures(result, data.matchFeaturesToHide());
+        return supplier;
     }
 
     private void hideImplicitMatchFeatures(Result result, Collection<String> namesToHide) {
@@ -87,44 +95,9 @@ public class GlobalPhaseRanker {
         }
     }
 
-    private Optional<GlobalPhaseData> globalPhaseDataFor(Query query, String schema) {
+    private Optional<GlobalPhaseSetup> globalPhaseSetupFor(Query query, String schema) {
         return factory.evaluatorForSchema(schema)
-                .flatMap(evaluator -> evaluator.getGlobalPhaseData(query.getRanking().getProfile()));
-    }
-
-    record NameAndValue(String name, Tensor value) { }
-
-    /* do this only once per query: */
-    List<NameAndValue> findFromQuery(Query query, List<String> needInputs) {
-        List<NameAndValue> result = new ArrayList<>();
-        var ranking = query.getRanking();
-        var rankFeatures = ranking.getFeatures();
-        var rankProps = ranking.getProperties().asMap();
-        for (String needed : needInputs) {
-            var optRef = com.yahoo.searchlib.rankingexpression.Reference.simple(needed);
-            if (optRef.isEmpty()) continue;
-            var ref = optRef.get();
-            if (ref.name().equals("constant")) {
-                // XXX in theory, we should be able to avoid this
-                result.add(new NameAndValue(needed, null));
-                continue;
-            }
-            if (ref.isSimple() && ref.name().equals("query")) {
-                String queryFeatureName = ref.simpleArgument().get();
-                // searchers are recommended to place query features here:
-                var feature = rankFeatures.getTensor(queryFeatureName);
-                if (feature.isPresent()) {
-                    result.add(new NameAndValue(needed, feature.get()));
-                } else {
-                    // but other ways of setting query features end up in the properties:
-                    var objList = rankProps.get(queryFeatureName);
-                    if (objList != null && objList.size() == 1 && objList.get(0) instanceof Tensor t) {
-                        result.add(new NameAndValue(needed, t));
-                    }
-                }
-            }
-        }
-        return result;
+                .flatMap(evaluator -> evaluator.getGlobalPhaseSetup(query.getRanking().getProfile()));
     }
 
 }
