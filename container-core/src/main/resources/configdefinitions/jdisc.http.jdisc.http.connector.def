@@ -131,7 +131,7 @@ http2Enabled                   bool  default=true
 
 http2.streamIdleTimeout double default=600
 
-http2.maxConcurrentStreams int default=4096
+http2.maxConcurrentStreams int default=512
 
 # Override the default server name when authority is missing from request.
 serverName.fallback string default=""
