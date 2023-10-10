@@ -17,7 +17,7 @@ AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tail) no
     HeadPtr oldHead = head.load(std::memory_order_relaxed);
     HeadPtr newHead(csl, oldHead._tag + 1);
     tail->_next = static_cast<AFListBase *>(oldHead._ptr);
-    // linkIn/linkOut performs a release/aquire pair
+    // linkIn/linkOut performs a release/acquire pair
     while ( __builtin_expect(! head.compare_exchange_weak(oldHead, newHead, std::memory_order_release, std::memory_order_relaxed), false) ) {
         newHead._tag = oldHead._tag + 1;
         tail->_next = static_cast<AFListBase *>(oldHead._ptr);
