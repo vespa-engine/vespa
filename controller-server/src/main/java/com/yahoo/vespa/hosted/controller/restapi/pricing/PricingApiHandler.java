@@ -155,12 +155,12 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         Cursor cursor = slime.setObject();
 
         var array = cursor.setArray("priceInfo");
-        addItem(array, "listPrice", priceInfo.listPrice());
-        addItem(array, "volumeDiscount", priceInfo.volumeDiscount());
-        addItem(array, "committedAmountDiscount", priceInfo.committedAmountDiscount());
-        addItem(array, "enclaveDiscount", priceInfo.enclaveDiscount());
+        addItem(array, "List price", priceInfo.listPrice());
+        addItem(array, "Volume discount", priceInfo.volumeDiscount());
+        addItem(array, "Committed spend discount", priceInfo.committedAmountDiscount());
+        addItem(array, "Enclave discount", priceInfo.enclaveDiscount());
 
-        cursor.setString("totalAmount", priceInfo.totalAmount().toPlainString());
+        cursor.setString("Total", priceInfo.totalAmount().toPlainString());
 
         return new SlimeJsonResponse(slime);
     }

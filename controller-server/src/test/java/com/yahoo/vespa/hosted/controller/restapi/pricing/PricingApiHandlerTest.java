@@ -27,10 +27,10 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
-                                          {"description": "listPrice", "amount": "2400.00"},
-                                          {"description": "volumeDiscount", "amount": "5.00"}
+                                          {"description": "List price", "amount": "2400.00"},
+                                          {"description": "Volume discount", "amount": "5.00"}
                                         ],
-                                        "totalAmount": "2395.00"
+                                        "Total": "2395.00"
                                       }
                                       """,
                               200);
