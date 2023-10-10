@@ -67,7 +67,6 @@ TokenExtractor::extract(bool allow_zero_length_tokens, std::vector<SpanTerm>& te
     if (tree == nullptr) {
         return false;
     }
-    terms.clear();
     for (const Annotation & annotation : *tree) {
         const SpanNode *span = annotation.getSpanNode();
         if ((span != nullptr) && annotation.valid() &&

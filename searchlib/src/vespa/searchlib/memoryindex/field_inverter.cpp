@@ -49,6 +49,7 @@ using vespalib::datastore::Aligner;
 void
 FieldInverter::processAnnotations(const StringFieldValue &value, const Document& doc)
 {
+    _terms.clear();
     auto span_trees = value.getSpanTrees();
     if (!TokenExtractor::extract(false, _terms, span_trees)) {
         /* This is wrong unless field is exact match */
