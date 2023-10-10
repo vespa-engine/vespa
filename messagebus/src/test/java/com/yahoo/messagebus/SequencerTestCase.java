@@ -19,7 +19,7 @@ public class SequencerTestCase {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);
-        Sequencer seq = new Sequencer(sender);
+        Sequencer seq = new Sequencer(sender, null);
 
         seq.handleMessage(src.createMessage(false, 0));
         seq.handleMessage(src.createMessage(false, 0));
@@ -51,7 +51,7 @@ public class SequencerTestCase {
         TestQueue src = new TestQueue();
         TestQueue dst = new TestQueue();
         QueueSender sender = new QueueSender(dst);
-        Sequencer seq = new Sequencer(sender);
+        Sequencer seq = new Sequencer(sender, null);
 
         seq.handleMessage(src.createMessage(true, 1L));
         seq.handleMessage(src.createMessage(true, 2L));
@@ -102,7 +102,6 @@ public class SequencerTestCase {
         assertEquals(0, dst.size());
     }
 
-    @SuppressWarnings("serial")
     private static class TestQueue extends LinkedList<Routable> implements ReplyHandler {
 
         void checkReply(boolean hasSeqId, long seqId) {

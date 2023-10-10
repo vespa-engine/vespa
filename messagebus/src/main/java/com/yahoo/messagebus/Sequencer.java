@@ -20,14 +20,18 @@ public class Sequencer implements MessageHandler, ReplyHandler {
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final MessageHandler sender;
     private final Map<Long, Queue<Message>> seqMap = new HashMap<>();
+    private final Messenger msn;
+    private final static Object BUSY = new Object();
+    private final static ThreadLocal<Object> isSending = new ThreadLocal<>();
 
     /**
      * Constructs a new sequencer on top of the given async sender.
      *
      * @param sender The underlying sender.
      */
-    public Sequencer(MessageHandler sender) {
+    public Sequencer(MessageHandler sender, Messenger msn) {
         this.sender = sender;
+        this.msn = msn;
     }
 
     /**
@@ -133,9 +137,16 @@ public class Sequencer implements MessageHandler, ReplyHandler {
             reply.getTrace().trace(TraceLevel.COMPONENT,
                                    "Sequencer received reply with sequence id '" + seqId + "'.");
         }
+        sendNextInSequence(seqId);
         ReplyHandler handler = reply.popHandler();
         handler.handleReply(reply);
-        sendNextInSequence(seqId);
+    }
+
+    private class SequencedSendTask implements Messenger.Task {
+        private final Message msg;
+        SequencedSendTask(Message msg) { this.msg = msg; }
+        @Override public void run() { sequencedSend(msg); }
+        @Override public void destroy() { msg.discard(); }
     }
 
     private void sendNextInSequence(long seqId) {
@@ -149,7 +160,15 @@ public class Sequencer implements MessageHandler, ReplyHandler {
             }
         }
         if (msg != null) {
-            sequencedSend(msg);
+            Object alreadySending = isSending.get();
+            if ((alreadySending == BUSY) && (msn != null)) {
+                // Dispatch in another thread to break possibly very long recursion.
+                msn.enqueue(new SequencedSendTask(msg));
+            } else {
+                isSending.set(BUSY);
+                sequencedSend(msg);
+            }
+            isSending.set(null);
         }
     }
 
