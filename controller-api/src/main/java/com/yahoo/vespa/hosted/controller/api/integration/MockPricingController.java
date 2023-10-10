@@ -21,10 +21,10 @@ public class MockPricingController implements PricingController {
                                                                           resources.nodeResources().diskGb() * 10))
                                                           .sum())
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal volumeDiscount = new BigDecimal("5.00");
+        BigDecimal volumeDiscount = new BigDecimal("-5.00");
         BigDecimal committedAmountDiscount = new BigDecimal("0.00");
         BigDecimal enclaveDiscount = new BigDecimal("0.00");
-        BigDecimal totalAmount = listPrice.subtract(volumeDiscount);
+        BigDecimal totalAmount = listPrice.add(volumeDiscount);
         return new PriceInformation(listPrice, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
     }
 
