@@ -42,14 +42,22 @@ public class Bill {
     private final StatusHistory statusHistory;
     private final ZonedDateTime startTime;
     private final ZonedDateTime endTime;
+    private final String exportedId;
 
-    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems,
+                ZonedDateTime startTime, ZonedDateTime endTime) {
+        this(id, tenant, statusHistory, lineItems, startTime, endTime, null);
+    }
+
+    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems,
+                ZonedDateTime startTime, ZonedDateTime endTime, String exportedId) {
         this.id = id;
         this.tenant = tenant;
         this.lineItems = List.copyOf(lineItems);
         this.statusHistory = statusHistory;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.exportedId = exportedId;
     }
 
     public Id id() {
@@ -78,6 +86,10 @@ public class Bill {
 
     public ZonedDateTime getEndTime() {
         return endTime;
+    }
+
+    public Optional<String> getExportedId() {
+        return Optional.ofNullable(exportedId);
     }
 
     public LocalDate getStartDate() {
@@ -196,6 +208,7 @@ public class Bill {
         private BigDecimal gpuCost;
         private NodeResources.Architecture architecture;
         private int majorVersion;
+        private String exportedId;
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
             this.id = id;
@@ -207,7 +220,8 @@ public class Bill {
         }
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture, int majorVersion) {
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost,
+                        NodeResources.Architecture architecture, int majorVersion, String exportedId) {
             this(id, description, amount, plan, agent, addedAt);
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -227,6 +241,7 @@ public class Bill {
             this.architecture = architecture;
             this.majorVersion = majorVersion;
             this.gpuCost = gpuCost;
+            this.exportedId = exportedId;
         }
 
         /** The opaque ID of this */
@@ -317,6 +332,10 @@ public class Bill {
 
         public int getMajorVersion() {
             return majorVersion;
+        }
+
+        public Optional<String> getExportedId() {
+            return Optional.ofNullable(exportedId);
         }
 
         @Override
