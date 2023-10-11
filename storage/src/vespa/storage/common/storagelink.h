@@ -42,34 +42,28 @@ public:
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 
 private:
-    const std::string            _name;
-    StorageLink*                 _up;
+    std::string _name;
+    StorageLink* _up;
     std::unique_ptr<StorageLink> _down;
-    std::atomic<State>           _state;
-    const bool                   _allow_msg_down_during_flushing;
+    std::atomic<State> _state;
 
 public:
-    StorageLink(const std::string& name, bool allow_msg_down_during_flushing);
-    explicit StorageLink(const std::string& name);
-
     StorageLink(const StorageLink &) = delete;
     StorageLink & operator = (const StorageLink &) = delete;
+    StorageLink(const std::string& name)
+        : _name(name), _up(0), _down(), _state(CREATED) {}
     ~StorageLink() override;
 
-    const std::string& getName() const noexcept { return _name; }
-    [[nodiscard]] bool isTop() const noexcept { return !_up; }
-    [[nodiscard]] bool isBottom() const noexcept { return !_down; }
-    [[nodiscard]] unsigned int size() const noexcept {
-        return (isBottom() ? 1 : _down->size() + 1);
-    }
+    const std::string& getName() const { return _name; }
+    bool isTop() const { return (_up == 0); }
+    bool isBottom() const { return (_down.get() == 0); }
+    unsigned int size() const { return (isBottom() ? 1 : _down->size() + 1); }
 
     /** Adds the link to the end of the chain. */
     void push_back(StorageLink::UP);
 
     /** Get the current state of the storage link. */
-    [[nodiscard]] State getState() const noexcept {
-        return _state.load(std::memory_order_relaxed);
-    }
+    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
 
     /**
      * Called by storage server after the storage chain have been created.

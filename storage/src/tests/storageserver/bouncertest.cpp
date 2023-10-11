@@ -51,10 +51,9 @@ struct BouncerTest : public Test {
             api::Timestamp timestamp,
             document::BucketSpace bucketSpace);
 
-    void expectMessageBouncedWithRejection() const;
-    void expect_message_bounced_with_node_down_abort() const;
-    void expect_message_bounced_with_shutdown_abort() const;
-    void expectMessageNotBounced() const;
+    void expectMessageBouncedWithRejection();
+    void expectMessageBouncedWithAbort();
+    void expectMessageNotBounced();
 };
 
 BouncerTest::BouncerTest()
@@ -182,7 +181,7 @@ TEST_F(BouncerTest, allow_notify_bucket_change_even_when_distributor_down) {
 }
 
 void
-BouncerTest::expectMessageBouncedWithRejection() const
+BouncerTest::expectMessageBouncedWithRejection()
 {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
@@ -192,7 +191,7 @@ BouncerTest::expectMessageBouncedWithRejection() const
 }
 
 void
-BouncerTest::expect_message_bounced_with_node_down_abort() const
+BouncerTest::expectMessageBouncedWithAbort()
 {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
@@ -205,17 +204,7 @@ BouncerTest::expect_message_bounced_with_node_down_abort() const
 }
 
 void
-BouncerTest::expect_message_bounced_with_shutdown_abort() const
-{
-    ASSERT_EQ(1, _upper->getNumReplies());
-    EXPECT_EQ(0, _upper->getNumCommands());
-    auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
-    EXPECT_EQ(api::ReturnCode(api::ReturnCode::ABORTED, "Node is shutting down"), reply.getResult());
-    EXPECT_EQ(0, _lower->getNumCommands());
-}
-
-void
-BouncerTest::expectMessageNotBounced() const
+BouncerTest::expectMessageNotBounced()
 {
     EXPECT_EQ(size_t(0), _upper->getNumReplies());
     EXPECT_EQ(size_t(1), _lower->getNumCommands());
@@ -307,7 +296,7 @@ TEST_F(BouncerTest, abort_request_when_derived_bucket_space_node_state_is_marked
     auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
-    expect_message_bounced_with_node_down_abort();
+    expectMessageBouncedWithAbort();
     EXPECT_EQ(1, _manager->metrics().unavailable_node_aborts.getValue());
 
     _upper->reset();
@@ -371,24 +360,6 @@ TEST_F(BouncerTest, operation_with_sufficient_bucket_bits_is_not_rejected) {
     auto cmd = make_remove_with_used_bits(spi::BucketLimits::MinUsedBits);
     _upper->sendDown(std::move(cmd));
     expectMessageNotBounced();
-}
-
-TEST_F(BouncerTest, requests_are_rejected_after_close) {
-    _manager->close();
-    _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
-    expect_message_bounced_with_shutdown_abort();
-}
-
-TEST_F(BouncerTest, replies_are_swallowed_after_close) {
-    _manager->close();
-    auto req = createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space());
-    auto reply = req->makeReply();
-    _upper->sendDown(std::move(reply));
-
-    EXPECT_EQ(0, _upper->getNumCommands());
-    EXPECT_EQ(0, _upper->getNumReplies());
-    EXPECT_EQ(0, _lower->getNumCommands());
-    EXPECT_EQ(0, _lower->getNumReplies());
 }
 
 } // storage
