@@ -273,7 +273,8 @@ public class InternalStepRunner implements StepRunner {
                 case CERTIFICATE_NOT_READY -> {
                     logger.log("No valid CA signed certificate for app available to config server");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log(WARNING, "CA signed certificate for app not available to config server within " + timeouts.endpointCertificate());
+                        logger.log(WARNING, "CA signed certificate for app not available to config server within " +
+                                            timeouts.endpointCertificate().toMinutes() + " minutes");
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -330,10 +331,10 @@ public class InternalStepRunner implements StepRunner {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
                     logger.log("Retrieving CA signed certificate for the application. " +
-                               "This may take up to " + timeouts.endpointCertificate() + " on first deployment.");
+                               "This may take up to " + timeouts.endpointCertificate().toMinutes() + " minutes on first deployment.");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log(WARNING, "CA signed certificate for app not available within " +
-                                   timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
+                                   timeouts.endpointCertificate().toMinutes() + " minutes: " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return Optional.empty();
