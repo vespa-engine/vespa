@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Will pick 2 random candidates and select the one with least pending operations.
+ * Will pick 2 random candidates and select the one with the least pending operations.
  *
  * @author baldersheim
  */
