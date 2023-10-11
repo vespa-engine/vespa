@@ -19,9 +19,7 @@ public abstract class UnaryBitFunctionNode extends UnaryFunctionNode {
     /**
      * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
-    public UnaryBitFunctionNode() {
-
-    }
+    public UnaryBitFunctionNode() {}
 
     /**
      * Constructs an instance of this class with given argument and number of bits.

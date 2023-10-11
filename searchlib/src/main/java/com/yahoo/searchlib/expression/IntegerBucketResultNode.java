@@ -13,16 +13,11 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class IntegerBucketResultNode extends BucketResultNode {
 
-    public static final int classId = registerClass(0x4000 + 101, IntegerBucketResultNode.class);
+    public static final int classId = registerClass(0x4000 + 101, IntegerBucketResultNode.class, IntegerBucketResultNode::new);
     private long from = 0; // bucket start, inclusive
     private long to = 0; // bucket end, exclusive
 
-    /**
-     * Constructs an empty result node.
-     */
-    public IntegerBucketResultNode() {
-        // empty
-    }
+    public IntegerBucketResultNode() { }
 
     /**
      * Create a bucket with the given limits

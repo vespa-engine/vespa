@@ -14,12 +14,10 @@ import java.util.ArrayList;
  */
 public class IntegerBucketResultNodeVector extends ResultNodeVector {
 
-    public static final int classId = registerClass(0x4000 + 112, IntegerBucketResultNodeVector.class);
-    private ArrayList<IntegerBucketResultNode> vector = new ArrayList<IntegerBucketResultNode>();
+    public static final int classId = registerClass(0x4000 + 112, IntegerBucketResultNodeVector.class, IntegerBucketResultNodeVector::new);
+    private ArrayList<IntegerBucketResultNode> vector = new ArrayList<>();
 
-    public IntegerBucketResultNodeVector() {
-
-    }
+    public IntegerBucketResultNodeVector() {}
 
     public IntegerBucketResultNodeVector add(IntegerBucketResultNode v) {
         vector.add(v);

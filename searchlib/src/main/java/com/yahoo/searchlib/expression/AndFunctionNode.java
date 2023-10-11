@@ -9,7 +9,7 @@ package com.yahoo.searchlib.expression;
  */
 public class AndFunctionNode extends BitFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 67, AndFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 67, AndFunctionNode.class, AndFunctionNode::new);
 
     @Override
     protected int onGetClassId() {

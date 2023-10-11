@@ -12,7 +12,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class InterpolatedLookupNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 39, InterpolatedLookupNode.class);
+    public static final int classId = registerClass(0x4000 + 39, InterpolatedLookupNode.class, InterpolatedLookupNode::new);
     private String attribute;
 
     /**

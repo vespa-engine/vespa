@@ -18,8 +18,7 @@ public class Int8ResultNode extends NumericResultNode {
     public static final int classId = registerClass(0x4000 + 104, Int8ResultNode.class, Int8ResultNode::new);
     private byte value = 0;
 
-    public Int8ResultNode() {
-    }
+    public Int8ResultNode() { }
 
     /**
      * Constructs an instance of this class with given value.

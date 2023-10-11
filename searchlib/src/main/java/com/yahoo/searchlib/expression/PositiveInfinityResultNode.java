@@ -6,7 +6,7 @@ package com.yahoo.searchlib.expression;
  */
 public class PositiveInfinityResultNode extends ResultNode {
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 124, PositiveInfinityResultNode.class);
+    public static final int classId = registerClass(0x4000 + 124, PositiveInfinityResultNode.class, PositiveInfinityResultNode::new);
 
     @Override
     protected int onGetClassId() {

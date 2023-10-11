@@ -18,10 +18,7 @@ public class Int16ResultNode extends NumericResultNode {
     public static final int classId = registerClass(0x4000 + 105, Int16ResultNode.class, Int16ResultNode::new);
     private short value = 0;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public Int16ResultNode() {
-        // used by deserializer
-    }
+    public Int16ResultNode() {}
 
     /**
      * Constructs an instance of this class with given value.

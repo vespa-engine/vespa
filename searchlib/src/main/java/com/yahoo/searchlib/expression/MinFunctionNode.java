@@ -9,7 +9,7 @@ package com.yahoo.searchlib.expression;
  */
 public class MinFunctionNode extends NumericFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 65, MinFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 65, MinFunctionNode.class, MinFunctionNode::new);
 
     @Override
     protected int onGetClassId() {

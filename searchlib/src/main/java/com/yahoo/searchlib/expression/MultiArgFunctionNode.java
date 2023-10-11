@@ -51,16 +51,16 @@ public abstract class MultiArgFunctionNode extends FunctionNode {
 
     @Override
     protected boolean onExecute() {
-        for (int i = 0; i < args.size(); i++) {
-            args.get(i).execute();
+        for (ExpressionNode arg : args) {
+            arg.execute();
         }
         return calculate(args, getResult());
     }
 
     @Override
     protected void onPrepare() {
-        for (int i = 0; i < args.size(); i++) {
-            args.get(i).prepare();
+        for (ExpressionNode arg : args) {
+            arg.prepare();
         }
         prepareResult();
     }

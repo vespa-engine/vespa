@@ -13,15 +13,10 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class RangeBucketPreDefFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 76, RangeBucketPreDefFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 76, RangeBucketPreDefFunctionNode.class, RangeBucketPreDefFunctionNode::new);
     private ResultNodeVector predef = null;
 
-    /**
-     * Constructs an empty result node.
-     */
-    public RangeBucketPreDefFunctionNode() {
-        // empty
-    }
+    public RangeBucketPreDefFunctionNode() {}
 
     /**
      * Create a bucket expression with the given width and the given subexpression

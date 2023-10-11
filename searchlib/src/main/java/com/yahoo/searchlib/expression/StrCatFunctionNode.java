@@ -9,7 +9,7 @@ package com.yahoo.searchlib.expression;
  */
 public class StrCatFunctionNode extends MultiArgFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 133, StrCatFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 133, StrCatFunctionNode.class, StrCatFunctionNode::new);
 
     @Override
     protected int onGetClassId() {

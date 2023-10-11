@@ -8,7 +8,7 @@ import java.util.HashSet;
 
 public class SparseSketch extends Sketch<SparseSketch> {
 
-    public static final int classId = registerClass(0x4000 + 171, SparseSketch.class);
+    public static final int classId = registerClass(0x4000 + 171, SparseSketch.class, SparseSketch::new);
     private final HashSet<Integer> values = new HashSet<>();
 
     @Override

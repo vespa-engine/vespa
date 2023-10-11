@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
 public class GroupingLevel extends Identifiable {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 93, GroupingLevel.class);
+    public static final int classId = registerClass(0x4000 + 93, GroupingLevel.class, GroupingLevel::new);
 
     // The maximum number of groups allowed at this level.
     private long maxGroups = -1;

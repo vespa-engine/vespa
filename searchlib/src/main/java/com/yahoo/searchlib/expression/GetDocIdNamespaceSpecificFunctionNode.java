@@ -13,7 +13,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class GetDocIdNamespaceSpecificFunctionNode extends DocumentAccessorNode {
 
-    public static final int classId = registerClass(0x4000 + 73, GetDocIdNamespaceSpecificFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 73, GetDocIdNamespaceSpecificFunctionNode.class, GetDocIdNamespaceSpecificFunctionNode::new);
     private ResultNode result = null;
 
     /**
