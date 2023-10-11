@@ -12,7 +12,7 @@
   <packaging>container-plugin</packaging>
   <version>8-SNAPSHOT</version>
   <properties>
-    <zookeeper.version>3.8.0</zookeeper.version>
+    <zookeeper.version>3.8.3</zookeeper.version>
   </properties>
   <dependencies>
     <dependency>

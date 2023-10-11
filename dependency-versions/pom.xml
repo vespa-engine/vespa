@@ -129,7 +129,7 @@
         <wiremock.vespa.version>3.2.0</wiremock.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
-        <zookeeper.client.vespa.version>3.8.0</zookeeper.client.vespa.version>
+        <zookeeper.client.vespa.version>3.8.3</zookeeper.client.vespa.version>
 
         <!-- Versions used by tenant parent pom and testing framework -->
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
