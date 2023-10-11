@@ -4,8 +4,8 @@ package com.yahoo.container.protect;
 import com.yahoo.protect.Process;
 
 /**
- * An injectable terminator of the Java VM.
- * Components that encounter conditions where the VM should be terminated should
+ * An injectable terminator of the Java vm.
+ * Components that encounters conditions where the vm should be terminated should
  * request an instance of this injected. That makes termination testable
  * as tests can create subclasses of this which register the termination request
  * rather than terminating.

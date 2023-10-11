@@ -75,7 +75,8 @@ public class DeploymentTester {
         tester = controllerTester;
         jobs = tester.controller().jobController();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
-        runner = new JobRunner(tester.controller(), maintenanceInterval, JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
+        runner = new JobRunner(tester.controller(), maintenanceInterval, JobRunnerTest.inThreadExecutor(),
+                               new InternalStepRunner(tester.controller()));
         upgrader = new Upgrader(tester.controller(), maintenanceInterval);
         upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval);
