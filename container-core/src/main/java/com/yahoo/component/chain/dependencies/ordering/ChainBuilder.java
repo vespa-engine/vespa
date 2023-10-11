@@ -46,7 +46,7 @@ public class ChainBuilder<T extends ChainedComponent> {
 
     public ChainBuilder(ComponentId id) {
         this.id = id;
-        allPhase = addPhase(new Phase("*", set("*"), Collections.<String>emptySet()));
+        allPhase = addPhase(new Phase("*", set("*"), Set.of()));
     }
 
     private Set<String> set(String... s) {
