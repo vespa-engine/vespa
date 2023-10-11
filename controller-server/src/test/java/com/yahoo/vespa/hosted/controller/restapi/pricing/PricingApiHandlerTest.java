@@ -37,14 +37,31 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    void testPricingInfoWithIncompleteParameter() {
+    void testInvalidRequests() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationWithMissingValueInResources());
-        tester.assertJsonResponse(request,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: resources\"}",
-                              400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No price information found in query\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No cluster resources found in query\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources="),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources='\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&key=value"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown query parameter 'key'\"}",
+                400);
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources=key%3Dvalue"),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown resource type 'key'\"}",
+                400);
     }
 
     /**
@@ -57,9 +74,4 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                 "&resources=" + resources +
                 "&resources=" + resources;
     }
-
-    String urlEncodedPriceInformationWithMissingValueInResources() {
-        return URLEncoder.encode("supportLevel=basic&committedSpend=0&enclave=false&resources", UTF_8);
-    }
-
 }
