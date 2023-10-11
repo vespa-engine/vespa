@@ -217,10 +217,10 @@ public class ArrayTestCase {
         assertEquals(new StringFieldValue("apple"), subArray.get(1));
 
 
-        assertEquals(false, array.containsAll(Arrays.asList(new StringFieldValue("bob"))));
-        assertEquals(true, array.containsAll(Arrays.asList(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
+        assertEquals(false, array.containsAll(List.of(new StringFieldValue("bob"))));
+        assertEquals(true, array.containsAll(List.of(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
 
-        array.removeAll(Arrays.asList(new StringFieldValue("foo"), new StringFieldValue("boo")));
+        array.removeAll(List.of(new StringFieldValue("foo"), new StringFieldValue("boo")));
 
         assertEquals(1, array.size());
         assertEquals(1, list.size());
@@ -249,7 +249,7 @@ public class ArrayTestCase {
             assertFalse(it.hasNext());
         }
 
-        array.addAll(Arrays.asList(new StringFieldValue("microsoft"), new StringFieldValue("google")));
+        array.addAll(List.of(new StringFieldValue("microsoft"), new StringFieldValue("google")));
 
         assertEquals(4, array.size());
         assertEquals(4, list.size());
