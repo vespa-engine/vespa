@@ -24,7 +24,7 @@ public class Grouping extends Identifiable {
     }
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 91, Grouping.class);
+    public static final int classId = registerClass(0x4000 + 91, Grouping.class, Grouping::new);
 
     // The client id for this grouping request.
     private int id = 0;

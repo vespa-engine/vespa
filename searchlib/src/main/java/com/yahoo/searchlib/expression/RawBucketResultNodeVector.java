@@ -11,16 +11,15 @@ import java.util.ArrayList;
  */
 public class RawBucketResultNodeVector extends ResultNodeVector {
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 126, RawBucketResultNodeVector.class);
-    private ArrayList<RawBucketResultNode> vector = new ArrayList<RawBucketResultNode>();
+    public static final int classId = registerClass(0x4000 + 126, RawBucketResultNodeVector.class, RawBucketResultNodeVector::new);
+    private ArrayList<RawBucketResultNode> vector = new ArrayList<>();
 
     @Override
     protected int onGetClassId() {
         return classId;
     }
 
-    public RawBucketResultNodeVector() {
-    }
+    public RawBucketResultNodeVector() {}
 
     public RawBucketResultNodeVector add(RawBucketResultNode v) {
         vector.add(v);

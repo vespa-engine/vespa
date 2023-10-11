@@ -8,14 +8,9 @@ package com.yahoo.searchlib.expression;
  */
 public class ToRawFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 141, ToRawFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 141, ToRawFunctionNode.class, ToRawFunctionNode::new);
 
-    /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
-     */
-    public ToRawFunctionNode() {
-
-    }
+    public ToRawFunctionNode() {}
 
     /**
      * Constructs an instance of this class with given argument.

@@ -9,7 +9,7 @@ package com.yahoo.searchlib.expression;
  */
 public class MultiplyFunctionNode extends NumericFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 62, MultiplyFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 62, MultiplyFunctionNode.class, MultiplyFunctionNode::new);
 
     @Override
     protected int onGetClassId() {

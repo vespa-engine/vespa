@@ -9,14 +9,12 @@ package com.yahoo.searchlib.expression;
  */
 public class MD5BitFunctionNode extends UnaryBitFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 70, MD5BitFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 70, MD5BitFunctionNode.class, MD5BitFunctionNode::new);
 
     /**
      * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
-    public MD5BitFunctionNode() {
-
-    }
+    public MD5BitFunctionNode() {}
 
     /**
      * Constructs an instance of this class with given argument and number of bits.

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class RawResultNodeVector extends ResultNodeVector {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 115, RawResultNodeVector.class);
+    public static final int classId = registerClass(0x4000 + 115, RawResultNodeVector.class, RawResultNodeVector::new);
     private ArrayList<RawResultNode> vector = new ArrayList<RawResultNode>();
 
     @Override

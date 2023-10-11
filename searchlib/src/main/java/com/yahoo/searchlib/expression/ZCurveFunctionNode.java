@@ -32,13 +32,10 @@ public class ZCurveFunctionNode extends UnaryFunctionNode {
         }
     }
 
-    public static final int classId = registerClass(0x4000 + 139, ZCurveFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 139, ZCurveFunctionNode.class, ZCurveFunctionNode::new);
     private Dimension dim = Dimension.X;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public ZCurveFunctionNode() {
-        // used by deserializer
-    }
+    private ZCurveFunctionNode() {}
 
     public ZCurveFunctionNode(ExpressionNode arg, Dimension dimension) {
         addArg(arg);

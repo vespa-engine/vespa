@@ -17,7 +17,7 @@ import java.util.Objects;
  */
 public class AttributeMapLookupNode extends AttributeNode {
 
-    public static final int classId = registerClass(0x4000 + 145, AttributeMapLookupNode.class);
+    public static final int classId = registerClass(0x4000 + 145, AttributeMapLookupNode.class, AttributeMapLookupNode::new);
     private String keyAttribute = "";
     private String valueAttribute = "";
     private String key = "";

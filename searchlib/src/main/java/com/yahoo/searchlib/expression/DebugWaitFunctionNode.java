@@ -12,14 +12,11 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class DebugWaitFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 144, DebugWaitFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 144, DebugWaitFunctionNode.class, DebugWaitFunctionNode::new);
     private double waitTime;
     private boolean busyWait;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public DebugWaitFunctionNode() {
-        // used by deserializer
-    }
+    public DebugWaitFunctionNode() { }
 
     /**
      * Constructs an instance of this class with given argument and wait parameters.

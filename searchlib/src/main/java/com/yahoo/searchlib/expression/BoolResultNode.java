@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 import java.nio.ByteBuffer;
 
 public class BoolResultNode extends ResultNode {
-    public static final int classId = registerClass(0x4000 + 146, BoolResultNode.class);
+    public static final int classId = registerClass(0x4000 + 146, BoolResultNode.class, BoolResultNode::new);
     private boolean value = false;
 
     public BoolResultNode() {

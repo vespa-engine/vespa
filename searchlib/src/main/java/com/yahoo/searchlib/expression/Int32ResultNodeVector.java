@@ -14,12 +14,10 @@ import java.util.ArrayList;
  */
 public class Int32ResultNodeVector extends ResultNodeVector {
 
-    public static final int classId = registerClass(0x4000 + 118, Int32ResultNodeVector.class);
+    public static final int classId = registerClass(0x4000 + 118, Int32ResultNodeVector.class, Int32ResultNodeVector::new);
     private ArrayList<Int32ResultNode> vector = new ArrayList<Int32ResultNode>();
 
-    public Int32ResultNodeVector() {
-
-    }
+    public Int32ResultNodeVector() {}
 
     public Int32ResultNodeVector add(Int32ResultNode v) {
         vector.add(v);

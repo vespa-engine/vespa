@@ -18,7 +18,7 @@ import java.util.Arrays;
  */
 public class NormalSketch extends Sketch<NormalSketch>  {
 
-    public static final int classId = registerClass(0x4000 + 170, NormalSketch.class);
+    public static final int classId = registerClass(0x4000 + 170, NormalSketch.class, NormalSketch::new);
 
     private final byte[] data;
     private final int bucketMask;

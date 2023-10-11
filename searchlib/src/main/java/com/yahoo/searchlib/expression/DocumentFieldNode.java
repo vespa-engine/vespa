@@ -13,7 +13,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class DocumentFieldNode extends DocumentAccessorNode {
 
-    public static final int classId = registerClass(0x4000 + 56, DocumentFieldNode.class);
+    public static final int classId = registerClass(0x4000 + 56, DocumentFieldNode.class, DocumentFieldNode::new);
     private String fieldName;
     private ResultNode result;
 

@@ -7,7 +7,7 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.ArrayList;
 
 public class BoolResultNodeVector extends ResultNodeVector {
-    public static final int classId = registerClass(0x4000 + 147, BoolResultNodeVector.class);
+    public static final int classId = registerClass(0x4000 + 147, BoolResultNodeVector.class, BoolResultNodeVector::new);
     private ArrayList<BoolResultNode> vector = new ArrayList<>();
 
     public BoolResultNodeVector() {}

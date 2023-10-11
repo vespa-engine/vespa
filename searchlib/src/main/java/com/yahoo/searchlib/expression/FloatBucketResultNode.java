@@ -14,7 +14,7 @@ import com.yahoo.vespa.objects.Serializer;
 public class FloatBucketResultNode extends BucketResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 102, FloatBucketResultNode.class);
+    public static final int classId = registerClass(0x4000 + 102, FloatBucketResultNode.class, FloatBucketResultNode::new);
 
     // bucket start, inclusive
     private double from = 0;

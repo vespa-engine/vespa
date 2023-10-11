@@ -9,14 +9,9 @@ package com.yahoo.searchlib.expression;
  */
 public class ToFloatFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 134, ToFloatFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 134, ToFloatFunctionNode.class, ToFloatFunctionNode::new);
 
-    /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
-     */
-    public ToFloatFunctionNode() {
-
-    }
+    public ToFloatFunctionNode() {}
 
     /**
      * Constructs an instance of this class with given argument.

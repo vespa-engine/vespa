@@ -12,7 +12,7 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 public class NullResultNode extends ResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 57, NullResultNode.class);
+    public static final int classId = registerClass(0x4000 + 57, NullResultNode.class, NullResultNode::new);
 
     @Override
     protected int onGetClassId() {

@@ -14,7 +14,7 @@ import com.yahoo.vespa.objects.Serializer;
 public class StringBucketResultNode extends BucketResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 103, StringBucketResultNode.class);
+    public static final int classId = registerClass(0x4000 + 103, StringBucketResultNode.class, StringBucketResultNode::new);
 
     // bucket start, inclusive
     private ResultNode from = StringResultNode.getNegativeInfinity();
@@ -27,12 +27,7 @@ public class StringBucketResultNode extends BucketResultNode {
         return to.equals(from);
     }
 
-    /**
-     * Constructs an empty result node.
-     */
-    public StringBucketResultNode() {
-        // empty
-    }
+    public StringBucketResultNode() {}
 
     /**
      * Create a bucket with the given limits

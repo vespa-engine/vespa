@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
 public class RawBucketResultNode extends BucketResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 125, RawBucketResultNode.class);
+    public static final int classId = registerClass(0x4000 + 125, RawBucketResultNode.class, RawBucketResultNode::new);
 
     // bucket start, inclusive
     private ResultNode from = RawResultNode.getNegativeInfinity();
@@ -24,12 +24,7 @@ public class RawBucketResultNode extends BucketResultNode {
         return to.equals(from);
     }
 
-    /**
-     * Constructs an empty result node.
-     */
-    public RawBucketResultNode() {
-        // empty
-    }
+    public RawBucketResultNode() {}
 
     /**
      * Create a bucket with the given limits
