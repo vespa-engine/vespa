@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 
 import java.net.URI;
@@ -26,7 +27,7 @@ public class InstanceInformation {
         public URI url;
         public String scope;
         public RoutingMethod routingMethod;
-        public String auth;
+        public AuthMethod auth;
 
         @JsonCreator
         public Endpoint(@JsonProperty("cluster") String cluster ,
@@ -34,7 +35,7 @@ public class InstanceInformation {
                         @JsonProperty("url") URI url,
                         @JsonProperty("scope") String scope,
                         @JsonProperty("routingMethod") RoutingMethod routingMethod,
-                        @JsonProperty("authMethod") String auth) {
+                        @JsonProperty("authMethod") AuthMethod auth) {
             this.cluster = cluster;
             this.tls = tls;
             this.url = url;
