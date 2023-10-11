@@ -8,7 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A thread pool executor which maintains the last time a worker completed.
+ * A thread pool executor which maintains the last time a worker completed
+ * package private for testing
  *
  * @author Steinar Knutsen
  * @author baldersheim

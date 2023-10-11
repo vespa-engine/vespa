@@ -23,7 +23,7 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
     private final Map<String, CacheEntry> cache = new HashMap<>();
 
     /**
-     * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occurred.
+     * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occured.
      * If no local service can be found, this policy simply returns the asterisk to allow the network to choose any.
      *
      * @param param The address to use for this, if empty this will resolve to hostname.

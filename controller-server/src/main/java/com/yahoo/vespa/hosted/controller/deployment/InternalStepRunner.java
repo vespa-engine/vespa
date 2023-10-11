@@ -727,8 +727,6 @@ public class InternalStepRunner implements StepRunner {
 
                     DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
                     boolean requireTests = spec.steps().stream().anyMatch(step -> step.concerns(id.type().environment()));
-                    logger.log(WARNING, "No tests were actually run, but this test suite is explicitly declared in 'deployment.xml'. " +
-                                        "Either add tests, ensure they're correctly configured, or remove the test declaration.");
                     return Optional.of(requireTests ? testFailure : noTests);
                 }
             case SUCCESS:

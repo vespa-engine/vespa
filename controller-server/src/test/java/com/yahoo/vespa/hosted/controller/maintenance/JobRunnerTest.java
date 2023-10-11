@@ -1,10 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -24,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobRunner.Metrics;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -40,9 +37,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Phaser;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -123,60 +118,6 @@ public class JobRunnerTest {
         phaser.arriveAndAwaitAdvance();
         assertTrue(jobs.last(id, systemTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
-    }
-
-    @Test
-    void metrics() {
-        Phaser phaser = new Phaser(4);
-        StepRunner runner = (step, id) -> {
-            phaser.arrive();
-            phaser.arriveAndAwaitAdvance();
-            return Optional.of(running);
-        };
-        ExecutorService executor = new ThreadPoolExecutor(3, 3, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), (task, pool) -> task.run());
-        DeploymentTester tester = new DeploymentTester();
-        MockMetric metric = new MockMetric();
-        Metrics metrics = new Metrics(metric, Duration.ofDays(1));
-        JobRunner jobs = new JobRunner(tester.controller(), Duration.ofDays(1), executor, runner, metrics);
-        tester.newDeploymentContext().submit();
-
-        assertEquals(Map.of(), metric.metrics());
-        metrics.report();
-        assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
-                            Map.of(Map.of(), 0.0),
-                            ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(),
-                            Map.of(Map.of(), 0.0)),
-                     metric.metrics());
-        tester.triggerJobs();
-
-        assertEquals(2, tester.jobs().active().size());
-        jobs.maintain();
-        phaser.arriveAndAwaitAdvance();
-        metrics.report();
-        assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
-                            Map.of(Map.of(), 1.0),
-                            ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(),
-                            Map.of(Map.of(), 3.0)),
-                     metric.metrics());
-
-        phaser.arrive();
-        phaser.arriveAndAwaitAdvance();
-        metrics.report();
-        assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
-                            Map.of(Map.of(), 1.0),
-                            ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(),
-                            Map.of(Map.of(), 3.0)),
-                     metric.metrics());
-
-        jobs.shutdown();
-        phaser.forceTermination();
-        jobs.awaitShutdown();
-        metrics.report();
-        assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
-                            Map.of(Map.of(), 0.0),
-                            ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(),
-                            Map.of(Map.of(), 0.0)),
-                     metric.metrics());
     }
 
     @Test

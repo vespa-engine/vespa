@@ -19,7 +19,7 @@ public class RoutingContext {
 
     private final RoutingNode node;
     private final int directive;
-    private final Set<Integer> consumableErrors = new HashSet<>();
+    private final Set<Integer> consumableErrors = new HashSet<Integer>();
     private boolean selectOnRetry = true;
     private Object context = null;
 
