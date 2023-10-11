@@ -3,4 +3,4 @@ package com.yahoo.search.ranking;
 
 import java.util.function.Supplier;
 
-record NormalizerSetup(String name, Supplier<Normalizer> supplier, FunEvalCtx evalCtx) {}
+record NormalizerSetup(String name, Supplier<Normalizer> supplier, FunEvalSpec inputEvalSpec) {}

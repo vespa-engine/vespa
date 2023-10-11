@@ -48,28 +48,29 @@ public class GlobalPhaseRanker {
     public void rerankHits(Query query, Result result, String schema) {
         var setup = globalPhaseSetupFor(query, schema).orElse(null);
         if (setup == null) return;
-        var mainSrc = withQueryPrep(setup.globalPhaseEvalCtx, query);
-        var mainMF = setup.globalPhaseEvalCtx.fromMF();
+        var mainSpec = setup.globalPhaseEvalSpec;
+        var mainSrc = withQueryPrep(mainSpec.evalSource(), mainSpec.fromQuery(), query);
         int rerankCount = setup.rerankCount;
         var normalizers = new ArrayList<NormalizerContext>();
         for (var nSetup : setup.normalizers) {
-            var normEvalSrc = withQueryPrep(nSetup.evalCtx(), query);
-            normalizers.add(new NormalizerContext(nSetup.name(), nSetup.supplier().get(), normEvalSrc, nSetup.evalCtx().fromMF()));
+            var normSpec = nSetup.inputEvalSpec();
+            var normEvalSrc = withQueryPrep(normSpec.evalSource(), normSpec.fromQuery(), query);
+            normalizers.add(new NormalizerContext(nSetup.name(), nSetup.supplier().get(), normEvalSrc, normSpec.fromMF()));
         }
-        var rescorer = new HitRescorer(mainSrc, mainMF, normalizers);
+        var rescorer = new HitRescorer(mainSrc, mainSpec.fromMF(), normalizers);
         var reranker = new ResultReranker(rescorer, rerankCount);
         reranker.rerankHits(result);
         hideImplicitMatchFeatures(result, setup.matchFeaturesToHide);
     }
 
-    static Supplier<Evaluator> withQueryPrep(FunEvalCtx evalCtx, Query query) {
-        var prepared = PreparedInput.findFromQuery(query, evalCtx.fromQuery());
+    static Supplier<Evaluator> withQueryPrep(Supplier<Evaluator> evalSource, List<String> queryFeatures, Query query) {
+        var prepared = PreparedInput.findFromQuery(query, queryFeatures);
         Supplier<Evaluator> supplier = () -> {
-            var result = evalCtx.evalSrc().get();
+            var evaluator = evalSource.get();
             for (var entry : prepared) {
-                result.bind(entry.name(), entry.value());
+                evaluator.bind(entry.name(), entry.value());
             }
-            return result;
+            return evaluator;
         };
         return supplier;
     }

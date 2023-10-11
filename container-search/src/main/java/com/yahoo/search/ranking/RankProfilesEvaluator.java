@@ -63,10 +63,6 @@ public class RankProfilesEvaluator extends AbstractComponent {
         return modelForRankProfile(rankProfile).evaluatorOf(functionName);
     }
 
-    Supplier<Evaluator> getSupplier(String rankProfile, String functionName) {
-        return () -> new SimpleEvaluator(evaluatorForFunction(rankProfile, functionName));
-    }
-
     private Map<String, GlobalPhaseSetup> profilesWithGlobalPhase = new HashMap<>();
 
     Optional<GlobalPhaseSetup> getGlobalPhaseSetup(String rankProfile) {

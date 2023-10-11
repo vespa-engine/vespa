@@ -4,4 +4,4 @@ package com.yahoo.search.ranking;
 import java.util.List;
 import java.util.function.Supplier;
 
-record FunEvalCtx(Supplier<Evaluator> evalSrc, List<String> fromQuery, List<String> fromMF) {}
+record FunEvalSpec(Supplier<Evaluator> evalSource, List<String> fromQuery, List<String> fromMF) {}

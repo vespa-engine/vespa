@@ -26,7 +26,7 @@ class SimpleEvaluator implements Evaluator {
 
     @Override
     public Evaluator bind(String name, Tensor value) {
-        if (value != null) evaluator.bind(name, value);
+        evaluator.bind(name, value);
         return this;
     }
 

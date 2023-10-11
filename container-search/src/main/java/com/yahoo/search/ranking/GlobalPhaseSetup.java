@@ -16,17 +16,17 @@ import java.util.function.Supplier;
 
 class GlobalPhaseSetup {
 
-    final FunEvalCtx globalPhaseEvalCtx;
+    final FunEvalSpec globalPhaseEvalSpec;
     final int rerankCount;
     final Collection<String> matchFeaturesToHide;
     final List<NormalizerSetup> normalizers;
 
-    GlobalPhaseSetup(FunEvalCtx globalPhase,
+    GlobalPhaseSetup(FunEvalSpec globalPhaseEvalSpec,
                      final int rerankCount,
                      Collection<String> matchFeaturesToHide,
                      List<NormalizerSetup> normalizers)
     {
-        this.globalPhaseEvalCtx = globalPhase;
+        this.globalPhaseEvalSpec = globalPhaseEvalSpec;
         this.rerankCount = rerankCount;
         this.matchFeaturesToHide = matchFeaturesToHide;
         this.normalizers = normalizers;
@@ -105,7 +105,7 @@ class GlobalPhaseSetup {
                 }
             }
             Supplier<Evaluator> supplier = SimpleEvaluator.wrap(functionEvaluatorSource);
-            var gfun = new FunEvalCtx(supplier, fromQuery, fromMF);
+            var gfun = new FunEvalSpec(supplier, fromQuery, fromMF);
             return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers);
         }
         return null;
@@ -129,7 +129,7 @@ class GlobalPhaseSetup {
                 throw new IllegalArgumentException("Bad config, missing normalizer input: " + input);
             }
         }
-        var fun = new FunEvalCtx(evalSupplier, fromQuery, fromMF);
+        var fun = new FunEvalSpec(evalSupplier, fromQuery, fromMF);
         return new NormalizerSetup(cfg.name(), makeNormalizerSupplier(cfg, rerankCount), fun);
     }
 

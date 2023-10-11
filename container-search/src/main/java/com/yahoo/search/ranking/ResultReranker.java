@@ -62,13 +62,11 @@ class ResultReranker {
         for (var iterator = hitsToRescore.iterator(); count < rerankCount && iterator.hasNext(); ) {
             WrappedHit wrapped = iterator.next();
             double oldScore = wrapped.getScore();
-            boolean didRerank = hitRescorer.rescoreHit(wrapped);
-            if (didRerank) {
-                ranges.withInitialScore(oldScore);
-                ranges.withFinalScore(wrapped.getScore());
-                ++count;
-                iterator.remove();
-            }
+            double newScore = hitRescorer.rescoreHit(wrapped);
+            ranges.withInitialScore(oldScore);
+            ranges.withFinalScore(newScore);
+            ++count;
+            iterator.remove();
         }
     }
 

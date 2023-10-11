@@ -37,7 +37,7 @@ class HitRescorer {
         }
     }
 
-    boolean rescoreHit(WrappedHit wrapped) {
+    double rescoreHit(WrappedHit wrapped) {
         var scorer = mainEvalSrc.get();
         for (var n : normalizers) {
             double normalizedValue = n.normalizer().getOutput(wrapped.getIdx());
@@ -45,7 +45,7 @@ class HitRescorer {
         }
         double newScore = evalScorer(wrapped, scorer, mainFromMF);
         wrapped.setScore(newScore);
-        return true;
+        return newScore;
     }
 
     private static double evalScorer(WrappedHit wrapped, Evaluator scorer, List<String> fromMF) {

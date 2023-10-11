@@ -66,14 +66,6 @@ class WrappedHit implements Comparable<WrappedHit> {
         return asTensor;
     }
 
-    Double getDouble(String argName) {
-        Double arg = matchFeatures.getDouble(argName);
-        if (arg == null) {
-            arg = matchFeatures.getDouble(alternate(argName));
-        }
-        return arg;
-    }
-
     private static final String RE_PREFIX = RANKING_EXPRESSION_WRAPPER + "(";
     private static final String RE_SUFFIX = ")";
     private static final int RE_PRE_LEN = RE_PREFIX.length();
