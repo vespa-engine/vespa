@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class MinAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 84, MinAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 84, MinAggregationResult.class, MinAggregationResult::new);
     private SingleResultNode min;
 
     /**

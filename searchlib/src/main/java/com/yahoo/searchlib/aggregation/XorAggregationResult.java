@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class XorAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 86, XorAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 86, XorAggregationResult.class, XorAggregationResult::new);
     private long xor = 0;
 
     /**

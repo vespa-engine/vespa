@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class SumAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 82, SumAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 82, SumAggregationResult.class, SumAggregationResult::new);
     private SingleResultNode sum;
 
     /**

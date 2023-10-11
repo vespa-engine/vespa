@@ -3567,6 +3567,7 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
       "protected static int registerClass(int, java.lang.Class)",
+      "protected static int registerClass(int, java.lang.Class, java.util.function.Supplier)",
       "public static com.yahoo.vespa.objects.Identifiable create(com.yahoo.vespa.objects.Deserializer)",
       "public static com.yahoo.vespa.objects.Identifiable createFromId(int)",
       "protected static com.yahoo.vespa.objects.Serializer serializeOptional(com.yahoo.vespa.objects.Serializer, com.yahoo.vespa.objects.Identifiable)",

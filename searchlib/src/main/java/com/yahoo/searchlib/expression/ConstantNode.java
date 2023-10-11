@@ -13,7 +13,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class ConstantNode extends ExpressionNode {
 
-    public static final int classId = registerClass(0x4000 + 49, ConstantNode.class);
+    public static final int classId = registerClass(0x4000 + 49, ConstantNode.class, ConstantNode::new);
     private ResultNode value = null;
 
     public ConstantNode() {}

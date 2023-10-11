@@ -16,7 +16,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class AverageAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 85, AverageAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 85, AverageAggregationResult.class, AverageAggregationResult::new);
     private NumericResultNode sum;
     private long count;
 
