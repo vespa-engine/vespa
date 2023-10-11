@@ -14,6 +14,20 @@ using namespace storage::api;
 
 namespace storage {
 
+StorageLink::StorageLink(const std::string& name, bool allow_msg_down_during_flushing)
+    : _name(name),
+      _up(nullptr),
+      _down(),
+      _state(CREATED),
+      _allow_msg_down_during_flushing(allow_msg_down_during_flushing)
+{
+}
+
+StorageLink::StorageLink(const std::string& name)
+    : StorageLink(name, false)
+{
+}
+
 StorageLink::~StorageLink() {
     LOG(debug, "Destructing link %s.", toString().c_str());
 }
@@ -129,9 +143,15 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
         case CLOSING:
         case FLUSHINGDOWN:
             break;
+        case FLUSHINGUP:
+            if (_allow_msg_down_during_flushing) {
+                break;
+            }
+            [[fallthrough]];
         default:
-            LOG(error, "Link %s trying to send %s down while in state %s",
-                toString().c_str(), msg->toString().c_str(), stateToString(getState()));
+            LOG(error, "Link %s trying to send %s down while in state %s. Stacktrace: %s",
+                toString().c_str(), msg->toString().c_str(), stateToString(getState()),
+                vespalib::getStackTrace(0).c_str());
             assert(false);
     }
     assert(msg);
@@ -172,8 +192,9 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
         case FLUSHINGUP:
             break;
         default:
-            LOG(error, "Link %s trying to send %s up while in state %s",
-                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
+            LOG(error, "Link %s trying to send %s up while in state %s. Stacktrace: %s",
+                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()),
+                vespalib::getStackTrace(0).c_str());
             assert(false);
     }
     assert(msg);

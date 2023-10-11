@@ -217,7 +217,7 @@ convert_to_rpc_compression_config(const vespa::config::content::core::StorCommun
 }
 
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
-    : StorageLink("Communication manager"),
+    : StorageLink("Communication manager", true), // Explicitly allow msg down during flushing (will be bounced)
       _component(compReg, "communicationmanager"),
       _metrics(),
       _shared_rpc_resources(),    // Created upon initial configuration
