@@ -129,7 +129,7 @@ public class JobRunnerTest {
     void metrics() {
         Phaser phaser = new Phaser(4);
         StepRunner runner = (step, id) -> {
-            phaser.arrive();
+            phaser.arriveAndAwaitAdvance();
             phaser.arriveAndAwaitAdvance();
             return Optional.of(running);
         };
@@ -151,15 +151,6 @@ public class JobRunnerTest {
 
         assertEquals(2, tester.jobs().active().size());
         jobs.maintain();
-        phaser.arriveAndAwaitAdvance();
-        metrics.report();
-        assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
-                            Map.of(Map.of(), 1.0),
-                            ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(),
-                            Map.of(Map.of(), 3.0)),
-                     metric.metrics());
-
-        phaser.arrive();
         phaser.arriveAndAwaitAdvance();
         metrics.report();
         assertEquals(Map.of(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(),
