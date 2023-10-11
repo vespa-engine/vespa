@@ -81,7 +81,7 @@ public class LbServicesProducerTest {
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) {
         Zone zone = new Zone(Environment.prod, regionName);
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().zone(zone));
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("md.example.com")))).zone(zone));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
@@ -126,7 +126,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testRoutingConfigForTesterApplication() {
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("md.example.com")))));
 
         // No config for tester application
         assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)

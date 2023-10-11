@@ -63,7 +63,19 @@ public class TenantsMaintainerTest {
     }
 
     private PrepareParams.Builder prepareParams(TenantName tenantName) {
-        return new PrepareParams.Builder().applicationId(applicationId(tenantName));
+        String endpoints = """
+                [
+                  {
+                    "clusterId": "container",
+                    "names": [
+                      "c.example.com"
+                    ],
+                    "scope": "zone",
+                    "routingMethod": "exclusive"
+                  }
+                ]
+                """;
+        return new PrepareParams.Builder().containerEndpoints(endpoints).applicationId(applicationId(tenantName));
     }
 
     private ApplicationId applicationId(TenantName tenantName) {

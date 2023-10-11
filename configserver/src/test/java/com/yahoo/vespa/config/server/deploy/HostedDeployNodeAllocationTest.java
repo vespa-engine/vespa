@@ -63,10 +63,22 @@ public class HostedDeployNodeAllocationTest {
                 .provisioner(new MockProvisioner().hostProvisioner(provisioner))
                 .hostedConfigserverConfig(Zone.defaultZone())
                 .build();
-
+        String endpoints = """
+                [
+                  {
+                    "clusterId": "container",
+                    "names": [
+                      "c.example.com"
+                    ],
+                    "scope": "zone",
+                    "routingMethod": "exclusive"
+                  }
+                ]
+                """;
         try {
             tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                     .vespaVersion("7.3")
+                    .containerEndpoints(endpoints)
                     .quota(new Quota(Optional.of(4), Optional.of(0))));
             fail("Expected to get a QuotaExceededException");
         } catch (QuotaExceededException e) {

@@ -17,6 +17,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
@@ -77,6 +78,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public static final String PROMETHEUS_V1_HANDLER_CLASS = PrometheusV1Handler.class.getName();
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
+
+    private static final TenantName HOSTED_VESPA = TenantName.from("hosted-vespa");
 
     public static final int defaultHeapSizePercentageOfAvailableMemory = 85;
     public static final int heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster = 24;
@@ -223,8 +226,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     /** Create list of endpoints, these will be consumed later by LbServicesProducer */
     private void createEndpoints(DeployState deployState) {
-        if (!deployState.isHosted()) return;
-        if (deployState.getProperties().applicationId().instance().isTester()) return;
+        if (!configureEndpoints(deployState)) return;
         // Add endpoints provided by the controller
         List<String> hosts = getContainers().stream().map(AbstractService::getHostName).sorted().toList();
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
@@ -241,6 +243,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                                            .authMethod(ce.authMethod())
                                                                            .build())
                    ));
+        if (endpoints.stream().noneMatch(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.zone)) {
+            throw new IllegalArgumentException("Expected at least one " + ApplicationClusterEndpoint.Scope.zone +
+                                               " endpoint for cluster '" + name() + "' in application '" +
+                                               deployState.getProperties().applicationId() +
+                                               "', got " + deployState.getEndpoints());
+        }
         this.endpoints = Collections.unmodifiableList(endpoints);
     }
 
@@ -373,6 +381,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public String name() { return getName(); }
 
     public OnnxModelCost.Calculator onnxModelCost() { return onnxModelCost; }
+
+    /** Returns whether the deployment in given deploy state should have endpoints */
+    private static boolean configureEndpoints(DeployState deployState) {
+        if (!deployState.isHosted()) return false;
+        if (deployState.getProperties().applicationId().instance().isTester()) return false;
+        if (deployState.getProperties().applicationId().tenant().equals(HOSTED_VESPA)) return false;
+        return true;
+    }
 
     public static class MbusParams {
         // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)

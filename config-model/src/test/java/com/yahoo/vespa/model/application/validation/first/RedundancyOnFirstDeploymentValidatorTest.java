@@ -24,7 +24,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
     @Test
     void testRedundancyOnFirstDeploymentValidation() {
         try {
-            tester.deploy(null, getServices(1), Environment.prod, null);
+            tester.deploy(null, getServices(1), Environment.prod, null, "contentClusterId.indexing");
             fail("Expected exception due to redundancy 1");
         }
         catch (IllegalArgumentException expected) {
@@ -38,7 +38,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
 
     @Test
     void testOverridingRedundancyOnFirstDeploymentValidation() {
-        tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride); // Allowed due to override
+        tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride, "contentClusterId.indexing"); // Allowed due to override
     }
 
     private static String getServices(int redundancy) {
