@@ -28,9 +28,9 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "List price", "amount": "2400.00"},
-                                          {"description": "Volume discount", "amount": "-5.00"}
+                                          {"description": "Volume discount", "amount": "-5.64"}
                                         ],
-                                        "totalAmount": "2395.00"
+                                        "totalAmount": "2394.36"
                                       }
                                       """,
                               200);
@@ -41,7 +41,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationWithMissingValueInResourcs());
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationWithMissingValueInResources());
         tester.assertJsonResponse(request,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: resources\"}",
                               400);
@@ -58,7 +58,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                 "&resources=" + resources;
     }
 
-    String urlEncodedPriceInformationWithMissingValueInResourcs() {
+    String urlEncodedPriceInformationWithMissingValueInResources() {
         return URLEncoder.encode("supportLevel=basic&committedSpend=0&enclave=false&resources", UTF_8);
     }
 
