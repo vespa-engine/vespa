@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
  */
 public class Int16ResultNode extends NumericResultNode {
 
-    public static final int classId = registerClass(0x4000 + 105, Int16ResultNode.class);
+    public static final int classId = registerClass(0x4000 + 105, Int16ResultNode.class, Int16ResultNode::new);
     private short value = 0;
 
     @SuppressWarnings("UnusedDeclaration")
@@ -122,7 +122,7 @@ public class Int16ResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Integer.valueOf(value);
+        return (int) value;
     }
 
     @Override

@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class RawResultNode extends SingleResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 54, RawResultNode.class);
+    public static final int classId = registerClass(0x4000 + 54, RawResultNode.class, RawResultNode::new);
     private static final RawResultNode negativeInfinity = new RawResultNode();
     private static final PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
 

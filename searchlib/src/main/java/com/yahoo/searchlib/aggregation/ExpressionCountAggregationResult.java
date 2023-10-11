@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class ExpressionCountAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 88, ExpressionCountAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 88, ExpressionCountAggregationResult.class, ExpressionCountAggregationResult::new);
     private static final int UNDEFINED = -1;
 
     // The unique count estimator
@@ -29,7 +29,6 @@ public class ExpressionCountAggregationResult extends AggregationResult {
 
 
     /** Constructor used for deserialization. Will be instantiated with a default sketch. */
-    @SuppressWarnings("UnusedDeclaration")
     public ExpressionCountAggregationResult() {
         this(new SparseSketch(), new HyperLogLogEstimator());
     }

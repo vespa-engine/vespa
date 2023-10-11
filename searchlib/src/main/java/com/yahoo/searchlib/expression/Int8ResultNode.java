@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
  */
 public class Int8ResultNode extends NumericResultNode {
 
-    public static final int classId = registerClass(0x4000 + 104, Int8ResultNode.class);
+    public static final int classId = registerClass(0x4000 + 104, Int8ResultNode.class, Int8ResultNode::new);
     private byte value = 0;
 
     public Int8ResultNode() {
@@ -120,7 +120,7 @@ public class Int8ResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Integer.valueOf(value);
+        return (int) value;
     }
 
     @Override

@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class StringResultNode extends SingleResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 53, StringResultNode.class);
+    public static final int classId = registerClass(0x4000 + 53, StringResultNode.class, StringResultNode::new);
     private static final StringResultNode negativeInfinity = new StringResultNode("");
     private static final PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
 
@@ -92,7 +92,7 @@ public class StringResultNode extends SingleResultNode {
     @Override
     public long getInteger() {
         try {
-            return Integer.valueOf(getString());
+            return Integer.parseInt(getString());
         } catch (java.lang.NumberFormatException e) {
             return 0;
         }
@@ -101,7 +101,7 @@ public class StringResultNode extends SingleResultNode {
     @Override
     public double getFloat() {
         try {
-            return Double.valueOf(getString());
+            return Double.parseDouble(getString());
         } catch (java.lang.NumberFormatException e) {
             return 0;
         }

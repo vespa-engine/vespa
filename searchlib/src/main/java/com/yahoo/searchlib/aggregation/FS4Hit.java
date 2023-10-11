@@ -13,7 +13,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class FS4Hit extends Hit {
 
-    public static final int classId = registerClass(0x4000 + 95, FS4Hit.class); // shared with c++
+    public static final int classId = registerClass(0x4000 + 95, FS4Hit.class, FS4Hit::new); // shared with c++
     private int path = 0;
     private GlobalId globalId = new GlobalId(new byte[GlobalId.LENGTH]);
     private int distributionKey = -1;

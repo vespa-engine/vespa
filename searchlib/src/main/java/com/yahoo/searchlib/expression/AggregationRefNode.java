@@ -14,14 +14,11 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class AggregationRefNode extends ExpressionNode {
 
-    public static final int classId = registerClass(0x4000 + 142, AggregationRefNode.class);
+    public static final int classId = registerClass(0x4000 + 142, AggregationRefNode.class, AggregationRefNode::new);
     private AggregationResult result = null;
     private int index = - 1;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public AggregationRefNode() {
-        // Used by deserializer.
-    }
+    public AggregationRefNode() { }
 
     public AggregationRefNode(int index) {
         this.index = index;

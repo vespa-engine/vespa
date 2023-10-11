@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 
 public class VdsHit extends Hit {
 
-    public static final int classId = registerClass(0x4000 + 96, VdsHit.class);
+    public static final int classId = registerClass(0x4000 + 96, VdsHit.class, VdsHit::new);
     private String docId = "";
     private RawData summary = new RawData();
 

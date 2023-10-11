@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class MaxAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 83, MaxAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 83, MaxAggregationResult.class, MaxAggregationResult::new);
     private SingleResultNode max;
 
     /**
