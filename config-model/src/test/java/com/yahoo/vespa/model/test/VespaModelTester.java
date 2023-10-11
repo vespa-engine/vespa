@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -21,12 +23,14 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
@@ -191,7 +195,7 @@ public class VespaModelTester {
      *
      * @param services the services xml string
      * @param hosts the hosts xml string, or null if none
-     * @param useMaxResources false to use the minmal resources (when given a range), true to use max
+     * @param useMaxResources false to use the minimal resources (when given a range), true to use max
      * @param failOnOutOfCapacity whether we should get an exception when not enough hosts of the requested flavor
      *        is available or if we should just silently receive a smaller allocation
      * @return the resulting model
@@ -200,10 +204,11 @@ public class VespaModelTester {
                                   boolean alwaysReturnOneNode,
                                   NodeResources defaultResources,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
-                                  DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
+                                  DeployState.Builder deployStateBuilder, String ... retiredHostNames) {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
+        Set<ContainerEndpoint> containerEndpoints = deployStateBuilder.build().getEndpoints();
         if (hosted) {
             InMemoryProvisioner provisioner = new InMemoryProvisioner(hostsByResources,
                                                                       failOnOutOfCapacity,
@@ -215,6 +220,9 @@ public class VespaModelTester {
                                                                       retiredHostNames);
             provisioner.setEnvironment(zone.environment());
             this.provisioner = new ProvisionerAdapter(provisioner);
+            if (containerEndpoints.isEmpty()) {
+                containerEndpoints = Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")));
+            }
         } else {
             provisioner = new SingleNodeProvisioner();
         }
@@ -226,10 +234,11 @@ public class VespaModelTester {
                 .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
                 .setAdminClusterNodeResourcesArchitecture(adminClusterArchitecture);
 
-        DeployState.Builder deployState = deployStatebuilder
+        DeployState.Builder deployState = deployStateBuilder
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
                 .properties(properties)
+                .endpoints(containerEndpoints)
                 .zone(zone);
         previousModel.ifPresent(deployState::previousModel);
         return modelCreatorWithMockPkg.create(false, deployState.build(), configModelRegistry);

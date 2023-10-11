@@ -5,6 +5,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.InnerNode;
 import com.yahoo.config.ModelNode;
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -19,10 +21,10 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BertEmbedder;
+import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
-import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -190,7 +193,11 @@ public class EmbedderTestCase {
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
         FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
         TestProperties properties = new TestProperties().setHostedVespa(hosted);
-        DeployState state = new DeployState.Builder().properties(properties).applicationPackage(applicationPackage).build();
+        DeployState state = new DeployState.Builder()
+                .properties(properties)
+                .endpoints(hosted ? Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))) : Set.of())
+                .applicationPackage(applicationPackage)
+                .build();
         return new VespaModel(state);
     }
 

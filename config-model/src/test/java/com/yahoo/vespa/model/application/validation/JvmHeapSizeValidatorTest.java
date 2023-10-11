@@ -7,6 +7,8 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -19,6 +21,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -85,6 +89,7 @@ class JvmHeapSizeValidatorTest {
                                 .withServices(servicesXml)
                                 .build())
                 .modelHostProvisioner(new InMemoryProvisioner(5, new NodeResources(4, nodeGb, 125, 0.3), true))
+                .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("c.example.com"))))
                 .properties(new TestProperties().setHostedVespa(true).setDynamicHeapSize(true))
                 .onnxModelCost(new ModelCostDummy(modelCostBytes))
                 .build();

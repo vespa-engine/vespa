@@ -5,6 +5,8 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -15,10 +17,12 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,9 +86,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
         final TestLogger logger = new TestLogger();
+        Set<ContainerEndpoint> endpoints = isHosted ? Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))) : Set.of();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
+                .endpoints(endpoints)
                 .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
@@ -109,9 +115,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
         final TestLogger logger = new TestLogger();
+        Set<ContainerEndpoint> endpoints = isHosted ? Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))) : Set.of();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
+                .endpoints(endpoints)
                 .properties(new TestProperties().setJvmGCOptions(featureFlagDefault).setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
@@ -249,6 +257,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(app)
                 .deployLogger(logger)
+                .endpoints(properties.hostedVespa() ? Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))) : Set.of())
                 .properties(properties)
                 .build());
     }
