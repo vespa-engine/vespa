@@ -105,6 +105,10 @@ void SharedRpcResources::wait_until_slobrok_is_ready() {
     }
 }
 
+void SharedRpcResources::sync_all_threads() {
+    _transport->sync();
+}
+
 void SharedRpcResources::shutdown() {
     assert(!_shutdown);
     if (listen_port() > 0) {
