@@ -21,40 +21,12 @@ public class InstanceInformation {
     public Long deployTimeEpochMs;
     public Long expiryTimeEpochMs;
 
-    public static class Endpoint {
-        public String cluster;
-        public boolean tls;
-        public URI url;
-        public String scope;
-        public RoutingMethod routingMethod;
-        public AuthMethod auth;
-
-        @JsonCreator
-        public Endpoint(@JsonProperty("cluster") String cluster ,
-                        @JsonProperty("tls") boolean tls,
-                        @JsonProperty("url") URI url,
-                        @JsonProperty("scope") String scope,
-                        @JsonProperty("routingMethod") RoutingMethod routingMethod,
-                        @JsonProperty("authMethod") AuthMethod auth) {
-            this.cluster = cluster;
-            this.tls = tls;
-            this.url = url;
-            this.scope = scope;
-            this.routingMethod = routingMethod;
-            this.auth = auth;
-        }
-
-        @Override
-        public String toString() {
-            return "Endpoint{" +
-                   "cluster='" + cluster + '\'' +
-                   ", tls=" + tls +
-                   ", url=" + url +
-                   ", scope='" + scope + '\'' +
-                   ", authType='" + auth + '\'' +
-                   ", routingMethod=" + routingMethod +
-                   '}';
-        }
+    public record Endpoint(@JsonProperty("cluster") String cluster,
+                           @JsonProperty("tls") boolean tls,
+                           @JsonProperty("url") URI url,
+                           @JsonProperty("scope") String scope,
+                           @JsonProperty("routingMethod") RoutingMethod routingMethod,
+                           @JsonProperty("authMethod") AuthMethod auth,
+                           @JsonProperty("legacy") boolean legacy) {
     }
-
 }
