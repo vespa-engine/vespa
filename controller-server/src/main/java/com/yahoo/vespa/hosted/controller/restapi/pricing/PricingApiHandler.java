@@ -79,11 +79,13 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse pricing(HttpRequest request) {
         String rawQuery = request.getUri().getRawQuery();
-        PriceInformation price = parseQuery(rawQuery);
-        return response(price);
+        var priceParameters = parseQuery(rawQuery);
+        var price = controller.serviceRegistry().pricingController()
+                .price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
+        return response(price, priceParameters);
     }
 
-    private PriceInformation parseQuery(String rawQuery) {
+    private PriceParameters parseQuery(String rawQuery) {
         if (rawQuery == null) throw new IllegalArgumentException("No price information found in query");
         String[] elements = URLDecoder.decode(rawQuery, UTF_8).split("&");
 
@@ -107,7 +109,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         if (clusterResources.isEmpty()) throw new IllegalArgumentException("No cluster resources found in query");
 
         PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
-        return controller.serviceRegistry().pricingController().price(clusterResources, pricingInfo, plan);
+        return new PriceParameters(clusterResources, pricingInfo, plan);
     }
 
     private ClusterResources clusterResources(String resourcesString) {
@@ -150,13 +152,15 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         return controller.serviceRegistry().planRegistry().plan(element);
     }
 
-    private static SlimeJsonResponse response(PriceInformation priceInfo) {
+    private static SlimeJsonResponse response(PriceInformation priceInfo, PriceParameters priceParameters) {
         var slime = new Slime();
         Cursor cursor = slime.setObject();
 
         var array = cursor.setArray("priceInfo");
         addItem(array, "List price", priceInfo.listPrice());
-        addItem(array, "Support level", priceInfo.supportLevelCost());
+        String supportLevel = priceParameters.pricingInfo.supportLevel().name();
+        addItem(array, supportLevel.substring(0,1).toUpperCase() + supportLevel.substring(1).toLowerCase() + " support",
+                priceInfo.supportLevelCost());
         addItem(array, "Enclave discount", priceInfo.enclaveDiscount());
         addItem(array, "Volume discount", priceInfo.volumeDiscount());
         addItem(array, "Committed spend", priceInfo.committedAmountDiscount());
@@ -176,6 +180,10 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
     private static void setBigDecimal(Cursor cursor, String name, BigDecimal value) {
         cursor.setString(name, value.setScale(2, RoundingMode.HALF_UP).toPlainString());
+    }
+
+    private record PriceParameters(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
+
     }
 
 }

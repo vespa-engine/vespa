@@ -31,7 +31,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "List price", "amount": "2400.00"},
-                                          {"description": "Support level", "amount": "-160.00"},
+                                          {"description": "Basic support", "amount": "-160.00"},
                                           {"description": "Volume discount", "amount": "-5.64"}
                                         ],
                                         "totalAmount": "2234.36"
@@ -50,7 +50,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "List price", "amount": "2400.00"},
-                                          {"description": "Support level", "amount": "800.00"},
+                                          {"description": "Commercial support", "amount": "800.00"},
                                           {"description": "Enclave discount", "amount": "-15.12"},
                                           {"description": "Volume discount", "amount": "-5.64"}
                                         ],
