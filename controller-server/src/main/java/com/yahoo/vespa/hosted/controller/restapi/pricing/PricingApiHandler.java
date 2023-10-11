@@ -22,13 +22,13 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.restapi.ErrorResponse.methodNotAllowed;
@@ -46,7 +46,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
     private static final Logger log = Logger.getLogger(PricingApiHandler.class.getName());
-    private static final BigDecimal SCALED_ZERO = BigDecimal.ZERO.setScale(2);
 
     private final Controller controller;
 
@@ -85,8 +84,8 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private PriceInformation parseQuery(String rawQuery) {
+        if (rawQuery == null) throw new IllegalArgumentException("No price information found in query");
         String[] elements = URLDecoder.decode(rawQuery, UTF_8).split("&");
-        if (elements.length == 0) throw new IllegalArgumentException("no price information found in query");
 
         var supportLevel = SupportLevel.BASIC;
         var enclave = false;
@@ -102,9 +101,10 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
                         .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
                 case "supportLevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
                 case "resources" -> clusterResources.add(clusterResources(entry.getSecond()));
+                default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
         }
-        if (clusterResources.size() < 1) throw new IllegalArgumentException("No cluster resources found in query");
+        if (clusterResources.isEmpty()) throw new IllegalArgumentException("No cluster resources found in query");
 
         PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
         return controller.serviceRegistry().pricingController().price(clusterResources, pricingInfo, plan);
@@ -112,8 +112,6 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
     private ClusterResources clusterResources(String resourcesString) {
         String[] elements = resourcesString.split(",");
-        if (elements.length == 0)
-            throw new IllegalArgumentException("nothing found in cluster resources: " + resourcesString);
 
         var nodes = 0;
         var vcpu = 0d;
@@ -128,6 +126,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
                 case "memoryGb" -> memoryGb = parseDouble(element.getSecond());
                 case "diskGb" -> diskGb = parseDouble(element.getSecond());
                 case "gpuMemoryGb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                default -> throw new IllegalArgumentException("Unknown resource type '" + element.getFirst() + '\'');
             }
         }
 
@@ -140,10 +139,11 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private List<Pair<String, String>> keysAndValues(String[] elements) {
         return Arrays.stream(elements).map(element -> {
                     var index = element.indexOf("=");
-                    if (index <= 0 ) throw new IllegalArgumentException("Error in query parameter, expected '=' between key and value: " + element);
+                    if (index <= 0 || index == element.length() - 1)
+                        throw new IllegalArgumentException("Error in query parameter, expected '=' between key and value: '" + element + '\'');
                     return new Pair<>(element.substring(0, index), element.substring(index + 1));
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Optional<Plan> plan(String element) {
@@ -160,7 +160,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         addItem(array, "Volume discount", priceInfo.volumeDiscount());
         addItem(array, "Committed spend", priceInfo.committedAmountDiscount());
 
-        cursor.setString("totalAmount", priceInfo.totalAmount().toPlainString());
+        setBigDecimal(cursor, "totalAmount", priceInfo.totalAmount());
 
         return new SlimeJsonResponse(slime);
     }
@@ -169,8 +169,12 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         if (amount.compareTo(BigDecimal.ZERO) != 0) {
             var o = array.addObject();
             o.setString("description", name);
-            o.setString("amount", SCALED_ZERO.add(amount).toPlainString());
+            setBigDecimal(o, "amount", amount);
         }
+    }
+
+    private static void setBigDecimal(Cursor cursor, String name, BigDecimal value) {
+        cursor.setString(name, value.setScale(2, RoundingMode.HALF_UP).toPlainString());
     }
 
 }
