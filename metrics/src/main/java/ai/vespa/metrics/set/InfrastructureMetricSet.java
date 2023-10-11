@@ -143,6 +143,8 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ARCHIVE_BUCKET_COUNT.max());
         addMetric(metrics, ControllerMetrics.BILLING_TENANTS.max());
 
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_QUEUED, EnumSet.of(count, sum));
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE, EnumSet.of(count, sum));
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ABORT.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
