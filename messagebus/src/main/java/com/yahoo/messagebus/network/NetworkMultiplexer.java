@@ -6,6 +6,7 @@ import com.yahoo.messagebus.Protocol;
 import com.yahoo.text.Utf8Array;
 
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -68,7 +69,7 @@ public class NetworkMultiplexer implements NetworkOwner {
 
     public void unregisterSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.computeIfPresent(session, (name, owners) -> {
-            if (owners.size() == 1 && owners.contains(owner)) {
+            if (owners.equals(List.of(owner))) {
                 if (broadcast)
                     net.unregisterSession(session);
                 return null;

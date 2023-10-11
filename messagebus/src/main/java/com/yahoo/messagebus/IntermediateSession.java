@@ -119,6 +119,7 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler, 
         mbus.connect(name, broadcastName);
     }
 
-    @Override public void disconnect() { close(); }
+    @Override
+    public void disconnect() { close(); }
 
 }
