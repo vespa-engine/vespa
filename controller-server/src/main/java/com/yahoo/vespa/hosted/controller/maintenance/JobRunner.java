@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
@@ -11,11 +13,14 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,22 +37,29 @@ public class JobRunner extends ControllerMaintainer {
     private final JobController jobs;
     private final ExecutorService executors;
     private final StepRunner runner;
+    private final Metrics metrics;
 
     public JobRunner(Controller controller, Duration duration) {
-        this(controller, duration, Executors.newFixedThreadPool(32, new DaemonThreadFactory("job-runner-")), new InternalStepRunner(controller));
+        this(controller, duration, Executors.newFixedThreadPool(32, new DaemonThreadFactory("job-runner-")),
+             new InternalStepRunner(controller));
     }
 
     public JobRunner(Controller controller, Duration duration, ExecutorService executors, StepRunner runner) {
+        this(controller, duration, executors, runner, new Metrics(controller.metric(), Duration.ofMillis(100)));
+    }
+
+    JobRunner(Controller controller, Duration duration, ExecutorService executors, StepRunner runner, Metrics metrics) {
         super(controller, duration);
         this.jobs = controller.jobController();
         this.jobs.setRunner(this::advance);
         this.executors = executors;
         this.runner = runner;
+        this.metrics = metrics;
     }
 
     @Override
     protected double maintain() {
-        executors.execute(() -> jobs.active().forEach(this::advance));
+        execute(() -> jobs.active().forEach(this::advance));
         jobs.collectGarbage();
         return 1.0;
     }
@@ -55,6 +67,7 @@ public class JobRunner extends ControllerMaintainer {
     @Override
     public void shutdown() {
         super.shutdown();
+        metrics.shutdown();
         executors.shutdown();
     }
 
@@ -83,14 +96,14 @@ public class JobRunner extends ControllerMaintainer {
         jobs.locked(id, run -> {
             if (   ! run.hasFailed()
                 &&   controller().clock().instant().isAfter(run.sleepUntil().orElse(run.start()).plus(jobTimeout)))
-                executors.execute(() -> {
+                execute(() -> {
                     jobs.abort(run.id(), "job timeout of " + jobTimeout + " reached", false);
                     advance(run.id());
                 });
             else if (run.readySteps().isEmpty())
-                executors.execute(() -> finish(run.id()));
+                execute(() -> finish(run.id()));
             else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
-                run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
+                run.readySteps().forEach(step -> execute(() -> advance(run.id(), step)));
 
             return null;
         });
@@ -143,6 +156,41 @@ public class JobRunner extends ControllerMaintainer {
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Exception attempting to advance " + step + " of " + id, e);
         }
+    }
+
+    private void execute(Runnable task) {
+        metrics.queued.incrementAndGet();
+        executors.execute(() -> {
+            metrics.queued.decrementAndGet();
+            metrics.active.incrementAndGet();
+            try { task.run(); }
+            finally { metrics.active.decrementAndGet(); }
+        });
+    }
+
+    static class Metrics {
+
+        private final AtomicInteger queued = new AtomicInteger();
+        private final AtomicInteger active = new AtomicInteger();
+        private final ScheduledExecutorService reporter = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("job-runner-metrics-"));
+        private final Metric metric;
+        private final Metric.Context context;
+
+        Metrics(Metric metric, Duration interval) {
+            this.metric = metric;
+            this.context = metric.createContext(Map.of());
+            reporter.scheduleAtFixedRate(this::report, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        }
+
+        void report() {
+            metric.set(ControllerMetrics.DEPLOYMENT_JOBS_QUEUED.baseName(), queued.get(), context);
+            metric.set(ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE.baseName(), active.get(), context);
+        }
+
+        void shutdown() {
+            reporter.shutdown();
+        }
+
     }
 
 }
