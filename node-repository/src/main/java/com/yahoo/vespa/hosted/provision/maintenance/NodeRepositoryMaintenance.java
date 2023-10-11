@@ -137,11 +137,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             hostResumeProvisionerInterval = Duration.ofMinutes(3);
             diskReplacerInterval = Duration.ofMinutes(3);
             failedExpirerInterval = Duration.ofMinutes(10);
-            failGrace = Duration.ofMinutes(20);
+            failGrace = Duration.ofMinutes(10);
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
-            nodeFailerInterval = Duration.ofMinutes(7);
+            nodeFailerInterval = Duration.ofMinutes(4);
             nodeFailureStatusUpdateInterval = Duration.ofMinutes(2);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             expeditedChangeRedeployInterval = Duration.ofMinutes(3);
