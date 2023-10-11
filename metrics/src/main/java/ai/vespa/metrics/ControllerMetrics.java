@@ -9,6 +9,8 @@ public enum ControllerMetrics implements VespaMetrics {
     ATHENZ_REQUEST_ERROR("athenz.request.error", Unit.REQUEST, "Controller: Athenz request error"),
     ARCHIVE_BUCKET_COUNT("archive.bucketCount", Unit.BUCKET, "Controller: Archive bucket count"),
 
+    DEPLOYMENT_JOBS_QUEUED("deployment.jobsQueued", Unit.TASK, "The number of deployment jobs queued"),
+    DEPLOYMENT_JOBS_ACTIVE("deployment.jobsActive", Unit.TASK, "The number of deployment jobs active"),
     DEPLOYMENT_START("deployment.start", Unit.DEPLOYMENT, "The number of started deployment jobs"),
     DEPLOYMENT_NODE_ALLOCATION_FAILURE("deployment.nodeAllocationFailure", Unit.DEPLOYMENT, "The number of deployments failed due to node allocation failures"),
     DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT("deployment.endpointCertificateTimeout", Unit.DEPLOYMENT, "The number of deployments failed due to timeout acquiring endpoint certificate"),
