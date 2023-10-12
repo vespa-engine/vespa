@@ -568,12 +568,13 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         if (parentHostname().isEmpty()) return false;
         if (type() != NodeType.tenant) return false;
 
+        // We always violate exclusivity if the parent is exclusive to someone else that the requesting application.
+        if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application)) return true;
+
         // In zones which do not allow host sharing, exclusivity is violated if...
         if ( ! hostSharing) {
             // If either the parent is dedicated to a cluster type different from this cluster
             return ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()) ||
-                   // or the parent is dedicated to a different application
-                   ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application) ||
                    // or this cluster requires exclusivity, but the host is not exclusive (to this, implicitly by the above).
                    exclusiveCluster && parent.flatMap(Node::exclusiveToApplicationId).isEmpty();
         }
