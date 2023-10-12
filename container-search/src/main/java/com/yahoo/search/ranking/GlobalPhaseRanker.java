@@ -107,7 +107,10 @@ public class GlobalPhaseRanker {
     }
 
     private int resolveRerankCount(GlobalPhaseSetup setup, Query query) {
-        if (setup == null) return 0;
+        if (setup == null) {
+            // there is no global-phase at all (ignore override)
+            return 0;
+        }
         Integer override = query.getRanking().getGlobalPhase().getRerankCount();
         if (override != null) {
             return override;
