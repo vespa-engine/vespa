@@ -134,6 +134,7 @@ class NodesResponse extends SlimeJsonResponse {
         object.setString("flavor", node.flavor().name());
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString("exclusiveTo", applicationId.serializedForm()));
+        node.provisionedForApplicationId().ifPresent(applicationId -> object.setString("provisionedFor", applicationId.serializedForm()));
         node.hostTTL().ifPresent(ttl -> object.setLong("hostTTL", ttl.toMillis()));
         node.hostEmptyAt().ifPresent(emptyAt -> object.setLong("hostEmptyAt", emptyAt.toEpochMilli()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString("exclusiveToClusterType", clusterType.name()));

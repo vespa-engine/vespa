@@ -1020,9 +1020,13 @@ public class NodesV2ApiTest {
         String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false); // Initially there is no exclusiveTo
 
-        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToApplicationId\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i1\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "\"exclusiveTo\":\"t1:a1:i1\",", true);
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"provisionedFor\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "\"provisionedFor\":\"t1:a1:i1\",", true);
 
         assertResponse(new Request(url, Utf8.toBytes("{\"hostTTL\": 86400000}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
@@ -1033,11 +1037,17 @@ public class NodesV2ApiTest {
         tester.assertPartialResponse(new Request(url), "\"hostEmptyAt\":789", true);
 
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToClusterType\": \"admin\"}"), Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "\"exclusiveToClusterType\":\"admin\",", true);
 
+        tester.assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i2\"}"), Request.Method.PATCH),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'exclusiveTo': exclusiveToApplicationId must be the same as provisionedForApplicationId when this is set\"}");
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"provisionedFor\": null}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"hostTTL\":null, \"hostEmptyAt\":null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+
         tester.assertPartialResponse(new Request(url), "\"exclusiveTo", false);
         tester.assertPartialResponse(new Request(url), "\"hostTTL\"", false);
         tester.assertPartialResponse(new Request(url), "\"hostEmptyAt\"", false);

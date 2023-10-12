@@ -238,7 +238,7 @@ public class DynamicProvisioningTest {
         tester.patchNodes(initialNodes.asList(), node -> node.removable(true));
         NodeList exclusiveViolators = nodes.owner(application1).not().retired().first(2);
         List<Node> parents = exclusiveViolators.mapToList(node -> nodes.parentOf(node).get());
-        tester.patchNode(parents.get(0), node -> node.withExclusiveToApplicationId(ApplicationId.defaultId()));
+        tester.patchNode(parents.get(0), node -> node.withProvisionedForApplicationId(ApplicationId.defaultId()));
         tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(ClusterSpec.Type.container));
 
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
