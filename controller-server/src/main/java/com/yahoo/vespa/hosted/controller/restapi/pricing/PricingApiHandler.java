@@ -235,7 +235,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
         var array = cursor.setArray("priceInfo");
         addItem(array, supportLevelDescription(priceParameters), priceInfo.listPriceWithSupport());
-        addItem(array, "Enclave discount", priceInfo.enclaveDiscount());
+        addItem(array, "Enclave", priceInfo.enclaveDiscount());
         addItem(array, "Volume discount", priceInfo.volumeDiscount());
         addItem(array, "Committed spend", priceInfo.committedAmountDiscount());
 

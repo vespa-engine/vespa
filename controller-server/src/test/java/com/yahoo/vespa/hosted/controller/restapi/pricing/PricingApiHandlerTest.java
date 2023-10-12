@@ -69,7 +69,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "Basic support unit price", "amount": "2240.00"},
-                                          {"description": "Enclave discount", "amount": "-15.12"},
+                                          {"description": "Enclave", "amount": "-15.12"},
                                           {"description": "Volume discount", "amount": "-5.64"},
                                           {"description": "Committed spend", "amount": "-1.23"}
                                         ],
@@ -89,7 +89,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "Commercial support unit price", "amount": "3200.00"},
-                                          {"description": "Enclave discount", "amount": "-15.12"},
+                                          {"description": "Enclave", "amount": "-15.12"},
                                           {"description": "Volume discount", "amount": "-5.64"},
                                           {"description": "Committed spend", "amount": "-1.23"}
                                         ],
@@ -109,7 +109,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                       {
                                         "priceInfo": [
                                           {"description": "Commercial support unit price", "amount": "3200.00"},
-                                          {"description": "Enclave discount", "amount": "-15.12"},
+                                          {"description": "Enclave", "amount": "-15.12"},
                                           {"description": "Volume discount", "amount": "-5.64"},
                                           {"description": "Committed spend", "amount": "-1.23"}
                                         ],
