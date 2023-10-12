@@ -244,6 +244,7 @@ vespa_define_module(
     src/tests/util/folded_string_compare
     src/tests/util/searchable_stats
     src/tests/util/slime_output_raw_buf_adapter
+    src/tests/util/token_extractor
     src/tests/vespa-fileheader-inspect
 )
 
