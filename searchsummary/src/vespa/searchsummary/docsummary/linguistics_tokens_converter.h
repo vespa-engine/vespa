@@ -4,16 +4,7 @@
 
 #include "i_string_field_converter.h"
 
-namespace document {
-
-class FieldValue;
-class Span;
-
-}
-
 namespace search::docsummary {
-
-class IJuniperConverter;
 
 /*
  * Class converting a string field value with annotations into an array
