@@ -76,7 +76,11 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
         var spec = loadDependencySpec(specFile);
         var resolved = resolve(spec, dependencies);
         if (System.getProperties().containsKey(WRITE_SPEC_PROP)) {
-            writeDependencySpec(specFile, resolved, System.getProperties().containsKey(GUESS_VERSION));
+            // Guess property for version by default, can be disabled with <prop>=false
+            var guessProperty = Optional.ofNullable(System.getProperty(GUESS_VERSION))
+                    .map(p -> p.isEmpty() || Boolean.parseBoolean(p))
+                    .orElse(true);
+            writeDependencySpec(specFile, resolved, guessProperty);
             getLog().info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
             warnOnDuplicateVersions(resolved);
