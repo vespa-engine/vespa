@@ -194,7 +194,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS_TOTAL, EnumSet.of(sum, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS.last());
 
-        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE, EnumSet.of(min, max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_COUNT.last());
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_FAILURE_COUNT.last());
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_MILLIS.last());

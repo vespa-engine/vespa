@@ -178,7 +178,7 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS_TOTAL.sum());
 
-        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.max());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE, EnumSet.of(min, max));
 
         addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.min());
         addMetric(metrics, ContainerMetrics.CONTAINER_IAM_ROLE_EXPIRY_SECONDS.baseName());
