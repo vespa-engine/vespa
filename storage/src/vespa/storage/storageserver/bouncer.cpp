@@ -22,7 +22,7 @@ LOG_SETUP(".bouncer");
 namespace storage {
 
 Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
-    : StorageLink("Bouncer", AllowMsgDownOnFlush::Disallowed, AllowMsgUpOnClosed::Allowed),
+    : StorageLink("Bouncer", MsgDownOnFlush::Disallowed, MsgUpOnClosed::Allowed),
       _config(new vespa::config::content::core::StorBouncerConfig()),
       _component(compReg, "bouncer"),
       _lock(),
