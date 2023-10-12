@@ -278,6 +278,39 @@ public class HostCapacityMaintainerTest {
     }
 
     @Test
+    public void respects_exclusive_allocation() {
+        tester = new DynamicProvisioningTester();
+        NodeResources resources1 = new NodeResources(24, 64, 100, 10);
+        setPreprovisionCapacityFlag(tester,
+                                    new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                                        resources1.bandwidthGbps(), resources1.diskSpeed().name(),
+                                                        resources1.storageType().name(), resources1.architecture().name(),
+                                                        null));
+        tester.maintain();
+
+        // Hosts are provisioned
+        assertEquals(2, tester.provisionedHostsMatching(resources1));
+        assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
+
+        // Next maintenance run does nothing
+        tester.assertNodesUnchanged();
+
+        // One host is allocated exclusively to some other application
+        tester.nodeRepository.nodes().write(tester.nodeRepository.nodes().list().node("host100").get()
+                                                                 .withExclusiveToApplicationId(ApplicationId.from("t", "a", "i")),
+                                            () -> { });
+
+        tester.maintain();
+
+        // New hosts are provisioned, and the empty exclusive host is deallocated
+        assertEquals(2, tester.provisionedHostsMatching(resources1));
+        assertEquals(1, tester.hostProvisioner.deprovisionedHosts());
+
+        // Next maintenance run does nothing
+        tester.assertNodesUnchanged();
+    }
+
+    @Test
     public void test_minimum_capacity() {
         tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);

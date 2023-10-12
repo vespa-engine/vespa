@@ -117,21 +117,21 @@ class NodeAllocation {
                 ClusterMembership membership = allocation.membership();
                 if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
-                if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
-                if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
-                if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
+                if (candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
+                if (candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
+                if (indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
                 if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requested.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requested.considerRetiring() && candidate.isResizable;
 
-                if ((! saturated() && hasCompatibleResources(candidate) && requested.acceptable(candidate)) || acceptIncompatible(candidate)) {
+                if (( ! saturated() && hasCompatibleResources(candidate) && requested.acceptable(candidate)) || acceptIncompatible(candidate)) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
                 }
             }
-            else if (! saturated() && hasCompatibleResources(candidate)) {
-                if (! nodeRepository.nodeResourceLimits().isWithinRealLimits(candidate, application, cluster)) {
+            else if ( ! saturated() && hasCompatibleResources(candidate)) {
+                if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(candidate, application, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
@@ -196,29 +196,8 @@ class NodeAllocation {
     }
 
     private boolean violatesExclusivity(NodeCandidate candidate) {
-        if (candidate.parentHostname().isEmpty()) return false;
-        if (requested.type() != NodeType.tenant) return false;
-
-        // In zones which does not allow host sharing, exclusivity is violated if...
-        if ( ! nodeRepository.zone().cloud().allowHostSharing()) {
-            // TODO: Write this in a way that is simple to read
-            // If either the parent is dedicated to a cluster type different from this cluster
-            return  ! candidate.parent.flatMap(Node::exclusiveToClusterType).map(cluster.type()::equals).orElse(true) ||
-                    // or the parent is dedicated to a different application
-                    ! candidate.parent.flatMap(Node::exclusiveToApplicationId).map(application::equals).orElse(true) ||
-                    // or this cluster requires exclusivity, but the host is not exclusive
-                    (nodeRepository.exclusiveAllocation(cluster) && candidate.parent.flatMap(Node::exclusiveToApplicationId).isEmpty());
-        }
-
-        // In zones with shared hosts we require that if either of the nodes on the host requires exclusivity,
-        // then all the nodes on the host must have the same owner
-        for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
-            if (nodeOnHost.allocation().isEmpty()) continue;
-            if (nodeRepository.exclusiveAllocation(cluster) || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
-                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
-            }
-        }
-        return false;
+        return candidate.violatesExclusivity(cluster, application, nodeRepository.exclusiveAllocation(cluster),
+                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes);
     }
 
     /**
