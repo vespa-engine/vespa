@@ -45,7 +45,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC, false));
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC));
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
@@ -59,6 +59,25 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                   200);
     }
 
+    @Test
+    void testPricingInfoBasicEnclave() {
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        assertEquals(SystemName.Public, tester.controller().system());
+
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(BASIC));
+        tester.assertJsonResponse(request, """
+                                      {
+                                        "priceInfo": [
+                                          {"description": "Basic support unit price", "amount": "2240.00"},
+                                          {"description": "Enclave discount", "amount": "-15.12"},
+                                          {"description": "Volume discount", "amount": "-5.64"},
+                                          {"description": "Committed spend", "amount": "-1.23"}
+                                        ],
+                                        "totalAmount": "2218.00"
+                                      }
+                                      """,
+                                  200);
+    }
 
     @Test
     void testPricingInfoCommercialEnclaveLegacy() {
@@ -85,7 +104,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(COMMERCIAL, true));
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(COMMERCIAL));
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
@@ -100,7 +119,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                   200);
     }
 
-
     @Test
     void testInvalidRequests() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
@@ -112,19 +130,19 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         tester.assertJsonResponse(request("/pricing/v1/pricing?"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
                 400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false"),
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application resources found in query\"}",
                 400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources"),
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",
                 400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources="),
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources="),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources='\"}",
                 400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&key=value"),
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&key=value"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown query parameter 'key'\"}",
                 400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources=key%3Dvalue"),
+        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources=key%3Dvalue"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown resource type 'key'\"}",
                 400);
     }
@@ -145,9 +163,19 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU,
      * price will be 20000 + 2000 + 200
      */
-    String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel, boolean enclave) {
+    String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel) {
         return "application=" + URLEncoder.encode("name=myapp,vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
-                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100&enclave=" + enclave;
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
+    }
+
+    /**
+     * 1 app, with 2 clusters (with total resources for all clusters with each having
+     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU,
+     * price will be 20000 + 2000 + 200
+     */
+    String urlEncodedPriceInformation1AppEnclave(PricingInfo.SupportLevel supportLevel) {
+        return "application=" + URLEncoder.encode("name=myapp,enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
     }
 
 }

@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo.SupportLevel.BASIC;
+import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
 
 public class MockPricingController implements PricingController {
@@ -41,11 +42,14 @@ public class MockPricingController implements PricingController {
         System.out.println(resources);
         BigDecimal listPrice = resources.vcpu().multiply(valueOf(1000))
                 .add(resources.memoryGb().multiply(valueOf(100)))
-                .add(resources.diskGb().multiply(valueOf(10)));
+                .add(resources.diskGb().multiply(valueOf(10)))
+                .add(resources.enclaveVcpu().multiply(valueOf(1000))
+                .add(resources.enclaveMemoryGb().multiply(valueOf(100)))
+                .add(resources.enclaveDiskGb().multiply(valueOf(10))));
 
         BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-160.00") : new BigDecimal("800.00");
         BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
-        BigDecimal enclaveDiscount = pricingInfo.enclave() ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
+        BigDecimal enclaveDiscount = (resources.enclaveVcpu().compareTo(ZERO) > 0) ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
         BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
         BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
         BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);

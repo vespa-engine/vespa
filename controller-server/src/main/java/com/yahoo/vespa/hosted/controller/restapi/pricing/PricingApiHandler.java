@@ -112,12 +112,12 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         List<ClusterResources> clusterResources = new ArrayList<>();
 
         for (Pair<String, String> entry : keysAndValues(elements)) {
-            switch (entry.getFirst()) {
-                case "committedSpend" -> committedSpend = parseDouble(entry.getSecond());
+            switch (entry.getFirst().toLowerCase()) {
+                case "committedspend" -> committedSpend = parseDouble(entry.getSecond());
                 case "enclave" -> enclave = Boolean.parseBoolean(entry.getSecond());
-                case "planId" -> plan = plan(entry.getSecond())
+                case "planid" -> plan = plan(entry.getSecond())
                         .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
-                case "supportLevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
+                case "supportlevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
                 case "resources" -> clusterResources.add(clusterResources(entry.getSecond()));
                 default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
@@ -137,19 +137,19 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         List<ApplicationResources> appResources = new ArrayList<>();
 
         for (Pair<String, String> entry : keysAndValues(elements)) {
-            switch (entry.getFirst()) {
-                case "committedSpend" -> committedSpend = parseDouble(entry.getSecond());
-                case "enclave" -> enclave = Boolean.parseBoolean(entry.getSecond());
-                case "planId" -> plan = plan(entry.getSecond())
+            switch (entry.getFirst().toLowerCase()) {
+                case "committedspend" -> committedSpend = parseDouble(entry.getSecond());
+                case "planid" -> plan = plan(entry.getSecond())
                         .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
-                case "supportLevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
+                case "supportlevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
                 case "application" -> appResources.add(applicationResources(entry.getSecond()));
                 default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
         }
         if (appResources.isEmpty()) throw new IllegalArgumentException("No application resources found in query");
 
-        PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
+        // TODO: enclave does not make sense in PricingInfo anymore, remove when legacy method is removed
+        PricingInfo pricingInfo = new PricingInfo(false, supportLevel, committedSpend);
         return new PriceParameters(List.of(), pricingInfo, plan, appResources);
     }
 
@@ -163,12 +163,12 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         var gpuMemoryGb = 0d;
 
         for (var element : keysAndValues(elements)) {
-            switch (element.getFirst()) {
+            switch (element.getFirst().toLowerCase()) {
                 case "nodes" -> nodes = parseInt(element.getSecond());
                 case "vcpu" -> vcpu = parseDouble(element.getSecond());
-                case "memoryGb" -> memoryGb = parseDouble(element.getSecond());
-                case "diskGb" -> diskGb = parseDouble(element.getSecond());
-                case "gpuMemoryGb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                case "memorygb" -> memoryGb = parseDouble(element.getSecond());
+                case "diskgb" -> diskGb = parseDouble(element.getSecond());
+                case "gpumemorygb" -> gpuMemoryGb = parseDouble(element.getSecond());
                 default -> throw new IllegalArgumentException("Unknown resource type '" + element.getFirst() + '\'');
             }
         }
@@ -187,20 +187,32 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         var memoryGb = 0d;
         var diskGb = 0d;
         var gpuMemoryGb = 0d;
+        var enclaveVcpu = 0d;
+        var enclaveMemoryGb = 0d;
+        var enclaveDiskGb = 0d;
+        var enclaveGpuMemoryGb = 0d;
 
         for (var element : keysAndValues(elements)) {
-            switch (element.getFirst()) {
+            switch (element.getFirst().toLowerCase()) {
                 case "name" -> applicationName = element.getSecond();
+
                 case "vcpu" -> vcpu = parseDouble(element.getSecond());
-                case "memoryGb" -> memoryGb = parseDouble(element.getSecond());
-                case "diskGb" -> diskGb = parseDouble(element.getSecond());
-                case "gpuMemoryGb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                case "memorygb" -> memoryGb = parseDouble(element.getSecond());
+                case "diskgb" -> diskGb = parseDouble(element.getSecond());
+                case "gpumemorygb" -> gpuMemoryGb = parseDouble(element.getSecond());
+
+                case "enclavevcpu" -> enclaveVcpu = parseDouble(element.getSecond());
+                case "enclavememorygb" -> enclaveMemoryGb = parseDouble(element.getSecond());
+                case "enclavediskgb" -> enclaveDiskGb = parseDouble(element.getSecond());
+                case "enclavegpumemorygb" -> enclaveGpuMemoryGb = parseDouble(element.getSecond());
+
                 default -> throw new IllegalArgumentException("Unknown key '" + element.getFirst() + '\'');
             }
         }
-        System.out.println("vcpu=" + vcpu);
 
-        return new ApplicationResources(applicationName, valueOf(vcpu), valueOf(memoryGb), valueOf(diskGb), valueOf(gpuMemoryGb));
+        return new ApplicationResources(applicationName,
+                                        valueOf(vcpu), valueOf(memoryGb), valueOf(diskGb), valueOf(gpuMemoryGb),
+                                        valueOf(enclaveVcpu), valueOf(enclaveMemoryGb), valueOf(enclaveDiskGb), valueOf(enclaveGpuMemoryGb));
     }
 
     private List<Pair<String, String>> keysAndValues(List<String> elements) {
