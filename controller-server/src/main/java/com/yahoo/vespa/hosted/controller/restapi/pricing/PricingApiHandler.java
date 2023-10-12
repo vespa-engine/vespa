@@ -16,6 +16,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
+import com.yahoo.vespa.hosted.controller.api.integration.pricing.ApplicationResources;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -35,6 +36,7 @@ import static com.yahoo.restapi.ErrorResponse.methodNotAllowed;
 import static com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo.SupportLevel;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.math.BigDecimal.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -80,15 +82,29 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse pricing(HttpRequest request) {
         String rawQuery = request.getUri().getRawQuery();
         var priceParameters = parseQuery(rawQuery);
-        var price = controller.serviceRegistry().pricingController()
-                .price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
+        PriceInformation price = calculatePrice(priceParameters);
         return response(price, priceParameters);
+    }
+
+    private PriceInformation calculatePrice(PriceParameters priceParameters) {
+        var priceCalculator = controller.serviceRegistry().pricingController();
+        if (priceParameters.appResources == null)
+            return priceCalculator.price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
+        else
+            return priceCalculator.priceForApplications(priceParameters.appResources, priceParameters.pricingInfo, priceParameters.plan);
     }
 
     private PriceParameters parseQuery(String rawQuery) {
         if (rawQuery == null) throw new IllegalArgumentException("No price information found in query");
-        String[] elements = URLDecoder.decode(rawQuery, UTF_8).split("&");
+        List<String> elements = Arrays.stream(URLDecoder.decode(rawQuery, UTF_8).split("&")).toList();
 
+        if (keysAndValues(elements).stream().map(Pair::getFirst).toList().contains("resources"))
+            return parseQueryLegacy(elements);
+        else
+            return parseQuery(elements);
+    }
+
+    private PriceParameters parseQueryLegacy(List<String> elements) {
         var supportLevel = SupportLevel.BASIC;
         var enclave = false;
         var committedSpend = 0d;
@@ -109,11 +125,36 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         if (clusterResources.isEmpty()) throw new IllegalArgumentException("No cluster resources found in query");
 
         PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
-        return new PriceParameters(clusterResources, pricingInfo, plan);
+        return new PriceParameters(clusterResources, pricingInfo, plan, null);
+    }
+
+    private PriceParameters parseQuery(List<String> elements) {
+        var supportLevel = SupportLevel.BASIC;
+        var enclave = false;
+        var committedSpend = 0d;
+        var applicationName = "default";
+        var plan = controller.serviceRegistry().planRegistry().defaultPlan();  // fallback to default plan if not supplied
+        List<ApplicationResources> appResources = new ArrayList<>();
+
+        for (Pair<String, String> entry : keysAndValues(elements)) {
+            switch (entry.getFirst()) {
+                case "committedSpend" -> committedSpend = parseDouble(entry.getSecond());
+                case "enclave" -> enclave = Boolean.parseBoolean(entry.getSecond());
+                case "planId" -> plan = plan(entry.getSecond())
+                        .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
+                case "supportLevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
+                case "application" -> appResources.add(applicationResources(entry.getSecond()));
+                default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
+            }
+        }
+        if (appResources.isEmpty()) throw new IllegalArgumentException("No application resources found in query");
+
+        PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
+        return new PriceParameters(List.of(), pricingInfo, plan, appResources);
     }
 
     private ClusterResources clusterResources(String resourcesString) {
-        String[] elements = resourcesString.split(",");
+        List<String> elements = Arrays.stream(resourcesString.split(",")).toList();
 
         var nodes = 0;
         var vcpu = 0d;
@@ -138,8 +179,32 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         return new ClusterResources(nodes, 1, nodeResources);
     }
 
-    private List<Pair<String, String>> keysAndValues(String[] elements) {
-        return Arrays.stream(elements).map(element -> {
+    private ApplicationResources applicationResources(String appResourcesString) {
+        List<String> elements = Arrays.stream(appResourcesString.split(",")).toList();
+
+        var applicationName = "default";
+        var vcpu = 0d;
+        var memoryGb = 0d;
+        var diskGb = 0d;
+        var gpuMemoryGb = 0d;
+
+        for (var element : keysAndValues(elements)) {
+            switch (element.getFirst()) {
+                case "name" -> applicationName = element.getSecond();
+                case "vcpu" -> vcpu = parseDouble(element.getSecond());
+                case "memoryGb" -> memoryGb = parseDouble(element.getSecond());
+                case "diskGb" -> diskGb = parseDouble(element.getSecond());
+                case "gpuMemoryGb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                default -> throw new IllegalArgumentException("Unknown key '" + element.getFirst() + '\'');
+            }
+        }
+        System.out.println("vcpu=" + vcpu);
+
+        return new ApplicationResources(applicationName, valueOf(vcpu), valueOf(memoryGb), valueOf(diskGb), valueOf(gpuMemoryGb));
+    }
+
+    private List<Pair<String, String>> keysAndValues(List<String> elements) {
+        return elements.stream().map(element -> {
                     var index = element.indexOf("=");
                     if (index <= 0 || index == element.length() - 1)
                         throw new IllegalArgumentException("Error in query parameter, expected '=' between key and value: '" + element + '\'');
@@ -184,7 +249,8 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         cursor.setString(name, value.setScale(2, RoundingMode.HALF_UP).toPlainString());
     }
 
-    private record PriceParameters(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
+    private record PriceParameters(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan,
+                                   List<ApplicationResources> appResources) {
 
     }
 

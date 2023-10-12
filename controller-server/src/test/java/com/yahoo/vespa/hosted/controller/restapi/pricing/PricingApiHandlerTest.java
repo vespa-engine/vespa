@@ -22,11 +22,11 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/pricing/responses/";
 
     @Test
-    void testPricingInfoBasic() {
+    void testPricingInfoBasicLegacy() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation(BASIC, false));
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationLegacy(BASIC, false));
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
@@ -41,11 +41,31 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    void testPricingInfoCommercialEnclave() {
+    void testPricingInfoBasic() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
 
-        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation(COMMERCIAL, true));
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC, false));
+        tester.assertJsonResponse(request, """
+                                      {
+                                        "priceInfo": [
+                                          {"description": "Basic support unit price", "amount": "2240.00"},
+                                          {"description": "Volume discount", "amount": "-5.64"},
+                                          {"description": "Committed spend", "amount": "-1.23"}
+                                        ],
+                                        "totalAmount": "2233.13"
+                                      }
+                                      """,
+                                  200);
+    }
+
+
+    @Test
+    void testPricingInfoCommercialEnclaveLegacy() {
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        assertEquals(SystemName.Public, tester.controller().system());
+
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformationLegacy(COMMERCIAL, true));
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
@@ -61,6 +81,27 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    void testPricingInfoCommercialEnclave() {
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        assertEquals(SystemName.Public, tester.controller().system());
+
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(COMMERCIAL, true));
+        tester.assertJsonResponse(request, """
+                                      {
+                                        "priceInfo": [
+                                          {"description": "Commercial support unit price", "amount": "3200.00"},
+                                          {"description": "Enclave discount", "amount": "-15.12"},
+                                          {"description": "Volume discount", "amount": "-5.64"},
+                                          {"description": "Committed spend", "amount": "-1.23"}
+                                        ],
+                                        "totalAmount": "3178.00"
+                                      }
+                                      """,
+                                  200);
+    }
+
+
+    @Test
     void testInvalidRequests() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
@@ -72,7 +113,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
                 400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No cluster resources found in query\"}",
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application resources found in query\"}",
                 400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&enclave=false&resources"),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",
@@ -92,10 +133,21 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * 2 clusters, with each having 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU
      * price will be 20000 + 2000 + 200
      */
-    String urlEncodedPriceInformation(PricingInfo.SupportLevel supportLevel, boolean enclave) {
+    String urlEncodedPriceInformationLegacy(PricingInfo.SupportLevel supportLevel, boolean enclave) {
         String resources = URLEncoder.encode("nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0", UTF_8);
         return "supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100&enclave=" + enclave +
                 "&resources=" + resources +
                 "&resources=" + resources;
     }
+
+    /**
+     * 1 app, with 2 clusters (with total resources for all clusters with each having
+     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU,
+     * price will be 20000 + 2000 + 200
+     */
+    String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel, boolean enclave) {
+        return "application=" + URLEncoder.encode("name=myapp,vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100&enclave=" + enclave;
+    }
+
 }
