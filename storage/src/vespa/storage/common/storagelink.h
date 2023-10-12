@@ -47,9 +47,12 @@ private:
     std::unique_ptr<StorageLink> _down;
     std::atomic<State>           _state;
     const bool                   _allow_msg_down_during_flushing;
+    const bool                   _allow_msg_up_during_closed;
 
 public:
-    StorageLink(const std::string& name, bool allow_msg_down_during_flushing);
+    StorageLink(const std::string& name,
+                bool allow_msg_down_during_flushing,
+                bool allow_msg_up_during_closed);
     explicit StorageLink(const std::string& name);
 
     StorageLink(const StorageLink &) = delete;
