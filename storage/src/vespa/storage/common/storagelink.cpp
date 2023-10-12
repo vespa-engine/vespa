@@ -15,8 +15,8 @@ using namespace storage::api;
 namespace storage {
 
 StorageLink::StorageLink(const std::string& name,
-                         bool allow_msg_down_during_flushing,
-                         bool allow_msg_up_during_closed)
+                         AllowMsgDownOnFlush allow_msg_down_during_flushing,
+                         AllowMsgUpOnClosed allow_msg_up_during_closed)
     : _name(name),
       _up(nullptr),
       _down(),
@@ -27,7 +27,7 @@ StorageLink::StorageLink(const std::string& name,
 }
 
 StorageLink::StorageLink(const std::string& name)
-    : StorageLink(name, false, false)
+    : StorageLink(name, AllowMsgDownOnFlush::Disallowed, AllowMsgUpOnClosed::Disallowed)
 {
 }
 
@@ -147,7 +147,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
         case FLUSHINGDOWN:
             break;
         case FLUSHINGUP:
-            if (_allow_msg_down_during_flushing) {
+            if (_allow_msg_down_during_flushing == AllowMsgDownOnFlush::Allowed) {
                 break;
             }
             [[fallthrough]];
@@ -195,7 +195,7 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
         case FLUSHINGUP:
             break;
         case CLOSED:
-            if (_allow_msg_up_during_closed) {
+            if (_allow_msg_up_during_closed == AllowMsgUpOnClosed::Allowed) {
                 break;
             }
             [[fallthrough]];

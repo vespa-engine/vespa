@@ -41,18 +41,21 @@ public:
 
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 
+    enum class AllowMsgDownOnFlush { Allowed, Disallowed };
+    enum class AllowMsgUpOnClosed  { Allowed, Disallowed };
+
 private:
     const std::string            _name;
     StorageLink*                 _up;
     std::unique_ptr<StorageLink> _down;
     std::atomic<State>           _state;
-    const bool                   _allow_msg_down_during_flushing;
-    const bool                   _allow_msg_up_during_closed;
+    const AllowMsgDownOnFlush    _allow_msg_down_during_flushing;
+    const AllowMsgUpOnClosed     _allow_msg_up_during_closed;
 
 public:
     StorageLink(const std::string& name,
-                bool allow_msg_down_during_flushing,
-                bool allow_msg_up_during_closed);
+                AllowMsgDownOnFlush allow_msg_down_during_flushing,
+                AllowMsgUpOnClosed allow_msg_up_during_closed);
     explicit StorageLink(const std::string& name);
 
     StorageLink(const StorageLink &) = delete;
