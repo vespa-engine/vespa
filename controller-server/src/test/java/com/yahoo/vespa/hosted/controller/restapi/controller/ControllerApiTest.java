@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -162,7 +163,7 @@ public class ControllerApiTest extends ControllerContainerTest {
                 new NodeResources(12, 48, 1200, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64),
                 new NodeResources(24, 96, 2400, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.x86_64));
 
-        var snapshots = resources.stream().map(x -> new ResourceSnapshot(applicationId, x, timestamp, zoneId, 0)).toList();
+        var snapshots = resources.stream().map(x -> new ResourceSnapshot(applicationId, x, timestamp, zoneId, 0, CloudAccount.empty)).toList();
 
         tester.controller().serviceRegistry().resourceDatabase().writeResourceSnapshots(snapshots);
         tester.assertResponse(

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -208,6 +209,7 @@ public class Bill {
         private BigDecimal gpuCost;
         private NodeResources.Architecture architecture;
         private int majorVersion;
+        private CloudAccount cloudAccount;
         private String exportedId;
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
@@ -217,11 +219,15 @@ public class Bill {
             this.plan = plan;
             this.agent = agent;
             this.addedAt = addedAt;
+            this.cloudAccount = CloudAccount.empty;
         }
 
-        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost,
-                        NodeResources.Architecture architecture, int majorVersion, String exportedId) {
+        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt,
+                        ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost,
+                        BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture,
+                        int majorVersion, CloudAccount cloudAccount, String exportedId)
+        {
             this(id, description, amount, plan, agent, addedAt);
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -241,6 +247,7 @@ public class Bill {
             this.architecture = architecture;
             this.majorVersion = majorVersion;
             this.gpuCost = gpuCost;
+            this.cloudAccount = cloudAccount;
             this.exportedId = exportedId;
         }
 
@@ -332,6 +339,10 @@ public class Bill {
 
         public int getMajorVersion() {
             return majorVersion;
+        }
+
+        public CloudAccount getCloudAccount() {
+            return cloudAccount;
         }
 
         public Optional<String> getExportedId() {

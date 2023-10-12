@@ -135,7 +135,8 @@ public class PlanRegistryMock implements PlanRegistry {
                     dgbCost,
                     gpuCost,
                     usage.getArchitecture(),
-                    usage.getMajorVersion()
+                    usage.getMajorVersion(),
+                    usage.getCloudAccount()
             );
         }
 

@@ -80,6 +80,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             plan,
                             a.resources().architecture(),
                             a.getMajorVersion(),
+                            a.getAccount(),
                             BigDecimal.valueOf(a.resources().vcpu()).multiply(d),
                             BigDecimal.valueOf(a.resources().memoryGb()).multiply(d),
                             BigDecimal.valueOf(a.resources().diskGb()).multiply(d),
@@ -93,12 +94,14 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
         assert a.getZoneId().equals(b.getZoneId());
         assert a.getPlan().equals(b.getPlan());
         assert a.getArchitecture().equals(b.getArchitecture());
+        assert a.getCloudAccount().equals(b.getCloudAccount());
         return new ResourceUsage(
                 a.getApplicationId(),
                 a.getZoneId(),
                 a.getPlan(),
                 a.getArchitecture(),
                 a.getMajorVersion(),
+                a.getCloudAccount(),
                 a.getCpuMillis().add(b.getCpuMillis()),
                 a.getMemoryMillis().add(b.getMemoryMillis()),
                 a.getDiskMillis().add(b.getDiskMillis()),
