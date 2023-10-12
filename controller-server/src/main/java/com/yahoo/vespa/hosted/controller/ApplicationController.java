@@ -524,7 +524,7 @@ public class ApplicationController {
                 try (Mutex lock = lock(applicationId)) {
                     LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                     application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
-                    return prepareEndpoints(deployment, job, application, applicationPackage, deployLogger);
+                    return prepareEndpoints(deployment, job, application, applicationPackage, deployLogger, lock);
                 }
             };
 
@@ -569,13 +569,16 @@ public class ApplicationController {
 
     private PreparedEndpoints prepareEndpoints(DeploymentId deployment, JobId job, LockedApplication application,
                                                ApplicationPackageStream applicationPackage,
-                                               Consumer<String> deployLogger) {
+                                               Consumer<String> deployLogger,
+                                               Mutex applicationLock) {
         Instance instance = application.get().require(job.application().instance());
         Tags tags = applicationPackage.truncatedPackage().deploymentSpec().instance(instance.name())
                                       .map(DeploymentInstanceSpec::tags)
                                       .orElseGet(Tags::empty);
-        Optional<EndpointCertificate> certificate = endpointCertificates.get(instance, deployment.zoneId(), applicationPackage.truncatedPackage().deploymentSpec());
-        certificate.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
+        EndpointCertificate certificate = endpointCertificates.get(deployment,
+                                                                   applicationPackage.truncatedPackage().deploymentSpec(),
+                                                                   applicationLock);
+        deployLogger.accept("Using CA signed certificate version %s".formatted(certificate.version()));
         BasicServicesXml services = applicationPackage.truncatedPackage().services(deployment, tags);
         return controller.routing().of(deployment).prepare(services, certificate, application);
     }
@@ -696,7 +699,7 @@ public class ApplicationController {
                 if (preparedEndpoints == null) return DeploymentEndpoints.none;
                 PreparedEndpoints prepared = preparedEndpoints.get();
                 generatedEndpoints.set(prepared.endpoints().generated());
-                return new DeploymentEndpoints(prepared.containerEndpoints(), prepared.certificate());
+                return new DeploymentEndpoints(prepared.containerEndpoints(), Optional.of(prepared.certificate()));
             };
             Supplier<List<DataplaneTokenVersions>> dataplaneTokenVersions = () -> {
                 Tags tags = applicationPackage.truncatedPackage().deploymentSpec()

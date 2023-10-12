@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -26,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,7 +40,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.Cha
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -1100,8 +1099,9 @@ public class UpgraderTest {
                 default2.instanceId(), default2);
 
         // Throttle upgrades per run
-        ((ManualClock) tester.controller().clock()).setInstant(Instant.ofEpochMilli(1589787107000L)); // Fixed random seed
-        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10));
+        Upgrader upgrader = new Upgrader(tester.controller(),
+                                         Duration.ofMinutes(10),
+                                         new Random(1589787107000L)); // Fixed random seed
         upgrader.setUpgradesPerMinute(0.1);
 
         // Trigger some upgrades

@@ -45,7 +45,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
      *
      * @return the container endpoints relevant for this deployment, as declared in deployment spec
      */
-    public final PreparedEndpoints prepare(BasicServicesXml services, Optional<EndpointCertificate> certificate, LockedApplication application) {
+    public final PreparedEndpoints prepare(BasicServicesXml services, EndpointCertificate certificate, LockedApplication application) {
         return routing.prepare(deployment, services, certificate, application);
     }
 

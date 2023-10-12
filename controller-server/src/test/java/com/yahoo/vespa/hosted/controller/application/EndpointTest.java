@@ -370,6 +370,24 @@ public class EndpointTest {
                 "dead2bad.deadbeef.a.vespa-app.cloud",
                 Endpoint.of(TenantAndApplicationId.from(instance1)).targetApplication(EndpointId.of("foo"), deployment)
                         .generatedFrom(ge2)
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Wildcard endpoint for zone
+                "*.deadbeef.z.vespa-app.cloud",
+                Endpoint.of(instance1)
+                        .wildcardGenerated(ge1.applicationPart(), Endpoint.Scope.zone)
+                        .certificateName()
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Wildcard endpoint for global
+                "*.deadbeef.g.vespa-app.cloud",
+                Endpoint.of(instance1)
+                        .wildcardGenerated(ge1.applicationPart(), Endpoint.Scope.global)
+                        .certificateName()
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Wildcard endpoint for application
+                "*.deadbeef.a.vespa-app.cloud",
+                Endpoint.of(instance1)
+                        .wildcardGenerated(ge1.applicationPart(), Endpoint.Scope.application)
+                        .certificateName()
                         .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.dnsName()));

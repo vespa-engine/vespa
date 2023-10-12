@@ -73,7 +73,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devAwsUsEast2a;
@@ -952,8 +951,6 @@ public class ControllerTest {
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodZone = ZoneId.from("prod", "us-west-1");
-        var stagingZone = ZoneId.from("staging", "us-east-3");
-        var testZone = ZoneId.from("test", "us-east-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                 .region(prodZone.region())
@@ -962,16 +959,23 @@ public class ControllerTest {
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
         assertTrue(cert.isPresent(), "Provisions certificate in " + Environment.prod);
-        assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
-                                "app1.tenant1.global.vespa.oath.cloud",
-                                "*.app1.tenant1.global.vespa.oath.cloud"),
-                        Stream.of(prodZone, testZone, stagingZone)
-                                .flatMap(zone -> Stream.of("", "*.")
-                                        .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
-                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
-                                                ".vespa.oath.cloud")))
-                        .collect(Collectors.toUnmodifiableSet()),
-                Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(cert.get().rootRequestId())));
+        assertEquals(List.of("*.app1.tenant1.global.vespa.oath.cloud",
+                             "*.app1.tenant1.us-east-1.test.vespa.oath.cloud",
+                             "*.app1.tenant1.us-east-3.staging.vespa.oath.cloud",
+                             "*.app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "*.f5549014.a.vespa.oath.cloud",
+                             "*.f5549014.g.vespa.oath.cloud",
+                             "*.f5549014.z.vespa.oath.cloud",
+                             "app1.tenant1.global.vespa.oath.cloud",
+                             "app1.tenant1.us-east-1.test.vespa.oath.cloud",
+                             "app1.tenant1.us-east-3.staging.vespa.oath.cloud",
+                             "app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud"),
+                     tester.controllerTester().serviceRegistry().endpointCertificateMock()
+                           .dnsNamesOf(cert.get().rootRequestId())
+                           .stream()
+                           .sorted()
+                           .toList());
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();

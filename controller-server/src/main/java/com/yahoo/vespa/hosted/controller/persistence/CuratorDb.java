@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
@@ -643,6 +642,10 @@ public class CuratorDb {
         curator.delete(endpointCertificatePath(application, instanceName));
     }
 
+    public void removeAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instanceName, NestedTransaction transaction) {
+        transaction.add(CuratorTransaction.from(CuratorOperations.delete(endpointCertificatePath(application, instanceName).getAbsolute()), curator));
+    }
+
     // TODO(mpolden): Remove this. Caller should make an explicit decision to read certificate for a particular instance
     public Optional<AssignedCertificate> readAssignedCertificate(ApplicationId applicationId) {
         return readAssignedCertificate(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()));
@@ -651,7 +654,7 @@ public class CuratorDb {
     public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
         return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
                                                                         .map(EndpointCertificateSerializer::fromSlime)
-                                                                        .map(cert -> new AssignedCertificate(application, instance, cert));
+                                                                        .map(cert -> new AssignedCertificate(application, instance, cert, false));
     }
 
     public List<AssignedCertificate> readAssignedCertificates() {

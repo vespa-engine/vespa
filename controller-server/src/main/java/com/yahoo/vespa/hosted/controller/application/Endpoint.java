@@ -65,7 +65,7 @@ public class Endpoint {
         Objects.requireNonNull(generated, "generated must be non-null");
         this.id = requireEndpointId(id, scope, certificateName);
         this.cluster = requireCluster(cluster, certificateName);
-        this.instance = requireInstance(instanceName, scope);
+        this.instance = requireInstance(instanceName, scope, certificateName, generated.isPresent());
         this.url = url;
         this.targets = List.copyOf(requireTargets(targets, application, instanceName, scope, certificateName));
         this.scope = requireScope(scope, routingMethod);
@@ -259,7 +259,7 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    public static String dnsSuffix(SystemName system) {
+    private static String dnsSuffix(SystemName system) {
         return switch (system) {
             case cd -> CD_OATH_DNS_SUFFIX;
             case main -> MAIN_OATH_DNS_SUFFIX;
@@ -316,7 +316,10 @@ public class Endpoint {
         return endpointId;
     }
 
-    private static Optional<InstanceName> requireInstance(Optional<InstanceName> instanceName, Scope scope) {
+    private static Optional<InstanceName> requireInstance(Optional<InstanceName> instanceName, Scope scope, boolean certificateName, boolean generated) {
+        if (generated && certificateName) {
+            return instanceName;
+        }
         if (scope == Scope.application) {
             if (instanceName.isPresent()) throw new IllegalArgumentException("Instance cannot be set for scope " + scope);
         } else {
@@ -331,7 +334,8 @@ public class Endpoint {
     }
 
     private static List<Target> requireTargets(List<Target> targets, TenantAndApplicationId application, Optional<InstanceName> instanceName, Scope scope, boolean certificateName) {
-        if (!certificateName && targets.isEmpty()) throw new IllegalArgumentException("At least one target must be given for " + scope + " endpoints");
+        if (certificateName && targets.isEmpty()) return List.of();
+        if (targets.isEmpty()) throw new IllegalArgumentException("At least one target must be given for " + scope + " endpoints");
         if (scope == Scope.zone && targets.size() != 1) throw new IllegalArgumentException("Exactly one target must be given for " + scope + " endpoints");
         for (var target : targets) {
             if (scope == Scope.application) {
@@ -522,6 +526,18 @@ public class Endpoint {
         /** Sets the zone wildcard target for this */
         public EndpointBuilder wildcard(DeploymentId deployment) {
             return target(ClusterSpec.Id.from("*"), deployment);
+        }
+
+        /** Sets the generated wildcard target for this */
+        public EndpointBuilder wildcardGenerated(String applicationPart, Scope scope) {
+            this.cluster = ClusterSpec.Id.from("*");
+            if (scope.multiDeployment()) {
+                this.endpointId = EndpointId.of("*");
+            }
+            this.targets = List.of();
+            this.scope = requireUnset(scope);
+            this.generated = Optional.of(new GeneratedEndpoint("*", applicationPart, AuthMethod.mtls, Optional.ofNullable(endpointId)));
+            return this;
         }
 
         /** Sets the application target with given ID, cluster, deployments and their weights */

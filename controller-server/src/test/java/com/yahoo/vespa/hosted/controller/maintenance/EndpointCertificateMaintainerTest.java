@@ -45,7 +45,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,6 +119,7 @@ public class EndpointCertificateMaintainerTest {
 
         var applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
+                .container("default")
                 .build();
 
         DeploymentContext deploymentContext = deploymentTester.newDeploymentContext("tenant", "application", "default");
@@ -191,68 +191,6 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    void production_deployment_certificates_are_assigned_random_id() {
-        var app = ApplicationId.from("tenant", "app", "default");
-        DeploymentTester deploymentTester = new DeploymentTester(tester);
-        deployToAssignCert(deploymentTester, app, List.of(systemTest, stagingTest, productionUsWest1), Optional.empty());
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-
-        maintainer.maintain();
-        assertEquals(2, tester.curator().readAssignedCertificates().size());
-
-        // Verify random id is same for application and instance certificates
-        Optional<AssignedCertificate> applicationCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(app), Optional.empty());
-        assertTrue(applicationCertificate.isPresent());
-        Optional<AssignedCertificate> instanceCertificate = tester.curator().readAssignedCertificate(TenantAndApplicationId.from(app), Optional.of(app.instance()));
-        assertTrue(instanceCertificate.isPresent());
-        assertEquals(instanceCertificate.get().certificate().generatedId(), applicationCertificate.get().certificate().generatedId());
-
-        // Verify the 3 wildcard random names are same in all certs
-        List<String> appWildcardSans = applicationCertificate.get().certificate().requestedDnsSans();
-        assertEquals(3, appWildcardSans.size());
-        List<String> instanceSans = instanceCertificate.get().certificate().requestedDnsSans();
-        List<String> wildcards = instanceSans.stream().filter(appWildcardSans::contains).toList();
-        assertEquals(appWildcardSans, wildcards);
-    }
-
-    @Test
-    void existing_application_randomid_is_copied_to_new_instance_deployments() {
-        var instance1 = ApplicationId.from("tenant", "prod", "instance1");
-        var instance2 = ApplicationId.from("tenant", "prod", "instance2");
-
-        DeploymentTester deploymentTester = new DeploymentTester(tester);
-        deployToAssignCert(deploymentTester, instance1, List.of(systemTest, stagingTest,productionUsWest1),Optional.of("instance1"));
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-        maintainer.maintain();
-
-        String randomId = tester.curator().readAssignedCertificate(instance1).get().certificate().generatedId().get();
-
-        deployToAssignCert(deploymentTester, instance2, List.of(productionUsWest1), Optional.of("instance1,instance2"));
-        maintainer.maintain();
-        assertEquals(3, tester.curator().readAssignedCertificates().size());
-
-        assertEquals(randomId, tester.curator().readAssignedCertificate(instance1).get().certificate().generatedId().get());
-    }
-
-    @Test
-    void dev_certificates_are_not_assigned_application_level_certificate() {
-        var devApp = ApplicationId.from("tenant", "devonly", "foo");
-        DeploymentTester deploymentTester = new DeploymentTester(tester);
-        deployToAssignCert(deploymentTester, devApp, List.of(devUsEast1), Optional.empty());
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-        List<String> originalRequestedSans = tester.curator().readAssignedCertificate(devApp).get().certificate().requestedDnsSans();
-        maintainer.maintain();
-        assertEquals(1, tester.curator().readAssignedCertificates().size());
-
-        // Verify certificate is assigned random id and 3 new names
-        Optional<AssignedCertificate> assignedCertificate = tester.curator().readAssignedCertificate(devApp);
-        assertTrue(assignedCertificate.get().certificate().generatedId().isPresent());
-        List<String> newRequestedSans = assignedCertificate.get().certificate().requestedDnsSans();
-        List<String> randomizedNames = newRequestedSans.stream().filter(san -> !originalRequestedSans.contains(san)).toList();
-        assertEquals(3, randomizedNames.size());
-    }
-
-    @Test
     void deploy_to_other_manual_zone_refreshes_cert() {
         String devSan = "*.foo.manual.tenant.us-east-1.dev.vespa.oath.cloud";
         String perfSan = "*.foo.manual.tenant.us-east-3.perf.vespa.oath.cloud";
@@ -301,10 +239,6 @@ public class EndpointCertificateMaintainerTest {
         Assertions.assertThat(usCentralWestSans).contains(centralSan);
     }
 
-    private void deploy() {
-
-    }
-
     private void deployToAssignCert(DeploymentTester tester, ApplicationId applicationId, List<JobType> jobTypes, Optional<String> instances) {
 
         var applicationPackageBuilder = new ApplicationPackageBuilder();
@@ -322,19 +256,15 @@ public class EndpointCertificateMaintainerTest {
         jobs.forEach(deploymentContext::runJob);
 
     }
-    EndpointCertificate certificate(List<String> sans) {
-        return new EndpointCertificate("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-
 
     private static AssignedCertificate assignedCertificate(ApplicationId instance, EndpointCertificate certificate) {
-        return new AssignedCertificate(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), certificate);
+        return new AssignedCertificate(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), certificate, false);
     }
 
     private void prepareCertificatePool(int numCertificates) {
         ((InMemoryFlagSource)tester.controller().flagSource()).withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), numCertificates);
         ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
 
         // Provision certificates
         for (int i = 0; i < numCertificates; i++) {
@@ -351,4 +281,5 @@ public class EndpointCertificateMaintainerTest {
         });
         certificatePoolMaintainer.maintain();
     }
+
 }
