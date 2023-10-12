@@ -113,7 +113,7 @@ public final class Node implements Nodelike {
         this.modelName = Objects.requireNonNull(modelName, "A null modelName is not permitted");
         this.reservedTo = Objects.requireNonNull(reservedTo, "reservedTo cannot be null");
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId cannot be null");
-        this.provisionedForApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "provisionedForApplicationId cannot be null");
+        this.provisionedForApplicationId = Objects.requireNonNull(provisionedForApplicationId, "provisionedForApplicationId cannot be null");
         this.hostTTL = Objects.requireNonNull(hostTTL, "hostTTL cannot be null");
         this.hostEmptyAt = Objects.requireNonNull(hostEmptyAt, "hostEmptyAt cannot be null");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType cannot be null");
