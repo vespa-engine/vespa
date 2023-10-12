@@ -6,6 +6,7 @@ import com.yahoo.messagebus.Protocol;
 import com.yahoo.text.Utf8Array;
 
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;

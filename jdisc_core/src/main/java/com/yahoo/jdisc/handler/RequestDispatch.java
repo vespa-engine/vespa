@@ -119,7 +119,7 @@ public abstract class RequestDispatch implements Future<Response>, ResponseHandl
                     try {
                         return futureResponse.get();
                     } catch (InterruptedException | ExecutionException e) {
-                        throw new IllegalStateException(e); // Should not happens since both futures are complete
+                        throw new IllegalStateException(e); // Should not happen since both futures are complete
                     }
                 });
     }
