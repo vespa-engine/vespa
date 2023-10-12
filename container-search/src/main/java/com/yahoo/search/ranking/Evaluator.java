@@ -3,11 +3,9 @@ package com.yahoo.search.ranking;
 
 import com.yahoo.tensor.Tensor;
 
-import java.util.Collection;
+import java.util.List;
 
 interface Evaluator {
-    Collection<String> needInputs();
-
     Evaluator bind(String name, Tensor value);
 
     double evaluateScore();
