@@ -78,8 +78,11 @@
         <bouncycastle.vespa.version>1.76</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.14.9</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
+        <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
         <commons-codec.vespa.version>1.16.0</commons-codec.vespa.version>
+        <commons-collections.vespa.version>3.2.2</commons-collections.vespa.version>
         <commons-csv.vespa.version>1.10.0</commons-csv.vespa.version>
+        <commons-digester.vespa.version>3.2</commons-digester.vespa.version>
         <commons-exec.vespa.version>1.3</commons-exec.vespa.version>
         <commons-io.vespa.version>2.14.0</commons-io.vespa.version>
         <commons-lang3.vespa.version>3.13.0</commons-lang3.vespa.version>
@@ -126,6 +129,8 @@
         <spifly.vespa.version>1.3.6</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
         <surefire.vespa.version>3.1.2</surefire.vespa.version>
+        <velocity.vespa.version>2.3</velocity.vespa.version>
+        <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.2.0</wiremock.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>

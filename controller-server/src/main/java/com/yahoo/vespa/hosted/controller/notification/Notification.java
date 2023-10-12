@@ -2,8 +2,11 @@
 package com.yahoo.vespa.hosted.controller.notification;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents an event that we want to notify the tenant about. The message(s) should be short
@@ -13,15 +16,21 @@ import java.util.Objects;
  *
  * @author freva
  */
-public record Notification(Instant at, com.yahoo.vespa.hosted.controller.notification.Notification.Type type, com.yahoo.vespa.hosted.controller.notification.Notification.Level level, NotificationSource source, List<String> messages) {
+public record Notification(Instant at, Notification.Type type, Notification.Level level, NotificationSource source,
+                           List<String> messages, Optional<MailContent> mailContent) {
 
     public Notification(Instant at, Type type, Level level, NotificationSource source, List<String> messages) {
-        this.at = Objects.requireNonNull(at, "at cannot be null");
-        this.type = Objects.requireNonNull(type, "type cannot be null");
-        this.level = Objects.requireNonNull(level, "level cannot be null");
-        this.source = Objects.requireNonNull(source, "source cannot be null");
-        this.messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
+        this(at, type, level, source, messages, Optional.empty());
+    }
+
+    public Notification {
+        at = Objects.requireNonNull(at, "at cannot be null");
+        type = Objects.requireNonNull(type, "type cannot be null");
+        level = Objects.requireNonNull(level, "level cannot be null");
+        source = Objects.requireNonNull(source, "source cannot be null");
+        messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
         if (messages.size() < 1) throw new IllegalArgumentException("messages cannot be empty");
+        mailContent = Objects.requireNonNull(mailContent);
     }
 
     public enum Level {
@@ -61,6 +70,38 @@ public record Notification(Instant at, com.yahoo.vespa.hosted.controller.notific
          */
         reindex
 
+    }
+
+    public static class MailContent {
+        private final String template;
+        private final Map<String, Object> values;
+        private final String subject;
+
+        private MailContent(Builder b) {
+            template = Objects.requireNonNull(b.template);
+            values = Map.copyOf(b.values);
+            subject = b.subject;
+        }
+
+        public String template() { return template; }
+        public Map<String, Object> values() { return Map.copyOf(values); }
+        public Optional<String> subject() { return Optional.ofNullable(subject); }
+
+        public static Builder fromTemplate(String template) { return new Builder(template); }
+
+        public static class Builder {
+            private final String template;
+            private final HashMap<String, Object> values = new HashMap<>();
+            private String subject;
+
+            private Builder(String template) {
+                this.template = template;
+            }
+
+            public Builder with(String name, Object value) { values.put(name, value); return this; }
+            public Builder subject(String s) { this.subject = s; return this; }
+            public MailContent build() { return new MailContent(this); }
+        }
     }
 
 }

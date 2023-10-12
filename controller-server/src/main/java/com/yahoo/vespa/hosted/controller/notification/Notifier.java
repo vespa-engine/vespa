@@ -16,8 +16,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
+import com.yahoo.yolean.Exceptions;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.Velocity;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.resource.loader.StringResourceLoader;
+import org.apache.velocity.runtime.resource.util.StringResourceRepository;
+import org.apache.velocity.tools.generic.EscapeTool;
 
+import java.io.StringWriter;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +34,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Notifier is responsible for dispatching user notifications to their chosen Contact points.
@@ -39,6 +46,7 @@ public class Notifier {
     private final FlagSource flagSource;
     private final NotificationFormatter formatter;
     private final URI dashboardUri;
+    private final VelocityEngine velocity;
 
     private static final Logger log = Logger.getLogger(Notifier.class.getName());
 
@@ -51,6 +59,28 @@ public class Notifier {
         this.flagSource = Objects.requireNonNull(flagSource);
         this.formatter = new NotificationFormatter(zoneRegistry);
         this.dashboardUri = zoneRegistry.dashboardUrl();
+        this.velocity = createTemplateEngine();
+    }
+
+    private static VelocityEngine createTemplateEngine() {
+        var v = new VelocityEngine();
+        v.setProperty(Velocity.RESOURCE_LOADERS, "string");
+        v.setProperty(Velocity.RESOURCE_LOADER + ".string.class", StringResourceLoader.class.getName());
+        v.setProperty(Velocity.RESOURCE_LOADER + ".string.repository.static", "false");
+        v.init();
+        var repo = (StringResourceRepository) v.getApplicationAttribute(StringResourceLoader.REPOSITORY_NAME_DEFAULT);
+        registerTemplate(repo, "mail");
+        registerTemplate(repo, "default-mail-content");
+        registerTemplate(repo, "notification-message");
+        return v;
+    }
+
+    private static void registerTemplate(StringResourceRepository repo, String name) {
+        var templateStr = Exceptions.uncheck(() -> {
+            var in = Notifier.class.getResourceAsStream("/mail/%s.vm".formatted(name));
+            return new String(in.readAllBytes());
+        });
+        repo.putStringResource(name, templateStr);
     }
 
     public void dispatch(List<Notification> notifications, NotificationSource source) {
@@ -114,21 +144,41 @@ public class Notifier {
 
     public Mail mailOf(FormattedNotification content, Collection<String> recipients) {
         var notification = content.notification();
-        var subject = Text.format("[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(), content.prettyType(), applicationIdSource(notification.source()));
-        var template = uncheck(() -> Notifier.class.getResourceAsStream("/mail/mail-notification.tmpl").readAllBytes());
-        var html = new String(template)
-                .replace("[[NOTIFICATION_HEADER]]", content.messagePrefix())
-                .replace("[[NOTIFICATION_ITEMS]]", notification.messages().stream()
-                        .map(Notifier::linkify)
-                        .map(Notifier::capitalise)
-                        .map(m -> "<p>" + m + "</p>")
-                        .collect(Collectors.joining()))
-                .replace("[[LINK_TO_NOTIFICATION]]", notificationLink(notification.source()))
-                .replace("[[LINK_TO_ACCOUNT_NOTIFICATIONS]]", accountNotificationsUri(content.notification().source().tenant()))
-                .replace("[[LINK_TO_PRIVACY_POLICY]]", "https://legal.yahoo.com/xw/en/yahoo/privacy/topic/b2bprivacypolicy/index.html")
-                .replace("[[LINK_TO_TERMS_OF_SERVICE]]", consoleUri("terms-of-service-trial.html"))
-                .replace("[[LINK_TO_SUPPORT]]", consoleUri("support"));
+        var subject = content.notification().mailContent().flatMap(Notification.MailContent::subject)
+                .orElseGet(() -> Text.format(
+                        "[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(),
+                        content.prettyType(), applicationIdSource(notification.source())));
+        var html = generateHtml(content);
         return new Mail(recipients, subject, "", html);
+    }
+
+    private String generateHtml(FormattedNotification content) {
+        var esc = new EscapeTool();
+        var mailContent = content.notification().mailContent().orElseGet(() -> generateContentFromMessages(content, esc));
+        var ctx = new VelocityContext();
+        ctx.put("esc", esc);
+        ctx.put("accountNotificationLink", accountNotificationsUri(content.notification().source().tenant()));
+        ctx.put("privacyPolicyLink", "https://legal.yahoo.com/xw/en/yahoo/privacy/topic/b2bprivacypolicy/index.html");
+        ctx.put("termsOfServiceLink", consoleUri("terms-of-service-trial.html"));
+        ctx.put("supportLink", consoleUri("support"));
+        ctx.put("mailBodyTemplate", mailContent.template());
+        mailContent.values().forEach(ctx::put);
+
+        var writer = new StringWriter();
+        // Ignoring return value - implementation either returns 'true' or throws, never 'false'
+        velocity.mergeTemplate("mail", StandardCharsets.UTF_8.name(), ctx, writer);
+        return writer.toString();
+    }
+
+    private Notification.MailContent generateContentFromMessages(FormattedNotification f, EscapeTool esc) {
+        var items = f.notification().messages().stream().map(m -> capitalise(linkify(esc.html(m)))).toList();
+        return Notification.MailContent.fromTemplate("default-mail-content")
+                .with("mailMessageTemplate", "notification-message")
+                .with("mailTitle", "Vespa Cloud Notifications")
+                .with("notificationHeader", f.messagePrefix())
+                .with("notificationItems", items)
+                .with("consoleLink", notificationLink(f.notification().source()))
+                .build();
     }
 
     @VisibleForTesting
