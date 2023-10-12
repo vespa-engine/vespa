@@ -623,6 +623,15 @@ public class QueryTestCase {
     }
 
     @Test
+    void globalphase_parameters_are_resolved() {
+        var q = new Query("?query=foo");
+        assertNull(q.getRanking().getGlobalPhase().getRerankCount());
+        q = new Query("?query=foo&" +
+                      "ranking.globalPhase.rerankCount=42");
+        assertEquals(42, q.getRanking().getGlobalPhase().getRerankCount());
+    }
+
+    @Test
     void testQueryPropertyResolveTracing() {
         QueryProfile testProfile = new QueryProfile("test");
         testProfile.setOverridable("u", false, DimensionValues.empty);
