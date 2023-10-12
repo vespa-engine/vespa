@@ -119,7 +119,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"jonmv"}) default boolean useReconfigurableDispatcher() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "log"; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
     }
 
