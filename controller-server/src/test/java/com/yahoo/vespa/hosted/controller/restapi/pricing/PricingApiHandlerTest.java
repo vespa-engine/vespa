@@ -30,8 +30,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
-                                          {"description": "List price", "amount": "2400.00"},
-                                          {"description": "Basic support", "amount": "-160.00"},
+                                          {"description": "Basic support unit price", "amount": "2240.00"},
                                           {"description": "Volume discount", "amount": "-5.64"},
                                           {"description": "Committed spend", "amount": "-1.23"}
                                         ],
@@ -50,8 +49,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
         tester.assertJsonResponse(request, """
                                       {
                                         "priceInfo": [
-                                          {"description": "List price", "amount": "2400.00"},
-                                          {"description": "Commercial support", "amount": "800.00"},
+                                          {"description": "Commercial support unit price", "amount": "3200.00"},
                                           {"description": "Enclave discount", "amount": "-15.12"},
                                           {"description": "Volume discount", "amount": "-5.64"},
                                           {"description": "Committed spend", "amount": "-1.23"}
