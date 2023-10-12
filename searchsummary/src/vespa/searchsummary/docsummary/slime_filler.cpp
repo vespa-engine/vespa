@@ -335,12 +335,12 @@ SlimeFiller::visit(const ReferenceFieldValue& value)
 }
 
 void
-SlimeFiller::insert_summary_field(const FieldValue& value, vespalib::slime::Inserter& inserter)
+SlimeFiller::insert_summary_field(const FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter);
+        SlimeFiller visitor(inserter, converter, SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }
@@ -357,12 +357,12 @@ SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib:
 }
 
 void
-SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, const SlimeFillerFilter* filter)
+SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter, const SlimeFillerFilter* filter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, nullptr, (filter != nullptr) ? filter->begin() : SlimeFillerFilter::all());
+        SlimeFiller visitor(inserter, converter, (filter != nullptr) ? filter->begin() : SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }

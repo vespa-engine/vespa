@@ -37,11 +37,11 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
 }
 
 void
-DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
+DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SlimeFiller::insert_summary_field(*field_value, inserter);
+        SlimeFiller::insert_summary_field(*field_value, inserter, converter);
     }
 }
 

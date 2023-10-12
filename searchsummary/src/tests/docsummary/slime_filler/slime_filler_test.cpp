@@ -351,7 +351,7 @@ SlimeFillerTest::expect_insert_summary_field_with_field_filter(const vespalib::s
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, filter);
+    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, nullptr, filter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
