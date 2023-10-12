@@ -158,9 +158,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
         var array = cursor.setArray("priceInfo");
         addItem(array, "List price", priceInfo.listPrice());
-        String supportLevel = priceParameters.pricingInfo.supportLevel().name();
-        addItem(array, supportLevel.substring(0,1).toUpperCase() + supportLevel.substring(1).toLowerCase() + " support",
-                priceInfo.supportLevelCost());
+        addItem(array, supportLevelDescription(priceParameters), priceInfo.supportLevelCost());
         addItem(array, "Enclave discount", priceInfo.enclaveDiscount());
         addItem(array, "Volume discount", priceInfo.volumeDiscount());
         addItem(array, "Committed spend", priceInfo.committedAmountDiscount());
@@ -168,6 +166,11 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         setBigDecimal(cursor, "totalAmount", priceInfo.totalAmount());
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private static String supportLevelDescription(PriceParameters priceParameters) {
+        String supportLevel = priceParameters.pricingInfo.supportLevel().name();
+        return supportLevel.substring(0,1).toUpperCase() + supportLevel.substring(1).toLowerCase() + " support";
     }
 
     private static void addItem(Cursor array, String name, BigDecimal amount) {
