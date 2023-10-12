@@ -5434,6 +5434,7 @@
       "public void setListFeatures(boolean)",
       "public boolean getListFeatures()",
       "public com.yahoo.search.query.ranking.MatchPhase getMatchPhase()",
+      "public com.yahoo.search.query.ranking.GlobalPhase getGlobalPhase()",
       "public com.yahoo.search.query.ranking.Matching getMatching()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
       "public com.yahoo.search.query.Sorting getSorting()",
@@ -5461,6 +5462,7 @@
       "public static final java.lang.String KEEPRANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
       "public static final java.lang.String MATCH_PHASE",
+      "public static final java.lang.String GLOBAL_PHASE",
       "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String MATCHING",
@@ -6933,6 +6935,26 @@
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String STRATEGY"
     ]
+  },
+  "com.yahoo.search.query.ranking.GlobalPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setRerankCount(int)",
+      "public java.lang.Integer getRerankCount()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public com.yahoo.search.query.ranking.GlobalPhase clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
     "superClass" : "java.lang.Object",
