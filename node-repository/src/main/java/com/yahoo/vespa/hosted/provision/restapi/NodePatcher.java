@@ -263,6 +263,8 @@ public class NodePatcher {
             case "exclusiveTo":
             case "exclusiveToApplicationId":
                 return node.withExclusiveToApplicationId(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
+            case "provisionedFor":
+                return node.withProvisionedForApplicationId(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
             case "hostTTL":
                 return node.withHostTTL(SlimeUtils.optionalDuration(value).orElse(null));
             case "hostEmptyAt":

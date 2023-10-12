@@ -365,7 +365,7 @@ public class MetricsReporterTest {
         Capacity capacity = Capacity.from(new ClusterResources(4, 1, resources));
         tester.deploy(app, spec, capacity);
 
-        // Host are now in use
+        // Hosts are now in use
         metricsReporter.maintain();
         assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
     }
