@@ -4,11 +4,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
+
+import static com.yahoo.collections.Optionals.emptyOrEqual;
 
 /**
  * A node candidate containing the details required to prioritize it for allocation. This is immutable.
@@ -556,6 +560,33 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         public String toString() {
             return "invalid candidate node with " + resources + " on " + parent.get();
         }
+
+    }
+
+    public boolean violatesExclusivity(ClusterSpec cluster, ApplicationId application,
+                                       boolean exclusiveCluster, boolean hostSharing, NodeList allNodes) {
+        if (parentHostname().isEmpty()) return false;
+        if (type() != NodeType.tenant) return false;
+
+        // In zones which do not allow host sharing, exclusivity is violated if...
+        if ( ! hostSharing) {
+            // If either the parent is dedicated to a cluster type different from this cluster
+            return ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()) ||
+                   // or the parent is dedicated to a different application
+                   ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application) ||
+                   // or this cluster requires exclusivity, but the host is not exclusive (to this, implicitly by the above).
+                   exclusiveCluster && parent.flatMap(Node::exclusiveToApplicationId).isEmpty();
+        }
+
+        // In zones with shared hosts we require that if any node on the host requires exclusivity,
+        // then all the nodes on the host must have the same owner.
+        for (Node nodeOnHost : allNodes.childrenOf(parentHostname().get())) {
+            if (nodeOnHost.allocation().isEmpty()) continue;
+            if (exclusiveCluster || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
+            }
+        }
+        return false;
 
     }
 
