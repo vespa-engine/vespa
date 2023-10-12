@@ -18,14 +18,17 @@ func newAPIKeyCmd(cli *CLI) *cobra.Command {
 	var overwriteKey bool
 	cmd := &cobra.Command{
 		Use:   "api-key",
-		Short: "Create a new user API key for control-plane authentication with Vespa Cloud",
-		Long: `Create a new user API key for control-plane authentication with Vespa Cloud.
+		Short: "Create a new developer key for headless authentication with Vespa Cloud control plane",
+		Long: `Create a new developer key for headless authentication with Vespa Cloud control plane
 
-The API key will be stored in the Vespa CLI home directory
-(see 'vespa help config'). Other commands will then automatically load the API
+A developer key is intended for headless communication with the Vespa Cloud
+control plane. For example when deploying from a continuous integration system.
+
+The developer key will be stored in the Vespa CLI home directory
+(see 'vespa help config'). Other commands will then automatically load the developer
 key as necessary.
 
-It's possible to override the API key used through environment variables. This
+It's possible to override the developer key used through environment variables. This
 can be useful in continuous integration systems.
 
 Example of setting the key in-line:
@@ -36,8 +39,9 @@ Example of loading the key from a custom path:
 
     export VESPA_CLI_API_KEY_FILE=/path/to/api-key
 
-Note that when overriding API key through environment variables, that key will
-always be used. It's not possible to specify a tenant-specific key.
+Note that when overriding the developer key through environment variables,
+that key will always be used. It's not possible to specify a tenant-specific
+key through the environment.
 
 Read more in https://cloud.vespa.ai/en/security/guide`,
 		Example:           "$ vespa auth api-key -a my-tenant.my-app.my-instance",
@@ -48,7 +52,7 @@ Read more in https://cloud.vespa.ai/en/security/guide`,
 			return doApiKey(cli, overwriteKey, args)
 		},
 	}
-	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
+	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing developer key")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
@@ -78,7 +82,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
 	if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
-		cli.printSuccess("API private key written to ", apiKeyFile)
+		cli.printSuccess("Developer private key written to ", apiKeyFile)
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
 		return fmt.Errorf("failed to write: %s: %w", apiKeyFile, err)
