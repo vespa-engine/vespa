@@ -31,6 +31,11 @@ public class GlobalPhaseRanker {
         logger.fine(() -> "Using factory: " + factory);
     }
 
+    public int getRerankCount(Query query, String schema) {
+        var setup = globalPhaseSetupFor(query, schema).orElse(null);
+        return resolveRerankCount(setup, query);
+    }
+
     public Optional<ErrorMessage> validateNoSorting(Query query, String schema) {
         var setup = globalPhaseSetupFor(query, schema).orElse(null);
         if (setup == null) return Optional.empty();
@@ -50,7 +55,7 @@ public class GlobalPhaseRanker {
         if (setup == null) return;
         var mainSpec = setup.globalPhaseEvalSpec;
         var mainSrc = withQueryPrep(mainSpec.evalSource(), mainSpec.fromQuery(), query);
-        int rerankCount = setup.rerankCount;
+        int rerankCount = resolveRerankCount(setup, query);
         var normalizers = new ArrayList<NormalizerContext>();
         for (var nSetup : setup.normalizers) {
             var normSpec = nSetup.inputEvalSpec();
@@ -101,4 +106,15 @@ public class GlobalPhaseRanker {
                 .flatMap(evaluator -> evaluator.getGlobalPhaseSetup(query.getRanking().getProfile()));
     }
 
+    private int resolveRerankCount(GlobalPhaseSetup setup, Query query) {
+        if (setup == null) {
+            // there is no global-phase at all (ignore override)
+            return 0;
+        }
+        Integer override = query.getRanking().getGlobalPhase().getRerankCount();
+        if (override != null) {
+            return override;
+        }
+        return setup.rerankCount;
+    }
 }
