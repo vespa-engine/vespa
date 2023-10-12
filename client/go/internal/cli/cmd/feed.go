@@ -58,8 +58,8 @@ func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
 	cmd := &cobra.Command{
 		Use:   "feed json-file [json-file]...",
-		Short: "Feed multiple document operations to a Vespa cluster",
-		Long: `Feed multiple document operations to a Vespa cluster.
+		Short: "Feed multiple document operations to Vespa",
+		Long: `Feed multiple document operations to Vespa.
 
 This command can be used to feed large amounts of documents to a Vespa cluster
 efficiently.

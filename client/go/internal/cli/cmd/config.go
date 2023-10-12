@@ -30,8 +30,8 @@ const (
 func newConfigCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Configure persistent values for global flags",
-		Long: `Configure persistent values for global flags.
+		Short: "Manage persistent values for global flags",
+		Long: `Manage persistent values for global flags.
 
 This command allows setting persistent values for global flags. On future
 invocations the flag can then be omitted as it is read from the config file

@@ -59,6 +59,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
+			// TODO(mpolden): Support issuing request to deploy service
 			if useDeploy {
 				if err := addAccessToken(c, target); err != nil {
 					return err

@@ -31,8 +31,8 @@ func newCloneCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "clone sample-application-path target-directory",
-		Short: "Create files and directory structure for a new Vespa application from a sample application",
-		Long: `Create files and directory structure for a new Vespa application
+		Short: "Create files and directory structure from a Vespa sample application",
+		Long: `Create files and directory structure from a Vespa sample application
 from a sample application.
 
 Sample applications are downloaded from
