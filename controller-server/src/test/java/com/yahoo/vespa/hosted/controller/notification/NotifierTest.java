@@ -75,7 +75,7 @@ public class NotifierTest {
         var mail = mailer.inbox(email.getEmailAddress()).get(0);
 
         assertEquals("[WARNING] Test package Vespa Notification for tenant1.default.default", mail.subject());
-        assertEquals(new String(NotifierTest.class.getResourceAsStream("/mail/notification.txt").readAllBytes()), mail.htmlMessage().get());
+        assertEquals(new String(NotifierTest.class.getResourceAsStream("/mail/notification.html").readAllBytes()), mail.htmlMessage().get());
     }
 
     @Test
