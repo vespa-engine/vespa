@@ -46,7 +46,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Long> zookeeperBarrierTimeout() {
-        return getInstallVariable("zookeeper_barrier_timeout", Long::parseLong);
+        return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT"))
+                .map(Long::parseLong)
+                .or(() -> getInstallVariable("zookeeper_barrier_timeout", Long::parseLong));
     }
 
     @Override
