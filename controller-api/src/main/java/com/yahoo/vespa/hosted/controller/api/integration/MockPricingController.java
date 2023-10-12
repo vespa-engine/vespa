@@ -39,7 +39,6 @@ public class MockPricingController implements PricingController {
     @Override
     public PriceInformation priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {
         ApplicationResources resources = applicationResources.get(0);
-        System.out.println(resources);
         BigDecimal listPrice = resources.vcpu().multiply(valueOf(1000))
                 .add(resources.memoryGb().multiply(valueOf(100)))
                 .add(resources.diskGb().multiply(valueOf(10)))
