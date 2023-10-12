@@ -89,6 +89,7 @@ private:
 
     void onOpen() override;
     void onClose() override;
+    void onFlush(bool downwards) override;
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
