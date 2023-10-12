@@ -173,6 +173,7 @@ private:
     uint32_t                       _oldPosSize;
 
     const index::Schema           &_schema;
+    linguistics::TokenExtractor    _token_extractor;
 
     WordBuffer                     _words;
     ElemInfoVec                    _elems;
@@ -202,12 +203,7 @@ private:
     /**
      * Save the given word in the word buffer and return the word reference.
      */
-    VESPA_DLL_LOCAL uint32_t saveWord(const vespalib::stringref word, const document::Document* doc);
-
-    /**
-     * Save the field value as a word in the word buffer and return the word reference.
-     */
-    VESPA_DLL_LOCAL uint32_t saveWord(const document::FieldValue &fv, const document::Document& doc);
+    VESPA_DLL_LOCAL uint32_t saveWord(vespalib::stringref word);
 
     /**
      * Get pointer to saved word from a word reference.
@@ -326,13 +322,7 @@ public:
 
     void endDoc();
 
-    void addWord(const vespalib::stringref word, const document::Document& doc) {
-        uint32_t wordRef = saveWord(word, &doc);
-        if (wordRef != 0u) {
-            add(wordRef);
-            stepWordPos();
-        }
-    }
+    void addWord(vespalib::stringref word, const document::Document& doc);
 };
 
 }
