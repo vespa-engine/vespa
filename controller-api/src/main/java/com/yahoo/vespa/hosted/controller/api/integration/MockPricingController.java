@@ -26,7 +26,7 @@ public class MockPricingController implements PricingController {
         BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-160.00") : new BigDecimal("800.00");
         BigDecimal enclaveDiscount = pricingInfo.enclave() ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
         BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
-        BigDecimal committedAmountDiscount = new BigDecimal("0.00");
+        BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
         BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);
         return new PriceInformation(listPrice, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount,
                                     supportLevelCost);

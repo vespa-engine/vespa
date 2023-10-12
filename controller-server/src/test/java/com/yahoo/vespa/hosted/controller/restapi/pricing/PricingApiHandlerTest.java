@@ -32,9 +32,10 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                         "priceInfo": [
                                           {"description": "List price", "amount": "2400.00"},
                                           {"description": "Basic support", "amount": "-160.00"},
-                                          {"description": "Volume discount", "amount": "-5.64"}
+                                          {"description": "Volume discount", "amount": "-5.64"},
+                                          {"description": "Committed spend", "amount": "-1.23"}
                                         ],
-                                        "totalAmount": "2234.36"
+                                        "totalAmount": "2233.13"
                                       }
                                       """,
                               200);
@@ -52,9 +53,10 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                           {"description": "List price", "amount": "2400.00"},
                                           {"description": "Commercial support", "amount": "800.00"},
                                           {"description": "Enclave discount", "amount": "-15.12"},
-                                          {"description": "Volume discount", "amount": "-5.64"}
+                                          {"description": "Volume discount", "amount": "-5.64"},
+                                          {"description": "Committed spend", "amount": "-1.23"}
                                         ],
-                                        "totalAmount": "3179.23"
+                                        "totalAmount": "3178.00"
                                       }
                                       """,
                                   200);
@@ -94,7 +96,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      */
     String urlEncodedPriceInformation(PricingInfo.SupportLevel supportLevel, boolean enclave) {
         String resources = URLEncoder.encode("nodes=1,vcpu=1,memoryGb=1,diskGb=10,gpuMemoryGb=0", UTF_8);
-        return "supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=0&enclave=" + enclave +
+        return "supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100&enclave=" + enclave +
                 "&resources=" + resources +
                 "&resources=" + resources;
     }
