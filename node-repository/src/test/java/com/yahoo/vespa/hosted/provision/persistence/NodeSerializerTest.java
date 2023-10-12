@@ -483,7 +483,7 @@ public class NodeSerializerTest {
         ApplicationId provisionedForApp = ApplicationId.from("tenant1", "app1", "instance1");
         node = nodeSerializer.fromJson(nodeSerializer.toJson(builder.exclusiveToApplicationId(provisionedForApp).build()));
         assertEquals(Optional.of(provisionedForApp), node.exclusiveToApplicationId());
-        // assertEquals(Optional.empty(), node.provisionedForApplicationId()); TODO: enable once serialisation phase 1 is done
+        assertEquals(Optional.empty(), node.provisionedForApplicationId());
 
         ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
         node = builder.provisionedForApplicationId(provisionedForApp)
@@ -513,7 +513,7 @@ public class NodeSerializerTest {
         CloudAccount account = CloudAccount.from("012345678912");
         Node node = Node.create("id", "host1.example.com", nodeFlavors.getFlavorOrThrow("default"), State.provisioned, NodeType.host)
                         .cloudAccount(account)
-                        .exclusiveToApplicationId(ApplicationId.defaultId())
+                        .provisionedForApplicationId(ApplicationId.defaultId())
                         .build();
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(account, node.cloudAccount());
