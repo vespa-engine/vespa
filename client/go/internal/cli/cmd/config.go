@@ -30,8 +30,8 @@ const (
 func newConfigCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Configure persistent values for global flags",
-		Long: `Configure persistent values for global flags.
+		Short: "Manage persistent values for global flags",
+		Long: `Manage persistent values for global flags.
 
 This command allows setting persistent values for global flags. On future
 invocations the flag can then be omitted as it is read from the config file
@@ -42,7 +42,8 @@ overridden by setting the VESPA_CLI_HOME environment variable.
 
 When setting an option locally, the configuration is written to .vespa in the
 working directory, where that directory is assumed to be a Vespa application
-directory. This allows you have separate configuration options per application.
+directory. This allows you to have separate configuration options per
+application.
 
 Vespa CLI chooses the value for a given option in the following order, from
 most to least preferred:
@@ -57,10 +58,10 @@ The following global flags/options can be configured:
 application
 
 Specifies the application ID to manage. It has three parts, separated by
-dots, with the third part being optional. This is only relevant for the "cloud"
-and "hosted" targets. See https://cloud.vespa.ai/en/tenant-apps-instances for
-more details. This has no default value. Examples: tenant1.app1,
-tenant1.app1.instance1
+dots, with the third part being optional. If the part is omitted it defaults to
+"default". This is only relevant for the "cloud" and "hosted" targets. See
+https://cloud.vespa.ai/en/tenant-apps-instances for more details. This has no
+default value. Examples: tenant1.app1, tenant1.app1.instance1
 
 cluster
 
@@ -80,28 +81,40 @@ instance
 
 Specifies the instance of the application to manage. When specified, this takes
 precedence over the instance specified as part of application. This has no
-default value. Example: instance2
+default value and is only relevant for the "cloud" and "hosted" targets.
+Example: instance2
 
 quiet
 
-Print only errors.
+Suppress informational output. Errors are still printed.
 
 target
 
 Specifies the target to use for commands that interact with a Vespa platform,
 e.g. vespa deploy or vespa query. Possible values are:
 
-- local: (default) Connect to a Vespa platform running at localhost
-- cloud: Connect to Vespa Cloud
-- hosted: Connect to hosted Vespa (internal platform)
-- *url*: Connect to a platform running at given URL.
+- local:  (default) Connect to a Vespa platform running at localhost. When using
+          this target, container clusters are automatically discovered and are
+          chosen with the cluster option. This assumes that the configserver is
+          available on port 19071 (the default when using the Vespa container
+          image).
+- cloud:  Connect to Vespa Cloud. When using this target, container clusters are
+          automatically discovered and can be selected with the cluster option.
+- hosted: Connect to hosted Vespa (reserved for internal use)
+- *url*:  Connect to a platform running at given URL. This instructs the command
+          you're running to target a concrete URL. The cluster option cannot be
+          used with this target.
+
+Authentication is configured automatically for the cloud and hosted targets. To
+set a custom private key and certificate, e.g. for use with a self-hosted Vespa
+installation using mTLS, see the documentation of 'vespa cert'.
 
 zone
 
-Specifies a custom dev or perf zone to use when connecting to a Vespa platform.
-This is only relevant for cloud and hosted targets. By default, a zone is
-chosen automatically. See https://cloud.vespa.ai/en/reference/zones for
-available zones. Examples: dev.aws-us-east-1c, perf.aws-us-east-1c
+Specifies a custom zone to use when connecting to a Vespa Cloud application.
+This is only relevant for cloud and hosted targets and defaults to a dev zone.
+See https://cloud.vespa.ai/en/reference/zones for available zones. Examples:
+dev.aws-us-east-1c, dev.gcp-us-central1-f, perf.aws-us-east-1c
 `,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,

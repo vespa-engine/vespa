@@ -13,8 +13,8 @@ func newDestroyCmd(cli *CLI) *cobra.Command {
 	force := false
 	cmd := &cobra.Command{
 		Use:   "destroy",
-		Short: "Remove a deployed application and its data",
-		Long: `Remove a deployed application and its data.
+		Short: "Remove a deployed Vespa application and its data",
+		Long: `Remove a deployed Vespa application and its data.
 
 This command removes the currently deployed application and permanently
 deletes its data.

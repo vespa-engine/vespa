@@ -22,7 +22,7 @@ func newVersionCmd(cli *CLI) *cobra.Command {
 	var skipVersionCheck bool
 	cmd := &cobra.Command{
 		Use:               "version",
-		Short:             "Show current version and check for updates",
+		Short:             "Show current CLI version and check for updates",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),

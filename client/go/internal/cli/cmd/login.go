@@ -19,9 +19,13 @@ import (
 // this will only affect the messages.
 func newLoginCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
-		Use:               "login",
-		Args:              cobra.NoArgs,
-		Short:             "Authenticate Vespa CLI with Vespa Cloud",
+		Use:   "login",
+		Args:  cobra.NoArgs,
+		Short: "Authenticate Vespa CLI with Vespa Cloud control plane. This is preferred over api-key for interactive use",
+		Long: `Authenticate Vespa CLI with Vespa Cloud control plane. This is preferred over api-key for interactive use.
+
+This command runs a browser-based authentication flow for the Vespa Cloud control plane.
+`,
 		Example:           "$ vespa auth login",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
