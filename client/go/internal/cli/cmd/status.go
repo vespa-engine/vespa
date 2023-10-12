@@ -25,9 +25,14 @@ func newStatusCmd(cli *CLI) *cobra.Command {
 			"status document", // TODO: Remove on Vespa 9
 			"status query",    // TODO: Remove on Vespa 9
 		},
-		Short: "Verify that container service(s) are ready to use",
+		Short: "Show Vespa endpoints and status",
+		Long: `Show Vespa endpoints and status.
+
+This command shows the current endpoints, and their status, of a deployed Vespa
+application.`,
 		Example: `$ vespa status
-$ vespa status --cluster mycluster`,
+$ vespa status --cluster mycluster
+$ vespa status --cluster mycluster --wait 600`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
@@ -68,7 +73,7 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
 		Use:               "deploy",
-		Short:             "Verify that the deploy service is ready to use",
+		Short:             "Show status of the Vespa deploy service",
 		Example:           `$ vespa status deploy`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
@@ -95,10 +100,17 @@ func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
 		Use:   "deployment",
-		Short: "Verify that deployment has converged on latest, or given, ID",
+		Short: "Show status of a Vespa deployment",
+		Long: `Show status of a Vespa deployment.
+
+This commands shows whether a Vespa deployment has converged on the latest run
+ (Vespa Cloud) or config generation (self-hosted). If an argument is given,
+show the convergence status of that particular run or generation.
+`,
 		Example: `$ vespa status deployment
 $ vespa status deployment -t cloud [run-id]
 $ vespa status deployment -t local [session-id]
+$ vespa status deployment -t local [session-id] --wait 600
 `,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
