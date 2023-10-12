@@ -1516,8 +1516,7 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester setEndpointConfig(EndpointConfig config) {
-            tester.controllerTester().flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), config.supportsLegacy());
-            tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), config.supportsGenerated());
+            tester.controllerTester().flagSource().withStringFlag(Flags.ENDPOINT_CONFIG.id(), config.name());
             return this;
         }
 

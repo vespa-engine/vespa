@@ -434,7 +434,7 @@ public class Flags {
             List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
-            APPLICATION_ID);
+            TENANT_ID, APPLICATION_ID, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

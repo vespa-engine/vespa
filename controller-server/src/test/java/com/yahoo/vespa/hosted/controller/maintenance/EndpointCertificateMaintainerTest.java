@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import com.yahoo.vespa.hosted.controller.routing.EndpointConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -262,9 +263,8 @@ public class EndpointCertificateMaintainerTest {
     }
 
     private void prepareCertificatePool(int numCertificates) {
-        ((InMemoryFlagSource)tester.controller().flagSource()).withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), numCertificates);
-        ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
+        ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), numCertificates);
+        ((InMemoryFlagSource) tester.controller().flagSource()).withStringFlag(Flags.ENDPOINT_CONFIG.id(), EndpointConfig.generated.name());
 
         // Provision certificates
         for (int i = 0; i < numCertificates; i++) {
