@@ -3,7 +3,19 @@ package com.yahoo.vespa.hosted.controller.api.integration.pricing;
 
 import java.math.BigDecimal;
 
+import static java.math.BigDecimal.ZERO;
+
 public record PriceInformation(BigDecimal listPriceWithSupport, BigDecimal volumeDiscount, BigDecimal committedAmountDiscount,
                                BigDecimal enclaveDiscount, BigDecimal totalAmount) {
+
+    public static PriceInformation empty() { return new PriceInformation(ZERO, ZERO, ZERO, ZERO, ZERO); }
+
+    public PriceInformation add(PriceInformation priceInformation) {
+        return new PriceInformation(this.listPriceWithSupport().add(priceInformation.listPriceWithSupport()),
+                                    this.volumeDiscount().add(priceInformation.volumeDiscount()),
+                                    this.committedAmountDiscount().add(priceInformation.committedAmountDiscount()),
+                                    this.enclaveDiscount().add(priceInformation.enclaveDiscount()),
+                                    this.totalAmount().add(priceInformation.totalAmount()));
+    }
 
 }
