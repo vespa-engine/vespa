@@ -205,7 +205,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
         private final boolean enableNestedMultivalueGrouping;
-        private final boolean useReconfigurableDispatcher;
         private final int contentLayerMetadataFeatureLevel;
         private final boolean dynamicHeapSize;
         private final String unknownConfigDefinition;
@@ -250,7 +249,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
-            this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
             this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
             this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
@@ -296,14 +294,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
         @Override public String logFileCompressionAlgorithm(String defVal) {
             var fflag = this.logFileCompressionAlgorithm;
-            if (fflag != null && ! fflag.equals("")) {
+            if (fflag != null && ! fflag.isEmpty()) {
                 return fflag;
             }
             return defVal;
         }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
-        @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
