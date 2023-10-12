@@ -69,7 +69,7 @@ public class NetworkMultiplexer implements NetworkOwner {
 
     public void unregisterSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.computeIfPresent(session, (name, owners) -> {
-            if (owners.equals(List.of(owner))) {
+            if (owners.size() == 1 && owners.contains(owner)) {
                 if (broadcast)
                     net.unregisterSession(session);
                 return null;
