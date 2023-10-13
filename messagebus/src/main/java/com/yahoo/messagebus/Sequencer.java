@@ -148,7 +148,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         private final Message msg;
         SequencedSendTask(Message msg) { this.msg = msg; }
         @Override public void run() { sequencedSend(msg); }
-        @Override public void destroy() { msg.discard(); }
+        @Override public void destroy() { }
     }
 
     private void sendNextInSequence(long seqId) {
