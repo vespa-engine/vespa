@@ -21,7 +21,7 @@ public class BillingReporterMock implements BillingReporter {
 
     @Override
     public InvoiceUpdate maintainInvoice(Bill bill) {
-        return InvoiceUpdate.empty();
+        return new InvoiceUpdate(0,0,1);
     }
 
 }

@@ -29,6 +29,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     private final Map<Bill.Id, Bill.StatusHistory> statuses = new HashMap<>();
     private final Map<Bill.Id, ZonedDateTime> startTimes = new HashMap<>();
     private final Map<Bill.Id, ZonedDateTime> endTimes = new HashMap<>();
+    private final Map<Bill.Id, String> exportedInvoiceIds = new HashMap<>();
 
     private final ZonedDateTime startTime = LocalDate.of(2020, 4, 1).atStartOfDay(ZoneId.of("UTC"));
     private final ZonedDateTime endTime = LocalDate.of(2020, 5, 1).atStartOfDay(ZoneId.of("UTC"));
@@ -74,7 +75,8 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
         var status = statuses.getOrDefault(billId, Bill.StatusHistory.open(clock));
         var start = startTimes.getOrDefault(billId, startTime);
         var end = endTimes.getOrDefault(billId, endTime);
-        return invoice.map(tenant -> new Bill(billId, tenant, status, lines, start, end));
+        var exportedId = exportedInvoiceId(billId);
+        return invoice.map(tenant -> new Bill(billId, tenant, status, lines, start, end, exportedId));
     }
 
     @Override
@@ -157,7 +159,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var status = statuses.get(invoiceId);
                     var start = startTimes.get(invoiceId);
                     var end = endTimes.get(invoiceId);
-                    return new Bill(invoiceId, tenant, status, items, start, end);
+                    return new Bill(invoiceId, tenant, status, items, start, end, exportedInvoiceId(invoiceId));
                 })
                 .toList();
     }
@@ -171,7 +173,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var status = statuses.get(invoiceId);
                     var start = startTimes.get(invoiceId);
                     var end = endTimes.get(invoiceId);
-                    return new Bill(invoiceId, tenant, status, items, start, end);
+                    return new Bill(invoiceId, tenant, status, items, start, end, exportedInvoiceId(invoiceId));
                 })
                 .toList();
     }
@@ -180,9 +182,14 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     public void maintain() {}
 
     @Override
-    public void setExportedInvoiceId(Bill.Id billId, String invoiceId) { }
+    public void setExportedInvoiceId(Bill.Id billId, String invoiceId) {
+        exportedInvoiceIds.put(billId, invoiceId);
+    }
 
     @Override
     public void setExportedInvoiceItemId(String lineItemId, String invoiceItemId) { }
 
+    private String exportedInvoiceId(Bill.Id billId) {
+        return exportedInvoiceIds.getOrDefault(billId, null);
+    }
 }

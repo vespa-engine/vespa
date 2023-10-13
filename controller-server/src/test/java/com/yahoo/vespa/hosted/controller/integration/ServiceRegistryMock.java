@@ -89,7 +89,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockEnclaveAccessService mockAMIService = new MockEnclaveAccessService();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final MockRoleService roleService = new MockRoleService();
-    private final MockBillingController billingController = new MockBillingController(clock);
     private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final NoopEndpointSecretManager secretManager = new NoopEndpointSecretManager();
@@ -100,6 +99,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final PlanRegistry planRegistry = new PlanRegistryMock();
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
+    private final MockBillingController billingController = new MockBillingController(clock, billingDb);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
     private final MockPricingController pricingController = new MockPricingController();
 

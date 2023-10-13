@@ -14,12 +14,6 @@ public record InvoiceUpdate(int itemsAdded, int itemsRemoved, int itemsModified)
         return new InvoiceUpdate(0, 0, 0);
     }
 
-    public InvoiceUpdate add(InvoiceUpdate other) {
-        return new InvoiceUpdate(itemsAdded + other.itemsAdded,
-                                 itemsRemoved + other.itemsRemoved,
-                                 itemsModified + other.itemsModified);
-    }
-
     public static class Counter {
         private int itemsAdded = 0;
         private int itemsRemoved = 0;
@@ -35,6 +29,12 @@ public record InvoiceUpdate(int itemsAdded, int itemsRemoved, int itemsModified)
 
         public void modifiedItem() {
             itemsModified++;
+        }
+
+        public void add(InvoiceUpdate other) {
+            itemsAdded += other.itemsAdded;
+            itemsRemoved += other.itemsRemoved;
+            itemsModified += other.itemsModified;
         }
 
         public InvoiceUpdate finish() {

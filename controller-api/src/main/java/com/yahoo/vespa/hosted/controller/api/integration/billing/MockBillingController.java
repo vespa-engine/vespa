@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 public class MockBillingController implements BillingController {
 
     private final Clock clock;
+    private final BillingDatabaseClient dbClient;
 
     PlanId defaultPlan = PlanId.from("trial");
     List<TenantName> tenants = new ArrayList<>();
@@ -32,8 +34,9 @@ public class MockBillingController implements BillingController {
     Map<TenantName, List<Bill.LineItem>> unusedLineItems = new HashMap<>();
     Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
 
-    public MockBillingController(Clock clock) {
+    public MockBillingController(Clock clock, BillingDatabaseClient dbClient) {
         this.clock = clock;
+        this.dbClient = dbClient;
     }
 
     @Override
@@ -201,6 +204,14 @@ public class MockBillingController implements BillingController {
                 .count();
 
         return count < limit;
+    }
+
+    @Override
+    public String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
+        // Replace bill with a copy with exportedId set
+        var exportedId = "EXT-ID-123";
+        dbClient.setExportedInvoiceId(bill.id(), exportedId);
+        return exportedId;
     }
 
     public void setTenants(List<TenantName> tenants) {

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
@@ -62,17 +63,17 @@ public class BillingReportMaintainer extends ControllerMaintainer {
         });
     }
 
-    private InvoiceUpdate maintainInvoices() {
+    InvoiceUpdate maintainInvoices() {
         var billsNeedingMaintenance = databaseClient.readBills().stream()
                 .filter(bill -> bill.getExportedId().isPresent())
                 .filter(exported -> ! exported.status().equals("ISSUED")) // TODO: This status does not yet exist.
                 .toList();
 
-        var updates = InvoiceUpdate.empty();
+        var updates = new InvoiceUpdate.Counter();
         for (var bill : billsNeedingMaintenance) {
             updates.add(reporter.maintainInvoice(bill));
         }
-        return updates;
+        return updates.finish();
     }
 
     private Map<TenantName, CloudTenant> cloudTenants() {
