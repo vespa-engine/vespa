@@ -186,7 +186,7 @@ public class InternalStepRunner implements StepRunner {
         return deploy(() -> controller.applications().deploy(id.job(),
                                                              setTheStage,
                                                              logger::log,
-                                                             account -> getCloudAccountWithOverrideForStaging(id, account)),
+                                                             account -> getAndSetCloudAccountWithOverrideForStaging(id, account)),
                       controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
@@ -224,7 +224,7 @@ public class InternalStepRunner implements StepRunner {
         return account;
     }
 
-    private Optional<CloudAccount> getCloudAccountWithOverrideForStaging(RunId id, Optional<CloudAccount> account) {
+    private Optional<CloudAccount> getAndSetCloudAccountWithOverrideForStaging(RunId id, Optional<CloudAccount> account) {
         if (id.type().environment() == Environment.staging) {
             Instant doom = controller.clock().instant().plusSeconds(60); // Sleeping is bad, but we're already in a sleepy code path: deployment.
             while (true) {
@@ -233,10 +233,6 @@ public class InternalStepRunner implements StepRunner {
                 if (stored.isPresent())
                     return stored.filter(not(CloudAccount.empty::equals));
 
-                // TODO jonmv: remove with next release
-                if (run.stepStatus(deployTester).get() != unfinished)
-                    return account; // Use original value for runs which started prior to this code change, and resumed after. Extremely unlikely :>
-
                 long millisToDoom = Duration.between(controller.clock().instant(), doom).toMillis();
                 if (millisToDoom > 0)
                     uncheckInterruptedAndRestoreFlag(() -> Thread.sleep(min(millisToDoom, 5000)));
@@ -244,6 +240,7 @@ public class InternalStepRunner implements StepRunner {
                     throw new CloudAccountNotSetException("Cloud account not yet set; must deploy tests first");
             }
         }
+        account.ifPresent(cloudAccount -> controller.jobController().locked(id, run -> run.with(cloudAccount)));
         return account;
     }
 

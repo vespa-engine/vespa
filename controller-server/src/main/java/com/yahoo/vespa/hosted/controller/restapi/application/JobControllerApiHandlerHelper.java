@@ -519,6 +519,8 @@ class JobControllerApiHandlerHelper {
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", nameOf(run.status()));
             toSlime(runObject, run.versions(), run.reason(), application);
+            run.cloudAccount().filter(account -> ! account.isUnspecified())
+               .ifPresent(cloudAccount -> runObject.setObject("enclave").setString("cloudAccount", cloudAccount.value()));
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {
                 Cursor runStepObject = runStepsArray.addObject();
