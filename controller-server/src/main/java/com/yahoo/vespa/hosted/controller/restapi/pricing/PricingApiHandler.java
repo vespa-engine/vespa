@@ -267,8 +267,6 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
         setBigDecimal(cursor, "totalAmount", prices.totalPriceInformation().totalAmount());
 
-        System.out.println(SlimeUtils.toJson(slime));
-
         return new SlimeJsonResponse(slime);
     }
 
