@@ -36,7 +36,7 @@ import static com.yahoo.restapi.ErrorResponse.methodNotAllowed;
 import static com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo.SupportLevel;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
-import static java.math.BigDecimal.valueOf;
+import static java.math.BigDecimal.ZERO;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -107,49 +107,49 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private PriceParameters parseQueryLegacy(List<String> elements) {
         var supportLevel = SupportLevel.BASIC;
         var enclave = false;
-        var committedSpend = 0d;
-        var plan = controller.serviceRegistry().planRegistry().defaultPlan();  // fallback to default plan if not supplied
+        var committedSpend = ZERO;
+        var plan = controller.serviceRegistry().planRegistry().defaultPlan(); // fallback to default plan if not supplied
         List<ClusterResources> clusterResources = new ArrayList<>();
 
         for (Pair<String, String> entry : keysAndValues(elements)) {
+            var value = entry.getSecond();
             switch (entry.getFirst().toLowerCase()) {
-                case "committedspend" -> committedSpend = parseDouble(entry.getSecond());
-                case "enclave" -> enclave = Boolean.parseBoolean(entry.getSecond());
-                case "planid" -> plan = plan(entry.getSecond())
-                        .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
-                case "supportlevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
-                case "resources" -> clusterResources.add(clusterResources(entry.getSecond()));
+                case "committedspend" -> committedSpend = new BigDecimal(value);
+                case "enclave" -> enclave = Boolean.parseBoolean(value);
+                case "planid" -> plan = plan(value).orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + value));
+                case "supportlevel" -> supportLevel = SupportLevel.valueOf(value.toUpperCase());
+                case "resources" -> clusterResources.add(clusterResources(value));
                 default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
         }
         if (clusterResources.isEmpty()) throw new IllegalArgumentException("No cluster resources found in query");
 
-        PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend);
+        PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend.doubleValue());
         return new PriceParameters(clusterResources, pricingInfo, plan, null);
     }
 
     private PriceParameters parseQuery(List<String> elements) {
         var supportLevel = SupportLevel.BASIC;
         var enclave = false;
-        var committedSpend = 0d;
+        var committedSpend = ZERO;
         var applicationName = "default";
-        var plan = controller.serviceRegistry().planRegistry().defaultPlan();  // fallback to default plan if not supplied
+        var plan = controller.serviceRegistry().planRegistry().defaultPlan(); // fallback to default plan if not supplied
         List<ApplicationResources> appResources = new ArrayList<>();
 
         for (Pair<String, String> entry : keysAndValues(elements)) {
+            var value = entry.getSecond();
             switch (entry.getFirst().toLowerCase()) {
-                case "committedspend" -> committedSpend = parseDouble(entry.getSecond());
-                case "planid" -> plan = plan(entry.getSecond())
-                        .orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + entry.getSecond()));
-                case "supportlevel" -> supportLevel = SupportLevel.valueOf(entry.getSecond().toUpperCase());
-                case "application" -> appResources.add(applicationResources(entry.getSecond()));
+                case "committedspend" -> committedSpend = new BigDecimal(value);
+                case "planid" -> plan = plan(value).orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + value));
+                case "supportlevel" -> supportLevel = SupportLevel.valueOf(value.toUpperCase());
+                case "application" -> appResources.add(applicationResources(value));
                 default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
         }
         if (appResources.isEmpty()) throw new IllegalArgumentException("No application resources found in query");
 
         // TODO: enclave does not make sense in PricingInfo anymore, remove when legacy method is removed
-        PricingInfo pricingInfo = new PricingInfo(false, supportLevel, committedSpend);
+        PricingInfo pricingInfo = new PricingInfo(false, supportLevel, committedSpend.doubleValue());
         return new PriceParameters(List.of(), pricingInfo, plan, appResources);
     }
 
@@ -163,12 +163,13 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         var gpuMemoryGb = 0d;
 
         for (var element : keysAndValues(elements)) {
+            var value = element.getSecond();
             switch (element.getFirst().toLowerCase()) {
-                case "nodes" -> nodes = parseInt(element.getSecond());
-                case "vcpu" -> vcpu = parseDouble(element.getSecond());
-                case "memorygb" -> memoryGb = parseDouble(element.getSecond());
-                case "diskgb" -> diskGb = parseDouble(element.getSecond());
-                case "gpumemorygb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                case "nodes" -> nodes = parseInt(value);
+                case "vcpu" -> vcpu = parseDouble(value);
+                case "memorygb" -> memoryGb = parseDouble(value);
+                case "diskgb" -> diskGb = parseDouble(value);
+                case "gpumemorygb" -> gpuMemoryGb = parseDouble(value);
                 default -> throw new IllegalArgumentException("Unknown resource type '" + element.getFirst() + '\'');
             }
         }
@@ -183,36 +184,36 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         List<String> elements = Arrays.stream(appResourcesString.split(",")).toList();
 
         var applicationName = "default";
-        var vcpu = 0d;
-        var memoryGb = 0d;
-        var diskGb = 0d;
-        var gpuMemoryGb = 0d;
-        var enclaveVcpu = 0d;
-        var enclaveMemoryGb = 0d;
-        var enclaveDiskGb = 0d;
-        var enclaveGpuMemoryGb = 0d;
+        var vcpu = ZERO;
+        var memoryGb = ZERO;
+        var diskGb = ZERO;
+        var gpuMemoryGb = ZERO;
+        var enclaveVcpu = ZERO;
+        var enclaveMemoryGb = ZERO;
+        var enclaveDiskGb = ZERO;
+        var enclaveGpuMemoryGb = ZERO;
 
         for (var element : keysAndValues(elements)) {
+            var value = element.getSecond();
             switch (element.getFirst().toLowerCase()) {
-                case "name" -> applicationName = element.getSecond();
+                case "name" -> applicationName = value;
 
-                case "vcpu" -> vcpu = parseDouble(element.getSecond());
-                case "memorygb" -> memoryGb = parseDouble(element.getSecond());
-                case "diskgb" -> diskGb = parseDouble(element.getSecond());
-                case "gpumemorygb" -> gpuMemoryGb = parseDouble(element.getSecond());
+                case "vcpu" -> vcpu = new BigDecimal(value);
+                case "memorygb" -> memoryGb = new BigDecimal(value);
+                case "diskgb" -> diskGb = new BigDecimal(value);
+                case "gpumemorygb" -> gpuMemoryGb = new BigDecimal(value);
 
-                case "enclavevcpu" -> enclaveVcpu = parseDouble(element.getSecond());
-                case "enclavememorygb" -> enclaveMemoryGb = parseDouble(element.getSecond());
-                case "enclavediskgb" -> enclaveDiskGb = parseDouble(element.getSecond());
-                case "enclavegpumemorygb" -> enclaveGpuMemoryGb = parseDouble(element.getSecond());
+                case "enclavevcpu" -> enclaveVcpu = new BigDecimal(value);
+                case "enclavememorygb" -> enclaveMemoryGb = new BigDecimal(value);
+                case "enclavediskgb" -> enclaveDiskGb = new BigDecimal(value);
+                case "enclavegpumemorygb" -> enclaveGpuMemoryGb = new BigDecimal(value);
 
                 default -> throw new IllegalArgumentException("Unknown key '" + element.getFirst() + '\'');
             }
         }
 
-        return new ApplicationResources(applicationName,
-                                        valueOf(vcpu), valueOf(memoryGb), valueOf(diskGb), valueOf(gpuMemoryGb),
-                                        valueOf(enclaveVcpu), valueOf(enclaveMemoryGb), valueOf(enclaveDiskGb), valueOf(enclaveGpuMemoryGb));
+        return new ApplicationResources(applicationName, vcpu, memoryGb, diskGb, gpuMemoryGb,
+                                        enclaveVcpu, enclaveMemoryGb, enclaveDiskGb, enclaveGpuMemoryGb);
     }
 
     private List<Pair<String, String>> keysAndValues(List<String> elements) {
