@@ -49,15 +49,29 @@ public class MockPricingController implements PricingController {
 
         BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-160.00") : new BigDecimal("800.00");
         BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
-        BigDecimal enclaveDiscount = (resources.enclaveVcpu().compareTo(ZERO) > 0) ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
+        BigDecimal enclaveDiscount = isEnclave(resources) ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
         BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
-        BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
-        BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);
+        BigDecimal appTotalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount);
 
-        var appPrice = new PriceInformation("app1", listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
-        var totalPrice = new PriceInformation("total", ZERO, ZERO, committedAmountDiscount, enclaveDiscount, totalAmount);
+        List<PriceInformation> appPrices = applicationResources.stream()
+                .map(appResources -> new PriceInformation(appResources.applicationName(),
+                                                          listPriceWithSupport,
+                                                          volumeDiscount,
+                                                          ZERO,
+                                                          enclaveDiscount,
+                                                          appTotalAmount))
+                .toList();
 
-        return new Prices(List.of(appPrice), totalPrice);
+        PriceInformation sum = PriceInformation.sum(appPrices);
+        var committedAmountDiscount = new BigDecimal("-1.23");
+        var totalAmount = sum.totalAmount().add(committedAmountDiscount);
+        var totalPrice = new PriceInformation("total", ZERO, ZERO, committedAmountDiscount, ZERO, totalAmount);
+
+        return new Prices(appPrices, totalPrice);
+    }
+
+    private static boolean isEnclave(ApplicationResources resources) {
+        return resources.enclaveVcpu().compareTo(ZERO) > 0;
     }
 
 }

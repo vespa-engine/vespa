@@ -13,7 +13,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
@@ -263,6 +262,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         applicationPrices(applicationsArray, prices.priceInformationApplications(), priceParameters);
 
         var priceInfoArray = cursor.setArray("priceInfo");
+        addItem(priceInfoArray, "Enclave", prices.totalPriceInformation().enclaveDiscount());
         addItem(priceInfoArray, "Committed spend", prices.totalPriceInformation().committedAmountDiscount());
 
         setBigDecimal(cursor, "totalAmount", prices.totalPriceInformation().totalAmount());
