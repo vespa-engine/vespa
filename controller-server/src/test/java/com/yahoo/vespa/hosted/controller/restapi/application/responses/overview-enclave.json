@@ -81,6 +81,9 @@
               "commit": "commit1"
             }
           },
+          "enclave": {
+            "cloudAccount": "aws:123456789012"
+          },
           "steps": [
             {
               "name": "deployTester",
@@ -177,6 +180,9 @@
               "commit": "commit1"
             }
           },
+          "enclave": {
+            "cloudAccount": "aws:123456789012"
+          },
           "steps": [
             {
               "name": "deployTester",
@@ -263,6 +269,9 @@
               "sourceUrl": "repository1/tree/commit1",
               "commit": "commit1"
             }
+          },
+          "enclave": {
+            "cloudAccount": "aws:123456789012"
           },
           "steps": [
             {

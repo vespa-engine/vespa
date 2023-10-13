@@ -276,7 +276,7 @@ public class Run {
     /** Whether this is a dry run deployment. */
     public boolean isDryRun() { return dryRun; }
 
-    /** Cloud account override to use for this run, if set. This should only be used by staging tests. */
+    /** Cloud account used for deployments in this run. This is set by the first deployment. */
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /** The specific reason for triggering this run, if any. This should be empty for jobs triggered bvy deployment orchestration. */
