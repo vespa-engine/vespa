@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.ApplicationResources;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
+import com.yahoo.vespa.hosted.controller.api.integration.pricing.Prices;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 
@@ -33,11 +34,11 @@ public class MockPricingController implements PricingController {
         BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
         BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
         BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);
-        return new PriceInformation(listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
+        return new PriceInformation("default", listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
     }
 
     @Override
-    public PriceInformation priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {
+    public Prices priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {
         ApplicationResources resources = applicationResources.get(0);
         BigDecimal listPrice = resources.vcpu().multiply(valueOf(1000))
                 .add(resources.memoryGb().multiply(valueOf(100)))
@@ -53,8 +54,10 @@ public class MockPricingController implements PricingController {
         BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
         BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);
 
-        return new PriceInformation(listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
-    }
+        var appPrice = new PriceInformation("app1", listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
+        var totalPrice = new PriceInformation("total", ZERO, ZERO, committedAmountDiscount, enclaveDiscount, totalAmount);
 
+        return new Prices(List.of(appPrice), totalPrice);
+    }
 
 }

@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface PricingController {
 
-    // TOD: Legacy, will be removed when not in use anymore
+    // TODO: Legacy, will be removed when not in use anymore
     PriceInformation price(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan);
 
     /**
@@ -23,6 +23,6 @@ public interface PricingController {
      * @param plan the plan to use for this calculation
      * @return a PriceInformation instance
      */
-    PriceInformation priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan);
+    Prices priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan);
 
 }
