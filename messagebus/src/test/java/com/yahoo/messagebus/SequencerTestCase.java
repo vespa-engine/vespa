@@ -102,6 +102,7 @@ public class SequencerTestCase {
         assertEquals(0, dst.size());
     }
 
+    @SuppressWarnings("serial")
     private static class TestQueue extends LinkedList<Routable> implements ReplyHandler {
 
         void checkReply(boolean hasSeqId, long seqId) {
