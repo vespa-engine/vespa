@@ -141,6 +141,41 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    void testPricingInfoCommercialEnclave2Apps() {
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        assertEquals(SystemName.Public, tester.controller().system());
+
+        var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation2AppsEnclave(COMMERCIAL));
+        tester.assertJsonResponse(request, """
+                                          {
+                                            "applications": [
+                                              {
+                                                "name": "app1",
+                                                "priceInfo": [
+                                                  {"description": "Commercial support unit price", "amount": "2000.00"},
+                                                  {"description": "Enclave", "amount": "-15.12"},
+                                                  {"description": "Volume discount", "amount": "-5.64"}
+                                                ]
+                                              },
+                                              {
+                                                "name": "app2",
+                                                "priceInfo": [
+                                                  {"description": "Commercial support unit price", "amount": "2000.00"},
+                                                  {"description": "Enclave", "amount": "-15.12"},
+                                                  {"description": "Volume discount", "amount": "-5.64"}
+                                                ]
+                                              }
+                                            ],
+                                            "priceInfo": [
+                                              {"description": "Committed spend", "amount": "-1.23"}
+                                            ],
+                                            "totalAmount": "3957.24"
+                                          }
+                                          """,
+                                  200);
+    }
+
+    @Test
     void testInvalidRequests() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         assertEquals(SystemName.Public, tester.controller().system());
@@ -185,7 +220,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("name=myapp,vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("name=app1,vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
     }
 
@@ -195,8 +230,18 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1AppEnclave(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("name=myapp,enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("name=app1,enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
+    }
+
+    /**
+     * 2 apps, with 1 cluster (with total resources for all clusters with each having
+     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU
+     */
+    String urlEncodedPriceInformation2AppsEnclave(PricingInfo.SupportLevel supportLevel) {
+        return "application=" + URLEncoder.encode("name=app1,enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
+                "&application=" + URLEncoder.encode("name=app2,enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=0";
     }
 
 }
