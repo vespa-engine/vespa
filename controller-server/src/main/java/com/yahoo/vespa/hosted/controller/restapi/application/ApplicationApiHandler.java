@@ -1071,6 +1071,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             case deployment: yield "deployment";
             case feedBlock: yield "feedBlock";
             case reindex: yield "reindex";
+            case account: yield "account";
         };
     }
 

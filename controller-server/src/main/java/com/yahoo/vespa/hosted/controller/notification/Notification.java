@@ -68,8 +68,12 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
         /**
          * Application cluster is reindexing document(s)
          */
-        reindex
+        reindex,
 
+        /**
+         * Account, e.g. expiration of trial plan
+         */
+        account
     }
 
     public static class MailContent {
