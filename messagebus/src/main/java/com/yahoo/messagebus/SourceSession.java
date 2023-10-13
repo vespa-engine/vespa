@@ -48,7 +48,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
      */
     SourceSession(MessageBus mbus, SourceSessionParams params) {
         this.mbus = mbus;
-        sequencer = new Sequencer(mbus, mbus.messenger());
+        sequencer = new Sequencer(mbus);
         if (!params.hasReplyHandler()) {
              throw new NullPointerException("Reply handler is null.");
         }
