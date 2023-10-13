@@ -47,15 +47,22 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC));
         tester.assertJsonResponse(request, """
-                                      {
-                                        "priceInfo": [
-                                          {"description": "Basic support unit price", "amount": "2240.00"},
-                                          {"description": "Volume discount", "amount": "-5.64"},
-                                          {"description": "Committed spend", "amount": "-1.23"}
-                                        ],
-                                        "totalAmount": "2233.13"
-                                      }
-                                      """,
+                                          {
+                                            "applications": [
+                                              {
+                                                "name": "app1",
+                                                "priceInfo": [
+                                                  {"description": "Basic support unit price", "amount": "2240.00"},
+                                                  {"description": "Volume discount", "amount": "-5.64"}
+                                                ]
+                                              }
+                                            ],
+                                            "priceInfo": [
+                                              {"description": "Committed spend", "amount": "-1.23"}
+                                            ],
+                                            "totalAmount": "2233.13"
+                                          }
+                                          """,
                                   200);
     }
 
@@ -66,16 +73,23 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(BASIC));
         tester.assertJsonResponse(request, """
-                                      {
-                                        "priceInfo": [
-                                          {"description": "Basic support unit price", "amount": "2240.00"},
-                                          {"description": "Enclave", "amount": "-15.12"},
-                                          {"description": "Volume discount", "amount": "-5.64"},
-                                          {"description": "Committed spend", "amount": "-1.23"}
-                                        ],
-                                        "totalAmount": "2218.00"
-                                      }
-                                      """,
+                                          {
+                                            "applications": [
+                                              {
+                                                "name": "app1",
+                                                "priceInfo": [
+                                                  {"description": "Basic support unit price", "amount": "2240.00"},
+                                                  {"description": "Enclave", "amount": "-15.12"},
+                                                  {"description": "Volume discount", "amount": "-5.64"}
+                                                ]
+                                              }
+                                            ],
+                                            "priceInfo": [
+                                              {"description": "Committed spend", "amount": "-1.23"}
+                                            ],
+                                            "totalAmount": "2218.00"
+                                          }
+                                          """,
                                   200);
     }
 
@@ -106,16 +120,23 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(COMMERCIAL));
         tester.assertJsonResponse(request, """
-                                      {
-                                        "priceInfo": [
-                                          {"description": "Commercial support unit price", "amount": "3200.00"},
-                                          {"description": "Enclave", "amount": "-15.12"},
-                                          {"description": "Volume discount", "amount": "-5.64"},
-                                          {"description": "Committed spend", "amount": "-1.23"}
-                                        ],
-                                        "totalAmount": "3178.00"
-                                      }
-                                      """,
+                                          {
+                                            "applications": [
+                                              {
+                                                "name": "app1",
+                                                "priceInfo": [
+                                                  {"description": "Commercial support unit price", "amount": "3200.00"},
+                                                  {"description": "Enclave", "amount": "-15.12"},
+                                                  {"description": "Volume discount", "amount": "-5.64"}
+                                                ]
+                                              }
+                                            ],
+                                            "priceInfo": [
+                                              {"description": "Committed spend", "amount": "-1.23"}
+                                            ],
+                                            "totalAmount": "3178.00"
+                                          }
+                                          """,
                                   200);
     }
 

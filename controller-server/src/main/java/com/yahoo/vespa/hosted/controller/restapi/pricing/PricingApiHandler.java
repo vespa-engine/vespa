@@ -13,11 +13,13 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.ApplicationResources;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
+import com.yahoo.vespa.hosted.controller.api.integration.pricing.Prices;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
@@ -82,16 +84,24 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse pricing(HttpRequest request) {
         String rawQuery = request.getUri().getRawQuery();
         var priceParameters = parseQuery(rawQuery);
-        PriceInformation price = calculatePrice(priceParameters);
-        return response(price, priceParameters);
+        boolean isLegacy = priceParameters.appResources() == null;
+        if (isLegacy) {
+            PriceInformation price = calculateLegacyPrice(priceParameters);
+            return legacyResponse(price, priceParameters);
+        } else {
+            Prices price = calculatePrice(priceParameters);
+            return response(price, priceParameters);
+        }
     }
 
-    private PriceInformation calculatePrice(PriceParameters priceParameters) {
+    private PriceInformation calculateLegacyPrice(PriceParameters priceParameters) {
         var priceCalculator = controller.serviceRegistry().pricingController();
-        if (priceParameters.appResources == null)
-            return priceCalculator.price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
-        else
-            return priceCalculator.priceForApplications(priceParameters.appResources, priceParameters.pricingInfo, priceParameters.plan);
+        return priceCalculator.price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
+    }
+
+    private Prices calculatePrice(PriceParameters priceParameters) {
+        var priceCalculator = controller.serviceRegistry().pricingController();
+        return priceCalculator.priceForApplications(priceParameters.appResources, priceParameters.pricingInfo, priceParameters.plan);
     }
 
     private PriceParameters parseQuery(String rawQuery) {
@@ -230,7 +240,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         return controller.serviceRegistry().planRegistry().plan(element);
     }
 
-    private static SlimeJsonResponse response(PriceInformation priceInfo, PriceParameters priceParameters) {
+    private static SlimeJsonResponse legacyResponse(PriceInformation priceInfo, PriceParameters priceParameters) {
         var slime = new Slime();
         Cursor cursor = slime.setObject();
 
@@ -243,6 +253,33 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         setBigDecimal(cursor, "totalAmount", priceInfo.totalAmount());
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private static SlimeJsonResponse response(Prices prices, PriceParameters priceParameters) {
+        var slime = new Slime();
+        Cursor cursor = slime.setObject();
+
+        var applicationsArray = cursor.setArray("applications");
+        applicationPrices(applicationsArray, prices.priceInformationApplications(), priceParameters);
+
+        var priceInfoArray = cursor.setArray("priceInfo");
+        addItem(priceInfoArray, "Committed spend", prices.totalPriceInformation().committedAmountDiscount());
+
+        setBigDecimal(cursor, "totalAmount", prices.totalPriceInformation().totalAmount());
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static void applicationPrices(Cursor applicationPricesArray, List<PriceInformation> applicationPrices, PriceParameters priceParameters) {
+        applicationPrices.forEach(priceInformation -> {
+            var element = applicationPricesArray.addObject();
+            element.setString("name", priceInformation.applicationName());
+            var array = element.setArray("priceInfo");
+            addItem(array, supportLevelDescription(priceParameters), priceInformation.listPriceWithSupport());
+            addItem(array, "Enclave", priceInformation.enclaveDiscount());
+            addItem(array, "Volume discount", priceInformation.volumeDiscount());
+
+        });
     }
 
     private static String supportLevelDescription(PriceParameters priceParameters) {
