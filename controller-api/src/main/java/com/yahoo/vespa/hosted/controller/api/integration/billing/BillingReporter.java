@@ -7,6 +7,6 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 public interface BillingReporter {
     BillingReference maintainTenant(CloudTenant tenant);
 
-    default void maintainInvoices() { }
+    InvoiceUpdate maintainInvoice(Bill bill);
 
 }
