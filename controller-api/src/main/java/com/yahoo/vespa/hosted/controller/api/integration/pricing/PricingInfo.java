@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.pricing;
 
-// TODO: Use BigDecimal for committedHourlyAmount
-public record PricingInfo(boolean enclave, SupportLevel supportLevel, double committedHourlyAmount) {
+import java.math.BigDecimal;
+
+import static java.math.BigDecimal.ZERO;
+
+public record PricingInfo(SupportLevel supportLevel, BigDecimal committedHourlyAmount) {
 
     public enum SupportLevel { BASIC, COMMERCIAL, ENTERPRISE }
 
-    public static PricingInfo empty() { return new PricingInfo(false, SupportLevel.COMMERCIAL, 0); }
+    public static PricingInfo empty() { return new PricingInfo(SupportLevel.COMMERCIAL, ZERO); }
 
 }

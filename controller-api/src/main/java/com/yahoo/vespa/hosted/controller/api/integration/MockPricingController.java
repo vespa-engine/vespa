@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration;
 
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.ApplicationResources;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
@@ -17,25 +16,6 @@ import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
 
 public class MockPricingController implements PricingController {
-
-    // TODO: Remove when not in use anymore
-    @Override
-    public PriceInformation price(List<ClusterResources> clusterResources, PricingInfo pricingInfo, Plan plan) {
-        BigDecimal listPrice = valueOf(clusterResources.stream()
-                                               .mapToDouble(resources -> resources.nodes() *
-                                                       (resources.nodeResources().vcpu() * 1000 +
-                                                               resources.nodeResources().memoryGb() * 100 +
-                                                               resources.nodeResources().diskGb() * 10))
-                                               .sum());
-
-        BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-160.00") : new BigDecimal("800.00");
-        BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
-        BigDecimal enclaveDiscount = pricingInfo.enclave() ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
-        BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
-        BigDecimal committedAmountDiscount = new BigDecimal("-1.23");
-        BigDecimal totalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount).add(committedAmountDiscount);
-        return new PriceInformation("default", listPriceWithSupport, volumeDiscount, committedAmountDiscount, enclaveDiscount, totalAmount);
-    }
 
     @Override
     public Prices priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {

@@ -83,19 +83,8 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse pricing(HttpRequest request) {
         String rawQuery = request.getUri().getRawQuery();
         var priceParameters = parseQuery(rawQuery);
-        boolean isLegacy = priceParameters.appResources() == null;
-        if (isLegacy) {
-            PriceInformation price = calculateLegacyPrice(priceParameters);
-            return legacyResponse(price, priceParameters);
-        } else {
-            Prices price = calculatePrice(priceParameters);
-            return response(price, priceParameters);
-        }
-    }
-
-    private PriceInformation calculateLegacyPrice(PriceParameters priceParameters) {
-        var priceCalculator = controller.serviceRegistry().pricingController();
-        return priceCalculator.price(priceParameters.clusterResources, priceParameters.pricingInfo, priceParameters.plan);
+        Prices price = calculatePrice(priceParameters);
+        return response(price, priceParameters);
     }
 
     private Prices calculatePrice(PriceParameters priceParameters) {
@@ -106,35 +95,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private PriceParameters parseQuery(String rawQuery) {
         if (rawQuery == null) throw new IllegalArgumentException("No price information found in query");
         List<String> elements = Arrays.stream(URLDecoder.decode(rawQuery, UTF_8).split("&")).toList();
-
-        if (keysAndValues(elements).stream().map(Pair::getFirst).toList().contains("resources"))
-            return parseQueryLegacy(elements);
-        else
-            return parseQuery(elements);
-    }
-
-    private PriceParameters parseQueryLegacy(List<String> elements) {
-        var supportLevel = SupportLevel.BASIC;
-        var enclave = false;
-        var committedSpend = ZERO;
-        var plan = controller.serviceRegistry().planRegistry().defaultPlan(); // fallback to default plan if not supplied
-        List<ClusterResources> clusterResources = new ArrayList<>();
-
-        for (Pair<String, String> entry : keysAndValues(elements)) {
-            var value = entry.getSecond();
-            switch (entry.getFirst().toLowerCase()) {
-                case "committedspend" -> committedSpend = new BigDecimal(value);
-                case "enclave" -> enclave = Boolean.parseBoolean(value);
-                case "planid" -> plan = plan(value).orElseThrow(() -> new IllegalArgumentException("Unknown plan id " + value));
-                case "supportlevel" -> supportLevel = SupportLevel.valueOf(value.toUpperCase());
-                case "resources" -> clusterResources.add(clusterResources(value));
-                default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
-            }
-        }
-        if (clusterResources.isEmpty()) throw new IllegalArgumentException("No cluster resources found in query");
-
-        PricingInfo pricingInfo = new PricingInfo(enclave, supportLevel, committedSpend.doubleValue());
-        return new PriceParameters(clusterResources, pricingInfo, plan, null);
+        return parseQuery(elements);
     }
 
     private PriceParameters parseQuery(List<String> elements) {
@@ -157,8 +118,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         }
         if (appResources.isEmpty()) throw new IllegalArgumentException("No application resources found in query");
 
-        // TODO: enclave does not make sense in PricingInfo anymore, remove when legacy method is removed
-        PricingInfo pricingInfo = new PricingInfo(false, supportLevel, committedSpend.doubleValue());
+        PricingInfo pricingInfo = new PricingInfo(supportLevel, committedSpend);
         return new PriceParameters(List.of(), pricingInfo, plan, appResources);
     }
 
@@ -237,21 +197,6 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
 
     private Optional<Plan> plan(String element) {
         return controller.serviceRegistry().planRegistry().plan(element);
-    }
-
-    private static SlimeJsonResponse legacyResponse(PriceInformation priceInfo, PriceParameters priceParameters) {
-        var slime = new Slime();
-        Cursor cursor = slime.setObject();
-
-        var array = cursor.setArray("priceInfo");
-        addItem(array, supportLevelDescription(priceParameters), priceInfo.listPriceWithSupport());
-        addItem(array, "Enclave", priceInfo.enclaveDiscount());
-        addItem(array, "Volume discount", priceInfo.volumeDiscount());
-        addItem(array, "Committed spend", priceInfo.committedAmountDiscount());
-
-        setBigDecimal(cursor, "totalAmount", priceInfo.totalAmount());
-
-        return new SlimeJsonResponse(slime);
     }
 
     private static SlimeJsonResponse response(Prices prices, PriceParameters priceParameters) {
