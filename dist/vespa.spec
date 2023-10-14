@@ -42,7 +42,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies = 1.0.1
+BuildRequires: vespa-build-dependencies = 1.2.0
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -196,7 +196,7 @@ Requires: vespa-protobuf = 3.21.12
 Requires: protobuf
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.15.1
+Requires: vespa-onnxruntime = 1.16.1
 
 %description libs
 
