@@ -130,13 +130,13 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
 
     @Test
     void require_accountant_tenant_preview() {
-        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1").roles(Role.hostedAccountant());
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/preview").roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"id\":\"empty\",\"from\":\"2021-04-13\",\"to\":\"2021-04-12\",\"total\":\"0.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2021-04-13T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[]}");
     }
 
     @Test
     void require_accountant_tenant_bill() {
-        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1", Request.Method.POST)
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/preview", Request.Method.POST)
                 .roles(Role.hostedAccountant())
                 .data("{\"from\": \"2020-05-01\",\"to\": \"2020-06-01\"}");
         tester.assertResponse(accountantRequest, "{\"message\":\"Created bill id-123\"}");
@@ -148,4 +148,41 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                 .roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");
     }
+
+   @Test
+    void require_additional_items_empty() {
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, """
+                {"items":[]}""");
+   }
+
+   @Test
+    void require_additional_items_with_content() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                        {
+                            "description": "Additional support costs",
+                            "amount": "123.45"
+                        }""");
+           tester.assertResponse(accountantRequest, """
+                {"message":"Added line item for tenant tenant1"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"items":[{"id":"line-item-id","description":"Additional support costs","amount":"123.45","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"majorVersion":0,"cpu":{},"memory":{},"disk":{}}]}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/item/line-item-id", Request.Method.DELETE)
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Successfully deleted line item line-item-id"}""");
+       }
+   }
 }

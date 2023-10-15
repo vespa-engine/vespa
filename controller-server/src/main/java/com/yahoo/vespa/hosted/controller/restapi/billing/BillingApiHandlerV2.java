@@ -12,6 +12,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -89,6 +90,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/preview")
+                        .get(self::previewBill)
+                        .post(Slime.class, self::createBill))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/items")
+                        .get(self::additionalItems)
+                        .post(Slime.class, self::newAdditionalItem))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/item/{item}")
+                        .delete(self::deleteAdditionalItem))
                 .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/export")
                         .put(Slime.class, self::putAccountantInvoiceExport))
                 .addRoute(RestApi.route("/billing/v2/accountant/plans")
@@ -299,6 +308,57 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var responseSlime = new Slime();
         responseSlime.setObject().setString("invoiceId", result);
         return new SlimeJsonResponse(responseSlime);
+    }
+
+    private MessageResponse deleteAdditionalItem(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.get(tenantName).orElseThrow(() -> new RestApiException.NotFound("No such tenant: " + tenantName));
+
+        var itemId = requestContext.pathParameters().getStringOrThrow("item");
+
+        var items = billing.getUnusedLineItems(tenant.name());
+        var candidate = items.stream().filter(item -> item.id().equals(itemId)).findAny();
+
+        if (candidate.isEmpty()) {
+            throw new RestApiException.NotFound("Could not find item with ID " + itemId);
+        }
+
+        billing.deleteLineItem(itemId);;
+
+        return new MessageResponse("Successfully deleted line item " + itemId);
+    }
+
+    private MessageResponse newAdditionalItem(RestApi.RequestContext requestContext, Slime body) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.get(tenantName).orElseThrow(() -> new RestApiException.NotFound("No such tenant: " + tenantName));
+
+        var inspector = body.get();
+
+        var billId = SlimeUtils.optionalString(inspector.field("billId")).map(Bill.Id::of);
+
+        billing.addLineItem(
+                tenant.name(),
+                getInspectorFieldOrThrow(inspector, "description"),
+                new BigDecimal(getInspectorFieldOrThrow(inspector, "amount")),
+                billId,
+                requestContext.userPrincipalOrThrow().getName());
+
+        return new MessageResponse("Added line item for tenant " + tenantName);
+    }
+
+    private Slime additionalItems(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.get(tenantName).orElseThrow(() -> new RestApiException.NotFound("No such tenant: " + tenantName));
+
+        var slime = new Slime();
+        var items = slime.setObject().setArray("items");
+
+        billing.getUnusedLineItems(tenant.name()).forEach(item -> {
+            var itemCursor = items.addObject();
+            toSlime(itemCursor, item);
+        });
+
+        return slime;
     }
 
     // --------- INVOICE RENDERING ----------

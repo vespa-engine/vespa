@@ -27,8 +27,8 @@
             "id": "line-item-id",
             "description": "support",
             "amount": "42.00",
-            "plan": "some-plan",
-            "planName": "Plan with id: some-plan",
+            "plan": "paid",
+            "planName": "Plan with id: paid",
             "majorVersion": 0
           }
         ]
