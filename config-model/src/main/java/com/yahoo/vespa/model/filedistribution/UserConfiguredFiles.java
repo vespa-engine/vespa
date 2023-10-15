@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
@@ -37,14 +39,17 @@ public class UserConfiguredFiles implements Serializable {
     private final DeployLogger logger;
     private final UserConfiguredUrls userConfiguredUrls;
     private final String unknownConfigDefinition;
+    private final ApplicationPackage applicationPackage;
 
     public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger,
                                ModelContext.FeatureFlags featureFlags,
-                               UserConfiguredUrls userConfiguredUrls) {
+                               UserConfiguredUrls userConfiguredUrls,
+                               ApplicationPackage applicationPackage) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
         this.userConfiguredUrls = userConfiguredUrls;
         this.unknownConfigDefinition = featureFlags.unknownConfigDefinition();
+        this.applicationPackage = applicationPackage;
     }
 
     /**
@@ -156,8 +161,8 @@ public class UserConfiguredFiles implements Serializable {
             path = Path.fromString(builder.getValue());
         }
 
-        File file = path.toFile();
-        if (file.isDirectory() && (file.listFiles() == null || file.listFiles().length == 0))
+        ApplicationFile file = applicationPackage.getFile(path);
+        if (file.isDirectory() && (file.listFiles() == null || file.listFiles().isEmpty()))
             throw new IllegalArgumentException("Directory '" + path.getRelative() + "' is empty");
 
         FileReference reference = registeredFiles.get(path);
