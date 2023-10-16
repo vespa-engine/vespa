@@ -88,6 +88,7 @@ void
 ServiceLayerNode::subscribeToConfigs()
 {
     StorageNode::subscribeToConfigs();
+    // TODO consolidate this with existing config fetcher in StorageNode parent...
     _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
 }
 
@@ -162,7 +163,7 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
 {
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
 
-    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri);
+    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, *_comm_mgr_config);
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
     builder.add(std::make_unique<Bouncer>(compReg, _configUri));

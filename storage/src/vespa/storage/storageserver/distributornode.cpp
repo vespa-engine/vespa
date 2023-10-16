@@ -32,7 +32,7 @@ DistributorNode::DistributorNode(
       _timestamp_second_counter(0),
       _intra_second_pseudo_usec_counter(0),
       _num_distributor_stripes(num_distributor_stripes),
-      _retrievedCommunicationManager(std::move(communicationManager))
+      _retrievedCommunicationManager(std::move(communicationManager)) // may be nullptr
 {
     if (storage_chain_builder) {
         set_storage_chain_builder(std::move(storage_chain_builder));
@@ -88,7 +88,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     if (_retrievedCommunicationManager) {
         builder.add(std::move(_retrievedCommunicationManager));
     } else {
-        auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri);
+        auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri, *_comm_mgr_config);
         _communicationManager = communication_manager.get();
         builder.add(std::move(communication_manager));
     }
