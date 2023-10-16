@@ -77,18 +77,4 @@ public class BillingReportMaintainerTest {
         return cloudTenant(tenantName).billingReference();
     }
 
-    static Bill createBill(TenantName tenant) {
-        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
-        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-        var statusHistory = new Bill.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
-        return new Bill(
-                Bill.Id.of("bill-id-1"),
-                tenant,
-                statusHistory,
-                List.of(),
-                start,
-                end
-        );
-    }
-
 }
