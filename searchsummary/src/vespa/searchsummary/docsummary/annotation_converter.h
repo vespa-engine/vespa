@@ -33,6 +33,7 @@ public:
     AnnotationConverter(IJuniperConverter& juniper_converter);
     ~AnnotationConverter() override;
     void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    bool render_weighted_set_as_array() const override;
 };
 
 }

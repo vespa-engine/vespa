@@ -2,14 +2,11 @@
 
 #include "linguistics_tokens_converter.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/searchlib/memoryindex/field_inverter.h>
-#include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using document::StringFieldValue;
 using search::linguistics::TokenExtractor;
-using search::memoryindex::FieldInverter;
 using vespalib::Memory;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
@@ -17,14 +14,9 @@ using vespalib::slime::Inserter;
 
 namespace search::docsummary {
 
-namespace {
-
-vespalib::string dummy_field_name;
-
-}
-
-LinguisticsTokensConverter::LinguisticsTokensConverter()
+LinguisticsTokensConverter::LinguisticsTokensConverter(const TokenExtractor& token_extractor)
     : IStringFieldConverter(),
+      _token_extractor(token_extractor),
       _text()
 {
 }
@@ -56,8 +48,7 @@ LinguisticsTokensConverter::handle_indexing_terms(const StringFieldValue& value,
     using SpanTerm = TokenExtractor::SpanTerm;
     std::vector<SpanTerm> terms;
     auto span_trees = value.getSpanTrees();
-    TokenExtractor token_extractor(dummy_field_name, FieldInverter::max_word_len);
-    token_extractor.extract(terms, span_trees, _text, nullptr);
+    _token_extractor.extract(terms, span_trees, _text, nullptr);
     auto it = terms.begin();
     auto ite = terms.end();
     auto itn = it;
@@ -76,6 +67,12 @@ LinguisticsTokensConverter::convert(const StringFieldValue &input, vespalib::sli
 {
     _text = input.getValueRef();
     handle_indexing_terms(input, inserter);
+}
+
+bool
+LinguisticsTokensConverter::render_weighted_set_as_array() const
+{
+    return true;
 }
 
 }

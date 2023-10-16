@@ -227,6 +227,19 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    void linguistics_tokenizer_override() throws ParseException {
+        var schema = buildSchema("field foo type string { indexing: summary }",
+                joinLines("document-summary bar {",
+                        "    summary baz type string {",
+                        "        source: foo ",
+                        "        linguistics-tokens",
+                        "     }",
+                        "    from-disk",
+                        "}"));
+        assertOverride(schema, "baz", SummaryTransform.LINGUISTICS_TOKENS.getName(), "foo", "bar");
+    }
+
+    @Test
     void documentid_summary_transform_requires_disk_access() {
         assertFalse(SummaryTransform.DOCUMENT_ID.isInMemory());
     }

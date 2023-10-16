@@ -12,6 +12,7 @@ const vespalib::string documentid("documentid");
 const vespalib::string dynamic_teaser("dynamicteaser");
 const vespalib::string empty("empty");
 const vespalib::string geo_position("geopos");
+const vespalib::string linguistics_tokens("linguistics-tokens");
 const vespalib::string matched_attribute_elements_filter("matchedattributeelementsfilter");
 const vespalib::string matched_elements_filter("matchedelementsfilter");
 const vespalib::string positions("positions");

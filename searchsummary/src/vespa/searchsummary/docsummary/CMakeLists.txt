@@ -24,6 +24,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     juniper_query_adapter.cpp
     juniperproperties.cpp
     linguistics_tokens_converter.cpp
+    linguistics_tokens_dfw.cpp
     matched_elements_filter_dfw.cpp
     positionsdfw.cpp
     query_term_filter.cpp

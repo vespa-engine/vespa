@@ -9,6 +9,7 @@
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
 #include "juniperdfw.h"
+#include "linguistics_tokens_dfw.h"
 #include "matched_elements_filter_dfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
@@ -81,6 +82,12 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if (command == command::copy) {
         if ( ! source.empty() ) {
             fieldWriter = std::make_unique<CopyDFW>(source);
+        } else {
+            throw_missing_source(command);
+        }
+    } else if (command == command::linguistics_tokens) {
+        if (!source.empty()) {
+            fieldWriter = std::make_unique<LinguisticsTokensDFW>(source);
         } else {
             throw_missing_source(command);
         }

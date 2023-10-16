@@ -9,6 +9,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/util/linguisticsannotation.h>
+#include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/searchsummary/docsummary/linguistics_tokens_converter.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
@@ -25,6 +26,7 @@ using document::SpanTree;
 using document::StringFieldValue;
 using search::docsummary::LinguisticsTokensConverter;
 using search::linguistics::SPANTREE_NAME;
+using search::linguistics::TokenExtractor;
 using vespalib::SimpleBuffer;
 using vespalib::Slime;
 using vespalib::slime::JsonFormat;
@@ -59,6 +61,8 @@ protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
     document::FixedTypeRepo                 _fixed_repo;
+    vespalib::string                        _dummy_field_name;
+    TokenExtractor                          _token_extractor;
 
     LinguisticsTokensConverterTest();
     ~LinguisticsTokensConverterTest() override;
@@ -73,7 +77,9 @@ LinguisticsTokensConverterTest::LinguisticsTokensConverterTest()
     : testing::Test(),
       _repo(std::make_unique<DocumentTypeRepo>(get_document_types_config())),
       _document_type(_repo->getDocumentType("indexingdocument")),
-      _fixed_repo(*_repo, *_document_type)
+      _fixed_repo(*_repo, *_document_type),
+      _dummy_field_name(),
+      _token_extractor(_dummy_field_name, 100)
 {
 }
 
@@ -127,7 +133,7 @@ LinguisticsTokensConverterTest::make_exp_annotated_chinese_string_tokens()
 vespalib::string
 LinguisticsTokensConverterTest::convert(const StringFieldValue& fv)
 {
-    LinguisticsTokensConverter converter;
+    LinguisticsTokensConverter converter(_token_extractor);
     Slime slime;
     SlimeInserter inserter(slime);
     converter.convert(fv, inserter);
