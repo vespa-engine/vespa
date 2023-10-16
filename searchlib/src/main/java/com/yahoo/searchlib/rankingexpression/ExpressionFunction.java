@@ -212,7 +212,7 @@ public class ExpressionFunction {
     public String toString() {
         return "function '" + name + "'";
     }
-    
+
     /**
      * An instance of a serialization of this function, using a particular serialization context (by {@link
      * ExpressionFunction#expand})
