@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
@@ -14,10 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,7 +54,6 @@ public class BillingReportMaintainerTest {
         var bill2 = billingDb.createBill(t1, start, end, "exported");
 
         billingController.setPlan(t1, PlanRegistryMock.paidPlan.id(), false, true);
-
 
         billingController.exportBill(billingDb.readBill(bill2).get(), "FOO", cloudTenant(t1));
         var updates = maintainer.maintainInvoices();
