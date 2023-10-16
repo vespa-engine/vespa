@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <ostream>
 #include <span>
-#include <xxh3.h> // TODO factor out?
+#include <xxhash.h> // TODO factor out?
 
 namespace vespalib::fuzzy {
 
