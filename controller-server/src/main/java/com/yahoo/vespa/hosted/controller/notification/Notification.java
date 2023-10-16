@@ -2,11 +2,15 @@
 package com.yahoo.vespa.hosted.controller.notification;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Represents an event that we want to notify the tenant about. The message(s) should be short
@@ -78,33 +82,56 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
 
     public static class MailContent {
         private final String template;
-        private final Map<String, Object> values;
+        private final SortedMap<String, Object> values;
         private final String subject;
 
         private MailContent(Builder b) {
             template = Objects.requireNonNull(b.template);
-            values = Map.copyOf(b.values);
+            values = new TreeMap<>(b.values);
             subject = b.subject;
         }
 
         public String template() { return template; }
-        public Map<String, Object> values() { return Map.copyOf(values); }
+        public SortedMap<String, Object> values() { return Collections.unmodifiableSortedMap(values); }
         public Optional<String> subject() { return Optional.ofNullable(subject); }
 
         public static Builder fromTemplate(String template) { return new Builder(template); }
 
         public static class Builder {
             private final String template;
-            private final HashMap<String, Object> values = new HashMap<>();
+            private final Map<String, Object> values = new HashMap<>();
             private String subject;
 
             private Builder(String template) {
                 this.template = template;
             }
 
-            public Builder with(String name, Object value) { values.put(name, value); return this; }
+            public Builder with(String name, String value) { values.put(name, value); return this; }
+            public Builder with(String name, Collection<String> items) { values.put(name, List.copyOf(items)); return this; }
             public Builder subject(String s) { this.subject = s; return this; }
             public MailContent build() { return new MailContent(this); }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MailContent that = (MailContent) o;
+            return Objects.equals(template, that.template) && Objects.equals(values, that.values) && Objects.equals(subject, that.subject);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(template, values, subject);
+        }
+
+        @Override
+        public String toString() {
+            return "MailContent{" +
+                    "template='" + template + '\'' +
+                    ", values=" + values +
+                    ", subject='" + subject + '\'' +
+                    '}';
         }
     }
 

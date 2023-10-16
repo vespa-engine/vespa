@@ -71,7 +71,6 @@ public class NotificationsDb {
     /**
      * Add a notification with given source and type. If a notification with same source and type
      * already exists, it'll be replaced by this one instead.
-     * Email content is not persisted here. The email dispatcher is responsible for reliable delivery.
      */
     public void setNotification(NotificationSource source, Type type, Level level, List<String> messages,
                                 Optional<MailContent> mailContent) {

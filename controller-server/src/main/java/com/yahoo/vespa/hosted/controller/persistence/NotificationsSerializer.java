@@ -8,6 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * (de)serializes notifications for a tenant
@@ -60,6 +62,22 @@ public class NotificationsSerializer {
             notification.source().clusterId().ifPresent(clusterId -> notificationObject.setString(clusterIdField, clusterId.value()));
             notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.serialized()));
             notification.source().runNumber().ifPresent(runNumber -> notificationObject.setLong(runNumberField, runNumber));
+
+            notification.mailContent().ifPresent(mc -> {
+                notificationObject.setString("mail-template", mc.template());
+                mc.subject().ifPresent(s -> notificationObject.setString("mail-subject", s));
+                var mailParamsCursor = notificationObject.setObject("mail-params");
+                mc.values().forEach((key, value) -> {
+                    if (value instanceof String str) {
+                        mailParamsCursor.setString(key, str);
+                    } else if (value instanceof List<?> l) {
+                        var array = mailParamsCursor.setArray(key);
+                        l.forEach(elem -> array.addString((String) elem));
+                    } else {
+                        throw new ClassCastException("Unsupported param type: " + value.getClass());
+                    }
+                });
+            });
         }
 
         return slime;
@@ -92,7 +110,24 @@ public class NotificationsSerializer {
                         SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
                         SlimeUtils.optionalString(inspector.field(jobTypeField)).map(jobName -> JobType.ofSerialized(jobName)),
                         SlimeUtils.optionalLong(inspector.field(runNumberField))),
-                SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).toList());
+                SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).toList(),
+                mailContentFrom(inspector));
+    }
+
+    private Optional<Notification.MailContent> mailContentFrom(final Inspector inspector) {
+        return SlimeUtils.optionalString(inspector.field("mail-template")).map(template -> {
+            var builder = Notification.MailContent.fromTemplate(template);
+            SlimeUtils.optionalString(inspector.field("mail-subject")).ifPresent(builder::subject);
+            var paramsCursor = inspector.field("mail-params");
+            inspector.field("mail-params").traverse((ObjectTraverser) (name, insp) -> {
+                switch (insp.type()) {
+                    case STRING -> builder.with(name, insp.asString());
+                    case ARRAY -> builder.with(name, SlimeUtils.entriesStream(insp).map(Inspector::asString).toList());
+                    default -> throw new IllegalArgumentException("Unsupported param type: " + insp.type());
+                }
+            });
+            return builder.build();
+        });
     }
     
     private static String asString(Notification.Type type) {
