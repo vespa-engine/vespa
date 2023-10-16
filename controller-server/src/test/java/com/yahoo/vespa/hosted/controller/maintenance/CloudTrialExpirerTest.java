@@ -3,12 +3,16 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.jupiter.api.Test;
@@ -89,6 +93,33 @@ public class CloudTrialExpirerTest {
         assertPlan("active", "none");
     }
 
+    @Test
+    void queues_trial_notification_based_on_account_age() {
+        var clock = (ManualClock)tester.controller().clock();
+        var tenant = TenantName.from("trial-tenant");
+        ((InMemoryFlagSource) tester.controller().flagSource())
+                .withBooleanFlag(Flags.CLOUD_TRIAL_NOTIFICATIONS.id(), true);
+        registerTenant(tenant.value(), "trial", Duration.ZERO);
+        assertEquals(0.0, expirer.maintain());
+        assertEquals("Welcome to Vespa Cloud", lastAccountLevelNotificationTitle(tenant));
+
+        clock.advance(Duration.ofDays(7));
+        assertEquals(0.0, expirer.maintain());
+        assertEquals("How is your Vespa Cloud trial going?", lastAccountLevelNotificationTitle(tenant));
+
+        clock.advance(Duration.ofDays(5));
+        assertEquals(0.0, expirer.maintain());
+        assertEquals("Your Vespa Cloud trial expires in 2 days", lastAccountLevelNotificationTitle(tenant));
+
+        clock.advance(Duration.ofDays(1));
+        assertEquals(0.0, expirer.maintain());
+        assertEquals("Your Vespa Cloud trial expires tomorrow", lastAccountLevelNotificationTitle(tenant));
+
+        clock.advance(Duration.ofDays(2));
+        assertEquals(0.0, expirer.maintain());
+        assertEquals("Your Vespa Cloud trial has expired", lastAccountLevelNotificationTitle(tenant));
+    }
+
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {
         var name = TenantName.from(tenantName);
         tester.createTenant(tenantName, Tenant.Type.cloud);
@@ -109,6 +140,13 @@ public class CloudTrialExpirerTest {
 
     private void assertPlan(String tenant, String planId) {
         assertEquals(planId, tester.serviceRegistry().billingController().getPlan(TenantName.from(tenant)).value());
+    }
+
+    private String lastAccountLevelNotificationTitle(TenantName tenant) {
+        return tester.controller().notificationsDb()
+                .listNotifications(NotificationSource.from(tenant), false).stream()
+                .filter(n -> n.type() == Notification.Type.account).map(n -> n.messages().get(0))
+                .findFirst().orElseThrow();
     }
 
 }
