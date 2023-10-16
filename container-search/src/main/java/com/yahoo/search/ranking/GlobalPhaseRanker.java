@@ -50,9 +50,7 @@ public class GlobalPhaseRanker {
         return Optional.empty();
     }
 
-    public void rerankHits(Query query, Result result, String schema) {
-        var setup = globalPhaseSetupFor(query, schema).orElse(null);
-        if (setup == null) return;
+    static void rerankHitsImpl(GlobalPhaseSetup setup, Query query, Result result) {
         var mainSpec = setup.globalPhaseEvalSpec;
         var mainSrc = withQueryPrep(mainSpec.evalSource(), mainSpec.fromQuery(), query);
         int rerankCount = resolveRerankCount(setup, query);
@@ -68,6 +66,13 @@ public class GlobalPhaseRanker {
         hideImplicitMatchFeatures(result, setup.matchFeaturesToHide);
     }
 
+    public void rerankHits(Query query, Result result, String schema) {
+        var setup = globalPhaseSetupFor(query, schema);
+        if (setup.isPresent()) {
+            rerankHitsImpl(setup.get(), query, result);
+        }
+    }
+
     static Supplier<Evaluator> withQueryPrep(Supplier<Evaluator> evalSource, List<String> queryFeatures, Query query) {
         var prepared = PreparedInput.findFromQuery(query, queryFeatures);
         Supplier<Evaluator> supplier = () -> {
@@ -80,7 +85,7 @@ public class GlobalPhaseRanker {
         return supplier;
     }
 
-    private void hideImplicitMatchFeatures(Result result, Collection<String> namesToHide) {
+    private static void hideImplicitMatchFeatures(Result result, Collection<String> namesToHide) {
         if (namesToHide.size() == 0) return;
         var filter = new MatchFeatureFilter(namesToHide);
         for (var iterator = result.hits().deepIterator(); iterator.hasNext();) {
@@ -94,7 +99,7 @@ public class GlobalPhaseRanker {
                     if (newValue.fieldCount() == 0) {
                         hit.removeField("matchfeatures");
                     } else {
-                        hit.setField("matchfeatures", newValue);
+                        hit.setField("matchfeatures", new FeatureData(newValue));
                     }
                 }
             }
@@ -106,7 +111,7 @@ public class GlobalPhaseRanker {
                 .flatMap(evaluator -> evaluator.getGlobalPhaseSetup(query.getRanking().getProfile()));
     }
 
-    private int resolveRerankCount(GlobalPhaseSetup setup, Query query) {
+    private static int resolveRerankCount(GlobalPhaseSetup setup, Query query) {
         if (setup == null) {
             // there is no global-phase at all (ignore override)
             return 0;

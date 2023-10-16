@@ -30,7 +30,7 @@ record PreparedInput(String name, Tensor value) {
         for (String queryFeatureName : queryFeatures) {
             String needed = "query(" + queryFeatureName + ")";
             // searchers are recommended to place query features here:
-            var feature = rankFeatures.getTensor(queryFeatureName);
+            var feature = rankFeatures.getTensor(needed);
             if (feature.isPresent()) {
                 result.add(new PreparedInput(needed, feature.get()));
             } else {
@@ -38,6 +38,8 @@ record PreparedInput(String name, Tensor value) {
                 var objList = rankProps.get(queryFeatureName);
                 if (objList != null && objList.size() == 1 && objList.get(0) instanceof Tensor t) {
                     result.add(new PreparedInput(needed, t));
+                } else if (objList != null && objList.size() == 1 && objList.get(0) instanceof Double d) {
+                    result.add(new PreparedInput(needed, Tensor.from(d)));
                 } else {
                     throw new IllegalArgumentException("missing query feature: " + queryFeatureName);
                 }
