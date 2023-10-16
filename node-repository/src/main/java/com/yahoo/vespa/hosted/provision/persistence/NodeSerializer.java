@@ -283,7 +283,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(modelNameKey)),
                         SlimeUtils.optionalString(object.field(reservedToKey)).map(TenantName::from),
                         SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm),
-                        SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm), // TODO: change to provisionedForApplicationIdKey
+                        SlimeUtils.optionalString(object.field(provisionedForApplicationIdKey)).map(ApplicationId::fromSerializedForm),
                         SlimeUtils.optionalDuration(object.field(hostTTLKey)),
                         SlimeUtils.optionalInstant(object.field(hostEmptyAtKey)),
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),

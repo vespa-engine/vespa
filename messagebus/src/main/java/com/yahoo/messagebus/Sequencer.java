@@ -145,10 +145,10 @@ public class Sequencer implements MessageHandler, ReplyHandler {
     }
 
     private class SequencedSendTask implements Messenger.Task {
-        private final Message msg;
+        private Message msg;
         SequencedSendTask(Message msg) { this.msg = msg; }
-        @Override public void run() { sequencedSend(msg); }
-        @Override public void destroy() { }
+        @Override public void run() { sequencedSend(msg); msg = null; }
+        @Override public void destroy() { if (msg != null) msg.discard(); }
     }
 
     private void sendNextInSequence(long seqId) {

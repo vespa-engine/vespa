@@ -411,8 +411,8 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2023-11-01",
-            "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
+            List.of("hmusum"), "2023-09-25", "2023-11-15",
+            "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -434,7 +434,7 @@ public class Flags {
             List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
-            APPLICATION_ID);
+            TENANT_ID, APPLICATION_ID, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
