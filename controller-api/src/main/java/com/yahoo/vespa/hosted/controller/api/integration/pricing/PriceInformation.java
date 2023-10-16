@@ -6,10 +6,10 @@ import java.util.List;
 
 import static java.math.BigDecimal.ZERO;
 
-public record PriceInformation(String applicationName, BigDecimal listPriceWithSupport, BigDecimal volumeDiscount,
+public record PriceInformation(BigDecimal listPriceWithSupport, BigDecimal volumeDiscount,
                                BigDecimal committedAmountDiscount, BigDecimal enclaveDiscount, BigDecimal totalAmount) {
 
-    public static PriceInformation empty() { return new PriceInformation("default", ZERO, ZERO, ZERO, ZERO, ZERO); }
+    public static PriceInformation empty() { return new PriceInformation(ZERO, ZERO, ZERO, ZERO, ZERO); }
 
     public static PriceInformation sum(List<PriceInformation> priceInformationList) {
         var result = PriceInformation.empty();
@@ -19,8 +19,7 @@ public record PriceInformation(String applicationName, BigDecimal listPriceWithS
     }
 
     public PriceInformation add(PriceInformation priceInformation) {
-        return new PriceInformation("accumulated",
-                                    this.listPriceWithSupport().add(priceInformation.listPriceWithSupport()),
+        return new PriceInformation(this.listPriceWithSupport().add(priceInformation.listPriceWithSupport()),
                                     this.volumeDiscount().add(priceInformation.volumeDiscount()),
                                     this.committedAmountDiscount().add(priceInformation.committedAmountDiscount()),
                                     this.enclaveDiscount().add(priceInformation.enclaveDiscount()),
