@@ -181,6 +181,10 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.min());
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED.max());
 
+        addMetric(metrics, ControllerMetrics.MAIL_SENT.count());
+        addMetric(metrics, ControllerMetrics.MAIL_FAILED.count());
+        addMetric(metrics, ControllerMetrics.MAIL_THROTTLED.count());
+
         return metrics;
     }
 
