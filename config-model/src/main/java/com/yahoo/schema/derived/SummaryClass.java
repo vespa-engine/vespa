@@ -155,7 +155,8 @@ public class SummaryClass extends Derived {
                 summaryField.getTransform() == SummaryTransform.GEOPOS ||
                 summaryField.getTransform() == SummaryTransform.POSITIONS ||
                 summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
-                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
+                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER ||
+                summaryField.getTransform() == SummaryTransform.LINGUISTICS_TOKENS)
         {
             return summaryField.getSingleSource();
         } else if (summaryField.getTransform().isDynamic()) {

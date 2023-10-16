@@ -109,4 +109,10 @@ AnnotationConverter::convert(const StringFieldValue &input, vespalib::slime::Ins
     _juniper_converter.convert(_out.str(), inserter);
 }
 
+bool
+AnnotationConverter::render_weighted_set_as_array() const
+{
+    return false;
+}
+
 }

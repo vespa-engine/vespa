@@ -285,6 +285,7 @@ SlimeFiller::visit(const WeightedSetFieldValue& value)
     if (empty_or_empty_after_filtering(value)) {
         return;
     }
+    bool render_as_array = _string_converter != nullptr && _string_converter->render_weighted_set_as_array();
     Cursor& a = _inserter.insertArray();
     Symbol isym = a.resolve("item");
     Symbol wsym = a.resolve("weight");
@@ -305,12 +306,18 @@ SlimeFiller::visit(const WeightedSetFieldValue& value)
             }
             ++matching_elements_itr;
         }
-        Cursor& o = a.addObject();
-        ObjectSymbolInserter ki(o, isym);
-        SlimeFiller conv(ki);
-        entry.first->accept(conv);
-        int weight = static_cast<const IntFieldValue&>(*entry.second).getValue();
-        o.setLong(wsym, weight);
+        if (render_as_array) {
+            ArrayInserter ai(a);
+            SlimeFiller conv(ai, _string_converter, SlimeFillerFilter::all());
+            entry.first->accept(conv);
+        } else {
+            Cursor& o = a.addObject();
+            ObjectSymbolInserter ki(o, isym);
+            SlimeFiller conv(ki);
+            entry.first->accept(conv);
+            int weight = static_cast<const IntFieldValue&>(*entry.second).getValue();
+            o.setLong(wsym, weight);
+        }
         ++idx;
     }
 }

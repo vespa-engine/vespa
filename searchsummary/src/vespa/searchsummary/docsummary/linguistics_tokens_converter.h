@@ -4,6 +4,8 @@
 
 #include "i_string_field_converter.h"
 
+namespace search::linguistics { class TokenExtractor; }
+
 namespace search::docsummary {
 
 /*
@@ -13,16 +15,18 @@ namespace search::docsummary {
  */
 class LinguisticsTokensConverter : public IStringFieldConverter
 {
-    vespalib::stringref    _text;
+    const linguistics::TokenExtractor& _token_extractor;
+    vespalib::stringref                _text;
 
     template <typename ForwardIt>
     void handle_alternative_index_terms(ForwardIt it, ForwardIt last, vespalib::slime::Inserter& inserter);
     void handle_index_term(vespalib::stringref word, vespalib::slime::Inserter& inserter);
     void handle_indexing_terms(const document::StringFieldValue& value, vespalib::slime::Inserter& inserter);
 public:
-    LinguisticsTokensConverter();
+    LinguisticsTokensConverter(const linguistics::TokenExtractor& token_extractor);
     ~LinguisticsTokensConverter() override;
     void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    bool render_weighted_set_as_array() const override;
 };
 
 }

@@ -18,6 +18,7 @@ class ParsedSummaryField extends ParsedBlock {
     private boolean isMEO = false;
     private boolean isFull = false;
     private boolean isBold = false;
+    private boolean isLinguisticsTokens = false;
     private final List<String> sources = new ArrayList<>();
     private final List<String> destinations = new ArrayList<>();
 
@@ -37,6 +38,7 @@ class ParsedSummaryField extends ParsedBlock {
     boolean getDynamic() { return isDyn; }
     boolean getFull() { return isFull; }
     boolean getMatchedElementsOnly() { return isMEO; }
+    boolean getLinguisticsTokens() { return isLinguisticsTokens; }
 
     void addDestination(String dst) { destinations.add(dst); }
     void addSource(String src) { sources.add(src); }
@@ -44,6 +46,7 @@ class ParsedSummaryField extends ParsedBlock {
     void setDynamic() { this.isDyn = true; }
     void setFull() { this.isFull = true; }
     void setMatchedElementsOnly() { this.isMEO = true; }
+    void setLinguisticsTokens() { this.isLinguisticsTokens = true; }
     void setType(ParsedType value) {
         verifyThat(type == null, "Cannot change type from ", type, "to", value);
         this.type = value;

@@ -132,6 +132,7 @@ public:
     }
     ~SnippetModifierJuniperConverter() override = default;
     void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    bool render_weighted_set_as_array() const override;
 };
 
 void
@@ -145,6 +146,12 @@ SnippetModifierJuniperConverter::convert(const document::StringFieldValue &input
     } else {
         _juniper_converter.convert(input.getValueRef(), inserter);
     }
+}
+
+bool
+SnippetModifierJuniperConverter::render_weighted_set_as_array() const
+{
+    return false;
 }
 
 /**
