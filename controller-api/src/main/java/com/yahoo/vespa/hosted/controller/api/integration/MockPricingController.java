@@ -34,8 +34,7 @@ public class MockPricingController implements PricingController {
         BigDecimal appTotalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount);
 
         List<PriceInformation> appPrices = applicationResources.stream()
-                .map(appResources -> new PriceInformation(appResources.applicationName(),
-                                                          listPriceWithSupport,
+                .map(appResources -> new PriceInformation(listPriceWithSupport,
                                                           volumeDiscount,
                                                           ZERO,
                                                           enclaveDiscount,
@@ -45,7 +44,7 @@ public class MockPricingController implements PricingController {
         PriceInformation sum = PriceInformation.sum(appPrices);
         var committedAmountDiscount = new BigDecimal("-1.23");
         var totalAmount = sum.totalAmount().add(committedAmountDiscount);
-        var totalPrice = new PriceInformation("total", ZERO, ZERO, committedAmountDiscount, ZERO, totalAmount);
+        var totalPrice = new PriceInformation(ZERO, ZERO, committedAmountDiscount, ZERO, totalAmount);
 
         return new Prices(appPrices, totalPrice);
     }

@@ -26,7 +26,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                             {
                                               "applications": [
                                                 {
-                                                  "name": "app1",
                                                   "priceInfo": [
                                                     {"description": "Basic support unit price", "amount": "2240.00"},
                                                     {"description": "Volume discount", "amount": "-5.64"}
@@ -49,7 +48,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                             {
                                               "applications": [
                                                 {
-                                                  "name": "app1",
                                                   "priceInfo": [
                                                     {"description": "Basic support unit price", "amount": "2240.00"},
                                                     {"description": "Enclave", "amount": "-15.12"},
@@ -73,7 +71,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                             {
                                               "applications": [
                                                 {
-                                                  "name": "app1",
                                                   "priceInfo": [
                                                     {"description": "Commercial support unit price", "amount": "3200.00"},
                                                     {"description": "Enclave", "amount": "-15.12"},
@@ -97,7 +94,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                             {
                                               "applications": [
                                                 {
-                                                  "name": "app1",
                                                   "priceInfo": [
                                                     {"description": "Commercial support unit price", "amount": "2000.00"},
                                                     {"description": "Enclave", "amount": "-15.12"},
@@ -105,7 +101,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                                   ]
                                                 },
                                                 {
-                                                  "name": "app2",
                                                   "priceInfo": [
                                                     {"description": "Commercial support unit price", "amount": "2000.00"},
                                                     {"description": "Enclave", "amount": "-15.12"},
@@ -160,7 +155,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("name=app1,vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
     }
 
@@ -170,7 +165,7 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1AppEnclave(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("name=app1,enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
     }
 
@@ -179,8 +174,8 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
      * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU
      */
     String urlEncodedPriceInformation2AppsEnclave(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("name=app1,enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
-                "&application=" + URLEncoder.encode("name=app2,enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
+                "&application=" + URLEncoder.encode("enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=0";
     }
 

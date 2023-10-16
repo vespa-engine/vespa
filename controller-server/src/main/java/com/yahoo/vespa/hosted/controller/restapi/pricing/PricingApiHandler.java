@@ -152,7 +152,6 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private ApplicationResources applicationResources(String appResourcesString) {
         List<String> elements = Arrays.stream(appResourcesString.split(",")).toList();
 
-        var applicationName = "default";
         var vcpu = ZERO;
         var memoryGb = ZERO;
         var diskGb = ZERO;
@@ -165,8 +164,6 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         for (var element : keysAndValues(elements)) {
             var value = element.getSecond();
             switch (element.getFirst().toLowerCase()) {
-                case "name" -> applicationName = value;
-
                 case "vcpu" -> vcpu = new BigDecimal(value);
                 case "memorygb" -> memoryGb = new BigDecimal(value);
                 case "diskgb" -> diskGb = new BigDecimal(value);
@@ -181,7 +178,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
             }
         }
 
-        return new ApplicationResources(applicationName, vcpu, memoryGb, diskGb, gpuMemoryGb,
+        return new ApplicationResources(vcpu, memoryGb, diskGb, gpuMemoryGb,
                                         enclaveVcpu, enclaveMemoryGb, enclaveDiskGb, enclaveGpuMemoryGb);
     }
 
@@ -218,12 +215,10 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private static void applicationPrices(Cursor applicationPricesArray, List<PriceInformation> applicationPrices, PriceParameters priceParameters) {
         applicationPrices.forEach(priceInformation -> {
             var element = applicationPricesArray.addObject();
-            element.setString("name", priceInformation.applicationName());
             var array = element.setArray("priceInfo");
             addItem(array, supportLevelDescription(priceParameters), priceInformation.listPriceWithSupport());
             addItem(array, "Enclave", priceInformation.enclaveDiscount());
             addItem(array, "Volume discount", priceInformation.volumeDiscount());
-
         });
     }
 

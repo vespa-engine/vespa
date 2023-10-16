@@ -5,10 +5,4 @@ import java.util.List;
 
 public record Prices(List<PriceInformation> priceInformationApplications, PriceInformation totalPriceInformation) {
 
-    public PriceInformation get(String applicationName) {
-        return priceInformationApplications.stream()
-                .filter(priceInformation -> priceInformation.applicationName().equals(applicationName))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Unknown application name " + applicationName));
-    }
-
 }
