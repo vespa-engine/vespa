@@ -24,8 +24,7 @@ fi
 build_cpp() {
     cat /proc/cpuinfo | grep "model name" | head -1
     cat /proc/cpuinfo | grep "flags" | head -1
-    # TODO This will only build for x86_64 architecture, and is used for pull request builds.
-    cmake3 -DVESPA_UNPRIVILEGED=no -DDEFAULT_VESPA_CPU_ARCH_FLAGS="-march=skylake" $1
+    cmake3 -DVESPA_UNPRIVILEGED=no $1
     time make -j ${NUM_THREADS}
     time ctest3 --output-on-failure -j ${NUM_THREADS}
     ccache --show-stats
