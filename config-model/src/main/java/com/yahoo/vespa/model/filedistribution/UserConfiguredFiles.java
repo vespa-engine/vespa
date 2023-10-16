@@ -69,7 +69,6 @@ public class UserConfiguredFiles implements Serializable {
         if (configDefinition == null) {
             String message = "Unable to find config definition " + key + ". Will not register files for file distribution for this config";
             switch (unknownConfigDefinition) {
-                case "log" -> logger.logApplicationPackage(Level.INFO, message);
                 case "warning" -> logger.logApplicationPackage(Level.WARNING, message);
                 case "fail" -> throw new IllegalArgumentException("Unable to find config definition for " + key);
             }
