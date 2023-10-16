@@ -229,7 +229,7 @@ public class TenantSerializerTest {
                         .withCode("3510")
                         .withRegion("Viken"))
                 .withBilling(TenantBilling.empty()
-                        .withContact(TenantContact.from("Thomas The Tank Engine", new Email("ceo@mycomp.any", true), "NA"))
+                        .withContact(TenantContact.from("Thomas The Tank Engine", new Email("ceo@mycomp.any", false), "NA"))
                         .withAddress(TenantAddress.empty()
                                 .withCity("Suddery")
                                 .withCountry("Sodor")

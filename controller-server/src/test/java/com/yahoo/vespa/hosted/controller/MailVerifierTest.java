@@ -3,12 +3,15 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.MailVerifier;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,6 +101,31 @@ class MailVerifierTest {
         assertTrue(resentVerification.isPresent());
         assertTrue(tester.curator().getPendingMailVerification(pendingMailVerification.getVerificationCode()).isEmpty());
         assertTrue(tester.curator().getPendingMailVerification(resentVerification.get().getVerificationCode()).isPresent());
+    }
+
+    @Test
+    public void test_billing_mail_verification() {
+        var billingMail = "billing@foo.bar";
+        tester.controller().tenants().lockOrThrow(tenantName, LockedTenant.Cloud.class, lockedTenant -> {
+            var tenantBilling = TenantBilling.empty().withContact(TenantContact.empty().withEmail(new Email(billingMail, false)));
+            lockedTenant = lockedTenant.withInfo(lockedTenant.get().info().withBilling(tenantBilling));
+            tester.controller().tenants().store(lockedTenant);
+        });
+        mailVerifier.sendMailVerification(tenantName, billingMail, PendingMailVerification.MailType.BILLING);
+
+        // Assert written verification data
+        var writtenMailVerification = tester.curator().listPendingMailVerifications().get(0);
+        assertEquals(PendingMailVerification.MailType.BILLING, writtenMailVerification.getMailType());
+        assertEquals(tenantName, writtenMailVerification.getTenantName());
+        assertEquals(tester.clock().instant().plus(Duration.ofDays(7)), writtenMailVerification.getVerificationDeadline());
+        assertEquals(billingMail, writtenMailVerification.getMailAddress());
+
+        // Assert mail is verified
+        mailVerifier.verifyMail(writtenMailVerification.getVerificationCode());
+        assertTrue(tester.curator().listPendingMailVerifications().isEmpty());
+        var tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
+        var expectedBillingContact = TenantContact.empty().withEmail(new Email(billingMail, true));
+        assertEquals(expectedBillingContact, tenant.info().billingContact().contact());
     }
 
 }

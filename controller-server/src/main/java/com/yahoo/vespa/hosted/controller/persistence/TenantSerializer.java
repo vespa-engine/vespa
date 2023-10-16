@@ -282,10 +282,13 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        //TODO: Remove validity check once emailVerified has been written for all tenants
+        var emailVerified = billingObject.field("emailVerified").valid() ?
+                billingObject.field("emailVerified").asBool() : true;
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
-                        new Email(billingObject.field("email").asString(), true),
+                        new Email(billingObject.field("email").asString(), emailVerified),
                         billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
@@ -344,11 +347,12 @@ public class TenantSerializer {
     private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
-        Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
-        addressCursor.setString("phone", billingContact.contact().phone());
-        toSlime(billingContact.address(), addressCursor);
+        Cursor billingCursor = parentCursor.setObject("billingContact");
+        billingCursor.setString("name", billingContact.contact().name());
+        billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
+        billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
+        billingCursor.setString("phone", billingContact.contact().phone());
+        toSlime(billingContact.address(), billingCursor);
     }
 
     private void toSlime(List<TenantSecretStore> tenantSecretStores, Cursor parentCursor) {
