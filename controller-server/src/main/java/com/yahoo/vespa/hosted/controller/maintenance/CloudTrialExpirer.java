@@ -3,24 +3,40 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
+import com.yahoo.vespa.hosted.controller.persistence.TrialNotifications;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRED;
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRES_IMMEDIATELY;
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRES_SOON;
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.MID_CHECK_IN;
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.SIGNED_UP;
+import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.UNKNOWN;
 
 /**
  * Expires unused tenants from Vespa Cloud.
  * <p>
- * TODO: Should support sending notifications some time before the various expiry events happen.
  *
  * @author ogronnesby
  */
@@ -30,17 +46,20 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     private static final Duration nonePlanAfter = Duration.ofDays(14);
     private static final Duration tombstoneAfter = Duration.ofDays(91);
     private final ListFlag<String> extendedTrialTenants;
+    private final BooleanFlag cloudTrialNotificationEnabled;
 
     public CloudTrialExpirer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.allOf(SystemName::isPublic));
         this.extendedTrialTenants = PermanentFlags.EXTENDED_TRIAL_TENANTS.bindTo(controller().flagSource());
+        this.cloudTrialNotificationEnabled = Flags.CLOUD_TRIAL_NOTIFICATIONS.bindTo(controller().flagSource());
     }
 
     @Override
     protected double maintain() {
         var a = tombstoneNonePlanTenants();
         var b = moveInactiveTenantsToNonePlan();
-        return (a ? 0.0 : -0.5) + (b ? 0.0 : -0.5);
+        var c = notifyTenants();
+        return (a ? 0.0 : -(1D/3)) + (b ? 0.0 : -(1D/3) + (c ? 0.0 : -(1D/3)));
     }
 
     private boolean moveInactiveTenantsToNonePlan() {
@@ -75,6 +94,87 @@ public class CloudTrialExpirer extends ControllerMaintainer {
         }
 
         return tombstoneTenants(idleOldPlanTenants);
+    }
+    private boolean notifyTenants() {
+        try {
+            var currentStatus = controller().curator().readTrialNotifications()
+                .map(TrialNotifications::tenants).orElse(List.of());
+            log.fine(() -> "Current: %s".formatted(currentStatus));
+            var currentStatusByTenant = new HashMap<TenantName, TrialNotifications.Status>();
+            currentStatus.forEach(status -> currentStatusByTenant.put(status.tenant(), status));
+            var updatedStatus = new ArrayList<TrialNotifications.Status>();
+            var now = controller().clock().instant();
+
+            for (var tenant : controller().tenants().asList()) {
+
+                var status = currentStatusByTenant.get(tenant.name());
+                var state = status == null ? UNKNOWN : status.state();
+                var plan = controller().serviceRegistry().billingController().getPlan(tenant.name()).value();
+                var ageInDays = Duration.between(tenant.createdAt(), now).toDays();
+
+                // TODO Replace stubs with proper email content stored in templates.
+
+                var enabled = cloudTrialNotificationEnabled.with(FetchVector.Dimension.TENANT_ID, tenant.name().value()).value();
+                if (!enabled) {
+                    updatedStatus.add(status);
+                } else if (!List.of("none", "trial").contains(plan)) {
+                    // Ignore tenants that are on a paid plan and skip from inclusion in updated data structure
+                } else if (status == null && "trial".equals(plan) && ageInDays <= 1) {
+                    updatedStatus.add(updatedStatus(tenant, now, SIGNED_UP));
+                    queueNotification(tenant, "Welcome to Vespa Cloud", "Welcome to Vespa Cloud",
+                            "Welcome to Vespa Cloud! We hope you will enjoy your trial. " +
+                                    "Please reach out to us if you have any questions or feedback.");
+                } else if ("none".equals(plan) && !List.of(EXPIRED).contains(state)) {
+                    updatedStatus.add(updatedStatus(tenant, now, EXPIRED));
+                    queueNotification(tenant, "Your Vespa Cloud trial has expired", "Your Vespa Cloud trial has expired",
+                            "Your Vespa Cloud trial has expired. " +
+                                    "Please reach out to us if you have any questions or feedback.");
+                } else if ("trial".equals(plan) && ageInDays >= 13
+                        && !List.of(EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
+                    updatedStatus.add(updatedStatus(tenant, now, EXPIRES_IMMEDIATELY));
+                    queueNotification(tenant, "Your Vespa Cloud trial expires tomorrow", "Your Vespa Cloud trial expires tomorrow",
+                            "Your Vespa Cloud trial expires tomorrow. " +
+                                    "Please reach out to us if you have any questions or feedback.");
+                } else if ("trial".equals(plan) && ageInDays >= 12
+                        && !List.of(EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
+                    updatedStatus.add(updatedStatus(tenant, now, EXPIRES_SOON));
+                    queueNotification(tenant, "Your Vespa Cloud trial expires in 2 days", "Your Vespa Cloud trial expires in 2 days",
+                            "Your Vespa Cloud trial expires in 2 days. " +
+                                    "Please reach out to us if you have any questions or feedback.");
+                } else if ("trial".equals(plan) && ageInDays >= 7
+                        && !List.of(MID_CHECK_IN, EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
+                    updatedStatus.add(updatedStatus(tenant, now, MID_CHECK_IN));
+                    queueNotification(tenant, "How is your Vespa Cloud trial going?", "How is your Vespa Cloud trial going?",
+                            "How is your Vespa Cloud trial going? " +
+                                    "Please reach out to us if you have any questions or feedback.");
+                } else {
+                    updatedStatus.add(status);
+                }
+            }
+            log.fine(() -> "Updated: %s".formatted(updatedStatus));
+            controller().curator().writeTrialNotifications(new TrialNotifications(updatedStatus));
+            return true;
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to process trial notifications", e);
+            return false;
+        }
+    }
+
+    private void queueNotification(Tenant tenant, String consoleMsg, String emailSubject, String emailMsg) {
+        var mail = Optional.of(Notification.MailContent.fromTemplate("default-mail-content")
+                                       .subject(emailSubject)
+                                       .with("mailMessageTemplate", "cloud-trial-notification")
+                                       .with("cloudTrialMessage", emailMsg)
+                                       .build());
+        var source = NotificationSource.from(tenant.name());
+        // Remove previous notification to ensure new notification is sent by email
+        controller().notificationsDb().removeNotification(source, Notification.Type.account);
+        controller().notificationsDb().setNotification(
+                source, Notification.Type.account, Notification.Level.info, List.of(consoleMsg), mail);
+    }
+
+    private static TrialNotifications.Status updatedStatus(Tenant t, Instant i, TrialNotifications.State s) {
+        return new TrialNotifications.Status(t.name(), s, i);
     }
 
     private boolean tenantIsCloudTenant(Tenant tenant) {

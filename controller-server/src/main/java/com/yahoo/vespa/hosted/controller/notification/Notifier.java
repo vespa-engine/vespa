@@ -72,6 +72,7 @@ public class Notifier {
         registerTemplate(repo, "mail");
         registerTemplate(repo, "default-mail-content");
         registerTemplate(repo, "notification-message");
+        registerTemplate(repo, "cloud-trial-notification");
         return v;
     }
 

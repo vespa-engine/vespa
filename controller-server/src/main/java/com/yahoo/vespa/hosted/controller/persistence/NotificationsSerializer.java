@@ -103,6 +103,7 @@ public class NotificationsSerializer {
             case deployment -> "deployment";
             case feedBlock -> "feedBlock";
             case reindex -> "reindex";
+            case account -> "account";
         };
     }
 
@@ -114,6 +115,7 @@ public class NotificationsSerializer {
             case "deployment" -> Notification.Type.deployment;
             case "feedBlock" -> Notification.Type.feedBlock;
             case "reindex" -> Notification.Type.reindex;
+            case "account" -> Notification.Type.account;
             default -> throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
         };
     }

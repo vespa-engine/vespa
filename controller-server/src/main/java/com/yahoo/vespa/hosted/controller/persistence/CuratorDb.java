@@ -111,6 +111,7 @@ public class CuratorDb {
     private static final Path mailVerificationRoot = root.append("mailVerification");
     private static final Path dataPlaneTokenRoot = root.append("dataplaneTokens");
     private static final Path certificatePoolRoot = root.append("certificatePool");
+    private static final Path trialNotificationsRoot = root.append("trialNotifications");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -814,6 +815,16 @@ public class CuratorDb {
 
     public List<UnassignedCertificate> readUnassignedCertificates() {
         return curator.getChildren(certificatePoolRoot).stream().flatMap(id -> readUnassignedCertificate(id).stream()).toList();
+    }
+
+    // -------------- Cloud trial notification --------------------------------
+
+    public void writeTrialNotifications(TrialNotifications tn) {
+        curator.set(trialNotificationsRoot, asJson(tn.toSlime()));
+    }
+
+    public Optional<TrialNotifications> readTrialNotifications() {
+        return readSlime(trialNotificationsRoot).map(TrialNotifications::fromSlime);
     }
 
     // -------------- Paths ---------------------------------------------------

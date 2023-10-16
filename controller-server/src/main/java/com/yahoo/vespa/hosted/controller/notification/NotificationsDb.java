@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
+import com.yahoo.vespa.hosted.controller.notification.Notification.MailContent;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -63,18 +64,24 @@ public class NotificationsDb {
         setNotification(source, type, level, List.of(message));
     }
 
+    public void setNotification(NotificationSource source, Type type, Level level, List<String> messages) {
+        setNotification(source, type, level, messages, Optional.empty());
+    }
+
     /**
      * Add a notification with given source and type. If a notification with same source and type
-     * already exists, it'll be replaced by this one instead
+     * already exists, it'll be replaced by this one instead.
+     * Email content is not persisted here. The email dispatcher is responsible for reliable delivery.
      */
-    public void setNotification(NotificationSource source, Type type, Level level, List<String> messages) {
+    public void setNotification(NotificationSource source, Type type, Level level, List<String> messages,
+                                Optional<MailContent> mailContent) {
         Optional<Notification> changed = Optional.empty();
         try (Mutex lock = curatorDb.lockNotifications(source.tenant())) {
             var existingNotifications = curatorDb.readNotifications(source.tenant());
             List<Notification> notifications = existingNotifications.stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
                     .collect(Collectors.toCollection(ArrayList::new));
-            var notification = new Notification(clock.instant(), type, level, source, messages);
+            var notification = new Notification(clock.instant(), type, level, source, messages, mailContent);
             if (!notificationExists(notification, existingNotifications, false)) {
                 changed = Optional.of(notification);
             }
