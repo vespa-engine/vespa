@@ -9,7 +9,7 @@
 namespace search::docsummary {
 
 /*
- * class for writing annotated string field values from document as
+ * Class for writing annotated string field values from document as
  * arrays containing the indexing terms.
  */
 class LinguisticsTokensDFW : public DocsumFieldWriter
