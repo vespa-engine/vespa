@@ -1103,7 +1103,7 @@ public class NodesV2ApiTest {
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
                (reservedTo.map(tenantName -> ", \"reservedTo\":\"" + tenantName.value() + "\"").orElse("")) +
-               (exclusiveTo.map(appId -> ", \"exclusiveTo\":\"" + appId.serializedForm() + "\"").orElse("")) +
+               (exclusiveTo.map(appId -> ", \"provisionedFor\":\"" + appId.serializedForm() + "\"").orElse("")) +
                (switchHostname.map(s -> ", \"switchHostname\":\"" + s + "\"").orElse("")) +
                (additionalIpAddresses.isEmpty() ? "" : ", \"additionalIpAddresses\":[\"" + String.join("\",\"", additionalIpAddresses) + "\"]") +
                (additionalHostnames.isEmpty() ? "" : ", \"additionalHostnames\":[\"" + String.join("\",\"", additionalHostnames) + "\"]") +
