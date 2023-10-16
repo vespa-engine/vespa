@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -43,10 +46,12 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     private static final Duration nonePlanAfter = Duration.ofDays(14);
     private static final Duration tombstoneAfter = Duration.ofDays(91);
     private final ListFlag<String> extendedTrialTenants;
+    private final BooleanFlag cloudTrialNotificationEnabled;
 
     public CloudTrialExpirer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.allOf(SystemName::isPublic));
         this.extendedTrialTenants = PermanentFlags.EXTENDED_TRIAL_TENANTS.bindTo(controller().flagSource());
+        this.cloudTrialNotificationEnabled = Flags.CLOUD_TRIAL_NOTIFICATIONS.bindTo(controller().flagSource());
     }
 
     @Override
@@ -92,10 +97,8 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     }
     private boolean notifyTenants() {
         try {
-            // TODO Introduce tenant specific feature flag
-
             var currentStatus = controller().curator().readTrialNotifications()
-                    .map(TrialNotifications::tenants).orElse(List.of());
+                .map(TrialNotifications::tenants).orElse(List.of());
             log.fine(() -> "Current: %s".formatted(currentStatus));
             var currentStatusByTenant = new HashMap<TenantName, TrialNotifications.Status>();
             currentStatus.forEach(status -> currentStatusByTenant.put(status.tenant(), status));
@@ -103,13 +106,18 @@ public class CloudTrialExpirer extends ControllerMaintainer {
             var now = controller().clock().instant();
 
             for (var tenant : controller().tenants().asList()) {
+
                 var status = currentStatusByTenant.get(tenant.name());
                 var state = status == null ? UNKNOWN : status.state();
                 var plan = controller().serviceRegistry().billingController().getPlan(tenant.name()).value();
                 var ageInDays = Duration.between(tenant.createdAt(), now).toDays();
 
                 // TODO Replace stubs with proper email content stored in templates.
-                if (!List.of("none", "trial").contains(plan)) {
+
+                var enabled = cloudTrialNotificationEnabled.with(FetchVector.Dimension.TENANT_ID, tenant.name().value()).value();
+                if (!enabled) {
+                    updatedStatus.add(status);
+                } else if (!List.of("none", "trial").contains(plan)) {
                     // Ignore tenants that are on a paid plan and skip from inclusion in updated data structure
                 } else if (status == null && "trial".equals(plan) && ageInDays <= 1) {
                     updatedStatus.add(updatedStatus(tenant, now, SIGNED_UP));
