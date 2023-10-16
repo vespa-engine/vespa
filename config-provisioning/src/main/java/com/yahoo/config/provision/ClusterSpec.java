@@ -2,8 +2,6 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,19 +22,21 @@ public final class ClusterSpec {
 
     private final Version vespaVersion;
     private final boolean exclusive;
+    private final boolean provisionForApplication;
     private final Optional<Id> combinedId;
     private final Optional<DockerImage> dockerImageRepo;
     private final ZoneEndpoint zoneEndpoint;
     private final boolean stateful;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo,
+                        boolean provisionForApplication, Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo,
                         ZoneEndpoint zoneEndpoint, boolean stateful) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "vespaVersion cannot be null");
         this.exclusive = exclusive;
+        this.provisionForApplication = provisionForApplication;
         if (type == Type.combined) {
             if (combinedId.isEmpty()) throw new IllegalArgumentException("combinedId must be set for cluster of type " + type);
         } else {
@@ -85,21 +85,22 @@ public final class ClusterSpec {
      */
     public boolean isExclusive() { return exclusive; }
 
+    /** Returns whether the physical hosts must be provisioned specifically for this application. */
+    public boolean provisionForApplication() { return provisionForApplication; }
+
     /** Returns whether this cluster has state */
     public boolean isStateful() { return stateful; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, provisionForApplication, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, provisionForApplication, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
-    // TODO: Remove after July 2023
-    @Deprecated
-    public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+    public ClusterSpec withProvisionForApplication(boolean provisionForApplication) {
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, provisionForApplication, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -121,6 +122,7 @@ public final class ClusterSpec {
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
+        private boolean provisionForApplication = false;
         private Optional<Id> combinedId = Optional.empty();
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
@@ -132,7 +134,7 @@ public final class ClusterSpec {
         }
 
         public ClusterSpec build() {
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, provisionForApplication, combinedId, dockerImageRepo, zoneEndpoint, stateful);
         }
 
         public Builder group(Group groupId) {
@@ -152,6 +154,11 @@ public final class ClusterSpec {
 
         public Builder exclusive(boolean exclusive) {
             this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder provisionForApplication(boolean provisionForApplication) {
+            this.provisionForApplication = provisionForApplication;
             return this;
         }
 
@@ -188,6 +195,7 @@ public final class ClusterSpec {
         if (o == null || getClass() != o.getClass()) return false;
         ClusterSpec that = (ClusterSpec) o;
         return exclusive == that.exclusive &&
+               provisionForApplication == that.provisionForApplication &&
                stateful == that.stateful &&
                type == that.type &&
                id.equals(that.id) &&
@@ -200,7 +208,7 @@ public final class ClusterSpec {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return Objects.hash(type, id, groupId, vespaVersion, exclusive, provisionForApplication, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /**
