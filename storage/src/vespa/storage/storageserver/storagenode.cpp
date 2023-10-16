@@ -112,18 +112,21 @@ void
 StorageNode::subscribeToConfigs()
 {
     _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
-    _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<BucketspacesConfig>(_configUri.getConfigId(), this);
+    _configFetcher->subscribe<CommunicationManagerConfig>(_configUri.getConfigId(), this);
+    _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
+    _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
+    _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
 
     _configFetcher->start();
 
+    // All the below config instances were synchronously populated as part of start()ing the config fetcher
     std::lock_guard configLockGuard(_configLock);
-    _serverConfig = std::move(_newServerConfig);
-    _clusterConfig = std::move(_newClusterConfig);
-    _distributionConfig = std::move(_newDistributionConfig);
     _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
+    _clusterConfig      = std::move(_newClusterConfig);
+    _comm_mgr_config    = std::move(_new_comm_mgr_config);
+    _distributionConfig = std::move(_newDistributionConfig);
+    _serverConfig       = std::move(_newServerConfig);
 }
 
 void
@@ -324,6 +327,10 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
         _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
     }
+    if (_new_comm_mgr_config) {
+        _comm_mgr_config = std::move(_new_comm_mgr_config);
+        _communicationManager->on_configure(*_comm_mgr_config);
+    }
 }
 
 void
@@ -499,6 +506,19 @@ StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
         _newBucketSpacesConfig = std::move(config);
     }
     if (_bucketSpacesConfig) {
+        InitialGuard concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate(concurrent_config_guard);
+    }
+}
+
+void
+StorageNode::configure(std::unique_ptr<CommunicationManagerConfig > config) {
+    log_config_received(*config);
+    {
+        std::lock_guard config_lock_guard(_configLock);
+        _new_comm_mgr_config = std::move(config);
+    }
+    if (_comm_mgr_config) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
         handleLiveConfigUpdate(concurrent_config_guard);
     }

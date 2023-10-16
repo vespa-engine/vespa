@@ -216,7 +216,9 @@ convert_to_rpc_compression_config(const vespa::config::content::core::StorCommun
 
 }
 
-CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
+CommunicationManager::CommunicationManager(StorageComponentRegister& compReg,
+                                           const config::ConfigUri& configUri,
+                                           const CommunicationManagerConfig& bootstrap_config)
     : StorageLink("Communication manager", MsgDownOnFlush::Allowed, MsgUpOnClosed::Disallowed),
       _component(compReg, "communicationmanager"),
       _metrics(),
@@ -224,10 +226,11 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _storage_api_rpc_service(), // (ditto)
       _cc_rpc_service(),          // (ditto)
       _eventQueue(),
+      _bootstrap_config(std::make_unique<CommunicationManagerConfig>(bootstrap_config)),
       _mbus(),
       _configUri(configUri),
       _closed(false),
-      _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()),
+      _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()), // TODO wire config from outside
       _thread()
 {
     _component.registerMetricUpdateHook(*this, 5s);
@@ -237,9 +240,13 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
 void
 CommunicationManager::onOpen()
 {
-    _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
-    _configFetcher->subscribe<vespa::config::content::core::StorCommunicationmanagerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->start();
+    // We have to hold on to the bootstrap config until we reach the open-phase, as the
+    // actual RPC/mbus endpoints are started at the first config edge.
+    // Note: this is called as part of synchronous node initialization, which explicitly
+    // prevents any concurrent reconfiguration prior to opening all storage chain components,
+    // i.e. there's no risk of on_configure() being called _prior_ to us getting here.
+    on_configure(*_bootstrap_config);
+    _bootstrap_config.reset();
     _thread = _component.startThread(*this, 60s);
 
     if (_shared_rpc_resources) {
@@ -275,9 +282,6 @@ CommunicationManager::~CommunicationManager()
 void
 CommunicationManager::onClose()
 {
-    // Avoid getting config during shutdown
-    _configFetcher.reset();
-
     _closed.store(true, std::memory_order_seq_cst);
     if (_cc_rpc_service) {
         _cc_rpc_service->close(); // Auto-abort all incoming CC RPC requests from now on
@@ -352,20 +356,20 @@ CommunicationManager::configureMessageBusLimits(const CommunicationManagerConfig
 }
 
 void
-CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
+CommunicationManager::on_configure(const CommunicationManagerConfig& config)
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     if (_mbus) {
-        configureMessageBusLimits(*config);
-        if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
+        configureMessageBusLimits(config);
+        if (_mbus->getRPCNetwork().getPort() != config.mbusport) {
             auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
-                                 _mbus->getRPCNetwork().getPort(), config->mbusport);
+                                 _mbus->getRPCNetwork().getPort(), config.mbusport);
             LOG(warning, "%s", m.c_str());
             _component.requestShutdown(m);
         }
-        if (_shared_rpc_resources->listen_port() != config->rpcport) {
+        if (_shared_rpc_resources->listen_port() != config.rpcport) {
             auto m = make_string("rpc port changed from %d to %d. Will conduct a quick, but controlled restart.",
-                                 _shared_rpc_resources->listen_port(), config->rpcport);
+                                 _shared_rpc_resources->listen_port(), config.rpcport);
             LOG(warning, "%s", m.c_str());
             _component.requestShutdown(m);
         }
@@ -375,25 +379,25 @@ CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> conf
     if (!_configUri.empty()) {
         LOG(debug, "setting up slobrok config from id: '%s", _configUri.getConfigId().c_str());
         mbus::RPCNetworkParams params(_configUri);
-        params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
-        params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
-        params.setNumRpcTargets(std::max(1, config->mbus.numRpcTargets));
-        params.events_before_wakeup(std::max(1, config->mbus.eventsBeforeWakeup));
-        params.setTcpNoDelay(config->mbus.tcpNoDelay);
+        params.setConnectionExpireSecs(config.mbus.rpctargetcache.ttl);
+        params.setNumNetworkThreads(std::max(1, config.mbus.numNetworkThreads));
+        params.setNumRpcTargets(std::max(1, config.mbus.numRpcTargets));
+        params.events_before_wakeup(std::max(1, config.mbus.eventsBeforeWakeup));
+        params.setTcpNoDelay(config.mbus.tcpNoDelay);
         params.required_capabilities(vespalib::net::tls::CapabilitySet::of({
             vespalib::net::tls::Capability::content_document_api()
         }));
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
-        if (config->mbusport != -1) {
-            params.setListenPort(config->mbusport);
+        if (config.mbusport != -1) {
+            params.setListenPort(config.mbusport);
         }
 
         using CompressionConfig = vespalib::compression::CompressionConfig;
         CompressionConfig::Type compressionType = CompressionConfig::toType(
-                CommunicationManagerConfig::Mbus::Compress::getTypeName(config->mbus.compress.type).c_str());
-        params.setCompressionConfig(CompressionConfig(compressionType, config->mbus.compress.level,
-                                                      90, config->mbus.compress.limit));
+                CommunicationManagerConfig::Mbus::Compress::getTypeName(config.mbus.compress.type).c_str());
+        params.setCompressionConfig(CompressionConfig(compressionType, config.mbus.compress.level,
+                                                      90, config.mbus.compress.limit));
 
         // Configure messagebus here as we for legacy reasons have
         // config here.
@@ -403,16 +407,16 @@ CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> conf
                 params,
                 _configUri);
 
-        configureMessageBusLimits(*config);
+        configureMessageBusLimits(config);
     }
 
     _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo);
-    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport,
-                                                                      config->rpc.numNetworkThreads, config->rpc.eventsBeforeWakeup);
+    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config.rpcport,
+                                                                      config.rpc.numNetworkThreads, config.rpc.eventsBeforeWakeup);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
     rpc::StorageApiRpcService::Params rpc_params;
-    rpc_params.compression_config = convert_to_rpc_compression_config(*config);
-    rpc_params.num_rpc_targets_per_node = config->rpc.numTargetsPerNode;
+    rpc_params.compression_config = convert_to_rpc_compression_config(config);
+    rpc_params.num_rpc_targets_per_node = config.rpc.numTargetsPerNode;
     _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(
             *this, *_shared_rpc_resources, *_message_codec_provider, rpc_params);
 

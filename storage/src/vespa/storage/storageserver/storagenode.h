@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::StorageNode
- * @ingroup storageserver
- *
- * @brief Main storage server class.
+ * Main storage server class.
  *
  * This class sets up the entire storage server.
  *
@@ -12,13 +9,14 @@
 
 #pragma once
 
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/common/doneinitializehandler.h>
-#include <vespa/config-bucketspaces.h>
+#include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
@@ -55,6 +53,7 @@ class StorageNode : private config::IFetcherCallback<vespa::config::content::cor
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
+                    private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
                     private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
                     private framework::defaultimplementation::ShutdownListener
@@ -64,12 +63,8 @@ public:
 
     StorageNode(const StorageNode &) = delete;
     StorageNode & operator = (const StorageNode &) = delete;
-    /**
-     * @param excludeStorageChain With this option set, no chain will be set
-     * up. This can be useful in unit testing if you need a storage server
-     * instance, but you want to have full control over the components yourself.
-     */
-    StorageNode(const config::ConfigUri & configUri,
+
+    StorageNode(const config::ConfigUri& configUri,
                 StorageNodeContext& context,
                 ApplicationGenerationFetcher& generationFetcher,
                 std::unique_ptr<HostInfo> hostInfo,
@@ -97,10 +92,11 @@ public:
     StorageLink* getChain() { return _chain.get(); }
     virtual void initializeStatusWebServer();
 protected:
-    using StorServerConfig = vespa::config::content::core::StorServerConfig;
-    using UpgradingConfig = vespa::config::content::UpgradingConfig;
-    using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
-    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
+    using BucketspacesConfig         = vespa::config::content::core::BucketspacesConfig;
+    using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
+    using StorServerConfig           = vespa::config::content::core::StorServerConfig;
+    using UpgradingConfig            = vespa::config::content::UpgradingConfig;
 private:
     bool _singleThreadedDebugMode;
         // Subscriptions to config
@@ -137,12 +133,14 @@ private:
     virtual void configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
+    void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
 
 protected:
     // Lock taken while doing configuration of the server.
     std::mutex _configLock;
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
+
     // Current running config. Kept, such that we can see what has been
     // changed in live config updates.
     std::unique_ptr<StorServerConfig> _serverConfig;
@@ -150,12 +148,15 @@ protected:
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
     std::unique_ptr<document::config::DocumenttypesConfig> _doctypesConfig;
     std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
+    std::unique_ptr<CommunicationManagerConfig> _comm_mgr_config;
+
     // New configs gotten that has yet to have been handled
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
     std::unique_ptr<document::config::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
+    std::unique_ptr<CommunicationManagerConfig> _new_comm_mgr_config;
     std::unique_ptr<StorageComponent> _component;
     std::unique_ptr<NodeIdentity> _node_identity;
     config::ConfigUri _configUri;
