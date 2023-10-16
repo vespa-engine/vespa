@@ -134,8 +134,9 @@ function(vespa_use_default_build_settings)
         # Require haswell cpu or newer when compiling with clang on linux.
         set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=haswell -mtune=skylake")
       else()
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
           # Temporary workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108599
+	  # Also xxhash-0.8.2 heavy inlining being too hard on GCC 12 and up
           set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=ivybridge")
         else()
           set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-msse3 -mcx16 -mtune=intel")
