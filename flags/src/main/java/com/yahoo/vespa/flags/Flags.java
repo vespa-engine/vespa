@@ -345,7 +345,7 @@ public class Flags {
             List.of("hakonhall"), "2023-10-12", "2023-12-12",
             "Whether to provision a host exclusively to an application ID only based on exclusive=\"true\" from services.xml. " +
             "Enabling this will produce hosts with exclusiveTo[ApplicationId] without provisionedToApplicationId.",
-            "Takes immediate effect newly provisioned hosts new hosts",
+            "Takes immediate effect when provisioning new hosts",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
