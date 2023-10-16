@@ -29,4 +29,6 @@ public record ApplicationResources(String applicationName, BigDecimal vcpu, BigD
         return new ApplicationResources(applicationName, ZERO, ZERO, ZERO, ZERO, vcpu, memoryGb, diskGb, gpuMemoryGb);
     }
 
+    public boolean enclave() { return enclaveVcpu().compareTo(ZERO) > 0; }
+
 }

@@ -19,149 +19,139 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
-    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/pricing/responses/";
-
     @Test
     void testPricingInfoBasic() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        assertEquals(SystemName.Public, tester.controller().system());
-
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC));
-        tester.assertJsonResponse(request, """
-                                          {
-                                            "applications": [
-                                              {
-                                                "name": "app1",
-                                                "priceInfo": [
-                                                  {"description": "Basic support unit price", "amount": "2240.00"},
-                                                  {"description": "Volume discount", "amount": "-5.64"}
-                                                ]
-                                              }
-                                            ],
-                                            "priceInfo": [
-                                              {"description": "Committed spend", "amount": "-1.23"}
-                                            ],
-                                            "totalAmount": "2233.13"
-                                          }
-                                          """,
-                                  200);
+        tester().assertJsonResponse(request, """
+                                            {
+                                              "applications": [
+                                                {
+                                                  "name": "app1",
+                                                  "priceInfo": [
+                                                    {"description": "Basic support unit price", "amount": "2240.00"},
+                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                  ]
+                                                }
+                                              ],
+                                              "priceInfo": [
+                                                {"description": "Committed spend", "amount": "-1.23"}
+                                              ],
+                                              "totalAmount": "2233.13"
+                                            }
+                                            """,
+                                    200);
     }
 
     @Test
     void testPricingInfoBasicEnclave() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        assertEquals(SystemName.Public, tester.controller().system());
-
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(BASIC));
-        tester.assertJsonResponse(request, """
-                                          {
-                                            "applications": [
-                                              {
-                                                "name": "app1",
-                                                "priceInfo": [
-                                                  {"description": "Basic support unit price", "amount": "2240.00"},
-                                                  {"description": "Enclave", "amount": "-15.12"},
-                                                  {"description": "Volume discount", "amount": "-5.64"}
-                                                ]
-                                              }
-                                            ],
-                                            "priceInfo": [
-                                              {"description": "Committed spend", "amount": "-1.23"}
-                                            ],
-                                            "totalAmount": "2218.00"
-                                          }
-                                          """,
-                                  200);
+        tester().assertJsonResponse(request, """
+                                            {
+                                              "applications": [
+                                                {
+                                                  "name": "app1",
+                                                  "priceInfo": [
+                                                    {"description": "Basic support unit price", "amount": "2240.00"},
+                                                    {"description": "Enclave", "amount": "-15.12"},
+                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                  ]
+                                                }
+                                              ],
+                                              "priceInfo": [
+                                                {"description": "Committed spend", "amount": "-1.23"}
+                                              ],
+                                              "totalAmount": "2218.00"
+                                            }
+                                            """,
+                                    200);
     }
 
     @Test
     void testPricingInfoCommercialEnclave() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        assertEquals(SystemName.Public, tester.controller().system());
-
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1AppEnclave(COMMERCIAL));
-        tester.assertJsonResponse(request, """
-                                          {
-                                            "applications": [
-                                              {
-                                                "name": "app1",
-                                                "priceInfo": [
-                                                  {"description": "Commercial support unit price", "amount": "3200.00"},
-                                                  {"description": "Enclave", "amount": "-15.12"},
-                                                  {"description": "Volume discount", "amount": "-5.64"}
-                                                ]
-                                              }
-                                            ],
-                                            "priceInfo": [
-                                              {"description": "Committed spend", "amount": "-1.23"}
-                                            ],
-                                            "totalAmount": "3178.00"
-                                          }
-                                          """,
-                                  200);
+        tester().assertJsonResponse(request, """
+                                            {
+                                              "applications": [
+                                                {
+                                                  "name": "app1",
+                                                  "priceInfo": [
+                                                    {"description": "Commercial support unit price", "amount": "3200.00"},
+                                                    {"description": "Enclave", "amount": "-15.12"},
+                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                  ]
+                                                }
+                                              ],
+                                              "priceInfo": [
+                                                {"description": "Committed spend", "amount": "-1.23"}
+                                              ],
+                                              "totalAmount": "3178.00"
+                                            }
+                                            """,
+                                    200);
     }
 
     @Test
     void testPricingInfoCommercialEnclave2Apps() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        assertEquals(SystemName.Public, tester.controller().system());
-
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation2AppsEnclave(COMMERCIAL));
-        tester.assertJsonResponse(request, """
-                                          {
-                                            "applications": [
-                                              {
-                                                "name": "app1",
-                                                "priceInfo": [
-                                                  {"description": "Commercial support unit price", "amount": "2000.00"},
-                                                  {"description": "Enclave", "amount": "-15.12"},
-                                                  {"description": "Volume discount", "amount": "-5.64"}
-                                                ]
-                                              },
-                                              {
-                                                "name": "app2",
-                                                "priceInfo": [
-                                                  {"description": "Commercial support unit price", "amount": "2000.00"},
-                                                  {"description": "Enclave", "amount": "-15.12"},
-                                                  {"description": "Volume discount", "amount": "-5.64"}
-                                                ]
-                                              }
-                                            ],
-                                            "priceInfo": [
-                                              {"description": "Committed spend", "amount": "-1.23"}
-                                            ],
-                                            "totalAmount": "3957.24"
-                                          }
-                                          """,
-                                  200);
+        tester().assertJsonResponse(request, """
+                                            {
+                                              "applications": [
+                                                {
+                                                  "name": "app1",
+                                                  "priceInfo": [
+                                                    {"description": "Commercial support unit price", "amount": "2000.00"},
+                                                    {"description": "Enclave", "amount": "-15.12"},
+                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                  ]
+                                                },
+                                                {
+                                                  "name": "app2",
+                                                  "priceInfo": [
+                                                    {"description": "Commercial support unit price", "amount": "2000.00"},
+                                                    {"description": "Enclave", "amount": "-15.12"},
+                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                  ]
+                                                }
+                                              ],
+                                              "priceInfo": [
+                                                {"description": "Committed spend", "amount": "-1.23"}
+                                              ],
+                                              "totalAmount": "3957.24"
+                                            }
+                                            """,
+                                    200);
     }
 
     @Test
     void testInvalidRequests() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        assertEquals(SystemName.Public, tester.controller().system());
-
+        ContainerTester tester = tester();
         tester.assertJsonResponse(request("/pricing/v1/pricing"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No price information found in query\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No price information found in query\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application resources found in query\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application resources found in query\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources="),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources='\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources='\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&key=value"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown query parameter 'key'\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown query parameter 'key'\"}",
+                                  400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&application=key%3Dvalue"),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown key 'key'\"}",
-                400);
+                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown key 'key'\"}",
+                                  400);
+    }
+
+    private ContainerTester tester() {
+        ContainerTester tester = new ContainerTester(container, null);
+        assertEquals(SystemName.Public, tester.controller().system());
+        return tester;
     }
 
     /**
