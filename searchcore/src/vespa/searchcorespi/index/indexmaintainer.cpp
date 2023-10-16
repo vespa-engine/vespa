@@ -1362,7 +1362,6 @@ void
 IndexMaintainer::consider_initial_urgent_flush()
 {
     const Schema *prev_schema = nullptr;
-    std::optional<uint32_t> urgent_source_id;
     auto coll = getSourceCollection();
     uint32_t count = coll->getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
