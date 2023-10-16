@@ -46,7 +46,6 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -112,6 +111,11 @@ public class RoutingPoliciesTest {
     private static final ZoneId zone4 = zoneApi4.getId();
     private static final ZoneId zone5 = zoneApi5.getId();
     private static final ZoneId zone6 = zoneApi6.getId();
+
+    private static final ZoneId testZonePublic = ZoneId.from("test", "aws-us-east-2c");
+    private static final ZoneId stagingZonePublic = ZoneId.from("staging", "aws-us-east-3c");
+    private static final ZoneId testZoneMain = ZoneId.from("test", "us-east-1");
+    private static final ZoneId stagingZoneMain = ZoneId.from("staging", "us-east-3");
 
     private static final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                                             .region(zone2.region())
@@ -400,20 +404,24 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    @Disabled // TODO(mpolden): Enable this test when we start creating generated endpoints for shared routing
-    void zone_routing_policies_with_shared_routing_and_generated_endpoint() {
+    void zone_routing_policies_with_shared_routing_and_generated_endpoint_config_and_token() {
         var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
-        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        tester.setEndpointConfig(EndpointConfig.generated);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
         ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                            .region(zone2.region())
                                                                            .container("c0", AuthMethod.mtls, AuthMethod.token)
                                                                            .build();
+        tester.provisionLoadBalancers(1, context.instanceId(), true,
+                                      testZoneMain, stagingZoneMain, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        assertEquals(List.of("c0a25b7c.cafed00d.z.vespa.oath.cloud",
-                             "dc5e383c.cafed00d.z.vespa.oath.cloud"),
+        // This only creates wildcard endpoint names in DNS because legacy names in shared routing-mode use a static
+        // wildcard DNS record pointing to the routing layer
+        assertEquals(List.of("a9c8c045.cafed00d.z.vespa.oath.cloud",
+                             "dc5e383c.cafed00d.z.vespa.oath.cloud",
+                             "ebd395b6.cafed00d.z.vespa.oath.cloud",
+                             "ee82b867.cafed00d.z.vespa.oath.cloud"),
                      tester.recordNames());
     }
 
@@ -1215,9 +1223,7 @@ public class RoutingPoliciesTest {
                                                                            .container("c0", AuthMethod.mtls)
                                                                            .endpoint("foo", "c0")
                                                                            .build();
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), zone1);
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic, zone1);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         assertEquals(List.of("a9c8c045.cafed00d.g.vespa-app.cloud",
                              "ebd395b6.cafed00d.z.vespa-app.cloud",
@@ -1229,8 +1235,7 @@ public class RoutingPoliciesTest {
                                                         .container("c0", AuthMethod.mtls, AuthMethod.token)
                                                         .endpoint("foo", "c0")
                                                         .build();
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         // Additional zone- and global-scoped endpoints are added (token)
         assertEquals(List.of("a9c8c045.cafed00d.g.vespa-app.cloud",
@@ -1246,8 +1251,7 @@ public class RoutingPoliciesTest {
                                                         .endpoint("foo", "c0")
                                                         .endpoint("bar", "c0")
                                                         .build();
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         List<String> expectedRecords = List.of("a9c8c045.cafed00d.g.vespa-app.cloud",
                                                "aa7591aa.cafed00d.g.vespa-app.cloud",
@@ -1259,8 +1263,7 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, tester.recordNames());
 
         // No change on redeployment
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         assertEquals(expectedRecords, tester.recordNames());
     }
@@ -1281,8 +1284,7 @@ public class RoutingPoliciesTest {
         tester.provisionLoadBalancers(1, context.instanceId(), zone1);
         // ConfigServerMock provisions a load balancer for the "default" cluster, but in this scenario we need full
         // control over the load balancer name because "default" has no special treatment when using generated endpoints
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         tester.assertTargets(context.instance().id(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"),
                              0, Map.of(zone1, 1L), true);
@@ -1297,8 +1299,7 @@ public class RoutingPoliciesTest {
                                                         .container("c0", AuthMethod.mtls)
                                                         .endpoint("foo", "c0")
                                                         .build();
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("test", "aws-us-east-2c"));
-        tester.provisionLoadBalancers(1, context.instanceId(), ZoneId.from("staging", "aws-us-east-3c"));
+        tester.provisionLoadBalancers(1, context.instanceId(), testZonePublic, stagingZonePublic);
         tester.provisionLoadBalancers(1, context.instanceId(), zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod).deploy();
         assertEquals(List.of("a6414896.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
@@ -1516,8 +1517,7 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester setEndpointConfig(EndpointConfig config) {
-            tester.controllerTester().flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), config.supportsLegacy());
-            tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), config.supportsGenerated());
+            tester.controllerTester().flagSource().withStringFlag(Flags.ENDPOINT_CONFIG.id(), config.name());
             return this;
         }
 

@@ -14,9 +14,9 @@ import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -82,8 +82,7 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag generatedEndpoints;
-    private final BooleanFlag legacyEndpoints;
+    private final StringFlag endpointConfig;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -91,8 +90,7 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.generatedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
-        this.legacyEndpoints = Flags.LEGACY_ENDPOINTS.bindTo(controller.flagSource());
+        this.endpointConfig = Flags.ENDPOINT_CONFIG.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -124,15 +122,17 @@ public class RoutingController {
 
     /** Returns the endpoint config to use for given instance */
     public EndpointConfig endpointConfig(ApplicationId instance) {
-        // TODO(mpolden): Switch to reading endpoint-config flag
-        if (legacyEndpointsEnabled(instance)) {
-            if (generatedEndpointsEnabled(instance)) {
-                return EndpointConfig.combined;
-            } else {
-                return EndpointConfig.legacy;
-            }
-        }
-        return EndpointConfig.generated;
+        String flagValue = endpointConfig.with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                                         .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                                         .with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                                         .value();
+        return switch (flagValue) {
+            case "legacy" -> EndpointConfig.legacy;
+            case "combined" -> EndpointConfig.combined;
+            case "generated" -> EndpointConfig.generated;
+            default -> throw new IllegalArgumentException("Invalid endpoint-config flag value: '" + flagValue + "', must be " +
+                                                          "'legacy', 'combined' or 'generated'");
+        };
     }
 
     /** Prepares and returns the endpoints relevant for given deployment */
@@ -598,20 +598,6 @@ public class RoutingController {
             }
         });
         return Collections.unmodifiableList(routingMethods);
-    }
-
-    private boolean generatedEndpointsEnabled(ApplicationId instance) {
-        return generatedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
-                                 .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
-                                 .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
-                                 .value();
-    }
-
-    private boolean legacyEndpointsEnabled(ApplicationId instance) {
-        return legacyEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
-                              .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
-                              .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
-                              .value();
     }
 
     private static void requireGeneratedEndpoints(GeneratedEndpointList generatedEndpoints, boolean declared) {

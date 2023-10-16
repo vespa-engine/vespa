@@ -303,8 +303,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void assign_certificate_from_pool() {
-        tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        tester.flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
+        setEndpointConfig(tester, EndpointConfig.generated);
         try {
             addCertificateToPool("bad0f00d", UnassignedCertificate.State.requested, tester);
             endpointCertificates.get(new DeploymentId(instance, prodZone), DeploymentSpec.empty, lock);
@@ -340,7 +339,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void certificate_migration() {
-        // An application is initially deployed with legacy config
+        // An application is initially deployed with legacy config (the default)
         ZoneId zone1 = ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1c"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().region(zone1.region())
                                                                                .build();
@@ -408,8 +407,7 @@ public class EndpointCertificatesTest {
                      devCert0.requestedDnsSans());
 
         // Application switches to combined config
-        tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
-        tester.flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), true);
+        setEndpointConfig(tester, EndpointConfig.combined);
         tester.clock().advance(Duration.ofHours(1));
         assertEquals(certificate.withLastRequested(tester.clock().instant().getEpochSecond()),
                      endpointCertificates.get(deployment0, applicationPackage.deploymentSpec(), lock),
@@ -420,7 +418,7 @@ public class EndpointCertificatesTest {
                    "Certificate is not assigned at application level");
 
         // Application switches to generated config
-        tester.flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), false);
+        setEndpointConfig(tester, EndpointConfig.generated);
         tester.clock().advance(Duration.ofHours(1));
         assertEquals(certificate.withLastRequested(tester.clock().instant().getEpochSecond()),
                      endpointCertificates.get(deployment0, applicationPackage.deploymentSpec(), lock),
@@ -451,13 +449,16 @@ public class EndpointCertificatesTest {
         assertEquals(poolCertId1, prodCertificate.generatedId().get());
 
         // Application switches back to legacy config
-        tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), false);
-        tester.flagSource().withBooleanFlag(Flags.LEGACY_ENDPOINTS.id(), true);
+        setEndpointConfig(tester, EndpointConfig.legacy);
         EndpointCertificate reissuedCertificate = endpointCertificates.get(deployment0, applicationPackage.deploymentSpec(), lock);
         assertEquals(certificate.requestedDnsSans(), reissuedCertificate.requestedDnsSans());
         assertTrue(tester.curator().readAssignedCertificate(deployment0.applicationId()).isPresent(), "Certificate is assigned at instance level again");
         assertTrue(tester.curator().readAssignedCertificate(TenantAndApplicationId.from(deployment0.applicationId()), Optional.empty()).isPresent(),
                    "Certificate is still assigned at application level"); // Not removed because the assumption is that the application will eventually migrate back
+    }
+
+    private void setEndpointConfig(ControllerTester tester, EndpointConfig config) {
+        tester.flagSource().withStringFlag(Flags.ENDPOINT_CONFIG.id(), config.name());
     }
 
     private void addCertificateToPool(String id, UnassignedCertificate.State state, ControllerTester tester) {
