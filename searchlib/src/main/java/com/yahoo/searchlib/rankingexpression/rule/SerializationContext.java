@@ -21,7 +21,7 @@ import java.util.Optional;
  * @author bratseth
  */
 public class SerializationContext extends FunctionReferenceContext {
-    
+
     /** Serialized form of functions indexed by name */
     private final Map<String, String> serializedFunctions;
 

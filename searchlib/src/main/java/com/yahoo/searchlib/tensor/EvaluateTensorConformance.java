@@ -71,7 +71,7 @@ public class EvaluateTensorConformance {
             System.exit(1);
         }
     }
-        
+
     private boolean testCase(String test, int count) {
         boolean wasOk = false;
         try {
