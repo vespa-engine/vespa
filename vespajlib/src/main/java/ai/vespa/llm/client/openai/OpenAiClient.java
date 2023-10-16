@@ -64,7 +64,7 @@ public class OpenAiClient implements LanguageModel {
     }
 
     @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> action) {
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> consumer) {
         try {
             var request = toRequest(prompt, true);
             var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines());
@@ -83,7 +83,7 @@ public class OpenAiClient implements LanguageModel {
                         if (line.startsWith(DATA_FIELD)) {
                             var root = SlimeUtils.jsonToSlime(line.substring(DATA_FIELD.length())).get();
                             var completion = toCompletions(root, "delta").get(0);
-                            action.accept(completion);
+                            consumer.accept(completion);
                             if (!completion.finishReason().equals(Completion.FinishReason.none)) {
                                 completionFuture.complete(completion.finishReason());
                             }
@@ -175,7 +175,7 @@ public class OpenAiClient implements LanguageModel {
             return this;
         }
 
-        /** A value between 0 and 2 - higher gives more random/creative output. */
+        /** Maximum number of tokens to generate */
         public Builder maxTokens(long maxTokens) {
             this.maxTokens = maxTokens;
             return this;
