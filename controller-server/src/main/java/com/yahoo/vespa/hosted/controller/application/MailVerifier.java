@@ -86,6 +86,7 @@ public class MailVerifier {
                         case NOTIFICATIONS -> withTenantContacts(oldTenantInfo, pendingMailVerification);
                         case TENANT_CONTACT -> oldTenantInfo.withContact(oldTenantInfo.contact()
                                 .withEmail(oldTenantInfo.contact().email().withVerification(true)));
+                        case BILLING -> withVerifiedBillingMail(oldTenantInfo);
                     };
 
                     tenantController.lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
@@ -109,6 +110,13 @@ public class MailVerifier {
                     return contact;
                 }).toList();
         return oldInfo.withContacts(new TenantContacts(newContacts));
+    }
+
+    private TenantInfo withVerifiedBillingMail(TenantInfo oldInfo) {
+        var verifiedMail = oldInfo.billingContact().contact().email().withVerification(true);
+        var billingContact = oldInfo.billingContact()
+                .withContact(oldInfo.billingContact().contact().withEmail(verifiedMail));
+        return oldInfo.withBilling(billingContact);
     }
 
     private void writePendingVerification(PendingMailVerification pendingMailVerification) {

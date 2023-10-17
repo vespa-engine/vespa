@@ -76,6 +76,7 @@ public class PendingMailVerification {
 
     public enum MailType {
         TENANT_CONTACT,
-        NOTIFICATIONS
+        NOTIFICATIONS,
+        BILLING
     }
 }

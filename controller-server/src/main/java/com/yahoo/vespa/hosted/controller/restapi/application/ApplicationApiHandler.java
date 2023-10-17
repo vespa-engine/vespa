@@ -779,11 +779,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
-        Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
-        addressCursor.setString("phone", billingContact.contact().phone());
-        toSlime(billingContact.address(), addressCursor);
+        Cursor billingCursor = parentCursor.setObject("billingContact");
+        billingCursor.setString("name", billingContact.contact().name());
+        billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
+        billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
+        billingCursor.setString("phone", billingContact.contact().phone());
+        toSlime(billingContact.address(), billingCursor);
     }
 
     private void toSlime(TenantContacts contacts, Cursor parentCursor) {
@@ -898,9 +899,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    if (isBillingContact)
-                        return new Email(address, true);
-                    controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    var mailType = isBillingContact ? PendingMailVerification.MailType.BILLING :
+                            PendingMailVerification.MailType.TENANT_CONTACT;
+                    controller.mailVerifier().sendMailVerification(tenantName, address, mailType);
                     return new Email(address, false);
                 })
                 .orElse(oldContact.email());
@@ -1701,6 +1702,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mailType = switch (type) {
             case "contact" -> PendingMailVerification.MailType.TENANT_CONTACT;
             case "notifications" -> PendingMailVerification.MailType.NOTIFICATIONS;
+            case "billing" -> PendingMailVerification.MailType.BILLING;
             default -> throw new IllegalArgumentException("Unknown mail type " + type);
         };
 
