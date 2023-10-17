@@ -134,7 +134,7 @@ public class MockBillingController implements BillingController {
                             "line-item-id",
                             description,
                             amount,
-                            "some-plan",
+                            "paid",
                             agent,
                             ZonedDateTime.now()));
         }
