@@ -16,7 +16,7 @@
  * This is the Linux implementation of @ref FastOS_File. Most
  * methods are inherited from @ref FastOS_UNIX_File.
  */
-class FastOS_Linux_File : public FastOS_UNIX_File
+class FastOS_Linux_File final : public FastOS_UNIX_File
 {
 public:
     using FastOS_UNIX_File::ReadBuf;
@@ -25,7 +25,8 @@ protected:
     int64_t _filePointer;   // Only maintained/used in directio mode
 
 public:
-    FastOS_Linux_File (const char *filename = nullptr);
+    FastOS_Linux_File() : FastOS_Linux_File(nullptr) {}
+    explicit FastOS_Linux_File(const char *filename);
     ~FastOS_Linux_File () override;
     bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;

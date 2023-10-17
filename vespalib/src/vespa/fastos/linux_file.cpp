@@ -202,7 +202,7 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
         if (writtenNow > 0) {
             written += writtenNow;
         } else {
-            return (written > 0) ? written : writtenNow;;
+            return (written > 0) ? written : writtenNow;
         }
     }
     return written;
@@ -240,7 +240,7 @@ FastOS_Linux_File::internalWrite2(const void *buffer, size_t length)
         if (writeRes > 0) {
             _filePointer += writeRes;
             if (_filePointer > _cachedSize.load(std::memory_order_relaxed)) {
-                _cachedSize.store(_filePointer, std::memory_order_release);
+                _cachedSize.store(_filePointer, std::memory_order_relaxed);
             }
         }
     } else {
@@ -277,7 +277,7 @@ FastOS_Linux_File::SetSize(int64_t newSize)
     bool rc = FastOS_UNIX_File::SetSize(newSize);
 
     if (rc) {
-        _cachedSize.store(newSize, std::memory_order_release);
+        _cachedSize.store(newSize, std::memory_order_relaxed);
     }
     return rc;
 }
@@ -339,7 +339,7 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBe
             // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
             // The main reason is that it will not reflect the file being extended by another filedescriptor.
             fileSize = getSize();
-            _cachedSize.store(fileSize, std::memory_order_release);
+            _cachedSize.store(fileSize, std::memory_order_relaxed);
         }
         if ((padAfter != 0) &&
             (static_cast<int64_t>(offset + length + padAfter) > fileSize) &&
