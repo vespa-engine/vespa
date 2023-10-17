@@ -78,7 +78,10 @@ public final class ClusterSpec {
     }
 
 
-    /** Returns whether the physical hosts must be provisioned specifically for this application. */
+    /**
+     * Returns whether the physical hosts running the nodes of this application can
+     * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.
+     */
     public boolean isExclusive() { return exclusive; }
 
     /** Returns whether this cluster has state */
