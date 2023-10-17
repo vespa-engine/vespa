@@ -78,8 +78,8 @@ public class MockHostProvisioner implements HostProvisioner {
         Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
-                                .filter(f -> request.sharing() == HostSharing.exclusive ? compatible(f, request.resources())
-                                                                              : satisfies(f, request.resources()))
+                                .filter(f -> request.sharing().isExclusiveAllocation() ? compatible(f, request.resources())
+                                                                                       : satisfies(f, request.resources()))
                                 .filter(f -> realHostResourcesWithinLimits.test(f.resources()))
                                 .findFirst()
                                 .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + request.resources(), true));
@@ -91,7 +91,8 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostHostname,
                                           hostFlavor,
                                           request.type(),
-                                          request.sharing() == HostSharing.exclusive ? Optional.of(request.owner()) : Optional.empty(),
+                                          request.sharing() == HostSharing.provision ? Optional.of(request.owner()) : Optional.empty(),
+                                          request.sharing().isExclusiveAllocation() ? Optional.of(request.owner()) : Optional.empty(),
                                           Optional.empty(),
                                           createHostnames(request.type(), hostFlavor, index),
                                           request.resources(),

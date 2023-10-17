@@ -2,8 +2,6 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -79,6 +77,7 @@ public final class ClusterSpec {
         return combinedId;
     }
 
+
     /**
      * Returns whether the physical hosts running the nodes of this application can
      * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.
@@ -93,12 +92,6 @@ public final class ClusterSpec {
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
-    }
-
-    // TODO: Remove after July 2023
-    @Deprecated
-    public ClusterSpec exclusive(boolean exclusive) {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
@@ -121,6 +114,7 @@ public final class ClusterSpec {
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
+        private boolean provisionForApplication = false;
         private Optional<Id> combinedId = Optional.empty();
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
@@ -152,6 +146,11 @@ public final class ClusterSpec {
 
         public Builder exclusive(boolean exclusive) {
             this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder provisionForApplication(boolean provisionForApplication) {
+            this.provisionForApplication = provisionForApplication;
             return this;
         }
 
