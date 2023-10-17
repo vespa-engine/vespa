@@ -51,11 +51,16 @@ public class CloudTenant extends Tenant {
 
     /** Creates a tenant with the given name, provided it passes validation. */
     public static CloudTenant create(TenantName tenantName, Instant createdAt, Principal creator) {
+        // Initialize with creator as verified contact
+        var info = TenantInfo.empty().withContacts(new TenantContacts(List.of(
+                new TenantContacts.EmailContact(
+                        List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS),
+                        new Email(creator.getName(), true)))));
         return new CloudTenant(requireName(tenantName),
                                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator).map(SimplePrincipal::of),
-                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(),
+                               ImmutableBiMap.of(), info, List.of(), new ArchiveAccess(), Optional.empty(),
                                Instant.EPOCH, List.of(), Optional.empty(), PlanId.from("none"));
     }
 
