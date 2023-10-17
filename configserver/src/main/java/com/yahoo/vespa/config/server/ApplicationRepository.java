@@ -660,11 +660,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant);
 
         List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse, instant);
-        if (fileReferencesToDelete.size() > 0) {
-            log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
+        // Do max 20 at a time
+        var toDelete = fileReferencesToDelete.subList(0, Math.min(fileReferencesToDelete.size(), 20));
+        if (toDelete.size() > 0) {
+            log.log(Level.FINE, () -> "Will delete file references not in use: " + toDelete);
+            toDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
+            log.log(Level.FINE, () -> "Deleted " + toDelete.size() + " file references not in use");
         }
-        return fileReferencesToDelete;
+        return toDelete;
     }
 
     private boolean isFileReferenceInUse(FileReference fileReference) {
