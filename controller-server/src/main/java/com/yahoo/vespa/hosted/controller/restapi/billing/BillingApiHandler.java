@@ -425,7 +425,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         cursor.setLong("majorVersion", lineItem.getMajorVersion());
 
         if (! lineItem.getCloudAccount().isUnspecified())
-            cursor.setString("cloudAccount", lineItem.getCloudAccount().account());
+            cursor.setString("cloudAccount", lineItem.getCloudAccount().value());
 
         lineItem.getCpuHours().ifPresent(cpuHours ->
                 cursor.setString("cpuHours", cpuHours.toString())

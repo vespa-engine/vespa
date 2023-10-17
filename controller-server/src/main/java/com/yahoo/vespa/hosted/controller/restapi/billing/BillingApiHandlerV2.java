@@ -412,7 +412,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         item.getArchitecture().ifPresent(arch -> slime.setString("architecture", arch.name()));
         slime.setLong("majorVersion", item.getMajorVersion());
         if (! item.getCloudAccount().isUnspecified())
-            slime.setString("cloudAccount", item.getCloudAccount().account());
+            slime.setString("cloudAccount", item.getCloudAccount().value());
 
         item.applicationId().ifPresent(appId -> {
             slime.setString("application", appId.application().value());
