@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author arnej
  */
 public class NoNormalizersTestCase extends AbstractSchemaTestCase {
-
-    static String wrapError(String core) {
-        return "Cannot use " + core + ", only valid in global-phase expression";
-    }
 
     void compileSchema(String schema) throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
@@ -46,8 +43,9 @@ public class NoNormalizersTestCase extends AbstractSchemaTestCase {
                           """);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'p1' is invalid", e.getMessage());
-            assertEquals(wrapError("normalize_linear(nativeRank) from first-phase expression"), e.getCause().getMessage());
+            assertEquals("Rank profile 'p1' is invalid: " +
+                         "Cannot use normalize_linear(nativeRank) from first-phase expression, only valid in global-phase expression",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -79,8 +77,9 @@ public class NoNormalizersTestCase extends AbstractSchemaTestCase {
                           """);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'p2' is invalid", e.getMessage());
-            assertEquals(wrapError("reciprocal_rank(whatever,1.0) from second-phase expression"), e.getCause().getMessage());
+            assertEquals("Rank profile 'p2' is invalid: " +
+                         "Cannot use reciprocal_rank(whatever,1.0) from second-phase expression, only valid in global-phase expression",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -106,8 +105,9 @@ public class NoNormalizersTestCase extends AbstractSchemaTestCase {
                           """);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'p3' is invalid", e.getMessage());
-            assertEquals(wrapError("normalize_linear(nativeRank) from match-feature foobar"), e.getCause().getMessage());
+            assertEquals("Rank profile 'p3' is invalid: " +
+                         "Cannot use normalize_linear(nativeRank) from match-feature foobar, only valid in global-phase expression",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -133,8 +133,9 @@ public class NoNormalizersTestCase extends AbstractSchemaTestCase {
                           """);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'p4' is invalid", e.getMessage());
-            assertEquals(wrapError("normalize_linear(nativeRank) from summary-feature foobar"), e.getCause().getMessage());
+            assertEquals("Rank profile 'p4' is invalid: " +
+                         "Cannot use normalize_linear(nativeRank) from summary-feature foobar, only valid in global-phase expression",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -163,8 +164,9 @@ public class NoNormalizersTestCase extends AbstractSchemaTestCase {
                           """);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'p5' is invalid", e.getMessage());
-            assertEquals(wrapError("reciprocal_rank(nativeRank) from normalizer input foobar"), e.getCause().getMessage());
+            assertEquals("Rank profile 'p5' is invalid: " +
+                         "Cannot use reciprocal_rank(nativeRank) from normalizer input foobar, only valid in global-phase expression",
+                         Exceptions.toMessageString(e));
         }
     }
 }
