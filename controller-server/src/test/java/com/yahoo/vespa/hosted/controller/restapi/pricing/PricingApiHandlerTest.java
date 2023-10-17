@@ -21,6 +21,12 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
     @Test
     void testPricingInfoBasic() {
+        tester().assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0"),
+                """
+                { "applications": [ ], "priceInfo": [ ], "totalAmount": "0.00" }
+                """,
+                200);
+
         var request = request("/pricing/v1/pricing?" + urlEncodedPriceInformation1App(BASIC));
         tester().assertJsonResponse(request, """
                                             {
@@ -110,10 +116,8 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                                   ]
                                                 }
                                               ],
-                                              "priceInfo": [
-                                                {"description": "Committed spend", "amount": "-0.20"}
-                                              ],
-                                              "totalAmount": "25.90"
+                                              "priceInfo": [ ],
+                                              "totalAmount": "26.10"
                                             }
                                             """,
                                     200);
@@ -127,9 +131,6 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                   400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?"),
                                   "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: ''\"}",
-                                  400);
-        tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0"),
-                                  "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application resources found in query\"}",
                                   400);
         tester.assertJsonResponse(request("/pricing/v1/pricing?supportLevel=basic&committedSpend=0&resources"),
                                   "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Error in query parameter, expected '=' between key and value: 'resources'\"}",

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.pricing;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -35,8 +34,6 @@ import java.util.logging.Logger;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.restapi.ErrorResponse.methodNotAllowed;
 import static com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo.SupportLevel;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
 import static java.math.BigDecimal.ZERO;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -116,41 +113,13 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
                 default -> throw new IllegalArgumentException("Unknown query parameter '" + entry.getFirst() + '\'');
             }
         }
-        if (appResources.isEmpty()) throw new IllegalArgumentException("No application resources found in query");
 
         PricingInfo pricingInfo = new PricingInfo(supportLevel, committedSpend);
         return new PriceParameters(List.of(), pricingInfo, plan, appResources);
     }
 
-    private ClusterResources clusterResources(String resourcesString) {
-        List<String> elements = Arrays.stream(resourcesString.split(",")).toList();
-
-        var nodes = 0;
-        var vcpu = 0d;
-        var memoryGb = 0d;
-        var diskGb = 0d;
-        var gpuMemoryGb = 0d;
-
-        for (var element : keysAndValues(elements)) {
-            var value = element.getSecond();
-            switch (element.getFirst().toLowerCase()) {
-                case "nodes" -> nodes = parseInt(value);
-                case "vcpu" -> vcpu = parseDouble(value);
-                case "memorygb" -> memoryGb = parseDouble(value);
-                case "diskgb" -> diskGb = parseDouble(value);
-                case "gpumemorygb" -> gpuMemoryGb = parseDouble(value);
-                default -> throw new IllegalArgumentException("Unknown resource type '" + element.getFirst() + '\'');
-            }
-        }
-
-        var nodeResources = new NodeResources(vcpu, memoryGb, diskGb, 0); // 0 bandwidth, not used in price calculation
-        if (gpuMemoryGb > 0)
-            nodeResources = nodeResources.with(new NodeResources.GpuResources(1, gpuMemoryGb));
-        return new ClusterResources(nodes, 1, nodeResources);
-    }
-
     private ApplicationResources applicationResources(String appResourcesString) {
-        List<String> elements = Arrays.stream(appResourcesString.split(",")).toList();
+        List<String> elements = List.of(appResourcesString.split(","));
 
         var vcpu = ZERO;
         var memoryGb = ZERO;

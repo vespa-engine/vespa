@@ -13,7 +13,6 @@ import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo.SupportLevel.BASIC;
 import static java.math.BigDecimal.ZERO;
-import static java.math.BigDecimal.valueOf;
 
 public class MockPricingController implements PricingController {
 
@@ -23,34 +22,35 @@ public class MockPricingController implements PricingController {
 
     @Override
     public Prices priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {
-        ApplicationResources resources = applicationResources.get(0);
-
-        BigDecimal listPrice = resources.vcpu().multiply(cpuCost)
-                .add(resources.memoryGb().multiply(memoryCost)
-                .add(resources.diskGb().multiply(diskCost))
-                .add(resources.enclaveVcpu().multiply(cpuCost)
-                .add(resources.enclaveMemoryGb().multiply(memoryCost))
-                .add(resources.enclaveDiskGb().multiply(diskCost))));
-
-        BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-1.00") : new BigDecimal("8.00");
-        BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
-        BigDecimal enclaveDiscount = isEnclave(resources) ? new BigDecimal("-0.15") : BigDecimal.ZERO;
-        BigDecimal volumeDiscount = new BigDecimal("-0.1");
-        BigDecimal appTotalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount);
-
         List<PriceInformation> appPrices = applicationResources.stream()
-                .map(appResources -> new PriceInformation(listPriceWithSupport,
-                                                          volumeDiscount,
-                                                          ZERO,
-                                                          enclaveDiscount,
-                                                          appTotalAmount))
+                .map(resources -> {
+                    BigDecimal listPrice = resources.vcpu().multiply(cpuCost)
+                            .add(resources.memoryGb().multiply(memoryCost))
+                            .add(resources.diskGb().multiply(diskCost))
+                            .add(resources.enclaveVcpu().multiply(cpuCost))
+                            .add(resources.enclaveMemoryGb().multiply(memoryCost))
+                            .add(resources.enclaveDiskGb().multiply(diskCost));
+
+                    BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-1.00") : new BigDecimal("8.00");
+                    BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
+                    BigDecimal enclaveDiscount = isEnclave(resources) ? new BigDecimal("-0.15") : BigDecimal.ZERO;
+                    BigDecimal volumeDiscount = new BigDecimal("-0.1");
+                    BigDecimal appTotalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount);
+
+                    return new PriceInformation(listPriceWithSupport,
+                            volumeDiscount,
+                            ZERO,
+                            enclaveDiscount,
+                            appTotalAmount);
+                })
                 .toList();
 
         PriceInformation sum = PriceInformation.sum(appPrices);
-        var committedAmountDiscount = new BigDecimal("-0.2");
+        System.out.println(pricingInfo.committedHourlyAmount());
+        var committedAmountDiscount = pricingInfo.committedHourlyAmount().compareTo(ZERO) > 0 ? new BigDecimal("-0.2") : ZERO;
         var totalAmount = sum.totalAmount().add(committedAmountDiscount);
         var enclave = ZERO;
-        if (resources.enclave() && totalAmount.compareTo(new BigDecimal("14.00")) < 0)
+        if (applicationResources.stream().anyMatch(ApplicationResources::enclave) && totalAmount.compareTo(new BigDecimal("14.00")) < 0)
             enclave = new BigDecimal("14.00").subtract(totalAmount);
         var totalPrice = new PriceInformation(ZERO, ZERO, committedAmountDiscount, enclave, totalAmount);
 
