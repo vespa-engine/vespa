@@ -518,6 +518,8 @@ public class NodeAgentImpl implements NodeAgent {
                     container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
+                serviceDumper.processServiceDumpRequest(context);
+
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
@@ -531,7 +533,6 @@ public class NodeAgentImpl implements NodeAgent {
                         throw ConvergenceException.ofTransient("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
-                serviceDumper.processServiceDumpRequest(context);
 
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
