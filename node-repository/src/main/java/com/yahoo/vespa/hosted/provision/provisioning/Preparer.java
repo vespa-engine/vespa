@@ -208,7 +208,7 @@ public class Preparer {
 
     private HostSharing hostSharing(ClusterSpec cluster, NodeType hostType) {
         if ( hostType.isSharable())
-            return cluster.provisionForApplication() ? HostSharing.provision :
+            return cluster.isExclusive() ? HostSharing.provision :
                    nodeRepository.exclusiveAllocation(cluster) ? HostSharing.exclusive :
                    HostSharing.any;
         else

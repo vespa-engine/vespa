@@ -174,7 +174,7 @@ public class CapacityPolicies {
     public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
         if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
         boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
-        return requestedCluster.withExclusivity(exclusive).withProvisionForApplication(exclusive);
+        return requestedCluster.withExclusivity(exclusive);
     }
 
 }
