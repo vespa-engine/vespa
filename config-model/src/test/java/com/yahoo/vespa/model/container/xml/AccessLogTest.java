@@ -16,6 +16,7 @@ import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
+import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import org.junit.jupiter.api.Test;
@@ -129,6 +130,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         assertEquals("default", config.cluster());
         assertEquals(-1, config.queueSize());
         assertEquals(256 * 1024, config.bufferSize());
+        assertTrue(root.getConfig(ServerConfig.class, "default/container.0/DefaultHttpServer").connectionLog().enabled());
     }
 
     @Test
@@ -141,6 +143,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
         Component<?, ?> fileConnectionLogComponent = getComponent("default", FileConnectionLog.class.getName());
         assertNull(fileConnectionLogComponent);
+        assertFalse(root.getConfig(ServerConfig.class, "default/container.0/DefaultHttpServer").connectionLog().enabled());
     }
 
     @Test
