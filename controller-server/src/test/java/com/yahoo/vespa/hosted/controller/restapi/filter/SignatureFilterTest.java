@@ -71,7 +71,7 @@ public class SignatureFilterTest {
         filter = new SignatureFilter(tester.controller());
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
-        tester.curator().writeTenant(CloudTenant.create(appId.tenant(), Instant.EPOCH, null));
+        tester.curator().writeTenant(CloudTenant.create(appId.tenant(), Instant.EPOCH, new SimplePrincipal("owner@my-tenant.my-app")));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
