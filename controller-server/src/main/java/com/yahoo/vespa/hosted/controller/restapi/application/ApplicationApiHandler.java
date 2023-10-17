@@ -705,7 +705,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var contact = info.billingContact().contact();
         var address = info.billingContact().address();
 
-        var mergedContact = updateTenantInfoContact(inspector.field("contact"), cloudTenant.name(), contact, false);
+        var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
 
         var mergedBilling = info.billingContact()
@@ -893,15 +893,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
-    private TenantContact updateTenantInfoContact(Inspector insp, TenantName tenantName, TenantContact oldContact, boolean isBillingContact) {
+    private TenantContact updateBillingContact(Inspector insp, TenantName tenantName, TenantContact oldContact) {
         if (!insp.valid()) return oldContact;
 
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    var mailType = isBillingContact ? PendingMailVerification.MailType.BILLING :
-                            PendingMailVerification.MailType.TENANT_CONTACT;
-                    controller.mailVerifier().sendMailVerification(tenantName, address, mailType);
+                    controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.BILLING);
                     return new Email(address, false);
                 })
                 .orElse(oldContact.email());
@@ -916,7 +914,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (!insp.valid()) return oldContact;
 
         return TenantBilling.empty()
-                .withContact(updateTenantInfoContact(insp, tenantName, oldContact.contact(), true))
+                .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
 

@@ -36,7 +36,6 @@ import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.S
 
 /**
  * Expires unused tenants from Vespa Cloud.
- * <p>
  *
  * @author ogronnesby
  */
