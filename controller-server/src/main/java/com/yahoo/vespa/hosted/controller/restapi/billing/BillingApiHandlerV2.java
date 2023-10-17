@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.messagebus.Message;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -461,6 +460,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         toSlime(slime.setObject("cpu"), item.getCpuHours(), item.getCpuCost());
         toSlime(slime.setObject("memory"), item.getMemoryHours(), item.getMemoryCost());
         toSlime(slime.setObject("disk"), item.getDiskHours(), item.getDiskCost());
+        toSlime(slime.setObject("gpu"), item.getGpuHours(), item.getGpuCost());
     }
 
     private void toSlime(Cursor slime, Optional<BigDecimal> hours, Optional<BigDecimal> cost) {
