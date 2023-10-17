@@ -17,20 +17,25 @@ import static java.math.BigDecimal.valueOf;
 
 public class MockPricingController implements PricingController {
 
+    private static final BigDecimal cpuCost = new BigDecimal("1.00");
+    private static final BigDecimal memoryCost = new BigDecimal("0.10");
+    private static final BigDecimal diskCost = new BigDecimal("0.005");
+
     @Override
     public Prices priceForApplications(List<ApplicationResources> applicationResources, PricingInfo pricingInfo, Plan plan) {
         ApplicationResources resources = applicationResources.get(0);
-        BigDecimal listPrice = resources.vcpu().multiply(valueOf(1000))
-                .add(resources.memoryGb().multiply(valueOf(100)))
-                .add(resources.diskGb().multiply(valueOf(10)))
-                .add(resources.enclaveVcpu().multiply(valueOf(1000))
-                .add(resources.enclaveMemoryGb().multiply(valueOf(100)))
-                .add(resources.enclaveDiskGb().multiply(valueOf(10))));
 
-        BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-160.00") : new BigDecimal("800.00");
+        BigDecimal listPrice = resources.vcpu().multiply(cpuCost)
+                .add(resources.memoryGb().multiply(memoryCost)
+                .add(resources.diskGb().multiply(diskCost))
+                .add(resources.enclaveVcpu().multiply(cpuCost)
+                .add(resources.enclaveMemoryGb().multiply(memoryCost))
+                .add(resources.enclaveDiskGb().multiply(diskCost))));
+
+        BigDecimal supportLevelCost = pricingInfo.supportLevel() == BASIC ? new BigDecimal("-1.00") : new BigDecimal("8.00");
         BigDecimal listPriceWithSupport = listPrice.add(supportLevelCost);
-        BigDecimal enclaveDiscount = isEnclave(resources) ? new BigDecimal("-15.1234") : BigDecimal.ZERO;
-        BigDecimal volumeDiscount = new BigDecimal("-5.64315634");
+        BigDecimal enclaveDiscount = isEnclave(resources) ? new BigDecimal("-0.15") : BigDecimal.ZERO;
+        BigDecimal volumeDiscount = new BigDecimal("-0.1");
         BigDecimal appTotalAmount = listPrice.add(supportLevelCost).add(enclaveDiscount).add(volumeDiscount);
 
         List<PriceInformation> appPrices = applicationResources.stream()
@@ -42,9 +47,12 @@ public class MockPricingController implements PricingController {
                 .toList();
 
         PriceInformation sum = PriceInformation.sum(appPrices);
-        var committedAmountDiscount = new BigDecimal("-1.23");
+        var committedAmountDiscount = new BigDecimal("-0.2");
         var totalAmount = sum.totalAmount().add(committedAmountDiscount);
-        var totalPrice = new PriceInformation(ZERO, ZERO, committedAmountDiscount, ZERO, totalAmount);
+        var enclave = ZERO;
+        if (resources.enclave() && totalAmount.compareTo(new BigDecimal("14.00")) < 0)
+            enclave = new BigDecimal("14.00").subtract(totalAmount);
+        var totalPrice = new PriceInformation(ZERO, ZERO, committedAmountDiscount, enclave, totalAmount);
 
         return new Prices(appPrices, totalPrice);
     }
