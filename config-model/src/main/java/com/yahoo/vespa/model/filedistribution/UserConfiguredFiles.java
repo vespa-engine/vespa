@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserConfiguredUrls;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
@@ -74,7 +75,7 @@ public class UserConfiguredFiles implements Serializable {
         if (configDefinition == null) {
             String message = "Unable to find config definition " + key + ". Will not register files for file distribution for this config";
             switch (unknownConfigDefinition) {
-                case "warning" -> logger.logApplicationPackage(Level.WARNING, message);
+                case "warning" -> logger.logApplicationPackage(WARNING, message);
                 case "fail" -> throw new IllegalArgumentException("Unable to find config definition for " + key);
             }
             return;
@@ -162,7 +163,7 @@ public class UserConfiguredFiles implements Serializable {
 
         ApplicationFile file = applicationPackage.getFile(path);
         if (file.isDirectory() && (file.listFiles() == null || file.listFiles().isEmpty()))
-            throw new IllegalArgumentException("Directory '" + path.getRelative() + "' is empty");
+            logger.logApplicationPackage(WARNING, "Directory '" + path.getRelative() + "' is empty");
 
         FileReference reference = registeredFiles.get(path);
         if (reference == null) {

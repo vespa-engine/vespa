@@ -5,12 +5,15 @@ import com.yahoo.config.FileNode;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.schema.processing.ReservedRankingExpressionFunctionNamesTestCase;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -27,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,22 +76,19 @@ public class UserConfiguredFilesTest {
 
     }
     private UserConfiguredFiles userConfiguredFiles() {
-        return new UserConfiguredFiles(fileRegistry,
-                                       new BaseDeployLogger(),
-                                       new TestProperties(),
-                                       new ApplicationContainerCluster.UserConfiguredUrls(),
-                                       new MockApplicationPackage.Builder().build());
+        return userConfiguredFiles(new MockApplicationPackage.Builder().build());
     }
 
-    private UserConfiguredFiles userConfiguredFiles(File root, com.yahoo.path.Path path) {
+    private UserConfiguredFiles userConfiguredFiles(ApplicationPackage applicationPackage) {
+        return userConfiguredFiles(applicationPackage, new BaseDeployLogger());
+    }
+
+    private UserConfiguredFiles userConfiguredFiles(ApplicationPackage applicationPackage, DeployLogger deployLogger) {
         return new UserConfiguredFiles(fileRegistry,
-                                       new BaseDeployLogger(),
+                                       deployLogger,
                                        new TestProperties(),
                                        new ApplicationContainerCluster.UserConfiguredUrls(),
-                                       new MockApplicationPackage.Builder()
-                                               .withRoot(root)
-                                               .withFiles(Map.of(path, ""))
-                                               .build());
+                                       applicationPackage);
     }
 
     @BeforeEach
@@ -304,17 +305,18 @@ public class UserConfiguredFilesTest {
     @Test
     void require_that_using_empty_dir_fails(@TempDir Path tempDir) {
         String relativeTempDir = tempDir.toString().substring(tempDir.toString().lastIndexOf("target") + 7);
-        try {
-            def.addPathDef("pathVal");
-            builder.setField("pathVal", relativeTempDir);
-            fileRegistry.pathToRef.put(relativeTempDir, new FileReference("bazshash"));
-            userConfiguredFiles(tempDir.toFile().getParentFile(),
-                                com.yahoo.path.Path.fromString(tempDir.toFile().getAbsolutePath())).register(producer);
-            fail("Should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Invalid config in services.xml for 'mynamespace.myname': Directory '" + relativeTempDir + "' is empty",
-                         e.getMessage());
-        }
+        ApplicationPackage applicationPackage =
+                new MockApplicationPackage.Builder()
+                        .withRoot(tempDir.toFile().getParentFile())
+                        .withFiles(Map.of(com.yahoo.path.Path.fromString(tempDir.toFile().getAbsolutePath()), ""))
+                        .build();
+
+        var logger = new TestDeployLogger();
+        def.addPathDef("pathVal");
+        builder.setField("pathVal", relativeTempDir);
+        fileRegistry.pathToRef.put(relativeTempDir, new FileReference("bazshash"));
+        userConfiguredFiles(applicationPackage, logger).register(producer);
+        assertEquals("Directory '" + relativeTempDir + "' is empty", logger.log);
     }
 
     @Test
@@ -328,6 +330,14 @@ public class UserConfiguredFilesTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid config in services.xml for 'mynamespace.myname': No such file or directory '" + relativeTempDir + "'",
                          e.getMessage());
+        }
+    }
+
+    private static class TestDeployLogger implements DeployLogger {
+        public String log = "";
+        @Override
+        public void log(Level level, String message) {
+            log += message;
         }
     }
 
