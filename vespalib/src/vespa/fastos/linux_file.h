@@ -10,6 +10,7 @@
 #pragma once
 
 #include "unix_file.h"
+#include <atomic>
 
 /**
  * This is the Linux implementation of @ref FastOS_File. Most
@@ -20,7 +21,7 @@ class FastOS_Linux_File : public FastOS_UNIX_File
 public:
     using FastOS_UNIX_File::ReadBuf;
 protected:
-    int64_t _cachedSize;
+    std::atomic<int64_t> _cachedSize;
     int64_t _filePointer;   // Only maintained/used in directio mode
 
 public:
