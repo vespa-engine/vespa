@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -69,12 +71,23 @@ public class UserConfiguredFilesTest {
         public String toString() { return export().toString(); }
 
     }
-
     private UserConfiguredFiles userConfiguredFiles() {
         return new UserConfiguredFiles(fileRegistry,
                                        new BaseDeployLogger(),
                                        new TestProperties(),
-                                       new ApplicationContainerCluster.UserConfiguredUrls());
+                                       new ApplicationContainerCluster.UserConfiguredUrls(),
+                                       new MockApplicationPackage.Builder().build());
+    }
+
+    private UserConfiguredFiles userConfiguredFiles(File root, com.yahoo.path.Path path) {
+        return new UserConfiguredFiles(fileRegistry,
+                                       new BaseDeployLogger(),
+                                       new TestProperties(),
+                                       new ApplicationContainerCluster.UserConfiguredUrls(),
+                                       new MockApplicationPackage.Builder()
+                                               .withRoot(root)
+                                               .withFiles(Map.of(path, ""))
+                                               .build());
     }
 
     @BeforeEach
@@ -289,16 +302,31 @@ public class UserConfiguredFilesTest {
     }
 
     @Test
-    void require_that_using_empty_dir_gives_sane_error_message(@TempDir Path tempDir) {
-        String relativeTempDir = tempDir.toString().substring(tempDir.toString().lastIndexOf("target"));
+    void require_that_using_empty_dir_fails(@TempDir Path tempDir) {
+        String relativeTempDir = tempDir.toString().substring(tempDir.toString().lastIndexOf("target") + 7);
         try {
             def.addPathDef("pathVal");
             builder.setField("pathVal", relativeTempDir);
             fileRegistry.pathToRef.put(relativeTempDir, new FileReference("bazshash"));
-            userConfiguredFiles().register(producer);
+            userConfiguredFiles(tempDir.toFile().getParentFile(),
+                                com.yahoo.path.Path.fromString(tempDir.toFile().getAbsolutePath())).register(producer);
             fail("Should have thrown exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid config in services.xml for 'mynamespace.myname': Directory '" + relativeTempDir + "' is empty",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    void require_that_using_non_existing_dir_fails() {
+        String relativeTempDir = "non-existing";
+        try {
+            def.addPathDef("pathVal");
+            builder.setField("pathVal", relativeTempDir);
+            userConfiguredFiles().register(producer);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid config in services.xml for 'mynamespace.myname': No such file or directory '" + relativeTempDir + "'",
                          e.getMessage());
         }
     }
