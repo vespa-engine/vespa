@@ -77,7 +77,7 @@ struct DocumentApiConverterTest : Test {
     }
 
     void SetUp() override {
-        _converter = std::make_unique<DocumentApiConverter>(config::ConfigUri("raw:"), _bucketResolver);
+        _converter = std::make_unique<DocumentApiConverter>(_bucketResolver);
     };
 
     template <typename DerivedT, typename BaseT>

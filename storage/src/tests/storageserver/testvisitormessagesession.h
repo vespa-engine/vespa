@@ -49,9 +49,11 @@ struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
     bool _createAutoReplyVisitorSessions;
     PriorityConverter _priConverter;
 
-    TestVisitorMessageSessionFactory(vespalib::stringref configId = "")
+    TestVisitorMessageSessionFactory()
         : _createAutoReplyVisitorSessions(false),
-          _priConverter(config::ConfigUri(configId)) {}
+          _priConverter()
+    {
+    }
 
     VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) override {
         std::lock_guard lock(_accessLock);
