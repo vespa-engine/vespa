@@ -34,7 +34,7 @@ shared:
         du -sh /tmp/vespa/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
-          if [[ -z $VESPA_USE_SANITIZER ]] || [[ $VESPA_USE_SANITIZER == null ]]; then
+          if [[ -z "$VESPA_USE_SANITIZER" ]] || [[ "$VESPA_USE_SANITIZER" == null ]]; then
             # Remove what we have produced
             rm -rf $LOCAL_MVN_REPO/com/yahoo
             rm -rf $LOCAL_MVN_REPO/ai/vespa
