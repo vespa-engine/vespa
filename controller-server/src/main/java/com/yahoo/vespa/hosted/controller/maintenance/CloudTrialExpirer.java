@@ -116,7 +116,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
                 var enabled = cloudTrialNotificationEnabled.with(FetchVector.Dimension.TENANT_ID, tenant.name().value()).value();
                 if (!enabled) {
-                    updatedStatus.add(status);
+                    if (status != null) updatedStatus.add(status);
                 } else if (!List.of("none", "trial").contains(plan)) {
                     // Ignore tenants that are on a paid plan and skip from inclusion in updated data structure
                 } else if (status == null && "trial".equals(plan) && ageInDays <= 1) {
