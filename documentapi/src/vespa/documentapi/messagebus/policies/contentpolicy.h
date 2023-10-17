@@ -6,7 +6,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/messagebus/routing/hop.h>
-#include <mutex>
+#include <shared_mutex>
 
 namespace config {
     class ICallback;
@@ -24,7 +24,7 @@ class ContentPolicy : public ExternSlobrokPolicy
 {
 private:
     document::BucketIdFactory                         _bucketIdFactory;
-    mutable std::mutex                                _lock;
+    mutable std::shared_mutex                         _rw_lock;
     std::shared_ptr<const storage::lib::ClusterState> _state;
     string                                            _clusterName;
     string                                            _clusterConfigId;

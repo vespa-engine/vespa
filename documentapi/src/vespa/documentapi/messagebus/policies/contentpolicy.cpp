@@ -103,7 +103,7 @@ void
 ContentPolicy::configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config)
 {
     try {
-        std::lock_guard guard(_lock);
+        std::lock_guard guard(_rw_lock);
         _distribution = std::make_unique<storage::lib::Distribution>(*config);
     } catch (const std::exception& e) {
         LOG(warning, "Got exception when configuring distribution, config id was %s", _clusterConfigId.c_str());
@@ -235,7 +235,7 @@ void
 ContentPolicy::updateStateFromReply(WrongDistributionReply& wdr)
 {
     auto newState = std::make_unique<storage::lib::ClusterState>(wdr.getSystemState());
-    std::lock_guard guard(_lock);
+    std::lock_guard guard(_rw_lock);
     if (!_state || newState->getVersion() >= _state->getVersion()) {
         if (_state) {
             wdr.getTrace().trace(1, make_string("System state changed from version %u to %u",
@@ -256,14 +256,14 @@ ContentPolicy::updateStateFromReply(WrongDistributionReply& wdr)
 ContentPolicy::StateSnapshot
 ContentPolicy::internal_state_snapshot()
 {
-    std::lock_guard guard(_lock);
+    std::shared_lock guard(_rw_lock);
     return {_state, _distribution};
 }
 
 std::shared_ptr<const storage::lib::ClusterState>
 ContentPolicy::getSystemState() const noexcept
 {
-    std::lock_guard guard(_lock);
+    std::shared_lock guard(_rw_lock);
     return _state;
 }
 
@@ -273,7 +273,7 @@ ContentPolicy::reset_state()
     // It's possible for the caller to race between checking and resetting the state,
     // but this should never lead to a worse outcome than sending to a random distributor
     // as if no state had been cached prior.
-    std::lock_guard guard(_lock);
+    std::lock_guard guard(_rw_lock);
     _state.reset();
 }
 
