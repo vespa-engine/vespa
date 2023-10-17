@@ -309,12 +309,6 @@ public class Flags {
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-11-14",
-            "Whether to use randomized endpoint names",
-            "Takes effect on application deployment",
-            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
-
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-11-01",
             "Whether to enable the one program that should not be named",
@@ -380,20 +374,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
 
-    public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
-            "assign-randomized-id", true,
-            List.of("mortent"), "2023-08-31", "2024-02-01",
-            "Whether to assign randomized id to the application",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
-    public static final UnboundIntFlag ASSIGNED_RANDOMIZED_ID_RATE = defineIntFlag(
-            "assign-randomized-id-rate", 5,
-            List.of("mortent"), "2023-09-11", "2024-02-01",
-            "Rate for requesting assigned ids for existing certificates. Rate is per maintainer cycle.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 0,
             List.of("vekterli"), "2022-09-12", "2024-02-01",
@@ -415,12 +395,6 @@ public class Flags {
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag LEGACY_ENDPOINTS = defineFeatureFlag(
-            "legacy-endpoints", true, List.of("mpolden", "tokle"), "2023-09-29", "2024-03-01",
-            "Whether legacy (non-anonymized) endpoints should be created in DNS",
-            "Takes effect on redeployment through controller",
-            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 2,
