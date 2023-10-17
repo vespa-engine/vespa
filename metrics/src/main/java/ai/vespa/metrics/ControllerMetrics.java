@@ -61,7 +61,12 @@ public enum ControllerMetrics implements VespaMetrics {
     METERING_MEMORY_GB("metering.memoryGB", Unit.GIGABYTE, "Controller: Metering memory GB"),
     METERING_VCPU("metering.vcpu", Unit.VCPU, "Controller: Metering VCPU"),
     METERING_LAST_REPORTED("metering_last_reported", Unit.SECONDS_SINCE_EPOCH, "Controller: Metering last reported"),
-    METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)");
+    METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)"),
+
+    MAIL_SENT("mail.sent", Unit.OPERATION, "Mail sent"),
+    MAIL_FAILED("mail.failed", Unit.OPERATION, "Mail delivery failed"),
+    MAIL_THROTTLED("mail.throttled", Unit.OPERATION, "Mail delivery throttled");
+
 
     private final String name;
     private final Unit unit;

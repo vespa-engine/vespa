@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -27,6 +28,8 @@ public class NotificationsSerializerTest {
     void serialization_test() throws IOException {
         NotificationsSerializer serializer = new NotificationsSerializer();
         TenantName tenantName = TenantName.from("tenant1");
+        var mail = Notification.MailContent.fromTemplate("my-template").subject("My mail subject")
+                .with("string-param", "string-value").with("list-param", List.of("elem1", "elem2")).build();
         List<Notification> notifications = List.of(
                 new Notification(Instant.ofEpochSecond(1234),
                         Notification.Type.applicationPackage,
@@ -37,7 +40,8 @@ public class NotificationsSerializerTest {
                         Notification.Type.deployment,
                         Notification.Level.error,
                         NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app1", "instance1"), DeploymentContext.systemTest, 12)),
-                        List.of("Failed to deploy: Node allocation failure")));
+                        List.of("Failed to deploy: Node allocation failure"),
+                        Optional.of(mail)));
 
         Slime serialized = serializer.toSlime(notifications);
         assertEquals("{\"notifications\":[" +
@@ -55,7 +59,10 @@ public class NotificationsSerializerTest {
                 "\"application\":\"app1\"," +
                 "\"instance\":\"instance1\"," +
                 "\"jobId\":\"test.us-east-1\"," +
-                "\"runNumber\":12" +
+                "\"runNumber\":12," +
+                "\"mail-template\":\"my-template\"," +
+                "\"mail-subject\":\"My mail subject\"," +
+                "\"mail-params\":{\"list-param\":[\"elem1\",\"elem2\"],\"string-param\":\"string-value\"}" +
                 "}]}", new String(SlimeUtils.toJsonBytes(serialized)));
 
         List<Notification> deserialized = serializer.fromSlime(tenantName, serialized);
