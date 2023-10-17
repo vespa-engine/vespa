@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.messagebus.Message;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -98,6 +99,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                         .post(Slime.class, self::newAdditionalItem))
                 .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/item/{item}")
                         .delete(self::deleteAdditionalItem))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/plan")
+                        .get(self::accountantTenantPlan)
+                        .post(Slime.class, self::setAccountantTenantPlan))
                 .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/export")
                         .put(Slime.class, self::putAccountantInvoiceExport))
                 .addRoute(RestApi.route("/billing/v2/accountant/plans")
@@ -357,6 +361,39 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             var itemCursor = items.addObject();
             toSlime(itemCursor, item);
         });
+
+        return slime;
+    }
+
+    private MessageResponse setAccountantTenantPlan(RestApi.RequestContext requestContext, Slime body) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var planId = PlanId.from(getInspectorFieldOrThrow(body.get(), "id"));
+        var response = billing.setPlan(tenant.name(), planId, false, true);
+
+        if (response.isSuccess()) {
+            return new MessageResponse("Plan: " + planId.value());
+        } else {
+            throw new RestApiException.BadRequest("Could not change plan: " + response.getErrorMessage());
+        }
+    }
+
+    private Slime accountantTenantPlan(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var planId = billing.getPlan(tenant.name());
+        var plan = planRegistry.plan(planId);
+
+        if (plan.isEmpty()) {
+            throw new RestApiException.BadRequest("Plan with ID '" + planId.value() + "' does not exist");
+        }
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        root.setString("id", plan.get().id().value());
+        root.setString("name", plan.get().displayName());
 
         return slime;
     }
