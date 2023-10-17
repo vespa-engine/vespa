@@ -185,4 +185,30 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                    {"message":"Successfully deleted line item line-item-id"}""");
        }
    }
+
+   @Test
+    void require_current_plan() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"id":"trial","name":"Free Trial - for testing purposes"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                           {"id": "paid"}""");
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Plan: paid"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"id":"paid","name":"Paid Plan - for testing purposes"}""");
+       }
+   }
 }
