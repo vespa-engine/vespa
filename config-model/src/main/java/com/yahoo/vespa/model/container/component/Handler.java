@@ -64,8 +64,8 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
         clientBindings.addAll(Arrays.asList(bindings));
     }
 
-    public final Set<BindingPattern> getServerBindings() {
-        return Collections.unmodifiableSet(serverBindings);
+    public final Collection<BindingPattern> getServerBindings() {
+        return List.copyOf(serverBindings);
     }
 
     public final List<BindingPattern> getClientBindings() {
