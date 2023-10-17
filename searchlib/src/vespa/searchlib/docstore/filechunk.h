@@ -120,9 +120,10 @@ public:
 
     virtual size_t getDiskHeaderFootprint() const { return _dataHeaderLen + _idxHeaderLen; }
     size_t getDiskBloat() const {
-        return (_addedBytes == 0)
+        size_t addedBytes = getAddedBytes();
+        return (addedBytes == 0)
                ? getDiskFootprint()
-               : size_t(getDiskFootprint() * double(_erasedBytes)/_addedBytes);
+               : size_t(getDiskFootprint() * double(getErasedBytes())/addedBytes);
     }
     /**
      * Get a metric for unorder of data in the file relative to when
@@ -154,9 +155,9 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     uint32_t getNumLids() const { return _numLids; }
-    size_t   getBloatCount() const { return _erasedCount; }
-    size_t   getAddedBytes() const { return _addedBytes; }
-    size_t   getErasedBytes() const { return _erasedBytes; }
+    size_t   getBloatCount() const { return _erasedCount.load(std::memory_order_relaxed); }
+    size_t   getAddedBytes() const { return _addedBytes.load(std::memory_order_relaxed); }
+    size_t   getErasedBytes() const { return _erasedBytes.load(std::memory_order_relaxed); }
     uint64_t getLastPersistedSerialNum() const;
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     virtual vespalib::system_time getModificationTime() const;
@@ -213,8 +214,8 @@ private:
     const FileId           _fileId;
     const NameId           _nameId;
     const vespalib::string _name;
-    size_t                 _erasedCount;
-    size_t                 _erasedBytes;
+    std::atomic<size_t>    _erasedCount;
+    std::atomic<size_t>    _erasedBytes;
     std::atomic<size_t>    _diskFootprint;
     size_t                 _sumNumBuckets;
     size_t                 _numChunksWithBuckets;
@@ -247,17 +248,17 @@ protected:
     static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
     using ChunkInfoVector = std::vector<ChunkInfo, vespalib::allocator_large<ChunkInfo>>;
-    const IBucketizer   * _bucketizer;
-    size_t                _addedBytes;
-    TuneFileSummary       _tune;
-    vespalib::string      _dataFileName;
-    vespalib::string      _idxFileName;
-    ChunkInfoVector       _chunkInfo;
-    std::atomic<uint64_t> _lastPersistedSerialNum;
-    uint32_t              _dataHeaderLen;
-    uint32_t              _idxHeaderLen;
-    uint32_t              _numLids;
-    uint32_t              _docIdLimit; // Limit when the file was created. Stored in idx file header.
+    const IBucketizer    * _bucketizer;
+    std::atomic<size_t>    _addedBytes;
+    TuneFileSummary        _tune;
+    vespalib::string       _dataFileName;
+    vespalib::string       _idxFileName;
+    ChunkInfoVector        _chunkInfo;
+    std::atomic<uint64_t>  _lastPersistedSerialNum;
+    uint32_t               _dataHeaderLen;
+    uint32_t               _idxHeaderLen;
+    uint32_t               _numLids;
+    uint32_t               _docIdLimit; // Limit when the file was created. Stored in idx file header.
     vespalib::system_time  _modificationTime;
 };
 

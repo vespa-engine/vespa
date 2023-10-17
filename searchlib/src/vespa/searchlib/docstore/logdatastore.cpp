@@ -453,9 +453,13 @@ void LogDataStore::compactFile(FileId fileId)
     std::unique_ptr<IWriteData> compacter;
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
-        size_t disk_footprint = fc->getDiskFootprint();
-        size_t disk_bloat = fc->getDiskBloat();
-        size_t compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        size_t compacted_size;
+        {
+            MonitorGuard guard(_updateLock);
+            size_t disk_footprint = fc->getDiskFootprint();
+            size_t disk_bloat = fc->getDiskBloat();
+            compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        }
         if ( ! shouldCompactToActiveFile(compacted_size)) {
             MonitorGuard guard(_updateLock);
             destinationFileId = allocateFileId(guard);
