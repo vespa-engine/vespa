@@ -230,7 +230,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg,
       _mbus(),
       _configUri(configUri),
       _closed(false),
-      _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()), // TODO wire config from outside
+      _docApiConverter(std::make_shared<PlaceHolderBucketResolver>()),
       _thread()
 {
     _component.registerMetricUpdateHook(*this, 5s);

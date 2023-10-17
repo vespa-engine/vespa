@@ -23,9 +23,8 @@ using document::BucketSpace;
 
 namespace storage {
 
-DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
-                                           std::shared_ptr<const BucketResolver> bucketResolver)
-    : _priConverter(std::make_unique<PriorityConverter>(configUri)),
+DocumentApiConverter::DocumentApiConverter(std::shared_ptr<const BucketResolver> bucketResolver)
+    : _priConverter(std::make_unique<PriorityConverter>()),
       _bucketResolver(std::move(bucketResolver))
 {}
 

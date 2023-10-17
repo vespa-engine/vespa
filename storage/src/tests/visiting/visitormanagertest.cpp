@@ -83,7 +83,7 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     vdstestlib::DirConfig config(getStandardConfig(true));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
 
-    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
     _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
     _node->setupDummyPersistence();
     _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));

@@ -161,7 +161,7 @@ VisitorTest::initializeTest(const TestParams& params)
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d1", rootFolder.c_str())));
 
-    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
     if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
         _messageSessionFactory->_autoReplyError = params._autoReplyError;
         _messageSessionFactory->_createAutoReplyVisitorSessions = true;
