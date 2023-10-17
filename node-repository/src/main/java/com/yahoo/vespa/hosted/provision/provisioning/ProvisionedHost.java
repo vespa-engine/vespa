@@ -31,6 +31,7 @@ public class ProvisionedHost {
     private final Flavor hostFlavor;
     private final NodeType hostType;
     private final Optional<ApplicationId> provisionedForApplicationId;
+    private final Optional<ApplicationId> exclusiveToApplicationId;
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
     private final List<HostName> nodeHostnames;
     private final NodeResources nodeResources;
@@ -38,7 +39,9 @@ public class ProvisionedHost {
     private final CloudAccount cloudAccount;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
-                           Optional<ApplicationId> provisionedForApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
+                           Optional<ApplicationId> provisionedForApplicationId,
+                           Optional<ApplicationId> exclusiveToApplicationId,
+                           Optional<ClusterSpec.Type> exclusiveToClusterType,
                            List<HostName> nodeHostnames, NodeResources nodeResources,
                            Version osVersion, CloudAccount cloudAccount) {
         if (!hostType.isHost()) throw new IllegalArgumentException(hostType + " is not a host");
@@ -47,6 +50,7 @@ public class ProvisionedHost {
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
         this.provisionedForApplicationId = Objects.requireNonNull(provisionedForApplicationId, "provisionedForApplicationId must be set");
+        this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId must be set");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType must be set");
         this.nodeHostnames = validateNodeAddresses(nodeHostnames);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
@@ -68,6 +72,7 @@ public class ProvisionedHost {
                                    .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                                    .cloudAccount(cloudAccount);
         provisionedForApplicationId.ifPresent(builder::provisionedForApplicationId);
+        exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
         exclusiveToClusterType.ifPresent(builder::exclusiveToClusterType);
         if ( ! hostTTL.isZero()) builder.hostTTL(hostTTL);
         return builder.build();
@@ -85,6 +90,7 @@ public class ProvisionedHost {
     public Flavor hostFlavor() { return hostFlavor; }
     public NodeType hostType() { return hostType; }
     public Optional<ApplicationId> provisionedForApplicationId() { return provisionedForApplicationId; }
+    public Optional<ApplicationId> exclusiveToApplicationId() { return exclusiveToApplicationId; }
     public Optional<ClusterSpec.Type> exclusiveToClusterType() { return exclusiveToClusterType; }
     public List<HostName> nodeHostnames() { return nodeHostnames; }
     public NodeResources nodeResources() { return nodeResources; }
@@ -103,6 +109,7 @@ public class ProvisionedHost {
                hostFlavor.equals(that.hostFlavor) &&
                hostType == that.hostType &&
                provisionedForApplicationId.equals(that.provisionedForApplicationId) &&
+               exclusiveToApplicationId.equals(that.exclusiveToApplicationId) &&
                exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
                nodeHostnames.equals(that.nodeHostnames) &&
                nodeResources.equals(that.nodeResources) &&
@@ -112,7 +119,7 @@ public class ProvisionedHost {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, hostType, provisionedForApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, provisionedForApplicationId, exclusiveToApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
     }
 
     @Override
@@ -123,8 +130,9 @@ public class ProvisionedHost {
                ", hostFlavor=" + hostFlavor +
                ", hostType=" + hostType +
                ", provisionedForApplicationId=" + provisionedForApplicationId +
+               ", exclusiveToApplicationId=" + exclusiveToApplicationId +
                ", exclusiveToClusterType=" + exclusiveToClusterType +
-               ", nodeAddresses=" + nodeHostnames +
+               ", nodeHostnames=" + nodeHostnames +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +
                ", cloudAccount=" + cloudAccount +
