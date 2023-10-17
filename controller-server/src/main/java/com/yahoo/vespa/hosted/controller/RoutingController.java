@@ -64,6 +64,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,6 +80,8 @@ import static java.util.stream.Collectors.toMap;
  * @author mpolden
  */
 public class RoutingController {
+
+    private static final Logger LOG = Logger.getLogger(RoutingController.class.getName());
 
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
@@ -212,6 +216,8 @@ public class RoutingController {
 
         // Register rotation-backed endpoints in DNS
         registerRotationEndpointsInDns(prepared);
+
+        LOG.log(Level.FINE, () -> "Prepared endpoints: " + prepared);
 
         return prepared;
     }
