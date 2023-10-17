@@ -8,7 +8,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <limits>
-#include <xxhash.h>
 
 using vespalib::nbostream;
 using vespalib::asciistream;
@@ -79,29 +78,7 @@ void BucketId::initialize() noexcept {
 
 uint64_t
 BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
-    const uint64_t raw_id = bucketId.getId();
-    /*
-     * This is a workaround for gcc 12 and on that produces incorrect warning when compiled with -march=haswell or newer
-     * /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp: In member function ‘uint64_t document::BucketId::hash::operator()(const document::BucketId&) const’:
-     * /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp:83:23: error: ‘raw_id’ may be used uninitialized [-Werror=maybe-uninitialized]
-     *   83 |     return XXH3_64bits(&raw_id, sizeof(uint64_t));
-     *      |                       ^
-     * In file included from /usr/include/xxh3.h:55,
-     *            from /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp:11:
-     * /usr/include/xxhash.h:5719:29: note: by argument 1 of type ‘const void*’ to ‘XXH64_hash_t XXH_INLINE_XXH3_64bits(const void*, size_t)’ declared here
-     * 5719 | XXH_PUBLIC_API XXH64_hash_t XXH3_64bits(XXH_NOESCAPE const void* input, size_t length)
-     *      |                             ^~~~~~~~~~~
-     * /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp:82:14: note: ‘raw_id’ declared here
-     *   82 |     uint64_t raw_id = bucketId.getId();
-     *    |              ^~~~~~
-     * cc1plus: all warnings being treated as errors
-     *
-     * Same issue in storage/src/vespa/storage/persistence/filestorhandlerimpl.cpp:FileStorHandlerImpl::dispersed_bucket_bits
-     */
-    uint8_t raw_as_bytes[sizeof(raw_id)];
-    memcpy(raw_as_bytes, &raw_id, sizeof(raw_id));
-
-    return XXH3_64bits(raw_as_bytes, sizeof(raw_as_bytes));
+    return vespalib::xxhash::xxh3_64(bucketId.getId());
 }
 
 vespalib::string
