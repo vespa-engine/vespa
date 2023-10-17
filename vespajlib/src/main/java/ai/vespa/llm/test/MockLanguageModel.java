@@ -7,6 +7,8 @@ import ai.vespa.llm.completion.Prompt;
 import com.yahoo.api.annotations.Beta;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -24,6 +26,11 @@ public class MockLanguageModel implements LanguageModel {
     @Override
     public List<Completion> complete(Prompt prompt) {
         return completer.apply(prompt);
+    }
+
+    @Override
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> action) {
+        throw new RuntimeException("Not implemented");
     }
 
     public static class Builder {

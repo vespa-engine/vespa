@@ -19,8 +19,10 @@ public record Completion(String text, FinishReason finishReason) {
         length,
 
         /** The completion is the predicted ending of the prompt. */
-        stop
+        stop,
 
+        /** The completion is not finished yet, more tokens are incoming. */
+        none
     }
 
     public Completion(String text, FinishReason finishReason) {
