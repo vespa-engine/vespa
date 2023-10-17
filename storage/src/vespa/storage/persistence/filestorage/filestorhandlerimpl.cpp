@@ -897,7 +897,13 @@ FileStorHandlerImpl::flush()
 uint64_t
 FileStorHandlerImpl::dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
     const uint64_t raw_id = bucket.getBucketId().getId();
-    return XXH3_64bits(&raw_id, sizeof(uint64_t));
+    /*
+     * This is a workaround for gcc 12 and on that produces incorrect warning when compiled with -march=haswell or newer
+     * See document/src/vespa/document/bucket/bucketid.cpp: In member function ‘uint64_t document::BucketId::hash::operator()(const document::BucketId&) const
+     */
+    uint8_t raw_as_bytes[sizeof(raw_id)];
+    memcpy(raw_as_bytes, &raw_id, sizeof(raw_id));
+    return XXH3_64bits(&raw_as_bytes, sizeof(raw_id));
 }
 
 FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender)

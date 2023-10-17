@@ -81,7 +81,7 @@ uint64_t
 BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
     const uint64_t raw_id = bucketId.getId();
     /*
-     * This is a workaround for gcc 12 and on that produces incorrect warning
+     * This is a workaround for gcc 12 and on that produces incorrect warning when compiled with -march=haswell or newer
      * /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp: In member function ‘uint64_t document::BucketId::hash::operator()(const document::BucketId&) const’:
      * /home/balder/git/vespa/document/src/vespa/document/bucket/bucketid.cpp:83:23: error: ‘raw_id’ may be used uninitialized [-Werror=maybe-uninitialized]
      *   83 |     return XXH3_64bits(&raw_id, sizeof(uint64_t));
@@ -95,6 +95,8 @@ BucketId::hash::operator () (const BucketId& bucketId) const noexcept {
      *   82 |     uint64_t raw_id = bucketId.getId();
      *    |              ^~~~~~
      * cc1plus: all warnings being treated as errors
+     *
+     * Same issue in storage/src/vespa/storage/persistence/filestorhandlerimpl.cpp:FileStorHandlerImpl::dispersed_bucket_bits
      */
     uint8_t raw_as_bytes[sizeof(raw_id)];
     memcpy(raw_as_bytes, &raw_id, sizeof(raw_id));
