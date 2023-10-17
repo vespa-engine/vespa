@@ -204,7 +204,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
         applicationPrices(applicationsArray, prices.priceInformationApplications(), priceParameters);
 
         var priceInfoArray = cursor.setArray("priceInfo");
-        addItem(priceInfoArray, "Enclave", prices.totalPriceInformation().enclaveDiscount());
+        addItem(priceInfoArray, "Enclave (minimum $10k per month)", prices.totalPriceInformation().enclaveDiscount());
         addItem(priceInfoArray, "Committed spend", prices.totalPriceInformation().committedAmountDiscount());
 
         setBigDecimal(cursor, "totalAmount", prices.totalPriceInformation().totalAmount());

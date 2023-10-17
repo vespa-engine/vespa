@@ -27,15 +27,15 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                               "applications": [
                                                 {
                                                   "priceInfo": [
-                                                    {"description": "Basic support unit price", "amount": "2240.00"},
-                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                    {"description": "Basic support unit price", "amount": "4.30"},
+                                                    {"description": "Volume discount", "amount": "-0.10"}
                                                   ]
                                                 }
                                               ],
                                               "priceInfo": [
-                                                {"description": "Committed spend", "amount": "-1.23"}
+                                                {"description": "Committed spend", "amount": "-0.20"}
                                               ],
-                                              "totalAmount": "2233.13"
+                                              "totalAmount": "4.00"
                                             }
                                             """,
                                     200);
@@ -49,16 +49,17 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                               "applications": [
                                                 {
                                                   "priceInfo": [
-                                                    {"description": "Basic support unit price", "amount": "2240.00"},
-                                                    {"description": "Enclave", "amount": "-15.12"},
-                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                    {"description": "Basic support unit price", "amount": "4.30"},
+                                                    {"description": "Enclave", "amount": "-0.15"},
+                                                    {"description": "Volume discount", "amount": "-0.10"}
                                                   ]
                                                 }
                                               ],
                                               "priceInfo": [
-                                                {"description": "Committed spend", "amount": "-1.23"}
+                                                {"description": "Enclave (minimum $10k per month)", "amount": "10.15"},
+                                                {"description": "Committed spend", "amount": "-0.20"}
                                               ],
-                                              "totalAmount": "2218.00"
+                                              "totalAmount": "3.85"
                                             }
                                             """,
                                     200);
@@ -72,16 +73,17 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                               "applications": [
                                                 {
                                                   "priceInfo": [
-                                                    {"description": "Commercial support unit price", "amount": "3200.00"},
-                                                    {"description": "Enclave", "amount": "-15.12"},
-                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                    {"description": "Commercial support unit price", "amount": "13.30"},
+                                                    {"description": "Enclave", "amount": "-0.15"},
+                                                    {"description": "Volume discount", "amount": "-0.10"}
                                                   ]
                                                 }
                                               ],
                                               "priceInfo": [
-                                                {"description": "Committed spend", "amount": "-1.23"}
+                                                {"description": "Enclave (minimum $10k per month)", "amount": "1.15"},
+                                                {"description": "Committed spend", "amount": "-0.20"}
                                               ],
-                                              "totalAmount": "3178.00"
+                                              "totalAmount": "12.85"
                                             }
                                             """,
                                     200);
@@ -95,23 +97,23 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
                                               "applications": [
                                                 {
                                                   "priceInfo": [
-                                                    {"description": "Commercial support unit price", "amount": "2000.00"},
-                                                    {"description": "Enclave", "amount": "-15.12"},
-                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                    {"description": "Commercial support unit price", "amount": "13.30"},
+                                                    {"description": "Enclave", "amount": "-0.15"},
+                                                    {"description": "Volume discount", "amount": "-0.10"}
                                                   ]
                                                 },
                                                 {
                                                   "priceInfo": [
-                                                    {"description": "Commercial support unit price", "amount": "2000.00"},
-                                                    {"description": "Enclave", "amount": "-15.12"},
-                                                    {"description": "Volume discount", "amount": "-5.64"}
+                                                    {"description": "Commercial support unit price", "amount": "13.30"},
+                                                    {"description": "Enclave", "amount": "-0.15"},
+                                                    {"description": "Volume discount", "amount": "-0.10"}
                                                   ]
                                                 }
                                               ],
                                               "priceInfo": [
-                                                {"description": "Committed spend", "amount": "-1.23"}
+                                                {"description": "Committed spend", "amount": "-0.20"}
                                               ],
-                                              "totalAmount": "3957.24"
+                                              "totalAmount": "25.90"
                                             }
                                             """,
                                     200);
@@ -151,31 +153,31 @@ public class PricingApiHandlerTest extends ControllerContainerCloudTest {
 
     /**
      * 1 app, with 2 clusters (with total resources for all clusters with each having
-     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU,
+     * 1 node, with 4 vcpu, 8 Gb memory, 100 Gb disk and no GPU,
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1App(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("vcpu=2,memoryGb=2,diskGb=20,gpuMemoryGb=0", UTF_8) +
-                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
+        return "application=" + URLEncoder.encode("vcpu=4,memoryGb=8,diskGb=100,gpuMemoryGb=0", UTF_8) +
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=20";
     }
 
     /**
      * 1 app, with 2 clusters (with total resources for all clusters with each having
-     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU,
+     * 1 node, with 4 vcpu, 8 Gb memory, 100 Gb disk and no GPU,
      * price will be 20000 + 2000 + 200
      */
     String urlEncodedPriceInformation1AppEnclave(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("enclaveVcpu=2,enclaveMemoryGb=2,enclaveDiskGb=20,enclaveGpuMemoryGb=0", UTF_8) +
-                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=100";
+        return "application=" + URLEncoder.encode("enclaveVcpu=4,enclaveMemoryGb=8,enclaveDiskGb=100,enclaveGpuMemoryGb=0", UTF_8) +
+                "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=20";
     }
 
     /**
      * 2 apps, with 1 cluster (with total resources for all clusters with each having
-     * 1 node, with 1 vcpu, 1 Gb memory, 10 Gb disk and no GPU
+     * 1 node, with 4 vcpu, 8 Gb memory, 100 Gb disk and no GPU,
      */
     String urlEncodedPriceInformation2AppsEnclave(PricingInfo.SupportLevel supportLevel) {
-        return "application=" + URLEncoder.encode("enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
-                "&application=" + URLEncoder.encode("enclaveVcpu=1,enclaveMemoryGb=1,enclaveDiskGb=10,enclaveGpuMemoryGb=0", UTF_8) +
+        return "application=" + URLEncoder.encode("enclaveVcpu=4,enclaveMemoryGb=8,enclaveDiskGb=100,enclaveGpuMemoryGb=0", UTF_8) +
+                "&application=" + URLEncoder.encode("enclaveVcpu=4,enclaveMemoryGb=8,enclaveDiskGb=100,enclaveGpuMemoryGb=0", UTF_8) +
                 "&supportLevel=" + supportLevel.name().toLowerCase() + "&committedSpend=0";
     }
 
