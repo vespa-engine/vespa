@@ -49,7 +49,6 @@ import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,7 +78,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_profile() {
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"emailVerified\":true},\"tenant\":{\"company\":\"\",\"website\":\"\"}}", 200);
 
         var updateRequest = request("/application/v4/tenant/scoober/info/profile", PUT)
                 .data("{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}")
@@ -101,7 +100,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_billing() {
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"phone\":\"\"}}", 200);
 
         var fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         var fullBillingContact = "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":" + fullAddress + "}";
@@ -118,7 +117,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_contacts() {
         var request = request("/application/v4/tenant/scoober/info/contacts", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{\"contacts\":[]}", 200);
+        tester.assertResponse(request, "{\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
 
         var fullContacts = "{\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\",\"emailVerified\":false},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\",\"emailVerified\":false}]}";
@@ -134,7 +133,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":true,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
         var postPartial =
@@ -189,7 +188,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":true,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         // name needs to be present and not blank
         var partialInfoMissingName = "{\"contactName\": \" \"}";
