@@ -5,14 +5,5 @@
   "contactName": "administrator",
   "contactEmail": "administrator@tenant",
   "contactEmailVerified": true,
-  "contacts": [
-    {
-      "audiences": [
-        "tenant",
-        "notifications"
-      ],
-      "email": "administrator@tenant",
-      "emailVerified": true
-    }
-  ]
+  "contacts": [ ]
 }
