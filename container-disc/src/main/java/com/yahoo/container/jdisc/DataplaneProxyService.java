@@ -109,6 +109,10 @@ public class DataplaneProxyService extends AbstractComponent {
                                                    config.tokenPort(),
                                                    config.tokenEndpoints(),
                                                    root));
+                if (configChanged) {
+                    logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
+                            .formatted(String.join(", ", config.tokenEndpoints())));
+                }
                 if (configChanged && state == NginxState.RUNNING) {
                     changeState(NginxState.RELOAD_REQUIRED);
                 }
