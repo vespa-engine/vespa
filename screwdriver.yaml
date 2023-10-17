@@ -238,6 +238,7 @@ jobs:
       - DOCKER_IMAGE_DEPLOY_KEY
       - DOCKER_HUB_DEPLOY_KEY
       - GHCR_DEPLOY_KEY
+      - ANN_BENCHMARK_DEPLOY_KEY
       - SVC_OKTA_VESPA_FACTORY_TOKEN
 
     environment:
@@ -265,6 +266,8 @@ jobs:
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
           screwdriver/release-container-image-docker.sh $VESPA_VERSION
+      - release-ann-benchmark: |
+          screwdriver/release-ann-benchmark.sh $VESPA_VERSION
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
       - update-released-time: |
