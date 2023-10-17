@@ -18,4 +18,10 @@ public class BillingReporterMock implements BillingReporter {
     public BillingReference maintainTenant(CloudTenant tenant) {
         return new BillingReference(UUID.randomUUID().toString(), clock.instant());
     }
+
+    @Override
+    public InvoiceUpdate maintainInvoice(Bill bill) {
+        return new InvoiceUpdate(0,0,1);
+    }
+
 }
