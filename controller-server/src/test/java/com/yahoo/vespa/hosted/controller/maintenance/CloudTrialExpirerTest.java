@@ -9,6 +9,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -17,16 +18,23 @@ import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author ogronnesby
  */
 public class CloudTrialExpirerTest {
+
+    private static final boolean OVERWRITE_TEST_FILES = false;
 
     private final ControllerTester tester = new ControllerTester(SystemName.PublicCd);
     private final DeploymentTester deploymentTester = new DeploymentTester(tester);
@@ -94,30 +102,50 @@ public class CloudTrialExpirerTest {
     }
 
     @Test
-    void queues_trial_notification_based_on_account_age() {
+    void queues_trial_notification_based_on_account_age() throws IOException {
         var clock = (ManualClock)tester.controller().clock();
+        var mailer = (MockMailer) tester.serviceRegistry().mailer();
         var tenant = TenantName.from("trial-tenant");
         ((InMemoryFlagSource) tester.controller().flagSource())
                 .withBooleanFlag(Flags.CLOUD_TRIAL_NOTIFICATIONS.id(), true);
         registerTenant(tenant.value(), "trial", Duration.ZERO);
         assertEquals(0.0, expirer.maintain());
         assertEquals("Welcome to Vespa Cloud", lastAccountLevelNotificationTitle(tenant));
+        assertLastEmailEquals(mailer, "welcome.html");
 
         clock.advance(Duration.ofDays(7));
         assertEquals(0.0, expirer.maintain());
         assertEquals("How is your Vespa Cloud trial going?", lastAccountLevelNotificationTitle(tenant));
+        assertLastEmailEquals(mailer, "trial-reminder.html");
 
         clock.advance(Duration.ofDays(5));
         assertEquals(0.0, expirer.maintain());
         assertEquals("Your Vespa Cloud trial expires in 2 days", lastAccountLevelNotificationTitle(tenant));
+        assertLastEmailEquals(mailer, "trial-expiring-soon.html");
 
         clock.advance(Duration.ofDays(1));
         assertEquals(0.0, expirer.maintain());
         assertEquals("Your Vespa Cloud trial expires tomorrow", lastAccountLevelNotificationTitle(tenant));
+        assertLastEmailEquals(mailer, "trial-expiring-immediately.html");
 
         clock.advance(Duration.ofDays(2));
         assertEquals(0.0, expirer.maintain());
         assertEquals("Your Vespa Cloud trial has expired", lastAccountLevelNotificationTitle(tenant));
+        assertLastEmailEquals(mailer, "trial-expired.html");
+    }
+
+    private void assertLastEmailEquals(MockMailer mailer, String expectedContentFile) throws IOException {
+        var mails = mailer.inbox("dev-trial-tenant");
+        assertFalse(mails.isEmpty());
+        var content = mails.get(mails.size() - 1).htmlMessage().orElseThrow();
+        var path = Paths.get("src/test/resources/mail/" + expectedContentFile);
+        if (OVERWRITE_TEST_FILES) {
+            Files.write(path, content.getBytes(),
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        } else {
+            var expectedContent = Files.readString(path);
+            assertEquals(expectedContent, content);
+        }
     }
 
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {
