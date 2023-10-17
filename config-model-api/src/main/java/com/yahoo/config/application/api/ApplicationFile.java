@@ -27,21 +27,21 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     }
 
     /**
-     * Checks whether this file is a directory.
+     * Check whether or not this file is a directory.
      *
      * @return true if it is, false if not.
      */
     public abstract boolean isDirectory();
 
     /**
-     * Tests whether this file exists.
+     * Test whether or not this file exists.
      *
      * @return true if it exists, false if not.
      */
     public abstract boolean exists();
 
     /**
-     * Creates a {@link Reader} for the contents of this file.
+     * Create a {@link Reader} for the contents of this file.
      *
      * @return A {@link Reader} that should be closed after use.
      * @throws FileNotFoundException if the file is not found.
@@ -50,7 +50,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
 
 
     /**
-     * Creates an {@link InputStream} for the contents of this file.
+     * Create an {@link InputStream} for the contents of this file.
      *
      * @return An {@link InputStream} that should be closed after use.
      * @throws FileNotFoundException if the file is not found.
@@ -58,7 +58,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract InputStream createInputStream() throws FileNotFoundException;
 
     /**
-     * Creates a directory at the path represented by this file. Parent directories will
+     * Create a directory at the path represented by this file. Parent directories will
      * be automatically created.
      *
      * @return this
@@ -67,7 +67,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract ApplicationFile createDirectory();
 
     /**
-     * Writes the contents from supplied reader to this file. Any existing content will be overwritten!
+     * Write the contents from this reader to this file. Any existing content will be overwritten!
      *
      * @param input A reader pointing to the content that should be written.
      * @return this
@@ -82,7 +82,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract ApplicationFile appendFile(String value);
 
     /**
-     * Lists the files under this directory. If this is file, an empty list is returned.
+     * List the files under this directory. If this is file, an empty list is returned.
      * Only immediate files/subdirectories are returned.
      *
      * @return a list of files in this directory.
@@ -92,7 +92,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     }
 
     /**
-     * Lists the files under this directory. If this is a file, an empty list is returned.
+     * List the files under this directory. If this is file, an empty list is returned.
      * Only immediate files/subdirectories are returned.
      *
      * @param filter A filter functor for filtering path names
@@ -101,7 +101,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract List<ApplicationFile> listFiles(PathFilter filter);
 
     /**
-     * Lists the files in this directory, optionally lists files for subdirectories recursively as well.
+     * List the files in this directory, optionally list files for subdirectories recursively as well.
      *
      * @param recurse Set to true if all files in the directory tree should be returned.
      * @return a list of files in this directory.
@@ -121,7 +121,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     }
 
     /**
-     * Deletes the file pointed to by this. If this is a non-empty directory, the operation will throw.
+     * Delete the file pointed to by this. If it is a non-empty directory, the operation will throw.
      *
      * @return this.
      * @throws RuntimeException if the file is a directory and not empty.
@@ -129,7 +129,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract ApplicationFile delete();
 
     /**
-     * Gets the path that this file represents.
+     * Get the path that this file represents.
      *
      * @return a Path
      */

@@ -166,8 +166,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(),
                                                             deployState.getDeployLogger(),
                                                             deployState.featureFlags(),
-                                                            userConfiguredUrls,
-                                                            deployState.getApplicationPackage());
+                                                            userConfiguredUrls);
         for (Component<?, ?> component : getAllComponents()) {
             files.register(component);
         }
