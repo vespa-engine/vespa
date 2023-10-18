@@ -4,6 +4,7 @@ package com.yahoo.search.ranking;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.util.*;
@@ -28,6 +29,71 @@ class GlobalPhaseSetup {
         this.matchFeaturesToHide = matchFeaturesToHide;
         this.normalizers = normalizers;
         this.defaultValues = defaultValues;
+    }
+
+    static class DefaultQueryFeatureExtractor {
+        final String baseName;
+        final String qfName;
+        TensorType type = null;
+        Tensor value = null;
+        DefaultQueryFeatureExtractor(String unwrappedQueryFeature) {
+            baseName = unwrappedQueryFeature;
+            qfName = "query(" + baseName + ")";
+        }
+        List<String> lookingFor() {
+            return List.of(qfName, "vespa.type.query." + baseName);
+        }
+        void accept(String key, String propValue) {
+            if (key.equals(qfName)) {
+                this.value = Tensor.from(propValue);
+            } else {
+                this.type = TensorType.fromSpec(propValue);
+            }
+        }
+        Tensor extract() {
+            if (value != null) {
+                return value;
+            }
+            if (type != null) {
+                return Tensor.Builder.of(type).build();
+            }
+            return Tensor.from(0.0);
+        }
+    }
+
+    static private Map<String, Tensor> extraDefaultQueryFeatureValues(RankProfilesConfig.Rankprofile rp,
+                                                                      List<String> fromQuery,
+                                                                      List<NormalizerSetup> normalizers)
+    {
+        Map<String, DefaultQueryFeatureExtractor> extractors = new HashMap<>();
+        for (String fn : fromQuery) {
+            extractors.put(fn, new DefaultQueryFeatureExtractor(fn));
+        }
+        for (var n : normalizers) {
+            for (String fn : n.inputEvalSpec().fromQuery()) {
+                extractors.put(fn, new DefaultQueryFeatureExtractor(fn));
+            }
+        }
+        Map<String, DefaultQueryFeatureExtractor> targets = new HashMap<>();
+        for (var extractor : extractors.values()) {
+            for (String key : extractor.lookingFor()) {
+                var old = targets.put(key, extractor);
+                if (old != null) {
+                    throw new IllegalStateException("Multiple targets for key: " + key);
+                }
+            }
+        }
+        for (var prop : rp.fef().property()) {
+            var extractor = targets.get(prop.name());
+            if (extractor != null) {
+                extractor.accept(prop.name(), prop.value());
+            }
+        }
+        Map<String, Tensor> defaultValues = new HashMap<>();
+        for (var extractor : extractors.values()) {
+            defaultValues.put(extractor.qfName, extractor.extract());
+        }
+        return defaultValues;
     }
 
     static GlobalPhaseSetup maybeMakeSetup(RankProfilesConfig.Rankprofile rp, RankProfilesEvaluator modelEvaluator) {
@@ -104,7 +170,8 @@ class GlobalPhaseSetup {
             }
             Supplier<Evaluator> supplier = SimpleEvaluator.wrap(functionEvaluatorSource);
             var gfun = new FunEvalSpec(supplier, fromQuery, fromMF);
-            return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers, Collections.emptyMap());
+            var defaultValues = extraDefaultQueryFeatureValues(rp, fromQuery, normalizers);
+            return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers, defaultValues);
         }
         return null;
     }
