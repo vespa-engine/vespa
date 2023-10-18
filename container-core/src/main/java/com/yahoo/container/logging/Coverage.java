@@ -59,6 +59,9 @@ public class Coverage {
         if (docs < total) {
             return (int) Math.round(docs * 100.0d / total);
         }
+        if ((total == 0) && isDegradedByTimeout()) {
+            return 0;
+        }
         return 100;
     }
 
