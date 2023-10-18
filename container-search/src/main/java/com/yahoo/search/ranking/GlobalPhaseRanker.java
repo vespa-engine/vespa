@@ -13,10 +13,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.data.access.helpers.MatchFeatureFilter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -52,12 +49,12 @@ public class GlobalPhaseRanker {
 
     static void rerankHitsImpl(GlobalPhaseSetup setup, Query query, Result result) {
         var mainSpec = setup.globalPhaseEvalSpec;
-        var mainSrc = withQueryPrep(mainSpec.evalSource(), mainSpec.fromQuery(), query);
+        var mainSrc = withQueryPrep(mainSpec.evalSource(), mainSpec.fromQuery(), setup.defaultValues, query);
         int rerankCount = resolveRerankCount(setup, query);
         var normalizers = new ArrayList<NormalizerContext>();
         for (var nSetup : setup.normalizers) {
             var normSpec = nSetup.inputEvalSpec();
-            var normEvalSrc = withQueryPrep(normSpec.evalSource(), normSpec.fromQuery(), query);
+            var normEvalSrc = withQueryPrep(normSpec.evalSource(), normSpec.fromQuery(), setup.defaultValues, query);
             normalizers.add(new NormalizerContext(nSetup.name(), nSetup.supplier().get(), normEvalSrc, normSpec.fromMF()));
         }
         var rescorer = new HitRescorer(mainSrc, mainSpec.fromMF(), normalizers);
@@ -73,8 +70,8 @@ public class GlobalPhaseRanker {
         }
     }
 
-    static Supplier<Evaluator> withQueryPrep(Supplier<Evaluator> evalSource, List<String> queryFeatures, Query query) {
-        var prepared = PreparedInput.findFromQuery(query, queryFeatures);
+    static Supplier<Evaluator> withQueryPrep(Supplier<Evaluator> evalSource, List<String> queryFeatures, Map<String, Tensor> defaultValues, Query query) {
+        var prepared = PreparedInput.findFromQuery(query, queryFeatures, defaultValues);
         Supplier<Evaluator> supplier = () -> {
             var evaluator = evalSource.get();
             for (var entry : prepared) {

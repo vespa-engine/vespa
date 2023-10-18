@@ -3,15 +3,10 @@ package com.yahoo.search.ranking;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
 
+import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Supplier;
 
 class GlobalPhaseSetup {
@@ -20,16 +15,19 @@ class GlobalPhaseSetup {
     final int rerankCount;
     final Collection<String> matchFeaturesToHide;
     final List<NormalizerSetup> normalizers;
+    final Map<String, Tensor> defaultValues;
 
     GlobalPhaseSetup(FunEvalSpec globalPhaseEvalSpec,
                      final int rerankCount,
                      Collection<String> matchFeaturesToHide,
-                     List<NormalizerSetup> normalizers)
+                     List<NormalizerSetup> normalizers,
+                     Map<String, Tensor> defaultValues)
     {
         this.globalPhaseEvalSpec = globalPhaseEvalSpec;
         this.rerankCount = rerankCount;
         this.matchFeaturesToHide = matchFeaturesToHide;
         this.normalizers = normalizers;
+        this.defaultValues = defaultValues;
     }
 
     static GlobalPhaseSetup maybeMakeSetup(RankProfilesConfig.Rankprofile rp, RankProfilesEvaluator modelEvaluator) {
@@ -106,7 +104,7 @@ class GlobalPhaseSetup {
             }
             Supplier<Evaluator> supplier = SimpleEvaluator.wrap(functionEvaluatorSource);
             var gfun = new FunEvalSpec(supplier, fromQuery, fromMF);
-            return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers);
+            return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers, Collections.emptyMap());
         }
         return null;
     }

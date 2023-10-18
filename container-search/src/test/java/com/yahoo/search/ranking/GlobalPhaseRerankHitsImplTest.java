@@ -60,17 +60,20 @@ public class GlobalPhaseRerankHitsImplTest {
     static NormalizerSetup makeNormalizer(String name, List<Double> expected, FunEvalSpec evalSpec) {
         return new NormalizerSetup(name, () -> new ExpectingNormalizer(expected), evalSpec);
     }
-    static GlobalPhaseSetup makeFullSetup(FunEvalSpec mainSpec, int rerankCount,
-                                          List<String> hiddenMF, List<NormalizerSetup> normalizers)
-    {
-        return new GlobalPhaseSetup(mainSpec, rerankCount, hiddenMF, normalizers);
+    static class SetupBuilder {
+        FunEvalSpec mainSpec = makeConstSpec(0.0);
+        int rerankCount = 100;
+        List<String> hiddenMF = new ArrayList<>();
+        List<NormalizerSetup> normalizers = new ArrayList<>();
+        Map<String, Tensor> defaultValues = new HashMap<>();
+        SetupBuilder eval(FunEvalSpec spec) { mainSpec = spec; return this; }
+        SetupBuilder rerank(int value) { rerankCount = value; return this; }
+        SetupBuilder hide(String mf) { hiddenMF.add(mf); return this; }
+        SetupBuilder addNormalizer(NormalizerSetup normalizer) { normalizers.add(normalizer); return this; }
+        SetupBuilder addDefault(String name, Tensor value) { defaultValues.put(name, value); return this; }
+        GlobalPhaseSetup build() { return new GlobalPhaseSetup(mainSpec, rerankCount, hiddenMF, normalizers, defaultValues); }
     }
-    static GlobalPhaseSetup makeSimpleSetup(FunEvalSpec mainSpec, int rerankCount) {
-        return makeFullSetup(mainSpec, rerankCount, Collections.emptyList(), Collections.emptyList());
-    }
-    static GlobalPhaseSetup makeNormSetup(FunEvalSpec mainSpec, List<NormalizerSetup> normalizers) {
-        return makeFullSetup(mainSpec, 100, Collections.emptyList(), normalizers);
-    }
+    static SetupBuilder setup() { return new SetupBuilder(); }
     static record NamedValue(String name, double value) {}
     NamedValue value(String name, double value) {
         return new NamedValue(name, value);
@@ -167,7 +170,7 @@ public class GlobalPhaseRerankHitsImplTest {
         }
     }
     @Test void partialRerankWithRescaling() {
-        var setup = makeSimpleSetup(makeConstSpec(3.0), 2);
+        var setup = setup().rerank(2).eval(makeConstSpec(3.0)).build();
         var query = makeQuery(Collections.emptyList());
         var result = makeResult(query, List.of(hit("a", 3), hit("b", 4), hit("c", 5), hit("d", 6)));
         var expect = Expect.make(List.of(hit("a", 1), hit("b", 2), hit("c", 3), hit("d", 3)));
@@ -175,8 +178,7 @@ public class GlobalPhaseRerankHitsImplTest {
         expect.verifyScores(result);
     }
     @Test void matchFeaturesCanBePartiallyHidden() {
-        var setup = makeFullSetup(makeSumSpec(Collections.emptyList(), List.of("public_value", "private_value")), 2,
-                List.of("private_value"), Collections.emptyList());
+        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("public_value", "private_value"))).hide("private_value").build();
         var query = makeQuery(Collections.emptyList());
         var factory = new HitFactory(List.of("public_value", "private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("public_value", 2), value("private_value", 3))),
@@ -188,8 +190,7 @@ public class GlobalPhaseRerankHitsImplTest {
         verifyDoesNotHaveMF(result, "private_value");
     }
     @Test void matchFeaturesCanBeRemoved() {
-        var setup = makeFullSetup(makeSumSpec(Collections.emptyList(), List.of("private_value")), 2,
-                List.of("private_value"), Collections.emptyList());
+        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("private_value"))).hide("private_value").build();
         var query = makeQuery(Collections.emptyList());
         var factory = new HitFactory(List.of("private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("private_value", 3))),
@@ -200,7 +201,7 @@ public class GlobalPhaseRerankHitsImplTest {
         verifyDoesNotHaveMatchFeaturesField(result);
     }
     @Test void queryFeaturesCanBeUsed() {
-        var setup = makeSimpleSetup(makeSumSpec(List.of("foo"), List.of("bar")), 2);
+        var setup = setup().eval(makeSumSpec(List.of("foo"), List.of("bar"))).build();
         var query = makeQuery(List.of(value("query(foo)", 7)));
         var factory = new HitFactory(List.of("bar"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("bar", 2))),
@@ -211,7 +212,7 @@ public class GlobalPhaseRerankHitsImplTest {
         verifyHasMF(result, "bar");
     }
     @Test void queryFeaturesCanBeUsedWhenPrepared() {
-        var setup = makeSimpleSetup(makeSumSpec(List.of("foo"), List.of("bar")), 2);
+        var setup = setup().eval(makeSumSpec(List.of("foo"), List.of("bar"))).build();
         var query = makeQueryWithPrepare(List.of(value("query(foo)", 7)));
         var factory = new HitFactory(List.of("bar"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("bar", 2))),
@@ -221,9 +222,18 @@ public class GlobalPhaseRerankHitsImplTest {
         expect.verifyScores(result);
         verifyHasMF(result, "bar");
     }
+    @Test void queryFeaturesCanBeDefaultValues() {
+        var setup = setup().eval(makeSumSpec(List.of("foo", "bar"), Collections.emptyList()))
+                .addDefault("query(bar)", Tensor.from(5.0)).build();
+        var query = makeQuery(List.of(value("query(foo)", 7)));
+        var result = makeResult(query, List.of(hit("a", 1)));
+        var expect = Expect.make(List.of(hit("a", 12)));
+        GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
+        expect.verifyScores(result);
+    }
     @Test void withNormalizer() {
-        var setup = makeNormSetup(makeSumSpec(Collections.emptyList(), List.of("bar")),
-                List.of(makeNormalizer("foo", List.of(115.0, 65.0, 55.0, 45.0, 15.0), makeSumSpec(List.of("x"), List.of("bar")))));
+        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("bar")))
+                .addNormalizer(makeNormalizer("foo", List.of(115.0, 65.0, 55.0, 45.0, 15.0), makeSumSpec(List.of("x"), List.of("bar")))).build();
         var query = makeQuery(List.of(value("query(x)", 5)));
         var factory = new HitFactory(List.of("bar"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("bar", 10))),
