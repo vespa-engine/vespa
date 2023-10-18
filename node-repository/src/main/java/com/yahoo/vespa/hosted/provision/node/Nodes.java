@@ -467,11 +467,12 @@ public class Nodes {
         }
     }
 
-    /*
-     * This method is used by the REST API to handle readying nodes for new allocations. For Linux
-     * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
+    /**
+     * This method is used by the REST API to handle readying nodes for new allocations.
+     * Tenant containers will be removed, while other nodes will be moved to the ready state.
+     * Returns true if a node was updated, or false if the node was removed, or already was ready.
      */
-    public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
+    public boolean markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         try (NodeMutex nodeMutex = lockAndGetRequired(hostname)) {
             Node node = nodeMutex.node();
             if (node.type() == NodeType.tenant) {
@@ -481,17 +482,18 @@ public class Nodes {
                 NestedTransaction transaction = new NestedTransaction();
                 db.removeNodes(List.of(node), transaction);
                 transaction.commit();
-                return node;
+                return false;
             }
 
-            if (node.state() == Node.State.ready) return node;
+            if (node.state() == Node.State.ready) return false;
 
             Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
             List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
             if (!failureReasons.isEmpty())
                 illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
-            return setReady(nodeMutex, agent, reason);
+            setReady(nodeMutex, agent, reason);
+            return true;
         }
     }
 

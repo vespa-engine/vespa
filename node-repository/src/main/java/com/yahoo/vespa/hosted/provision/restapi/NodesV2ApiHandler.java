@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
+import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
@@ -75,13 +76,16 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
+    private final InfraApplicationRedeployer infraApplicationRedeployer;
 
     @Inject
-    public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository, NodeFlavors flavors) {
+    public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository,
+                             NodeFlavors flavors, InfraApplicationRedeployer infraApplicationRedeployer) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = flavors;
+        this.infraApplicationRedeployer = infraApplicationRedeployer;
     }
 
     @Override
@@ -138,7 +142,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Path path = new Path(request.getUri());
         // Check paths to disallow illegal state changes
         if (path.matches("/nodes/v2/state/ready/{hostname}")) {
-            nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API");
+            if (nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API"))
+                infraApplicationRedeployer.readied(nodeRepository.nodes().node(path.get("hostname")).get().type());
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {

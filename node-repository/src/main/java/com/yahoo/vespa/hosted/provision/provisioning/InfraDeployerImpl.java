@@ -13,7 +13,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -60,7 +59,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                 .forEach(api -> {
             var application = api.getApplicationId();
             var deployment = new InfraDeployment(api);
-            try {
+            try (var lock = nodeRepository.applications().lockMaintenance(application)) {
                 deployment.activate();
             } catch (RuntimeException e) {
                 logger.log(Level.INFO, "Failed to activate " + application, e);
