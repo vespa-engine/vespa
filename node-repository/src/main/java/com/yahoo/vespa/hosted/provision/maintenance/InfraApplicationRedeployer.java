@@ -72,7 +72,7 @@ public class InfraApplicationRedeployer extends AbstractComponent {
             log.log(INFO, () -> "Redeploying " + application.id() + " after completing provisioning of " + application.name());
             try {
                 deployer.getDeployment(application.id()).ifPresent(Deployment::activate);
-                if (childOf(application) != null) readied(childOf(application));
+                readied(childOf(application));
             }
             catch (RuntimeException e) {
                 log.log(WARNING, "Failed redeploying " + application.id() + ", will be retried by maintainer", e);
