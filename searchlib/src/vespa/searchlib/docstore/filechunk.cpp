@@ -208,7 +208,7 @@ FileChunk::handleChunk(const unique_lock &guard, ISetLid &ds, uint32_t docIdLimi
         } else {
             remove(lidMeta.getLid(), lidMeta.size());
         }
-        _addedBytes += adjustSize(lidMeta.size());
+        _addedBytes.store(getAddedBytes() + adjustSize(lidMeta.size()), std::memory_order_relaxed);
     }
     uint64_t serialNum = chunkMeta.getLastSerial();
     addNumBuckets(bucketMap.getNumBuckets());
@@ -250,8 +250,8 @@ void
 FileChunk::remove(uint32_t lid, uint32_t size)
 {
      (void) lid;
-     _erasedCount++;
-     _erasedBytes += adjustSize(size);
+     _erasedCount.store(getErasedCount() + 1, std::memory_order_relaxed);
+     _erasedBytes.store(getErasedBytes() + adjustSize(size), std::memory_order_relaxed);
 }
 
 uint64_t
@@ -451,7 +451,7 @@ FileChunk::verify(bool reportOnly) const
     (void) reportOnly;
     LOG(info,
         "Verifying file '%s' with fileid '%u'. erased-count='%zu' and erased-bytes='%zu'. diskFootprint='%zu'",
-        _name.c_str(), _fileId.getId(), _erasedCount, _erasedBytes, _diskFootprint.load(std::memory_order_relaxed));
+        _name.c_str(), _fileId.getId(), getErasedCount(), getErasedBytes(), _diskFootprint.load(std::memory_order_relaxed));
     uint64_t lastSerial(0);
     size_t chunkId(0);
     bool errorInPrev(false);

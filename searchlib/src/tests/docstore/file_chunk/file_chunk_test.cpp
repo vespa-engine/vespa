@@ -202,7 +202,7 @@ assertUpdateLidMap(FixtureType &f)
     f.assertBucketizer(expLids);
     size_t entrySize = 10 + 8;
     EXPECT_EQUAL(9 * entrySize, f.chunk.getAddedBytes());
-    EXPECT_EQUAL(3u, f.chunk.getBloatCount());
+    EXPECT_EQUAL(3u, f.chunk.getErasedCount());
     EXPECT_EQUAL(3 * entrySize, f.chunk.getErasedBytes());
 }
 

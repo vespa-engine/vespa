@@ -730,7 +730,7 @@ WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, vespalib::ConstBuff
     }
     assert(serialNum >= _serialNum);
     _serialNum = serialNum;
-    _addedBytes += adjustSize(data.size());
+    _addedBytes.store(getAddedBytes() + adjustSize(data.size()), std::memory_order_relaxed);
     _numLids++;
     size_t oldSz(_active->size());
     LidMeta lm = _active->append(lid, data);
