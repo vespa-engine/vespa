@@ -93,12 +93,10 @@ StorageNode::StorageNode(
       _serverConfig(),
       _clusterConfig(),
       _distributionConfig(),
-      _doctypesConfig(),
       _bucketSpacesConfig(),
       _newServerConfig(),
       _newClusterConfig(),
       _newDistributionConfig(),
-      _newDoctypesConfig(),
       _newBucketSpacesConfig(),
       _component(),
       _node_identity(),
@@ -476,23 +474,6 @@ StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
         _newDistributionConfig = std::move(config);
     }
     if (_distributionConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
-}
-void
-StorageNode::configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
-                       bool hasChanged, int64_t generation)
-{
-    log_config_received(*config);
-    (void) generation;
-    if (!hasChanged)
-        return;
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newDoctypesConfig = std::move(config);
-    }
-    if (_doctypesConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
         handleLiveConfigUpdate(concurrent_config_guard);
     }
