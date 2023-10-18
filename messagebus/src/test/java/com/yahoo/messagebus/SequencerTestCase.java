@@ -116,6 +116,7 @@ public class SequencerTestCase {
         // This test queues up a lot of replies, and then has them all ready to return at once.
         int n = 10000;
         CountDownLatch latch = new CountDownLatch(n);
+        CountDownLatch started = new CountDownLatch(1);
         AtomicReference<Reply> waiting = new AtomicReference<>();
         Executor executor = Executors.newSingleThreadExecutor();
         MessageHandler sender = message -> {
@@ -123,7 +124,8 @@ public class SequencerTestCase {
                 Reply reply = new EmptyReply();
                 reply.swapState(message);
                 reply.setMessage(message);
-                if ( ! waiting.compareAndSet(null, reply)) reply.popHandler().handleReply(reply);
+                if (waiting.compareAndSet(null, reply)) started.countDown();
+                else reply.popHandler().handleReply(reply);
             };
             if (Math.random() < 0.5) executor.execute(task); // Usually, RPC thread runs this.
             else task.run();                                 // But on, e.g., timeouts, it runs in the caller thread instead.
@@ -147,6 +149,7 @@ public class SequencerTestCase {
             sent.add(message);
         }
 
+        assertTrue(started.await(10, TimeUnit.SECONDS));
         waiting.get().popHandler().handleReply(waiting.get());
         assertTrue(latch.await(10, TimeUnit.SECONDS), "All messages should obtain a reply within 10s");
         assertEquals(Set.copyOf(sent), Set.copyOf(answered)); // Order is not guaranteed at all!
