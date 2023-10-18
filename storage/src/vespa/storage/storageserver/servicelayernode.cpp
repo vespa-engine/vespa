@@ -107,7 +107,7 @@ ServiceLayerNode::initializeNodeSpecific()
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
 
-    ns.setCapacity(_serverConfig->nodeCapacity);
+    ns.setCapacity(server_config().nodeCapacity);
     LOG(debug, "Adjusting reported node state to include capacity: %s", ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
 }
@@ -118,10 +118,10 @@ ServiceLayerNode::initializeNodeSpecific()
 void
 ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
-    if (_newServerConfig) {
+    if (_server_config.staging) {
         bool updated = false;
-        vespa::config::content::core::StorServerConfigBuilder oldC(*_serverConfig);
-        StorServerConfig& newC(*_newServerConfig);
+        vespa::config::content::core::StorServerConfigBuilder oldC(*_server_config.active);
+        StorServerConfig& newC(*_server_config.staging);
         {
             updated = false;
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
@@ -133,7 +133,7 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                 ns.setCapacity(newC.nodeCapacity);
             }
             if (updated) {
-                _serverConfig.reset(new vespa::config::content::core::StorServerConfig(oldC));
+                _server_config.active = std::make_unique<vespa::config::content::core::StorServerConfig>(oldC);
                 _component->getStateUpdater().setReportedNodeState(ns);
             }
         }
@@ -163,7 +163,7 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
 {
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
 
-    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, *_comm_mgr_config);
+    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, communication_manager_config());
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
     builder.add(std::make_unique<Bouncer>(compReg, _configUri));

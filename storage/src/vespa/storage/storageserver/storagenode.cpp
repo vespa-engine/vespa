@@ -90,14 +90,10 @@ StorageNode::StorageNode(
       _chain(),
       _configLock(),
       _initial_config_mutex(),
-      _serverConfig(),
-      _clusterConfig(),
-      _distributionConfig(),
-      _bucketSpacesConfig(),
-      _newServerConfig(),
-      _newClusterConfig(),
-      _newDistributionConfig(),
-      _newBucketSpacesConfig(),
+      _bucket_spaces_config(),
+      _comm_mgr_config(),
+      _distribution_config(),
+      _server_config(),
       _component(),
       _node_identity(),
       _configUri(configUri),
@@ -114,17 +110,15 @@ StorageNode::subscribeToConfigs()
     _configFetcher->subscribe<CommunicationManagerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
 
     _configFetcher->start();
 
     // All the below config instances were synchronously populated as part of start()ing the config fetcher
     std::lock_guard configLockGuard(_configLock);
-    _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
-    _clusterConfig      = std::move(_newClusterConfig);
-    _comm_mgr_config    = std::move(_new_comm_mgr_config);
-    _distributionConfig = std::move(_newDistributionConfig);
-    _serverConfig       = std::move(_newServerConfig);
+    _bucket_spaces_config.promote_staging_to_active();
+    _comm_mgr_config.promote_staging_to_active();
+    _distribution_config.promote_staging_to_active();
+    _server_config.promote_staging_to_active();
 }
 
 void
@@ -142,13 +136,13 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 
     // First update some basics that doesn't depend on anything else to be
     // available
-    _rootFolder = _serverConfig->rootFolder;
+    _rootFolder = server_config().rootFolder;
 
-    _context.getComponentRegister().setNodeInfo(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
+    _context.getComponentRegister().setNodeInfo(server_config().clusterName, getNodeType(), server_config().nodeIndex);
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
-    _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(*_distributionConfig));
-    _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-    _node_identity = std::make_unique<NodeIdentity>(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
+    _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(distribution_config()));
+    _context.getComponentRegister().setBucketSpacesConfig(bucket_spaces_config());
+    _node_identity = std::make_unique<NodeIdentity>(server_config().clusterName, getNodeType(), server_config().nodeIndex);
 
     _metrics = std::make_shared<StorageMetricSet>();
     _component = std::make_unique<StorageComponent>(_context.getComponentRegister(), "storagenode");
@@ -185,17 +179,17 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 
     // Start deadlock detector
     _deadLockDetector = std::make_unique<DeadLockDetector>(_context.getComponentRegister());
-    _deadLockDetector->enableWarning(_serverConfig->enableDeadLockDetectorWarnings);
-    _deadLockDetector->enableShutdown(_serverConfig->enableDeadLockDetector);
-    _deadLockDetector->setProcessSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
-    _deadLockDetector->setWaitSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
+    _deadLockDetector->enableWarning(server_config().enableDeadLockDetectorWarnings);
+    _deadLockDetector->enableShutdown(server_config().enableDeadLockDetector);
+    _deadLockDetector->setProcessSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
+    _deadLockDetector->setWaitSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
 
     createChain(*_chain_builder);
     _chain = std::move(*_chain_builder).build();
     _chain_builder.reset();
 
     assert(_communicationManager != nullptr);
-    _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
+    _communicationManager->updateBucketSpacesConfig(bucket_spaces_config());
 
     perform_post_chain_creation_init_steps();
 
@@ -257,23 +251,23 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     // If we get here, initialize is done running. We have to handle changes
     // we want to handle.
 
-    if (_newServerConfig) {
-        StorServerConfigBuilder oldC(*_serverConfig);
-        StorServerConfig& newC(*_newServerConfig);
+    if (_server_config.staging) {
+        StorServerConfigBuilder oldC(*_server_config.active);
+        StorServerConfig& newC(*_server_config.staging);
         DIFFERWARN(rootFolder, "Cannot alter root folder of node live");
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
-        _serverConfig = std::make_unique<StorServerConfig>(oldC);
-        _newServerConfig.reset();
-        _deadLockDetector->enableWarning(_serverConfig->enableDeadLockDetectorWarnings);
-        _deadLockDetector->enableShutdown(_serverConfig->enableDeadLockDetector);
-        _deadLockDetector->setProcessSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
-        _deadLockDetector->setWaitSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
+        _server_config.active = std::make_unique<StorServerConfig>(oldC); // TODO isn't this a no-op...?
+        _server_config.staging.reset();
+        _deadLockDetector->enableWarning(server_config().enableDeadLockDetectorWarnings);
+        _deadLockDetector->enableShutdown(server_config().enableDeadLockDetector);
+        _deadLockDetector->setProcessSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
+        _deadLockDetector->setWaitSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
     }
-    if (_newDistributionConfig) {
-        StorDistributionConfigBuilder oldC(*_distributionConfig);
-        StorDistributionConfig& newC(*_newDistributionConfig);
+    if (_distribution_config.staging) {
+        StorDistributionConfigBuilder oldC(*_distribution_config.active);
+        StorDistributionConfig& newC(*_distribution_config.staging);
         bool updated = false;
         if (DIFFER(redundancy)) {
             LOG(info, "Live config update: Altering redundancy from %u to %u.", oldC.redundancy, newC.redundancy);
@@ -304,8 +298,9 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
             LOG(info, "Live config update: Group structure altered.");
             ASSIGN(group);
         }
-        _distributionConfig = std::make_unique<StorDistributionConfig>(oldC);
-        _newDistributionConfig.reset();
+        // This looks weird, but the magical ASSIGN() macro mutates `oldC` in-place upon changes
+        _distribution_config.active = std::make_unique<StorDistributionConfig>(oldC);
+        _distribution_config.staging.reset();
         if (updated) {
             _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(oldC));
             for (StorageLink* link = _chain.get(); link != nullptr; link = link->getNextLink()) {
@@ -313,21 +308,15 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
             }
         }
     }
-    if (_newClusterConfig) {
-        if (*_clusterConfig != *_newClusterConfig) {
-            LOG(warning, "Live config failure: Cannot alter cluster config of node live.");
-        }
-        _newClusterConfig.reset();
-    }
 
-    if (_newBucketSpacesConfig) {
-        _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
-        _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-        _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
+    if (_bucket_spaces_config.staging) {
+        _bucket_spaces_config.promote_staging_to_active();
+        _context.getComponentRegister().setBucketSpacesConfig(bucket_spaces_config());
+        _communicationManager->updateBucketSpacesConfig(bucket_spaces_config());
     }
-    if (_new_comm_mgr_config) {
-        _comm_mgr_config = std::move(_new_comm_mgr_config);
-        _communicationManager->on_configure(*_comm_mgr_config);
+    if (_comm_mgr_config.staging) {
+        _comm_mgr_config.promote_staging_to_active();
+        _communicationManager->on_configure(communication_manager_config());
     }
 }
 
@@ -438,68 +427,37 @@ StorageNode::shutdown()
 
 void
 StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
-    log_config_received(*config);
-    // When we get config, we try to grab the config lock to ensure noone
-    // else is doing configuration work, and then we write the new config
-    // to a variable where we can find it later when processing config
-    // updates
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newServerConfig = std::move(config);
-    }
-    if (_serverConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
-}
-
-void
-StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
-    log_config_received(*config);
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newClusterConfig = std::move(config);
-    }
-    if (_clusterConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
+    stage_config_change(_server_config, std::move(config));
 }
 
 void
 StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
-    log_config_received(*config);
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newDistributionConfig = std::move(config);
-    }
-    if (_distributionConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
+    stage_config_change(_distribution_config, std::move(config));
 }
 
 void
 StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
-    log_config_received(*config);
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newBucketSpacesConfig = std::move(config);
-    }
-    if (_bucketSpacesConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
+    stage_config_change(_bucket_spaces_config, std::move(config));
 }
 
 void
 StorageNode::configure(std::unique_ptr<CommunicationManagerConfig > config) {
-    log_config_received(*config);
+    stage_config_change(_comm_mgr_config, std::move(config));
+}
+
+template <typename ConfigT>
+void
+StorageNode::stage_config_change(ConfigWrapper<ConfigT>& cfg, std::unique_ptr<ConfigT> new_cfg) {
+    log_config_received(*new_cfg);
+    // When we get config, we try to grab the config lock to ensure no one
+    // else is doing configuration work, and then we write the new config
+    // to a variable where we can find it later when processing config
+    // updates
     {
         std::lock_guard config_lock_guard(_configLock);
-        _new_comm_mgr_config = std::move(config);
+        cfg.staging = std::move(new_cfg);
     }
-    if (_comm_mgr_config) {
+    if (cfg.active) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
         handleLiveConfigUpdate(concurrent_config_guard);
     }
@@ -563,6 +521,18 @@ void
 StorageNode::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
 {
     _chain_builder = std::move(builder);
+}
+
+template <typename ConfigT>
+StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper() = default;
+
+template <typename ConfigT>
+StorageNode::ConfigWrapper<ConfigT>::~ConfigWrapper() = default;
+
+template <typename ConfigT>
+void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() {
+    assert(staging);
+    active = std::move(staging);
 }
 
 } // storage
