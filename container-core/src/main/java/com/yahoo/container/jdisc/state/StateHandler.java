@@ -131,12 +131,12 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         try {
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
-            case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-            case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(config));
-            case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
-            case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
-            case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
-            default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
+                case "" -> ByteBuffer.wrap(apiLinks(requestUri));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(config));
+                case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
+                case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
+                case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
+                default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
             };
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction", e);
