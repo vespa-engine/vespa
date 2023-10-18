@@ -15,6 +15,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -97,7 +98,7 @@ class JvmHeapSizeValidatorTest {
 
     private static DeployState createDeployState(double nodeGb, long modelCostBytes) {
         String servicesXml =
-                """
+                Text.format("""
                 <?xml version="1.0" encoding="utf-8" ?>
                 <services version='1.0'>
                     <container version='1.0'>
@@ -109,7 +110,7 @@ class JvmHeapSizeValidatorTest {
                             <tokenizer-model path="app/tokenizer.json"/>
                         </component>
                     </container>
-                </services>""".formatted(nodeGb);
+                </services>""", nodeGb);
         return createDeployState(servicesXml, nodeGb, modelCostBytes);
     }
 
