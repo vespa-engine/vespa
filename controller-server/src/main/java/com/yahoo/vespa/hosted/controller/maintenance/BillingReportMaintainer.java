@@ -31,7 +31,7 @@ public class BillingReportMaintainer extends ControllerMaintainer {
     private final PlanRegistry plans;
 
     public BillingReportMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, Set.of(SystemName.PublicCd));
+        super(controller, interval, null, Set.of(SystemName.Public, SystemName.PublicCd));
         reporter = controller.serviceRegistry().billingReporter();
         billing = controller.serviceRegistry().billingController();
         databaseClient = controller.serviceRegistry().billingDatabase();
