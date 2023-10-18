@@ -52,7 +52,6 @@ find_package(JNI REQUIRED)
 find_package(GTest REQUIRED)
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
 
 find_package(Protobuf REQUIRED)
 
