@@ -26,24 +26,19 @@ record PreparedInput(String name, Tensor value) {
         List<PreparedInput> result = new ArrayList<>();
         var ranking = query.getRanking();
         var rankFeatures = ranking.getFeatures();
-        var rankProps = ranking.getProperties().asMap();
+        var rankProps = ranking.getProperties();
         for (String queryFeatureName : queryFeatures) {
             String needed = "query(" + queryFeatureName + ")";
-            // searchers are recommended to place query features here:
-            var feature = rankFeatures.getTensor(needed);
-            if (feature.isPresent()) {
-                result.add(new PreparedInput(needed, feature.get()));
-            } else {
-                // but other ways of setting query features end up in the properties:
-                var objList = rankProps.get(queryFeatureName);
-                if (objList != null && objList.size() == 1 && objList.get(0) instanceof Tensor t) {
-                    result.add(new PreparedInput(needed, t));
-                } else if (objList != null && objList.size() == 1 && objList.get(0) instanceof Double d) {
-                    result.add(new PreparedInput(needed, Tensor.from(d)));
-                } else {
-                    throw new IllegalArgumentException("missing query feature: " + queryFeatureName);
-                }
+            // after prepare() the query tensor ends up here:
+            var feature = rankProps.getAsTensor(queryFeatureName);
+            if (feature.isEmpty()) {
+                // searchers are recommended to place query features here:
+                feature = rankFeatures.getTensor(needed);
             }
+            if (feature.isEmpty()) {
+                throw new IllegalArgumentException("missing query feature: " + queryFeatureName);
+            }
+            result.add(new PreparedInput(needed, feature.get()));
         }
         return result;
     }

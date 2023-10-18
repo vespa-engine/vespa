@@ -7076,6 +7076,7 @@
       "public void put(java.lang.String, java.lang.String)",
       "public void put(java.lang.String, java.lang.Object)",
       "public java.util.List get(java.lang.String)",
+      "public java.util.Optional getAsTensor(java.lang.String)",
       "public void remove(java.lang.String)",
       "public boolean isEmpty()",
       "public java.util.Map asMap()",
