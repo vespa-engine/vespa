@@ -23,16 +23,6 @@ public record AssignedRotation(ClusterSpec.Id clusterId, EndpointId endpointId, 
         this.regions = Set.copyOf(Objects.requireNonNull(regions));
     }
 
-    @Override
-    public String toString() {
-        return "AssignedRotation{" +
-               "clusterId=" + clusterId +
-               ", endpointId='" + endpointId + '\'' +
-               ", rotationId=" + rotationId +
-               ", regions=" + regions +
-               '}';
-    }
-
     private static <T> T requireNonEmpty(T object, String value, String field) {
         Objects.requireNonNull(object);
         Objects.requireNonNull(value);
