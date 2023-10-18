@@ -6,4 +6,6 @@ vespa_add_executable(eval_analyze_onnx_model_app
     INSTALL bin
     DEPENDS
     vespaeval
+    EXTERNAL_DEPENDS
+    dl
 )

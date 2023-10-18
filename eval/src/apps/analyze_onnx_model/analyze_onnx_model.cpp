@@ -10,6 +10,8 @@
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
+#include <malloc.h>
+#include <dlfcn.h>
 
 using vespalib::make_string_short::fmt;
 
@@ -75,17 +77,12 @@ size_t convert(const vespalib::string & s) {
 }
 
 MemoryUsage extract_memory_usage() {
-    vespalib::string vm_size = UNKNOWN;
-    vespalib::string vm_rss = UNKNOWN;
-    FilePointer file(fopen("/proc/self/status", "r"));
-    if (file.valid()) {
-        vespalib::string line;
-        while (read_line(file, line)) {
-            extract(line, "VmSize:", vm_size);
-            extract(line, "VmRSS:", vm_rss);
-        }
+    struct mallinfo info = mallinfo();
+    if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
+        return {size_t(info.usmblks) << 20, size_t(info.arena + info.hblkhd) << 20};
+    } else {
+        return {size_t(info.usmblks), size_t(info.arena + info.hblkhd)};
     }
-    return {convert(vm_size), convert(vm_rss)};
 }
 
 void report_memory_usage(const vespalib::string &desc) {

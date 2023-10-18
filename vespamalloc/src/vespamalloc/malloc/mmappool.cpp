@@ -10,6 +10,7 @@ namespace vespamalloc {
 MMapPool::MMapPool()
     : _page_size(getpagesize()),
       _huge_flags((getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0),
+      _peakBytes(0ul),
       _count(0),
       _mutex(),
       _mappings()
@@ -31,6 +32,12 @@ MMapPool::getMmappedBytes() const {
     size_t sum(0);
     std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
     return sum;
+}
+
+size_t
+MMapPool::getMmappedBytesPeak() const {
+    std::lock_guard guard(_mutex);
+    return _peakBytes;
 }
 
 void *
@@ -76,9 +83,10 @@ MMapPool::mmap(size_t sz) {
         std::lock_guard guard(_mutex);
         auto [it, inserted] = _mappings.insert(std::make_pair(buf, MMapInfo(mmapId, sz)));
         ASSERT_STACKTRACE(inserted);
+        size_t sum(0);
+        std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
+        _peakBytes = std::max(_peakBytes, sum);
         if (sz >= _G_bigBlockLimit) {
-            size_t sum(0);
-            std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
             fprintf(_G_logFile, "%ld mappings of accumulated size %ld\n", _mappings.size(), sum);
         }
     }

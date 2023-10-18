@@ -29,7 +29,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
     assert(info.uordblks > 0);
-    assert(info.usmblks == 0);
+    assert(info.usmblks > 0);
 #else
     struct mallinfo info = mallinfo();
     printf("Malloc used %dm of memory\n",info.arena);
@@ -43,7 +43,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
     assert(info.uordblks > 0);
-    assert(info.usmblks == 0);
+    assert(info.usmblks > 0);
 #endif
 }
 
