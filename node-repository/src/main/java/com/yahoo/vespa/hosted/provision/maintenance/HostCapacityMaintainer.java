@@ -205,25 +205,24 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
 
             ClusterCapacity clusterCapacityDeficit = deficit.get();
-            var clusterType = Optional.ofNullable(clusterCapacityDeficit.clusterType());
             nodesPlusProvisioned.addAll(provisionHosts(clusterCapacityDeficit.count(),
                                                        toNodeResources(clusterCapacityDeficit),
-                                                       clusterType.map(ClusterSpec.Type::from),
+                                                       Optional.ofNullable(clusterCapacityDeficit.clusterType()),
                                                        nodeList));
         }
     }
 
-    private List<Node> provisionHosts(int count, NodeResources nodeResources, Optional<ClusterSpec.Type> clusterType, NodeList allNodes) {
+    private List<Node> provisionHosts(int count, NodeResources nodeResources, Optional<String> clusterType, NodeList allNodes) {
         try {
             if (throttler.throttle(allNodes, Agent.HostCapacityMaintainer)) {
                 throw new NodeAllocationException("Host provisioning is being throttled", true);
             }
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
-            HostSharing sharingMode = clusterType.map(ClusterSpec.Type::isContainer).orElse(false) ? HostSharing.exclusive : HostSharing.shared;
+            HostSharing sharingMode = nodeRepository().exclusiveAllocation(asSpec(clusterType, 0)) ? HostSharing.exclusive : HostSharing.shared;
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
                                                                     ApplicationId.defaultId(), osVersion,
-                                                                    sharingMode, clusterType, Optional.empty(),
+                                                                    sharingMode, clusterType.map(ClusterSpec.Type::valueOf), Optional.empty(),
                                                                     nodeRepository().zone().cloud().account(), false);
             List<Node> hosts = new ArrayList<>();
             hostProvisioner.provisionHosts(request,
@@ -274,14 +273,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
         ApplicationId applicationId = ApplicationId.defaultId();
-        ClusterSpec.Id clusterId = ClusterSpec.Id.from(String.valueOf(clusterIndex));
-        ClusterSpec.Type type = clusterCapacity.clusterType() != null
-                ? ClusterSpec.Type.from(clusterCapacity.clusterType())
-                : ClusterSpec.Type.content;
-        ClusterSpec clusterSpec = ClusterSpec.request(type, clusterId)
-                // build() requires a version, even though it is not (should not be) used
-                .vespaVersion(Vtag.currentVersion)
-                .build();
+        ClusterSpec clusterSpec = asSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex);
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
         var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
@@ -307,6 +299,13 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                   nodeResources,
                                   nodeRepository().clock().instant()))
                 .toList();
+    }
+
+    private static ClusterSpec asSpec(Optional<String> clusterType, int index) {
+        return ClusterSpec.request(clusterType.map(ClusterSpec.Type::from).orElse(ClusterSpec.Type.content),
+                                   ClusterSpec.Id.from(String.valueOf(index)))
+                          .vespaVersion(Vtag.currentVersion) // Needed, but should not be used here.
+                          .build();
     }
 
     private static NodeResources toNodeResources(ClusterCapacity clusterCapacity) {
