@@ -37,6 +37,7 @@ const (
 )
 
 var errWaitTimeout = errors.New("wait timed out")
+var errAuth = errors.New("auth failed")
 
 // Authenticator authenticates the given HTTP request.
 type Authenticator interface {
@@ -113,7 +114,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	})
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", errAuth, err)
 		}
 	}
 	return s.httpClient.Do(request, timeout)
@@ -220,7 +221,9 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
 		response, err = service.Do(reqFn(), 10*time.Second)
-		if err == nil {
+		if errors.Is(err, errAuth) {
+			return status, fmt.Errorf("aborting wait: %w", err)
+		} else if err == nil {
 			status = response.StatusCode
 			body, err := io.ReadAll(response.Body)
 			if err != nil {

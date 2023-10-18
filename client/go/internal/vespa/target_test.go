@@ -120,6 +120,8 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 func TestCloudTargetWait(t *testing.T) {
 	var logWriter bytes.Buffer
 	target, client := createCloudTarget(t, &logWriter)
+	client.NextResponseError(errAuth)
+	assertService(t, true, target, "deploy", time.Second) // No retrying on auth error
 	client.NextStatus(401)
 	assertService(t, true, target, "deploy", time.Second) // No retrying on 4xx
 	client.NextStatus(500)
