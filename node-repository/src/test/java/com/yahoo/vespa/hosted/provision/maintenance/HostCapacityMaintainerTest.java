@@ -282,7 +282,11 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                                        resources1.bandwidthGbps(), resources1.diskSpeed().name(),
+                                                        resources1.storageType().name(), resources1.architecture().name(),
+                                                        "container"),
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
@@ -291,12 +295,14 @@ public class HostCapacityMaintainerTest {
         // Hosts are provisioned
         assertEquals(2, tester.provisionedHostsMatching(resources1));
         assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node("host100").flatMap(Node::exclusiveToApplicationId));
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node("host101").flatMap(Node::exclusiveToApplicationId));
 
         // Next maintenance run does nothing
         tester.assertNodesUnchanged();
 
         // One host is allocated exclusively to some other application
-        tester.nodeRepository.nodes().write(tester.nodeRepository.nodes().list().node("host100").get()
+        tester.nodeRepository.nodes().write(tester.nodeRepository.nodes().node("host100").get()
                                                                  .withExclusiveToApplicationId(ApplicationId.from("t", "a", "i")),
                                             () -> { });
 

@@ -494,7 +494,7 @@ public final class Node implements Nodelike {
 
     public Node withExclusiveToApplicationId(ApplicationId exclusiveTo) {
         return new Node(id, extraId, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history,
-                        type, reports, modelName, reservedTo, Optional.ofNullable(exclusiveTo), provisionedForApplicationId.filter(__ -> exclusiveTo != null), hostTTL, hostEmptyAt,
+                        type, reports, modelName, reservedTo, Optional.ofNullable(exclusiveTo), provisionedForApplicationId, hostTTL, hostEmptyAt,
                         exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount, wireguardPubKey);
     }
 
