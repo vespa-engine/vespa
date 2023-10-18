@@ -83,7 +83,7 @@ class InfraApplicationRedeployerTest {
         redeployer.readied(NodeType.confighost);
 
         outro.await(10, TimeUnit.SECONDS);
-        redeployer.deconstruct();
+        redeployer.close();
         locks.verify();
         deployer.verify();
     }
@@ -115,7 +115,7 @@ class InfraApplicationRedeployerTest {
         deployer.expect(cfg, Optional::empty);
         redeployer.readied(NodeType.confighost);
         latch.await(10, TimeUnit.SECONDS);
-        redeployer.deconstruct();
+        redeployer.close();
         locks.verify();
         deployer.verify();
     }

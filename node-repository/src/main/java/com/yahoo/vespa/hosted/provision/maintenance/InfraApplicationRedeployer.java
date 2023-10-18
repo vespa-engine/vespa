@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.UncheckedTimeoutException;
@@ -13,8 +12,8 @@ import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.service.duper.TenantHostApplication;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -33,7 +33,7 @@ import static java.util.logging.Level.WARNING;
  *
  * @author jonmv
  */
-public class InfraApplicationRedeployer extends AbstractComponent {
+public class InfraApplicationRedeployer implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(InfraApplicationRedeployer.class.getName());
 
@@ -55,7 +55,7 @@ public class InfraApplicationRedeployer extends AbstractComponent {
     }
 
     public void readied(NodeType type) {
-        readied(applicationOf(type));
+        applicationOf(type).ifPresent(this::readied);
     }
 
     private void readied(InfrastructureApplication application) {
@@ -64,18 +64,16 @@ public class InfraApplicationRedeployer extends AbstractComponent {
     }
 
     private void checkAndRedeploy(InfrastructureApplication application) {
-        log.log(INFO, () -> "Checking if " + application.name() + " should be redeployed");
         if ( ! readiedTypes.remove(application)) return;
-        log.log(INFO, () -> "Trying to redeploy " + application.id() + " after completing provisioning of " + application.name());
         try (Mutex lock = locks.apply(application.id())) {
             if (application.nodeType().isHost() && nodes.get().state(State.ready).nodeType(application.nodeType()).isEmpty()) return;
-            log.log(INFO, () -> "Redeploying " + application.id() + " after completing provisioning of " + application.name());
+            log.log(FINE, () -> "Redeploying " + application.id() + " after completing provisioning for " + application.name());
             try {
                 deployer.getDeployment(application.id()).ifPresent(Deployment::activate);
-                readied(childOf(application));
+                childOf(application).ifPresent(this::readied);
             }
             catch (RuntimeException e) {
-                log.log(WARNING, "Failed redeploying " + application.id() + ", will be retried by maintainer", e);
+                log.log(INFO, "Failed redeploying " + application.id() + ", will be retried by maintainer", e);
             }
         }
         catch (UncheckedTimeoutException collision) {
@@ -83,26 +81,26 @@ public class InfraApplicationRedeployer extends AbstractComponent {
         }
     }
 
-    private static InfrastructureApplication applicationOf(NodeType type) {
+    private static Optional<InfrastructureApplication> applicationOf(NodeType type) {
         return switch (type) {
-            case host -> InfrastructureApplication.TENANT_HOST;
-            case confighost -> InfrastructureApplication.CONFIG_SERVER_HOST;
-            case controllerhost -> InfrastructureApplication.CONTROLLER_HOST;
-            case proxyhost -> InfrastructureApplication.PROXY_HOST;
-            default -> null;
+            case host -> Optional.of(InfrastructureApplication.TENANT_HOST);
+            case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST);
+            case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST);
+            case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST);
+            default -> Optional.empty();
         };
     }
 
-    private static InfrastructureApplication childOf(InfrastructureApplication application) {
+    private static Optional<InfrastructureApplication> childOf(InfrastructureApplication application) {
         return switch (application) {
-            case CONFIG_SERVER_HOST -> InfrastructureApplication.CONFIG_SERVER;
-            case CONTROLLER_HOST -> InfrastructureApplication.CONTROLLER;
-            default -> null;
+            case CONFIG_SERVER_HOST -> Optional.of(InfrastructureApplication.CONFIG_SERVER);
+            case CONTROLLER_HOST -> Optional.of(InfrastructureApplication.CONTROLLER);
+            default -> Optional.empty();
         };
     }
 
     @Override
-    public void deconstruct() {
+    public void close() {
         executor.shutdown();
         try {
             if (executor.awaitTermination(10, TimeUnit.SECONDS)) return;

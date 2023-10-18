@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -80,12 +81,12 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
 
     @Inject
     public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository,
-                             NodeFlavors flavors, InfraApplicationRedeployer infraApplicationRedeployer) {
+                             NodeFlavors flavors, InfraDeployer infraDeployer) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = flavors;
-        this.infraApplicationRedeployer = infraApplicationRedeployer;
+        this.infraApplicationRedeployer = new InfraApplicationRedeployer(infraDeployer, nodeRepository);
     }
 
     @Override
@@ -511,6 +512,12 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         catch (URISyntaxException e) {
             throw new RuntimeException("Will not happen", e);
         }
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        infraApplicationRedeployer.close();
     }
 
 }
