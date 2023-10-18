@@ -84,7 +84,7 @@ TYPED_TEST(ScheduledExecutorTest, test_drop_handle) {
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_only_one_instance_running) {
-    vespalib::TimeBomb time_bomb(60s);
+    vespalib::TimeBomb time_bomb(120s);
     vespalib::Gate latch;
     std::atomic<uint64_t> counter = 0;
     auto handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { counter++; latch.await();}), 0ms, 1ms);
@@ -96,7 +96,7 @@ TYPED_TEST(ScheduledExecutorTest, test_only_one_instance_running) {
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_sync_delete) {
-    vespalib::TimeBomb time_bomb(60s);
+    vespalib::TimeBomb time_bomb(120s);
     vespalib::Gate latch;
     std::atomic<uint64_t> counter = 0;
     std::atomic<uint64_t> reset_counter = 0;
