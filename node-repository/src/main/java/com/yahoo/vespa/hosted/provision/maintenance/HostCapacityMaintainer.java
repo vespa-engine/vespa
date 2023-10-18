@@ -7,6 +7,7 @@ import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Type;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -219,15 +220,19 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
+            HostSharing sharingMode = clusterType.map(ClusterSpec.Type::isContainer).orElse(false) ? HostSharing.exclusive : HostSharing.shared;
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
                                                                     ApplicationId.defaultId(), osVersion,
-                                                                    HostSharing.shared, clusterType, Optional.empty(),
+                                                                    sharingMode, clusterType, Optional.empty(),
                                                                     nodeRepository().zone().cloud().account(), false);
             List<Node> hosts = new ArrayList<>();
             hostProvisioner.provisionHosts(request,
                                            resources -> true,
                                            provisionedHosts -> {
-                                               hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(Duration.ZERO)).toList());
+                                               hosts.addAll(provisionedHosts.stream()
+                                                                            .map(host -> host.generateHost(Duration.ZERO))
+                                                                            .map(host -> host.withExclusiveToApplicationId(null))
+                                                                            .toList());
                                                nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
                                            });
             return hosts;
