@@ -84,7 +84,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         double successFactorDeviation = asSuccessFactorDeviation(attempts, failures);
         if ( successFactorDeviation == -successFactorBaseline )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
-        else if ( successFactorDeviation < -0.1 )
+        else if ( successFactorDeviation < 0 )
             log.log(Level.FINE, "Could not update traffic share on all applications", lastException);
         return successFactorDeviation;
     }
