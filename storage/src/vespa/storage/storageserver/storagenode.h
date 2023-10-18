@@ -130,8 +130,6 @@ private:
     void configure(std::unique_ptr<StorServerConfig> config) override;
     void configure(std::unique_ptr<UpgradingConfig> config) override;
     void configure(std::unique_ptr<StorDistributionConfig> config) override;
-    virtual void configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
-                           bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
 
@@ -146,7 +144,6 @@ protected:
     std::unique_ptr<StorServerConfig> _serverConfig;
     std::unique_ptr<UpgradingConfig> _clusterConfig;
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<document::config::DocumenttypesConfig> _doctypesConfig;
     std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
     std::unique_ptr<CommunicationManagerConfig> _comm_mgr_config;
 
@@ -154,7 +151,6 @@ protected:
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<document::config::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
     std::unique_ptr<CommunicationManagerConfig> _new_comm_mgr_config;
     std::unique_ptr<StorageComponent> _component;
