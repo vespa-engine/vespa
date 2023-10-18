@@ -211,4 +211,30 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                    {"id":"paid","name":"Paid Plan - for testing purposes"}""");
        }
    }
+
+   @Test
+    void require_current_collection() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"collection":"AUTO"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                           {"collection": "INVOICE"}""");
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Collection: INVOICE"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"collection":"INVOICE"}""");
+       }
+   }
 }
