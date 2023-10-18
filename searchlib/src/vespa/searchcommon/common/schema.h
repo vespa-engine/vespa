@@ -74,7 +74,6 @@ public:
     class IndexField : public Field {
     private:
         uint32_t _avgElemLen;
-        // TODO: Remove when posting list format with interleaved features is made default
         bool _interleaved_features;
 
     public:
