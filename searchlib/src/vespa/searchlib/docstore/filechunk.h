@@ -155,7 +155,7 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     uint32_t getNumLids() const { return _numLids; }
-    size_t   getBloatCount() const { return _erasedCount.load(std::memory_order_relaxed); }
+    size_t   getErasedCount() const { return _erasedCount.load(std::memory_order_relaxed); }
     size_t   getAddedBytes() const { return _addedBytes.load(std::memory_order_relaxed); }
     size_t   getErasedBytes() const { return _erasedBytes.load(std::memory_order_relaxed); }
     uint64_t getLastPersistedSerialNum() const;
