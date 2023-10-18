@@ -13,16 +13,13 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.data.access.helpers.MatchFeatureFilter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 record PreparedInput(String name, Tensor value) {
 
-    static List<PreparedInput> findFromQuery(Query query, Collection<String> queryFeatures) {
+    static List<PreparedInput> findFromQuery(Query query, Collection<String> queryFeatures, Map<String, Tensor> defaultValues) {
         List<PreparedInput> result = new ArrayList<>();
         var ranking = query.getRanking();
         var rankFeatures = ranking.getFeatures();
@@ -34,6 +31,12 @@ record PreparedInput(String name, Tensor value) {
             if (feature.isEmpty()) {
                 // searchers are recommended to place query features here:
                 feature = rankFeatures.getTensor(needed);
+            }
+            if (feature.isEmpty()) {
+                var t = defaultValues.get(needed);
+                if (t != null) {
+                    feature = Optional.of(t);
+                }
             }
             if (feature.isEmpty()) {
                 throw new IllegalArgumentException("missing query feature: " + queryFeatureName);
