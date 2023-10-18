@@ -6,7 +6,9 @@ import com.yahoo.search.Result;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Steinar Knutsen
@@ -101,6 +103,24 @@ public class CoverageTestCase {
             assertEquals(1, coverage.getFullResultSets());
             verifyCoverageConversion(coverage);
         }
+    }
+
+    private void verifyNoCoverage(Coverage zero) {
+        assertFalse(zero.isDegraded());
+        assertEquals(100, zero.getResultPercentage());
+        assertTrue(zero.getFull());
+        zero.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT);
+        assertTrue(zero.isDegraded());
+        assertEquals(0, zero.getResultPercentage());
+        assertFalse(zero.getFull());
+    }
+    @Test
+    void testCoverageWithNoResponseFromSearchNodesAndTimeout() {
+        verifyNoCoverage(new Coverage(0, 0, 0));
+    }
+    @Test
+    void testCoverageWithResponseFromSearchNodesAndTimeout() {
+        verifyNoCoverage(new Coverage(0, 0, 1));
     }
 
 }
