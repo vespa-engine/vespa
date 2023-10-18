@@ -992,7 +992,7 @@ public class SelectParser implements Parser {
         if (origin != null) {
             out.setOrigin(origin);
         }
-        if (annotations !=  null){
+        if (annotations !=  null) {
             Boolean usePositionData = getBoolAnnotation(USE_POSITION_DATA, annotations, null);
             if (usePositionData != null) {
                 out.setPositionData(usePositionData);

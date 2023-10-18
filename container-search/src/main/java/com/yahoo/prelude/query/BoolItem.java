@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 
 /**
  * A true/false term suitable for searching bool indexes.
+ *
+ * @author bratseth
  */
 public class BoolItem extends TermItem {
 
@@ -58,11 +60,11 @@ public class BoolItem extends TermItem {
     }
 
     private boolean toBoolean(String stringValue) {
-        switch (stringValue.toLowerCase()) {
-            case "true" : return true;
-            case "false" : return false;
-            default: throw new IllegalInputException("Expected 'true' or 'false', got '" + stringValue + "'");
-        }
+        return switch (stringValue.toLowerCase()) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw new IllegalInputException("Expected 'true' or 'false', got '" + stringValue + "'");
+        };
     }
 
     /** Returns the same as stringValue */

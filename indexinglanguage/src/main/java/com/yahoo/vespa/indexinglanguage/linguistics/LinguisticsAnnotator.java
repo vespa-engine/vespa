@@ -88,9 +88,9 @@ public class LinguisticsAnnotator {
      * Creates a TERM annotation which has the lowercase value as annotation (only) if it is different from the
      * original.
      *
-     * @param termToLowerCase The term to lower case.
-     * @param origTerm        The original term.
-     * @return the created TERM annotation.
+     * @param termToLowerCase the term to lower case
+     * @param origTerm        the original term
+     * @return the created TERM annotation
      */
     public static Annotation lowerCaseTermAnnotation(String termToLowerCase, String origTerm) {
         String annotationValue = toLowerCase(termToLowerCase);
