@@ -88,7 +88,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     if (_retrievedCommunicationManager) {
         builder.add(std::move(_retrievedCommunicationManager));
     } else {
-        auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri, *_comm_mgr_config);
+        auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri, communication_manager_config());
         _communicationManager = communication_manager.get();
         builder.add(std::move(communication_manager));
     }

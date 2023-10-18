@@ -11,7 +11,6 @@
 
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config-upgrading.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -51,7 +50,6 @@ namespace lib { class NodeType; }
 
 class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
-                    private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
                     private framework::MetricUpdateHook,
@@ -96,10 +94,9 @@ protected:
     using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
     using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
     using StorServerConfig           = vespa::config::content::core::StorServerConfig;
-    using UpgradingConfig            = vespa::config::content::UpgradingConfig;
 private:
     bool _singleThreadedDebugMode;
-        // Subscriptions to config
+    // Subscriptions to config
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
 
     std::unique_ptr<HostInfo> _hostInfo;
@@ -126,9 +123,22 @@ private:
     // The storage chain can depend on anything.
     std::unique_ptr<StorageLink>               _chain;
 
+    template <typename ConfigT>
+    struct ConfigWrapper {
+        std::unique_ptr<ConfigT> staging;
+        std::unique_ptr<ConfigT> active;
+
+        ConfigWrapper();
+        ~ConfigWrapper();
+
+        void promote_staging_to_active();
+    };
+
+    template <typename ConfigT>
+    void stage_config_change(ConfigWrapper<ConfigT>& my_cfg, std::unique_ptr<ConfigT> new_cfg);
+
     /** Implementation of config callbacks. */
     void configure(std::unique_ptr<StorServerConfig> config) override;
-    void configure(std::unique_ptr<UpgradingConfig> config) override;
     void configure(std::unique_ptr<StorDistributionConfig> config) override;
     void configure(std::unique_ptr<BucketspacesConfig>) override;
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
@@ -139,20 +149,24 @@ protected:
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
 
-    // Current running config. Kept, such that we can see what has been
-    // changed in live config updates.
-    std::unique_ptr<StorServerConfig> _serverConfig;
-    std::unique_ptr<UpgradingConfig> _clusterConfig;
-    std::unique_ptr<StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
-    std::unique_ptr<CommunicationManagerConfig> _comm_mgr_config;
+    ConfigWrapper<BucketspacesConfig>         _bucket_spaces_config;
+    ConfigWrapper<CommunicationManagerConfig> _comm_mgr_config;
+    ConfigWrapper<StorDistributionConfig>     _distribution_config;
+    ConfigWrapper<StorServerConfig>           _server_config;
 
-    // New configs gotten that has yet to have been handled
-    std::unique_ptr<StorServerConfig> _newServerConfig;
-    std::unique_ptr<UpgradingConfig> _newClusterConfig;
-    std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
-    std::unique_ptr<CommunicationManagerConfig> _new_comm_mgr_config;
+    [[nodiscard]] const BucketspacesConfig& bucket_spaces_config() const noexcept {
+        return *_bucket_spaces_config.active;
+    }
+    [[nodiscard]] const CommunicationManagerConfig& communication_manager_config() const noexcept {
+        return *_comm_mgr_config.active;
+    }
+    [[nodiscard]] const StorDistributionConfig& distribution_config() const noexcept {
+        return *_distribution_config.active;
+    }
+    [[nodiscard]] const StorServerConfig& server_config() const noexcept {
+        return *_server_config.active;
+    }
+
     std::unique_ptr<StorageComponent> _component;
     std::unique_ptr<NodeIdentity> _node_identity;
     config::ConfigUri _configUri;
