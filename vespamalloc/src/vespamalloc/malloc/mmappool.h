@@ -19,6 +19,7 @@ public:
     size_t get_size(void *) const;
     size_t getNumMappings() const;
     size_t getMmappedBytes() const;
+    size_t getMmappedBytesPeak() const;
     void info(FILE * os, size_t level) const;
 private:
     struct MMapInfo {
@@ -28,6 +29,8 @@ private:
     };
     const size_t        _page_size;
     const int           _huge_flags;
+    size_t              _peakBytes;
+    size_t              _currentBytes;
     std::atomic<size_t> _count;
     std::atomic<bool>   _has_hugepage_failure_just_happened;
     mutable std::mutex  _mutex;
