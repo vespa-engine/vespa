@@ -94,7 +94,7 @@ MemoryUsage extract_memory_usage() {
     usage.rss_size = convert(vm_rss);
 
 #if __GLIBC_PREREQ(2, 33)
-    struct mallinfo2 mallocInfo = mallinfo2();
+    struct mallinfo2 info = mallinfo2();
     usage.malloc_peak = size_t(info.usmblks);
     usage.malloc_current = size_t(info.arena + info.hblkhd);
 #else
