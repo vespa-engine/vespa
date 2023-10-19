@@ -24,11 +24,9 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_
       _dictSize(_frozenDictionary.size()),
       _pidx(),
       _frozenRoot(),
-      _FSTC(0.0),
-      _PLSTC(0.0),
       _hasWeight(hasWeight),
       _useBitVector(useBitVector),
-      _counted_hits()
+      _estimated_hits()
 {
 }
 
@@ -70,6 +68,17 @@ PostingListSearchContext::lookupSingle()
     if (_lowerDictItr.valid()) {
         _pidx = _lowerDictItr.getData().load_acquire();
     }
+}
+
+size_t
+PostingListSearchContext::estimated_hits_in_range() const
+{
+    if (_estimated_hits.has_value()) {
+        return _estimated_hits.value();
+    }
+    size_t result = calc_estimated_hits_in_range();
+    _estimated_hits = result;
+    return result;
 }
 
 template class PostingListSearchContextT<vespalib::btree::BTreeNoLeafData>;
