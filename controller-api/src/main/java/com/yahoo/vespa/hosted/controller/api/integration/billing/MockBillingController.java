@@ -206,13 +206,6 @@ public class MockBillingController implements BillingController {
         return count < limit;
     }
 
-    @Override
-    public String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
-        // Replace bill with a copy with exportedId set
-        var exportedId = "EXT-ID-123";
-        dbClient.setExportedInvoiceId(bill.id(), exportedId);
-        return exportedId;
-    }
 
     public void setTenants(List<TenantName> tenants) {
         this.tenants = tenants;

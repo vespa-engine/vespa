@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
@@ -54,6 +55,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private final ApplicationController applications;
     private final TenantController tenants;
     private final BillingController billing;
+    private final BillingReporter billingReporter;
     private final PlanRegistry planRegistry;
     private final Clock clock;
 
@@ -64,6 +66,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         this.billing = controller.serviceRegistry().billingController();
         this.planRegistry = controller.serviceRegistry().planRegistry();
         this.clock = controller.serviceRegistry().clock();
+        this.billingReporter = controller.serviceRegistry().billingReporter();
     }
 
     private static RestApi createRestApi(BillingApiHandlerV2 self) {
@@ -309,7 +312,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var cloudTenant = tenants.require(bill.tenant(), CloudTenant.class);
 
         var exportMethod = slime.get().field("method").asString();
-        var result = billing.exportBill(bill, exportMethod, cloudTenant);
+        var result = billingReporter.exportBill(bill, exportMethod, cloudTenant);
 
         var responseSlime = new Slime();
         responseSlime.setObject().setString("invoiceId", result);

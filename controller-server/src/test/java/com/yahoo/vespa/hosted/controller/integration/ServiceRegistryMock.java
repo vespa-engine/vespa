@@ -317,7 +317,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     @Override
     public BillingReporter billingReporter() {
-        return new BillingReporterMock(clock());
+        return new BillingReporterMock(clock(), billingDb);
     }
 
 }

@@ -9,4 +9,9 @@ public interface BillingReporter {
 
     InvoiceUpdate maintainInvoice(Bill bill);
 
+    /** Export a bill to a payment service. Returns the invoice ID in the external system. */
+    default String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
+        return "NOT_IMPLEMENTED";
+    }
+
 }

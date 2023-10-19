@@ -5,6 +5,8 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceUsage;
 
+import java.math.BigDecimal;
+
 /**
  * @author ogronnesby
  */
@@ -16,4 +18,15 @@ public interface CostCalculator {
     /** Estimate the cost for the given resources */
     double calculate(NodeResources resources);
 
+    /** CPU unit price */
+    BigDecimal getCpuPrice();
+
+    /** Memory unit price */
+    BigDecimal getMemoryPrice();
+
+    /** Disk unit price */
+    BigDecimal getDiskPrice();
+
+    /** GPU unit price */
+    BigDecimal getGpuPrice();
 }

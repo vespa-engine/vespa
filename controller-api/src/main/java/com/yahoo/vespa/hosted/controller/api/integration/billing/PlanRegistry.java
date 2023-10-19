@@ -20,6 +20,10 @@ public interface PlanRegistry {
     /** Get a set of all plans */
     List<Plan> all();
 
+    default Plan require(String planId) {
+        return plan(planId).orElseThrow();
+    }
+
     /** Get a plan give a plan ID */
     default Optional<Plan> plan(String planId) {
         if (planId == null || planId.isBlank())
