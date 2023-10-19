@@ -11,6 +11,7 @@ MMapPool::MMapPool()
     : _page_size(getpagesize()),
       _huge_flags((getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0),
       _peakBytes(0ul),
+      _currentBytes(0ul),
       _count(0),
       _mutex(),
       _mappings()
@@ -29,9 +30,7 @@ MMapPool::getNumMappings() const {
 size_t
 MMapPool::getMmappedBytes() const {
     std::lock_guard guard(_mutex);
-    size_t sum(0);
-    std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
-    return sum;
+    return _currentBytes;
 }
 
 size_t
@@ -83,11 +82,10 @@ MMapPool::mmap(size_t sz) {
         std::lock_guard guard(_mutex);
         auto [it, inserted] = _mappings.insert(std::make_pair(buf, MMapInfo(mmapId, sz)));
         ASSERT_STACKTRACE(inserted);
-        size_t sum(0);
-        std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
-        _peakBytes = std::max(_peakBytes, sum);
+        _currentBytes += sz;
+        _peakBytes = std::max(_peakBytes, _currentBytes);
         if (sz >= _G_bigBlockLimit) {
-            fprintf(_G_logFile, "%ld mappings of accumulated size %ld\n", _mappings.size(), sum);
+            fprintf(_G_logFile, "%ld mappings of accumulated size %ld\n", _mappings.size(), _currentBytes);
         }
     }
     return buf;
@@ -106,6 +104,7 @@ MMapPool::unmap(void * ptr) {
         }
         sz = found->second._sz;
         _mappings.erase(found);
+        _currentBytes -= sz;
     }
     int munmap_ok = ::munmap(ptr, sz);
     ASSERT_STACKTRACE(munmap_ok == 0);

@@ -30,6 +30,7 @@ private:
     const size_t        _page_size;
     const int           _huge_flags;
     size_t              _peakBytes;
+    size_t              _currentBytes;
     std::atomic<size_t> _count;
     std::atomic<bool>   _has_hugepage_failure_just_happened;
     mutable std::mutex  _mutex;
