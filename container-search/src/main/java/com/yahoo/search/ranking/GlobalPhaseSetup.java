@@ -162,7 +162,7 @@ class GlobalPhaseSetup {
                         var normSupplier = SimpleEvaluator.wrap(normSource);
                         normalizers.add(makeNormalizerSetup(cfg, matchFeatures, normSupplier, normInputs, rerankCount));
                     }
-                } else if (matchFeatures.contains(input)) {
+                } else if (matchFeatures.contains(input) || matchFeatures.contains(WrappedHit.alternate(input))) {
                     fromMF.add(input);
                 } else {
                     throw new IllegalArgumentException("Bad config, missing global-phase input: " + input);
@@ -188,7 +188,7 @@ class GlobalPhaseSetup {
             String queryFeatureName = asQueryFeature(input);
             if (queryFeatureName != null) {
                 fromQuery.add(queryFeatureName);
-            } else if (matchFeatures.contains(input)) {
+            } else if (matchFeatures.contains(input) || matchFeatures.contains(WrappedHit.alternate(input))) {
                 fromMF.add(input);
             } else {
                 throw new IllegalArgumentException("Bad config, missing normalizer input: " + input);
