@@ -2,6 +2,8 @@
 
 package com.yahoo.config.model.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -31,4 +33,6 @@ public interface OnnxModelCost {
             @Override public void registerModel(URI uri) {}
         };
     }
+
+
 }

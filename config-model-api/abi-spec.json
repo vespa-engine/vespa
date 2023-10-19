@@ -1420,6 +1420,31 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.OnnxMemoryStats" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, long, long, long)",
+      "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.fasterxml.jackson.databind.JsonNode)",
+      "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.yahoo.config.application.api.ApplicationFile)",
+      "public static com.yahoo.path.Path memoryStatsFilePath(com.yahoo.path.Path)",
+      "public long peakMemoryUsage()",
+      "public com.fasterxml.jackson.databind.JsonNode toJson()",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long vmSize()",
+      "public long vmRss()",
+      "public long mallocPeak()",
+      "public long mallocCurrent()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.OnnxModelCost$Calculator" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
