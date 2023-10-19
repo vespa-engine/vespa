@@ -67,7 +67,7 @@ public class EndpointCertificateValidatorImpl implements EndpointCertificateVali
 
         } catch (SecretNotFoundException s) {
             // Normally because the cert is in the process of being provisioned - this will cause a retry in InternalStepRunner
-            throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store");
+            throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store", s);
         } catch (EndpointCertificateException e) {
             if (!e.type().equals(EndpointCertificateException.Type.CERT_NOT_AVAILABLE)) { // such failures are normal and will be retried, it takes some time to show up in the secret store
                 log.log(Level.WARNING, "Certificate validation failure for " + serializedInstanceId, e);
