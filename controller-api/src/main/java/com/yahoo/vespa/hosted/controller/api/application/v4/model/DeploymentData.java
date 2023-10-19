@@ -61,14 +61,14 @@ public class DeploymentData {
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
-        this.endpoints = wrap(requireNonNull(endpoints), Duration.ofSeconds(30), "deployment endpoints");
+        this.endpoints = wrap(requireNonNull(endpoints), Duration.ofSeconds(30), "deployment endpoints for " + instance + " in " + zone);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
-        this.quota = wrap(requireNonNull(quota), Duration.ofSeconds(10), "quota");
+        this.quota = wrap(requireNonNull(quota), Duration.ofSeconds(10), "quota for " + instance);
         this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
         this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
-        this.cloudAccount = wrap(requireNonNull(cloudAccount), Duration.ofSeconds(5), "cloud account");
-        this.dataPlaneTokens = wrap(dataPlaneTokens, Duration.ofSeconds(5), "data plane tokens");
+        this.cloudAccount = wrap(requireNonNull(cloudAccount), Duration.ofSeconds(5), "cloud account for " + instance + " in " + zone);
+        this.dataPlaneTokens = wrap(dataPlaneTokens, Duration.ofSeconds(5), "data plane tokens for " + instance + " in " + zone);
         this.dryRun = dryRun;
     }
 
@@ -155,7 +155,7 @@ public class DeploymentData {
                 long durationNanos = System.nanoTime() - startNanos;
                 Level level = durationNanos > timeout.toNanos() ? Level.WARNING : Level.FINE;
                 String thrownMessage = thrown == null ? "" : " with exception " + thrown;
-                log.log(level, () -> "Getting " + description + " took " + Duration.ofNanos(durationNanos) + thrownMessage);
+                log.log(level, () -> String.format("Getting %s took %.6f seconds%s", description, durationNanos / 1e9, thrownMessage));
             }
         }
 
