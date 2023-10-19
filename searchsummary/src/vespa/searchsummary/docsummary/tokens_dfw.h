@@ -10,17 +10,17 @@ namespace search::docsummary {
 
 /*
  * Class for writing annotated string field values from document as
- * arrays containing the indexing terms.
+ * arrays containing the tokens.
  */
-class LinguisticsTokensDFW : public DocsumFieldWriter
+class TokensDFW : public DocsumFieldWriter
 {
 private:
     vespalib::string            _input_field_name;
     linguistics::TokenExtractor _token_extractor;
 
 public:
-    explicit LinguisticsTokensDFW(const vespalib::string& input_field_name);
-    ~LinguisticsTokensDFW() override;
+    explicit TokensDFW(const vespalib::string& input_field_name);
+    ~TokensDFW() override;
     bool isGenerated() const override;
     void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter& target) const override;
 };
