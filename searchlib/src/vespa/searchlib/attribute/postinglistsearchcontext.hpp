@@ -58,6 +58,21 @@ PostingListSearchContextT<DataT>::lookupSingle()
 }
 
 template <typename DataT>
+size_t
+PostingListSearchContextT<DataT>::countHits() const
+{
+    if (_counted_hits.has_value()) {
+        return _counted_hits.value();
+    }
+    size_t sum(0);
+    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
+        sum += _postingList.frozenSize(it.getData().load_acquire());
+    }
+    _counted_hits = sum;
+    return sum;
+}
+
+template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillArray()
 {
@@ -82,9 +97,9 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
-    if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
-        if (execInfo.isStrict() || use_posting_lists_when_non_strict(execInfo)) {
-            size_t sum = estimated_hits_in_range();
+    if (!_merger.merge_done() && _uniqueValues >= 2u) {
+        if ((execInfo.isStrict() || use_posting_list_when_non_strict(execInfo)) && !fallbackToFiltering()) {
+            size_t sum(countHits());
             if (sum < _docIdLimit / 64) {
                 _merger.reserveArray(_uniqueValues, sum);
                 fillArray();
@@ -207,10 +222,17 @@ PostingListSearchContextT<DataT>::approximateHits() const
     } else if (_uniqueValues == 1u) {
         numHits = singleHits();
     } else {
-        numHits = estimated_hits_in_range();
+        if (this->fallbackToFiltering()) {
+            numHits = _docIdLimit;
+        } else if (this->fallback_to_approx_num_hits()) {
+            numHits = this->calculateApproxNumHits();
+        } else {
+            numHits = countHits();
+        }
     }
     return std::min(numHits, size_t(std::numeric_limits<uint32_t>::max()));
 }
+
 
 template <typename DataT>
 void
@@ -251,10 +273,20 @@ template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::~PostingListFoldedSearchContextT() = default;
 
 template <typename DataT>
-size_t
-PostingListFoldedSearchContextT<DataT>::calc_estimated_hits_in_range() const
+bool
+PostingListFoldedSearchContextT<DataT>::fallback_to_approx_num_hits() const
 {
-    size_t sum = 0;
+    return false;
+}
+
+template <typename DataT>
+size_t
+PostingListFoldedSearchContextT<DataT>::countHits() const
+{
+    if (_counted_hits.has_value()) {
+        return _counted_hits.value();
+    }
+    size_t sum(0);
     bool overflow = false;
     for (auto it(_lowerDictItr); it != _upperDictItr;) {
         if (use_dictionary_entry(it)) {
@@ -273,6 +305,7 @@ PostingListFoldedSearchContextT<DataT>::calc_estimated_hits_in_range() const
             ++it;
         }
     }
+    _counted_hits = sum;
     return sum;
 }
 
