@@ -222,6 +222,14 @@ public record IP() {
             this.hostnames = List.copyOf(Objects.requireNonNull(hostnames, "hostnames must be non-null"));
         }
 
+        /** The number of hosts in this pool: each host has a name and/or one or two IP addresses. */
+        public long size() {
+            return hostnames().isEmpty() ?
+                   Math.max(ipAddresses.addresses.stream().filter(IP::isV4).count(),
+                            ipAddresses.addresses.stream().filter(IP::isV6).count()) :
+                   hostnames().size();
+        }
+
         public List<String> ips() { return ipAddresses.addresses; }
 
         /**
