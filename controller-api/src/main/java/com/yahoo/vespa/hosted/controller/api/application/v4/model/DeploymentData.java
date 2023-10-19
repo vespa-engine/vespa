@@ -83,8 +83,8 @@ public class DeploymentData {
         return platform;
     }
 
-    public Supplier<DeploymentEndpoints> endpoints() {
-        return endpoints;
+    public DeploymentEndpoints endpoints() {
+        return endpoints.get();
     }
 
     public Optional<DockerImage> dockerImageRepo() {
