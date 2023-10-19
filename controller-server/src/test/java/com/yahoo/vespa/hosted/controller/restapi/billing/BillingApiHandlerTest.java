@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
@@ -151,14 +152,14 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     void adding_new_status() {
         billingController.addBill(tenant, createBill(), true);
 
-        var requestBody = "{\"status\":\"DONE\"}";
+        var requestBody = "{\"status\":\"CLOSED\"}";
         var request = request("/billing/v1/invoice/id-1/status", POST)
                 .data(requestBody)
                 .roles(financeAdmin);
         tester.assertResponse(request, "{\"message\":\"Updated status of invoice id-1\"}");
 
         var bill = billingController.getBillsForTenant(tenant).get(0);
-        assertEquals("DONE", bill.status());
+        assertEquals(BillStatus.CLOSED, bill.status());
     }
 
     @Test
@@ -210,7 +211,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     static Bill createBill() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
         var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-        var statusHistory = new StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
+        var statusHistory = new StatusHistory(new TreeMap<>(Map.of(start, BillStatus.OPEN)));
         return new Bill(
                 Bill.Id.of("id-1"),
                 TenantName.defaultName(),

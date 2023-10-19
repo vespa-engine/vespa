@@ -8,27 +8,27 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
- * @author gjoranv
+ * @author ogronnesby
  */
 public class StatusHistory {
-    SortedMap<ZonedDateTime, String> history;
+    SortedMap<ZonedDateTime, BillStatus> history;
 
-    public StatusHistory(SortedMap<ZonedDateTime, String> history) {
+    public StatusHistory(SortedMap<ZonedDateTime, BillStatus> history) {
         this.history = history;
     }
 
     public static StatusHistory open(Clock clock) {
         var now = clock.instant().atZone(ZoneOffset.UTC);
         return new StatusHistory(
-                new TreeMap<>(Map.of(now, "OPEN"))
+                new TreeMap<>(Map.of(now, BillStatus.OPEN))
         );
     }
 
-    public String current() {
+    public BillStatus current() {
         return history.get(history.lastKey());
     }
 
-    public SortedMap<ZonedDateTime, String> getHistory() {
+    public SortedMap<ZonedDateTime, BillStatus> getHistory() {
         return history;
     }
 

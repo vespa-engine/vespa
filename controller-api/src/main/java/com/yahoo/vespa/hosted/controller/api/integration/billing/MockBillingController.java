@@ -119,7 +119,7 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void updateBillStatus(Bill.Id billId, String agent, String status) {
+    public void updateBillStatus(Bill.Id billId, String agent, BillStatus status) {
         var now = clock.instant().atZone(ZoneOffset.UTC);
         committedBills.values().stream()
                 .flatMap(List::stream)

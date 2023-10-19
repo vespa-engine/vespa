@@ -64,7 +64,7 @@ public class Bill {
         return tenant;
     }
 
-    public String status() {
+    public BillStatus status() {
         return statusHistory.current();
     }
 

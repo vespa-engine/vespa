@@ -54,7 +54,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                 .findFirst();
     }
 
-    public String getStatus(Bill.Id invoiceId) {
+    public BillStatus getStatus(Bill.Id invoiceId) {
         return statuses.get(invoiceId).current();
     }
 
@@ -90,7 +90,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public void setStatus(Bill.Id invoiceId, String agent, String status) {
+    public void setStatus(Bill.Id invoiceId, String agent, BillStatus status) {
         statuses.computeIfAbsent(invoiceId, k -> StatusHistory.open(clock))
                 .getHistory()
                 .put(ZonedDateTime.now(), status);

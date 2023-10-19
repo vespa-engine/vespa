@@ -90,7 +90,7 @@ public interface BillingController {
     boolean deleteInstrument(TenantName tenant, String userId, String instrumentId);
 
     /** Change the status of the given bill */
-    void updateBillStatus(Bill.Id billId, String agent, String status);
+    void updateBillStatus(Bill.Id billId, String agent, BillStatus status);
 
     /** Add a line item to the given bill */
     void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent);

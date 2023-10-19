@@ -69,7 +69,7 @@ public interface BillingDatabaseClient {
      * @param agent     The agent that added the status
      * @param status    The new status of the bill
      */
-    void setStatus(Bill.Id billId, String agent, String status);
+    void setStatus(Bill.Id billId, String agent, BillStatus status);
 
     List<Bill.LineItem> getUnusedLineItems(TenantName tenantName);
 
