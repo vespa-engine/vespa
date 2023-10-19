@@ -1,12 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::Bouncer
- * @ingroup storageserver
- *
- * @brief Denies messages from entering if state is not good.
- *
- * If we are not in up state, but process is still running, only a few
- * messages should be allowed through. This link stops all messages not allowed.
+ * Component which rejects messages that can not be accepted by the node in
+ * its current state.
  */
 
 #pragma once
@@ -29,28 +24,28 @@ namespace storage {
 struct BouncerMetrics;
 
 class Bouncer : public StorageLink,
-                private StateListener,
-                private config::IFetcherCallback<vespa::config::content::core::StorBouncerConfig>
+                private StateListener
 {
-    std::unique_ptr<vespa::config::content::core::StorBouncerConfig> _config;
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+
+    std::unique_ptr<StorBouncerConfig> _config;
     StorageComponent _component;
     std::mutex       _lock;
     lib::NodeState   _baselineNodeState;
     using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
     BucketSpaceNodeStateMapping _derivedNodeStates;
     const lib::State* _clusterState;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::unique_ptr<BouncerMetrics> _metrics;
     bool _closed;
 
 public:
-    Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri);
+    Bouncer(StorageComponentRegister& compReg, const StorBouncerConfig& bootstrap_config);
     ~Bouncer() override;
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;
 
-    void configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config) override;
+    void on_configure(const StorBouncerConfig& config);
     const BouncerMetrics& metrics() const noexcept;
 
 private:

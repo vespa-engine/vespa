@@ -19,6 +19,7 @@ namespace storage {
 
 namespace distributor { class DistributorStripePool; }
 
+class Bouncer;
 class IStorageChainBuilder;
 
 class DistributorNode
@@ -34,6 +35,7 @@ class DistributorNode
     uint32_t _intra_second_pseudo_usec_counter;
     uint32_t _num_distributor_stripes;
     std::unique_ptr<StorageLink> _retrievedCommunicationManager;
+    Bouncer* _bouncer;
 
     // If the current wall clock is more than the below number of seconds into the
     // past when compared to the highest recorded wall clock second time stamp, abort
@@ -65,6 +67,7 @@ private:
     void initializeNodeSpecific() override;
     void createChain(IStorageChainBuilder &builder) override;
     api::Timestamp generate_unique_timestamp() override;
+    void on_bouncer_config_changed() override;
 
     /**
      * Shut down necessary distributor-specific components before shutting

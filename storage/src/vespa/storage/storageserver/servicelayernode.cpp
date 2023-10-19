@@ -32,6 +32,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
+      _bouncer(nullptr),
       _bucket_manager(nullptr),
       _fileStorManager(nullptr),
       _init_has_been_called(false)
@@ -166,7 +167,9 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, communication_manager_config());
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
-    builder.add(std::make_unique<Bouncer>(compReg, _configUri));
+    auto bouncer = std::make_unique<Bouncer>(compReg, bouncer_config());
+    _bouncer = bouncer.get();
+    builder.add(std::move(bouncer));
     auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
     auto merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
@@ -213,6 +216,11 @@ void ServiceLayerNode::perform_post_chain_creation_init_steps() {
     _fileStorManager->initialize_bucket_databases_from_provider();
     _bucket_manager->force_db_sweep_and_metric_update();
     _fileStorManager->complete_internal_initialization();
+}
+
+void ServiceLayerNode::on_bouncer_config_changed() {
+    assert(_bouncer);
+    _bouncer->on_configure(bouncer_config());
 }
 
 } // storage

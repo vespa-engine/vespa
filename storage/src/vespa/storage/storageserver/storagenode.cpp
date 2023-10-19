@@ -106,6 +106,7 @@ void
 StorageNode::subscribeToConfigs()
 {
     _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
+    _configFetcher->subscribe<StorBouncerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<BucketspacesConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<CommunicationManagerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
@@ -115,6 +116,7 @@ StorageNode::subscribeToConfigs()
 
     // All the below config instances were synchronously populated as part of start()ing the config fetcher
     std::lock_guard configLockGuard(_configLock);
+    _bouncer_config.promote_staging_to_active();
     _bucket_spaces_config.promote_staging_to_active();
     _comm_mgr_config.promote_staging_to_active();
     _distribution_config.promote_staging_to_active();
@@ -318,6 +320,10 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         _comm_mgr_config.promote_staging_to_active();
         _communicationManager->on_configure(communication_manager_config());
     }
+    if (_bouncer_config.staging) {
+        _bouncer_config.promote_staging_to_active();
+        on_bouncer_config_changed();
+    }
 }
 
 void
@@ -441,8 +447,13 @@ StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
 }
 
 void
-StorageNode::configure(std::unique_ptr<CommunicationManagerConfig > config) {
+StorageNode::configure(std::unique_ptr<CommunicationManagerConfig> config) {
     stage_config_change(_comm_mgr_config, std::move(config));
+}
+
+void
+StorageNode::configure(std::unique_ptr<StorBouncerConfig> config) {
+    stage_config_change(_bouncer_config, std::move(config));
 }
 
 template <typename ConfigT>

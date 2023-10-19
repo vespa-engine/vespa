@@ -15,6 +15,7 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/common/doneinitializehandler.h>
+#include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/resumeguard.h>
@@ -52,6 +53,7 @@ class StorageNode : private config::IFetcherCallback<vespa::config::content::cor
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
+                    private config::IFetcherCallback<vespa::config::content::core::StorBouncerConfig>,
                     private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
                     private framework::defaultimplementation::ShutdownListener
@@ -92,6 +94,7 @@ public:
 protected:
     using BucketspacesConfig         = vespa::config::content::core::BucketspacesConfig;
     using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using StorBouncerConfig          = vespa::config::content::core::StorBouncerConfig;
     using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
     using StorServerConfig           = vespa::config::content::core::StorServerConfig;
 private:
@@ -142,6 +145,7 @@ private:
     void configure(std::unique_ptr<StorDistributionConfig> config) override;
     void configure(std::unique_ptr<BucketspacesConfig>) override;
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
+    void configure(std::unique_ptr<StorBouncerConfig> config) override;
 
 protected:
     // Lock taken while doing configuration of the server.
@@ -149,11 +153,15 @@ protected:
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
 
+    ConfigWrapper<StorBouncerConfig>          _bouncer_config;
     ConfigWrapper<BucketspacesConfig>         _bucket_spaces_config;
     ConfigWrapper<CommunicationManagerConfig> _comm_mgr_config;
     ConfigWrapper<StorDistributionConfig>     _distribution_config;
     ConfigWrapper<StorServerConfig>           _server_config;
 
+    [[nodiscard]] const StorBouncerConfig& bouncer_config() const noexcept {
+        return *_bouncer_config.active;
+    }
     [[nodiscard]] const BucketspacesConfig& bucket_spaces_config() const noexcept {
         return *_bucket_spaces_config.active;
     }
@@ -192,6 +200,8 @@ protected:
     virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();
     virtual void removeConfigSubscriptions();
+
+    virtual void on_bouncer_config_changed() { /* no-op by default */ }
 public:
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
