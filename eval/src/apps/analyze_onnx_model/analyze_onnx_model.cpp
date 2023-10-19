@@ -10,8 +10,10 @@
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
+#ifdef __linux__
 #include <malloc.h>
 #include <dlfcn.h>
+#endif
 
 using vespalib::make_string_short::fmt;
 
@@ -62,6 +64,7 @@ struct MemoryUsage {
     size_t malloc_current;
 };
 
+#ifdef __linux__
 static const vespalib::string UNKNOWN = "unknown";
 
 size_t convert(const vespalib::string & s) {
@@ -111,6 +114,11 @@ MemoryUsage extract_memory_usage() {
 #endif
     return usage;
 }
+#else
+MemoryUsage extract_memory_usage() {
+    return { 0, 0, 0, 0 };
+}
+#endif
 
 void report_memory_usage(const vespalib::string &desc) {
     MemoryUsage m = extract_memory_usage();
