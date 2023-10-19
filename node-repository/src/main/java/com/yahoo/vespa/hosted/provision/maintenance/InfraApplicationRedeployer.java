@@ -85,7 +85,9 @@ public class InfraApplicationRedeployer implements AutoCloseable {
         return switch (type) {
             case host -> Optional.of(InfrastructureApplication.TENANT_HOST);
             case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST);
+            case config -> Optional.of(InfrastructureApplication.CONFIG_SERVER);
             case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST);
+            case controller -> Optional.of(InfrastructureApplication.CONTROLLER);
             case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST);
             default -> Optional.empty();
         };
