@@ -227,7 +227,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    void tokensr_override() throws ParseException {
+    void tokens_override() throws ParseException {
         var schema = buildSchema("field foo type string { indexing: summary }",
                 joinLines("document-summary bar {",
                         "    summary baz type string {",
