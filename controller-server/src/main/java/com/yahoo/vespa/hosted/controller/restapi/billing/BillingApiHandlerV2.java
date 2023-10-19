@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -481,7 +482,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         toSlime(slime.setArray("items"), bill.lineItems());
     }
 
-    private void toSlime(Cursor slime, Bill.StatusHistory history) {
+    private void toSlime(Cursor slime, StatusHistory history) {
         history.getHistory().forEach((key, value) -> {
             var c = slime.addObject();
             c.setString("at", key.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));

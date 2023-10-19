@@ -74,7 +74,7 @@ public class MockBillingController implements BillingController {
                 .add(new Bill(
                         billId,
                         tenant,
-                        Bill.StatusHistory.open(clock),
+                        StatusHistory.open(clock),
                         List.of(),
                         startTime,
                         endTime
@@ -238,6 +238,6 @@ public class MockBillingController implements BillingController {
     private Bill emptyBill() {
         var start = clock.instant().atZone(ZoneOffset.UTC);
         var end = clock.instant().atZone(ZoneOffset.UTC);
-        return new Bill(Bill.Id.of("empty"), TenantName.defaultName(), Bill.StatusHistory.open(clock), List.of(), start, end);
+        return new Bill(Bill.Id.of("empty"), TenantName.defaultName(), StatusHistory.open(clock), List.of(), start, end);
     }
 }

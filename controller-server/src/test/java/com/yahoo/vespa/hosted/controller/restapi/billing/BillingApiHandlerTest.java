@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -26,12 +27,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author olaa
@@ -211,7 +210,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     static Bill createBill() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
         var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-        var statusHistory = new Bill.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
+        var statusHistory = new StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
         return new Bill(
                 Bill.Id.of("id-1"),
                 TenantName.defaultName(),

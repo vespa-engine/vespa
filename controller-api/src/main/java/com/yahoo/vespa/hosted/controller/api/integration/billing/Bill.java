@@ -8,16 +8,11 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -387,30 +382,6 @@ public class Bill {
                     ", zoneId=" + zoneId +
                     '}';
         }
-    }
-
-    public static class StatusHistory {
-        SortedMap<ZonedDateTime, String> history;
-
-        public StatusHistory(SortedMap<ZonedDateTime, String> history) {
-            this.history = history;
-        }
-
-        public static StatusHistory open(Clock clock) {
-            var now = clock.instant().atZone(ZoneOffset.UTC);
-            return new StatusHistory(
-                    new TreeMap<>(Map.of(now, "OPEN"))
-            );
-        }
-
-        public String current() {
-            return history.get(history.lastKey());
-        }
-
-        public SortedMap<ZonedDateTime, String> getHistory() {
-            return history;
-        }
-
     }
 
 }

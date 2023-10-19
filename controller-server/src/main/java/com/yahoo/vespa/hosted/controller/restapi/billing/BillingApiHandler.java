@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -392,7 +393,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         });
     }
 
-    private void renderStatusHistory(Cursor cursor, Bill.StatusHistory statusHistory) {
+    private void renderStatusHistory(Cursor cursor, StatusHistory statusHistory) {
         statusHistory.getHistory()
                 .entrySet()
                 .stream()
