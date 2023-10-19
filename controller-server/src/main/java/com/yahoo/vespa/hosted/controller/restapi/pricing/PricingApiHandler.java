@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.ApplicationResources;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PriceInformation;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.Prices;
+import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingInfo;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
@@ -48,11 +49,13 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     private static final Logger log = Logger.getLogger(PricingApiHandler.class.getName());
 
     private final Controller controller;
+    private final PricingController pricingController;
 
     @Inject
-    public PricingApiHandler(Context parentCtx, Controller controller) {
+    public PricingApiHandler(Context parentCtx, Controller controller, PricingController pricingController) {
         super(parentCtx);
         this.controller = controller;
+        this.pricingController = pricingController;
     }
 
     @Override
@@ -85,8 +88,7 @@ public class PricingApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private Prices calculatePrice(PriceParameters priceParameters) {
-        var priceCalculator = controller.serviceRegistry().pricingController();
-        return priceCalculator.priceForApplications(priceParameters.appResources, priceParameters.pricingInfo, priceParameters.plan);
+        return pricingController.priceForApplications(priceParameters.appResources, priceParameters.pricingInfo, priceParameters.plan);
     }
 
     private PriceParameters parseQuery(String rawQuery) {

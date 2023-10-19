@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandl
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
-import com.yahoo.vespa.hosted.controller.api.integration.pricing.PricingController;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
@@ -126,7 +125,5 @@ public interface ServiceRegistry {
     GcpSecretStore gcpSecretStore();
 
     BillingReporter billingReporter();
-
-    PricingController pricingController();
 
 }
