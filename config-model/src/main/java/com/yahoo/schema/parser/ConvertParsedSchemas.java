@@ -150,6 +150,12 @@ public class ConvertParsedSchemas {
             var parsedType = parsedField.getType();
             DataType dataType = (parsedType != null) ? typeContext.resolveType(parsedType) : null;
             var existingField = schema.getField(parsedField.name());
+            if (existingField == null && parsedField.getSources().size() == 1) {
+                var sourceName = parsedField.getSources().get(0);
+                if (!sourceName.equals(parsedField.name())) {
+                    existingField = schema.getField(sourceName);
+                }
+            }
             if (existingField != null) {
                 var existingType = existingField.getDataType();
                 if (dataType == null) {
