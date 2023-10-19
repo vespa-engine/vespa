@@ -101,6 +101,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/plan")
                         .get(self::accountantTenantPlan)
                         .post(Slime.class, self::setAccountantTenantPlan))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/collection")
+                        .get(self::accountantTenantCollection)
+                        .post(Slime.class, self::setAccountantTenantCollection))
                 .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/export")
                         .put(Slime.class, self::putAccountantInvoiceExport))
                 .addRoute(RestApi.route("/billing/v2/accountant/plans")
@@ -393,6 +396,33 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var root = slime.setObject();
         root.setString("id", plan.get().id().value());
         root.setString("name", plan.get().displayName());
+
+        return slime;
+    }
+
+    private MessageResponse setAccountantTenantCollection(RestApi.RequestContext requestContext, Slime body) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var collection = CollectionMethod.valueOf(getInspectorFieldOrThrow(body.get(), "collection"));
+        var result = billing.setCollectionMethod(tenant.name(), collection);
+
+        if (result.isSuccess()) {
+            return new MessageResponse("Collection: " + collection.name());
+        } else {
+            throw new RestApiException.BadRequest("Could not change collection method: " + result.getErrorMessage());
+        }
+    }
+
+    private Slime accountantTenantCollection(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var collection = billing.getCollectionMethod(tenant.name());
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        root.setString("collection", collection.name());
 
         return slime;
     }
