@@ -440,7 +440,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     std::lock_guard<std::mutex> guard(_lock);
     /*
      * Hand over any priority flush token for completed flush to
-     * _pendingPrune, to ensure that setStrategy will wait util
+     * _pendingPrune, to ensure that setStrategy will wait until
      * flush engine has called prune().
      */
     std::shared_ptr<PriorityFlushToken> priority_flush_token;
