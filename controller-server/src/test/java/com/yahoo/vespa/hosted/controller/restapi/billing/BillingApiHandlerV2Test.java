@@ -237,4 +237,12 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                    {"collection":"INVOICE"}""");
        }
    }
+
+   @Test
+    void require_accountant_tenant() {
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, """
+                {"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes","billed":false,"supported":false},"billing":{},"collection":"AUTO"}""");
+   }
 }

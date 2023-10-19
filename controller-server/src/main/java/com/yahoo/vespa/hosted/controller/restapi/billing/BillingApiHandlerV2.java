@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
+import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -90,6 +91,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
+                .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}")
+                        .get(self::accountantTenant))
                 .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/preview")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
@@ -427,6 +430,23 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         return slime;
     }
 
+    private Slime accountantTenant(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var slime = new Slime();
+        var root = slime.setObject();
+
+        var planId = billing.getPlan(tenant.name());
+        var plan = planRegistry.plan(planId);
+
+        var collection = billing.getCollectionMethod(tenant.name());
+
+        toSlime(root, tenant, planId, plan, collection);
+
+        return slime;
+    }
+
     // --------- INVOICE RENDERING ----------
 
     private void invoicesSummaryToSlime(Cursor slime, List<Bill> bills) {
@@ -496,6 +516,33 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private void toSlime(Cursor slime, Optional<BigDecimal> hours, Optional<BigDecimal> cost) {
         hours.ifPresent(h -> slime.setString("hours", h.toString()));
         cost.ifPresent(c -> slime.setString("cost", c.toString()));
+    }
+
+    private void toSlime(Cursor slime, CloudTenant tenant, PlanId planId, Optional<Plan> plan, CollectionMethod method) {
+        slime.setString("tenant", tenant.name().value());
+        toSlime(slime.setObject("plan"), planId, plan);
+        toSlime(slime.setObject("billing"), tenant.billingReference());
+        slime.setString("collection", method.name());
+    }
+
+    private void toSlime(Cursor slime, PlanId planId, Optional<Plan> plan) {
+        slime.setString("id", planId.value());
+        if (plan.isPresent()) {
+            slime.setString("name", plan.get().displayName());
+            slime.setBool("billed", plan.get().isBilled());
+            slime.setBool("supported", plan.get().isSupported());
+        } else {
+            slime.setString("name", "UNKNOWN");
+            slime.setBool("billed", false);
+            slime.setBool("supported", false);
+        }
+    }
+
+    private void toSlime(Cursor slime, Optional<BillingReference> billingReference) {
+        if (billingReference.isPresent()) {
+            slime.setString("id", billingReference.get().reference());
+            slime.setLong("lastUpdated", billingReference.get().updated().toEpochMilli());
+        }
     }
 
     private List<Object[]> toCsv(Bill bill) {
