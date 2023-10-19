@@ -71,6 +71,24 @@ public class BcpGroupUpdater extends ControllerMaintainer {
                         var patch = new ApplicationPatch();
                         addTrafficShare(deployment, bcpGroups, patch);
                         addBcpGroupInfo(deployment.zone().region(), metrics.get(instance.id()), bcpGroups, patch);
+
+                        StringBuilder patchAsStringBuilder = new StringBuilder("Patch of instance ").append(instance.id().serializedForm()).append(": ")
+                            .append("\n\tcurrentReadShare: ")
+                                .append(patch.currentReadShare)
+                            .append("\n\tmaxReadShare: ")
+                                .append(patch.maxReadShare);
+                        for (Map.Entry<String, ApplicationPatch.ClusterPatch> entry : patch.clusters.entrySet()) {
+                            String key = entry.getKey();
+                            ApplicationPatch.ClusterPatch value = entry.getValue();
+                            patchAsStringBuilder.append("\n\tbcpGroupInfo for ").append(key).append(": ")
+                                                    .append("\n\t\tcpuCostPerQuery: ")
+                                                        .append(value.bcpGroupInfo.cpuCostPerQuery)
+                                                    .append("\n\t\tqueryRate: ")
+                                                        .append(value.bcpGroupInfo.queryRate)
+                                                    .append("\n\t\tgrowthRateHeadroom: ")
+                                                        .append(value.bcpGroupInfo.growthRateHeadroom);
+                        }
+                        log.log(Level.FINER, patchAsStringBuilder.toString());
                         nodeRepository.patchApplication(deployment.zone(), instance.id(), patch);
                     }
                     catch (Exception e) {
