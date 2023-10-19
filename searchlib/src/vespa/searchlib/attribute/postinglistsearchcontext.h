@@ -451,17 +451,15 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::calc_estimated_hits_in_range(
 {
     size_t exact_sum = 0;
     size_t estimated_sum = 0;
-    uint32_t count = 0;
     constexpr uint32_t max_posting_lists_to_count = 1000;
-    for (auto it = this->_lowerDictItr; it != this->_upperDictItr; ++it) {
-        if (count >= max_posting_lists_to_count) {
-            uint32_t remaining_posting_lists = this->_upperDictItr - it;
-            float hits_per_posting_list = static_cast<float>(exact_sum) / static_cast<float>(max_posting_lists_to_count);
-            estimated_sum = remaining_posting_lists * hits_per_posting_list;
-            break;
-        }
+    auto it = this->_lowerDictItr;
+    for (uint32_t count = 0; (it != this->_upperDictItr) && (count < max_posting_lists_to_count); ++it, ++count) {
         exact_sum += this->_postingList.frozenSize(it.getData().load_acquire());
-        ++count;
+    }
+    if (it != this->_upperDictItr) {
+        uint32_t remaining_posting_lists = this->_upperDictItr - it;
+        float hits_per_posting_list = static_cast<float>(exact_sum) / static_cast<float>(max_posting_lists_to_count);
+        estimated_sum = remaining_posting_lists * hits_per_posting_list;
     }
     return exact_sum + estimated_sum;
 }
