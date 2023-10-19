@@ -20,6 +20,7 @@ namespace storage {
 
 namespace spi { struct PersistenceProvider; }
 
+class Bouncer;
 class BucketManager;
 class FileStorManager;
 
@@ -35,8 +36,9 @@ class ServiceLayerNode
 
     // FIXME: Should probably use the fetcher in StorageNode
     std::unique_ptr<config::ConfigFetcher>   _configFetcher;
-    BucketManager                          * _bucket_manager;
-    FileStorManager                        * _fileStorManager;
+    Bouncer*                                 _bouncer;
+    BucketManager*                           _bucket_manager;
+    FileStorManager*                         _fileStorManager;
     bool                                     _init_has_been_called;
 
 public:
@@ -67,6 +69,7 @@ private:
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
     void createChain(IStorageChainBuilder &builder) override;
     void removeConfigSubscriptions() override;
+    void on_bouncer_config_changed() override;
 };
 
 } // storage

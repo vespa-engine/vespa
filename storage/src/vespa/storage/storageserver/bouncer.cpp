@@ -21,34 +21,19 @@ LOG_SETUP(".bouncer");
 
 namespace storage {
 
-Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
+Bouncer::Bouncer(StorageComponentRegister& compReg, const StorBouncerConfig& bootstrap_config)
     : StorageLink("Bouncer", MsgDownOnFlush::Disallowed, MsgUpOnClosed::Allowed),
-      _config(new vespa::config::content::core::StorBouncerConfig()),
+      _config(std::make_unique<vespa::config::content::core::StorBouncerConfig>(bootstrap_config)),
       _component(compReg, "bouncer"),
       _lock(),
       _baselineNodeState("s:i"),
       _derivedNodeStates(),
       _clusterState(&lib::State::UP),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_unique<BouncerMetrics>()),
       _closed(false)
 {
     _component.getStateUpdater().addStateListener(*this);
     _component.registerMetric(*_metrics);
-    // Register for config. Normally not critical, so catching config
-    // exception allowing program to continue if missing/faulty config.
-    try {
-        if (!configUri.empty()) {
-            _configFetcher->subscribe<vespa::config::content::core::StorBouncerConfig>(configUri.getConfigId(), this);
-            _configFetcher->start();
-        } else {
-            LOG(info, "No config id specified. Using defaults rather than config");
-        }
-    } catch (config::InvalidConfigException& e) {
-        LOG(info, "Bouncer failed to load config '%s'. This "
-                  "is not critical since it has sensible defaults: %s",
-            configUri.getConfigId().c_str(), e.what());
-    }
 }
 
 Bouncer::~Bouncer()
@@ -68,19 +53,18 @@ Bouncer::print(std::ostream& out, bool verbose,
 void
 Bouncer::onClose()
 {
-    _configFetcher->close();
     _component.getStateUpdater().removeStateListener(*this);
     std::lock_guard guard(_lock);
     _closed = true;
 }
 
 void
-Bouncer::configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config)
+Bouncer::on_configure(const vespa::config::content::core::StorBouncerConfig& config)
 {
-    log_config_received(*config);
-    validateConfig(*config);
+    validateConfig(config);
+    auto new_config = std::make_unique<StorBouncerConfig>(config);
     std::lock_guard lock(_lock);
-    _config = std::move(config);
+    _config = std::move(new_config);
 }
 
 const BouncerMetrics& Bouncer::metrics() const noexcept {

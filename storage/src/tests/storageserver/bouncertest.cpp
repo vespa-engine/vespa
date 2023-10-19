@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/stat.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/storageserver/bouncer.h>
 #include <vespa/storage/storageserver/bouncer_metrics.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storageapi/message/stat.h>
+#include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -73,7 +75,10 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
         _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
     }
     _upper.reset(new DummyStorageLink());
-    _manager = new Bouncer(_node->getComponentRegister(), config::ConfigUri(config.getConfigId()));
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+    auto cfg_uri = config::ConfigUri(config.getConfigId());
+    auto cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
+    _manager = new Bouncer(_node->getComponentRegister(), *cfg);
     _lower = new DummyStorageLink();
     _upper->push_back(std::unique_ptr<StorageLink>(_manager));
     _upper->push_back(std::unique_ptr<StorageLink>(_lower));
@@ -225,9 +230,9 @@ void
 BouncerTest::configureRejectionThreshold(int newThreshold)
 {
     using Builder = vespa::config::content::core::StorBouncerConfigBuilder;
-    auto config = std::make_unique<Builder>();
-    config->feedRejectionPriorityThreshold = newThreshold;
-    _manager->configure(std::move(config));
+    Builder config;
+    config.feedRejectionPriorityThreshold = newThreshold;
+    _manager->on_configure(config);
 }
 
 TEST_F(BouncerTest, reject_lower_prioritized_feed_messages_when_configured) {

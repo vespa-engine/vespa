@@ -32,7 +32,8 @@ DistributorNode::DistributorNode(
       _timestamp_second_counter(0),
       _intra_second_pseudo_usec_counter(0),
       _num_distributor_stripes(num_distributor_stripes),
-      _retrievedCommunicationManager(std::move(communicationManager)) // may be nullptr
+      _retrievedCommunicationManager(std::move(communicationManager)), // may be nullptr
+      _bouncer(nullptr)
 {
     if (storage_chain_builder) {
         set_storage_chain_builder(std::move(storage_chain_builder));
@@ -94,7 +95,9 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     }
     std::unique_ptr<StateManager> stateManager(releaseStateManager());
 
-    builder.add(std::make_unique<Bouncer>(dcr, _configUri));
+    auto bouncer = std::make_unique<Bouncer>(dcr, bouncer_config());
+    _bouncer = bouncer.get();
+    builder.add(std::move(bouncer));
     // Distributor instance registers a host info reporter with the state
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
@@ -138,6 +141,11 @@ ResumeGuard
 DistributorNode::pause()
 {
     return {};
+}
+
+void DistributorNode::on_bouncer_config_changed() {
+    assert(_bouncer);
+    _bouncer->on_configure(bouncer_config());
 }
 
 } // storage
