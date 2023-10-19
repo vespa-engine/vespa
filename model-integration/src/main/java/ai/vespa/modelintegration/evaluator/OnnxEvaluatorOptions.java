@@ -41,6 +41,7 @@ public class OnnxEvaluatorOptions {
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(executionMode == PARALLEL ? interOpThreads : 1);
         options.setIntraOpNumThreads(intraOpThreads);
+        options.setCPUArenaAllocator(false);
         if (loadCuda) {
             options.addCUDA(gpuDeviceNumber);
         }
