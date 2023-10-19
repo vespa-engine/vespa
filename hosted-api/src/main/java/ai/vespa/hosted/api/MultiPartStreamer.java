@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Used to create builders for multi part http body entities, which stream their data.
+ * Used to create builders for multipart HTTP body entities, which stream their data.
  *
  * @author jonmv
  */
