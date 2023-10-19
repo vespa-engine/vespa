@@ -79,7 +79,7 @@ public class IndexingOutputs extends Processor {
             }
             dynamicSummary.add(summaryName);
         } else if (summaryTransform != SummaryTransform.ATTRIBUTE &&
-                summaryTransform != SummaryTransform.LINGUISTICS_TOKENS) {
+                summaryTransform != SummaryTransform.TOKENS) {
             staticSummary.add(summaryName);
         }
     }

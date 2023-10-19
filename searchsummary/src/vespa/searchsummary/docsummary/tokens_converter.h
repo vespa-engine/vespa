@@ -10,10 +10,10 @@ namespace search::docsummary {
 
 /*
  * Class converting a string field value with annotations into an array
- * containing the index terms. Multiple index terms at same position are
+ * containing the tokens. Multiple tokens at same position are
  * placed in a nested array.
  */
-class LinguisticsTokensConverter : public IStringFieldConverter
+class TokensConverter : public IStringFieldConverter
 {
     const linguistics::TokenExtractor& _token_extractor;
     vespalib::stringref                _text;
@@ -23,8 +23,8 @@ class LinguisticsTokensConverter : public IStringFieldConverter
     void handle_index_term(vespalib::stringref word, vespalib::slime::Inserter& inserter);
     void handle_indexing_terms(const document::StringFieldValue& value, vespalib::slime::Inserter& inserter);
 public:
-    LinguisticsTokensConverter(const linguistics::TokenExtractor& token_extractor);
-    ~LinguisticsTokensConverter() override;
+    TokensConverter(const linguistics::TokenExtractor& token_extractor);
+    ~TokensConverter() override;
     void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
     bool render_weighted_set_as_array() const override;
 };

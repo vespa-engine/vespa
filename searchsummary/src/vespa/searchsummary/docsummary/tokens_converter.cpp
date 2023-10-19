@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "linguistics_tokens_converter.h"
+#include "tokens_converter.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -14,18 +14,18 @@ using vespalib::slime::Inserter;
 
 namespace search::docsummary {
 
-LinguisticsTokensConverter::LinguisticsTokensConverter(const TokenExtractor& token_extractor)
+TokensConverter::TokensConverter(const TokenExtractor& token_extractor)
     : IStringFieldConverter(),
       _token_extractor(token_extractor),
       _text()
 {
 }
 
-LinguisticsTokensConverter::~LinguisticsTokensConverter() = default;
+TokensConverter::~TokensConverter() = default;
 
 template <typename ForwardIt>
 void
-LinguisticsTokensConverter::handle_alternative_index_terms(ForwardIt it, ForwardIt last, Inserter& inserter)
+TokensConverter::handle_alternative_index_terms(ForwardIt it, ForwardIt last, Inserter& inserter)
 {
     Cursor& a = inserter.insertArray();
     ArrayInserter ai(a);
@@ -35,13 +35,13 @@ LinguisticsTokensConverter::handle_alternative_index_terms(ForwardIt it, Forward
 }
 
 void
-LinguisticsTokensConverter::handle_index_term(vespalib::stringref word, Inserter& inserter)
+TokensConverter::handle_index_term(vespalib::stringref word, Inserter& inserter)
 {
     inserter.insertString(Memory(word));
 }
 
 void
-LinguisticsTokensConverter::handle_indexing_terms(const StringFieldValue& value, vespalib::slime::Inserter& inserter)
+TokensConverter::handle_indexing_terms(const StringFieldValue& value, vespalib::slime::Inserter& inserter)
 {
     Cursor& a = inserter.insertArray();
     ArrayInserter ai(a);
@@ -63,14 +63,14 @@ LinguisticsTokensConverter::handle_indexing_terms(const StringFieldValue& value,
 }
 
 void
-LinguisticsTokensConverter::convert(const StringFieldValue &input, vespalib::slime::Inserter& inserter)
+TokensConverter::convert(const StringFieldValue &input, vespalib::slime::Inserter& inserter)
 {
     _text = input.getValueRef();
     handle_indexing_terms(input, inserter);
 }
 
 bool
-LinguisticsTokensConverter::render_weighted_set_as_array() const
+TokensConverter::render_weighted_set_as_array() const
 {
     return true;
 }

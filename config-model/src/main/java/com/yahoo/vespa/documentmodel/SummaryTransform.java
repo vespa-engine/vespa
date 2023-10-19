@@ -24,7 +24,7 @@ public enum SummaryTransform {
     MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter"),
     COPY("copy"),
     DOCUMENT_ID("documentid"),
-    LINGUISTICS_TOKENS("linguistics-tokens");
+    TOKENS("tokens");
 
     private final String name;
 

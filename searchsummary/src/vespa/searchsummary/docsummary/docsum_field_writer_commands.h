@@ -18,11 +18,11 @@ extern const vespalib::string documentid;
 extern const vespalib::string dynamic_teaser;
 extern const vespalib::string empty;
 extern const vespalib::string geo_position;
-extern const vespalib::string linguistics_tokens;
 extern const vespalib::string matched_attribute_elements_filter;
 extern const vespalib::string matched_elements_filter;
 extern const vespalib::string positions;
 extern const vespalib::string rank_features;
 extern const vespalib::string summary_features;
+extern const vespalib::string tokens;
 
 }

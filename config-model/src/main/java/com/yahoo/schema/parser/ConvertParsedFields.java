@@ -217,8 +217,8 @@ public class ConvertParsedFields {
             transform = SummaryTransform.MATCHED_ELEMENTS_FILTER;
         } else if (parsed.getDynamic()) {
             transform = SummaryTransform.DYNAMICTEASER;
-        } else if (parsed.getLinguisticsTokens()) {
-            transform = SummaryTransform.LINGUISTICS_TOKENS;
+        } else if (parsed.getTokens()) {
+            transform = SummaryTransform.TOKENS;
         }
         if (parsed.getBolded()) {
             transform = transform.bold();

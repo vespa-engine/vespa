@@ -9,11 +9,11 @@
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
 #include "juniperdfw.h"
-#include "linguistics_tokens_dfw.h"
 #include "matched_elements_filter_dfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "summaryfeaturesdfw.h"
+#include "tokens_dfw.h"
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -85,9 +85,9 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
         } else {
             throw_missing_source(command);
         }
-    } else if (command == command::linguistics_tokens) {
+    } else if (command == command::tokens) {
         if (!source.empty()) {
-            fieldWriter = std::make_unique<LinguisticsTokensDFW>(source);
+            fieldWriter = std::make_unique<TokensDFW>(source);
         } else {
             throw_missing_source(command);
         }

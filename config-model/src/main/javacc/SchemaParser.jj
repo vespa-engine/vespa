@@ -201,7 +201,7 @@ TOKEN :
 | < FULL: "full" >
 | < STATIC: "static" >
 | < DYNAMIC: "dynamic" >
-| < LINGUISTICS_TOKENS: "linguistics-tokens" >
+| < TOKENS: "tokens" >
 | < MATCHED_ELEMENTS_ONLY: "matched-elements-only" >
 | < SSCONTEXTUAL: "contextual" >
 | < SSOVERRIDE: "override" >
@@ -1129,7 +1129,7 @@ void summaryInFieldShort(ParsedField field) :
     <COLON> ( <DYNAMIC> { psf.setDynamic(); }
               | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
               | (<FULL> | <STATIC>) { psf.setFull(); }
-              | <LINGUISTICS_TOKENS> { psf.setLinguisticsTokens(); }
+              | <TOKENS> { psf.setTokens(); }
             )
 }
 
@@ -1175,7 +1175,7 @@ void summaryTransform(ParsedSummaryField field) : { }
     ( <DYNAMIC>              { field.setDynamic(); }
      | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
-     | <LINGUISTICS_TOKENS> { field.setLinguisticsTokens(); }
+     | <TOKENS> { field.setTokens(); }
     )
 }
 
@@ -2715,7 +2715,6 @@ String identifier() : { }
       | <INLINE>
       | <INPUTS>
       | <INTEGER>
-      | <LINGUISTICS_TOKENS>
       | <LITERAL>
       | <LOCALE>
       | <LONG>
@@ -2769,6 +2768,7 @@ String identifier() : { }
       | <TERTIARY>
       | <TEXT>
       | <TO>
+      | <TOKENS>
       | <TRUE>
       | <TYPE>
       | <UCA>
