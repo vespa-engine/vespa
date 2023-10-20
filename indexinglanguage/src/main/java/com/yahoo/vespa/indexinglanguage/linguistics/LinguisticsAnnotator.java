@@ -12,6 +12,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
+import com.yahoo.text.Text;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class LinguisticsAnnotator {
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                 ? text.getString()
-                : text.getString().substring(0, config.getMaxTokenizeLength());
+                : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
         Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
                                                     config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
