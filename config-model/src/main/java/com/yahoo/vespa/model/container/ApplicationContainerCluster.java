@@ -49,10 +49,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
+import static java.util.logging.Level.FINE;
 
 /**
  * A container cluster that is typically set up from the user application.
@@ -218,8 +218,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
             double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
-            logger.log(Level.FINE, () -> "memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
-                           .formatted(memoryPercentage, availableMemory, totalMemory, availableMemoryPercentage, jvmHeapDeductionGb));
+            logger.log(FINE, () -> "cluster id '%s': memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
+                    .formatted(id(), memoryPercentage, availableMemory, totalMemory, availableMemoryPercentage, jvmHeapDeductionGb));
             return Optional.of(JvmMemoryPercentage.of(memoryPercentage, availableMemory));
         }
         return Optional.empty();
