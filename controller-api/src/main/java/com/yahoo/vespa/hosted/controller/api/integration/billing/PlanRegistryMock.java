@@ -144,5 +144,25 @@ public class PlanRegistryMock implements PlanRegistry {
         public double calculate(NodeResources resources) {
             return resources.cost();
         }
+
+        @Override
+        public BigDecimal getCpuPrice() {
+            return cpuHourCost;
+        }
+
+        @Override
+        public BigDecimal getMemoryPrice() {
+            return memHourCost;
+        }
+
+        @Override
+        public BigDecimal getDiskPrice() {
+            return dgbHourCost;
+        }
+
+        @Override
+        public BigDecimal getGpuPrice() {
+            return gpuHourCost;
+        }
     }
 }

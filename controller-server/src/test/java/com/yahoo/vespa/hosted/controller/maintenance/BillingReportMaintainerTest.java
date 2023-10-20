@@ -55,7 +55,7 @@ public class BillingReportMaintainerTest {
 
         billingController.setPlan(t1, PlanRegistryMock.paidPlan.id(), false, true);
 
-        billingController.exportBill(billingDb.readBill(bill2).get(), "FOO", cloudTenant(t1));
+        tester.controller().serviceRegistry().billingReporter().exportBill(billingDb.readBill(bill2).get(), "FOO", cloudTenant(t1));
         var updates = maintainer.maintainInvoices();
         assertEquals(new InvoiceUpdate(0, 0, 1), updates);
 

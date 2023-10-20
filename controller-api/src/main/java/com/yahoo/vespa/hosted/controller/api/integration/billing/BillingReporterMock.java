@@ -9,9 +9,11 @@ import java.util.UUID;
 
 public class BillingReporterMock implements BillingReporter {
     private final Clock clock;
+    private final BillingDatabaseClient dbClient;
 
-    public BillingReporterMock(Clock clock) {
+    public BillingReporterMock(Clock clock, BillingDatabaseClient dbClient) {
         this.clock = clock;
+        this.dbClient = dbClient;
     }
 
     @Override
@@ -22,6 +24,14 @@ public class BillingReporterMock implements BillingReporter {
     @Override
     public InvoiceUpdate maintainInvoice(Bill bill) {
         return new InvoiceUpdate(0,0,1);
+    }
+
+    @Override
+    public String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
+        // Replace bill with a copy with exportedId set
+        var exportedId = "EXT-ID-123";
+        dbClient.setExportedInvoiceId(bill.id(), exportedId);
+        return exportedId;
     }
 
 }
