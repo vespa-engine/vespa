@@ -36,6 +36,7 @@ public class NotificationsSerializer {
     private static final String atFieldName = "at";
     private static final String typeField = "type";
     private static final String levelField = "level";
+    private static final String titleField = "title";
     private static final String messagesField = "messages";
     private static final String applicationField = "application";
     private static final String instanceField = "instance";
@@ -53,6 +54,7 @@ public class NotificationsSerializer {
             notificationObject.setLong(atFieldName, notification.at().toEpochMilli());
             notificationObject.setString(typeField, asString(notification.type()));
             notificationObject.setString(levelField, asString(notification.level()));
+            notificationObject.setString(titleField, notification.title());
             Cursor messagesArray = notificationObject.setArray(messagesField);
             notification.messages().forEach(messagesArray::addString);
 
@@ -110,6 +112,7 @@ public class NotificationsSerializer {
                         SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
                         SlimeUtils.optionalString(inspector.field(jobTypeField)).map(jobName -> JobType.ofSerialized(jobName)),
                         SlimeUtils.optionalLong(inspector.field(runNumberField))),
+                SlimeUtils.optionalString(inspector.field(titleField)).orElse(""),
                 SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).toList(),
                 mailContentFrom(inspector));
     }

@@ -1047,6 +1047,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         if (!excludeMessages) {
+            cursor.setString("title", notification.title());
             Cursor messagesArray = cursor.setArray("messages");
             notification.messages().forEach(messagesArray::addString);
         }

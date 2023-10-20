@@ -173,7 +173,7 @@ public class CloudTrialExpirerTest {
     private String lastAccountLevelNotificationTitle(TenantName tenant) {
         return tester.controller().notificationsDb()
                 .listNotifications(NotificationSource.from(tenant), false).stream()
-                .filter(n -> n.type() == Notification.Type.account).map(n -> n.messages().get(0))
+                .filter(n -> n.type() == Notification.Type.account).map(Notification::title)
                 .findFirst().orElseThrow();
     }
 

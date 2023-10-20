@@ -171,7 +171,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
         // Remove previous notification to ensure new notification is sent by email
         controller().notificationsDb().removeNotification(source, Notification.Type.account);
         controller().notificationsDb().setNotification(
-                source, Notification.Type.account, Notification.Level.info, List.of(consoleMsg), mail);
+                source, Notification.Type.account, Notification.Level.info, consoleMsg, List.of(), mail);
     }
 
     private static TrialNotifications.Status updatedStatus(Tenant t, Instant i, TrialNotifications.State s) {

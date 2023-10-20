@@ -40,7 +40,7 @@ public class NotificationsSerializerTest {
                         Notification.Type.deployment,
                         Notification.Level.error,
                         NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app1", "instance1"), DeploymentContext.systemTest, 12)),
-                        List.of("Failed to deploy: Node allocation failure"),
+                        "Failed to deploy", List.of("Node allocation failure"),
                         Optional.of(mail)));
 
         Slime serialized = serializer.toSlime(notifications);
@@ -49,13 +49,15 @@ public class NotificationsSerializerTest {
                 "\"at\":1234000," +
                 "\"type\":\"applicationPackage\"," +
                 "\"level\":\"warning\"," +
+                "\"title\":\"\"," +
                 "\"messages\":[\"Something something deprecated...\"]," +
                 "\"application\":\"app1\"" +
                 "},{" +
                 "\"at\":2345000," +
                 "\"type\":\"deployment\"," +
                 "\"level\":\"error\"," +
-                "\"messages\":[\"Failed to deploy: Node allocation failure\"]," +
+                "\"title\":\"Failed to deploy\"," +
+                "\"messages\":[\"Node allocation failure\"]," +
                 "\"application\":\"app1\"," +
                 "\"instance\":\"instance1\"," +
                 "\"jobId\":\"test.us-east-1\"," +
