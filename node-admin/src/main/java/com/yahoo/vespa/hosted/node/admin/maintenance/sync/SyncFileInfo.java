@@ -84,6 +84,9 @@ public class SyncFileInfo {
         } else if (filename.startsWith("start-services.out-")) {
             compression = Compression.ZSTD;
             dir = "logs/start-services/";
+        } else if (filename.startsWith("nginx-error")) {
+            compression = Compression.ZSTD;
+            dir = "logs/nginx/";
         } else {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
             if (rotatedOnly && compression != Compression.NONE)
