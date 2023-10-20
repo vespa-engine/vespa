@@ -83,24 +83,6 @@ public class TextTestCase {
     }
 
     @Test
-    public void testSafeSubstring() {
-        String withSurrogates = "abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef";
-        assertEquals("", Text.safeSubstring(withSurrogates, 0));
-        assertEquals("a", Text.safeSubstring(withSurrogates, 1));
-        assertEquals("ab", Text.safeSubstring(withSurrogates, 2));
-        assertEquals("abc", Text.safeSubstring(withSurrogates, 3));
-        assertEquals("abc", Text.safeSubstring(withSurrogates, 4));
-        assertEquals("abc\uD83D\uDE48", Text.safeSubstring(withSurrogates, 5));
-        assertEquals("abc\uD83D\uDE48", Text.safeSubstring(withSurrogates, 6));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49", Text.safeSubstring(withSurrogates, 7));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49", Text.safeSubstring(withSurrogates, 8));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4A", Text.safeSubstring(withSurrogates, 9));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Ad", Text.safeSubstring(withSurrogates, 10));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Ade", Text.safeSubstring(withSurrogates, 11));
-        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", Text.safeSubstring(withSurrogates, 12));
-    }
-
-    @Test
     public void testIsDisplayable() {
         assertTrue(Text.isDisplayable('A'));
         assertTrue(Text.isDisplayable('a'));
@@ -122,8 +104,9 @@ public class TextTestCase {
         assertEquals("",   Text.truncate("ab", 0));
         assertEquals("ab c",  Text.truncate("ab cde", 4));
         assertEquals("a ...", Text.truncate("ab cde", 5));
-        assertEquals("abc\uD83D\uDE48 ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 9));
-        assertEquals("abc\uD83D\uDE48 ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 10));
+        assertEquals("abc ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 7));
+        assertEquals("abc\uD83D\uDE48 ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 8));
+        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 9));
     }
 
     @Test
