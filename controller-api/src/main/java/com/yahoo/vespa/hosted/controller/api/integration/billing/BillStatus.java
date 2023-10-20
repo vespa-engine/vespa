@@ -4,9 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
  * @author gjoranv
  */
 public enum BillStatus {
-    OPEN(),     // All bills start in this state, the only state where changes can be made
-    READY(),    // No more changes can be made
-    SENT(),     // Sent to the customer
+    OPEN,       // All bills start in this state, the only state where changes can be made
+    FINALIZED,  // No more changes can be made to the bill
     CLOSED,     // End state
     VOID,       // End state
     LEGACY_ISSUED("ISSUED"),     // Legacy state, should be removed when unused by any current bills
