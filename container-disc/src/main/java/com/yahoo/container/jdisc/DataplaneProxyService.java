@@ -11,9 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -207,9 +204,7 @@ public class DataplaneProxyService extends AbstractComponent {
             Path root) {
 
         try {
-            String date = DateTimeFormatter.ofPattern("yyyyMMdd").format(Instant.now().atOffset(ZoneOffset.UTC));
             String nginxTemplate = Files.readString(configTemplate);
-            nginxTemplate = replace(nginxTemplate, "date", date);
             nginxTemplate = replace(nginxTemplate, "client_cert", clientCert.toString());
             nginxTemplate = replace(nginxTemplate, "client_key", clientKey.toString());
             nginxTemplate = replace(nginxTemplate, "server_cert", serverCert.toString());

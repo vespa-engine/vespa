@@ -86,6 +86,10 @@ public class SyncFileInfo {
             dir = "logs/start-services/";
         } else if (filename.startsWith("nginx-error")) {
             compression = Compression.ZSTD;
+            if ("nginx-error.log".equals(filename)) {
+                if (!rotatedOnly) remoteFilename = "nginx-error.log";
+                minDurationBetweenSync = rotatedOnly ? Duration.ofHours(1) : Duration.ZERO;
+            }
             dir = "logs/nginx/";
         } else {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;

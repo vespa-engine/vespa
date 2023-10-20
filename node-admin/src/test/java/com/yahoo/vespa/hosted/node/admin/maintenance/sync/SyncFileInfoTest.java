@@ -40,8 +40,9 @@ public class SyncFileInfoTest {
     private static final Path zkLogPath1 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.1.log");
     private static final Path startServicesPath1 = fileSystem.getPath("/opt/vespa/logs/start-services.out");
     private static final Path startServicesPath2 = fileSystem.getPath("/opt/vespa/logs/start-services.out-20230808100143");
-    private static final Path nginxErrorLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-error.log.20231019");
-    private static final Path nginxAccessLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-access.log.20231019");
+    private static final Path rotatedNginxErrorLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-error.log.20231019-1234555");
+    private static final Path currentNginxErrorLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-error.log");
+    private static final Path nginxAccessLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-access.log.20231019-1234");
 
     @Test
     void access_logs() {
@@ -99,9 +100,13 @@ public class SyncFileInfoTest {
 
     @Test
     void nginx_error_logs() {
-        new UnixPath(nginxErrorLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
-        assertForLogFile(nginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019.zst", ZSTD, true);
-        assertForLogFile(nginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019.zst", ZSTD, false);
+        new UnixPath(currentNginxErrorLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
+        assertForLogFile(currentNginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.zst", ZSTD, Duration.ofHours(1),true);
+        assertForLogFile(currentNginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.zst", ZSTD, Duration.ZERO,false);
+
+        new UnixPath(rotatedNginxErrorLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
+        assertForLogFile(rotatedNginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019-1234555.zst", ZSTD, true);
+        assertForLogFile(rotatedNginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019-1234555.zst", ZSTD, false);
 
         // Does not sync access logs
         new UnixPath(nginxAccessLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
