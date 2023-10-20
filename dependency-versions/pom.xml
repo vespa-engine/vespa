@@ -45,7 +45,7 @@
         <javax.ws.rs-api.vespa.version>2.1.1</javax.ws.rs-api.vespa.version>
         <jaxb-api.vespa.version>2.3.1</jaxb-api.vespa.version>
         <jaxb-core.vespa.version>2.3.0.1</jaxb-core.vespa.version>
-        <jaxb-impl.vespa.version>2.3.0</jaxb-impl.vespa.version>
+        <jaxb-impl.vespa.version>2.3.9</jaxb-impl.vespa.version>
         <slf4j.vespa.version>1.7.36</slf4j.vespa.version>
 
         <!-- END Dependencies available from the Jdisc container -->
