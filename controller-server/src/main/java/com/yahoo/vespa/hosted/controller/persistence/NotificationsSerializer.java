@@ -121,7 +121,6 @@ public class NotificationsSerializer {
         return SlimeUtils.optionalString(inspector.field("mail-template")).map(template -> {
             var builder = Notification.MailContent.fromTemplate(template);
             SlimeUtils.optionalString(inspector.field("mail-subject")).ifPresent(builder::subject);
-            var paramsCursor = inspector.field("mail-params");
             inspector.field("mail-params").traverse((ObjectTraverser) (name, insp) -> {
                 switch (insp.type()) {
                     case STRING -> builder.with(name, insp.asString());
