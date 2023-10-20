@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
  * @author gjoranv
  */
 public enum BillStatus {
-    OPEN,       // All bills start in this state, the only state where changes can be made
-    FINALIZED,  // No more changes can be made to the bill
-    CLOSED,     // End state
-    VOID;       // End state
+    OPEN,       // All bills start in this state. The bill can be modified and exported/synced to external systems.
+    FROZEN,     // Syncing to external systems is switched off. Reviews should be done in this state.
+    CLOSED,     // End state for a valid bill.
+    VOID;       // End state, indicating that the bill is not valid.
 
     private static final String LEGACY_ISSUED = "ISSUED";         // Legacy state, used by historical bills
     private static final String LEGACY_EXPORTED = "EXPORTED";     // Legacy state, used by historical bills
