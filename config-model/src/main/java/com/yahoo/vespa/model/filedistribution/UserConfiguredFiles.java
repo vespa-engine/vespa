@@ -14,18 +14,16 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-
 import com.yahoo.yolean.Exceptions;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserConfiguredUrls;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -163,7 +161,7 @@ public class UserConfiguredFiles implements Serializable {
 
         ApplicationFile file = applicationPackage.getFile(path);
         if (file.isDirectory() && (file.listFiles() == null || file.listFiles().isEmpty()))
-            logger.logApplicationPackage(WARNING, "Directory '" + path.getRelative() + "' is empty");
+            logger.logApplicationPackage(INFO, "Directory '" + path.getRelative() + "' is empty");
 
         FileReference reference = registeredFiles.get(path);
         if (reference == null) {
