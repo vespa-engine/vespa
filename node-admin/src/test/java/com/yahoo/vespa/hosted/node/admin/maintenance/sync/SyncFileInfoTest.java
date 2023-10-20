@@ -40,6 +40,8 @@ public class SyncFileInfoTest {
     private static final Path zkLogPath1 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.1.log");
     private static final Path startServicesPath1 = fileSystem.getPath("/opt/vespa/logs/start-services.out");
     private static final Path startServicesPath2 = fileSystem.getPath("/opt/vespa/logs/start-services.out-20230808100143");
+    private static final Path nginxErrorLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-error.log.20231019");
+    private static final Path nginxAccessLog = fileSystem.getPath("/opt/vespa/logs/nginx/nginx-access.log.20231019");
 
     @Test
     void access_logs() {
@@ -93,6 +95,18 @@ public class SyncFileInfoTest {
         new UnixPath(zkLogPath1).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
         assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, true);
         assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, false);
+    }
+
+    @Test
+    void nginx_error_logs() {
+        new UnixPath(nginxErrorLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
+        assertForLogFile(nginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019.zst", ZSTD, true);
+        assertForLogFile(nginxErrorLog, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/nginx/nginx-error.log.20231019.zst", ZSTD, false);
+
+        // Does not sync access logs
+        new UnixPath(nginxAccessLog).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
+        Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, nginxAccessLog, false, ApplicationId.defaultId());
+        assertEquals(Optional.empty(), sfi);
     }
 
     @Test
