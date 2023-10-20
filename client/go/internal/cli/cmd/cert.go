@@ -32,8 +32,10 @@ package specified as an argument to this command (default '.').
 It's possible to override the private key and certificate used through
 environment variables. This can be useful in continuous integration systems.
 
-It's also possible override the CA certificate which can be useful when using self-signed certificates with a
-self-hosted Vespa service. See https://docs.vespa.ai/en/operations-selfhosted/mtls.html for more information.
+It's also possible override the CA certificate which can be useful when using
+self-signed certificates with a self-hosted Vespa service.
+See https://docs.vespa.ai/en/operations-selfhosted/mtls.html for more
+information.
 
 Example of setting the CA certificate, certificate and key in-line:
 
