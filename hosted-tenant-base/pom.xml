@@ -284,9 +284,6 @@
                                                 <exclude>org.junit.platform:junit-platform-engine:(${junit.platform.vespa.tenant.version},):jar:*</exclude>
                                                 <exclude>org.junit.platform:junit-platform-commons:(,${junit.platform.vespa.tenant.version}):jar:*</exclude>
                                                 <exclude>org.junit.platform:junit-platform-commons:(${junit.platform.vespa.tenant.version},):jar:*</exclude>
-
-                                                <!-- Ban testng as its presence breaks the Java based test framework for Cloud -->
-                                                <exclude>org.testng:testng:*:jar:test</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
