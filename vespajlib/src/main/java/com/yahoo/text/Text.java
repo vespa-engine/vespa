@@ -177,8 +177,8 @@ public final class Text {
      */
     public static String truncate(String s, int length) {
         if (s.length() <= length) return s;
-        if (length <= 4) return s.substring(0, length);
-        return s.substring(0, length - 4) + " ...";
+        if (length <= 4) return safeSubstring(s, length);
+        return safeSubstring(s, length - 4) + " ...";
     }
 
     public static String substringByCodepoints(String s, int fromCP, int toCP) {
@@ -208,4 +208,14 @@ public final class Text {
     public static String format(String format, Object... args) {
 	return String.format(Locale.US, format, args);
     }
+
+    /** Like {@link String#substring(int)}, but if this would split a surrogate pair at the end, the leading high surrogate is also cut. */
+    public static String safeSubstring(String s, int length) {
+        boolean pairCut =    0 < length
+                          && length < s.length()
+                          && Character.isHighSurrogate(s.charAt(length - 1))
+                          && Character.isLowSurrogate(s.charAt(length));
+        return s.substring(0, length - (pairCut ? 1 : 0));
+    }
+
 }
