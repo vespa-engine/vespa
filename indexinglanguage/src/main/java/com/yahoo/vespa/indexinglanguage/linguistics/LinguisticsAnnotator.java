@@ -72,7 +72,7 @@ public class LinguisticsAnnotator {
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                 ? text.getString()
-                : Text.safeSubstring(text.getString(), config.getMaxTokenizeLength());
+                : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
         Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
                                                     config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
