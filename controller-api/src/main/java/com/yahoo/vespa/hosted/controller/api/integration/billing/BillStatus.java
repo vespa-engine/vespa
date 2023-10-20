@@ -7,9 +7,10 @@ public enum BillStatus {
     OPEN,       // All bills start in this state, the only state where changes can be made
     FINALIZED,  // No more changes can be made to the bill
     CLOSED,     // End state
-    VOID,       // End state
-    LEGACY_ISSUED("ISSUED"),     // Legacy state, should be removed when unused by any current bills
-    LEGACY_EXPORTED("EXPORTED"); // Legacy state, should be removed when unused by any current bills
+    VOID;       // End state
+
+    private static final String LEGACY_ISSUED = "ISSUED";         // Legacy state, used by historical bills
+    private static final String LEGACY_EXPORTED = "EXPORTED";     // Legacy state, used by historical bills
 
     private final String value;
 
@@ -17,16 +18,13 @@ public enum BillStatus {
         this.value = name();
     }
 
-    BillStatus(String value) {
-        this.value = value;
-    }
-
     public String value() {
-        if (this == LEGACY_ISSUED || this == LEGACY_EXPORTED) return OPEN.value;
         return value;
     }
 
     public static BillStatus from(String status) {
+        if (LEGACY_ISSUED.equals(status) || LEGACY_EXPORTED.equals(status)) return OPEN;
         return Enum.valueOf(BillStatus.class, status.toUpperCase());
     }
+
 }
