@@ -12,6 +12,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.notification.MailTemplating;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 
@@ -66,7 +67,7 @@ public class NotificationsSerializer {
             notification.source().runNumber().ifPresent(runNumber -> notificationObject.setLong(runNumberField, runNumber));
 
             notification.mailContent().ifPresent(mc -> {
-                notificationObject.setString("mail-template", mc.template());
+                notificationObject.setString("mail-template", mc.template().getId());
                 mc.subject().ifPresent(s -> notificationObject.setString("mail-subject", s));
                 var mailParamsCursor = notificationObject.setObject("mail-params");
                 mc.values().forEach((key, value) -> {
@@ -119,7 +120,7 @@ public class NotificationsSerializer {
 
     private Optional<Notification.MailContent> mailContentFrom(final Inspector inspector) {
         return SlimeUtils.optionalString(inspector.field("mail-template")).map(template -> {
-            var builder = Notification.MailContent.fromTemplate(template);
+            var builder = Notification.MailContent.fromTemplate(MailTemplating.Template.fromId(template).orElseThrow());
             SlimeUtils.optionalString(inspector.field("mail-subject")).ifPresent(builder::subject);
             inspector.field("mail-params").traverse((ObjectTraverser) (name, insp) -> {
                 switch (insp.type()) {

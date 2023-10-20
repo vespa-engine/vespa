@@ -90,7 +90,7 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
     }
 
     public static class MailContent {
-        private final String template;
+        private final MailTemplating.Template template;
         private final SortedMap<String, Object> values;
         private final String subject;
 
@@ -100,18 +100,18 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
             subject = b.subject;
         }
 
-        public String template() { return template; }
+        public MailTemplating.Template template() { return template; }
         public SortedMap<String, Object> values() { return Collections.unmodifiableSortedMap(values); }
         public Optional<String> subject() { return Optional.ofNullable(subject); }
 
-        public static Builder fromTemplate(String template) { return new Builder(template); }
+        public static Builder fromTemplate(MailTemplating.Template template) { return new Builder(template); }
 
         public static class Builder {
-            private final String template;
+            private final MailTemplating.Template template;
             private final Map<String, Object> values = new HashMap<>();
             private String subject;
 
-            private Builder(String template) {
+            private Builder(MailTemplating.Template template) {
                 this.template = template;
             }
 

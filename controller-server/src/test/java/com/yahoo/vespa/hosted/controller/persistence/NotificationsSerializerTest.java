@@ -8,6 +8,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
+import com.yahoo.vespa.hosted.controller.notification.MailTemplating;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ public class NotificationsSerializerTest {
     void serialization_test() throws IOException {
         NotificationsSerializer serializer = new NotificationsSerializer();
         TenantName tenantName = TenantName.from("tenant1");
-        var mail = Notification.MailContent.fromTemplate("my-template").subject("My mail subject")
+        var mail = Notification.MailContent.fromTemplate(MailTemplating.Template.DEFAULT_MAIL_CONTENT).subject("My mail subject")
                 .with("string-param", "string-value").with("list-param", List.of("elem1", "elem2")).build();
         List<Notification> notifications = List.of(
                 new Notification(Instant.ofEpochSecond(1234),
@@ -62,7 +63,7 @@ public class NotificationsSerializerTest {
                 "\"instance\":\"instance1\"," +
                 "\"jobId\":\"test.us-east-1\"," +
                 "\"runNumber\":12," +
-                "\"mail-template\":\"my-template\"," +
+                "\"mail-template\":\"default-mail-content\"," +
                 "\"mail-subject\":\"My mail subject\"," +
                 "\"mail-params\":{\"list-param\":[\"elem1\",\"elem2\"],\"string-param\":\"string-value\"}" +
                 "}]}", new String(SlimeUtils.toJsonBytes(serialized)));
