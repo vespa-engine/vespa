@@ -212,6 +212,11 @@ public class NodeRepository extends AbstractComponent {
                ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
     }
 
+    /** Whether the nodes of this cluster must be running on hosts that are specifically provisioned for the application. */
+    public boolean exclusiveProvisioning(ClusterSpec clusterSpec) {
+        return !zone.cloud().allowHostSharing() && clusterSpec.isExclusive();
+    }
+
     /**
      * Returns ACLs for the children of the given host.
      *

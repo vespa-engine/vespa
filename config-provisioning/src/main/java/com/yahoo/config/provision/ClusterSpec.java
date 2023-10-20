@@ -77,7 +77,6 @@ public final class ClusterSpec {
         return combinedId;
     }
 
-
     /**
      * Returns whether the physical hosts running the nodes of this application can
      * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.

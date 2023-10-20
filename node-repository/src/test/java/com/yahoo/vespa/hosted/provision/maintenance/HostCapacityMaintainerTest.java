@@ -24,9 +24,12 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
+import com.yahoo.vespa.flags.custom.HostResources;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
@@ -279,7 +282,7 @@ public class HostCapacityMaintainerTest {
 
     @Test
     public void respects_exclusive_allocation() {
-        tester = new DynamicProvisioningTester();
+        tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(), new MockNameResolver());
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         setPreprovisionCapacityFlag(tester,
                                     new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
@@ -290,6 +293,7 @@ public class HostCapacityMaintainerTest {
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
+        tester.flagSource.withBooleanFlag(Flags.MAKE_EXCLUSIVE.id(), true);
         tester.maintain();
 
         // Hosts are provisioned
@@ -310,6 +314,44 @@ public class HostCapacityMaintainerTest {
 
         // New hosts are provisioned, and the empty exclusive host is deallocated
         assertEquals(2, tester.provisionedHostsMatching(resources1));
+        assertEquals(1, tester.hostProvisioner.deprovisionedHosts());
+
+        // Next maintenance run does nothing
+        tester.assertNodesUnchanged();
+    }
+
+    @Test
+    public void works_as_before_without_make_exclusive() {
+        // TODO(hakon): Remove test once make-exclusive has rolled out
+        tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(), new MockNameResolver());
+        NodeResources resources1 = new NodeResources(24, 64, 100, 10);
+        setPreprovisionCapacityFlag(tester,
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                                        resources1.bandwidthGbps(), resources1.diskSpeed().name(),
+                                                        resources1.storageType().name(), resources1.architecture().name(),
+                                                        null));
+        tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(),
+                                          new SharedHost(List.of(new HostResources(48d, 128d, 200d, 20d, "fast", "remote", null, 4, "x86_64"))),
+                                          SharedHost.class);
+        tester.maintain();
+
+        // Hosts are provisioned
+        assertEquals(1, tester.provisionedHostsMatching(resources1));
+        assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node("host100").flatMap(Node::exclusiveToApplicationId));
+
+        // Next maintenance run does nothing
+        tester.assertNodesUnchanged();
+
+        // One host is allocated exclusively to some other application
+        tester.nodeRepository.nodes().write(tester.nodeRepository.nodes().node("host100").get()
+                                                                 .withExclusiveToApplicationId(ApplicationId.from("t", "a", "i")),
+                                            () -> { });
+
+        tester.maintain();
+
+        // New hosts are provisioned, and the empty exclusive host is deallocated
+        assertEquals(1, tester.provisionedHostsMatching(resources1));
         assertEquals(1, tester.hostProvisioner.deprovisionedHosts());
 
         // Next maintenance run does nothing
