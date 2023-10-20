@@ -21,10 +21,14 @@ import java.util.TreeMap;
  * @author freva
  */
 public record Notification(Instant at, Notification.Type type, Notification.Level level, NotificationSource source,
-                           List<String> messages, Optional<MailContent> mailContent) {
+                           String title, List<String> messages, Optional<MailContent> mailContent) {
+
+    public Notification(Instant at, Type type, Level level, NotificationSource source, String title, List<String> messages) {
+        this(at, type, level, source, title, messages, Optional.empty());
+    }
 
     public Notification(Instant at, Type type, Level level, NotificationSource source, List<String> messages) {
-        this(at, type, level, source, messages, Optional.empty());
+        this(at, type, level, source, "", messages);
     }
 
     public Notification {
@@ -32,8 +36,13 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
         type = Objects.requireNonNull(type, "type cannot be null");
         level = Objects.requireNonNull(level, "level cannot be null");
         source = Objects.requireNonNull(source, "source cannot be null");
+        title = Objects.requireNonNull(title, "title cannot be null");
         messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
-        if (messages.size() < 1) throw new IllegalArgumentException("messages cannot be empty");
+
+        // Allowing empty title temporarily until all notifications have a title
+        // if (title.isBlank()) throw new IllegalArgumentException("title cannot be empty");
+        if (messages.isEmpty() && title.isBlank()) throw new IllegalArgumentException("messages cannot be empty when title is empty");
+
         mailContent = Objects.requireNonNull(mailContent);
     }
 
@@ -81,7 +90,7 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
     }
 
     public static class MailContent {
-        private final String template;
+        private final MailTemplating.Template template;
         private final SortedMap<String, Object> values;
         private final String subject;
 
@@ -91,18 +100,18 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
             subject = b.subject;
         }
 
-        public String template() { return template; }
+        public MailTemplating.Template template() { return template; }
         public SortedMap<String, Object> values() { return Collections.unmodifiableSortedMap(values); }
         public Optional<String> subject() { return Optional.ofNullable(subject); }
 
-        public static Builder fromTemplate(String template) { return new Builder(template); }
+        public static Builder fromTemplate(MailTemplating.Template template) { return new Builder(template); }
 
         public static class Builder {
-            private final String template;
+            private final MailTemplating.Template template;
             private final Map<String, Object> values = new HashMap<>();
             private String subject;
 
-            private Builder(String template) {
+            private Builder(MailTemplating.Template template) {
                 this.template = template;
             }
 

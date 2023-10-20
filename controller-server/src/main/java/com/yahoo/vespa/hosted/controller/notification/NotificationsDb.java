@@ -65,14 +65,14 @@ public class NotificationsDb {
     }
 
     public void setNotification(NotificationSource source, Type type, Level level, List<String> messages) {
-        setNotification(source, type, level, messages, Optional.empty());
+        setNotification(source, type, level, "", messages, Optional.empty());
     }
 
     /**
      * Add a notification with given source and type. If a notification with same source and type
      * already exists, it'll be replaced by this one instead.
      */
-    public void setNotification(NotificationSource source, Type type, Level level, List<String> messages,
+    public void setNotification(NotificationSource source, Type type, Level level, String title, List<String> messages,
                                 Optional<MailContent> mailContent) {
         Optional<Notification> changed = Optional.empty();
         try (Mutex lock = curatorDb.lockNotifications(source.tenant())) {
@@ -80,7 +80,7 @@ public class NotificationsDb {
             List<Notification> notifications = existingNotifications.stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
                     .collect(Collectors.toCollection(ArrayList::new));
-            var notification = new Notification(clock.instant(), type, level, source, messages, mailContent);
+            var notification = new Notification(clock.instant(), type, level, source, title, messages, mailContent);
             if (!notificationExists(notification, existingNotifications, false)) {
                 changed = Optional.of(notification);
             }
@@ -190,7 +190,7 @@ public class NotificationsDb {
                 .filter(status -> status.getFirst() == level) // Do not mix message from different levels
                 .map(Pair::getSecond)
                 .toList();
-        return Optional.of(new Notification(at, Type.feedBlock, level, source, messages));
+        return Optional.of(new Notification(at, Type.feedBlock, level, source, "", messages));
     }
 
     private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, Cluster cluster) {
@@ -201,7 +201,7 @@ public class NotificationsDb {
                 .sorted()
                 .toList();
         if (messages.isEmpty()) return Optional.empty();
-        return Optional.of(new Notification(at, Type.reindex, Level.info, source, messages));
+        return Optional.of(new Notification(at, Type.reindex, Level.info, source, "", messages));
     }
 
     /**

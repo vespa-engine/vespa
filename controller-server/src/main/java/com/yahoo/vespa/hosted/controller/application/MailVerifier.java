@@ -6,21 +6,20 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.notification.MailTemplating;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -34,14 +33,14 @@ public class MailVerifier {
     private final Mailer mailer;
     private final CuratorDb curatorDb;
     private final Clock clock;
-    private final URI dashboardUri;
+    private final MailTemplating mailTemplating;
 
-    public MailVerifier(URI dashboardUri, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
+    public MailVerifier(ZoneRegistry zoneRegistry, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
         this.tenantController = tenantController;
         this.mailer = mailer;
         this.curatorDb = curatorDb;
         this.clock = clock;
-        this.dashboardUri = dashboardUri;
+        this.mailTemplating = new MailTemplating(zoneRegistry);
     }
 
     public PendingMailVerification sendMailVerification(TenantName tenantName, String email, PendingMailVerification.MailType mailType) {
@@ -133,12 +132,7 @@ public class MailVerifier {
     }
 
     private Mail mailOf(PendingMailVerification pendingMailVerification) {
-        var classLoader = this.getClass().getClassLoader();
-        var template = uncheck(() -> classLoader.getResourceAsStream("mail/mail-verification.tmpl").readAllBytes());
-        var message = new String(template)
-                .replaceAll("%\\{consoleUrl}", dashboardUri.getHost())
-                .replaceAll("%\\{email}", pendingMailVerification.getMailAddress())
-                .replaceAll("%\\{code}", pendingMailVerification.getVerificationCode());
+        var message = mailTemplating.generateMailVerificationHtml(pendingMailVerification);
         return new Mail(List.of(pendingMailVerification.getMailAddress()), "Please verify your email", "", message);
     }
 

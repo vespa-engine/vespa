@@ -10,6 +10,7 @@ import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.notification.MailTemplating;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.TrialNotifications;
@@ -160,7 +161,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     }
 
     private void queueNotification(Tenant tenant, String consoleMsg, String emailSubject, String emailMsg) {
-        var mail = Optional.of(Notification.MailContent.fromTemplate("default-mail-content")
+        var mail = Optional.of(Notification.MailContent.fromTemplate(MailTemplating.Template.DEFAULT_MAIL_CONTENT)
                                        .subject(emailSubject)
                                        .with("mailMessageTemplate", "cloud-trial-notification")
                                        .with("cloudTrialMessage", emailMsg)
@@ -171,7 +172,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
         // Remove previous notification to ensure new notification is sent by email
         controller().notificationsDb().removeNotification(source, Notification.Type.account);
         controller().notificationsDb().setNotification(
-                source, Notification.Type.account, Notification.Level.info, List.of(consoleMsg), mail);
+                source, Notification.Type.account, Notification.Level.info, consoleMsg, List.of(), mail);
     }
 
     private static TrialNotifications.Status updatedStatus(Tenant t, Instant i, TrialNotifications.State s) {

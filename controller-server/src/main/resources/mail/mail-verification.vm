@@ -366,7 +366,7 @@
                             "
                           >
                             <p style="margin: 10px 0; text-align: center">
-                              You have entered the email address <b>%{email}</b> in
+                              You have entered the email address <b>$esc.html($email)</b> in
                               Vespa Cloud.&nbsp;
                             </p>
                             <p style="margin: 10px 0; text-align: center">
@@ -411,7 +411,7 @@
                                   valign="middle"
                                 >
                                   <a
-                                    href="https://%{consoleUrl}/verify?code=%{code}"
+                                    href="https://$consoleUrl/verify?code=$code"
                                     style="
                                       display: inline-block;
                                       background: #3b9fde;
@@ -471,9 +471,9 @@
                               <a
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                href="https://%{consoleUrl}/verify?code=%{code}"
+                                href="https://$consoleUrl/verify?code=$code"
                                 style="color: #3b9fde"
-                                >https://%{consoleUrl}/verify?code=%{code}</a
+                                >https://$consoleUrl/verify?code=$code</a
                               >
                             </p>
                           </div>
