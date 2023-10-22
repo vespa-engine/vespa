@@ -17,6 +17,6 @@ schema test {
     }
   }
   document-summary rename {
-    summary new_elem_array type array<elem> { source: elem_array }
+    summary new_elem_array { source: elem_array }
   }
 }

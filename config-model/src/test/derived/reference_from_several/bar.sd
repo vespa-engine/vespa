@@ -10,7 +10,7 @@ schema bar {
     }
     import field bpref.x as barsximp {}
     document-summary other {
-        summary bartitle type string {}
+        summary bartitle {}
         summary barsximp type int {}
     }
 }
