@@ -1345,6 +1345,7 @@ public class ControllerTest {
                         Type.testPackage,
                         Level.warning,
                         NotificationSource.from(app.application().id()),
+                        "There are problems with tests for [application](https://console.tld/tenant/tenant/application/application/prod/instance)",
                         List.of("test package has staging tests, so it should also include staging setup",
                                 "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
                 tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.notification;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -17,10 +18,12 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -85,7 +88,8 @@ public class NotificationsDbTest {
     private final MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
     private final MockMailer mailer = new MockMailer();
     private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(PermanentFlags.NOTIFICATION_DISPATCH_FLAG.id(), true);
-    private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb, new Notifier(curatorDb, new ConsoleUrls(URI.create("https://console.tld")), mailer, flagSource));
+    private final ConsoleUrls consoleUrls = new ConsoleUrls(URI.create("https://console.tld"));
+    private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb, new Notifier(curatorDb, consoleUrls, mailer, flagSource), consoleUrls);
 
     @Test
     void list_test() {
@@ -103,10 +107,10 @@ public class NotificationsDbTest {
         Notification notification2 = notification(12345, Type.deployment, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
 
         // Replace the 3rd notification
-        notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.level(), notification1.messages());
+        setNotification(notification1);
 
         // Notification for a new app, add without replacement
-        notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.level(), notification2.messages());
+        setNotification(notification2);
 
         List<Notification> expected = notificationIndices(0, 1, 3, 4, 5);
         expected.addAll(List.of(notification1, notification2));
@@ -120,19 +124,19 @@ public class NotificationsDbTest {
         Notification notification3 = notification(12345, Type.reindex, Level.warning, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.defaultId()), new ClusterSpec.Id("content")), "instance msg #2");
         ;
         var a = notifications.get(0);
-        notificationsDb.setNotification(a.source(), a.type(), a.level(), a.messages());
+        setNotification(a);
         assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Replace the 3rd notification. but don't change source or type
-        notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.level(), notification1.messages());
+        setNotification(notification1);
         assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Notification for a new app, add without replacement
-        notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.level(), notification2.messages());
+        setNotification(notification2);
         assertEquals(1, mailer.inbox(email.getEmailAddress()).size());
 
         // Notification for new type on existing app
-        notificationsDb.setNotification(notification3.source(), notification3.type(), notification3.level(), notification3.messages());
+        setNotification(notification3);
         assertEquals(2, mailer.inbox(email.getEmailAddress()).size());
     }
 
@@ -200,17 +204,19 @@ public class NotificationsDbTest {
 
         // One resource is at warning
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5)), emptyReindexing);
-        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
+        expected.add(notification(12345, Type.feedBlock, Level.warning, "Cluster [cluster1](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster1) in **prod.us-south-3** for **app1.instance1** is nearly feed blocked",
+                sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Both resources over the limit
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5)), emptyReindexing);
-        expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster1, "disk (usage: 95.0%, feed block limit: 90.0%)"));
+        expected.set(6, notification(12345, Type.feedBlock, Level.error, "Cluster [cluster1](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster1) in **prod.us-south-3** for **app1.instance1** is feed blocked",
+                sourceCluster1, "disk (usage: 95.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // One resource at warning, one at error: Only show error message
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.7, 0.5)), emptyReindexing);
-        expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster1,
+        expected.set(6, notification(12345, Type.feedBlock, Level.error, "Cluster [cluster1](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster1) in **prod.us-south-3** for **app1.instance1** is feed blocked", sourceCluster1,
                 "memory (usage: 70.0%, feed block limit: 50.0%)", "disk (usage: 95.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
     }
@@ -230,9 +236,9 @@ public class NotificationsDbTest {
                         "build", reindexingStatus(null, 0.50)))));
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
                 clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75), clusterMetrics("cluster3", 0.1, 0.8, 0.2, 0.9)), applicationReindexing1);
-        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
-        expected.add(notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
-        expected.add(notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' reindexing due to a schema change (75.0% done)", "document type 'build' (50.0% done)"));
+        expected.add(notification(12345, Type.feedBlock, Level.warning, "Cluster [cluster1](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster1) in **prod.us-south-3** for **app1.instance1** is nearly feed blocked", sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
+        expected.add(notification(12345, Type.feedBlock, Level.error, "Cluster [cluster2](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster2) in **prod.us-south-3** for **app1.instance1** is feed blocked", sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
+        expected.add(notification(12345, Type.reindex, Level.info, "Cluster [cluster3](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster3%3Dreindexing) in **prod.us-south-3** for **app1.instance1** is [reindexing](https://docs.vespa.ai/en/operations/reindexing.html)", sourceCluster3, "document type 'announcements' reindexing due to a schema change (75.0% done)", "document type 'build' (50.0% done)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Cluster1 improves, while cluster3 starts having feed block issues and finishes reindexing 'build' documents
@@ -242,10 +248,39 @@ public class NotificationsDbTest {
                         "build", reindexingStatus(null, null)))));
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
                 clusterMetrics("cluster1", 0.15, 0.9, 0.3, 0.5), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75), clusterMetrics("cluster3", 0.78, 0.8, 0.2, 0.9)), applicationReindexing2);
-        expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
-        expected.set(7, notification(12345, Type.feedBlock, Level.warning, sourceCluster3, "disk (usage: 78.0%, feed block limit: 80.0%)"));
-        expected.set(8, notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' reindexing due to a schema change (90.0% done)"));
+        expected.set(6, notification(12345, Type.feedBlock, Level.error, "Cluster [cluster2](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster2) in **prod.us-south-3** for **app1.instance1** is feed blocked", sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
+        expected.set(7, notification(12345, Type.feedBlock, Level.warning, "Cluster [cluster3](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster3) in **prod.us-south-3** for **app1.instance1** is nearly feed blocked", sourceCluster3, "disk (usage: 78.0%, feed block limit: 80.0%)"));
+        expected.set(8, notification(12345, Type.reindex, Level.info, "Cluster [cluster3](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1?instance1.prod.us-south-3=clusters%2Ccluster3%3Dreindexing) in **prod.us-south-3** for **app1.instance1** is [reindexing](https://docs.vespa.ai/en/operations/reindexing.html)", sourceCluster3, "document type 'announcements' reindexing due to a schema change (90.0% done)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
+    }
+
+    @Test
+    void title_test() {
+        curatorDb.deleteNotifications(tenant);
+        TenantAndApplicationId tenantApp = TenantAndApplicationId.from(tenant.value(), "app1");
+        ApplicationId app = tenantApp.instance("instance1");
+        ZoneRegistryMock zoneRegistry = new ZoneRegistryMock(SystemName.Public);
+
+        notificationsDb.setApplicationPackageNotification(NotificationSource.from(tenantApp), List.of());
+        notificationsDb.setApplicationPackageNotification(NotificationSource.from(new DeploymentId(app, ZoneId.from("dev.us-east-3"))), List.of());
+        notificationsDb.setSubmissionNotification(tenantApp, "msg");
+        notificationsDb.setTestPackageNotification(tenantApp, List.of());
+        notificationsDb.setDeploymentNotification(new RunId(app, JobType.prod("us-east-3"), 123), "msg");
+        notificationsDb.setDeploymentNotification(new RunId(app, JobType.productionTestOf(ZoneId.from("prod.us-east-3")), 123), "msg");
+        notificationsDb.setDeploymentNotification(new RunId(app, JobType.systemTest(zoneRegistry, CloudName.AWS), 123), "msg");
+        notificationsDb.setDeploymentNotification(new RunId(app, JobType.stagingTest(zoneRegistry, CloudName.AWS), 123), "msg");
+        notificationsDb.setDeploymentNotification(new RunId(app, JobType.dev("us-east-3"), 123), "msg");
+        assertEquals(List.of(
+                "Application package for [app1](https://console.tld/tenant/tenant1/application/app1/prod/instance) has warnings",
+                "Application package for [app1.instance1](https://console.tld/tenant/tenant1/application/app1/dev/instance/instance1) has warnings",
+                "Application package for [app1](https://console.tld/tenant/tenant1/application/app1/prod/instance) has a warning",
+                "There are problems with tests for [app1](https://console.tld/tenant/tenant1/application/app1/prod/instance)",
+                "Deployment job [#123 to us-east-3](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1/job/production-us-east-3/run/123) for application **app1.instance1** has failed",
+                "Test job [#123 to us-east-3](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1/job/test-us-east-3/run/123) for application **app1.instance1** has failed",
+                "[System test #123](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1/job/system-test/run/123) for application **app1.instance1** has failed",
+                "[Staging test #123](https://console.tld/tenant/tenant1/application/app1/prod/instance/instance1/job/staging-test/run/123) for application **app1.instance1** has failed",
+                "Deployment job [#123 to dev.us-east-3](https://console.tld/tenant/tenant1/application/app1/dev/instance/instance1/job/dev-us-east-3/run/123) for application **app1.instance1** has failed"
+                ), notificationsDb.listNotifications(NotificationSource.from(tenant), false).stream().map(Notification::title).toList());
     }
 
     @BeforeEach
@@ -255,12 +290,20 @@ public class NotificationsDbTest {
         mailer.reset();
     }
 
+    private void setNotification(Notification notification) {
+        notificationsDb.setNotification(notification.source(), notification.type(), notification.level(), "", notification.messages(), Optional.empty());
+    }
+
     private static List<Notification> notificationIndices(int... indices) {
         return Arrays.stream(indices).mapToObj(notifications::get).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static Notification notification(long secondsSinceEpoch, Type type, Level level, NotificationSource source, String... messages) {
-        return new Notification(Instant.ofEpochSecond(secondsSinceEpoch), type, level, source, List.of(messages));
+        return notification(secondsSinceEpoch, type, level, "", source, messages);
+    }
+
+    private static Notification notification(long secondsSinceEpoch, Type type, Level level, String title, NotificationSource source, String... messages) {
+        return new Notification(Instant.ofEpochSecond(secondsSinceEpoch), type, level, source, title, List.of(messages));
     }
 
     private static ClusterMetrics clusterMetrics(String clusterId,

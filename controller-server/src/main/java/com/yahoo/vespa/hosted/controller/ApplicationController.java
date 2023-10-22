@@ -554,7 +554,7 @@ public class ApplicationController {
                 if (warnings.isEmpty())
                     controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
                 else
-                    controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+                    controller.notificationsDb().setApplicationPackageNotification(source, warnings);
             }
 
             lockApplicationOrThrow(applicationId, application ->

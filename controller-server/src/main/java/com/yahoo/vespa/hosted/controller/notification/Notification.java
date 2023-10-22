@@ -32,18 +32,18 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
     }
 
     public Notification {
-        at = Objects.requireNonNull(at, "at cannot be null");
-        type = Objects.requireNonNull(type, "type cannot be null");
-        level = Objects.requireNonNull(level, "level cannot be null");
-        source = Objects.requireNonNull(source, "source cannot be null");
-        title = Objects.requireNonNull(title, "title cannot be null");
-        messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
+        Objects.requireNonNull(at, "at cannot be null");
+        Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(level, "level cannot be null");
+        Objects.requireNonNull(source, "source cannot be null");
+        Objects.requireNonNull(title, "title cannot be null");
+        List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
 
         // Allowing empty title temporarily until all notifications have a title
         // if (title.isBlank()) throw new IllegalArgumentException("title cannot be empty");
         if (messages.isEmpty() && title.isBlank()) throw new IllegalArgumentException("messages cannot be empty when title is empty");
 
-        mailContent = Objects.requireNonNull(mailContent);
+        Objects.requireNonNull(mailContent);
     }
 
     public enum Level {
@@ -53,40 +53,26 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
 
     public enum Type {
 
-        /**
-         * Related to contents of application package, e.g., usage of deprecated features/syntax
-         */
+        /** Related to contents of application package, e.g., usage of deprecated features/syntax */
         applicationPackage,
 
-        /**
-         * Related to contents of application package detectable by the controller on submission
-         */
+        /** Related to contents of application package detectable by the controller on submission */
         submission,
 
-        /**
-         * Related to contents of application test package, e.g., mismatch between deployment spec and provided tests
-         */
+        /** Related to contents of application test package, e.g., mismatch between deployment spec and provided tests */
         testPackage,
 
-        /**
-         * Related to deployment of application, e.g., system test failure, node allocation failure, internal errors, etc.
-         */
+        /** Related to deployment of application, e.g., system test failure, node allocation failure, internal errors, etc. */
         deployment,
 
-        /**
-         * Application cluster is (near) external feed blocked
-         */
+        /** Application cluster is (near) external feed blocked */
         feedBlock,
 
-        /**
-         * Application cluster is reindexing document(s)
-         */
+        /** Application cluster is reindexing document(s) */
         reindex,
 
-        /**
-         * Account, e.g. expiration of trial plan
-         */
-        account
+        /** Account, e.g. expiration of trial plan */
+        account,
     }
 
     public static class MailContent {

@@ -37,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
@@ -625,19 +624,15 @@ public class JobController {
     private void validateTests(TenantAndApplicationId id, Submission submission) {
         var testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
         if ( ! testSummary.problems().isEmpty())
-            controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                         Type.testPackage,
-                                                         Notification.Level.warning,
-                                                         testSummary.problems());
-
+            controller.notificationsDb().setTestPackageNotification(id, testSummary.problems());
     }
 
     private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
             if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
-                controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
-                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
-                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
+                controller.notificationsDb().setSubmissionNotification(id,
+                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to [Vespa " + (explicitMajor + 1) + " now](" +
+                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html)"); // ∠( ᐛ 」∠)＿
         });
     }
 
