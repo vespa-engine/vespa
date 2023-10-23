@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
@@ -216,7 +216,7 @@ public class MetricsReporterTest {
 
         NestedTransaction transaction = new NestedTransaction();
         nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(),
-                                        new ApplicationTransaction(new ProvisionLock(InfrastructureApplication.TENANT_HOST.id(), () -> { }), transaction));
+                                        new ApplicationTransaction(new ApplicationMutex(InfrastructureApplication.TENANT_HOST.id(), () -> { }), transaction));
         transaction.commit();
 
         Orchestrator orchestrator = mock(Orchestrator.class);

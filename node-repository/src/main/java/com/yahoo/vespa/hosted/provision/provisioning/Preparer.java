@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.transaction.Mutex;
@@ -18,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -95,7 +95,7 @@ public class Preparer {
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, boolean makeExclusive) {
         try (Mutex lock = nodeRepository.applications().lock(application);
-             Applications.Lock tenantHostLock = makeExclusive ? nodeRepository.applications().lock(InfrastructureApplication.TENANT_HOST.id()) : null;
+             ApplicationMutex tenantHostLock = makeExclusive ? nodeRepository.applications().lock(InfrastructureApplication.TENANT_HOST.id()) : null;
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
             NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, makeExclusive);

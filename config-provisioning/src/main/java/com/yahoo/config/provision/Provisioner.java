@@ -37,6 +37,6 @@ public interface Provisioner {
     void restart(ApplicationId application, HostFilter filter);
 
     /** Returns a provision lock for the given application */
-    ProvisionLock lock(ApplicationId application);
+    ApplicationMutex lock(ApplicationId application);
 
 }
