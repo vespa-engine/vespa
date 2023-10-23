@@ -18,12 +18,13 @@ namespace storage {
 DistributorNode::DistributorNode(
         const config::ConfigUri& configUri,
         DistributorNodeContext& context,
+        BootstrapConfigs bootstrap_configs,
         ApplicationGenerationFetcher& generationFetcher,
         uint32_t num_distributor_stripes,
         StorageLink::UP communicationManager,
         std::unique_ptr<IStorageChainBuilder> storage_chain_builder)
-    : StorageNode(configUri, context, generationFetcher,
-                  std::make_unique<HostInfo>(),
+    : StorageNode(configUri, context, std::move(bootstrap_configs),
+                  generationFetcher, std::make_unique<HostInfo>(),
                   !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
       _threadPool(framework::TickingThreadPool::createDefault("distributor", 100ms, 1, 5s)),
       _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
