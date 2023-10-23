@@ -73,7 +73,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					return err
 				}
 			}
-			waiter := cli.waiter(false, timeout)
+			waiter := cli.waiter(timeout)
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
@@ -158,7 +158,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			timeout := time.Duration(waitSecs) * time.Second
-			waiter := cli.waiter(false, timeout)
+			waiter := cli.waiter(timeout)
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func waitForDeploymentReady(cli *CLI, target vespa.Target, sessionOrRunID int64,
 	if timeout == 0 {
 		return nil
 	}
-	waiter := cli.waiter(false, timeout)
+	waiter := cli.waiter(timeout)
 	if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			}
 			var service *vespa.Service
 			useDeploy := curlService == "deploy"
-			waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			if useDeploy {
 				if cli.config.cluster() != "" {
 					return fmt.Errorf("cannot specify cluster for service %s", curlService)
