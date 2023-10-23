@@ -53,6 +53,7 @@ ServiceLayerProcess::shutdown()
 void
 ServiceLayerProcess::setupConfig(vespalib::duration subscribe_timeout)
 {
+    // We reuse the StorServerConfig subscription from the parent Process
     Process::setupConfig(subscribe_timeout);
 }
 
@@ -60,6 +61,9 @@ void
 ServiceLayerProcess::updateConfig()
 {
     Process::updateConfig();
+    if (_server_cfg_handle->isChanged()) {
+        _node->on_configure(*_server_cfg_handle->getConfig());
+    }
 }
 
 bool

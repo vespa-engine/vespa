@@ -1,10 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class storage::ServiceLayerNode
- * \ingroup storageserver
- *
- * \brief Class for setting up a service layer node.
- */
 
 #pragma once
 
@@ -23,6 +17,7 @@ namespace spi { struct PersistenceProvider; }
 class Bouncer;
 class BucketManager;
 class FileStorManager;
+class MergeThrottler;
 
 class ServiceLayerNode
         : public StorageNode,
@@ -37,6 +32,7 @@ class ServiceLayerNode
     Bouncer*                  _bouncer;
     BucketManager*            _bucket_manager;
     FileStorManager*          _fileStorManager;
+    MergeThrottler*           _merge_throttler;
     bool                      _init_has_been_called;
 
 public:
@@ -53,6 +49,8 @@ public:
      * Init must be called exactly once after construction and before destruction.
      */
     void init();
+
+    void on_configure(const StorServerConfig& config);
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::STORAGE; }
 

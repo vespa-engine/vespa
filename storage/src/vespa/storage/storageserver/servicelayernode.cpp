@@ -37,6 +37,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
       _bouncer(nullptr),
       _bucket_manager(nullptr),
       _fileStorManager(nullptr),
+      _merge_throttler(nullptr),
       _init_has_been_called(false)
 {
 }
@@ -158,8 +159,8 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto bouncer = std::make_unique<Bouncer>(compReg, bouncer_config());
     _bouncer = bouncer.get();
     builder.add(std::move(bouncer));
-    auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
-    auto merge_throttler = merge_throttler_up.get();
+    auto merge_throttler_up = std::make_unique<MergeThrottler>(server_config(), compReg);
+    _merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
     builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
     auto bucket_manager = std::make_unique<BucketManager>(_configUri, _context.getComponentRegister());
@@ -178,8 +179,15 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     // Lifetimes of all referenced components shall outlive the last call going
     // through the SPI, as queues are flushed and worker threads joined when
     // the storage link chain is closed prior to destruction.
-    auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *merge_throttler);
+    auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *_merge_throttler);
     _fileStorManager->error_wrapper().register_error_listener(std::move(error_listener));
+}
+
+void
+ServiceLayerNode::on_configure(const StorServerConfig& config)
+{
+    assert(_merge_throttler);
+    _merge_throttler->on_configure(config);
 }
 
 ResumeGuard

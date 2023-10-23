@@ -6,6 +6,7 @@
 #include <vespa/vdstestlib/config/dirconfig.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
@@ -37,9 +38,15 @@ struct Fixture {
     vdstestlib::DirConfig config{getStandardConfig(true)};
     TestServiceLayerApp app;
     ServiceLayerComponent component{app.getComponentRegister(), "dummy"};
-    MergeThrottler merge_throttler{config::ConfigUri(config.getConfigId()), app.getComponentRegister()};
+    MergeThrottler merge_throttler{*config_from(config::ConfigUri(config.getConfigId())), app.getComponentRegister()};
     TestShutdownListener shutdown_listener;
     ServiceLayerErrorListener error_listener{component, merge_throttler};
+
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
+
+    static std::unique_ptr<StorServerConfig> config_from(const ::config::ConfigUri& cfg_uri) {
+        return ::config::ConfigGetter<StorServerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
+    }
 
     Fixture();
     ~Fixture();

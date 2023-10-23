@@ -179,7 +179,7 @@ MergeThrottler::MergeNodeSequence::chain_contains_this_node() const noexcept
 }
 
 MergeThrottler::MergeThrottler(
-        const config::ConfigUri & configUri,
+        const StorServerConfig& bootstrap_config,
         StorageComponentRegister& compReg)
     : StorageLink("Merge Throttler"),
       framework::HtmlStatusReporter("merges", "Merge Throttler"),
@@ -190,7 +190,6 @@ MergeThrottler::MergeThrottler(
       _queueSequence(0),
       _messageLock(),
       _stateLock(),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_unique<Metrics>()),
       _component(compReg, "mergethrottler"),
       _thread(),
@@ -203,34 +202,33 @@ MergeThrottler::MergeThrottler(
 {
     _throttlePolicy->setMinWindowSize(20);
     _throttlePolicy->setMaxWindowSize(20);
-    _configFetcher->subscribe<StorServerConfig>(configUri.getConfigId(), this);
-    _configFetcher->start();
+    on_configure(bootstrap_config);
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
 
 void
-MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
+MergeThrottler::on_configure(const StorServerConfig& new_config)
 {
     std::lock_guard lock(_stateLock);
-    _use_dynamic_throttling = (newConfig->mergeThrottlingPolicy.type
+    _use_dynamic_throttling = (new_config.mergeThrottlingPolicy.type
                                == StorServerConfig::MergeThrottlingPolicy::Type::DYNAMIC);
-    if (newConfig->maxMergesPerNode < 1) {
+    if (new_config.maxMergesPerNode < 1) {
         throw config::InvalidConfigException("Cannot have a max merge count of less than 1");
     }
-    if (newConfig->maxMergeQueueSize < 0) {
+    if (new_config.maxMergeQueueSize < 0) {
         throw config::InvalidConfigException("Max merge queue size cannot be less than 0");
     }
-    if (newConfig->resourceExhaustionMergeBackPressureDurationSecs < 0.0) {
+    if (new_config.resourceExhaustionMergeBackPressureDurationSecs < 0.0) {
         throw config::InvalidConfigException("Merge back-pressure duration cannot be less than 0");
     }
     if (_use_dynamic_throttling) {
-        auto min_win_sz = std::max(newConfig->mergeThrottlingPolicy.minWindowSize, 1);
-        auto max_win_sz = std::max(newConfig->mergeThrottlingPolicy.maxWindowSize, 1);
+        auto min_win_sz = std::max(new_config.mergeThrottlingPolicy.minWindowSize, 1);
+        auto max_win_sz = std::max(new_config.mergeThrottlingPolicy.maxWindowSize, 1);
         if (min_win_sz > max_win_sz) {
             min_win_sz = max_win_sz;
         }
-        auto win_sz_increment = std::max(1.0, newConfig->mergeThrottlingPolicy.windowSizeIncrement);
+        auto win_sz_increment = std::max(1.0, new_config.mergeThrottlingPolicy.windowSizeIncrement);
         _throttlePolicy->setMinWindowSize(min_win_sz);
         _throttlePolicy->setMaxWindowSize(max_win_sz);
         _throttlePolicy->setWindowSizeIncrement(win_sz_increment);
@@ -238,15 +236,14 @@ MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServ
             min_win_sz, max_win_sz, win_sz_increment);
     } else {
         // Use legacy config values when static throttling is enabled.
-        _throttlePolicy->setMinWindowSize(newConfig->maxMergesPerNode);
-        _throttlePolicy->setMaxWindowSize(newConfig->maxMergesPerNode);
+        _throttlePolicy->setMinWindowSize(new_config.maxMergesPerNode);
+        _throttlePolicy->setMaxWindowSize(new_config.maxMergesPerNode);
     }
-    LOG(debug, "Setting new max queue size to %d",
-        newConfig->maxMergeQueueSize);
-    _maxQueueSize = newConfig->maxMergeQueueSize;
+    LOG(debug, "Setting new max queue size to %d", new_config.maxMergeQueueSize);
+    _maxQueueSize = new_config.maxMergeQueueSize;
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-            std::chrono::duration<double>(newConfig->resourceExhaustionMergeBackPressureDurationSecs));
-    _disable_queue_limits_for_chained_merges = newConfig->disableQueueLimitsForChainedMerges;
+            std::chrono::duration<double>(new_config.resourceExhaustionMergeBackPressureDurationSecs));
+    _disable_queue_limits_for_chained_merges = new_config.disableQueueLimitsForChainedMerges;
 }
 
 MergeThrottler::~MergeThrottler()
@@ -275,8 +272,6 @@ MergeThrottler::onOpen()
 void
 MergeThrottler::onClose()
 {
-    // Avoid getting config on shutdown
-    _configFetcher->close();
     {
         std::lock_guard guard(_messageLock);
         // Note: used to prevent taking locks in different order if onFlush
