@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -123,8 +122,6 @@ class JvmHeapSizeValidatorTest {
         @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
-
-        @SuppressWarnings("removal") @Override public void registerModel(ModelReference ref) {}
 
         @Override
         public void registerModel(URI uri) {

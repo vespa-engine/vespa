@@ -1456,7 +1456,6 @@
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
-      "public abstract void registerModel(com.yahoo.config.ModelReference)",
       "public abstract void registerModel(java.net.URI)"
     ],
     "fields" : [ ]
