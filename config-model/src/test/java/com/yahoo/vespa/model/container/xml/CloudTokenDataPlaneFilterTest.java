@@ -14,9 +14,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
 import com.yahoo.processing.response.Data;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -127,6 +130,21 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         assertFalse(root.getConfigIds().stream().anyMatch(id -> id.contains("DataplaneProxyConfigurator")));
     }
 
+    @Test
+    void configuresCorrectConnectors() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var clusterElem = DomBuilderTest.parse(servicesXmlTemplate.formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        createCertificate(certFile);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
+
+        ConnectorConfig connectorConfig8443 = connectorConfig(8443);
+        assertEquals(List.of("mtls"),connectorConfig8443.serverName().known());
+
+        ConnectorConfig connectorConfig8444 = connectorConfig(8444);
+        assertEquals(List.of("token"),connectorConfig8444.serverName().known());
+
+    }
+
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(
             String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
         return new CloudTokenDataPlaneFilterConfig.Clients.Tokens.Builder()
@@ -149,5 +167,16 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
                 .endpoints(endpoints)
                 .build();
         return createModel(root, state, null, clusterElem);
+    }
+
+    private ConnectorConfig connectorConfig(int port) {
+        ApplicationContainer container = (ApplicationContainer) root.getProducer("container/container.0");
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
+        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == port).findFirst().orElseThrow();
+
+        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+
+        return new ConnectorConfig(builder);
     }
 }

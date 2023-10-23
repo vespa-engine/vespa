@@ -1261,10 +1261,13 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder fallback(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder known(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder known(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName build()"
     ],
     "fields" : [
-      "public java.util.List allowed"
+      "public java.util.List allowed",
+      "public java.util.List known"
     ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$ServerName" : {
@@ -1278,7 +1281,9 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder)",
       "public java.lang.String fallback()",
       "public java.util.List allowed()",
-      "public java.lang.String allowed(int)"
+      "public java.lang.String allowed(int)",
+      "public java.util.List known()",
+      "public java.lang.String known(int)"
     ],
     "fields" : [ ]
   },
