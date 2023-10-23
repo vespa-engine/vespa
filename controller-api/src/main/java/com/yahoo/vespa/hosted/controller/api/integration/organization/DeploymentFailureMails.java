@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.util.Collection;
 
@@ -14,10 +14,10 @@ import java.util.Collection;
  */
 public class DeploymentFailureMails {
 
-    private final ZoneRegistry registry;
+    private final ConsoleUrls consoleUrls;
 
-    public DeploymentFailureMails(ZoneRegistry registry) {
-        this.registry = registry;
+    public DeploymentFailureMails(ConsoleUrls consoleUrls) {
+        this.consoleUrls = consoleUrls;
     }
 
     public Mail nodeAllocationFailure(RunId id, Collection<String> recipients) {
@@ -66,8 +66,8 @@ public class DeploymentFailureMails {
                                       jobToString(id.type()),
                                       id.application(),
                                       messageDetail,
-                                      registry.dashboardUrl(id),
-                                      registry.supportUrl()));
+                                      consoleUrls.deploymentRun(id),
+                                      consoleUrls.support()));
     }
 
     private String jobToString(JobType type) {

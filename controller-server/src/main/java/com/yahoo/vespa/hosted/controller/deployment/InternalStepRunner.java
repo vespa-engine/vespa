@@ -86,7 +86,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
@@ -128,7 +127,7 @@ public class InternalStepRunner implements StepRunner {
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
-        this.mails = new DeploymentFailureMails(controller.zoneRegistry());
+        this.mails = new DeploymentFailureMails(controller.serviceRegistry().consoleUrls());
         this.timeouts = Timeouts.of(controller.system());
     }
 

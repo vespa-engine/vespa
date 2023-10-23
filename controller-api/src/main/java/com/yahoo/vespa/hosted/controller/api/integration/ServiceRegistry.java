@@ -32,8 +32,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipI
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -89,6 +89,8 @@ public interface ServiceRegistry {
     RunDataStore runDataStore();
 
     ZoneRegistry zoneRegistry();
+
+    ConsoleUrls consoleUrls();
 
     ResourceTagger resourceTagger();
 
