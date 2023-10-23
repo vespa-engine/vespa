@@ -38,12 +38,18 @@ func TestStatusCommandMultiCluster(t *testing.T) {
 	mockServiceStatus(client)
 	assert.NotNil(t, cli.Run("status"))
 	assert.Equal(t, "Error: no services exist\nHint: Deployment may not be ready yet\nHint: Try 'vespa status deployment'\n", stderr.String())
+	stderr.Reset()
 
 	mockServiceStatus(client, "foo", "bar")
-	assert.Nil(t, cli.Run("status"))
+	client.NextStatus(200)
+	client.NextStatus(400) // One cluster is unavilable
+	assert.NotNil(t, cli.Run("status"))
 	assert.Equal(t, `Container bar at http://127.0.0.1:8080 is ready
-Container foo at http://127.0.0.1:8080 is ready
+Container foo at http://127.0.0.1:8080 is not ready: unhealthy container foo: status 400 at http://127.0.0.1:8080/status.html: aborting wait: got status 400
 `, stdout.String())
+	assert.Equal(t,
+		"Error: services not ready: foo\n",
+		stderr.String())
 
 	stdout.Reset()
 	mockServiceStatus(client, "foo", "bar")
@@ -75,18 +81,25 @@ func TestStatusError(t *testing.T) {
 	client := &mock.HTTPClient{}
 	mockServiceStatus(client, "default")
 	client.NextStatus(500)
-	cli, _, stderr := newTestCLI(t)
+	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("status", "container"))
 	assert.Equal(t,
-		"Error: unhealthy container default: status 500 at http://127.0.0.1:8080/status.html: wait timed out\n",
+		"Container default at http://127.0.0.1:8080 is not ready: unhealthy container default: status 500 at http://127.0.0.1:8080/status.html: wait timed out\n",
+		stdout.String())
+	assert.Equal(t,
+		"Error: services not ready: default\n",
 		stderr.String())
 
+	stdout.Reset()
 	stderr.Reset()
 	client.NextResponseError(io.EOF)
 	assert.NotNil(t, cli.Run("status", "container", "-t", "http://example.com"))
 	assert.Equal(t,
-		"Error: unhealthy container at http://example.com/status.html: EOF\n",
+		"Container at http://example.com is not ready: unhealthy container at http://example.com/status.html: EOF\n",
+		stdout.String())
+	assert.Equal(t,
+		"Error: services not ready: http://example.com\n",
 		stderr.String())
 }
 

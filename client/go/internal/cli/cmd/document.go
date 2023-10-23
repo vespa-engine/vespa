@@ -298,7 +298,7 @@ func documentService(cli *CLI, waitSecs int) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	return waiter.Service(target, cli.config.cluster())
 }
 
