@@ -25,7 +25,7 @@ public class SummaryDiskAccessValidatorTestCase {
                 "    }",
                 "  }",
                 "  document-summary my_sum {",
-                "    summary str_map type map<string, string> { source: str_map }",
+                "    summary str_map { source: str_map }",
                 "  }",
                 "}");
 

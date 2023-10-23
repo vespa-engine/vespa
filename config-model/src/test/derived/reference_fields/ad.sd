@@ -12,6 +12,6 @@ schema ad {
     }
   }
   document-summary explicit_summary {
-    summary yet_another_ref type reference<campaign> {}
+    summary yet_another_ref {}
   }
 }

@@ -13,13 +13,13 @@ search summaryfieldcollision {
   }
 
   document-summary sum1 {
-    summary f type string {
+    summary f {
       source: title
     }
   }
 
   document-summary sum2 {
-    summary f type string {
+    summary f {
       source: description
     }
   }

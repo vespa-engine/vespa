@@ -12,7 +12,7 @@ schema chunk {
     }
 
     document-summary content-summary inherits default {
-        summary content_dynamic type string {
+        summary content_dynamic {
             source: content
             dynamic
         }

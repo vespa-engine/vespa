@@ -3,17 +3,17 @@ search outsidesummary {
 
   document-summary other {
 
-    summary sa type string {
+    summary sa {
       dynamic
       source: a
     }
 
-    summary sa2 type string {
+    summary sa2 {
       full
       source: a
     }
 
-    summary a type string {
+    summary a {
     }
 
   }
