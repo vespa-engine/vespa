@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
@@ -63,24 +64,19 @@ public class Applications {
         db.deleteApplication(transaction);
     }
 
-    public record Lock(Mutex mutex, ApplicationId application) implements Mutex {
-        @Override
-        public void close() { mutex.close(); }
-    }
-
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Lock lock(ApplicationId application) {
-        return new Lock(db.lock(application), application);
+    public ApplicationMutex lock(ApplicationId application) {
+        return new ApplicationMutex(application, db.lock(application));
     }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Lock lock(ApplicationId application, Duration timeout) {
-        return new Lock(db.lock(application, timeout), application);
+    public ApplicationMutex lock(ApplicationId application, Duration timeout) {
+        return new ApplicationMutex(application, db.lock(application, timeout));
     }
 
     /** Create a lock which provides exclusive rights to perform a maintenance deployment */
-    public Lock lockMaintenance(ApplicationId application) {
-        return new Lock(db.lockMaintenance(application), application);
+    public ApplicationMutex lockMaintenance(ApplicationId application) {
+        return new ApplicationMutex(application, db.lockMaintenance(application));
     }
 
 }

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.transaction.Mutex;
@@ -224,7 +225,7 @@ public class Nodes {
     }
 
     /** Sets the exclusiveToApplicationId field.  The nodes must be tenant hosts without the field already. */
-    public void setExclusiveToApplicationId(List<Node> hosts, Applications.Lock lock) {
+    public void setExclusiveToApplicationId(List<Node> hosts, ApplicationMutex lock) {
         List<Node> hostsToWrite = hosts.stream()
                                        .filter(host -> !host.exclusiveToApplicationId().equals(Optional.of(lock.application())))
                                        .peek(host -> {

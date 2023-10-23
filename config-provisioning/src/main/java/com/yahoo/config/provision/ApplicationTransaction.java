@@ -13,10 +13,10 @@ import java.util.Objects;
  */
 public class ApplicationTransaction implements Closeable {
 
-    private final ProvisionLock lock;
+    private final ApplicationMutex lock;
     private final NestedTransaction transaction;
 
-    public ApplicationTransaction(ProvisionLock lock, NestedTransaction transaction) {
+    public ApplicationTransaction(ApplicationMutex lock, NestedTransaction transaction) {
         this.lock = Objects.requireNonNull(lock);
         this.transaction = Objects.requireNonNull(transaction);
     }

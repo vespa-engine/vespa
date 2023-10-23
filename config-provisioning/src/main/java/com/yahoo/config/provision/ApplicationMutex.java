@@ -10,12 +10,12 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class ProvisionLock implements AutoCloseable {
+public class ApplicationMutex implements Mutex {
 
     private final ApplicationId application;
     private final Mutex lock;
 
-    public ProvisionLock(ApplicationId application, Mutex lock) {
+    public ApplicationMutex(ApplicationId application, Mutex lock) {
         this.application = Objects.requireNonNull(application);
         this.lock = Objects.requireNonNull(lock);
     }

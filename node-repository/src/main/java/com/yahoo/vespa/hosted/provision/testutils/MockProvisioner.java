@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 
@@ -36,7 +36,7 @@ public class MockProvisioner implements Provisioner {
     public void restart(ApplicationId application, HostFilter filter) { }
 
     @Override
-    public ProvisionLock lock(ApplicationId application) {
+    public ApplicationMutex lock(ApplicationId application) {
         return null;
     }
 
