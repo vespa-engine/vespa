@@ -606,6 +606,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
         if (endpointCert != null) {
             builder.endpointCertificate(endpointCert);
+            Set<String> mtlsEndpointNames = state.getEndpoints().stream()
+                    .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.mtls)
+                    .flatMap(endpoint -> endpoint.names().stream())
+                    .collect(Collectors.toSet());
+            builder.knownServerNames(mtlsEndpointNames);
             boolean isPublic = state.zone().system().isPublic();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
@@ -659,6 +664,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .remoteAddressHeader("X-Forwarded-For")
                 .remotePortHeader("X-Forwarded-Port")
                 .clientAuth(SslClientAuth.NEED)
+                .knownServerNames(tokenEndpoints)
                 .build();
         server.addConnector(connector);
 
