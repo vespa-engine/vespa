@@ -26,7 +26,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     private final Map<Bill.Id, List<Bill.LineItem>> lineItems = new HashMap<>();
     private final Map<TenantName, List<Bill.LineItem>> uncommittedLineItems = new HashMap<>();
 
-    private final Map<Bill.Id, Bill.StatusHistory> statuses = new HashMap<>();
+    private final Map<Bill.Id, StatusHistory> statuses = new HashMap<>();
     private final Map<Bill.Id, ZonedDateTime> startTimes = new HashMap<>();
     private final Map<Bill.Id, ZonedDateTime> endTimes = new HashMap<>();
     private final Map<Bill.Id, String> exportedInvoiceIds = new HashMap<>();
@@ -54,7 +54,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                 .findFirst();
     }
 
-    public String getStatus(Bill.Id invoiceId) {
+    public BillStatus getStatus(Bill.Id invoiceId) {
         return statuses.get(invoiceId).current();
     }
 
@@ -62,7 +62,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     public Bill.Id createBill(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent) {
         var invoiceId = Bill.Id.generate();
         invoices.put(invoiceId, tenant);
-        statuses.computeIfAbsent(invoiceId, l -> Bill.StatusHistory.open(clock));
+        statuses.computeIfAbsent(invoiceId, l -> StatusHistory.open(clock));
         startTimes.put(invoiceId, startTime);
         endTimes.put(invoiceId, endTime);
         return invoiceId;
@@ -72,7 +72,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     public Optional<Bill> readBill(Bill.Id billId) {
         var invoice = Optional.ofNullable(invoices.get(billId));
         var lines = lineItems.getOrDefault(billId, List.of());
-        var status = statuses.getOrDefault(billId, Bill.StatusHistory.open(clock));
+        var status = statuses.getOrDefault(billId, StatusHistory.open(clock));
         var start = startTimes.getOrDefault(billId, startTime);
         var end = endTimes.getOrDefault(billId, endTime);
         var exportedId = exportedInvoiceId(billId);
@@ -90,8 +90,8 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public void setStatus(Bill.Id invoiceId, String agent, String status) {
-        statuses.computeIfAbsent(invoiceId, k -> Bill.StatusHistory.open(clock))
+    public void setStatus(Bill.Id invoiceId, String agent, BillStatus status) {
+        statuses.computeIfAbsent(invoiceId, k -> StatusHistory.open(clock))
                 .getHistory()
                 .put(ZonedDateTime.now(), status);
     }
