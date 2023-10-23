@@ -166,7 +166,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                                        .with("mailMessageTemplate", "cloud-trial-notification")
                                        .with("cloudTrialMessage", emailMsg)
                                        .with("mailTitle", emailSubject)
-                                       .with("consoleLink", controller().zoneRegistry().dashboardUrl(tenant.name()).toString())
+                                       .with("consoleLink", controller().serviceRegistry().consoleUrls().tenantOverview(tenant.name()))
                                        .build());
         var source = NotificationSource.from(tenant.name());
         // Remove previous notification to ensure new notification is sent by email

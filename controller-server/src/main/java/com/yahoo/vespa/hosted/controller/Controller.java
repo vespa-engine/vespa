@@ -131,10 +131,10 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
-        notifier = new Notifier(curator, serviceRegistry.zoneRegistry(), serviceRegistry.mailer(), flagSource);
+        notifier = new Notifier(curator, serviceRegistry.consoleUrls(), serviceRegistry.mailer(), flagSource);
         notificationsDb = new NotificationsDb(this);
         supportAccessControl = new SupportAccessControl(this);
-        mailVerifier = new MailVerifier(serviceRegistry.zoneRegistry(), tenantController, serviceRegistry.mailer(), curator, clock);
+        mailVerifier = new MailVerifier(serviceRegistry.consoleUrls(), tenantController, serviceRegistry.mailer(), curator, clock);
         dataplaneTokenService = new DataplaneTokenService(this);
 
         // Record the version of this controller

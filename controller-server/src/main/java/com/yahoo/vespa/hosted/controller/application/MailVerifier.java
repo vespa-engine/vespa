@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.notification.MailTemplating;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -35,12 +35,12 @@ public class MailVerifier {
     private final Clock clock;
     private final MailTemplating mailTemplating;
 
-    public MailVerifier(ZoneRegistry zoneRegistry, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
+    public MailVerifier(ConsoleUrls consoleUrls, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
         this.tenantController = tenantController;
         this.mailer = mailer;
         this.curatorDb = curatorDb;
         this.clock = clock;
-        this.mailTemplating = new MailTemplating(zoneRegistry);
+        this.mailTemplating = new MailTemplating(consoleUrls);
     }
 
     public PendingMailVerification sendMailVerification(TenantName tenantName, String email, PendingMailVerification.MailType mailType) {

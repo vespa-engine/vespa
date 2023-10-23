@@ -30,7 +30,7 @@ class MailVerifierTest {
 
     private final ControllerTester tester = new ControllerTester(SystemName.Public);
     private final MockMailer mailer = tester.serviceRegistry().mailer();
-    private final MailVerifier mailVerifier = new MailVerifier(tester.zoneRegistry(), tester.controller().tenants(), mailer, tester.curator(), tester.clock());
+    private final MailVerifier mailVerifier = new MailVerifier(tester.serviceRegistry().consoleUrls(), tester.controller().tenants(), mailer, tester.curator(), tester.clock());
 
     private static final TenantName tenantName = TenantName.from("scoober");
     private static final String mail = "unverified@bar.com";

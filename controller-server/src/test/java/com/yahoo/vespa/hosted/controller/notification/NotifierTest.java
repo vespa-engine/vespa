@@ -9,9 +9,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class NotifierTest {
     void dispatch() throws IOException {
         var mailer = new MockMailer();
         var flagSource = new InMemoryFlagSource().withBooleanFlag(PermanentFlags.NOTIFICATION_DISPATCH_FLAG.id(), true);
-        var notifier = new Notifier(curatorDb, new ZoneRegistryMock(SystemName.cd), mailer, flagSource);
+        var notifier = new Notifier(curatorDb, new ConsoleUrls(URI.create("https://console.tld")), mailer, flagSource);
 
         var notification = new Notification(Instant.now(), Notification.Type.testPackage, Notification.Level.warning,
                 NotificationSource.from(ApplicationId.from(tenant, ApplicationName.defaultName(), InstanceName.defaultName())),
