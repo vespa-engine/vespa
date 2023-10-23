@@ -4,7 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
+import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 public class BillingReporterMock implements BillingReporter {
@@ -23,7 +26,8 @@ public class BillingReporterMock implements BillingReporter {
 
     @Override
     public InvoiceUpdate maintainInvoice(Bill bill) {
-        return new InvoiceUpdate(0,0,1);
+        dbClient.addLineItem(bill.tenant(), maintainedMarkerItem(), Optional.of(bill.id()));
+        return new InvoiceUpdate(1,0,0);
     }
 
     @Override
@@ -32,6 +36,10 @@ public class BillingReporterMock implements BillingReporter {
         var exportedId = "EXT-ID-123";
         dbClient.setExportedInvoiceId(bill.id(), exportedId);
         return exportedId;
+    }
+
+    private static Bill.LineItem maintainedMarkerItem() {
+        return new Bill.LineItem("maintained", "", BigDecimal.valueOf(0.0), "", "", ZonedDateTime.now());
     }
 
 }
