@@ -66,6 +66,11 @@ removePidFile(const vespalib::string& pidfile)
 
 } // End of anonymous namespace
 
+StorageNode::BootstrapConfigs::BootstrapConfigs() = default;
+StorageNode::BootstrapConfigs::~BootstrapConfigs() = default;
+StorageNode::BootstrapConfigs::BootstrapConfigs(BootstrapConfigs&&) noexcept = default;
+StorageNode::BootstrapConfigs& StorageNode::BootstrapConfigs::operator=(BootstrapConfigs&&) noexcept = default;
+
 StorageNode::StorageNode(
         const config::ConfigUri & configUri,
         StorageNodeContext& context,

@@ -71,6 +71,11 @@ public:
         std::unique_ptr<CommunicationManagerConfig> comm_mgr_cfg;
         std::unique_ptr<StorDistributionConfig>     distribution_cfg;
         std::unique_ptr<StorServerConfig>           server_cfg;
+
+        BootstrapConfigs();
+        ~BootstrapConfigs();
+        BootstrapConfigs(BootstrapConfigs&&) noexcept;
+        BootstrapConfigs& operator=(BootstrapConfigs&&) noexcept;
     };
 
     StorageNode(const config::ConfigUri& configUri,
