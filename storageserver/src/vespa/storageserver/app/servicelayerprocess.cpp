@@ -34,6 +34,7 @@ bucket_db_options_from_config(const config::ConfigUri& config_uri) {
 ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
     : Process(configUri),
       _externalVisitors(),
+      _persistence_cfg_handle(),
       _node(),
       _storage_chain_builder(),
       _context(std::make_unique<framework::defaultimplementation::RealClock>(),
@@ -53,6 +54,7 @@ ServiceLayerProcess::shutdown()
 void
 ServiceLayerProcess::setupConfig(vespalib::duration subscribe_timeout)
 {
+    _persistence_cfg_handle = _configSubscriber.subscribe<PersistenceConfig>(_configUri.getConfigId(), subscribe_timeout);
     // We reuse the StorServerConfig subscription from the parent Process
     Process::setupConfig(subscribe_timeout);
 }
@@ -63,6 +65,9 @@ ServiceLayerProcess::updateConfig()
     Process::updateConfig();
     if (_server_cfg_handle->isChanged()) {
         _node->on_configure(*_server_cfg_handle->getConfig());
+    }
+    if (_persistence_cfg_handle->isChanged()) {
+        _node->on_configure(*_persistence_cfg_handle->getConfig());
     }
 }
 
@@ -77,15 +82,19 @@ ServiceLayerProcess::createNode()
 {
     add_external_visitors();
     setupProvider();
-    // TODO dedupe, consolidate
+
     StorageNode::BootstrapConfigs bc;
     bc.bucket_spaces_cfg = _bucket_spaces_cfg_handle->getConfig();
-    bc.bouncer_cfg = _bouncer_cfg_handle->getConfig();
-    bc.comm_mgr_cfg = _comm_mgr_cfg_handle->getConfig();
-    bc.distribution_cfg = _distribution_cfg_handle->getConfig();
-    bc.server_cfg = _server_cfg_handle->getConfig();
+    bc.bouncer_cfg       = _bouncer_cfg_handle->getConfig();
+    bc.comm_mgr_cfg      = _comm_mgr_cfg_handle->getConfig();
+    bc.distribution_cfg  = _distribution_cfg_handle->getConfig();
+    bc.server_cfg        = _server_cfg_handle->getConfig();
 
-    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, std::move(bc), *this, getProvider(), _externalVisitors);
+    ServiceLayerNode::ServiceLayerBootstrapConfigs sbc;
+    sbc.storage_bootstrap_configs = std::move(bc);
+    sbc.persistence_cfg = _persistence_cfg_handle->getConfig();
+
+    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, std::move(sbc), *this, getProvider(), _externalVisitors);
     if (_storage_chain_builder) {
         _node->set_storage_chain_builder(std::move(_storage_chain_builder));
     }

@@ -6,6 +6,7 @@
 #include "servicelayernodecontext.h"
 #include "storagenode.h"
 #include "vespa/vespalib/util/jsonstream.h"
+#include <vespa/config-persistence.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -16,6 +17,7 @@ namespace spi { struct PersistenceProvider; }
 
 class Bouncer;
 class BucketManager;
+class ChangedBucketOwnershipHandler;
 class FileStorManager;
 class MergeThrottler;
 
@@ -25,22 +27,36 @@ class ServiceLayerNode
           private NodeStateReporter
 
 {
-    ServiceLayerNodeContext&  _context;
-    spi::PersistenceProvider& _persistenceProvider;
-    VisitorFactory::Map       _externalVisitors;
-
-    Bouncer*                  _bouncer;
-    BucketManager*            _bucket_manager;
-    FileStorManager*          _fileStorManager;
-    MergeThrottler*           _merge_throttler;
-    bool                      _init_has_been_called;
+public:
+    using PersistenceConfig = vespa::config::content::PersistenceConfig;
+private:
+    ServiceLayerNodeContext&           _context;
+    spi::PersistenceProvider&          _persistenceProvider;
+    VisitorFactory::Map                _externalVisitors;
+    std::unique_ptr<PersistenceConfig> _persistence_bootstrap_config;
+    Bouncer*                           _bouncer;
+    BucketManager*                     _bucket_manager;
+    ChangedBucketOwnershipHandler*     _changed_bucket_ownership_handler;
+    FileStorManager*                   _fileStorManager;
+    MergeThrottler*                    _merge_throttler;
+    bool                               _init_has_been_called;
 
 public:
     using UP = std::unique_ptr<ServiceLayerNode>;
 
+    struct ServiceLayerBootstrapConfigs {
+        BootstrapConfigs storage_bootstrap_configs;
+        std::unique_ptr<PersistenceConfig> persistence_cfg;
+
+        ServiceLayerBootstrapConfigs();
+        ~ServiceLayerBootstrapConfigs();
+        ServiceLayerBootstrapConfigs(ServiceLayerBootstrapConfigs&&) noexcept;
+        ServiceLayerBootstrapConfigs& operator=(ServiceLayerBootstrapConfigs&&) noexcept;
+    };
+
     ServiceLayerNode(const config::ConfigUri & configUri,
                      ServiceLayerNodeContext& context,
-                     BootstrapConfigs bootstrap_configs,
+                     ServiceLayerBootstrapConfigs bootstrap_configs,
                      ApplicationGenerationFetcher& generationFetcher,
                      spi::PersistenceProvider& persistenceProvider,
                      const VisitorFactory::Map& externalVisitors);
@@ -51,6 +67,7 @@ public:
     void init();
 
     void on_configure(const StorServerConfig& config);
+    void on_configure(const PersistenceConfig& config);
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::STORAGE; }
 

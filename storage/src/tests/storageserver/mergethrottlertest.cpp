@@ -124,10 +124,6 @@ makeSystemStateCmd(const std::string& state)
     return std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state));
 }
 
-std::unique_ptr<StorServerConfig> config_from(const ::config::ConfigUri& cfg_uri) {
-    return ::config::ConfigGetter<StorServerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
-}
-
 } // anon ns
 
 struct MergeThrottlerTest : Test {
@@ -176,7 +172,7 @@ MergeThrottlerTest::SetUp()
 {
     vdstestlib::DirConfig dir_config(getStandardConfig(true));
     auto cfg_uri = ::config::ConfigUri(dir_config.getConfigId());
-    auto config = config_from(cfg_uri);
+    auto config = config_from<StorServerConfig>(cfg_uri);
 
     for (int i = 0; i < _storageNodeCount; ++i) {
         auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i));
