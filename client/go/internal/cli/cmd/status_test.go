@@ -60,7 +60,7 @@ func TestStatusCommandMultiClusterWait(t *testing.T) {
 	client.NextStatus(400)
 	assert.NotNil(t, cli.Run("status", "--cluster", "foo", "--wait", "10"))
 	assert.Equal(t, "Waiting up to 10s for cluster discovery...\nWaiting up to 10s for container foo...\n"+
-		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/ApplicationStatus: aborting wait: got status 400\n", stderr.String())
+		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/status.html: aborting wait: got status 400\n", stderr.String())
 }
 
 func TestStatusCommandWithUrlTarget(t *testing.T) {
@@ -79,14 +79,14 @@ func TestStatusError(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("status", "container"))
 	assert.Equal(t,
-		"Error: unhealthy container default: status 500 at http://127.0.0.1:8080/ApplicationStatus: wait timed out\n",
+		"Error: unhealthy container default: status 500 at http://127.0.0.1:8080/status.html: wait timed out\n",
 		stderr.String())
 
 	stderr.Reset()
 	client.NextResponseError(io.EOF)
 	assert.NotNil(t, cli.Run("status", "container", "-t", "http://example.com"))
 	assert.Equal(t,
-		"Error: unhealthy container at http://example.com/ApplicationStatus: EOF\n",
+		"Error: unhealthy container at http://example.com/status.html: EOF\n",
 		stderr.String())
 }
 
@@ -189,7 +189,7 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 			clusterName = "foo"
 			mockServiceStatus(client, clusterName)
 		}
-		client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+		client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
 	}
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
@@ -200,14 +200,14 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 		prefix += " " + clusterName
 	}
 	assert.Equal(t, prefix+" at "+expectedTarget+" is ready\n", stdout.String())
-	assert.Equal(t, expectedTarget+"/ApplicationStatus", client.LastRequest.URL.String())
+	assert.Equal(t, expectedTarget+"/status.html", client.LastRequest.URL.String())
 
 	// Test legacy command
 	statusArgs = []string{"status query"}
 	stdout.Reset()
 	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t, prefix+" at "+expectedTarget+" is ready\n", stdout.String())
-	assert.Equal(t, expectedTarget+"/ApplicationStatus", client.LastRequest.URL.String())
+	assert.Equal(t, expectedTarget+"/status.html", client.LastRequest.URL.String())
 }
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
@@ -223,5 +223,5 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 		"Container (document API) at "+target+" is ready\n",
 		stdout.String(),
 		"vespa status container")
-	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
+	assert.Equal(t, target+"/status.html", client.LastRequest.URL.String())
 }

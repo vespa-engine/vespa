@@ -88,7 +88,7 @@ func TestCustomTargetWait(t *testing.T) {
 		client.NextResponseError(io.EOF)
 	}
 	// Then succeeds
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
 	assertService(t, false, target, "", time.Second)
 }
 
@@ -153,10 +153,10 @@ func TestCloudTargetWait(t *testing.T) {
 	assert.Equal(t, 2, len(services))
 
 	client.NextResponse(response)
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 500})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 500})
 	assertService(t, true, target, "default", 0)
 	client.NextResponse(response)
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
 	assertService(t, false, target, "feed", 0)
 }
 

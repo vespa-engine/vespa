@@ -125,12 +125,8 @@ func (s *Service) SetClient(client util.HTTPClient) { s.httpClient = client }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) error {
-	url := s.BaseURL
-	if s.deployAPI {
-		url += "/status.html" // because /ApplicationStatus is not publicly reachable in Vespa Cloud
-	} else {
-		url += "/ApplicationStatus"
-	}
+	// A path that does not need authentication, on any target
+	url := strings.TrimRight(s.BaseURL, "/") + "/status.html"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
