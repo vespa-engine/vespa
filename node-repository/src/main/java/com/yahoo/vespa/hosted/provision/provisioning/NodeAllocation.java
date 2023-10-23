@@ -84,9 +84,10 @@ class NodeAllocation {
 
     private final NodeRepository nodeRepository;
     private final Optional<String> requiredHostFlavor;
+    private final boolean makeExclusive;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                   Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, boolean makeExclusive) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
@@ -99,6 +100,7 @@ class NodeAllocation {
                                                                         .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                                                                         .value())
                                           .filter(s -> !s.isBlank());
+        this.makeExclusive = makeExclusive;
     }
 
     /**
@@ -139,9 +141,13 @@ class NodeAllocation {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                if ( violatesExclusivity(candidate)) {
-                    ++rejectedDueToExclusivity;
-                    continue;
+                switch (violatesExclusivity(candidate, makeExclusive)) {
+                    case PARENT_HOST_NOT_EXCLUSIVE -> candidate = candidate.withExclusiveParent(true);
+                    case NONE -> {}
+                    case YES -> {
+                        ++rejectedDueToExclusivity;
+                        continue;
+                    }
                 }
                 if (candidate.wantToRetire()) {
                     continue;
@@ -169,7 +175,7 @@ class NodeAllocation {
         if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
-        if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
+        if (violatesExclusivity(candidate, makeExclusive) != NodeCandidate.ExclusivityViolation.NONE) return Retirement.violatesExclusivity;
         if (requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) return Retirement.violatesHostFlavor;
         if (candidate.violatesSpares) return Retirement.violatesSpares;
         return Retirement.none;
@@ -186,18 +192,15 @@ class NodeAllocation {
     }
 
     private boolean offeredNodeHasParentHostnameAlreadyAccepted(NodeCandidate candidate) {
-        for (NodeCandidate acceptedNode : nodes.values()) {
-            if (acceptedNode.parentHostname().isPresent() && candidate.parentHostname().isPresent() &&
-                    acceptedNode.parentHostname().get().equals(candidate.parentHostname().get())) {
-                return true;
-            }
-        }
-        return false;
+        if (candidate.parentHostname().isEmpty()) return false;
+        return nodes.values().stream().anyMatch(acceptedNode -> acceptedNode.parentHostname().equals(candidate.parentHostname()));
     }
 
-    private boolean violatesExclusivity(NodeCandidate candidate) {
-        return candidate.violatesExclusivity(cluster, application, nodeRepository.exclusiveAllocation(cluster),
-                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes);
+    private NodeCandidate.ExclusivityViolation violatesExclusivity(NodeCandidate candidate, boolean makeExclusive) {
+        return candidate.violatesExclusivity(cluster, application,
+                                             nodeRepository.exclusiveAllocation(cluster),
+                                             nodeRepository.exclusiveProvisioning(cluster),
+                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes, makeExclusive);
     }
 
     /**
@@ -376,6 +379,14 @@ class NodeAllocation {
     /** The node type this is allocating */
     NodeType nodeType() {
         return requested.type();
+    }
+
+    List<Node> parentsRequiredToBeExclusive() {
+        return nodes.values()
+                    .stream()
+                    .filter(candidate -> candidate.exclusiveParent)
+                    .map(candidate -> candidate.parent.orElseThrow())
+                    .toList();
     }
 
     List<Node> finalNodes() {

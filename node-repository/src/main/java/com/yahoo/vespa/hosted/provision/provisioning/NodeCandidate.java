@@ -63,7 +63,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
-    private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean exclusiveSwitch, boolean isSurplus, boolean isNew, boolean isResizeable) {
+    /** The parent host must become exclusive to the implied application */
+    final boolean exclusiveParent;
+
+    private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean exclusiveSwitch,
+                          boolean exclusiveParent, boolean isSurplus, boolean isNew, boolean isResizeable) {
         if (isResizeable && isNew)
             throw new IllegalArgumentException("A new node cannot be resizable");
 
@@ -71,6 +75,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         this.parent = parent;
         this.violatesSpares = violatesSpares;
         this.exclusiveSwitch = exclusiveSwitch;
+        this.exclusiveParent = exclusiveParent;
         this.isSurplus = isSurplus;
         this.isNew = isNew;
         this.isResizable = isResizeable;
@@ -98,6 +103,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     /** Returns a copy of this with exclusive switch set to given value */
     public abstract NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch);
+
+    public abstract NodeCandidate withExclusiveParent(boolean exclusiveParent);
 
     /**
      * Returns the node instance of this candidate, allocating it if necessary.
@@ -228,7 +235,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     /** Returns a copy of this with node set to given value */
     NodeCandidate withNode(Node node, boolean retiredNow) {
-        return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
+        return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, exclusiveParent, isSurplus, isNew, isResizable);
     }
 
     /** Returns the switch priority, based on switch exclusivity, of this compared to other */
@@ -271,7 +278,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                             boolean isSurplus,
                                             boolean isNew,
                                             boolean isResizeable) {
-        return new ConcreteNodeCandidate(node, false, freeParentCapacity, Optional.of(parent), violatesSpares, true, isSurplus, isNew, isResizeable);
+        return new ConcreteNodeCandidate(node, false, freeParentCapacity, Optional.of(parent), violatesSpares, true, false, isSurplus, isNew, isResizeable);
     }
 
     public static NodeCandidate createNewChild(NodeResources resources,
@@ -280,15 +287,15 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                                boolean violatesSpares,
                                                LockedNodeList allNodes,
                                                IP.Allocation.Context ipAllocationContext) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, ipAllocationContext);
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, false, allNodes, ipAllocationContext);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
-        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.of(parent), false, true, false, true, false);
+        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.of(parent), false, true, false, false, true, false);
     }
 
     public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew) {
-        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.empty(), false, true, isSurplus, isNew, false);
+        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.empty(), false, true, false, isSurplus, isNew, false);
     }
 
     /** A candidate backed by a node */
@@ -300,9 +307,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         ConcreteNodeCandidate(Node node,
                               boolean retiredNow,
                               NodeResources freeParentCapacity, Optional<Node> parent,
-                              boolean violatesSpares, boolean exclusiveSwitch,
+                              boolean violatesSpares, boolean exclusiveSwitch, boolean exclusiveParent,
                               boolean isSurplus, boolean isNew, boolean isResizeable) {
-            super(freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizeable);
+            super(freeParentCapacity, parent, violatesSpares, exclusiveSwitch, exclusiveParent, isSurplus, isNew, isResizeable);
             this.retiredNow = retiredNow;
             this.node = Objects.requireNonNull(node, "Node cannot be null");
         }
@@ -340,7 +347,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         @Override
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
             return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at), retiredNow,
-                                             freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
+                                             freeParentCapacity, parent, violatesSpares, exclusiveSwitch, exclusiveParent, isSurplus, isNew, isResizable);
         }
 
         /** Called when the node described by this candidate must be created */
@@ -350,7 +357,13 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
             return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch,
-                                             isSurplus, isNew, isResizable);
+                                             exclusiveParent, isSurplus, isNew, isResizable);
+        }
+
+        @Override
+        public NodeCandidate withExclusiveParent(boolean exclusiveParent) {
+            return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch,
+                                             exclusiveParent, isSurplus, isNew, isResizable);
         }
 
         @Override
@@ -391,9 +404,10 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      Node parent,
                                      boolean violatesSpares,
                                      boolean exclusiveSwitch,
+                                     boolean exclusiveParent,
                                      LockedNodeList allNodes,
                                      IP.Allocation.Context ipAllocationContext) {
-            super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, false, true, false);
+            super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, exclusiveParent, false, true, false);
             this.resources = resources;
             this.allNodes = allNodes;
             this.ipAllocationContext = ipAllocationContext;
@@ -453,13 +467,18 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      NodeType.tenant)
                             .cloudAccount(parent.get().cloudAccount())
                             .build();
-            return new ConcreteNodeCandidate(node, false, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
+            return new ConcreteNodeCandidate(node, false, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, exclusiveParent, isSurplus, isNew, isResizable);
 
         }
 
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
-            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, ipAllocationContext);
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, exclusiveParent, allNodes, ipAllocationContext);
+        }
+
+        @Override
+        public NodeCandidate withExclusiveParent(boolean exclusiveParent) {
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, exclusiveParent, allNodes, ipAllocationContext);
         }
 
         @Override
@@ -496,7 +515,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         private InvalidNodeCandidate(NodeResources resources, NodeResources freeParentCapacity, Node parent,
                                      String invalidReason) {
-            super(freeParentCapacity, Optional.of(parent), false, false, false, true, false);
+            super(freeParentCapacity, Optional.of(parent), false, false, false, false, true, false);
             this.resources = resources;
             this.invalidReason = invalidReason;
         }
@@ -544,6 +563,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         }
 
         @Override
+        public NodeCandidate withExclusiveParent(boolean exclusiveParent) {
+            return this;
+        }
+
+        @Override
         public Node toNode() {
             throw new IllegalStateException("Candidate node on " + parent.get() + " is invalid: " + invalidReason);
         }
@@ -563,32 +587,51 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     }
 
-    public boolean violatesExclusivity(ClusterSpec cluster, ApplicationId application,
-                                       boolean exclusiveCluster, boolean hostSharing, NodeList allNodes) {
-        if (parentHostname().isEmpty()) return false;
-        if (type() != NodeType.tenant) return false;
+    public enum ExclusivityViolation {
+        NONE, YES,
 
-        // We always violate exclusivity if the parent is exclusive to someone else that the requesting application.
-        if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application)) return true;
+        /** No violation IF AND ONLY IF the parent host's exclusiveToApplicationId is set to this application. */
+        PARENT_HOST_NOT_EXCLUSIVE
+    }
 
-        // In zones which do not allow host sharing, exclusivity is violated if...
-        if ( ! hostSharing) {
-            // If either the parent is dedicated to a cluster type different from this cluster
-            return ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()) ||
-                   // or this cluster requires exclusivity, but the host is not exclusive (to this, implicitly by the above).
-                   exclusiveCluster && parent.flatMap(Node::exclusiveToApplicationId).isEmpty();
-        }
+    public ExclusivityViolation violatesExclusivity(ClusterSpec cluster, ApplicationId application,
+                                                    boolean exclusiveAllocation, boolean exclusiveProvisioning,
+                                                    boolean hostSharing, NodeList allNodes, boolean makeExclusive) {
+        if (parentHostname().isEmpty()) return ExclusivityViolation.NONE;
+        if (type() != NodeType.tenant) return ExclusivityViolation.NONE;
 
-        // In zones with shared hosts we require that if any node on the host requires exclusivity,
-        // then all the nodes on the host must have the same owner.
-        for (Node nodeOnHost : allNodes.childrenOf(parentHostname().get())) {
-            if (nodeOnHost.allocation().isEmpty()) continue;
-            if (exclusiveCluster || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
-                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
+        if (hostSharing) {
+            // In zones with shared hosts we require that if any node on the host requires exclusivity,
+            // then all the nodes on the host must have the same owner.
+            for (Node nodeOnHost : allNodes.childrenOf(parentHostname().get())) {
+                if (nodeOnHost.allocation().isEmpty()) continue;
+                if (exclusiveAllocation || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                    if ( ! nodeOnHost.allocation().get().owner().equals(application)) return ExclusivityViolation.YES;
+                }
             }
-        }
-        return false;
+        } else {
+            // the parent is exclusive to another cluster type
+            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()))
+                return ExclusivityViolation.YES;
 
+            // the parent is provisioned for another application
+            if ( ! emptyOrEqual(parent.flatMap(Node::provisionedForApplicationId), application))
+                return ExclusivityViolation.YES;
+
+            // this cluster requires a parent that was provisioned for this application
+            if (exclusiveProvisioning && parent.flatMap(Node::provisionedForApplicationId).isEmpty())
+                return ExclusivityViolation.YES;
+
+            // the parent is exclusive to another application
+            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application))
+                return ExclusivityViolation.YES;
+
+            // this cluster requires exclusivity, but the parent is not exclusive
+            if (exclusiveAllocation && parent.flatMap(Node::exclusiveToApplicationId).isEmpty())
+                return makeExclusive ? ExclusivityViolation.PARENT_HOST_NOT_EXCLUSIVE : ExclusivityViolation.YES;
+        }
+
+        return ExclusivityViolation.NONE;
     }
 
 }

@@ -11,10 +11,14 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -44,12 +48,14 @@ public class Preparer {
     private final Optional<HostProvisioner> hostProvisioner;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
     private final ProvisioningThrottler throttler;
+    private final BooleanFlag makeExclusiveFlag;
 
     public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, Optional<LoadBalancerProvisioner> loadBalancerProvisioner, Metric metric) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
         this.throttler = new ProvisioningThrottler(nodeRepository, metric);
+        this.makeExclusiveFlag = Flags.MAKE_EXCLUSIVE.bindTo(nodeRepository.flagSource());
     }
 
     /**
@@ -69,11 +75,12 @@ public class Preparer {
 
         loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
 
+        boolean makeExclusive = makeExclusiveFlag.value();
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
         LockedNodeList allNodes = nodeRepository.nodes().list(PROBE_LOCK);
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
-        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes);
+        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes, makeExclusive);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             indices.commitProbe();
@@ -81,16 +88,17 @@ public class Preparer {
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            return prepareWithLocks(application, cluster, requested, indices);
+            return prepareWithLocks(application, cluster, requested, indices, makeExclusive);
         }
     }
 
     /// Note that this will write to the node repo.
-    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices) {
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, boolean makeExclusive) {
         try (Mutex lock = nodeRepository.applications().lock(application);
+             Applications.Lock tenantHostLock = makeExclusive ? nodeRepository.applications().lock(InfrastructureApplication.TENANT_HOST.id()) : null;
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
-            NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes);
+            NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, makeExclusive);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(cluster, hostType);
@@ -140,7 +148,7 @@ public class Preparer {
                 // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
                 // Try again, but without retiring
                 indices.resetProbe();
-                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), indices);
+                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), indices, makeExclusive);
                 log.warning("Prepared " + application + " " + cluster.id() + " without retirement due to lack of capacity");
                 return accepted;
             }
@@ -150,6 +158,11 @@ public class Preparer {
                                                   allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
+            if (tenantHostLock != null) {
+                List<Node> exclusiveParents = allocation.parentsRequiredToBeExclusive();
+                nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, tenantHostLock);
+                // TODO: also update tags
+            }
             List<Node> acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
@@ -165,9 +178,9 @@ public class Preparer {
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                                             Supplier<Integer> nextIndex, LockedNodeList allNodes) {
+                                             Supplier<Integer> nextIndex, LockedNodeList allNodes, boolean makeExclusive) {
         validateAccount(requested.cloudAccount(), application, allNodes);
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository, makeExclusive);
         var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
                                                            requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                            nodeRepository.nameResolver());
@@ -208,7 +221,7 @@ public class Preparer {
 
     private HostSharing hostSharing(ClusterSpec cluster, NodeType hostType) {
         if ( hostType.isSharable())
-            return cluster.isExclusive() ? HostSharing.provision :
+            return nodeRepository.exclusiveProvisioning(cluster) ? HostSharing.provision :
                    nodeRepository.exclusiveAllocation(cluster) ? HostSharing.exclusive :
                    HostSharing.any;
         else

@@ -63,19 +63,24 @@ public class Applications {
         db.deleteApplication(transaction);
     }
 
+    public record Lock(Mutex mutex, ApplicationId application) implements Mutex {
+        @Override
+        public void close() { mutex.close(); }
+    }
+
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application) {
-        return db.lock(application);
+    public Lock lock(ApplicationId application) {
+        return new Lock(db.lock(application), application);
     }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) {
-        return db.lock(application, timeout);
+    public Lock lock(ApplicationId application, Duration timeout) {
+        return new Lock(db.lock(application, timeout), application);
     }
 
     /** Create a lock which provides exclusive rights to perform a maintenance deployment */
-    public Mutex lockMaintenance(ApplicationId application) {
-        return db.lockMaintenance(application);
+    public Lock lockMaintenance(ApplicationId application) {
+        return new Lock(db.lockMaintenance(application), application);
     }
 
 }

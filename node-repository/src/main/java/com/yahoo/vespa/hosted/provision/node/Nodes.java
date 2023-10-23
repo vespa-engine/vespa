@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.time.TimeBudget;
@@ -222,6 +221,23 @@ public class Nodes {
      */
     public void setRemovable(NodeList nodes, boolean reusable) {
         performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)), mutex));
+    }
+
+    /** Sets the exclusiveToApplicationId field.  The nodes must be tenant hosts without the field already. */
+    public void setExclusiveToApplicationId(List<Node> hosts, Applications.Lock lock) {
+        List<Node> hostsToWrite = hosts.stream()
+                                       .filter(host -> !host.exclusiveToApplicationId().equals(Optional.of(lock.application())))
+                                       .peek(host -> {
+                                           if (host.type() != NodeType.host)
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                                                                  ": the node is not a tenant host");
+                                           if (host.exclusiveToApplicationId().isPresent())
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                                                                  ": it is already set exclusive to " + host.exclusiveToApplicationId().get());
+                                       })
+                                       .map(host -> host.withExclusiveToApplicationId(lock.application()))
+                                       .toList();
+        write(hostsToWrite, lock);
     }
 
     /**
