@@ -1,11 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class storage::DistributorNode
- * \ingroup storageserver
- *
- * \brief Class for setting up a distributor node.
- */
-
 #pragma once
 
 #include "distributornodecontext.h"
@@ -49,6 +42,7 @@ public:
 
     DistributorNode(const config::ConfigUri & configUri,
                     DistributorNodeContext&,
+                    BootstrapConfigs bootstrap_configs,
                     ApplicationGenerationFetcher& generationFetcher,
                     uint32_t num_distributor_stripes,
                     std::unique_ptr<StorageLink> communicationManager,
