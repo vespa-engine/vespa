@@ -3,6 +3,7 @@
 
 #include "process.h"
 #include <vespa/config-persistence.h>
+#include <vespa/config-stor-filestor.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/storageserver/servicelayernodecontext.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
@@ -20,11 +21,13 @@ class ServiceLayerProcess : public Process {
 protected:
     VisitorFactory::Map _externalVisitors;
 private:
-    using PersistenceConfig = vespa::config::content::PersistenceConfig;
-    using StorVisitorConfig = vespa::config::content::core::StorVisitorConfig;
+    using PersistenceConfig  = vespa::config::content::PersistenceConfig;
+    using StorVisitorConfig  = vespa::config::content::core::StorVisitorConfig;
+    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
 
-    std::unique_ptr<config::ConfigHandle<PersistenceConfig>> _persistence_cfg_handle;
-    std::unique_ptr<config::ConfigHandle<StorVisitorConfig>> _visitor_cfg_handle;
+    std::unique_ptr<config::ConfigHandle<PersistenceConfig>>  _persistence_cfg_handle;
+    std::unique_ptr<config::ConfigHandle<StorVisitorConfig>>  _visitor_cfg_handle;
+    std::unique_ptr<config::ConfigHandle<StorFilestorConfig>> _filestor_cfg_handle;
 
     std::unique_ptr<ServiceLayerNode> _node;
     std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;

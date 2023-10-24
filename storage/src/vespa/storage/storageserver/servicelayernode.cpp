@@ -43,6 +43,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
       _externalVisitors(externalVisitors),
       _persistence_bootstrap_config(std::move(bootstrap_configs.persistence_cfg)),
       _visitor_bootstrap_config(std::move(bootstrap_configs.visitor_cfg)),
+      _filestor_bootstrap_config(std::move(bootstrap_configs.filestor_cfg)),
       _bouncer(nullptr),
       _bucket_manager(nullptr),
       _changed_bucket_ownership_handler(nullptr),
@@ -188,7 +189,8 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     _modified_bucket_checker = bucket_checker.get();
     builder.add(std::move(bucket_checker));
     auto state_manager = releaseStateManager();
-    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
+    auto filstor_manager = std::make_unique<FileStorManager>(*_filestor_bootstrap_config, _persistenceProvider,
+                                                             _context.getComponentRegister(),
                                                              getDoneInitializeHandler(), state_manager->getHostInfo());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
@@ -227,6 +229,12 @@ ServiceLayerNode::on_configure(const StorVisitorConfig& config)
     _visitor_manager->on_configure(config);
 }
 
+void
+ServiceLayerNode::on_configure(const StorFilestorConfig& config)
+{
+    assert(_fileStorManager);
+    _fileStorManager->on_configure(config);
+}
 
 ResumeGuard
 ServiceLayerNode::pause()

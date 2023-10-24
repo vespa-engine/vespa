@@ -98,7 +98,9 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
                                                defer_manager_thread_start);
     _manager = vm.get();
     _top->push_back(std::move(vm));
-    _top->push_back(std::make_unique<FileStorManager>(config::ConfigUri(config.getConfigId()), _node->getPersistenceProvider(),
+    using vespa::config::content::StorFilestorConfig;
+    auto filestor_cfg = config_from<StorFilestorConfig>(config::ConfigUri(config.getConfigId()));
+    _top->push_back(std::make_unique<FileStorManager>(*filestor_cfg, _node->getPersistenceProvider(),
                                                       _node->getComponentRegister(), *_node, _node->get_host_info()));
     _manager->setTimeBetweenTicks(10);
     _top->open();

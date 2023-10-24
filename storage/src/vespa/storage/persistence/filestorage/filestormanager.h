@@ -1,10 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class storage::FileStorManager
- * @ingroup filestorage
- *
- * @version $Id$
- */
 
 #pragma once
 
@@ -42,7 +36,6 @@ namespace spi { struct PersistenceProvider; }
 
 class ContentBucketSpace;
 struct FileStorManagerTest;
-class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 struct DoneInitializeHandler;
@@ -54,10 +47,11 @@ class ProviderErrorWrapper;
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
                         public StateListener,
-                        private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
                         public MessageSender,
                         public spi::BucketExecutor
 {
+    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
+
     ServiceLayerComponentRegister             & _compReg;
     ServiceLayerComponent                       _component;
     std::unique_ptr<spi::PersistenceProvider>   _provider;
@@ -69,7 +63,6 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     bool                  _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
@@ -82,7 +75,7 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<vespalib::IDestructorCallback> _resource_usage_listener_registration;
 
 public:
-    FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,
+    FileStorManager(const StorFilestorConfig&, spi::PersistenceProvider&,
                     ServiceLayerComponentRegister&, DoneInitializeHandler&, HostInfo&);
     FileStorManager(const FileStorManager &) = delete;
     FileStorManager& operator=(const FileStorManager &) = delete;
@@ -118,8 +111,9 @@ public:
 
     const FileStorMetrics& get_metrics() const { return *_metrics; }
 
+    void on_configure(const vespa::config::content::StorFilestorConfig& config);
+
 private:
-    void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
     PersistenceHandler & createRegisteredHandler(const ServiceLayerComponent & component);
     VESPA_DLL_LOCAL PersistenceHandler & getThreadLocalHandler();
 

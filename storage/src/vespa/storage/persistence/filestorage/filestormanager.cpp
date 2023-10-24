@@ -62,7 +62,7 @@ private:
 }
 
 FileStorManager::
-FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
+FileStorManager(const StorFilestorConfig& bootstrap_config, spi::PersistenceProvider& provider,
                 ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler,
                 HostInfo& hostInfoReporterRegistrar)
     : StorageLinkQueued("File store manager", compReg),
@@ -75,7 +75,6 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
       _filestorHandler(),
@@ -85,8 +84,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _host_info_reporter(_component.getStateUpdater()),
       _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter))
 {
-    _configFetcher->subscribe(configUri.getConfigId(), this);
-    _configFetcher->start();
+    on_configure(bootstrap_config);
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
@@ -207,19 +205,19 @@ FileStorManager::getThreadLocalHandler() {
 }
 
 void
-FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
+FileStorManager::on_configure(const StorFilestorConfig& config)
 {
     // If true, this is not the first configure.
     const bool liveUpdate = ! _threads.empty();
 
-    _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
-    _host_info_reporter.set_noise_level(config->resourceUsageReporterNoiseLevel);
-    const bool use_dynamic_throttling = ((config->asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
-                                         (config->asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
-    const bool throttle_merge_feed_ops = config->asyncOperationThrottler.throttleIndividualMergeFeedOps;
+    _use_async_message_handling_on_schedule = config.useAsyncMessageHandlingOnSchedule;
+    _host_info_reporter.set_noise_level(config.resourceUsageReporterNoiseLevel);
+    const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
+                                         (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
+    const bool throttle_merge_feed_ops = config.asyncOperationThrottler.throttleIndividualMergeFeedOps;
 
     if (!liveUpdate) {
-        _config = std::move(config);
+        _config = std::make_unique<StorFilestorConfig>(config);
         uint32_t numThreads = std::max(1, _config->numThreads);
         uint32_t numStripes = std::max(1u, numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
@@ -240,7 +238,7 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     } else {
         assert(_filestorHandler);
-        auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(*config, _threads.size());
+        auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(config, _threads.size());
         _filestorHandler->reconfigure_dynamic_throttler(updated_dyn_throttle_params);
     }
     // TODO remove once desired dynamic throttling behavior is set in stone
@@ -828,8 +826,6 @@ void FileStorManager::onClose()
     LOG(debug, "Start closing");
     _bucketExecutorRegistration.reset();
     _resource_usage_listener_registration.reset();
-    // Avoid getting config during shutdown
-    _configFetcher->close();
     LOG(debug, "Closed _configFetcher.");
     _filestorHandler->close();
     LOG(debug, "Closed _filestorHandler.");
