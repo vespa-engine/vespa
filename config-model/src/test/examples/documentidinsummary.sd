@@ -4,6 +4,6 @@ search documentidinsummary {
     field a type string { }
   }
   document-summary withid {
-    summary w type string { source: documentid }
+    summary w { source: documentid }
   }
 }

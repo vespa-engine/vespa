@@ -20,6 +20,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Helper for converting ParsedField etc to SDField with settings
@@ -137,7 +138,7 @@ public class ConvertParsedFields {
     }
 
     // from grammar, things that can be inside struct-field block
-    private void convertCommonFieldSettings(SDField field, ParsedField parsed) {
+    private void convertCommonFieldSettings(Schema schema, SDField field, ParsedField parsed) {
         convertMatchSettings(field, parsed.matchSettings());
         var indexing = parsed.getIndexing();
         if (indexing.isPresent()) {
@@ -152,7 +153,12 @@ public class ConvertParsedFields {
         for (var summaryField : parsed.getSummaryFields()) {
             var dataType = field.getDataType();
             var otherType = summaryField.getType();
-            if (otherType != null) {
+            if (otherType != null && summaryField.getHasExplicitType()) {
+                schema.getDeployLogger().log(Level.FINE, () -> "For " + schema.getName() +
+                        ", field '" + field.getName() +
+                        "', summary '" + summaryField.name() +
+                        "': Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                        " Remove the type specification to silence this warning.");
                 dataType = context.resolveType(otherType);
             }
             convertSummaryField(field, summaryField, dataType);
@@ -161,7 +167,7 @@ public class ConvertParsedFields {
             field.addQueryCommand(command);
         }
         for (var structField : parsed.getStructFields()) {
-            convertStructField(field, structField);
+            convertStructField(schema, field, structField);
         }
         if (parsed.hasLiteral()) {
             field.getRanking().setLiteral(true);
@@ -174,13 +180,13 @@ public class ConvertParsedFields {
         }
     }
 
-    private void convertStructField(SDField field, ParsedField parsed) {
+    private void convertStructField(Schema schema, SDField field, ParsedField parsed) {
         SDField structField = field.getStructField(parsed.name());
         if (structField == null ) {
             throw new IllegalArgumentException("Struct field '" + parsed.name() + "' has not been defined in struct " +
                                                "for field '" + field.getName() + "'.");
         }
-        convertCommonFieldSettings(structField, parsed);
+        convertCommonFieldSettings(schema, structField, parsed);
     }
 
     private void convertExtraFieldSettings(SDField field, ParsedField parsed) {
@@ -280,7 +286,7 @@ public class ConvertParsedFields {
         String name = parsed.name();
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(document, name, dataType);
-        convertCommonFieldSettings(field, parsed);
+        convertCommonFieldSettings(schema, field, parsed);
         convertExtraFieldSettings(field, parsed);
         document.addField(field);
         return field;
@@ -290,7 +296,7 @@ public class ConvertParsedFields {
         String name = parsed.name();
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(schema.getDocument(), name, dataType);
-        convertCommonFieldSettings(field, parsed);
+        convertCommonFieldSettings(schema, field, parsed);
         convertExtraFieldSettings(field, parsed);
         schema.addExtraField(field);
     }
@@ -307,7 +313,7 @@ public class ConvertParsedFields {
         for (var parsedField : parsed.getFields()) {
             var fieldType = context.resolveType(parsedField.getType());
             var field = new SDField(document, parsedField.name(), fieldType);
-            convertCommonFieldSettings(field, parsedField);
+            convertCommonFieldSettings(schema, field, parsedField);
             structProxy.addField(field);
             if (parsedField.hasIdOverride()) {
                 structProxy.setFieldId(field, parsedField.idOverride());

@@ -19,6 +19,7 @@ class ParsedSummaryField extends ParsedBlock {
     private boolean isFull = false;
     private boolean isBold = false;
     private boolean isTokens = false;
+    private boolean hasExplicitType = false;
     private final List<String> sources = new ArrayList<>();
     private final List<String> destinations = new ArrayList<>();
 
@@ -39,6 +40,7 @@ class ParsedSummaryField extends ParsedBlock {
     boolean getFull() { return isFull; }
     boolean getMatchedElementsOnly() { return isMEO; }
     boolean getTokens() { return isTokens; }
+    boolean getHasExplicitType() { return hasExplicitType; }
 
     void addDestination(String dst) { destinations.add(dst); }
     void addSource(String src) { sources.add(src); }
@@ -47,6 +49,7 @@ class ParsedSummaryField extends ParsedBlock {
     void setFull() { this.isFull = true; }
     void setMatchedElementsOnly() { this.isMEO = true; }
     void setTokens() { this.isTokens = true; }
+    void setHasExplicitType() { this.hasExplicitType = true; }
     void setType(ParsedType value) {
         verifyThat(type == null, "Cannot change type from ", type, "to", value);
         this.type = value;

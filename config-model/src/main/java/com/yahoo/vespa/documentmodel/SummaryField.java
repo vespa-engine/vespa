@@ -66,6 +66,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /** True if this field was defined implicitly */
     private boolean implicit = false;
+    private boolean unresolvedType = false;
 
     /** Creates a summary field with NONE as transform */
     public SummaryField(String name, DataType type) {
@@ -87,9 +88,23 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         this.transform=transform;
     }
 
+    public static SummaryField createWithUnresolvedType(String name) {
+        /*
+         * Data type is not available during conversion of
+         * parsed schema to schema. Use a placeholder data type and tag the summary
+         * field as having an unresolved type.
+         */
+        var summaryField = new SummaryField(name, DataType.NONE);
+        summaryField.unresolvedType = true;
+        return summaryField;
+    }
+
+
     public void setImplicit(boolean implicit) { this.implicit=implicit; }
 
     public boolean isImplicit() { return implicit; }
+
+    public boolean hasUnresolvedType() { return unresolvedType; }
 
     public void setTransform(SummaryTransform transform) {
         this.transform = transform;
@@ -246,6 +261,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
                 clone.sources = new LinkedHashSet<>(this.sources);
             if (this.destinations != null)
                 clone.destinations = new LinkedHashSet<>(destinations);
+            clone.unresolvedType = unresolvedType;
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -270,6 +286,14 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
             return false;
         }
         return true;
+    }
+
+    public void setResolvedDataType(DataType type) {
+        this.dataType = type;
+        if (!hasForcedId()) {
+            this.fieldId = calculateIdV7(null);
+        }
+        unresolvedType = false;
     }
 
     public VsmCommand getVsmCommand() {

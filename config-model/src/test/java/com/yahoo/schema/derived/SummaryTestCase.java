@@ -221,7 +221,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     void documentid_summary_field_has_corresponding_summary_transform() throws ParseException {
         var schema = buildSchema("field foo type string { indexing: summary }",
                 joinLines("document-summary bar {",
-                        "    summary documentid type string {}",
+                        "    summary documentid {}",
                         "}"));
         assertOverride(schema, "documentid", SummaryTransform.DOCUMENT_ID.getName(), "", "bar");
     }

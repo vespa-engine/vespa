@@ -6,6 +6,7 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.yolean.Exceptions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -259,12 +260,12 @@ public class SummaryTestCase {
                     }
                   }
                   document-summary parent1 {
-                    summary s1 type string {
+                    summary s1 {
                         source: field1
                     }
                   }
                   document-summary parent2 {
-                    summary field1 type int {
+                    summary field1 {
                         source: field2
                     }
                   }
@@ -343,6 +344,94 @@ public class SummaryTestCase {
         DeployLoggerStub logger = new DeployLoggerStub();
         ApplicationBuilder.createFromStrings(logger, parent, child);
         assertTrue(logger.entries.isEmpty());
+
+    }
+    private void testSummaryTypeInField(boolean explicit) throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string {",
+                "      indexing: summary",
+                "      summary bar " + (explicit ? "type string ": "") + "{ }",
+                "    }",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, sd);
+        if (explicit) {
+            assertEquals(1, logger.entries.size());
+            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals("For test, field 'foo', summary 'bar':" +
+                    " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                    " Remove the type specification to silence this warning.", logger.entries.get(0).message);
+        } else {
+            assertTrue(logger.entries.isEmpty());
+        }
+    }
+
+    @Test
+    void testSummaryInFieldWithoutTypeEmitsNoWarning() throws ParseException {
+        testSummaryTypeInField(false);
+    }
+
+    @Test
+    void testSummaryInFieldWithTypeEmitsWarning() throws ParseException {
+        testSummaryTypeInField(true);
+    }
+
+    private void testSummaryField(boolean explicit) throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string { indexing: summary }",
+                "  }",
+                "  document-summary bar {",
+                "    summary foo " + (explicit ? "type string" : "") + "{ }",
+                "    from-disk",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, sd);
+        if (explicit) {
+            assertEquals(1, logger.entries.size());
+            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals("For test, document-summary 'bar', summary field 'foo':" +
+                    " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                    " Remove the type specification to silence this warning.", logger.entries.get(0).message);
+        } else {
+            assertTrue(logger.entries.isEmpty());
+        }
+    }
+
+    @Test
+    void testSummaryFieldWithoutTypeEmitsNoWarning() throws ParseException {
+        testSummaryField(false);
+    }
+
+    @Test
+    void testSummaryFieldWithTypeEmitsWarning() throws ParseException {
+        testSummaryField(true);
+    }
+
+    @Test
+    void testSummarySourceLoop() throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string { indexing: summary }",
+                "  }",
+                "  document-summary bar {",
+                "    summary foo { source: foo2 }",
+                "    summary foo2 { source: foo3 }",
+                "    summary foo3 { source: foo2 }",
+                "    from-disk",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        try {
+            ApplicationBuilder.createFromStrings(logger, sd);
+            fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test' summary class 'bar' summary field 'foo'" +
+            ": Source loop detected for summary field 'foo2'", e.getMessage());
+        }
     }
 
     private static class TestValue {

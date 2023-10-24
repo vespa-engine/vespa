@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author bjorncs
  */
-public class AddAttributeTransformToSummaryOfImportedFieldsTest {
+public class AddDataTypeAndTransformToSummaryOfImportedFieldsTest {
 
     private static final String IMPORTED_FIELD_NAME = "imported_myfield";
     private static final String DOCUMENT_NAME = "mydoc";
@@ -38,7 +38,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
         schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME));
         schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, schema));
 
-        AddAttributeTransformToSummaryOfImportedFields processor = new AddAttributeTransformToSummaryOfImportedFields(
+        AddDataTypeAndTransformToSummaryOfImportedFields processor = new AddDataTypeAndTransformToSummaryOfImportedFields(
                 schema, null, null, null);
         processor.process(true, false);
         SummaryField summaryField = schema.getSummaries().get(SUMMARY_NAME).getSummaryField(IMPORTED_FIELD_NAME);

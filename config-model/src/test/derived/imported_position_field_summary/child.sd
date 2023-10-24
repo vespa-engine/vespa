@@ -8,6 +8,6 @@ schema child {
   import field parent_ref.pos as my_pos {}
 
   document-summary mysummary {
-      summary my_pos type position { }
+      summary my_pos { }
   }
 }

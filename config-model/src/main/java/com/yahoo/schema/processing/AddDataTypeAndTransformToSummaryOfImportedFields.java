@@ -2,6 +2,8 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.DataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.ImmutableImportedComplexSDField;
@@ -13,17 +15,17 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import java.util.stream.Stream;
 
 /**
- * Adds the attribute summary transform ({@link SummaryTransform#ATTRIBUTE} to all {@link SummaryField} having an imported
+ * Adds the data type and attribute summary transform ({@link SummaryTransform#ATTRIBUTE} to all {@link SummaryField} having an imported
  * field as source.
  *
  * @author bjorncs
  */
-public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
+public class AddDataTypeAndTransformToSummaryOfImportedFields extends Processor {
 
-    public AddAttributeTransformToSummaryOfImportedFields(Schema schema,
-                                                          DeployLogger deployLogger,
-                                                          RankProfileRegistry rankProfileRegistry,
-                                                          QueryProfiles queryProfiles) {
+    public AddDataTypeAndTransformToSummaryOfImportedFields(Schema schema,
+                                                            DeployLogger deployLogger,
+                                                            RankProfileRegistry rankProfileRegistry,
+                                                            QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
@@ -39,19 +41,29 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
 
     private void setTransform(ImmutableSDField field) {
         if (field instanceof ImmutableImportedComplexSDField) {
-            getSummaryFieldsForImportedField(field).forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeCombinerTransform);
+            getSummaryFieldsForImportedField(field).forEach(summaryField -> setAttributeCombinerTransform(field, summaryField));
         } else {
-            getSummaryFieldsForImportedField(field).forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);
+            getSummaryFieldsForImportedField(field).forEach(summaryField -> setAttributeTransform(field, summaryField));
         }
     }
 
-    private static void setAttributeTransform(SummaryField summaryField) {
+    private static void setAttributeTransform(ImmutableSDField field, SummaryField summaryField) {
+        if (summaryField.hasUnresolvedType()) {
+            if (field.getDataType().equals(DataType.LONG) && summaryField.getTransform().equals(SummaryTransform.GEOPOS)) {
+                summaryField.setResolvedDataType(PositionDataType.INSTANCE);
+            } else {
+                summaryField.setResolvedDataType(field.getDataType());
+            }
+        }
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             summaryField.setTransform(SummaryTransform.ATTRIBUTE);
         }
     }
 
-    private static void setAttributeCombinerTransform(SummaryField summaryField) {
+    private static void setAttributeCombinerTransform(ImmutableSDField field, SummaryField summaryField) {
+        if (summaryField.hasUnresolvedType()) {
+            summaryField.setResolvedDataType(field.getDataType());
+        }
         if (summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER) {
             // This field already has the correct transform.
             return;

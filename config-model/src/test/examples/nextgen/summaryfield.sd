@@ -10,8 +10,8 @@ search summaryfield {
         }
     }
     document-summary baz {
-        summary cox type string {
-            source: bar
+        summary cox {
+            source: foo
         }
         summary alltags {
             source: mytags

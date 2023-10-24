@@ -170,7 +170,7 @@ schema multiplesummaries {
     summary c {
     }
 
-    summary loc_position type long {
+    summary loc_position {
         source: loc_pos_zcurve
     }
 
@@ -185,7 +185,7 @@ schema multiplesummaries {
         source: a
     }
 
-    summary loc_pos_zcurve type long {
+    summary loc_pos_zcurve {
     }
 
   }
