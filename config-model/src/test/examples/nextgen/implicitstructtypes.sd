@@ -10,8 +10,8 @@ search implicitstructtypes {
         }
     }
     document-summary docsum {
-        summary docsum_str type string {
-            source: doc_str_sum
+        summary docsum_str {
+            source: doc_str
         }
     }
 }

@@ -1090,6 +1090,9 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
     (<TYPE>   type = dataType())?
     lbrace() {
         psf = new ParsedSummaryField(name, type);
+	if (type != null) {
+	    psf.setHasExplicitType();
+	}
     }
     (summaryItem(psf) (<NL>)*)* <RBRACE>
     {
@@ -1140,13 +1143,17 @@ void summaryInFieldLong(ParsedField field) :
 {
     String name = field.name();
     ParsedType type = field.getType();
+    boolean explicitType = false;
     ParsedSummaryField psf;
 }
 {
-    ( [ name = identifier() [ <TYPE> type = dataType() ] ]
+    ( [ name = identifier() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
       lbrace()
       {
           psf = field.summaryFieldFor(name, type);
+	  if (explicitType) {
+              psf.setHasExplicitType();
+          }
       }
       (summaryItem(psf) (<NL>)*)* <RBRACE> )
 }

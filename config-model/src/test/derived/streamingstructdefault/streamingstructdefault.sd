@@ -14,7 +14,7 @@ schema streamingstructdefault {
     }
   }
   document-summary default {
-    summary sum1 type string {
+    summary sum1 {
       source: f1, f2.s1
       dynamic
     }

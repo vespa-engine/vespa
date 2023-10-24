@@ -4,6 +4,6 @@ search invalidselfreferringsummary {
     field a type string { }
   }
   document-summary withid {
-    summary w type string { source: w }
+    summary w { source: w }
   }
 }

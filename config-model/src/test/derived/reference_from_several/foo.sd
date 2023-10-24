@@ -10,7 +10,7 @@ schema foo {
     }
     import field myref.x as myx {}
     document-summary small {
-        summary myx type int {}
+        summary myx {}
         summary foo {}
     }
 }

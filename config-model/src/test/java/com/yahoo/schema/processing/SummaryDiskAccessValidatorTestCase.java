@@ -58,7 +58,7 @@ public class SummaryDiskAccessValidatorTestCase {
                 "  }",
                 "  import field ref.str_map as ref_str_map {}",
                 "  document-summary my_sum {",
-                "    summary ref_str_map type map<string, string> { source: ref_str_map }",
+                "    summary ref_str_map { source: ref_str_map }",
                 "  }",
                 "}");
         var logger = new TestableDeployLogger();

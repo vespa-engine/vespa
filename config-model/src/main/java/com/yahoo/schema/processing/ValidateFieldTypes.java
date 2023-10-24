@@ -49,7 +49,9 @@ public class ValidateFieldTypes extends Processor {
     final protected void verifySummaryFields(String searchName, Map<String, DataType> seenFields) {
         for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField field : summary.getSummaryFields().values()) {
-                checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
+                if (!field.hasUnresolvedType()) {
+                    checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
+                }
             }
         }
     }

@@ -4,7 +4,7 @@ schema flickrphotos{
    #Document summary to use for attribute-prefetching with many hits
 
    document-summary mapcluster {
-        summary distance type int {}
+        summary distance {}
   }
 
   document flickrphotos{

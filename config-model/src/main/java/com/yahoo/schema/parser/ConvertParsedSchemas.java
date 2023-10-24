@@ -11,11 +11,13 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.schema.DefaultRankProfile;
 import com.yahoo.schema.DocumentOnlySchema;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.UnrankedRankProfile;
+import com.yahoo.schema.derived.SummaryClass;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporaryImportedField;
@@ -25,7 +27,9 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.Map;
 import java.util.Optional;
 
@@ -137,7 +141,82 @@ public class ConvertParsedSchemas {
         schema.addDocument(document);
     }
 
-    private void convertDocumentSummary(Schema schema, ParsedDocumentSummary parsed, TypeResolver typeContext) {
+    /*
+     * Helper class for resolving data type for a document summary. Summary type is still
+     * used internally in config model when generating and processing indexing scripts.
+     * See DynamicSummaryTransformUtils class comment for more details.
+     */
+    private class SummaryFieldTypeResolver {
+
+        private final Schema schema;
+        private final Map<String, ParsedSummaryField> summaryFields = new LinkedHashMap<String, ParsedSummaryField>();
+        private static final String zCurveSuffix = new String("_zcurve");
+
+        public SummaryFieldTypeResolver(Schema schema, List<ParsedDocumentSummary> parsed) {
+            this.schema = schema;
+            for (var docsum : parsed) {
+                for (var field : docsum.getSummaryFields()) {
+                    summaryFields.put(field.name(), field);
+                }
+            }
+        }
+
+        private boolean isPositionAttribute(Schema schema, String sourceFieldName) {
+            if (!sourceFieldName.endsWith(zCurveSuffix)) {
+                return false;
+            }
+            var name = sourceFieldName.substring(0, sourceFieldName.length() - zCurveSuffix.length());
+            var field = schema.getField(name);
+            return (field.getDataType().equals(PositionDataType.INSTANCE));
+        }
+
+
+        private String getSingleSource(ParsedSummaryField parsedField) {
+            if (parsedField.getSources().size() == 1) {
+                return parsedField.getSources().get(0);
+            }
+            return parsedField.name();
+        }
+
+        public DataType resolve(ParsedDocumentSummary docsum, ParsedSummaryField parsedField) {
+            var seen = new LinkedHashSet<String>();
+            var origName = parsedField.name();
+            while (true) {
+                if (seen.contains(parsedField.name())) {
+                    throw new IllegalArgumentException("For schema '" + schema.getName() +
+                            "' summary class '" + docsum.name() +
+                            "' summary field '" + origName +
+                            "': Source loop detected for summary field '" + parsedField.name() + "'");
+                }
+                seen.add(parsedField.name());
+                if (parsedField.getSources().size() >= 2) {
+                    return DataType.STRING; // Flattening, streaming search
+                }
+                var source = getSingleSource(parsedField);
+                if (source.equals(SummaryClass.DOCUMENT_ID_FIELD)) {
+                    return DataType.STRING; // Reserved source field name
+                } else if (isPositionAttribute(schema, source)) {
+                    return DataType.LONG;   // Extra field with suffix is added later for positions
+                }
+                var field = schema.getField(source);
+                if (field != null) {
+                    return field.getDataType();
+                } else if (schema.temporaryImportedFields().isPresent() &&
+                        schema.temporaryImportedFields().get().hasField(source)) {
+                    return null; // Imported field, cannot resolve now
+                } else if (source.equals(parsedField.name()) || !summaryFields.containsKey(source)) {
+                    throw new IllegalArgumentException("For schema '" + schema.getName() +
+                            "', summary class '" + docsum.name() +
+                            "', summary field '" + parsedField.name() +
+                            "': there is no valid source '" + source + "'.");
+                }
+                parsedField = summaryFields.get(source);
+            }
+        }
+    }
+
+    private void convertDocumentSummary(Schema schema, ParsedDocumentSummary parsed, TypeResolver typeContext,
+                                        SummaryFieldTypeResolver sfResolver) {
         var docsum = new DocumentSummary(parsed.name(), schema);
         parsed.getInherited().forEach(inherited -> docsum.addInherited(inherited));
         if (parsed.getFromDisk()) {
@@ -148,16 +227,17 @@ public class ConvertParsedSchemas {
         }
         for (var parsedField : parsed.getSummaryFields()) {
             var parsedType = parsedField.getType();
-            DataType dataType = (parsedType != null) ? typeContext.resolveType(parsedType) : null;
-            var existingField = schema.getField(parsedField.name());
-            if (existingField == null && parsedField.getSources().size() == 1) {
-                var sourceName = parsedField.getSources().get(0);
-                if (!sourceName.equals(parsedField.name())) {
-                    existingField = schema.getField(sourceName);
-                }
+            if (parsedType != null) {
+                var log = schema.getDeployLogger();
+                log.log(Level.FINE, () -> "For " + schema.getName() +
+                        ", document-summary '" + parsed.name() +
+                        "', summary field '" + parsedField.name() +
+                        "': Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                        " Remove the type specification to silence this warning.");
             }
-            if (existingField != null) {
-                var existingType = existingField.getDataType();
+            DataType dataType = (parsedType != null) ? typeContext.resolveType(parsedType) : null;
+            DataType existingType = sfResolver.resolve(parsed, parsedField);
+            if (existingType != null) {
                 if (dataType == null) {
                     dataType = existingType;
                 } else if (!dataType.equals(existingType)) {
@@ -167,10 +247,9 @@ public class ConvertParsedSchemas {
                     }
                 }
             }
-            if (dataType == null) {
-                throw new IllegalArgumentException("Missing data-type for summary field " + parsedField.name() + " in document-summary " + parsed.name());
-            }
-            var summaryField = new SummaryField(parsedField.name(), dataType);
+            var summaryField = (dataType == null) ?
+                    SummaryField.createWithUnresolvedType(parsedField.name()) :
+                    new SummaryField(parsedField.name(), dataType);
             // XXX does not belong here:
             summaryField.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
             ConvertParsedFields.convertSummaryFieldSettings(summaryField, parsedField);
@@ -212,6 +291,7 @@ public class ConvertParsedSchemas {
         }
         parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
         var typeContext = typeConverter.makeContext(parsed.getDocument());
+        var sfResolver = new SummaryFieldTypeResolver(schema, parsed.getDocumentSummaries());
         var fieldConverter = new ConvertParsedFields(typeContext, convertedStructs);
         convertDocument(schema, parsed.getDocument(), fieldConverter);
         for (var field : parsed.getFields()) {
@@ -220,11 +300,11 @@ public class ConvertParsedSchemas {
         for (var index : parsed.getIndexes()) {
             fieldConverter.convertExtraIndex(schema, index);
         }
-        for (var docsum : parsed.getDocumentSummaries()) {
-            convertDocumentSummary(schema, docsum, typeContext);
-        }
         for (var importedField : parsed.getImportedFields()) {
             convertImportField(schema, importedField);
+        }
+        for (var docsum : parsed.getDocumentSummaries()) {
+            convertDocumentSummary(schema, docsum, typeContext, sfResolver);
         }
         for (var fieldSet : parsed.getFieldSets()) {
             convertFieldSet(schema, fieldSet);

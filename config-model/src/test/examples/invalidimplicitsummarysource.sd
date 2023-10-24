@@ -6,6 +6,6 @@ search invalidsummarysource {
         }
     }
     document-summary baz {
-        summary cox type string { }
+        summary cox { }
     }
 }
