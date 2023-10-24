@@ -7,9 +7,10 @@
 #include "storagenode.h"
 #include "vespa/vespalib/util/jsonstream.h"
 #include <vespa/config-persistence.h>
-#include <vespa/storage/visiting/visitormessagesessionfactory.h>
-#include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/common/visitorfactory.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/storage/visiting/visitormessagesessionfactory.h>
 
 namespace storage {
 
@@ -20,6 +21,7 @@ class BucketManager;
 class ChangedBucketOwnershipHandler;
 class FileStorManager;
 class MergeThrottler;
+class VisitorManager;
 
 class ServiceLayerNode
         : public StorageNode,
@@ -29,16 +31,19 @@ class ServiceLayerNode
 {
 public:
     using PersistenceConfig = vespa::config::content::PersistenceConfig;
+    using StorVisitorConfig = vespa::config::content::core::StorVisitorConfig;
 private:
     ServiceLayerNodeContext&           _context;
     spi::PersistenceProvider&          _persistenceProvider;
     VisitorFactory::Map                _externalVisitors;
     std::unique_ptr<PersistenceConfig> _persistence_bootstrap_config;
+    std::unique_ptr<StorVisitorConfig> _visitor_bootstrap_config;
     Bouncer*                           _bouncer;
     BucketManager*                     _bucket_manager;
     ChangedBucketOwnershipHandler*     _changed_bucket_ownership_handler;
     FileStorManager*                   _fileStorManager;
     MergeThrottler*                    _merge_throttler;
+    VisitorManager*                    _visitor_manager;
     bool                               _init_has_been_called;
 
 public:
@@ -47,6 +52,7 @@ public:
     struct ServiceLayerBootstrapConfigs {
         BootstrapConfigs storage_bootstrap_configs;
         std::unique_ptr<PersistenceConfig> persistence_cfg;
+        std::unique_ptr<StorVisitorConfig> visitor_cfg;
 
         ServiceLayerBootstrapConfigs();
         ~ServiceLayerBootstrapConfigs();
@@ -68,6 +74,7 @@ public:
 
     void on_configure(const StorServerConfig& config);
     void on_configure(const PersistenceConfig& config);
+    void on_configure(const StorVisitorConfig& config);
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::STORAGE; }
 

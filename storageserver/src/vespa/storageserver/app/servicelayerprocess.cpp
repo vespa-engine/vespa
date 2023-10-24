@@ -35,6 +35,7 @@ ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
     : Process(configUri),
       _externalVisitors(),
       _persistence_cfg_handle(),
+      _visitor_cfg_handle(),
       _node(),
       _storage_chain_builder(),
       _context(std::make_unique<framework::defaultimplementation::RealClock>(),
@@ -55,6 +56,7 @@ void
 ServiceLayerProcess::setupConfig(vespalib::duration subscribe_timeout)
 {
     _persistence_cfg_handle = _configSubscriber.subscribe<PersistenceConfig>(_configUri.getConfigId(), subscribe_timeout);
+    _visitor_cfg_handle     = _configSubscriber.subscribe<StorVisitorConfig>(_configUri.getConfigId(), subscribe_timeout);
     // We reuse the StorServerConfig subscription from the parent Process
     Process::setupConfig(subscribe_timeout);
 }
@@ -68,6 +70,9 @@ ServiceLayerProcess::updateConfig()
     }
     if (_persistence_cfg_handle->isChanged()) {
         _node->on_configure(*_persistence_cfg_handle->getConfig());
+    }
+    if (_visitor_cfg_handle->isChanged()) {
+        _node->on_configure(*_visitor_cfg_handle->getConfig());
     }
 }
 
@@ -93,6 +98,7 @@ ServiceLayerProcess::createNode()
     ServiceLayerNode::ServiceLayerBootstrapConfigs sbc;
     sbc.storage_bootstrap_configs = std::move(bc);
     sbc.persistence_cfg = _persistence_cfg_handle->getConfig();
+    sbc.visitor_cfg     = _visitor_cfg_handle->getConfig();
 
     _node = std::make_unique<ServiceLayerNode>(_configUri, _context, std::move(sbc), *this, getProvider(), _externalVisitors);
     if (_storage_chain_builder) {

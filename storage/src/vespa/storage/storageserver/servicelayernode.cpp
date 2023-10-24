@@ -42,11 +42,13 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
       _persistence_bootstrap_config(std::move(bootstrap_configs.persistence_cfg)),
+      _visitor_bootstrap_config(std::move(bootstrap_configs.visitor_cfg)),
       _bouncer(nullptr),
       _bucket_manager(nullptr),
       _changed_bucket_ownership_handler(nullptr),
       _fileStorManager(nullptr),
       _merge_throttler(nullptr),
+      _visitor_manager(nullptr),
       _init_has_been_called(false)
 {
 }
@@ -177,8 +179,10 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto bucket_manager = std::make_unique<BucketManager>(server_config(), _context.getComponentRegister());
     _bucket_manager = bucket_manager.get();
     builder.add(std::move(bucket_manager));
-    builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(),
-                                                 static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
+    auto visitor_manager = std::make_unique<VisitorManager>(*_visitor_bootstrap_config, _context.getComponentRegister(),
+                                                            static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors);
+    _visitor_manager = visitor_manager.get();
+    builder.add(std::move(visitor_manager));
     builder.add(std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, _configUri));
     auto state_manager = releaseStateManager();
     auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
@@ -210,6 +214,14 @@ ServiceLayerNode::on_configure(const PersistenceConfig& config)
     assert(_changed_bucket_ownership_handler);
     _changed_bucket_ownership_handler->on_configure(config);
 }
+
+void
+ServiceLayerNode::on_configure(const StorVisitorConfig& config)
+{
+    assert(_visitor_manager);
+    _visitor_manager->on_configure(config);
+}
+
 
 ResumeGuard
 ServiceLayerNode::pause()
