@@ -200,7 +200,7 @@ public class DynamicProvisioningTester {
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
                                             Autoscaling autoscaling) {
-        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+        assertTrue("Resources should be present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
                    autoscaling.resources().isPresent());
         var resources = autoscaling.resources().get();
         assertResources(message, nodeCount, groupCount, approxCpu, approxMemory, approxDisk, resources);

@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -90,7 +91,10 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.withUnspecifiedNumbersFrom(defaultResources(clusterSpec, applicationId));
+        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec, applicationId).with(DiskSpeed.any));
+        // TODO jonmv: remove this after all apps are 8.248.8 or above; architecture for admin nodes was not picked up before this.
+        if (clusterSpec.vespaVersion().isBefore(Version.fromString("8.248.8"))) amended = amended.with(resources.architecture());
+        return amended;
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
@@ -149,7 +153,9 @@ public class CapacityPolicies {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(INSTANCE_ID, instance.serializedForm()).value());
     }
 
-    /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
+    /**
+     * Returns the resources for the newest version not newer than that requested in the cluster spec.
+     */
     static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)
