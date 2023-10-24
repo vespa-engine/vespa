@@ -143,10 +143,10 @@ public class SchemaTestCase {
                         "    file: models/my_model.onnx" +
                         "  }" +
                         "  document-summary parent_summary1 {" +
-                        "    summary pf1 type string {}" +
+                        "    summary pf1 {}" +
                         "  }" +
                         "  document-summary parent_summary2 {" +
-                        "    summary pf2 type string {}" +
+                        "    summary pf2 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
                         "  raw-as-base64-in-summary" +
@@ -177,7 +177,7 @@ public class SchemaTestCase {
                         "    file: models/my_model.onnx" +
                         "  }" +
                         "  document-summary child1_summary inherits parent_summary1 {" +
-                        "    summary c1f1 type string {}" +
+                        "    summary c1f1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as child1_imported {}" +
                         "}");
@@ -208,7 +208,7 @@ public class SchemaTestCase {
                         "    file: models/my_model.onnx" +
                         "  }" +
                         "  document-summary child2_summary inherits parent_summary1, parent_summary2 {" +
-                        "    summary c2f1 type string {}" +
+                        "    summary c2f1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as child2_imported {}" +
                         "}");
@@ -340,7 +340,7 @@ public class SchemaTestCase {
                         "    file: models/my_model.onnx" +
                         "  }" +
                         "  document-summary parent_summary {" +
-                        "    summary pf1 type string {}" +
+                        "    summary pf1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
                         "  raw-as-base64-in-summary" +

@@ -25,7 +25,7 @@ public class Email {
     }
 
     public static Email empty() {
-        return new Email("", true);
+        return new Email("", false);
     }
 
     public Email withEmailAddress(String emailAddress) {

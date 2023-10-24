@@ -32,7 +32,7 @@ public class SummaryConsistencyTestCase {
                 "      }",
                 "  }",
                 "  document-summary unfiltered {",
-                "      summary elem_array_unfiltered type array<elem> {",
+                "      summary elem_array_unfiltered {",
                 "          source: elem_array",
                 "      }",
                 "  }",

@@ -36,7 +36,7 @@ schema child inherits parent {
     }
 
     document-summary child_summary inherits parent_summary {
-        summary cf1 type string {}
+        summary cf1 {}
     }
 
     import field importedschema_ref.importedfield2 as child_imported {}

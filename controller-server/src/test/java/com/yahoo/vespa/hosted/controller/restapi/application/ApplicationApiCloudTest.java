@@ -78,7 +78,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_profile() {
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"emailVerified\":true},\"tenant\":{\"company\":\"\",\"website\":\"\"}}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"emailVerified\":false},\"tenant\":{\"company\":\"\",\"website\":\"\"}}", 200);
 
         var updateRequest = request("/application/v4/tenant/scoober/info/profile", PUT)
                 .data("{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}")
@@ -100,7 +100,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_billing() {
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"phone\":\"\"}}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"emailVerified\":false,\"phone\":\"\"}}", 200);
 
         var fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         var fullBillingContact = "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":" + fullAddress + "}";
@@ -110,7 +110,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
 
-        tester.assertResponse(request, "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"emailVerified\":false,\"phone\":\"phone\"},\"address\":{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}}", 200);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":true,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":false,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
         var postPartial =
@@ -150,7 +150,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartialContacts, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"contactEmailVerified\":false,\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"emailVerified\":true,\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false}]}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"contactEmailVerified\":false,\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"emailVerified\":false,\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false}]}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"emailVerified\":false,\"phone\":\"phone\",\"address\":" + fullAddress + "}";
@@ -188,7 +188,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":true,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":false,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         // name needs to be present and not blank
         var partialInfoMissingName = "{\"contactName\": \" \"}";

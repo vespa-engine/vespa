@@ -2,21 +2,22 @@
 package com.yahoo.vespa.hosted.controller.notification;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.restapi.UriBuilder;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MailerException;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -34,8 +35,8 @@ public class Notifier {
     private final CuratorDb curatorDb;
     private final Mailer mailer;
     private final FlagSource flagSource;
+    private final ConsoleUrls consoleUrls;
     private final NotificationFormatter formatter;
-    private final URI dashboardUri;
     private final MailTemplating mailTemplating;
 
     private static final Logger log = Logger.getLogger(Notifier.class.getName());
@@ -43,13 +44,13 @@ public class Notifier {
     // Minimal url pattern matcher to detect hardcoded URLs in Notification messages
     private static final Pattern urlPattern = Pattern.compile("https://[\\w\\d./]+");
 
-    public Notifier(CuratorDb curatorDb, ZoneRegistry zoneRegistry, Mailer mailer, FlagSource flagSource) {
+    public Notifier(CuratorDb curatorDb, ConsoleUrls consoleUrls, Mailer mailer, FlagSource flagSource) {
         this.curatorDb = Objects.requireNonNull(curatorDb);
         this.mailer = Objects.requireNonNull(mailer);
         this.flagSource = Objects.requireNonNull(flagSource);
-        this.formatter = new NotificationFormatter(zoneRegistry);
-        this.dashboardUri = zoneRegistry.dashboardUrl();
-        this.mailTemplating = new MailTemplating(zoneRegistry);
+        this.consoleUrls = Objects.requireNonNull(consoleUrls);
+        this.formatter = new NotificationFormatter(consoleUrls);
+        this.mailTemplating = new MailTemplating(consoleUrls);
     }
 
     public void dispatch(List<Notification> notifications, NotificationSource source) {
@@ -133,7 +134,7 @@ public class Notifier {
                 .with("mailTitle", "Vespa Cloud Notifications")
                 .with("notificationHeader", f.messagePrefix())
                 .with("notificationItems", items)
-                .with("consoleLink", notificationLink(f.notification().source()))
+                .with("consoleLink", notificationLink(consoleUrls, f.notification().source()))
                 .build();
     }
 
@@ -150,24 +151,16 @@ public class Notifier {
         return sb.toString();
     }
 
-    private String notificationLink(NotificationSource source) {
-        var uri = new UriBuilder(dashboardUri);
-        uri = uri.append("tenant").append(source.tenant().value());
-        if (source.application().isPresent())
-            uri = uri.append("application").append(source.application().get().value());
-        if (source.isProduction()) {
-            uri = uri.append("prod/instance");
-            if (source.jobType().isPresent()) {
-                uri = uri.append(source.instance().get().value());
-            }
-        }
-        else {
-            uri = uri.append("dev/instance/").append(source.instance().get().value());
-        }
-        if (source.jobType().isPresent()) {
-            uri = uri.append("job").append(source.jobType().get().jobName()).append("run").append(String.valueOf(source.runNumber().getAsLong()));
-        }
-        return uri.toString();
+    static String notificationLink(ConsoleUrls consoleUrls, NotificationSource source) {
+        if (source.application().isEmpty()) return consoleUrls.tenantOverview(source.tenant());
+        if (source.instance().isEmpty()) return consoleUrls.prodApplicationOverview(source.tenant(), source.application().get());
+
+        ApplicationId application = ApplicationId.from(source.tenant(), source.application().get(), source.instance().get());
+        if (source.jobType().isPresent())
+            return consoleUrls.deploymentRun(new RunId(application, source.jobType().get(), source.runNumber().getAsLong()));
+        if (source.clusterId().isPresent())
+            return consoleUrls.clusterOverview(application, source.zoneId().get(), source.clusterId().get());
+        return consoleUrls.instanceOverview(application, source.zoneId().map(ZoneId::environment).orElse(Environment.prod));
     }
 
     private static String capitalise(String m) {

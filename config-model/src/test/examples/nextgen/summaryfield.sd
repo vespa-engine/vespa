@@ -13,10 +13,10 @@ search summaryfield {
         summary cox type string {
             source: bar
         }
-        summary alltags type array<string> {
+        summary alltags {
             source: mytags
         }
-        summary sometags type array<string> {
+        summary sometags {
             source: mytags
             matched-elements-only
         }

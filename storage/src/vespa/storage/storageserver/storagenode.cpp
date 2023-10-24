@@ -66,14 +66,19 @@ removePidFile(const vespalib::string& pidfile)
 
 } // End of anonymous namespace
 
+StorageNode::BootstrapConfigs::BootstrapConfigs() = default;
+StorageNode::BootstrapConfigs::~BootstrapConfigs() = default;
+StorageNode::BootstrapConfigs::BootstrapConfigs(BootstrapConfigs&&) noexcept = default;
+StorageNode::BootstrapConfigs& StorageNode::BootstrapConfigs::operator=(BootstrapConfigs&&) noexcept = default;
+
 StorageNode::StorageNode(
         const config::ConfigUri & configUri,
         StorageNodeContext& context,
+        BootstrapConfigs bootstrap_configs,
         ApplicationGenerationFetcher& generationFetcher,
         std::unique_ptr<HostInfo> hostInfo,
         RunMode mode)
     : _singleThreadedDebugMode(mode == SINGLE_THREADED_TEST_MODE),
-      _configFetcher(),
       _hostInfo(std::move(hostInfo)),
       _context(context),
       _generationFetcher(generationFetcher),
@@ -90,10 +95,11 @@ StorageNode::StorageNode(
       _chain(),
       _configLock(),
       _initial_config_mutex(),
-      _bucket_spaces_config(),
-      _comm_mgr_config(),
-      _distribution_config(),
-      _server_config(),
+      _bouncer_config(std::move(bootstrap_configs.bouncer_cfg)),
+      _bucket_spaces_config(std::move(bootstrap_configs.bucket_spaces_cfg)),
+      _comm_mgr_config(std::move(bootstrap_configs.comm_mgr_cfg)),
+      _distribution_config(std::move(bootstrap_configs.distribution_cfg)),
+      _server_config(std::move(bootstrap_configs.server_cfg)),
       _component(),
       _node_identity(),
       _configUri(configUri),
@@ -103,38 +109,14 @@ StorageNode::StorageNode(
 }
 
 void
-StorageNode::subscribeToConfigs()
-{
-    _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
-    _configFetcher->subscribe<StorBouncerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<BucketspacesConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<CommunicationManagerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
-
-    _configFetcher->start();
-
-    // All the below config instances were synchronously populated as part of start()ing the config fetcher
-    std::lock_guard configLockGuard(_configLock);
-    _bouncer_config.promote_staging_to_active();
-    _bucket_spaces_config.promote_staging_to_active();
-    _comm_mgr_config.promote_staging_to_active();
-    _distribution_config.promote_staging_to_active();
-    _server_config.promote_staging_to_active();
-}
-
-void
 StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 {
     // Avoid racing with concurrent reconfigurations before we've set up the entire
     // node component stack.
+    // TODO no longer needed... probably
     std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
 
     _context.getComponentRegister().registerShutdownListener(*this);
-
-    // Fetch configs needed first. These functions will just grab the config
-    // and store them away, while having the config lock.
-    subscribeToConfigs();
 
     // First update some basics that doesn't depend on anything else to be
     // available
@@ -260,7 +242,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
-        _server_config.active = std::make_unique<StorServerConfig>(oldC); // TODO isn't this a no-op...?
+        _server_config.active = std::make_unique<StorServerConfig>(oldC); // TODO this overwrites from ServiceLayerNode
         _server_config.staging.reset();
         _deadLockDetector->enableWarning(server_config().enableDeadLockDetectorWarnings);
         _deadLockDetector->enableShutdown(server_config().enableDeadLockDetector);
@@ -347,13 +329,6 @@ StorageNode::notifyDoneInitializing()
 StorageNode::~StorageNode() = default;
 
 void
-StorageNode::removeConfigSubscriptions()
-{
-    LOG(debug, "Removing config subscribers");
-    _configFetcher.reset();
-}
-
-void
 StorageNode::shutdown()
 {
     // Try to shut down in opposite order of initialize. Bear in mind that
@@ -364,8 +339,6 @@ StorageNode::shutdown()
         LOG(debug, "Storage killed before requestShutdown() was called. No "
                    "reason has been given for why we're stopping.");
     }
-    // Remove the subscription to avoid more callbacks from config
-    removeConfigSubscriptions();
 
     if (_chain) {
         LOG(debug, "Closing storage chain");
@@ -535,13 +508,20 @@ StorageNode::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> bui
 }
 
 template <typename ConfigT>
-StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper() = default;
+StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper() noexcept = default;
+
+template <typename ConfigT>
+StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper(std::unique_ptr<ConfigT> initial_active) noexcept
+    : staging(),
+      active(std::move(initial_active))
+{
+}
 
 template <typename ConfigT>
 StorageNode::ConfigWrapper<ConfigT>::~ConfigWrapper() = default;
 
 template <typename ConfigT>
-void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() {
+void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() noexcept {
     assert(staging);
     active = std::move(staging);
 }

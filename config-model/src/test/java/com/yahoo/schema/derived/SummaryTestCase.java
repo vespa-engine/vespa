@@ -131,7 +131,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                                     "    }",
                                     "  }",
                                     "  document-summary my_summary {",
-                                    "    summary other_campaign_ref type reference<campaign> {}",
+                                    "    summary other_campaign_ref {}",
                                     "  }",
                                     "}"));
         builder.build(true);
@@ -146,11 +146,11 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "    field foo type string { indexing: summary }",
                 "  }",
                 "  document-summary bar {",
-                "    summary foo type string {}",
+                "    summary foo {}",
                 "    omit-summary-features",
                 "  }",
                 "  document-summary baz {",
-                "    summary foo type string {}",
+                "    summary foo {}",
                 "  }",
                 "}");
         var search = ApplicationBuilder.createFromString(sd).getSchema();

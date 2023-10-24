@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -461,7 +462,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         slime.setString("from", bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("to", bill.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("total", bill.sum().toString());
-        slime.setString("status", bill.status());
+        slime.setString("status", bill.status().value());
     }
 
     private void usageToSlime(Cursor slime, Bill bill) {
@@ -476,16 +477,16 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         slime.setString("from", bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("to", bill.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("total", bill.sum().toString());
-        slime.setString("status", bill.status());
+        slime.setString("status", bill.status().value());
         toSlime(slime.setArray("statusHistory"), bill.statusHistory());
         toSlime(slime.setArray("items"), bill.lineItems());
     }
 
-    private void toSlime(Cursor slime, Bill.StatusHistory history) {
+    private void toSlime(Cursor slime, StatusHistory history) {
         history.getHistory().forEach((key, value) -> {
             var c = slime.addObject();
             c.setString("at", key.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-            c.setString("status", value);
+            c.setString("status", value.value());
         });
     }
 

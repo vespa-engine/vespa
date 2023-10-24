@@ -45,6 +45,10 @@ public:
 
     void shutdown() override;
 
+    void setupConfig(vespalib::duration subscribe_timeout) override;
+    bool configUpdated() override;
+    void updateConfig() override;
+
     virtual void setupProvider() = 0;
     virtual spi::PersistenceProvider& getProvider() = 0;
 

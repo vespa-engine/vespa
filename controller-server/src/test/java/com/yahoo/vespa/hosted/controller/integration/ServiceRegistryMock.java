@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
@@ -54,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -68,6 +70,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ControllerVersion controllerVersion;
     private final ZoneRegistryMock zoneRegistryMock;
     private final ConfigServerMock configServerMock;
+    private final ConsoleUrls consoleUrls = new ConsoleUrls(URI.create("https://console.tld"));
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MockVpcEndpointService vpcEndpointService = new MockVpcEndpointService(clock, memoryNameService);
     private final MockMailer mockMailer = new MockMailer();
@@ -215,6 +218,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ZoneRegistryMock zoneRegistry() {
         return zoneRegistryMock;
+    }
+
+    @Override
+    public ConsoleUrls consoleUrls() {
+        return consoleUrls;
     }
 
     @Override

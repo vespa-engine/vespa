@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import org.junit.Test;
@@ -53,8 +53,8 @@ public class ApplicationsTest {
         assertEquals(List.of(), applications.ids());
     }
 
-    private ProvisionLock provisionLock(ApplicationId application) {
-        return new ProvisionLock(application, () -> {});
+    private ApplicationMutex provisionLock(ApplicationId application) {
+        return new ApplicationMutex(application, () -> {});
     }
 
 }

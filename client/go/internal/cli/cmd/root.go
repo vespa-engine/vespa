@@ -345,9 +345,7 @@ func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
 	}
 }
 
-func (c *CLI) waiter(once bool, timeout time.Duration) *Waiter {
-	return &Waiter{Once: once, Timeout: timeout, cli: c}
-}
+func (c *CLI) waiter(timeout time.Duration) *Waiter { return &Waiter{Timeout: timeout, cli: c} }
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {

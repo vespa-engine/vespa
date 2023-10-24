@@ -220,7 +220,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		service, ok = context.clusters[cluster]
 		if !ok {
 			// Cache service so we don't have to discover it for every step
-			waiter := context.cli.waiter(false, time.Duration(waitSecs)*time.Second)
+			waiter := context.cli.waiter(time.Duration(waitSecs) * time.Second)
 			service, err = waiter.Service(target, cluster)
 			if err != nil {
 				return "", "", err

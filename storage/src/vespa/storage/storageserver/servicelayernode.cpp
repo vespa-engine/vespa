@@ -24,11 +24,13 @@ LOG_SETUP(".node.servicelayer");
 
 namespace storage {
 
-ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceLayerNodeContext& context,
+ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
+                                   ServiceLayerNodeContext& context,
+                                   BootstrapConfigs bootstrap_configs,
                                    ApplicationGenerationFetcher& generationFetcher,
                                    spi::PersistenceProvider& persistenceProvider,
                                    const VisitorFactory::Map& externalVisitors)
-    : StorageNode(configUri, context, generationFetcher, std::make_unique<HostInfo>()),
+    : StorageNode(configUri, context, std::move(bootstrap_configs), generationFetcher, std::make_unique<HostInfo>()),
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
@@ -86,21 +88,6 @@ ServiceLayerNode::~ServiceLayerNode()
 }
 
 void
-ServiceLayerNode::subscribeToConfigs()
-{
-    StorageNode::subscribeToConfigs();
-    // TODO consolidate this with existing config fetcher in StorageNode parent...
-    _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
-}
-
-void
-ServiceLayerNode::removeConfigSubscriptions()
-{
-    StorageNode::removeConfigSubscriptions();
-    _configFetcher.reset();
-}
-
-void
 ServiceLayerNode::initializeNodeSpecific()
 {
     // Give node state to mount point initialization, such that we can
@@ -134,6 +121,7 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                 ns.setCapacity(newC.nodeCapacity);
             }
             if (updated) {
+                // FIXME this always gets overwritten by StorageNode::handleLiveConfigUpdate...! Intentional?
                 _server_config.active = std::make_unique<vespa::config::content::core::StorServerConfig>(oldC);
                 _component->getStateUpdater().setReportedNodeState(ns);
             }

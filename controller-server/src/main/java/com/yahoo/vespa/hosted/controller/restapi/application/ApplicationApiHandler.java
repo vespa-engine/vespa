@@ -692,6 +692,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             var contact = root.setObject("contact");
             contact.setString("name", billingContact.contact().name());
             contact.setString("email", billingContact.contact().email().getEmailAddress());
+            contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
 
             toSlime(billingContact.address(), root); // will create "address" on the parent

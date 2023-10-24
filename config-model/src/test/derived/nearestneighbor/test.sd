@@ -23,6 +23,6 @@ schema test {
     }
   }
   document-summary minimal {
-    summary id type int {}
+    summary id {}
   }
 }

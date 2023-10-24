@@ -12,7 +12,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
@@ -157,8 +157,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
-    public ProvisionLock lock(ApplicationId application) {
-        return new ProvisionLock(application, nodeRepository.applications().lock(application));
+    public ApplicationMutex lock(ApplicationId application) {
+        return new ApplicationMutex(application, nodeRepository.applications().lock(application));
     }
 
     /**

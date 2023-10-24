@@ -51,11 +51,37 @@ ServiceLayerProcess::shutdown()
 }
 
 void
+ServiceLayerProcess::setupConfig(vespalib::duration subscribe_timeout)
+{
+    Process::setupConfig(subscribe_timeout);
+}
+
+void
+ServiceLayerProcess::updateConfig()
+{
+    Process::updateConfig();
+}
+
+bool
+ServiceLayerProcess::configUpdated()
+{
+    return Process::configUpdated();
+}
+
+void
 ServiceLayerProcess::createNode()
 {
     add_external_visitors();
     setupProvider();
-    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, *this, getProvider(), _externalVisitors);
+    // TODO dedupe, consolidate
+    StorageNode::BootstrapConfigs bc;
+    bc.bucket_spaces_cfg = _bucket_spaces_cfg_handle->getConfig();
+    bc.bouncer_cfg = _bouncer_cfg_handle->getConfig();
+    bc.comm_mgr_cfg = _comm_mgr_cfg_handle->getConfig();
+    bc.distribution_cfg = _distribution_cfg_handle->getConfig();
+    bc.server_cfg = _server_cfg_handle->getConfig();
+
+    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, std::move(bc), *this, getProvider(), _externalVisitors);
     if (_storage_chain_builder) {
         _node->set_storage_chain_builder(std::move(_storage_chain_builder));
     }

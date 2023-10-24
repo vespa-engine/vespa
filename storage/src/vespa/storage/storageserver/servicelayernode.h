@@ -30,22 +30,21 @@ class ServiceLayerNode
           private NodeStateReporter
 
 {
-    ServiceLayerNodeContext  & _context;
-    spi::PersistenceProvider & _persistenceProvider;
-    VisitorFactory::Map        _externalVisitors;
+    ServiceLayerNodeContext&  _context;
+    spi::PersistenceProvider& _persistenceProvider;
+    VisitorFactory::Map       _externalVisitors;
 
-    // FIXME: Should probably use the fetcher in StorageNode
-    std::unique_ptr<config::ConfigFetcher>   _configFetcher;
-    Bouncer*                                 _bouncer;
-    BucketManager*                           _bucket_manager;
-    FileStorManager*                         _fileStorManager;
-    bool                                     _init_has_been_called;
+    Bouncer*                  _bouncer;
+    BucketManager*            _bucket_manager;
+    FileStorManager*          _fileStorManager;
+    bool                      _init_has_been_called;
 
 public:
     using UP = std::unique_ptr<ServiceLayerNode>;
 
     ServiceLayerNode(const config::ConfigUri & configUri,
                      ServiceLayerNodeContext& context,
+                     BootstrapConfigs bootstrap_configs,
                      ApplicationGenerationFetcher& generationFetcher,
                      spi::PersistenceProvider& persistenceProvider,
                      const VisitorFactory::Map& externalVisitors);
@@ -61,14 +60,12 @@ public:
 
 private:
     void report(vespalib::JsonStream &writer) const override;
-    void subscribeToConfigs() override;
     void initializeNodeSpecific() override;
     void perform_post_chain_creation_init_steps() override;
     void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
     void createChain(IStorageChainBuilder &builder) override;
-    void removeConfigSubscriptions() override;
     void on_bouncer_config_changed() override;
 };
 

@@ -13,7 +13,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -542,7 +542,7 @@ public class DynamicAllocationTest {
 
         tester.nodeRepository().nodes().addNodes(List.of(node1aAllocation), Agent.system);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
-        tester.nodeRepository().nodes().activate(List.of(node1aAllocation), new ApplicationTransaction(new ProvisionLock(id, () -> { }), transaction));
+        tester.nodeRepository().nodes().activate(List.of(node1aAllocation), new ApplicationTransaction(new ApplicationMutex(id, () -> { }), transaction));
         transaction.commit();
     }
 

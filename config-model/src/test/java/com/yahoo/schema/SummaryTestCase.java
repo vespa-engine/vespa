@@ -48,8 +48,8 @@ public class SummaryTestCase {
         String sd = joinLines(
                 "schema disksummary {",
                 "  document-summary foobar {",
-                "      summary foo1 type string { source: inmemory }",
-                "      summary foo2 type string { source: ondisk }",
+                "      summary foo1 { source: inmemory }",
+                "      summary foo2 { source: ondisk }",
                 "  }",
                 "  document disksummary {",
                 "      field inmemory type string {",
@@ -84,8 +84,8 @@ public class SummaryTestCase {
                 "      }",
                 "  }",
                 "  document-summary foobar {",
-                "      summary foo1 type string { source: inmemory }",
-                "      summary foo2 type string { source: ondisk }",
+                "      summary foo1 { source: inmemory }",
+                "      summary foo2 { source: ondisk }",
                 "      from-disk",
                 "  }",
                 "}");
@@ -114,7 +114,7 @@ public class SummaryTestCase {
                 "      }",
                 "  }",
                 "  document-summary filtered {",
-                "      summary elem_array_filtered type array<elem> {",
+                "      summary elem_array_filtered {",
                 "          source: elem_array",
                 "          matched-elements-only",
                 "      }",
@@ -141,17 +141,17 @@ public class SummaryTestCase {
                 "    }",
                 "  }",
                 "  document-summary title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title",
                 "    }",
                 "  }",
                 "  document-summary title_artist inherits title {",
-                "    summary artist type string {",
+                "    summary artist {",
                 "      source: artist",
                 "    }",
                 "  }",
                 "  document-summary everything inherits title_artist {",
-                "    summary album type string {",
+                "    summary album {",
                 "      source: album",
                 "    }",
                 "  }",
@@ -201,12 +201,12 @@ public class SummaryTestCase {
                 "    }",
                 "  }",
                 "  document-summary title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title",
                 "    }",
                 "  }",
                 "  document-summary title2 inherits title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title_short",
                 "    }",
                 "  }",
@@ -297,12 +297,12 @@ public class SummaryTestCase {
                     }
                   }
                   document-summary parent1 {
-                    summary s1 type string {
+                    summary s1 {
                         source: field1
                     }
                   }
                   document-summary parent2 {
-                    summary field1 type string {
+                    summary field1 {
                         source: field1
                     }
                   }
@@ -326,7 +326,7 @@ public class SummaryTestCase {
                         "    }" +
                         "  }" +
                         "  document-summary parent_summary {" +
-                        "    summary pf1 type string {}" +
+                        "    summary pf1 {}" +
                         "  }" +
                         "}");
         String child = joinLines(
@@ -337,7 +337,7 @@ public class SummaryTestCase {
                         "    }" +
                         "  }" +
                         "  document-summary child_summary inherits parent_summary {" +
-                        "    summary cf1 type string {}" +
+                        "    summary cf1 {}" +
                         "  }" +
                         "}");
         DeployLoggerStub logger = new DeployLoggerStub();

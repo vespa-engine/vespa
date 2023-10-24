@@ -19,12 +19,14 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -238,7 +240,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse setBillStatus(HttpRequest request, String billId, String userId) {
         Inspector inspector = inspectorOrThrow(request);
         String status = getInspectorFieldOrThrow(inspector, "status");
-        billingController.updateBillStatus(Bill.Id.of(billId), userId, status);
+        billingController.updateBillStatus(Bill.Id.of(billId), userId, BillStatus.from(status));
         return new MessageResponse("Updated status of invoice " + billId);
     }
 
@@ -380,7 +382,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         billCursor.setString("to", bill.getEndDate().format(DATE_TIME_FORMATTER));
 
         billCursor.setString("amount", bill.sum().toString());
-        billCursor.setString("status", bill.status());
+        billCursor.setString("status", bill.status().value());
         var statusCursor = billCursor.setArray("statusHistory");
         renderStatusHistory(statusCursor, bill.statusHistory());
 
@@ -392,14 +394,14 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         });
     }
 
-    private void renderStatusHistory(Cursor cursor, Bill.StatusHistory statusHistory) {
+    private void renderStatusHistory(Cursor cursor, StatusHistory statusHistory) {
         statusHistory.getHistory()
                 .entrySet()
                 .stream()
                 .forEach(entry -> {
                     var c = cursor.addObject();
                     c.setString("at", entry.getKey().format(DATE_TIME_FORMATTER));
-                    c.setString("status", entry.getValue());
+                    c.setString("status", entry.getValue().value());
                 });
     }
 

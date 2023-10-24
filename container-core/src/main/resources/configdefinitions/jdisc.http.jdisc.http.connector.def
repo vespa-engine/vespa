@@ -139,6 +139,9 @@ serverName.fallback string default=""
 # The list of accepted server names. Empty list to accept any. Elements follows format of 'serverName.default'.
 serverName.allowed[] string
 
+# The list of known server names. Used for e.g matching metric dimensions.
+serverName.known[] string
+
 # HTTP request headers that contain remote address
 accessLog.remoteAddressHeaders[]      string
 

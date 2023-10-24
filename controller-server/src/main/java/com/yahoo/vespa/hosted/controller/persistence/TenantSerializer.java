@@ -282,13 +282,10 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        //TODO: Remove validity check once emailVerified has been written for all tenants
-        var emailVerified = billingObject.field("emailVerified").valid() ?
-                billingObject.field("emailVerified").asBool() : true;
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
-                        new Email(billingObject.field("email").asString(), emailVerified),
+                        new Email(billingObject.field("email").asString(), billingObject.field("emailVerified").asBool()),
                         billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }

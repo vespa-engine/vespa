@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.controller.notification;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.restapi.UriBuilder;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.yolean.Exceptions;
 import org.apache.velocity.VelocityContext;
@@ -15,7 +13,6 @@ import org.apache.velocity.runtime.resource.util.StringResourceRepository;
 import org.apache.velocity.tools.generic.EscapeTool;
 
 import java.io.StringWriter;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
@@ -43,19 +40,19 @@ public class MailTemplating {
 
     private final VelocityEngine velocity;
     private final EscapeTool escapeTool = new EscapeTool();
-    private final URI dashboardUri;
+    private final ConsoleUrls consoleUrls;
 
-    public MailTemplating(ZoneRegistry zoneRegistry) {
+    public MailTemplating(ConsoleUrls consoleUrls) {
         this.velocity = createTemplateEngine();
-        this.dashboardUri = zoneRegistry.dashboardUrl();
+        this.consoleUrls = consoleUrls;
     }
 
     public String generateDefaultMailHtml(Template mailBodyTemplate, Map<String, Object> params, TenantName tenant) {
         var ctx = createVelocityContext();
-        ctx.put("accountNotificationLink", accountNotificationsUri(tenant));
+        ctx.put("accountNotificationLink", consoleUrls.tenantNotifications(tenant));
         ctx.put("privacyPolicyLink", "https://legal.yahoo.com/xw/en/yahoo/privacy/topic/b2bprivacypolicy/index.html");
-        ctx.put("termsOfServiceLink", consoleUri("terms-of-service-trial.html"));
-        ctx.put("supportLink", consoleUri("support"));
+        ctx.put("termsOfServiceLink", consoleUrls.termsOfService());
+        ctx.put("supportLink", consoleUrls.support());
         ctx.put("mailBodyTemplate", mailBodyTemplate.getId());
         params.forEach(ctx::put);
         return render(ctx, Template.MAIL);
@@ -63,9 +60,8 @@ public class MailTemplating {
 
     public String generateMailVerificationHtml(PendingMailVerification pmf) {
         var ctx = createVelocityContext();
-        ctx.put("consoleLink", dashboardUri.getHost());
+        ctx.put("verifyLink", consoleUrls.verifyEmail(pmf.getVerificationCode()));
         ctx.put("email", pmf.getMailAddress());
-        ctx.put("code", pmf.getVerificationCode());
         return render(ctx, Template.MAIL_VERIFICATION);
     }
 
@@ -101,17 +97,5 @@ public class MailTemplating {
             return new String(in.readAllBytes());
         });
         repo.putStringResource(name, templateStr);
-    }
-
-    private String accountNotificationsUri(TenantName tenant) {
-        return new UriBuilder(dashboardUri)
-                .append("tenant/")
-                .append(tenant.value())
-                .append("account/notifications")
-                .toString();
-    }
-
-    private String consoleUri(String path) {
-        return new UriBuilder(dashboardUri).append(path).toString();
     }
 }
