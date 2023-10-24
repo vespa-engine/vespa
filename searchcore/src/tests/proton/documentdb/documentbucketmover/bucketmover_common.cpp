@@ -28,7 +28,7 @@ MyMoveHandler::MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDo
 
 MyMoveHandler::~MyMoveHandler() = default;
 
-void
+IDocumentMoveHandler::MoveResult
 MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) {
     _moves.push_back(op);
     if (_bucketDb.takeGuard()->isCachedBucket(op.getBucketId())) {
@@ -37,6 +37,7 @@ MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
     if (_storeMoveDoneContexts) {
         _moveDoneContexts.push_back(std::move(moveDoneCtx));
     }
+    return MoveResult::SUCCESS;
 }
 
 MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,

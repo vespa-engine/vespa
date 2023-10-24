@@ -38,7 +38,10 @@ BucketMover::createMoveOperation(const MoveKey &key) {
 
 void
 BucketMover::moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone) {
-    _handler->handleMove(*moveOp, std::move(onDone));
+    auto result = _handler->handleMove(*moveOp, std::move(onDone));
+    if (result == IDocumentMoveHandler::MoveResult::FAILURE) {
+        _needReschedule.store(true, std::memory_order_relaxed);
+    }
 }
 
 BucketMover::MoveKey::MoveKey(uint32_t lid, const document::GlobalId &gid, Timestamp timestamp, MoveGuard guard) noexcept

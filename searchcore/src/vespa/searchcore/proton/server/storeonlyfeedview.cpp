@@ -2,13 +2,11 @@
 
 #include "storeonlyfeedview.h"
 #include "forcecommitcontext.h"
-#include "ireplayconfig.h"
 #include "operationdonecontext.h"
 #include "putdonecontext.h"
 #include "removedonecontext.h"
 #include "updatedonecontext.h"
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
@@ -710,6 +708,15 @@ StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, Done
     size_t rm_count = removeDocuments(delOp, true, onDone);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
         _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
+}
+
+bool
+StoreOnlyFeedView::isMoveStillValid(const MoveOperation & moveOp) const {
+    uint32_t lid = moveOp.getPrevLid();
+    if ( ! _metaStore.validLid(lid)) return false;
+
+    const RawDocumentMetaData & meta = _metaStore.getRawMetaData(lid);
+    return meta.getTimestamp() == moveOp.getTimestamp();
 }
 
 // CombiningFeedView calls this only for the subdb we're moving to.

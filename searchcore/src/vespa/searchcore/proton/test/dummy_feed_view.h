@@ -26,6 +26,7 @@ struct DummyFeedView : public IFeedView
     void handleRemove(FeedToken, const RemoveOperation &) override {}
     void prepareDeleteBucket(DeleteBucketOperation &) override {}
     void handleDeleteBucket(const DeleteBucketOperation &, DoneCallback) override {}
+    bool isMoveStillValid(const MoveOperation &) const override { return true; }
     void prepareMove(MoveOperation &) override {}
     void handleMove(const MoveOperation &, DoneCallback) override {}
     void heartBeat(search::SerialNum, DoneCallback) override {}

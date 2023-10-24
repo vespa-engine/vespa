@@ -43,7 +43,7 @@ struct MyMoveHandler : public IDocumentMoveHandler {
 
     MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext = false);
     ~MyMoveHandler() override;
-    void handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
+    MoveResult handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
 
     void reset() {
         _moves.clear();
