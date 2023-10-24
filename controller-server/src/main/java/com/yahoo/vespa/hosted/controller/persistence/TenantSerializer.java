@@ -93,6 +93,9 @@ public class TenantSerializer {
     private static final String cloudAccountsField = "cloudAccounts";
     private static final String accountField = "account";
     private static final String templateVersionField = "templateVersion";
+    private static final String taxCodeField = "taxCode";
+    private static final String purchaseOrderField = "purchaseOrder";
+    private static final String invoiceEmailField = "invoiceEmail";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -282,12 +285,19 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        var taxCode = billingObject.field(taxCodeField).asString();
+        var purchaseOrder = billingObject.field(purchaseOrderField).asString();
+        var invoiceEmail = billingObject.field(invoiceEmailField).asString();
+
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
                         new Email(billingObject.field("email").asString(), billingObject.field("emailVerified").asBool()),
                         billingObject.field("phone").asString()))
-                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
+                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")))
+                .withTaxCode(taxCode)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
@@ -349,6 +359,9 @@ public class TenantSerializer {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString(taxCodeField, billingContact.getTaxCode());
+        billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder());
+        billingCursor.setString(invoiceEmailField, billingContact.getInvoiceEmail());
         toSlime(billingContact.address(), billingCursor);
     }
 

@@ -234,7 +234,11 @@ public class TenantSerializerTest {
                                 .withCity("Suddery")
                                 .withCountry("Sodor")
                                 .withAddress("Central Station")
-                                .withRegion("Irish Sea")));
+                                .withRegion("Irish Sea"))
+                        .withPurchaseOrder("PO42")
+                        .withTaxCode("1234L")
+                        .withInvoiceEmail("billing@mycomp.any")
+                );
 
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();

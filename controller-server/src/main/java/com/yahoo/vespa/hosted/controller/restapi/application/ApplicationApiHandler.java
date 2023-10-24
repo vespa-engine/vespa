@@ -694,6 +694,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             contact.setString("email", billingContact.contact().email().getEmailAddress());
             contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
+            root.setString("taxCode", billingContact.getTaxCode());
+            root.setString("purchaseOrder", billingContact.getPurchaseOrder());
+            root.setString("invoiceEmail", billingContact.getInvoiceEmail());
 
             toSlime(billingContact.address(), root); // will create "address" on the parent
         }
@@ -708,10 +711,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
+        var mergedTaxCode = getString(inspector.field("taxCode"), info.billingContact().getTaxCode());
+        var mergedPurchaseOrder = getString(inspector.field("purchaseOrder"), info.billingContact().getPurchaseOrder());
+        var mergedInvoiceEmail = getString(inspector.field("invoiceEmail"), info.billingContact().getInvoiceEmail());
 
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
-                .withAddress(mergedAddress);
+                .withAddress(mergedAddress)
+                .withTaxCode(mergedTaxCode)
+                .withPurchaseOrder(mergedPurchaseOrder)
+                .withInvoiceEmail(mergedInvoiceEmail);
 
         var mergedInfo = info.withBilling(mergedBilling);
 
@@ -764,6 +773,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 throw new IllegalArgumentException("'website' needs to be a valid address");
             }
         }
+        if (! mergedInfo.billingContact().getInvoiceEmail().isBlank()) {
+            // TODO: Validate invoice email is set if collection method is INVOICE
+            if (! mergedInfo.billingContact().getInvoiceEmail().contains("@"))
+                throw new IllegalArgumentException("'Invoice email' needs to be an email address");
+        }
     }
 
     private void toSlime(TenantAddress address, Cursor parentCursor) {
@@ -785,6 +799,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString("taxCode", billingContact.getTaxCode());
+        billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder());
+        billingCursor.setString("invoiceEmail", billingContact.getInvoiceEmail());
         toSlime(billingContact.address(), billingCursor);
     }
 
@@ -914,9 +931,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantName tenantName, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
+        var taxCode = getString(insp.field("taxCode"), oldContact.getTaxCode());
+        var purchaseOrder = getString(insp.field("purchaseOrder"), oldContact.getPurchaseOrder());
+        var invoiceEmail = getString(insp.field("purchaseOrder"), oldContact.getInvoiceEmail());
         return TenantBilling.empty()
                 .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
-                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()))
+                .withTaxCode(taxCode)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private TenantContacts updateTenantInfoContacts(Inspector insp, TenantName tenantName, TenantContacts oldContacts) {
