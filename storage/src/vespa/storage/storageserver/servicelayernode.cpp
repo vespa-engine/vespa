@@ -49,6 +49,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
       _fileStorManager(nullptr),
       _merge_throttler(nullptr),
       _visitor_manager(nullptr),
+      _modified_bucket_checker(nullptr),
       _init_has_been_called(false)
 {
 }
@@ -183,7 +184,9 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
                                                             static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors);
     _visitor_manager = visitor_manager.get();
     builder.add(std::move(visitor_manager));
-    builder.add(std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, _configUri));
+    auto bucket_checker = std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, server_config());
+    _modified_bucket_checker = bucket_checker.get();
+    builder.add(std::move(bucket_checker));
     auto state_manager = releaseStateManager();
     auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
                                                              getDoneInitializeHandler(), state_manager->getHostInfo());
@@ -206,6 +209,8 @@ ServiceLayerNode::on_configure(const StorServerConfig& config)
 {
     assert(_merge_throttler);
     _merge_throttler->on_configure(config);
+    assert(_modified_bucket_checker);
+    _modified_bucket_checker->on_configure(config);
 }
 
 void

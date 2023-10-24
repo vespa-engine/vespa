@@ -21,6 +21,7 @@ class BucketManager;
 class ChangedBucketOwnershipHandler;
 class FileStorManager;
 class MergeThrottler;
+class ModifiedBucketChecker;
 class VisitorManager;
 
 class ServiceLayerNode
@@ -44,6 +45,7 @@ private:
     FileStorManager*                   _fileStorManager;
     MergeThrottler*                    _merge_throttler;
     VisitorManager*                    _visitor_manager;
+    ModifiedBucketChecker*             _modified_bucket_checker;
     bool                               _init_has_been_called;
 
 public:
