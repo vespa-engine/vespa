@@ -145,6 +145,10 @@ public class ConvertParsedSchemas {
      * Helper class for resolving data type for a document summary. Summary type is still
      * used internally in config model when generating and processing indexing scripts.
      * See DynamicSummaryTransformUtils class comment for more details.
+     *
+     * This kind of resolving is a temporary measure until the use of summary fields have
+     * been eliminated from indexing scripts and are no longer used to extend the document
+     * type. At that time, the data type of a summary field is no longer relevant.
      */
     private class SummaryFieldTypeResolver {
 
