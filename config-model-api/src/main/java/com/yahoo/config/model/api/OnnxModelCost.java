@@ -2,9 +2,6 @@
 
 package com.yahoo.config.model.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -21,7 +18,6 @@ public interface OnnxModelCost {
     interface Calculator {
         long aggregatedModelCostInBytes();
         void registerModel(ApplicationFile path);
-        @Deprecated(forRemoval = true) void registerModel(ModelReference ref); // TODO(bjorncs): remove once no longer in use by old config models
         void registerModel(URI uri);
     }
 
@@ -29,10 +25,8 @@ public interface OnnxModelCost {
         return (__, ___) -> new Calculator() {
             @Override public long aggregatedModelCostInBytes() { return 0; }
             @Override public void registerModel(ApplicationFile path) {}
-            @SuppressWarnings("removal") @Override public void registerModel(ModelReference ref) {}
             @Override public void registerModel(URI uri) {}
         };
     }
-
 
 }
