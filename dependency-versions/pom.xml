@@ -140,6 +140,7 @@
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
         <junit.vespa.tenant.version>5.8.1</junit.vespa.tenant.version>
         <junit.platform.vespa.tenant.version>1.8.1</junit.platform.vespa.tenant.version>
+        <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
         <clover-maven-plugin.vespa.version>4.5.0</clover-maven-plugin.vespa.version>
