@@ -91,7 +91,10 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.withUnspecifiedNumbersFrom(defaultResources(clusterSpec, applicationId));
+        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec, applicationId).with(DiskSpeed.any));
+        // TODO jonmv: remove this after all apps are 8.248.8 or above; architecture for admin nodes was not picked up before this.
+        if (clusterSpec.vespaVersion().isBefore(Version.fromString("8.248.8"))) amended = amended.with(resources.architecture());
+        return amended;
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
