@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
  */
 public enum BillStatus {
     OPEN,       // All bills start in this state. The bill can be modified and exported/synced to external systems.
-    FROZEN,     // Syncing to external systems is switched off. Reviews should be done in this state.
+    FROZEN,     // Syncing to external systems is switched off. No changes can be made.
     CLOSED,     // End state for a valid bill.
     VOID;       // End state, indicating that the bill is not valid.
 
