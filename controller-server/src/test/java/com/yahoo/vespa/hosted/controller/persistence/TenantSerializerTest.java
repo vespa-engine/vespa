@@ -24,6 +24,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
+import com.yahoo.vespa.hosted.controller.tenant.TaxCode;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
@@ -235,9 +237,9 @@ public class TenantSerializerTest {
                                 .withCountry("Sodor")
                                 .withAddress("Central Station")
                                 .withRegion("Irish Sea"))
-                        .withPurchaseOrder("PO42")
-                        .withTaxCode("1234L")
-                        .withInvoiceEmail("billing@mycomp.any")
+                        .withPurchaseOrder(new PurchaseOrder("PO42"))
+                        .withTaxCode(new TaxCode("1234L"))
+                        .withInvoiceEmail(new Email("billing@mycomp.any", false))
                 );
 
         Slime slime = new Slime();

@@ -10,11 +10,11 @@ public class TenantBilling {
 
     private final TenantContact contact;
     private final TenantAddress address;
-    private final String taxCode;
-    private final String purchaseOrder;
-    private final String invoiceEmail;
+    private final TaxCode taxCode;
+    private final PurchaseOrder purchaseOrder;
+    private final Email invoiceEmail;
 
-    public TenantBilling(TenantContact contact, TenantAddress address, String taxCode, String purchaseOrder, String invoiceEmail) {
+    public TenantBilling(TenantContact contact, TenantAddress address, TaxCode taxCode, PurchaseOrder purchaseOrder, Email invoiceEmail) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
         this.taxCode = Objects.requireNonNull(taxCode);
@@ -23,7 +23,7 @@ public class TenantBilling {
     }
 
     public static TenantBilling empty() {
-        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), "", "", "");
+        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxCode.empty(), PurchaseOrder.empty(), Email.empty());
     }
 
     public TenantContact contact() {
@@ -34,15 +34,15 @@ public class TenantBilling {
         return address;
     }
 
-    public String getTaxCode() {
+    public TaxCode getTaxCode() {
         return taxCode;
     }
 
-    public String getPurchaseOrder() {
+    public PurchaseOrder getPurchaseOrder() {
         return purchaseOrder;
     }
 
-    public String getInvoiceEmail() {
+    public Email getInvoiceEmail() {
         return invoiceEmail;
     }
 
@@ -54,15 +54,15 @@ public class TenantBilling {
         return new TenantBilling(this.contact, updatedAddress, this.taxCode, this.purchaseOrder, this.invoiceEmail);
     }
 
-    public TenantBilling withTaxCode(String updatedTaxCode) {
+    public TenantBilling withTaxCode(TaxCode updatedTaxCode) {
         return new TenantBilling(this.contact, this.address, updatedTaxCode, this.purchaseOrder, this.invoiceEmail);
     }
 
-    public TenantBilling withPurchaseOrder(String updatedPurchaseOrder) {
+    public TenantBilling withPurchaseOrder(PurchaseOrder updatedPurchaseOrder) {
         return new TenantBilling(this.contact, this.address, this.taxCode, updatedPurchaseOrder, this.invoiceEmail);
     }
 
-    public TenantBilling withInvoiceEmail(String updatedInvoiceEmail) {
+    public TenantBilling withInvoiceEmail(Email updatedInvoiceEmail) {
         return new TenantBilling(this.contact, this.address, this.taxCode, this.purchaseOrder, updatedInvoiceEmail);
     }
 
