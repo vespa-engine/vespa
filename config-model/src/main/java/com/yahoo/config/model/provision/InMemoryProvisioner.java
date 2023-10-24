@@ -39,7 +39,7 @@ import java.util.stream.IntStream;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    public static final NodeResources defaultHostResources = new NodeResources(1, 3, 50, 1, DiskSpeed.any);
+    public static final NodeResources defaultHostResources = new NodeResources(1, 3, 50, 1);
 
     private final NodeResources defaultNodeResources;
 
