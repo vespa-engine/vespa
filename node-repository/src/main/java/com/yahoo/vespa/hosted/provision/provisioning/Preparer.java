@@ -189,10 +189,13 @@ public class Preparer {
                                                           cluster,
                                                           requested,
                                                           nodeRepository.zone().cloud().dynamicProvisioning(),
+                                                          nodeRepository.zone().cloud().allowHostSharing(),
                                                           allocationContext,
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount());
+                                                          nodeRepository.spareCount(),
+                                                          nodeRepository.exclusiveAllocation(cluster),
+                                                          makeExclusive);
         allocation.offer(prioritizer.collect());
         return allocation;
     }

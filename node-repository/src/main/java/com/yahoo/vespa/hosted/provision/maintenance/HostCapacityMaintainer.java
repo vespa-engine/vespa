@@ -278,20 +278,21 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
         ApplicationId applicationId = ApplicationId.defaultId();
-        ClusterSpec clusterSpec = asSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex);
+        ClusterSpec cluster = asSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex);
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
         var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
                                                            nodeSpec.cloudAccount().isExclave(nodeRepository().zone()),
                                                            nodeRepository().nameResolver());
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec,
-                true, allocationContext, nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
-                nodeRepository().spareCount());
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, cluster, nodeSpec,
+                                                          true, false, allocationContext, nodeRepository().nodes(),
+                                                          nodeRepository().resourcesCalculator(), nodeRepository().spareCount(),
+                                                          nodeRepository().exclusiveAllocation(cluster), makeExclusive);
         List<NodeCandidate> nodeCandidates = prioritizer.collect()
                                                         .stream()
-                                                        .filter(node -> node.violatesExclusivity(clusterSpec,
+                                                        .filter(node -> node.violatesExclusivity(cluster,
                                                                                                  applicationId,
-                                                                                                 nodeRepository().exclusiveAllocation(clusterSpec),
+                                                                                                 nodeRepository().exclusiveAllocation(cluster),
                                                                                                  false,
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),
                                                                                                  allNodes,
@@ -304,7 +305,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 .limit(clusterCapacity.count())
                 .map(candidate -> candidate.toNode()
                         .allocate(applicationId,
-                                  ClusterMembership.from(clusterSpec, index.next()),
+                                  ClusterMembership.from(cluster, index.next()),
                                   nodeResources,
                                   nodeRepository().clock().instant()))
                 .toList();

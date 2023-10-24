@@ -141,7 +141,7 @@ class NodeAllocation {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                switch (violatesExclusivity(candidate, makeExclusive)) {
+                switch (violatesExclusivity(candidate)) {
                     case PARENT_HOST_NOT_EXCLUSIVE -> candidate = candidate.withExclusiveParent(true);
                     case NONE -> {}
                     case YES -> {
@@ -175,7 +175,7 @@ class NodeAllocation {
         if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
-        if (violatesExclusivity(candidate, makeExclusive) != NodeCandidate.ExclusivityViolation.NONE) return Retirement.violatesExclusivity;
+        if (violatesExclusivity(candidate) != NodeCandidate.ExclusivityViolation.NONE) return Retirement.violatesExclusivity;
         if (requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) return Retirement.violatesHostFlavor;
         if (candidate.violatesSpares) return Retirement.violatesSpares;
         return Retirement.none;
@@ -196,7 +196,7 @@ class NodeAllocation {
         return nodes.values().stream().anyMatch(acceptedNode -> acceptedNode.parentHostname().equals(candidate.parentHostname()));
     }
 
-    private NodeCandidate.ExclusivityViolation violatesExclusivity(NodeCandidate candidate, boolean makeExclusive) {
+    private NodeCandidate.ExclusivityViolation violatesExclusivity(NodeCandidate candidate) {
         return candidate.violatesExclusivity(cluster, application,
                                              nodeRepository.exclusiveAllocation(cluster),
                                              nodeRepository.exclusiveProvisioning(cluster),
