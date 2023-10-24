@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/storageapi/message/datagram.h>
@@ -88,14 +89,18 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     _node->setupDummyPersistence();
     _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));
     _top = std::make_unique<DummyStorageLink>();
-    auto vm = std::make_unique<VisitorManager>(config::ConfigUri(config.getConfigId()),
+    using vespa::config::content::core::StorVisitorConfig;
+    auto bootstrap_cfg = config_from<StorVisitorConfig>(config::ConfigUri(config.getConfigId()));
+    auto vm = std::make_unique<VisitorManager>(*bootstrap_cfg,
                                                _node->getComponentRegister(),
                                                *_messageSessionFactory,
                                                VisitorFactory::Map(),
                                                defer_manager_thread_start);
     _manager = vm.get();
     _top->push_back(std::move(vm));
-    _top->push_back(std::make_unique<FileStorManager>(config::ConfigUri(config.getConfigId()), _node->getPersistenceProvider(),
+    using vespa::config::content::StorFilestorConfig;
+    auto filestor_cfg = config_from<StorFilestorConfig>(config::ConfigUri(config.getConfigId()));
+    _top->push_back(std::make_unique<FileStorManager>(*filestor_cfg, _node->getPersistenceProvider(),
                                                       _node->getComponentRegister(), *_node, _node->get_host_info()));
     _manager->setTimeBetweenTicks(10);
     _top->open();

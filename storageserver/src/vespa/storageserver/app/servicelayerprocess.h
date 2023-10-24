@@ -1,24 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class storage::ServiceLayerProcess
- *
- * \brief A process running a service layer.
- */
-/**
- * \class storage::MemFileServiceLayerProcess
- *
- * \brief A process running a service layer with memfile persistence provider.
- */
-/**
- * \class storage::RpcServiceLayerProcess
- *
- * \brief A process running a service layer with RPC persistence provider.
- */
 #pragma once
 
 #include "process.h"
-#include <vespa/storage/storageserver/servicelayernodecontext.h>
+#include <vespa/config-persistence.h>
+#include <vespa/config-stor-filestor.h>
 #include <vespa/storage/common/visitorfactory.h>
+#include <vespa/storage/storageserver/servicelayernodecontext.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
 
 namespace config { class ConfigUri; }
 
@@ -33,6 +21,14 @@ class ServiceLayerProcess : public Process {
 protected:
     VisitorFactory::Map _externalVisitors;
 private:
+    using PersistenceConfig  = vespa::config::content::PersistenceConfig;
+    using StorVisitorConfig  = vespa::config::content::core::StorVisitorConfig;
+    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
+
+    std::unique_ptr<config::ConfigHandle<PersistenceConfig>>  _persistence_cfg_handle;
+    std::unique_ptr<config::ConfigHandle<StorVisitorConfig>>  _visitor_cfg_handle;
+    std::unique_ptr<config::ConfigHandle<StorFilestorConfig>> _filestor_cfg_handle;
+
     std::unique_ptr<ServiceLayerNode> _node;
     std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;
 

@@ -29,14 +29,6 @@ vespalib::string _storage("storage");
 
 using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
 
-namespace {
-
-std::unique_ptr<CommunicationManagerConfig> config_from(const config::ConfigUri& cfg_uri) {
-    return config::ConfigGetter<CommunicationManagerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
-}
-
-}
-
 struct CommunicationManagerTest : Test {
 
     static constexpr uint32_t MESSAGE_WAIT_TIME_SEC = 60;
@@ -88,8 +80,10 @@ TEST_F(CommunicationManagerTest, simple) {
     auto dist_cfg_uri = config::ConfigUri(distConfig.getConfigId());
     auto stor_cfg_uri = config::ConfigUri(storConfig.getConfigId());
 
-    CommunicationManager distributor(distNode.getComponentRegister(), dist_cfg_uri, *config_from(dist_cfg_uri));
-    CommunicationManager storage(storNode.getComponentRegister(), stor_cfg_uri, *config_from(stor_cfg_uri));
+    CommunicationManager distributor(distNode.getComponentRegister(), dist_cfg_uri,
+                                     *config_from<CommunicationManagerConfig>(dist_cfg_uri));
+    CommunicationManager storage(storNode.getComponentRegister(), stor_cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(stor_cfg_uri));
     auto* distributorLink = new DummyStorageLink();
     auto* storageLink = new DummyStorageLink();
     distributor.push_back(std::unique_ptr<StorageLink>(distributorLink));
@@ -146,7 +140,8 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
     }
 
     auto cfg_uri = config::ConfigUri(config.getConfigId());
-    CommunicationManager commMgr(node->getComponentRegister(), cfg_uri, *config_from(cfg_uri));
+    CommunicationManager commMgr(node->getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
     commMgr.push_back(std::unique_ptr<StorageLink>(storageLink));
     commMgr.open();
@@ -191,7 +186,8 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
     auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
-    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri, *config_from(cfg_uri));
+    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
@@ -224,7 +220,8 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
     auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
-    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri, *config_from(cfg_uri));
+    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
@@ -265,7 +262,8 @@ struct CommunicationManagerFixture {
 
         node = std::make_unique<TestServiceLayerApp>(stor_config.getConfigId());
         auto cfg_uri = config::ConfigUri(stor_config.getConfigId());
-        comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(), cfg_uri, *config_from(cfg_uri));
+        comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(), cfg_uri,
+                                                          *config_from<CommunicationManagerConfig>(cfg_uri));
         bottom_link = new DummyStorageLink();
         comm_mgr->push_back(std::unique_ptr<StorageLink>(bottom_link));
         comm_mgr->open();

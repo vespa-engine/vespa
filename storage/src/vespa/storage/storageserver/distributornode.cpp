@@ -84,8 +84,6 @@ void
 DistributorNode::createChain(IStorageChainBuilder &builder)
 {
     DistributorComponentRegister& dcr(_context.getComponentRegister());
-    // TODO: All components in this chain should use a common thread instead of
-    // each having its own configfetcher.
     StorageLink::UP chain;
     if (_retrievedCommunicationManager) {
         builder.add(std::move(_retrievedCommunicationManager));

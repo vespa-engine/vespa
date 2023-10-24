@@ -12,6 +12,7 @@
 
 namespace storage {
 
+class StorageComponent;
 class Visitor;
 
 class VisitorEnvironment {

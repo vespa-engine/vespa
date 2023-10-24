@@ -5,6 +5,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
@@ -223,8 +224,10 @@ struct TestFileStorComponents {
     explicit TestFileStorComponents(FileStorTestBase& test, bool use_small_config = false)
         : manager(nullptr)
     {
-        auto fsm = std::make_unique<FileStorManager>(config::ConfigUri((use_small_config ? test.smallConfig : test.config)->getConfigId()),
-                                                     test._node->getPersistenceProvider(),
+        using vespa::config::content::StorFilestorConfig;
+        auto config_uri = config::ConfigUri((use_small_config ? test.smallConfig : test.config)->getConfigId());
+        auto config = config_from<StorFilestorConfig>(config_uri);
+        auto fsm = std::make_unique<FileStorManager>(*config, test._node->getPersistenceProvider(),
                                                      test._node->getComponentRegister(), *test._node, test._node->get_host_info());
         manager = fsm.get();
         top.push_back(std::move(fsm));
