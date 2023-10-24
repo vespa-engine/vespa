@@ -159,8 +159,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noD
         _top->push_back(std::move(bottom));
     } else {
         using vespa::config::content::StorFilestorConfig;
-        auto filestor_cfg = config_from<StorFilestorConfig>(config_uri);
-        auto bottom = std::make_unique<FileStorManager>(*filestor_cfg,
+        auto bottom = std::make_unique<FileStorManager>(*config_from<StorFilestorConfig>(config_uri),
                                                         _node->getPersistenceProvider(), _node->getComponentRegister(),
                                                         *_node, _node->get_host_info());
         _top->push_back(std::move(bottom));
