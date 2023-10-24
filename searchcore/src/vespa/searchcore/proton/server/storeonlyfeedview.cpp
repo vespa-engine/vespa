@@ -714,9 +714,9 @@ bool
 StoreOnlyFeedView::isMoveStillValid(const MoveOperation & moveOp) const {
     uint32_t lid = moveOp.getPrevLid();
     if ( ! _metaStore.validLid(lid)) return false;
-
     const RawDocumentMetaData & meta = _metaStore.getRawMetaData(lid);
-    return meta.getTimestamp() == moveOp.getTimestamp();
+    return (meta.getTimestamp() == moveOp.getTimestamp()) &&
+           (meta.getGid() == moveOp.getDocument()->getId().getGlobalId());
 }
 
 // CombiningFeedView calls this only for the subdb we're moving to.

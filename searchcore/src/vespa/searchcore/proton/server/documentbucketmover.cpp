@@ -40,7 +40,7 @@ void
 BucketMover::moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone) {
     auto result = _handler->handleMove(*moveOp, std::move(onDone));
     if (result == IDocumentMoveHandler::MoveResult::FAILURE) {
-        _needReschedule.store(true, std::memory_order_relaxed);
+        enableReschedule();
     }
 }
 
@@ -128,7 +128,7 @@ BucketMover::createMoveOperations(MoveKeys toMove) {
         }
     }
     if ( ! moveOps.failed().empty()) {
-        _needReschedule.store(true, std::memory_order_relaxed);
+        enableReschedule();
     }
     return moveOps;
 }
@@ -144,7 +144,7 @@ void
 BucketMover::cancel() {
     _cancelled = true;
     setAllScheduled();
-    _needReschedule.store(true, std::memory_order_relaxed);
+    enableReschedule();
 }
 
 }
