@@ -8,7 +8,7 @@
  * contains the process as a library such that it can be tested and used in
  * other pieces of code.
  *
- * Specializations of this class will exist to add the funcionality needed for
+ * Specializations of this class will exist to add the functionality needed for
  * the various process types.
  */
 

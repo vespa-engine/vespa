@@ -174,7 +174,7 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto bucket_ownership_handler = std::make_unique<ChangedBucketOwnershipHandler>(*_persistence_bootstrap_config, compReg);
     _changed_bucket_ownership_handler = bucket_ownership_handler.get();
     builder.add(std::move(bucket_ownership_handler));
-    auto bucket_manager = std::make_unique<BucketManager>(_configUri, _context.getComponentRegister());
+    auto bucket_manager = std::make_unique<BucketManager>(server_config(), _context.getComponentRegister());
     _bucket_manager = bucket_manager.get();
     builder.add(std::move(bucket_manager));
     builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(),
