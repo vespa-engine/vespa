@@ -10,20 +10,20 @@ public class TenantBilling {
 
     private final TenantContact contact;
     private final TenantAddress address;
-    private final TaxCode taxCode;
+    private final TaxId taxId;
     private final PurchaseOrder purchaseOrder;
     private final Email invoiceEmail;
 
-    public TenantBilling(TenantContact contact, TenantAddress address, TaxCode taxCode, PurchaseOrder purchaseOrder, Email invoiceEmail) {
+    public TenantBilling(TenantContact contact, TenantAddress address, TaxId taxId, PurchaseOrder purchaseOrder, Email invoiceEmail) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
-        this.taxCode = Objects.requireNonNull(taxCode);
+        this.taxId = Objects.requireNonNull(taxId);
         this.purchaseOrder = Objects.requireNonNull(purchaseOrder);
         this.invoiceEmail = Objects.requireNonNull(invoiceEmail);
     }
 
     public static TenantBilling empty() {
-        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxCode.empty(), PurchaseOrder.empty(), Email.empty());
+        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxId.empty(), PurchaseOrder.empty(), Email.empty());
     }
 
     public TenantContact contact() {
@@ -34,8 +34,8 @@ public class TenantBilling {
         return address;
     }
 
-    public TaxCode getTaxCode() {
-        return taxCode;
+    public TaxId getTaxId() {
+        return taxId;
     }
 
     public PurchaseOrder getPurchaseOrder() {
@@ -47,23 +47,23 @@ public class TenantBilling {
     }
 
     public TenantBilling withContact(TenantContact updatedContact) {
-        return new TenantBilling(updatedContact, this.address, this.taxCode, this.purchaseOrder, this.invoiceEmail);
+        return new TenantBilling(updatedContact, this.address, this.taxId, this.purchaseOrder, this.invoiceEmail);
     }
 
     public TenantBilling withAddress(TenantAddress updatedAddress) {
-        return new TenantBilling(this.contact, updatedAddress, this.taxCode, this.purchaseOrder, this.invoiceEmail);
+        return new TenantBilling(this.contact, updatedAddress, this.taxId, this.purchaseOrder, this.invoiceEmail);
     }
 
-    public TenantBilling withTaxCode(TaxCode updatedTaxCode) {
-        return new TenantBilling(this.contact, this.address, updatedTaxCode, this.purchaseOrder, this.invoiceEmail);
+    public TenantBilling withTaxId(TaxId updatedTaxId) {
+        return new TenantBilling(this.contact, this.address, updatedTaxId, this.purchaseOrder, this.invoiceEmail);
     }
 
     public TenantBilling withPurchaseOrder(PurchaseOrder updatedPurchaseOrder) {
-        return new TenantBilling(this.contact, this.address, this.taxCode, updatedPurchaseOrder, this.invoiceEmail);
+        return new TenantBilling(this.contact, this.address, this.taxId, updatedPurchaseOrder, this.invoiceEmail);
     }
 
     public TenantBilling withInvoiceEmail(Email updatedInvoiceEmail) {
-        return new TenantBilling(this.contact, this.address, this.taxCode, this.purchaseOrder, updatedInvoiceEmail);
+        return new TenantBilling(this.contact, this.address, this.taxId, this.purchaseOrder, updatedInvoiceEmail);
     }
 
     public boolean isEmpty() {
@@ -77,14 +77,14 @@ public class TenantBilling {
         TenantBilling that = (TenantBilling) o;
         return Objects.equals(contact, that.contact) &&
                 Objects.equals(address, that.address) &&
-                Objects.equals(taxCode, that.taxCode) &&
+                Objects.equals(taxId, that.taxId) &&
                 Objects.equals(purchaseOrder, that.purchaseOrder) &&
                 Objects.equals(invoiceEmail, that.invoiceEmail);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(contact, address, taxCode, purchaseOrder, invoiceEmail);
+        return Objects.hash(contact, address, taxId, purchaseOrder, invoiceEmail);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class TenantBilling {
         return "TenantBilling{" +
                 "contact=" + contact +
                 ", address=" + address +
-                ", taxCode='" + taxCode + '\'' +
+                ", taxId='" + taxId + '\'' +
                 ", purchaseOrder='" + purchaseOrder + '\'' +
                 ", invoiceEmail=" + invoiceEmail +
                 '}';

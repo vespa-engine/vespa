@@ -8,14 +8,14 @@ import static ai.vespa.validation.Validation.requireLength;
 /**
  * @author olaa
  */
-public class TaxCode extends StringWrapper<TaxCode> {
+public class TaxId extends StringWrapper<TaxId> {
 
-    public TaxCode(String value) {
+    public TaxId(String value) {
         super(value);
         requireLength(value, "tax code length", 0, 64);
     }
 
-    public static TaxCode empty() {
-        return new TaxCode("");
+    public static TaxId empty() {
+        return new TaxId("");
     }
 }

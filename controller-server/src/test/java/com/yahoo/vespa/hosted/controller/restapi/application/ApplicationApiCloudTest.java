@@ -106,7 +106,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "emailVerified":false,
                         "phone":""
                     },
-                    "taxCode":"",
+                    "taxId":"",
                     "purchaseOrder":"",
                     "invoiceEmail":""
                 }
@@ -122,7 +122,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "phone":"phone"
                     },
-                    "taxCode":"1234L",
+                    "taxId":"1234L",
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -147,7 +147,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "emailVerified": false,
                         "phone":"phone"
                     },
-                    "taxCode":"1234L",
+                    "taxId":"1234L",
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -231,7 +231,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "name":"billingName",
                         "email":"","emailVerified":false,
                         "phone":"",
-                        "taxCode":"",
+                        "taxId":"",
                         "purchaseOrder":"",
                         "invoiceEmail":""
                     },
@@ -262,7 +262,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "emailVerified":false,
                         "phone":"phone",
-                        "taxCode":"",
+                        "taxId":"",
                         "purchaseOrder":"",
                         "invoiceEmail":"",
                         "address": {

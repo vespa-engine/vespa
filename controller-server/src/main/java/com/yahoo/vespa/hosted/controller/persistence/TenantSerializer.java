@@ -29,7 +29,7 @@ import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
-import com.yahoo.vespa.hosted.controller.tenant.TaxCode;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -95,7 +95,7 @@ public class TenantSerializer {
     private static final String cloudAccountsField = "cloudAccounts";
     private static final String accountField = "account";
     private static final String templateVersionField = "templateVersion";
-    private static final String taxCodeField = "taxCode";
+    private static final String taxIdField = "taxId";
     private static final String purchaseOrderField = "purchaseOrder";
     private static final String invoiceEmailField = "invoiceEmail";
 
@@ -287,7 +287,7 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        var taxCode = new TaxCode(billingObject.field(taxCodeField).asString());
+        var taxId = new TaxId(billingObject.field(taxIdField).asString());
         var purchaseOrder = new PurchaseOrder(billingObject.field(purchaseOrderField).asString());
         var invoiceEmail = new Email(billingObject.field(invoiceEmailField).asString(), false);
 
@@ -297,7 +297,7 @@ public class TenantSerializer {
                         new Email(billingObject.field("email").asString(), billingObject.field("emailVerified").asBool()),
                         billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")))
-                .withTaxCode(taxCode)
+                .withTaxId(taxId)
                 .withPurchaseOrder(purchaseOrder)
                 .withInvoiceEmail(invoiceEmail);
     }
@@ -361,7 +361,7 @@ public class TenantSerializer {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
-        billingCursor.setString(taxCodeField, billingContact.getTaxCode().value());
+        billingCursor.setString(taxIdField, billingContact.getTaxId().value());
         billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder().value());
         billingCursor.setString(invoiceEmailField, billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
