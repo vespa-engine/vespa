@@ -38,10 +38,9 @@ public class NotificationFormatter {
     private FormattedNotification applicationPackage(Notification n) {
         var source = n.source();
         var application = requirePresent(source.application(), "application");
-        var instance = requirePresent(source.instance(), "instance");
-        var message = Text.format("Application package for %s.%s has %s",
+        var message = Text.format("Application package for %s%s has %s",
                 application,
-                instance,
+                source.instance().map(instance -> "." + instance.value()).orElse(""),
                 levelText(n.level(), n.messages().size()));
         return new FormattedNotification(n, "Application package", message, notificationLink(consoleUrls, n.source()));
     }
