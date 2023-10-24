@@ -17,6 +17,9 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.Architecture;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
@@ -411,8 +414,8 @@ public class ProvisioningTest {
                                         tester);
             assertEquals(6, state.allHosts.size());
             tester.activate(application, state.allHosts);
-            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
-            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == DiskSpeed.any));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == DiskSpeed.any));
         }
 
         {
@@ -423,8 +426,8 @@ public class ProvisioningTest {
                                         tester);
             assertEquals(8, state.allHosts.size());
             tester.activate(application, state.allHosts);
-            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.fast));
-            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == DiskSpeed.fast));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == DiskSpeed.fast));
         }
 
         {
@@ -434,8 +437,8 @@ public class ProvisioningTest {
                                         tester);
             assertEquals(8, state.allHosts.size());
             tester.activate(application, state.allHosts);
-            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
-            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == DiskSpeed.any));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == DiskSpeed.any));
         }
     }
 
@@ -1074,10 +1077,25 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void no_arm64_architecture() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        NodeResources nodeResources = new NodeResources(1, 4, 10, 4, DiskSpeed.fast, StorageType.any, Architecture.x86_64);
+        tester.makeReadyHosts(4, nodeResources);
+        tester.activateTenantHosts();
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        assertTrue(assertThrows(NodeAllocationException.class,
+                                () -> prepare(application, 1, 1, 1, 1, nodeResources.with(Architecture.arm64), tester))
+                           .getMessage().startsWith("Could not satisfy request"));
+
+    }
+
+    @Test
     public void arm64_architecture() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        NodeResources nodeResources = new NodeResources(1, 4, 10, 4, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64);
+        NodeResources nodeResources = new NodeResources(1, 4, 10, 4, DiskSpeed.fast, StorageType.any, Architecture.arm64);
         tester.makeReadyHosts(4, nodeResources);
         tester.activateTenantHosts();
 

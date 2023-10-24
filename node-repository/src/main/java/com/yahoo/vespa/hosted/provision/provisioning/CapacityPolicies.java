@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -149,7 +150,9 @@ public class CapacityPolicies {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(INSTANCE_ID, instance.serializedForm()).value());
     }
 
-    /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
+    /**
+     * Returns the resources for the newest version not newer than that requested in the cluster spec.
+     */
     static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)

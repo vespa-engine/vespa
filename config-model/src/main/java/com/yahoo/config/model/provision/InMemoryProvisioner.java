@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ import java.util.stream.IntStream;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    public static final NodeResources defaultHostResources = new NodeResources(1, 3, 50, 1);
+    public static final NodeResources defaultHostResources = new NodeResources(1, 3, 50, 1, DiskSpeed.any);
 
     private final NodeResources defaultNodeResources;
 
@@ -234,7 +235,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     // Minimal capacity policies
     private NodeResources decideResources(NodeResources resources) {
         if (defaultNodeResources.isUnspecified()) return resources;
-        return resources.withUnspecifiedNumbersFrom(defaultNodeResources);
+        return resources.withUnspecifiedFieldsFrom(defaultNodeResources);
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResourcesOrUnspecified,

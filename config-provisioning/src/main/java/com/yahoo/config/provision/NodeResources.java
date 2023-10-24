@@ -278,7 +278,7 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
-    public NodeResources withUnspecifiedNumbersFrom(NodeResources fullySpecified) {
+    public NodeResources withUnspecifiedFieldsFrom(NodeResources fullySpecified) {
         var resources = this;
         if (resources.vcpuIsUnspecified())
             resources = resources.withVcpu(fullySpecified.vcpu());
@@ -288,6 +288,13 @@ public class NodeResources {
             resources = resources.withDiskGb(fullySpecified.diskGb());
         if (resources.bandwidthGbpsIsUnspecified())
             resources = resources.withBandwidthGbps(fullySpecified.bandwidthGbps());
+        if (resources.diskSpeed() == DiskSpeed.any)
+            resources = resources.with(fullySpecified.diskSpeed());
+        if (resources.storageType() == StorageType.any)
+            resources = resources.with(fullySpecified.storageType());
+        if (resources.architecture() == Architecture.any)
+            resources = resources.with(fullySpecified.architecture());
+        assert fullySpecified.gpuResources() == GpuResources.zero : "Not handled";
         return resources;
     }
 
