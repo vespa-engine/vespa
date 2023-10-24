@@ -37,7 +37,7 @@ public record Notification(Instant at, Notification.Type type, Notification.Leve
         Objects.requireNonNull(level, "level cannot be null");
         Objects.requireNonNull(source, "source cannot be null");
         Objects.requireNonNull(title, "title cannot be null");
-        List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
+        messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null"));
 
         // Allowing empty title temporarily until all notifications have a title
         // if (title.isBlank()) throw new IllegalArgumentException("title cannot be empty");
