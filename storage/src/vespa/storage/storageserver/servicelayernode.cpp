@@ -204,6 +204,8 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
 
     // Purge config no longer needed
     _persistence_bootstrap_config.reset();
+    _visitor_bootstrap_config.reset();
+    _filestor_bootstrap_config.reset();
 }
 
 void
