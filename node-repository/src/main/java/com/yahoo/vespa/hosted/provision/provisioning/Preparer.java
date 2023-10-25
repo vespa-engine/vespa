@@ -92,10 +92,24 @@ public class Preparer {
         }
     }
 
+    /**
+     * Whether the preparation of an application MAY require changes to the parent hosts, and therefore the parent host lock is required.
+     * See {@link NodeCandidate#withExclusiveParent(boolean)}.
+     */
+    public static boolean requireParentHostLock(boolean makeExclusive, NodeType type, boolean allowHostSharing) {
+        return makeExclusive && type == NodeType.tenant && !allowHostSharing;
+    }
+
+    private ApplicationMutex parentLockOrNull(boolean makeExclusive, NodeType type) {
+        return requireParentHostLock(makeExclusive, type, nodeRepository.zone().cloud().allowHostSharing()) ?
+               nodeRepository.applications().lock(InfrastructureApplication.withNodeType(type.parentNodeType()).id()) :
+               null;
+    }
+
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, boolean makeExclusive) {
         try (Mutex lock = nodeRepository.applications().lock(application);
-             ApplicationMutex tenantHostLock = makeExclusive ? nodeRepository.applications().lock(InfrastructureApplication.TENANT_HOST.id()) : null;
+             ApplicationMutex parentLockOrNull = parentLockOrNull(makeExclusive, requested.type());
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
             NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, makeExclusive);
@@ -158,9 +172,9 @@ public class Preparer {
                                                   allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
-            if (tenantHostLock != null) {
+            if (parentLockOrNull != null) {
                 List<Node> exclusiveParents = allocation.parentsRequiredToBeExclusive();
-                nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, tenantHostLock);
+                nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, parentLockOrNull);
                 // TODO: also update tags
             }
             List<Node> acceptedNodes = allocation.finalNodes();

@@ -88,6 +88,14 @@ public enum NodeType {
         return childNodeTypes.contains(type);
     }
 
+    /** Returns the parent host type. */
+    public NodeType parentNodeType() {
+        for (var type : values()) {
+            if (type.childNodeTypes.contains(this)) return type;
+        }
+        throw new IllegalStateException(this + " has no parent");
+    }
+
     /** Returns the host type of this */
     public NodeType hostType() {
         if (isHost()) return this;
@@ -97,7 +105,7 @@ public enum NodeType {
                 return nodeType;
             }
         }
-        throw new IllegalArgumentException("No host of " + this + " exists");
+        throw new IllegalStateException("No host of " + this + " exists");
     }
 
 }
