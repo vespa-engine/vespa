@@ -108,6 +108,8 @@ public class Preparer {
 
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, boolean makeExclusive) {
+        Runnable waiter = null;
+        List<Node> acceptedNodes;
         try (Mutex lock = nodeRepository.applications().lock(application);
              ApplicationMutex parentLockOrNull = parentLockOrNull(makeExclusive, requested.type());
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
@@ -149,7 +151,7 @@ public class Preparer {
                                                                             requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
                     Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository.nodeResourceLimits().isWithinRealLimits(resources, application, cluster);
-                    hostProvisioner.get().provisionHosts(request, realHostResourcesWithinLimits, whenProvisioned);
+                    waiter = hostProvisioner.get().provisionHosts(request, realHostResourcesWithinLimits, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been
@@ -177,7 +179,7 @@ public class Preparer {
                 nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, parentLockOrNull);
                 // TODO: also update tags
             }
-            List<Node> acceptedNodes = allocation.finalNodes();
+            acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
 
@@ -187,8 +189,10 @@ public class Preparer {
                                              .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                              .toList();
             }
-            return acceptedNodes;
         }
+
+        if (waiter != null) waiter.run();
+        return acceptedNodes;
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
