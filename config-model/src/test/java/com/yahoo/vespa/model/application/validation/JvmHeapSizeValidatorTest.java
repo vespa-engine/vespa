@@ -13,6 +13,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
@@ -119,7 +120,10 @@ class JvmHeapSizeValidatorTest {
 
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
-        @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger) { return this; }
+        @Override
+        public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger) { return this; }
+
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
 

@@ -5,6 +5,7 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.ApplicationId;
 
 import java.net.URI;
 
@@ -13,7 +14,8 @@ import java.net.URI;
  */
 public interface OnnxModelCost {
 
-    Calculator newCalculator(ApplicationPackage appPkg, DeployLogger logger);
+    Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger); // TODO: Remove when 8.249 is oldest model in use
+    Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
 
     interface Calculator {
         long aggregatedModelCostInBytes();
@@ -21,12 +23,14 @@ public interface OnnxModelCost {
         void registerModel(URI uri);
     }
 
-    static OnnxModelCost disabled() {
-        return (__, ___) -> new Calculator() {
-            @Override public long aggregatedModelCostInBytes() { return 0; }
-            @Override public void registerModel(ApplicationFile path) {}
-            @Override public void registerModel(URI uri) {}
-        };
+    static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
+
+    class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
+        @Override public long aggregatedModelCostInBytes() {return 0;}
+        @Override public void registerModel(ApplicationFile path) {}
+        @Override public void registerModel(URI uri) {}
     }
 
 }
