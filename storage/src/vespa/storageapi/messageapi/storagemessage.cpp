@@ -13,7 +13,7 @@ namespace storage::api {
 
 namespace {
 
-std::atomic<uint64_t> _G_lastMsgId(1000);
+std::atomic<uint64_t> _g_lastMsgId(1000);
 
 }
 
@@ -231,7 +231,7 @@ TransportContext::~TransportContext() = default;
 StorageMessage::Id
 StorageMessage::generateMsgId() noexcept
 {
-    return _G_lastMsgId.fetch_add(1, std::memory_order_relaxed);
+    return _g_lastMsgId.fetch_add(1, std::memory_order_relaxed);
 }
 
 StorageMessage::StorageMessage(const MessageType& type, Id internal_id, Id originator_id) noexcept

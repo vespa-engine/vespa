@@ -84,11 +84,11 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
     top.open();
 }
 
-vespalib::string _Storage("storage");
+vespalib::string _storage("storage");
 
 api::StorageMessageAddress
 FileStorTestFixture::makeSelfAddress() {
-    return api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0);
+    return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, 0);
 }
 
 void
