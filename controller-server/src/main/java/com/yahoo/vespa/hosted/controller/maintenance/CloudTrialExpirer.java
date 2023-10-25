@@ -121,32 +121,22 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                     // Ignore tenants that are on a paid plan and skip from inclusion in updated data structure
                 } else if (status == null && "trial".equals(plan) && ageInDays <= 1) {
                     updatedStatus.add(updatedStatus(tenant, now, SIGNED_UP));
-                    queueNotification(tenant, "Welcome to Vespa Cloud", "Welcome to Vespa Cloud",
-                            "Welcome to Vespa Cloud! We hope you will enjoy your trial. " +
-                                    "Please reach out to us if you have any questions or feedback.");
+                    notifySignup(tenant);
                 } else if ("none".equals(plan) && !List.of(EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, EXPIRED));
-                    queueNotification(tenant, "Your Vespa Cloud trial has expired", "Your Vespa Cloud trial has expired",
-                            "Your Vespa Cloud trial has expired. " +
-                                    "Please reach out to us if you have any questions or feedback.");
+                    notifyExpired(tenant);
                 } else if ("trial".equals(plan) && ageInDays >= 13
                         && !List.of(EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, EXPIRES_IMMEDIATELY));
-                    queueNotification(tenant, "Your Vespa Cloud trial expires tomorrow", "Your Vespa Cloud trial expires tomorrow",
-                            "Your Vespa Cloud trial expires tomorrow. " +
-                                    "Please reach out to us if you have any questions or feedback.");
+                    notifyExpiresImmediately(tenant);
                 } else if ("trial".equals(plan) && ageInDays >= 12
                         && !List.of(EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, EXPIRES_SOON));
-                    queueNotification(tenant, "Your Vespa Cloud trial expires in 2 days", "Your Vespa Cloud trial expires in 2 days",
-                            "Your Vespa Cloud trial expires in 2 days. " +
-                                    "Please reach out to us if you have any questions or feedback.");
+                    notifyExpiresSoon(tenant);
                 } else if ("trial".equals(plan) && ageInDays >= 7
                         && !List.of(MID_CHECK_IN, EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, MID_CHECK_IN));
-                    queueNotification(tenant, "How is your Vespa Cloud trial going?", "How is your Vespa Cloud trial going?",
-                            "How is your Vespa Cloud trial going? " +
-                                    "Please reach out to us if you have any questions or feedback.");
+                    notifyMidCheckIn(tenant);
                 } else {
                     updatedStatus.add(status);
                 }
@@ -158,6 +148,36 @@ public class CloudTrialExpirer extends ControllerMaintainer {
             log.log(Level.WARNING, "Failed to process trial notifications", e);
             return false;
         }
+    }
+
+    private void notifySignup(Tenant tenant) {
+        queueNotification(tenant, "Welcome to Vespa Cloud", "Welcome to Vespa Cloud",
+                          "Welcome to Vespa Cloud! We hope you will enjoy your trial. " +
+                                  "Please reach out to us if you have any questions or feedback.");
+    }
+
+    private void notifyMidCheckIn(Tenant tenant) {
+        queueNotification(tenant, "How is your Vespa Cloud trial going?", "How is your Vespa Cloud trial going?",
+                          "How is your Vespa Cloud trial going? " +
+                        "Please reach out to us if you have any questions or feedback.");
+    }
+
+    private void notifyExpiresSoon(Tenant tenant) {
+        queueNotification(tenant, "Your Vespa Cloud trial expires in 2 days", "Your Vespa Cloud trial expires in 2 days",
+                          "Your Vespa Cloud trial expires in 2 days. " +
+                        "Please reach out to us if you have any questions or feedback.");
+    }
+
+    private void notifyExpiresImmediately(Tenant tenant) {
+        queueNotification(tenant, "Your Vespa Cloud trial expires tomorrow", "Your Vespa Cloud trial expires tomorrow",
+                          "Your Vespa Cloud trial expires tomorrow. " +
+                        "Please reach out to us if you have any questions or feedback.");
+    }
+
+    private void notifyExpired(Tenant tenant) {
+        queueNotification(tenant, "Your Vespa Cloud trial has expired", "Your Vespa Cloud trial has expired",
+                          "Your Vespa Cloud trial has expired. " +
+                        "Please reach out to us if you have any questions or feedback.");
     }
 
     private void queueNotification(Tenant tenant, String consoleMsg, String emailSubject, String emailMsg) {
