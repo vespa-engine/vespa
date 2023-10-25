@@ -23,9 +23,8 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     private final Duration ttlForUnusedTenant;
     private final Clock clock;
 
-    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                      Duration interval, Clock clock) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, true);
+    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Clock clock) {
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, true);
         this.ttlForUnusedTenant = defaultTtlForUnusedTenant;
         this.clock = clock;
     }
