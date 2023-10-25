@@ -237,6 +237,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                         "    from-disk",
                         "}"));
         assertOverride(schema, "baz", SummaryTransform.TOKENS.getName(), "foo", "bar");
+        assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
     }
 
     @Test
