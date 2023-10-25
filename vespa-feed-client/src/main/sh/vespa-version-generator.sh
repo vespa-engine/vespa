@@ -18,7 +18,7 @@ versionNumber=$(cat $source | grep V_TAG_COMPONENT | awk '{print $2}' )
 cat > $destination <<- END
 package ai.vespa.feed.client.impl;
 
-class Vespa {
-    static final String VERSION = "$versionNumber";
+public class Vespa {
+    public static final String VERSION = "$versionNumber";
 }
 END
