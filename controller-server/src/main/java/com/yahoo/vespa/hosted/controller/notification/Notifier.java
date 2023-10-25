@@ -101,10 +101,13 @@ public class Notifier {
             log.fine(() -> "Sending notification " + notification + " to " +
                     contacts.stream().map(c -> c.email().getEmailAddress()).toList());
             var content = formatter.format(notification);
-            mailer.send(mailOf(content, contacts.stream()
-                    .filter(c -> c.email().isVerified())
-                    .map(c -> c.email().getEmailAddress())
-                    .toList()));
+            var verifiedContacts = contacts.stream()
+                    .filter(c -> c.email().isVerified()).map(c -> c.email().getEmailAddress()).toList();
+            if (verifiedContacts.isEmpty()) {
+                log.fine(() -> "None of the %d contact(s) are verified - skipping delivery of %s".formatted(contacts.size(), notification));
+                return;
+            }
+            mailer.send(mailOf(content, verifiedContacts));
         } catch (MailerException e) {
             log.log(Level.SEVERE, "Failed sending email", e);
         } catch (MissingOptionalException e) {
