@@ -170,7 +170,7 @@ dynamic_throttle_params_from_config(const StorFilestorConfig& config, uint32_t n
 #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("local-exec")))
 #endif
 
-thread_local PersistenceHandler * _G_threadLocalHandler TLS_LINKAGE = nullptr;
+thread_local PersistenceHandler * _g_threadLocalHandler TLS_LINKAGE = nullptr;
 
 size_t
 computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfig & cfg) {
@@ -198,10 +198,10 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
 
 PersistenceHandler &
 FileStorManager::getThreadLocalHandler() {
-    if (_G_threadLocalHandler == nullptr) {
-        _G_threadLocalHandler = & createRegisteredHandler(_component);
+    if (_g_threadLocalHandler == nullptr) {
+        _g_threadLocalHandler = & createRegisteredHandler(_component);
     }
-    return *_G_threadLocalHandler;
+    return *_g_threadLocalHandler;
 }
 
 void
