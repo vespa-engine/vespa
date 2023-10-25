@@ -229,15 +229,17 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                     sharingMode, clusterType.map(ClusterSpec.Type::valueOf), Optional.empty(),
                                                                     nodeRepository().zone().cloud().account(), false);
             List<Node> hosts = new ArrayList<>();
-            hostProvisioner.provisionHosts(request,
-                                           resources -> true,
-                                           provisionedHosts -> {
-                                               hosts.addAll(provisionedHosts.stream()
-                                                                            .map(host -> host.generateHost(Duration.ZERO))
-                                                                            .map(host -> host.withExclusiveToApplicationId(null))
-                                                                            .toList());
-                                               nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
-                                           });
+            try (var lock = nodeRepository().nodes().lockUnallocated()) {
+                hostProvisioner.provisionHosts(request,
+                        resources -> true,
+                        provisionedHosts -> {
+                            hosts.addAll(provisionedHosts.stream()
+                                    .map(host -> host.generateHost(Duration.ZERO))
+                                    .map(host -> host.withExclusiveToApplicationId(null))
+                                    .toList());
+                            nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
+                        });
+            }
             return hosts;
         } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
             throw new NodeAllocationException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage(),
