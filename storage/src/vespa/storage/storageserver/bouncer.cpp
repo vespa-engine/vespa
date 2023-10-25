@@ -47,6 +47,7 @@ Bouncer::print(std::ostream& out, bool verbose,
                const std::string& indent) const
 {
     (void) verbose; (void) indent;
+    std::lock_guard guard(_lock);
     out << "Bouncer(" << _baselineNodeState << ")";
 }
 
@@ -343,9 +344,9 @@ void
 Bouncer::handleNewState() noexcept
 {
     std::lock_guard lock(_lock);
-    const auto reportedNodeState = *_component.getStateUpdater().getReportedNodeState();
+    const auto reportedNodeState  = *_component.getStateUpdater().getReportedNodeState();
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    const auto &clusterState = *clusterStateBundle->getBaselineClusterState();
+    const auto& clusterState      = *clusterStateBundle->getBaselineClusterState();
     _clusterState = &clusterState.getClusterState();
     const lib::Node node(_component.getNodeType(), _component.getIndex());
     _baselineNodeState = deriveNodeState(reportedNodeState, clusterState.getNodeState(node));
