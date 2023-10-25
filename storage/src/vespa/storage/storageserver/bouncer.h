@@ -27,16 +27,16 @@ class Bouncer : public StorageLink,
                 private StateListener
 {
     using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+    using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
 
     std::unique_ptr<StorBouncerConfig> _config;
-    StorageComponent _component;
-    std::mutex       _lock;
-    lib::NodeState   _baselineNodeState;
-    using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
-    BucketSpaceNodeStateMapping _derivedNodeStates;
-    const lib::State* _clusterState;
-    std::unique_ptr<BouncerMetrics> _metrics;
-    bool _closed;
+    StorageComponent                   _component;
+    mutable std::mutex                 _lock;
+    lib::NodeState                     _baselineNodeState;
+    BucketSpaceNodeStateMapping        _derivedNodeStates;
+    const lib::State*                  _clusterState;
+    std::unique_ptr<BouncerMetrics>    _metrics;
+    bool                               _closed;
 
 public:
     Bouncer(StorageComponentRegister& compReg, const StorBouncerConfig& bootstrap_config);
