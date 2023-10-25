@@ -158,21 +158,21 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     }
 
     private void notifyMidCheckIn(Tenant tenant) {
-        var consoleMsg = "You're halfway through the *14 day* trial period. [Manage plan](%s)".formatted(billingUrl(tenant));
+        var consoleMsg = "You're halfway through the **14 day** trial period. [Manage plan](%s)".formatted(billingUrl(tenant));
         queueNotification(tenant, consoleMsg, "How is your Vespa Cloud trial going?",
                           "How is your Vespa Cloud trial going? " +
                         "Please reach out to us if you have any questions or feedback.");
     }
 
     private void notifyExpiresSoon(Tenant tenant) {
-        var consoleMsg = "Your Vespa Cloud trial expires in *2* days. [Manage plan](%s)".formatted(billingUrl(tenant));
+        var consoleMsg = "Your Vespa Cloud trial expires in **2** days. [Manage plan](%s)".formatted(billingUrl(tenant));
         queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial expires in 2 days",
                           "Your Vespa Cloud trial expires in 2 days. " +
                         "Please reach out to us if you have any questions or feedback.");
     }
 
     private void notifyExpiresImmediately(Tenant tenant) {
-        var consoleMsg = "Your Vespa Cloud trial expires *tomorrow*. [Manage plan](%s)".formatted(billingUrl(tenant));
+        var consoleMsg = "Your Vespa Cloud trial expires **tomorrow**. [Manage plan](%s)".formatted(billingUrl(tenant));
         queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial expires tomorrow",
                           "Your Vespa Cloud trial expires tomorrow. " +
                         "Please reach out to us if you have any questions or feedback.");
