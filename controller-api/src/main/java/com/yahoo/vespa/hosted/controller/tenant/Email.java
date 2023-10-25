@@ -36,6 +36,10 @@ public class Email {
         return new Email(emailAddress, isVerified);
     }
 
+    public boolean isBlank() {
+        return emailAddress.isBlank();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

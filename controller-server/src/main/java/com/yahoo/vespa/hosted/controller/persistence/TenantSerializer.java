@@ -28,6 +28,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -93,6 +95,9 @@ public class TenantSerializer {
     private static final String cloudAccountsField = "cloudAccounts";
     private static final String accountField = "account";
     private static final String templateVersionField = "templateVersion";
+    private static final String taxIdField = "taxId";
+    private static final String purchaseOrderField = "purchaseOrder";
+    private static final String invoiceEmailField = "invoiceEmail";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -282,12 +287,19 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        var taxId = new TaxId(billingObject.field(taxIdField).asString());
+        var purchaseOrder = new PurchaseOrder(billingObject.field(purchaseOrderField).asString());
+        var invoiceEmail = new Email(billingObject.field(invoiceEmailField).asString(), false);
+
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
                         new Email(billingObject.field("email").asString(), billingObject.field("emailVerified").asBool()),
                         billingObject.field("phone").asString()))
-                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
+                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")))
+                .withTaxId(taxId)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
@@ -349,6 +361,9 @@ public class TenantSerializer {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString(taxIdField, billingContact.getTaxId().value());
+        billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder().value());
+        billingCursor.setString(invoiceEmailField, billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
     }
 

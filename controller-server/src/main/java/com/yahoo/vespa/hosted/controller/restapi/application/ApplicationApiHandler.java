@@ -127,6 +127,8 @@ import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
+import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -694,6 +696,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             contact.setString("email", billingContact.contact().email().getEmailAddress());
             contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
+            root.setString("taxId", billingContact.getTaxId().value());
+            root.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
+            root.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
 
             toSlime(billingContact.address(), root); // will create "address" on the parent
         }
@@ -703,15 +708,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private SlimeJsonResponse putTenantInfoBilling(CloudTenant cloudTenant, Inspector inspector) {
         var info = cloudTenant.info();
-        var contact = info.billingContact().contact();
-        var address = info.billingContact().address();
+        var billing = info.billingContact();
+        var contact = billing.contact();
+        var address = billing.address();
 
         var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
-        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
+        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), billing.address());
+        var mergedTaxId = optional("taxId", inspector).map(TaxId::new).orElse(billing.getTaxId());
+        var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
+        var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
 
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
-                .withAddress(mergedAddress);
+                .withAddress(mergedAddress)
+                .withTaxId(mergedTaxId)
+                .withPurchaseOrder(mergedPurchaseOrder)
+                .withInvoiceEmail(mergedInvoiceEmail);
 
         var mergedInfo = info.withBilling(mergedBilling);
 
@@ -764,6 +776,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 throw new IllegalArgumentException("'website' needs to be a valid address");
             }
         }
+        if (! mergedInfo.billingContact().getInvoiceEmail().isBlank()) {
+            // TODO: Validate invoice email is set if collection method is INVOICE
+            if (! mergedInfo.billingContact().getInvoiceEmail().getEmailAddress().contains("@"))
+                throw new IllegalArgumentException("'Invoice email' needs to be an email address");
+        }
     }
 
     private void toSlime(TenantAddress address, Cursor parentCursor) {
@@ -785,6 +802,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString("taxId", billingContact.getTaxId().value());
+        billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
+        billingCursor.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
     }
 
@@ -914,9 +934,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantName tenantName, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
+        var taxId = optional("taxId", insp).map(TaxId::new).orElse(oldContact.getTaxId());
+        var purchaseOrder = optional("purchaseOrder", insp).map(PurchaseOrder::new).orElse(oldContact.getPurchaseOrder());
+        var invoiceEmail = optional("invoiceEmail", insp).map(mail -> new Email(mail, false)).orElse(oldContact.getInvoiceEmail());
         return TenantBilling.empty()
                 .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
-                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()))
+                .withTaxId(taxId)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private TenantContacts updateTenantInfoContacts(Inspector insp, TenantName tenantName, TenantContacts oldContacts) {
