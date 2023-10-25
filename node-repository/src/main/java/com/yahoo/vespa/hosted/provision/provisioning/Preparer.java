@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -156,7 +157,8 @@ public class Preparer {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been
                     // allocated on them, so let HostDeprovisioner deal with it
-                    hosts.forEach(host -> nodeRepository.nodes().deprovision(host.hostname(), Agent.system, nodeRepository.clock().instant()));
+                    hosts.forEach(host -> nodeRepository.nodes().parkRecursively(host.hostname(), Agent.system, true,
+                            "Failed to provision: " + Exceptions.toMessageString(e)));
                     throw e;
                 }
             } else if (allocation.hostDeficit().isPresent() && requested.canFail() &&

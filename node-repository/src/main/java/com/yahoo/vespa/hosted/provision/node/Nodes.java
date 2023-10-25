@@ -403,8 +403,8 @@ public class Nodes {
      *
      * @return List of all the parked nodes in their new state
      */
-    public List<Node> parkRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.parked, agent, Optional.of(reason));
+    public List<Node> parkRecursively(String hostname, Agent agent, boolean forceDeprovision, String reason) {
+        return moveRecursively(hostname, Node.State.parked, agent, forceDeprovision, Optional.of(reason));
     }
 
     /**
@@ -433,12 +433,12 @@ public class Nodes {
         }
     }
 
-    private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
+    private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason) {
         try (RecursiveNodeMutexes locked = lockAndGetRecursively(hostname, Optional.empty())) {
             List<Node> moved = new ArrayList<>();
             NestedTransaction transaction = new NestedTransaction();
             for (NodeMutex node : locked.nodes().nodes())
-                moved.add(move(node.node().hostname(), toState, agent, false, reason, transaction));
+                moved.add(move(node.node().hostname(), toState, agent, forceDeprovision, reason, transaction));
             transaction.commit();
             return moved;
         }

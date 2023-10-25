@@ -153,7 +153,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                                        " and marked " + hostnamesAsString(failedOrMarkedNodes.failing().asList()) + " as wantToFail");
         }
         else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
-            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), agent(request), "Parked through the nodes/v2 API");
+            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), agent(request), false, "Parked through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to " + Node.State.parked);
         }
         else if (path.matches("/nodes/v2/state/dirty/{hostname}")) {
