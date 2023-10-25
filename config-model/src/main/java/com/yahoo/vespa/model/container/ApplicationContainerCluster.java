@@ -137,7 +137,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
                 : defaultHeapSizePercentageOfAvailableMemory;
         onnxModelCost = deployState.onnxModelCost().newCalculator(
-                deployState.getApplicationPackage(), deployState.getDeployLogger());
+                deployState.getApplicationPackage(), deployState.getProperties().applicationId());
         logger = deployState.getDeployLogger();
     }
 
