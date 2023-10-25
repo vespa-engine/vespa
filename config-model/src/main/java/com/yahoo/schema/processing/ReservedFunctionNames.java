@@ -9,6 +9,7 @@ import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConst
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -46,8 +47,20 @@ public class ReservedFunctionNames extends Processor {
     }
 
     private static Set<String> getReservedNames() {
-        return Arrays.stream(RankingExpressionParserConstants.tokenImage)
-                .map(token -> token.substring(1, token.length()-1)).collect(Collectors.toUnmodifiableSet());
+        Set<String> temp = new HashSet<>();
+        Arrays.stream(RankingExpressionParserConstants.tokenImage)
+                .map(token -> token.substring(1, token.length()-1)).forEach(name -> temp.add(name));
+        temp.add("customTokenInputIds");
+        temp.add("normalize_linear");
+        temp.add("onnx");
+        temp.add("onnx_vespa");
+        temp.add("reciprocal_rank");
+        temp.add("reciprocal_rank_fusion");
+        temp.add("tokenAttentionMask");
+        temp.add("tokenInputIds");
+        temp.add("tokenTypeIds");
+        temp.add("xgboost");
+        return Set.copyOf(temp);
     }
 
 }
