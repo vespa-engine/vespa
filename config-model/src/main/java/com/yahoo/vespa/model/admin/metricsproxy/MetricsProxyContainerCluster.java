@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
 import static ai.vespa.metrics.set.MetricSet.empty;
 import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
+import static ai.vespa.metrics.set.Vespa9DefaultMetricSet.vespa9defaultMetricSet;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.addMetrics;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.generateConsumers;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.toConsumerBuilder;
@@ -169,8 +170,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     public MetricsConsumer newDefaultConsumer() {
         if (isHostedVespa()) {
-            // TODO: use different metric set for hosted vespa.
-            return MetricsConsumer.consumer(NEW_DEFAULT_CONSUMER_ID, defaultMetricSet, systemMetricSet);
+            return MetricsConsumer.consumer(NEW_DEFAULT_CONSUMER_ID, vespa9defaultMetricSet, systemMetricSet);
         }
         return MetricsConsumer.consumer(NEW_DEFAULT_CONSUMER_ID, defaultMetricSet, systemMetricSet);
     }
