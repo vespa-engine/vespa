@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
+
 import java.time.Duration;
 
 /**
@@ -24,9 +24,8 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
-                               FlagSource flagSource,
                                FileDirectory fileDirectory) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, false);
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
         this.fileDirectory = fileDirectory;
