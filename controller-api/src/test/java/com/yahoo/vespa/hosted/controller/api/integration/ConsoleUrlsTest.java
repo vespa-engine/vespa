@@ -31,6 +31,7 @@ class ConsoleUrlsTest {
         assertEquals("https://console.tld", urls.root());
         assertEquals("https://console.tld/tenant/t1", urls.tenantOverview(app.tenant()));
         assertEquals("https://console.tld/tenant/t1/account/notifications", urls.tenantNotifications(app.tenant()));
+        assertEquals("https://console.tld/tenant/t1/account/billing", urls.tenantBilling(app.tenant()));
         assertEquals("https://console.tld/tenant/t1/application/a1/prod/instance", urls.prodApplicationOverview(app.tenant(), app.application()));
         assertEquals("https://console.tld/tenant/t1/application/a1/prod/instance/i1", urls.instanceOverview(app, Environment.test));
         assertEquals("https://console.tld/tenant/t1/application/a1/dev/instance/i1?i1.dev.eu-west-2=clusters%2Cc1", urls.clusterOverview(app, dev, cluster));

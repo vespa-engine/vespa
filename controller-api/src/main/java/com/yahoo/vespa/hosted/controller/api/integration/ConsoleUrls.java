@@ -38,6 +38,8 @@ public class ConsoleUrls {
         return "%s/tenant/%s/account/notifications".formatted(root, tenantName.value());
     }
 
+    public String tenantBilling(TenantName t) { return "%s/tenant/%s/account/billing".formatted(root, t.value()); }
+
     public String prodApplicationOverview(TenantName tenantName, ApplicationName applicationName) {
         return "%s/tenant/%s/application/%s/prod/instance".formatted(root, tenantName.value(), applicationName.value());
     }

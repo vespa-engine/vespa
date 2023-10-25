@@ -110,27 +110,32 @@ public class CloudTrialExpirerTest {
                 .withBooleanFlag(Flags.CLOUD_TRIAL_NOTIFICATIONS.id(), true);
         registerTenant(tenant.value(), "trial", Duration.ZERO);
         assertEquals(0.0, expirer.maintain());
-        assertEquals("Welcome to Vespa Cloud", lastAccountLevelNotificationTitle(tenant));
+        var expected = "Welcome to Vespa Cloud trial! [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
+        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
         assertLastEmailEquals(mailer, "welcome.html");
 
+        expected = "You're halfway through the **14 day** trial period. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(7));
         assertEquals(0.0, expirer.maintain());
-        assertEquals("How is your Vespa Cloud trial going?", lastAccountLevelNotificationTitle(tenant));
+        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
         assertLastEmailEquals(mailer, "trial-reminder.html");
 
+        expected = "Your Vespa Cloud trial expires in **2** days. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(5));
         assertEquals(0.0, expirer.maintain());
-        assertEquals("Your Vespa Cloud trial expires in 2 days", lastAccountLevelNotificationTitle(tenant));
+        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
         assertLastEmailEquals(mailer, "trial-expiring-soon.html");
 
+        expected = "Your Vespa Cloud trial expires **tomorrow**. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(1));
         assertEquals(0.0, expirer.maintain());
-        assertEquals("Your Vespa Cloud trial expires tomorrow", lastAccountLevelNotificationTitle(tenant));
+        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
         assertLastEmailEquals(mailer, "trial-expiring-immediately.html");
 
+        expected = "Your Vespa Cloud trial has expired. [Upgrade plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(2));
         assertEquals(0.0, expirer.maintain());
-        assertEquals("Your Vespa Cloud trial has expired", lastAccountLevelNotificationTitle(tenant));
+        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
         assertLastEmailEquals(mailer, "trial-expired.html");
     }
 
