@@ -14,7 +14,11 @@ import java.net.URI;
  */
 public interface OnnxModelCost {
 
-    Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger); // TODO: Remove when 8.249 is oldest model in use
+    // TODO: Remove when 8.250 is oldest model in use
+    default Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger) {
+        return newCalculator(appPkg, ApplicationId.defaultId());
+    }
+
     Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
 
     interface Calculator {
@@ -26,7 +30,6 @@ public interface OnnxModelCost {
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
     class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
-        @Override public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger) { return this; }
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
         @Override public void registerModel(ApplicationFile path) {}
