@@ -206,8 +206,10 @@ PostingListSearchContextT<DataT>::approximateHits() const
     if (_uniqueValues == 0u) {
     } else if (_uniqueValues == 1u) {
         numHits = singleHits();
-    } else {
+    } else if (_dictionary.get_has_btree_dictionary()) {
         numHits = estimated_hits_in_range();
+    } else {
+        numHits = _docIdLimit;
     }
     return std::min(numHits, size_t(std::numeric_limits<uint32_t>::max()));
 }
