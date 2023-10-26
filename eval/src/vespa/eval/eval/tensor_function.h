@@ -249,6 +249,29 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class MapSubspaces : public Op1
+{
+    using Super = Op1;
+private:
+    ValueType _inner_type;
+    std::shared_ptr<Function const> _lambda;
+    NodeTypes _lambda_types;
+public:
+    MapSubspaces(const ValueType &result_type_in, const TensorFunction &child_in, const Function &lambda_in, NodeTypes lambda_types_in)
+      : Super(result_type_in, child_in),
+        _inner_type(child_in.result_type().strip_mapped_dimensions()),
+        _lambda(lambda_in.shared_from_this()),
+        _lambda_types(std::move(lambda_types_in)) {}
+    const ValueType &inner_type() const { return _inner_type; }
+    const Function &lambda() const { return *_lambda; }
+    const NodeTypes &types() const { return _lambda_types; }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Join : public Op2
 {
     using Super = Op2;
@@ -463,6 +486,7 @@ const TensorFunction &const_value(const Value &value, Stash &stash);
 const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash);
 const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash);
+const TensorFunction &map_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash);
 const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
 const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
 const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash);

@@ -12,6 +12,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_lambda.h>
 #include <vespa/eval/instruction/generic_map.h>
+#include <vespa/eval/instruction/generic_map_subspaces.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_peek.h>
 #include <vespa/eval/instruction/generic_reduce.h>
@@ -168,6 +169,20 @@ Map::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
+}
+
+//-----------------------------------------------------------------------------
+
+InterpretedFunction::Instruction
+MapSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+{
+    return instruction::GenericMapSubspaces::make_instruction(*this, factory, stash);
+}
+
+void
+MapSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
 }
 
 //-----------------------------------------------------------------------------
@@ -453,6 +468,11 @@ const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
     ValueType result_type = child.result_type().map();
     return stash.create<Map>(result_type, child, function);
+}
+
+const TensorFunction &map_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash) {
+    auto result_type = child.result_type().strip_indexed_dimensions().wrap(node_types.get_type(function.root()));
+    return stash.create<MapSubspaces>(result_type, child, function, std::move(node_types));
 }
 
 const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {

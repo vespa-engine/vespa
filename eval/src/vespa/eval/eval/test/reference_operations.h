@@ -19,6 +19,7 @@ struct ReferenceOperations {
     using map_fun_t = std::function<double(double)>;
     using join_fun_t = std::function<double(double,double)>;
     using lambda_fun_t = std::function<double(const std::vector<size_t> &dimension_indexes)>;
+    using map_subspace_fun_t = std::function<TensorSpec(const TensorSpec &subspace)>;
 
     // mapping from cell address to index of child that computes the cell value
     using CreateSpec = tensor_function::Create::Spec;
@@ -33,6 +34,7 @@ struct ReferenceOperations {
     static TensorSpec create(const vespalib::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec join(const TensorSpec &a, const TensorSpec &b, join_fun_t function);
     static TensorSpec map(const TensorSpec &a, map_fun_t func);
+    static TensorSpec map_subspaces(const TensorSpec &a, map_subspace_fun_t fun);
     static TensorSpec merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun);
     static TensorSpec peek(const PeekSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims);

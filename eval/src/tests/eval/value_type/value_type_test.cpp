@@ -351,6 +351,36 @@ TEST("require that mapped dimensions can be obtained") {
     TEST_DO(my_check(type("tensor(a[1],b[1],x{},y[10],z[1])").mapped_dimensions()));
 }
 
+TEST("require that mapped dimensions can be stripped") {
+    EXPECT_EQUAL(type("error").strip_mapped_dimensions(), type("error"));
+    EXPECT_EQUAL(type("double").strip_mapped_dimensions(), type("double"));
+    EXPECT_EQUAL(type("tensor<float>(x{})").strip_mapped_dimensions(), type("double"));
+    EXPECT_EQUAL(type("tensor<float>(x[10])").strip_mapped_dimensions(), type("tensor<float>(x[10])"));
+    EXPECT_EQUAL(type("tensor<float>(a[1],b{},c[2],d{},e[3],f{})").strip_mapped_dimensions(), type("tensor<float>(a[1],c[2],e[3])"));
+}
+
+TEST("require that indexed dimensions can be stripped") {
+    EXPECT_EQUAL(type("error").strip_indexed_dimensions(), type("error"));
+    EXPECT_EQUAL(type("double").strip_indexed_dimensions(), type("double"));
+    EXPECT_EQUAL(type("tensor<float>(x{})").strip_indexed_dimensions(), type("tensor<float>(x{})"));
+    EXPECT_EQUAL(type("tensor<float>(x[10])").strip_indexed_dimensions(), type("double"));
+    EXPECT_EQUAL(type("tensor<float>(a[1],b{},c[2],d{},e[3],f{})").strip_indexed_dimensions(), type("tensor<float>(b{},d{},f{})"));
+}
+
+TEST("require that value types can be wrapped inside each other") {
+    EXPECT_EQUAL(type("error").wrap(type("error")), type("error"));
+    EXPECT_EQUAL(type("double").wrap(type("error")), type("error"));
+    EXPECT_EQUAL(type("error").wrap(type("double")), type("error"));
+    EXPECT_EQUAL(type("double").wrap(type("double")), type("double"));
+    EXPECT_EQUAL(type("tensor<int8>(x{})").wrap(type("tensor<int8>(y[10])")), type("tensor<int8>(x{},y[10])"));
+    EXPECT_EQUAL(type("tensor<int8>(a{},c{})").wrap(type("tensor<int8>(b[10],d[5])")), type("tensor<int8>(a{},b[10],c{},d[5])"));
+    EXPECT_EQUAL(type("tensor<int8>(x{})").wrap(type("tensor<int8>(x[10])")), type("error")); // dimension name conflict
+    EXPECT_EQUAL(type("tensor<int8>(x{},z[2])").wrap(type("tensor<int8>(y[10])")), type("error")); // outer cannot have indexed dimensions
+    EXPECT_EQUAL(type("tensor<int8>(x{})").wrap(type("tensor<int8>(y[10],z{})")), type("error")); // inner cannot have mapped dimensions
+    EXPECT_EQUAL(type("double").wrap(type("tensor<int8>(y[10])")), type("tensor<int8>(y[10])")); // NB: no decay
+    EXPECT_EQUAL(type("tensor<int8>(x{})").wrap(type("double")), type("tensor<float>(x{})")); // NB: decay
+}
+
 TEST("require that dimension index can be obtained") {
     EXPECT_EQUAL(type("error").dimension_index("x"), ValueType::Dimension::npos);
     EXPECT_EQUAL(type("double").dimension_index("x"), ValueType::Dimension::npos);

@@ -456,6 +456,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorMap &node) override {
         make_error(node.num_children());
     }
+    void visit(const TensorMapSubspaces &node) override {
+        make_error(node.num_children());
+    }
     void visit(const TensorJoin &node) override {
         make_error(node.num_children());
     }

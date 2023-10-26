@@ -49,6 +49,12 @@ TensorSpec sparse_1d_all_two() {
         .add({{"c", "qux"}}, 2.0);
 }
 
+TensorSpec spec(const vespalib::string &expr) {
+    auto result = TensorSpec::from_expr(expr);
+    EXPECT_FALSE(ValueType::from_spec(result.type()).is_error());
+    return result;
+}
+
 //-----------------------------------------------------------------------------
 
 TEST(ReferenceConcatTest, concat_numbers) {
@@ -230,6 +236,62 @@ TEST(ReferenceMapTest, map_mixed_tensor) {
     auto output = ReferenceOperations::map(input, operation::Square::f);
     auto expect = mixed_5d_input(true);
     EXPECT_EQ(output, expect.normalize());
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceMapSubspacesTest, map_vectors) {
+    auto input = spec("tensor(x{},y[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    auto fun = [&](const TensorSpec &space) {
+                   EXPECT_EQ(space.type(), "tensor(y[3])");
+                   size_t i = 0;
+                   double a = 0.0;
+                   double b = 0.0;
+                   for (const auto &[addr, value]: space.cells()) {
+                       if (i < 2) {
+                           a += value;
+                       }
+                       if (i > 0) {
+                           b += value;
+                       }
+                       ++i;
+                   }
+                   TensorSpec result("tensor(y[2])");
+                   result.add({{"y", 0}}, a);
+                   result.add({{"y", 1}}, b);
+                   return result;
+               };
+    auto output = ReferenceOperations::map_subspaces(input, fun);
+    auto expect = spec("tensor(x{},y[2]):{foo:[3,5],bar:[9,11]}");
+    EXPECT_EQ(output, expect);
+}
+
+TEST(ReferenceMapSubspacesTest, map_numbers_with_external_decay) {
+    auto input = spec("tensor<bfloat16>(x{}):{foo:3,bar:5}");
+    auto fun = [&](const TensorSpec &space) {
+                   EXPECT_EQ(space.type(), "double");
+                   TensorSpec result("double");
+                   result.add({}, space.cells().begin()->second + 4.0);
+                   return result;
+               };
+    auto output = ReferenceOperations::map_subspaces(input, fun);
+    auto expect = spec("tensor<float>(x{}):{foo:7,bar:9}");
+    EXPECT_EQ(output, expect);
+}
+
+TEST(ReferenceMapSubspacesTest, cast_cells_without_internal_decay) {
+    auto input = spec("tensor<float>(x{},y[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    auto fun = [&](const TensorSpec &space) {
+                   EXPECT_EQ(space.type(), "tensor<float>(y[3])");
+                   TensorSpec result("tensor<bfloat16>(y[3])");
+                   for (const auto &[addr, value]: space.cells()) {
+                       result.add(addr, value);
+                   }
+                   return result;
+               };
+    auto output = ReferenceOperations::map_subspaces(input, fun);
+    auto expect = spec("tensor<bfloat16>(x{},y[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    EXPECT_EQ(output, expect);
 }
 
 //-----------------------------------------------------------------------------

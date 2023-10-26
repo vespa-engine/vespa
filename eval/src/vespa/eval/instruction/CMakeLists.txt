@@ -24,6 +24,7 @@ vespa_add_library(eval_instruction OBJECT
     generic_join.cpp
     generic_lambda.cpp
     generic_map.cpp
+    generic_map_subspaces.cpp
     generic_merge.cpp
     generic_peek.cpp
     generic_reduce.cpp
