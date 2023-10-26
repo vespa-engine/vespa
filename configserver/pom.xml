@@ -34,9 +34,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>airlift-zstd</artifactId>
-      <version>${project.version}</version>
+      <groupId>io.airlift</groupId>
+      <artifactId>aircompressor</artifactId>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -216,7 +215,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <allowEmbeddedArtifacts>com.yahoo.vespa:airlift-zstd</allowEmbeddedArtifacts>
+          <allowEmbeddedArtifacts>io.airlift:aircompressor</allowEmbeddedArtifacts>
         </configuration>
       </plugin>
       <plugin>

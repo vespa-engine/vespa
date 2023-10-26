@@ -138,7 +138,6 @@
                     <i>com.yahoo.vespa:fat-model-dependencies:*:*</i>
 
                     <!-- Vespa artifacts embedded -->
-                    <i>com.yahoo.vespa:airlift-zstd:*:*</i>
                     <i>com.yahoo.vespa:annotations:*:*</i>
                     <i>com.yahoo.vespa:component:*:*</i>
                     <i>com.yahoo.vespa:config:*:*</i>
@@ -196,6 +195,7 @@
                     <i>com.sun.xml.bind:jaxb-core:*:*</i>
                     <i>com.sun.xml.bind:jaxb-impl:*:*</i>
                     <i>com.thaiopensource:jing:*:*</i>
+                    <i>io.airlift:aircompressor:*:*</i>
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>io.prometheus:simpleclient_tracer_common:*:*</i>

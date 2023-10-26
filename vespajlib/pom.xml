@@ -32,9 +32,9 @@
       <artifactId>jna</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>airlift-zstd</artifactId>
-      <version>${project.version}</version>
+      <groupId>io.airlift</groupId>
+      <artifactId>aircompressor</artifactId>
+      <version>${aircompress.vespa.version}</version>
     </dependency>
     <dependency>
       <groupId>net.openhft</groupId>

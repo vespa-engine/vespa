@@ -549,8 +549,6 @@ jobs:
             while read f; do (echo -e "---\nrender_with_liquid: false\n---\n"; cat ${f})>${f}.new; mv ${f}.new ${f}; done
       - build-site: |
           bundle exec jekyll build
-      - ignore-files: |
-          rm -rf _site/airlift-zstd
       - check-links: |
           bundle exec htmlproofer \
           --assume-extension --check-html --check-external-hash --no-enforce-http \

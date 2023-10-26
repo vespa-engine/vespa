@@ -35,8 +35,8 @@
           <artifactId>asm</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>airlift-zstd</artifactId>
+          <groupId>io.airlift</groupId>
+          <artifactId>aircompress</artifactId>
         </exclusion>
         <exclusion>
           <groupId>net.java.dev.jna</groupId>

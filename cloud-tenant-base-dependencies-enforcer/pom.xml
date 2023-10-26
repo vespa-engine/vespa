@@ -47,6 +47,7 @@
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}:provided</include>
+                                        <include>io.airlift:aircompressor:${aircompress.vespa.version}:provided</include>
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.vespa.version}:provided</include>
@@ -110,7 +111,6 @@
                                         <include>com.yahoo.vespa:vespalog:*:provided</include>
 
                                         <!-- Vespa test dependencies -->
-                                        <include>com.yahoo.vespa:airlift-zstd:*:test</include>
                                         <include>com.yahoo.vespa:application:*:test</include>
                                         <include>com.yahoo.vespa:cloud-tenant-cd:*:test</include>
                                         <include>com.yahoo.vespa:config-application-package:*:test</include>

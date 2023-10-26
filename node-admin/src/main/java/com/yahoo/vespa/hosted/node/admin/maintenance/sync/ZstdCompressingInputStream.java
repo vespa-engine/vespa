@@ -14,7 +14,7 @@ import java.io.InputStream;
 public class ZstdCompressingInputStream extends InputStream {
 
     public static final int DEFAULT_INPUT_BUFFER_SIZE = 8 * 1024;
-    static final ZstdCompressor compressor = new ZstdCompressor();
+    private final ZstdCompressor compressor = new ZstdCompressor();
 
     private final InputStream is;
     private final byte[] inputBuffer;
