@@ -93,16 +93,8 @@ public class Preparer {
         }
     }
 
-    /**
-     * Whether the preparation of an application MAY require changes to the parent hosts, and therefore the parent host lock is required.
-     * See {@link NodeCandidate#withExclusiveParent(boolean)}.
-     */
-    public static boolean requireParentHostLock(boolean makeExclusive, NodeType type, boolean allowHostSharing) {
-        return makeExclusive && type == NodeType.tenant && !allowHostSharing;
-    }
-
     private ApplicationMutex parentLockOrNull(boolean makeExclusive, NodeType type) {
-        return requireParentHostLock(makeExclusive, type, nodeRepository.zone().cloud().allowHostSharing()) ?
+        return NodeCandidate.canMakeHostExclusive(makeExclusive, type, nodeRepository.zone().cloud().allowHostSharing()) ?
                nodeRepository.applications().lock(InfrastructureApplication.withNodeType(type.parentNodeType()).id()) :
                null;
     }
