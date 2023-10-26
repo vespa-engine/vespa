@@ -14,6 +14,17 @@ public class StatusHistory {
     SortedMap<ZonedDateTime, BillStatus> history;
 
     public StatusHistory(SortedMap<ZonedDateTime, BillStatus> history) {
+        // Validate the given history
+        var iter = history.values().iterator();
+        BillStatus next  = iter.hasNext() ? iter.next() : null;
+        while (iter.hasNext()) {
+            var current = next;
+            next = iter.next();
+            if (! validateStatus(current, next)) {
+                throw new IllegalArgumentException("Invalid transition from " + current + " to " + next);
+            }
+        }
+
         this.history = history;
     }
 
@@ -30,6 +41,21 @@ public class StatusHistory {
 
     public SortedMap<ZonedDateTime, BillStatus> getHistory() {
         return history;
+    }
+
+    public void checkValidTransition(BillStatus newStatus) {
+        if (! validateStatus(current(), newStatus)) {
+            throw new IllegalArgumentException("Invalid transition from " + current() + " to " + newStatus);
+        }
+    }
+
+    private static boolean validateStatus(BillStatus current, BillStatus newStatus) {
+        return switch(current) {
+            case OPEN -> true;
+            case FROZEN -> newStatus != BillStatus.OPEN; // This could be subject to change.
+            case CLOSED -> newStatus == BillStatus.CLOSED;
+            case VOID -> newStatus == BillStatus.VOID;
+        };
     }
 
 }
