@@ -151,8 +151,8 @@ public class OnnxEvaluator implements AutoCloseable {
                 throw new IllegalArgumentException("No such file: " + model.path().get());
             }
             if (tryCuda && isCudaError(e) && !options.gpuDeviceRequired()) {
-                LOG.log(Level.WARNING, "Failed to create session with CUDA using GPU device " +
-                                       options.gpuDeviceNumber() + ". Falling back to CPU", e);
+                LOG.log(Level.INFO, "Failed to create session with CUDA using GPU device " +
+                                       options.gpuDeviceNumber() + ". Falling back to CPU. Reason: " + e.getMessage());
                 return createSession(model, runtime, options, false);
             }
             if (isCudaError(e)) {
