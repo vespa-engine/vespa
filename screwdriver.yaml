@@ -355,6 +355,7 @@ jobs:
           fi
 
   publish-el9-preview:
+    requires: [~pr]
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
     annotations:
       screwdriver.cd/cpu: 7
@@ -368,7 +369,7 @@ jobs:
 
     environment:
       BASE_IMAGE: "el9"
-      IMAGE_NAME: "vespaengine/vespa-el9-preview"
+      IMAGE_NAME: "vespa-el9-preview"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
@@ -403,7 +404,8 @@ jobs:
                 --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
+                --tag vespaengine/vespa:latest \
+                --tag vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
           # Run quick start guide
@@ -444,7 +446,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 1 * *
     environment:
       BASE_IMAGE: "el8"
-      IMAGE_NAME: "vespaengine/vespa-el8-preview"
+      IMAGE_NAME: "vespa-el8-preview"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
     steps: *publish-el9-preview-steps
