@@ -120,9 +120,6 @@ class JvmHeapSizeValidatorTest {
 
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
-        @Override
-        public Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger) { return this; }
-
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
