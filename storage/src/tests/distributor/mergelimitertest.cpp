@@ -42,24 +42,30 @@ struct NodeFactory {
     operator const MergeLimiter::NodeArray&() const { return _nodes; }
 };
 
-#define ASSERT_LIMIT(maxNodes, nodes, result) \
-{ \
-    MergeLimiter limiter(maxNodes); \
-    auto nodesCopy = nodes; \
-    limiter.limitMergeToMaxNodes(nodesCopy); \
-    std::ostringstream actual; \
-    for (uint32_t i = 0; i < nodesCopy.size(); ++i) { \
-        if (i != 0) actual << ","; \
-        actual << nodesCopy[i]._nodeIndex; \
-        if (nodesCopy[i]._sourceOnly) actual << 's'; \
-    } \
-    ASSERT_EQ(result, actual.str()); \
 }
 
-}
+struct MergeLimiterTest : Test {
+
+    static std::string limit(uint32_t max_nodes, std::vector<MergeMetaData> nodes) {
+        MergeLimiter limiter(max_nodes);
+        limiter.limitMergeToMaxNodes(nodes);
+        std::ostringstream actual;
+        for (uint32_t i = 0; i < nodes.size(); ++i) {
+            if (i != 0) {
+                actual << ",";
+            }
+            actual << nodes[i]._nodeIndex;
+            if (nodes[i]._sourceOnly) {
+                actual << 's';
+            }
+        }
+        return actual.str();
+    }
+
+};
 
 // If there is <= max nodes, then none should be removed.
-TEST(MergeLimiterTest, keeps_all_below_limit) {
+TEST_F(MergeLimiterTest, keeps_all_below_limit) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(3, 0x4)
         .addTrusted(5, 0x4)
@@ -67,22 +73,22 @@ TEST(MergeLimiterTest, keeps_all_below_limit) {
         .add(2, 0x6)
         .add(4, 0x5));
 
-    ASSERT_LIMIT(8, nodes, "3,5,9,2,4");
+    ASSERT_EQ(limit(8, nodes), "3,5,9,2,4");
 }
 // If less than max nodes is untrusted, merge all untrusted copies with a
 // trusted one. (Optionally with extra trusted copies if there is space)
-TEST(MergeLimiterTest, less_than_max_untrusted) {
+TEST_F(MergeLimiterTest, less_than_max_untrusted) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(3, 0x4)
         .addTrusted(5, 0x4)
         .add(9, 0x6)
         .add(2, 0x6)
         .add(4, 0x5));
-    ASSERT_LIMIT(4, nodes, "2,4,9,5");
+    ASSERT_EQ(limit(4, nodes), "2,4,9,5");
 }
 // With more than max untrusted, just merge one trusted with as many untrusted
 // that fits.
-TEST(MergeLimiterTest, more_than_max_untrusted) {
+TEST_F(MergeLimiterTest, more_than_max_untrusted) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(3, 0x4)
         .addTrusted(5, 0x4)
@@ -91,12 +97,12 @@ TEST(MergeLimiterTest, more_than_max_untrusted) {
         .add(13, 0x9)
         .add(1, 0x7)
         .add(4, 0x5));
-    ASSERT_LIMIT(4, nodes, "2,13,1,5");
+    ASSERT_EQ(limit(4, nodes), "2,13,1,5");
 }
 // With nothing trusted. If there is <= max different variants (checksums),
 // merge one of each variant. After this merge, all these nodes can be set
 // trusted. (Except for any source only ones)
-TEST(MergeLimiterTest, all_untrusted_less_than_max_variants) {
+TEST_F(MergeLimiterTest, all_untrusted_less_than_max_variants) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .add(3, 0x4)
         .add(5, 0x4)
@@ -105,11 +111,11 @@ TEST(MergeLimiterTest, all_untrusted_less_than_max_variants) {
         .add(13, 0x3)
         .add(1, 0x3)
         .add(4, 0x3));
-    ASSERT_LIMIT(4, nodes, "5,2,4,3");
+    ASSERT_EQ(limit(4, nodes), "5,2,4,3");
 }
 // With nothing trusted and more than max variants, we just have to merge one
 // of each variant until we end up with less than max variants.
-TEST(MergeLimiterTest, all_untrusted_more_than_max_variants) {
+TEST_F(MergeLimiterTest, all_untrusted_more_than_max_variants) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .add(3, 0x4)
         .add(5, 0x5)
@@ -118,12 +124,12 @@ TEST(MergeLimiterTest, all_untrusted_more_than_max_variants) {
         .add(13, 0x3)
         .add(1, 0x9)
         .add(4, 0x8));
-    ASSERT_LIMIT(4, nodes, "3,5,2,13");
+    ASSERT_EQ(limit(4, nodes), "3,5,2,13");
 }
 
 // With more than max untrusted, just merge one trusted with as many untrusted
 // that fits.
-TEST(MergeLimiterTest, source_only_last) {
+TEST_F(MergeLimiterTest, source_only_last) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(3, 0x4)
         .addTrusted(5, 0x4).setSourceOnly()
@@ -132,20 +138,20 @@ TEST(MergeLimiterTest, source_only_last) {
         .add(13, 0x9)
         .add(1, 0x7)
         .add(4, 0x5));
-    ASSERT_LIMIT(4, nodes, "9,3,5s,2s");
+    ASSERT_EQ(limit(4, nodes), "9,3,5s,2s");
 }
 
-TEST(MergeLimiterTest, limited_set_cannot_be_just_source_only) {
+TEST_F(MergeLimiterTest, limited_set_cannot_be_just_source_only) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(9, 0x6)
         .addTrusted(2, 0x6)
         .addTrusted(13, 0x6).setSourceOnly()
         .add(1, 0x7).setSourceOnly());
-    ASSERT_LIMIT(2, nodes, "2,13s");
-    ASSERT_LIMIT(3, nodes, "2,13s,1s");
+    ASSERT_EQ(limit(2, nodes), "2,13s");
+    ASSERT_EQ(limit(3, nodes), "2,13s,1s");
 }
 
-TEST(MergeLimiterTest, non_source_only_replica_chosen_from_in_sync_group) {
+TEST_F(MergeLimiterTest, non_source_only_replica_chosen_from_in_sync_group) {
     // nodes 9, 2, 13 are all in sync. Merge limiter will currently by default
     // pop the _last_ node of an in-sync replica "group" when outputting a limited
     // set. Unless we special-case source-only replicas here, we'd end up with an
@@ -155,38 +161,38 @@ TEST(MergeLimiterTest, non_source_only_replica_chosen_from_in_sync_group) {
         .add(2, 0x6)
         .add(13, 0x6).setSourceOnly()
         .add(1, 0x7).setSourceOnly());
-    ASSERT_LIMIT(2, nodes, "2,13s");
-    ASSERT_LIMIT(3, nodes, "2,13s,1s");
+    ASSERT_EQ(limit(2, nodes), "2,13s");
+    ASSERT_EQ(limit(3, nodes), "2,13s,1s");
 }
 
-TEST(MergeLimiterTest, non_source_only_replicas_preferred_when_replicas_not_in_sync) {
+TEST_F(MergeLimiterTest, non_source_only_replicas_preferred_when_replicas_not_in_sync) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .add(9, 0x4)
         .add(2, 0x5)
         .add(13, 0x6).setSourceOnly()
         .add(1, 0x7).setSourceOnly());
-    ASSERT_LIMIT(2, nodes, "9,2");
-    ASSERT_LIMIT(3, nodes, "9,2,13s");
+    ASSERT_EQ(limit(2, nodes), "9,2");
+    ASSERT_EQ(limit(3, nodes), "9,2,13s");
 }
 
-TEST(MergeLimiterTest, at_least_one_non_source_only_replica_chosen_when_all_trusted) {
+TEST_F(MergeLimiterTest, at_least_one_non_source_only_replica_chosen_when_all_trusted) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(9, 0x6)
         .addTrusted(2, 0x6)
         .addTrusted(13, 0x6).setSourceOnly()
         .addTrusted(1, 0x6).setSourceOnly());
-    ASSERT_LIMIT(2, nodes, "2,13s");
-    ASSERT_LIMIT(3, nodes, "2,13s,1s");
+    ASSERT_EQ(limit(2, nodes), "2,13s");
+    ASSERT_EQ(limit(3, nodes), "2,13s,1s");
 }
 
-TEST(MergeLimiterTest, missing_replica_distinct_from_empty_replica) {
+TEST_F(MergeLimiterTest, missing_replica_distinct_from_empty_replica) {
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addEmpty(3)
         .addEmpty(5)
         .addMissing(1)
         .addMissing(2));
-    ASSERT_LIMIT(2, nodes, "5,2");
-    ASSERT_LIMIT(3, nodes, "5,2,3");
+    ASSERT_EQ(limit(2, nodes), "5,2");
+    ASSERT_EQ(limit(3, nodes), "5,2,3");
 }
 
 } // storage::distributor
