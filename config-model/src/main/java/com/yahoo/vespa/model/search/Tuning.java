@@ -120,8 +120,8 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
         }
 
         public static class Resizing implements ProtonConfig.Producer {
+            // TODO GC as soon as resource computation is moved to backend.
             public Integer initialDocumentCount = null;
-            public Integer amortizeCount = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
@@ -130,29 +130,16 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
                         db.allocation.initialnumdocs(initialDocumentCount);
                     }
                 }
-                if (amortizeCount !=null) {
-                    for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
-                        db.allocation.amortizecount(amortizeCount);
-                    }
-                }
             }
 
         }
 
         public static class Index implements ProtonConfig.Producer {
             public static class Io implements ProtonConfig.Producer {
-                public IoType write = null;
-                public IoType read = null;
                 public IoType search = null;
 
                 @Override
                 public void getConfig(ProtonConfig.Builder builder) {
-                    if (write != null) {
-                        builder.indexing.write.io(ProtonConfig.Indexing.Write.Io.Enum.valueOf(write.name));
-                    }
-                    if (read != null) {
-                        builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
-                    }
                     if (search != null) {
                         if (search.equals(IoType.POPULATE)) {
                             builder.search.mmap.options.add(ProtonConfig.Search.Mmap.Options.POPULATE);
@@ -184,38 +171,11 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             }
         }
 
-        public static class Attribute implements ProtonConfig.Producer {
-            public static class Io implements ProtonConfig.Producer {
-                public IoType write = null;
-
-                public Io() {}
-
-                @Override
-                public void getConfig(ProtonConfig.Builder builder) {
-                    if (write != null) {
-                        builder.attribute.write.io(ProtonConfig.Attribute.Write.Io.Enum.valueOf(write.name));
-                    }
-                }
-            }
-
-            public Io io;
-
-            @Override
-            public void getConfig(ProtonConfig.Builder builder) {
-                if (io != null) io.getConfig(builder);
-            }
-
-        }
-
         public static class Summary implements ProtonConfig.Producer {
             public static class Io {
-                public IoType write = null;
                 public IoType read = null;
 
                 public void getConfig(ProtonConfig.Summary.Builder builder) {
-                    if (write != null) {
-                        builder.write.io(ProtonConfig.Summary.Write.Io.Enum.valueOf(write.name));
-                    }
                     if (read != null) {
                         if (read.equals(IoType.POPULATE)) {
                             builder.read.io(ProtonConfig.Summary.Read.Io.MMAP);
@@ -389,7 +349,6 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
         public FlushStrategy strategy = null;
         public Resizing resizing = null;
         public Index index = null;
-        public Attribute attribute = null;
         public Summary summary = null;
         public Initialize initialize = null;
         public Feeding feeding = null;
@@ -402,7 +361,6 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             if (strategy != null) strategy.getConfig(builder);
             if (resizing != null) resizing.getConfig(builder);
             if (index != null) index.getConfig(builder);
-            if (attribute != null) attribute.getConfig(builder);
             if (summary != null) summary.getConfig(builder);
             if (initialize != null) initialize.getConfig(builder);
             if (feeding != null) feeding.getConfig(builder);

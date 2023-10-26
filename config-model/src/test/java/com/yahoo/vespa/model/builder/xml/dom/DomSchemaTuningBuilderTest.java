@@ -27,10 +27,6 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "</tuning>");
     }
 
-    private Tuning newTuning(String xml) {
-        return createTuning(parse(xml));
-    }
-
     private Tuning createTuning(Element xml) {
         DomSearchTuningBuilder b = new DomSearchTuningBuilder();
         return b.build(root.getDeployState(), root, xml);
@@ -113,14 +109,11 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "<amortize-count>13</amortize-count>",
                 "</resizing>"));
         assertEquals(128, t.searchNode.resizing.initialDocumentCount.intValue());
-        assertEquals(13, t.searchNode.resizing.amortizeCount.intValue());
     }
 
     @Test
     void requireThatWeCanParseIndexTag() {
         Tuning t = createTuning(parseXml("<index>", "<io>",
-                "<write>directio</write>",
-                "<read>normal</read>",
                 "<search>mmap</search>",
                 "</io>",
                 "<warmup>" +
@@ -128,14 +121,12 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "<unpack>true</unpack>",
                 "</warmup>",
                 "</index>"));
-        assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.index.io.write);
-        assertEquals(Tuning.SearchNode.IoType.NORMAL, t.searchNode.index.io.read);
         assertEquals(Tuning.SearchNode.IoType.MMAP, t.searchNode.index.io.search);
         assertEquals(178, t.searchNode.index.warmup.time, DELTA);
         assertTrue(t.searchNode.index.warmup.unpack);
         ProtonConfig cfg = getProtonCfg(t);
         assertEquals(cfg.indexing().write().io(), ProtonConfig.Indexing.Write.Io.DIRECTIO);
-        assertEquals(cfg.indexing().read().io(), ProtonConfig.Indexing.Read.Io.NORMAL);
+        assertEquals(cfg.indexing().read().io(), ProtonConfig.Indexing.Read.Io.DIRECTIO);
         assertEquals(cfg.index().warmup().time(), 178, DELTA);
         assertTrue(cfg.index().warmup().unpack());
     }
@@ -172,9 +163,8 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     @Test
     void requireThatWeCanParseAttributeTag() {
         Tuning t = createTuning(parseXml("<attribute>", "<io>",
-                "<write>directio</write>",
+                "<write>normal</write>",
                 "</io>", "</attribute>"));
-        assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.attribute.io.write);
         ProtonConfig cfg = getProtonCfg(t);
         assertEquals(cfg.attribute().write().io(), ProtonConfig.Attribute.Write.Io.DIRECTIO);
     }
@@ -209,7 +199,6 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "</logstore>",
                 "</store>",
                 "</summary>"));
-        assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.write);
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.read);
         assertEquals(128, t.searchNode.summary.store.cache.maxSize.longValue());
         assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent, DELTA);
