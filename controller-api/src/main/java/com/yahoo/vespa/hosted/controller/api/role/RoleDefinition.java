@@ -43,8 +43,6 @@ public enum RoleDefinition {
            Policy.applicationRead,
            Policy.deploymentRead,
            Policy.publicRead,
-           Policy.paymentInstrumentRead,
-           Policy.paymentInstrumentDelete,
            Policy.billingInformationRead,
            Policy.horizonProxyOperations),
 
@@ -56,8 +54,6 @@ public enum RoleDefinition {
               Policy.developmentDeployment,
               Policy.keyManagement,
               Policy.submission,
-              Policy.paymentInstrumentRead,
-              Policy.paymentInstrumentDelete,
               Policy.billingInformationRead,
               Policy.secretStoreOperations,
               Policy.dataplaneToken),
@@ -72,7 +68,6 @@ public enum RoleDefinition {
                   Policy.tenantArchiveAccessManagement,
                   Policy.applicationManager,
                   Policy.keyRevokal,
-                  Policy.paymentInstrumentRead,
                   Policy.billingInformationRead,
                   Policy.accessRequests
             ),
@@ -99,7 +94,6 @@ public enum RoleDefinition {
     paymentProcessor(Policy.paymentProcessor),
 
     hostedAccountant(Policy.hostedAccountant,
-                     Policy.collectionMethodUpdate,
                      Policy.planUpdate,
                      Policy.tenantUpdate);
 
