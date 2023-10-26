@@ -99,7 +99,8 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                                                     .map(Node::hostname)
                                                     .toList();
             if (unparkedChildren.isEmpty()) {
-                return Optional.of(nodeRepository.nodes().park(node.hostname(), true, Agent.FailedExpirer,
+                // Only forcing de-provisioning of off premises nodes
+                return Optional.of(nodeRepository.nodes().park(node.hostname(), nodeRepository.zone().cloud().dynamicProvisioning(), Agent.FailedExpirer,
                                                                "Parked by FailedExpirer due to " + reason.get()));
             } else {
                 log.info(String.format("Expired failed node %s was not parked because of unparked children: %s",
