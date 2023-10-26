@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
 import com.yahoo.document.DataType;
@@ -11,8 +11,9 @@ import java.io.File;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class DocumentGenTest {
 
@@ -39,7 +40,7 @@ public class DocumentGenTest {
         assertEquals(searches.get("music3").getDocument("music3").getField("pos").getDataType().getName(), "position");
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
         assertTrue(searches.get("book").getDocument("book").getField("mywsinteger").getDataType() instanceof WeightedSetDataType);
-        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType() == DataType.INT);
+        assertSame(((WeightedSetDataType) (searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType(), DataType.INT);
     }
 
     @Test
@@ -50,18 +51,15 @@ public class DocumentGenTest {
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
         assertTrue(searches.get("book").getDocument("book").getField("mywsinteger").getDataType() instanceof WeightedSetDataType);
-        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType() == DataType.INT);
+        assertSame(((WeightedSetDataType) (searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType(), DataType.INT);
     }
 
     @Test
     public void testEmptyPkgNameForbidden() {
-        DocumentGenMojo mojo = new DocumentGenMojo();
-        try {
-            mojo.execute(new File("etc/localapp/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "");
-            fail("Didn't throw in empty pkg");
-        } catch (IllegalArgumentException e) {
-
-        }
+        assertThrows(IllegalArgumentException.class,
+                     () -> new DocumentGenMojo().execute(new File("etc/localapp/"),
+                                                         new File("target/generated-test-sources/vespa-documentgen-plugin/"),
+                                                         ""));
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
@@ -46,12 +46,11 @@ ModifiedBucketChecker::BucketIdListResult::reset(document::BucketSpace bucketSpa
 ModifiedBucketChecker::ModifiedBucketChecker(
         ServiceLayerComponentRegister& compReg,
         spi::PersistenceProvider& provider,
-        const config::ConfigUri& configUri)
+        const StorServerConfig& bootstrap_config)
     : StorageLink("Modified bucket checker"),
       _provider(provider),
       _component(),
       _thread(),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _monitor(),
       _stateLock(),
       _bucketSpaces(),
@@ -60,8 +59,7 @@ ModifiedBucketChecker::ModifiedBucketChecker(
       _maxPendingChunkSize(100),
       _singleThreadMode(false)
 {
-    _configFetcher->subscribe<vespa::config::content::core::StorServerConfig>(configUri.getConfigId(), this);
-    _configFetcher->start();
+    on_configure(bootstrap_config);
 
     std::ostringstream threadName;
     threadName << "Modified bucket checker " << static_cast<void*>(this);
@@ -75,15 +73,14 @@ ModifiedBucketChecker::~ModifiedBucketChecker()
 }
 
 void
-ModifiedBucketChecker::configure(
-    std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
+ModifiedBucketChecker::on_configure(const vespa::config::content::core::StorServerConfig& newConfig)
 {
     std::lock_guard lock(_stateLock);
-    if (newConfig->bucketRecheckingChunkSize < 1) {
+    if (newConfig.bucketRecheckingChunkSize < 1) {
         throw config::InvalidConfigException(
                 "Cannot have bucket rechecking chunk size of less than 1");
     }
-    _maxPendingChunkSize = newConfig->bucketRecheckingChunkSize;
+    _maxPendingChunkSize = newConfig.bucketRecheckingChunkSize;
 }
 
 

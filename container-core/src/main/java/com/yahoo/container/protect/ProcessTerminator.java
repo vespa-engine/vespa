@@ -1,11 +1,11 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.protect;
 
 import com.yahoo.protect.Process;
 
 /**
- * An injectable terminator of the Java vm.
- * Components that encounters conditions where the vm should be terminated should
+ * An injectable terminator of the Java VM.
+ * Components that encounter conditions where the VM should be terminated should
  * request an instance of this injected. That makes termination testable
  * as tests can create subclasses of this which register the termination request
  * rather than terminating.

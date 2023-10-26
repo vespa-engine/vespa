@@ -1,0 +1,3 @@
+<p>
+    $esc.html($cloudTrialMessage)
+</p>

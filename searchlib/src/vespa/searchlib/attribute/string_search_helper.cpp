@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "string_search_helper.h"
 #include "dfa_fuzzy_matcher.h"
@@ -49,14 +49,15 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespali
                 ? vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None)
                 : vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
     } else if (isFuzzy()) {
+        auto max_edit_dist = term.getFuzzyMaxEditDistance();
         _fuzzyMatcher = std::make_unique<vespalib::FuzzyMatcher>(term.getTerm(),
-                                                                 term.getFuzzyMaxEditDistance(),
+                                                                 max_edit_dist,
                                                                  term.getFuzzyPrefixLength(),
                                                                  isCased());
         if ((fuzzy_matching_algorithm != FMA::BruteForce) &&
-            (term.getFuzzyMaxEditDistance() <= 2)) {
+            (max_edit_dist > 0 && max_edit_dist <= 2)) {
             _dfa_fuzzy_matcher = std::make_unique<DfaFuzzyMatcher>(term.getTerm(),
-                                                                   term.getFuzzyMaxEditDistance(),
+                                                                   max_edit_dist,
                                                                    term.getFuzzyPrefixLength(),
                                                                    isCased(),
                                                                    to_dfa_type(fuzzy_matching_algorithm));

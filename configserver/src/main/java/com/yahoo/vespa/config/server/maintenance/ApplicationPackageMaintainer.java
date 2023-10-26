@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.FileReference;
@@ -16,7 +16,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-import com.yahoo.vespa.flags.FlagSource;
+
 import java.io.File;
 import java.time.Duration;
 import java.util.List;
@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -37,20 +38,14 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
 
-    private final ApplicationRepository applicationRepository;
     private final File downloadDirectory;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
     private final FileDownloader fileDownloader;
 
-    ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
-                                 Curator curator,
-                                 Duration interval,
-                                 FlagSource flagSource,
-                                 List<String> otherConfigServersInCluster) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
-        this.applicationRepository = applicationRepository;
+    ApplicationPackageMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, false);
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
-        this.fileDownloader = createFileDownloader(otherConfigServersInCluster, downloadDirectory, supervisor);
+        this.fileDownloader = createFileDownloader(applicationRepository, downloadDirectory, supervisor);
     }
 
     @Override
@@ -91,9 +86,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         return  asSuccessFactorDeviation(attempts, failures);
     }
 
-    private static FileDownloader createFileDownloader(List<String> otherConfigServersInCluster,
+    private static FileDownloader createFileDownloader(ApplicationRepository applicationRepository,
                                                        File downloadDirectory,
                                                        Supervisor supervisor) {
+        List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(applicationRepository.configserverConfig());
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
         ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
         return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(300));

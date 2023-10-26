@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone;
 
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
@@ -46,7 +46,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Long> zookeeperBarrierTimeout() {
-        return getInstallVariable("zookeeper_barrier_timeout", Long::parseLong);
+        return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT"))
+                .map(Long::parseLong)
+                .or(() -> getInstallVariable("zookeeper_barrier_timeout", Long::parseLong));
     }
 
     @Override

@@ -1,9 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Duration;
 import java.util.logging.Level;
@@ -17,8 +16,8 @@ import java.util.logging.Level;
  */
 public class SessionsMaintainer extends ConfigServerMaintainer {
 
-    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, true);
+    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, true);
     }
 
     @Override

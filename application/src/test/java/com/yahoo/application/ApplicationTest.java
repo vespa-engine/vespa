@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
 import com.yahoo.application.container.MockServer;
@@ -24,6 +24,7 @@ import com.yahoo.search.handler.SearchHandler;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -50,9 +51,7 @@ public class ApplicationTest {
 
     @Test
     void minimal_application_can_be_constructed() {
-        try (Application application = Application.fromServicesXml("<container version=\"1.0\"/>", Networking.disable)) {
-            Application unused = application;
-        }
+        try (Application application = Application.fromServicesXml("<container version=\"1.0\"/>", Networking.disable)) { }
     }
 
     /** Tests that an application with search chains referencing a content cluster can be constructed. */
@@ -79,10 +78,6 @@ public class ApplicationTest {
             assertEquals("2", application.getCompiledQueryProfileRegistry().findQueryProfile("default").get("hits"));
             assertEquals("select * from sources * where weakAnd(substring contains \"foobar\") limit 2 timeout 20000000", result.getQuery().yqlRepresentation(true));
         }
-    }
-    private void printTrace(Result result) {
-        for (String message : result.getQuery().getContext(true).getTrace().traceNode().descendants(String.class))
-            System.out.println(message);
     }
 
     @Test
@@ -348,17 +343,17 @@ public class ApplicationTest {
     void http_interface_is_on_when_networking_is_enabled() throws Exception {
         int httpPort = getFreePort();
         try (Application application = Application.fromServicesXml(servicesXmlWithServer(httpPort), Networking.enable)) {
-            HttpClient client = new org.apache.http.impl.client.DefaultHttpClient();
-            HttpResponse response = client.execute(new HttpGet("http://localhost:" + httpPort));
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-            String line;
-            StringBuilder sb = new StringBuilder();
-            while ((line = r.readLine()) != null) {
-                sb.append(line).append("\n");
+            try (DefaultHttpClient client = new org.apache.http.impl.client.DefaultHttpClient()) {
+                HttpResponse response = client.execute(new HttpGet("http://localhost:" + httpPort));
+                assertEquals(200, response.getStatusLine().getStatusCode());
+                BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                String line;
+                StringBuilder sb = new StringBuilder();
+                while ((line = r.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                assertTrue(sb.toString().contains("Handler"));
             }
-            assertTrue(sb.toString().contains("Handler"));
-            Application unused = application;
         }
     }
 
@@ -366,7 +361,6 @@ public class ApplicationTest {
     void athenz_in_deployment_xml() {
         try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/athenz-in-deployment-xml/"), Networking.disable)) {
             // Deployment succeeded
-            Application unused = application;
         }
     }
 
@@ -386,9 +380,7 @@ public class ApplicationTest {
 
     @Test
     void application_with_access_control_can_be_constructed() {
-        try (Application application = Application.fromServicesXml(servicesXmlWithAccessControl(), Networking.disable)) {
-            Application unused = application;
-        }
+        try (Application application = Application.fromServicesXml(servicesXmlWithAccessControl(), Networking.disable)) { }
     }
 
     private static String servicesXmlWithAccessControl() {

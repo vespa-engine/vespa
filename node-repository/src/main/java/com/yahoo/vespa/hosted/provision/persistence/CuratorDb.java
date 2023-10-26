@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
@@ -221,7 +221,7 @@ public class CuratorDb {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                                    node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(),
+                                    node.exclusiveToApplicationId(), node.provisionedForApplicationId(), node.hostTTL(), node.hostEmptyAt(),
                                     node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates(),
                                     node.cloudAccount(), node.wireguardPubKey());
             curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));

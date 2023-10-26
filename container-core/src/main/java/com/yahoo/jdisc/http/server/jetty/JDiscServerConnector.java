@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
@@ -11,8 +11,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author bjorncs
@@ -26,6 +26,7 @@ class JDiscServerConnector extends ServerConnector {
     private final Metric metric;
     private final String connectorName;
     private final int listenPort;
+    private final List<String> knownServerNames;
 
     JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, JettyConnectionLogger connectionLogger,
                          ConnectionMetricAggregator connectionMetricAggregator, ConnectionFactory... factories) {
@@ -35,6 +36,7 @@ class JDiscServerConnector extends ServerConnector {
         this.connectorName = config.name();
         this.listenPort = config.listenPort();
         this.metricCtx = metric.createContext(createConnectorDimensions(listenPort, connectorName, 0));
+        this.knownServerNames = List.copyOf(config.serverName().known());
 
         this.statistics = new ConnectionStatistics();
         setAcceptedTcpNoDelay(config.tcpNoDelay());
@@ -69,7 +71,7 @@ class JDiscServerConnector extends ServerConnector {
         dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
         dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
         dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, request.getProtocol());
-        String serverName = Optional.ofNullable(request.getServerName()).orElse("unknown");
+        String serverName = knownServerNames.stream().filter(name -> name.equalsIgnoreCase(request.getServerName())).findFirst().orElse("unknown");
         dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
         dimensions.putAll(extraDimensions);
         return metric.createContext(dimensions);

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.text.Utf8;
@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 
 public class VdsHit extends Hit {
 
-    public static final int classId = registerClass(0x4000 + 96, VdsHit.class);
+    public static final int classId = registerClass(0x4000 + 96, VdsHit.class, VdsHit::new);
     private String docId = "";
     private RawData summary = new RawData();
 

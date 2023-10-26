@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_manager_explorer.h"
 #include "index_manager_stats.h"
@@ -76,6 +76,7 @@ IndexManagerExplorer::get_state(const Inserter &inserter, bool full) const
     object.setLong("lastSerialNum", _mgr->getCurrentSerialNum());
     if (full) {
         IndexManagerStats stats(*_mgr);
+        object.setBool("pending_urgent_flush", _mgr->has_pending_urgent_flush());
         Cursor &diskIndexArrayCursor = object.setArray("diskIndexes");
         for (const auto &diskIndex : stats.getDiskIndexes()) {
             insertDiskIndex(diskIndexArrayCursor, diskIndex);

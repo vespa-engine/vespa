@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
@@ -574,7 +574,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Reader reader = file.createReader();
             String certPem = IOUtils.readAll(reader);
             reader.close();
-            List<X509Certificate> x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
+            List<X509Certificate> x509Certificates;
+            try {
+                x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("File %s contains an invalid certificate".formatted(file.getPath().getRelative()), e);
+            }
             if (x509Certificates.isEmpty()) {
                 throw new IllegalArgumentException("File %s does not contain any certificates.".formatted(file.getPath().getRelative()));
             }
@@ -601,6 +606,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
         if (endpointCert != null) {
             builder.endpointCertificate(endpointCert);
+            Set<String> mtlsEndpointNames = state.getEndpoints().stream()
+                    .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.mtls)
+                    .flatMap(endpoint -> endpoint.names().stream())
+                    .collect(Collectors.toSet());
+            builder.knownServerNames(mtlsEndpointNames);
             boolean isPublic = state.zone().system().isPublic();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
@@ -654,6 +664,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .remoteAddressHeader("X-Forwarded-For")
                 .remotePortHeader("X-Forwarded-Port")
                 .clientAuth(SslClientAuth.NEED)
+                .knownServerNames(tokenEndpoints)
                 .build();
         server.addConnector(connector);
 

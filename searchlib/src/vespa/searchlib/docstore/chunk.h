@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -59,6 +59,7 @@ class Chunk {
 public:
     using UP = std::unique_ptr<Chunk>;
     using CompressionConfig = vespalib::compression::CompressionConfig;
+    using ConstBufferRef = vespalib::ConstBufferRef;
     class Config {
     public:
         Config(size_t maxBytes) noexcept : _maxBytes(maxBytes) { }
@@ -84,7 +85,7 @@ public:
     Chunk(uint32_t id, const Config & config);
     Chunk(uint32_t id, const void * buffer, size_t len);
     ~Chunk();
-    LidMeta append(uint32_t lid, const void * buffer, size_t len);
+    LidMeta append(uint32_t lid, ConstBufferRef data);
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const;
     std::pair<size_t, vespalib::alloc::Alloc> read(uint32_t lid) const;
     size_t count() const { return _lids.size(); }
@@ -96,7 +97,7 @@ public:
     void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, CompressionConfig compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
-    vespalib::ConstBufferRef getLid(uint32_t lid) const;
+    ConstBufferRef getLid(uint32_t lid) const;
     const vespalib::nbostream & getData() const;
     bool hasRoom(size_t len) const;
     vespalib::MemoryUsage getMemoryUsage() const;

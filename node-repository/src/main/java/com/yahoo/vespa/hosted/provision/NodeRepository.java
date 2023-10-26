@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.component.AbstractComponent;
@@ -210,6 +210,11 @@ public class NodeRepository extends AbstractComponent {
         return clusterSpec.isExclusive() ||
                ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
                ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
+    }
+
+    /** Whether the nodes of this cluster must be running on hosts that are specifically provisioned for the application. */
+    public boolean exclusiveProvisioning(ClusterSpec clusterSpec) {
+        return !zone.cloud().allowHostSharing() && clusterSpec.isExclusive();
     }
 
     /**

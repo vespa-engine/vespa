@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -228,6 +228,8 @@ public class SessionZooKeeperClient {
     public SessionData readSessionData() {
         return SessionData.fromSlime(SlimeUtils.jsonToSlime(curator.getData(sessionPath.append(SESSION_DATA_PATH)).orElseThrow()));
     }
+
+    public boolean sessionDataExists() { return curator.exists(sessionPath.append(SESSION_DATA_PATH)); }
 
     public Version readVespaVersion() {
         Optional<byte[]> data = curator.getData(versionPath());

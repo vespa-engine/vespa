@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.server.application.ApplicationReindexing.Cluster;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -46,9 +45,9 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
 
-    public ReindexingMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
+    public ReindexingMaintainer(ApplicationRepository applicationRepository, Curator curator,
                                 Duration interval, ConfigConvergenceChecker convergence, Clock clock) {
-        super(applicationRepository, curator, flagSource, clock, interval, true);
+        super(applicationRepository, curator, applicationRepository.flagSource(), clock, interval, true);
         this.convergence = convergence;
         this.clock = clock;
     }

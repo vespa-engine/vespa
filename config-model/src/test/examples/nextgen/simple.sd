@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search simple {
     document simple {
         field doc_field type string {
@@ -7,8 +7,8 @@ search simple {
         }
     }
     document-summary explicit_summary {
-        summary summary_field type string {
-            source: doc_field_summary
+        summary summary_field {
+            source: doc_field
         }
     }
     field extern_field type string {

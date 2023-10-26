@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -12,7 +12,7 @@ class Anything
 {
 public:
    using UP = std::unique_ptr<Anything>;
-   virtual ~Anything() { }
+   virtual ~Anything() = default;
 };
 
 /**
@@ -22,7 +22,7 @@ template<typename T>
 class AnyWrapper : public Anything
 {
 public:
-    AnyWrapper(T value) : _value(std::move(value)) { }
+    explicit AnyWrapper(T value) : _value(std::move(value)) { }
     const T & getValue() const { return _value; }
     static const T & getValue(const Anything & any) { return static_cast<const AnyWrapper &>(any).getValue(); }
 private:
@@ -35,7 +35,7 @@ private:
 class IObjectStore
 {
 public:
-    virtual ~IObjectStore() { }
+    virtual ~IObjectStore() = default;
     virtual void add(const vespalib::string & key, Anything::UP value) = 0;
     virtual const Anything * get(const vespalib::string & key) const = 0;
 };
@@ -47,7 +47,7 @@ class ObjectStore : public IObjectStore
 {
 public:
     ObjectStore();
-    ~ObjectStore();
+    ~ObjectStore() override;
     void add(const vespalib::string & key, Anything::UP value) override;
     const Anything * get(const vespalib::string & key) const override;
 private:

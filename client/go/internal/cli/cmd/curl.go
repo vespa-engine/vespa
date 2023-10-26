@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package cmd
 
 import (
@@ -41,7 +41,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			}
 			var service *vespa.Service
 			useDeploy := curlService == "deploy"
-			waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			if useDeploy {
 				if cli.config.cluster() != "" {
 					return fmt.Errorf("cannot specify cluster for service %s", curlService)
@@ -59,6 +59,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
+			// TODO(mpolden): Support issuing request to deploy service
 			if useDeploy {
 				if err := addAccessToken(c, target); err != nil {
 					return err

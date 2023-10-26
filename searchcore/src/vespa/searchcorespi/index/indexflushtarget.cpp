@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexflushtarget.h"
 #include <vespa/vespalib/util/size_literals.h>
@@ -44,7 +44,8 @@ IndexFlushTarget::needUrgentFlush() const
     // Due to limitation of 16G address space of single datastore
     // TODO: Even better if urgency was decided by memory index itself.
     bool urgent = (_numFrozenMemoryIndexes > _maxFrozenMemoryIndexes) ||
-                  (getApproxMemoryGain().gain() > ssize_t(16_Gi));
+                  (getApproxMemoryGain().gain() > ssize_t(16_Gi)) ||
+                  _indexMaintainer.urgent_memory_index_flush();
     SerialNum flushedSerial = _indexMaintainer.getFlushedSerialNum();
     LOG(debug, "Num frozen: %u Memory gain: %" PRId64 " Urgent: %d, flushedSerial=%" PRIu64,
         _numFrozenMemoryIndexes, getApproxMemoryGain().gain(), static_cast<int>(urgent), flushedSerial);

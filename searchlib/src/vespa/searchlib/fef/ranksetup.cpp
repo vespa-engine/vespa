@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ranksetup.h"
 #include "blueprint.h"
@@ -69,7 +69,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _global_filter_lower_limit(0.0),
       _global_filter_upper_limit(1.0),
       _target_hits_max_adjustment_factor(20.0),
-      _fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm::BruteForce),
+      _fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm::DfaTable),
       _mutateOnMatch(),
       _mutateOnFirstPhase(),
       _mutateOnSecondPhase(),

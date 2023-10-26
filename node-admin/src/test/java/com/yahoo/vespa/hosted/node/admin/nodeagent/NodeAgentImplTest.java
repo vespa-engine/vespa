@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.component.Version;
@@ -729,6 +729,24 @@ public class NodeAgentImplTest {
         nodeAgent.doConverge(context);
         inOrder.verify(orchestrator, times(1)).resume(eq(hostName));
     }
+
+    @Test
+    void resume_during_first_warmup() {
+        InOrder inOrder = inOrder(orchestrator, nodeRepository);
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true, Duration.ofSeconds(30));
+        mockGetContainer(dockerImage, ContainerResources.from(2, 2, 16), true);
+
+        // Warmup period prevents resume when node has a current docker image, i.e., already existed.
+        nodeAgent.converge(createContext(nodeBuilder(NodeState.active).wantedDockerImage(dockerImage).currentDockerImage(dockerImage).build()));
+        inOrder.verifyNoMoreInteractions();
+
+        nodeAgent.converge(createContext(nodeBuilder(NodeState.active).wantedDockerImage(dockerImage).build()));
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)
+                                                                                                 .withRebootGeneration(0)
+                                                                                                 .withVespaVersion(Version.fromString("7.1.1"))));
+        inOrder.verifyNoMoreInteractions();
+    }
+
 
     @Test
     void drop_all_documents() {

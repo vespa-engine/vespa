@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -20,35 +20,20 @@ using namespace search::fef;
 using namespace search;
 using vespalib::Trinary;
 
-//-----------------------------------------------------------------------------
-
-class Test : public vespalib::TestApp
-{
-public:
-    Test();
-    ~Test();
-    void testAndNot();
-    void testAnd();
-    void testBug7163266();
-    void testOr();
+struct Fixture {
+    Fixture();
     void testAndWith(bool invert);
     void testEndGuard(bool invert);
-    void testIteratorConformance();
-    void testUnpackOfOr();
-    template<typename T>
-    void testThatOptimizePreservesUnpack();
+    void verifyUnpackOfOr(const UnpackInfo & unpackInfo);
     template <typename T>
     void testOptimizeCommon(bool isAnd, bool invert);
     template <typename T>
-    void testOptimizeAndOr(bool invert);
-    template <typename T>
     void testSearch(bool strict, bool invert);
-    int Main() override;
-private:
-    void verifyUnpackOfOr(const UnpackInfo & unpackInfo);
-    void verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd);
-    void searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit);
-    void setup();
+    template <typename T>
+    void testOptimizeAndOr(bool invert);
+    template<typename T>
+    void testThatOptimizePreservesUnpack();
+
     SearchIterator::UP createIter(size_t index, bool inverted, TermFieldMatchData & tfmd, bool strict) {
         return BitVectorIterator::create(getBV(index, inverted), tfmd, strict, inverted);
     }
@@ -69,10 +54,9 @@ private:
     std::vector< BitVector::UP > _bvs_inverted;
 };
 
-Test::Test() = default;
-Test::~Test() = default;
-
-void Test::setup()
+Fixture::Fixture()
+    : _bvs(),
+      _bvs_inverted()
 {
     std::minstd_rand rnd(341);
     for(size_t i(0); i < 3; i++) {
@@ -120,7 +104,7 @@ seek(SearchIterator & s, uint32_t docIdLimit)
 }
 
 void
-Test::testAndWith(bool invert)
+Fixture::testAndWith(bool invert)
 {
     TermFieldMatchData tfmd;
     {
@@ -156,54 +140,55 @@ Test::testAndWith(bool invert)
     }
 }
 
-void
-Test::testAndNot()
+TEST_F("testAndNot", Fixture)
 {
     for (bool invert : {false, true}) {
-        testOptimizeCommon<AndNotSearch>(false, invert);
-        testSearch<AndNotSearch>(false, invert);
-        testSearch<AndNotSearch>(true, invert);
+        f.template testOptimizeCommon<AndNotSearch>(false, invert);
+        f.template testSearch<AndNotSearch>(false, invert);
+        f.template testSearch<AndNotSearch>(true, invert);
     }
 }
 
-void
-Test::testAnd()
+TEST_F("testAnd", Fixture)
 {
     for (bool invert : {false, true}) {
-        testOptimizeCommon<AndSearch>(true, invert);
-        testOptimizeAndOr<AndSearch>(invert);
-        testSearch<AndSearch>(false, invert);
-        testSearch<AndSearch>(true, invert);
+        f.template testOptimizeCommon<AndSearch>(true, invert);
+        f.template testOptimizeAndOr<AndSearch>(invert);
+        f.template testSearch<AndSearch>(false, invert);
+        f.template testSearch<AndSearch>(true, invert);
     }
 }
 
-void
-Test::testOr()
+TEST_F("testOr", Fixture)
 {
     for (bool invert : {false, true}) {
-        testOptimizeCommon< OrSearch >(false, invert);
-        testOptimizeAndOr< OrSearch >(invert);
-        testSearch<OrSearch>(false, invert);
-        testSearch<OrSearch>(true, invert);
+        f.template testOptimizeCommon< OrSearch >(false, invert);
+        f.template testOptimizeAndOr< OrSearch >(invert);
+        f.template testSearch<OrSearch>(false, invert);
+        f.template testSearch<OrSearch>(true, invert);
     }
 }
 
-void
-Test::testBug7163266()
+TEST_F("testAndWith", Fixture) {
+    f.testAndWith(false);
+    f.testAndWith(true);
+}
+
+TEST_F("testBug7163266", Fixture)
 {
     TermFieldMatchData tfmd[30];
-    _bvs[0]->setBit(1);
-    _bvs[1]->setBit(1);
+    f._bvs[0]->setBit(1);
+    f._bvs[1]->setBit(1);
     MultiSearch::Children children;
     UnpackInfo unpackInfo;
     for (size_t i(0); i < 28; i++) {
         children.emplace_back(new TrueSearch(tfmd[2]));
         unpackInfo.add(i);
     }
-    children.push_back(createIter(0, false, tfmd[0], false));
-    children.push_back(createIter(1, false, tfmd[1], false));
+    children.push_back(f.createIter(0, false, tfmd[0], false));
+    children.push_back(f.createIter(1, false, tfmd[1], false));
     SearchIterator::UP s = AndSearch::create(std::move(children), false, unpackInfo);
-    const MultiSearch * ms = dynamic_cast<const MultiSearch *>(s.get());
+    const auto * ms = dynamic_cast<const MultiSearch *>(s.get());
     EXPECT_TRUE(ms != nullptr);
     EXPECT_EQUAL(30u, ms->getChildren().size());
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::SelectiveUnpack>", s->getClassName());
@@ -221,12 +206,26 @@ Test::testBug7163266()
         EXPECT_TRUE(ms->needUnpack(i));
     }
     EXPECT_TRUE(ms->needUnpack(28)); // NB: force unpack all
-    fixup_bitvectors();
+}
+
+void
+verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd)
+{
+    s.seek(1);
+    EXPECT_EQUAL(0u, tfmd[0].getDocId());
+    EXPECT_EQUAL(0u, tfmd[1].getDocId());
+    EXPECT_EQUAL(0u, tfmd[2].getDocId());
+    EXPECT_EQUAL(0u, tfmd[3].getDocId());
+    s.unpack(1);
+    EXPECT_EQUAL(0u, tfmd[0].getDocId());
+    EXPECT_EQUAL(1u, tfmd[1].getDocId());
+    EXPECT_EQUAL(1u, tfmd[2].getDocId());
+    EXPECT_EQUAL(0u, tfmd[3].getDocId());
 }
 
 template<typename T>
 void
-Test::testThatOptimizePreservesUnpack()
+Fixture::testThatOptimizePreservesUnpack()
 {
     TermFieldMatchData tfmd[4];
     _bvs[0]->setBit(1);
@@ -242,7 +241,7 @@ Test::testThatOptimizePreservesUnpack()
     unpackInfo.add(2);
     SearchIterator::UP s = T::create(std::move(children), false, unpackInfo);
     s->initFullRange();
-    const MultiSearch * ms = dynamic_cast<const MultiSearch *>(s.get());
+    const auto * ms = dynamic_cast<const MultiSearch *>(s.get());
     EXPECT_TRUE(ms != nullptr);
     EXPECT_EQUAL(4u, ms->getChildren().size());
     verifySelectiveUnpack(*s, tfmd);
@@ -269,25 +268,22 @@ void verifyOrUnpack(SearchIterator & s, TermFieldMatchData tfmd[3]) {
     EXPECT_EQUAL(0u, tfmd[2].getDocId());
 }
 
-void
-Test::testUnpackOfOr() {
-    _bvs[0]->clearBit(1);
-    _bvs[1]->setBit(1);
-    _bvs[2]->clearBit(1);
+TEST_F("testUnpackOfOr", Fixture) {
+    f._bvs[0]->clearBit(1);
+    f._bvs[1]->setBit(1);
+    f._bvs[2]->clearBit(1);
     UnpackInfo all;
     all.forceAll();
-    verifyUnpackOfOr(all);
+    f.verifyUnpackOfOr(all);
 
     UnpackInfo unpackInfo;
     unpackInfo.add(1);
     unpackInfo.add(2);
-    verifyUnpackOfOr(unpackInfo);
-
-    fixup_bitvectors();
+    f.verifyUnpackOfOr(unpackInfo);
 }
 
 void
-Test::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
+Fixture::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
 {
     TermFieldMatchData tfmdA[3];
     MultiSearch::Children children;
@@ -301,7 +297,7 @@ Test::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
         tfmd.resetOnlyDocId(0);
     }
 
-    const MultiSearch * ms = dynamic_cast<const MultiSearch *>(s.get());
+    const auto * ms = dynamic_cast<const MultiSearch *>(s.get());
     EXPECT_TRUE(ms != nullptr);
     EXPECT_EQUAL(3u, ms->getChildren().size());
 
@@ -315,22 +311,7 @@ Test::verifyUnpackOfOr(const UnpackInfo &unpackInfo)
 }
 
 void
-Test::verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd)
-{
-    s.seek(1);
-    EXPECT_EQUAL(0u, tfmd[0].getDocId());
-    EXPECT_EQUAL(0u, tfmd[1].getDocId());
-    EXPECT_EQUAL(0u, tfmd[2].getDocId());
-    EXPECT_EQUAL(0u, tfmd[3].getDocId());
-    s.unpack(1);
-    EXPECT_EQUAL(0u, tfmd[0].getDocId());
-    EXPECT_EQUAL(1u, tfmd[1].getDocId());
-    EXPECT_EQUAL(1u, tfmd[2].getDocId());
-    EXPECT_EQUAL(0u, tfmd[3].getDocId());
-}
-
-void
-Test::searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit)
+searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit)
 {
     H a = seek(*s, docIdLimit);
     SearchIterator * p = s.get();
@@ -347,7 +328,7 @@ Test::searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit)
 
 template <typename T>
 void
-Test::testSearch(bool strict, bool invert)
+Fixture::testSearch(bool strict, bool invert)
 {
     TermFieldMatchData tfmd;
     uint32_t docIdLimit(_bvs[0]->size());
@@ -376,7 +357,7 @@ Test::testSearch(bool strict, bool invert)
 
 template <typename T>
 void
-Test::testOptimizeCommon(bool isAnd, bool invert)
+Fixture::testOptimizeCommon(bool isAnd, bool invert)
 {
     TermFieldMatchData tfmd;
 
@@ -387,7 +368,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         SearchIterator::UP s = T::create(std::move(children), false);
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(1u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const BitVectorIterator *>(m.getChildren()[0].get()) != nullptr);
     }
@@ -399,7 +380,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         SearchIterator::UP s = T::create(std::move(children), false);
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const BitVectorIterator *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[1].get()) != nullptr);
@@ -412,7 +393,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         SearchIterator::UP s = T::create(std::move(children), false);
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<const BitVectorIterator *>(m.getChildren()[1].get()) != nullptr);
@@ -427,7 +408,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1].get()) != nullptr);
@@ -443,7 +424,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const EmptySearch *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[1].get()) != nullptr);
@@ -481,7 +462,7 @@ Test::testOptimizeCommon(bool isAnd, bool invert)
 
 template <typename T>
 void
-Test::testOptimizeAndOr(bool invert)
+Fixture::testOptimizeAndOr(bool invert)
 {
     TermFieldMatchData tfmd;
 
@@ -506,7 +487,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
@@ -522,7 +503,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(Trinary::False == m.getChildren()[0]->is_strict());
@@ -538,7 +519,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
@@ -554,7 +535,7 @@ Test::testOptimizeAndOr(bool invert)
         s = MultiBitVectorIteratorBase::optimize(std::move(s));
         EXPECT_TRUE(s);
         EXPECT_TRUE(dynamic_cast<const T *>(s.get()) != nullptr);
-        const MultiSearch & m(dynamic_cast<const MultiSearch &>(*s));
+        const auto & m(dynamic_cast<const MultiSearch &>(*s));
         EXPECT_EQUAL(2u, m.getChildren().size());
         EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(m.getChildren()[0].get()) != nullptr);
         EXPECT_TRUE(Trinary::True == m.getChildren()[0]->is_strict());
@@ -563,7 +544,7 @@ Test::testOptimizeAndOr(bool invert)
 }
 
 void
-Test::testEndGuard(bool invert)
+Fixture::testEndGuard(bool invert)
 {
     using T = AndSearch;
     TermFieldMatchData tfmd;
@@ -576,16 +557,72 @@ Test::testEndGuard(bool invert)
     s->initFullRange();
     EXPECT_TRUE(s);
     EXPECT_TRUE(dynamic_cast<const MultiBitVectorIteratorBase *>(s.get()) != nullptr);
-    MultiSearch & m(dynamic_cast<MultiSearch &>(*s));
+    auto & m(dynamic_cast<MultiSearch &>(*s));
     EXPECT_TRUE(m.seek(0) || !m.seek(0));
     EXPECT_TRUE(m.seek(3) || !m.seek(3));
     EXPECT_FALSE(m.seek(_bvs[0]->size()+987));
 }
 
+TEST_F("testEndGuard", Fixture) {
+    f.testEndGuard(false);
+    f.testEndGuard(true);
+}
+
+TEST_F("testThatOptimizePreservesUnpack", Fixture) {
+    f.template testThatOptimizePreservesUnpack<OrSearch>();
+    f.template testThatOptimizePreservesUnpack<AndSearch>();
+}
+
+SearchIterator::UP
+createDual(Fixture & f, TermFieldMatchData & tfmd, int32_t docIdLimit) {
+    MultiSearch::Children children;
+    children.push_back(f.createIter(0, false, tfmd, true));
+    children.push_back(f.createIter(1, false, tfmd, true));
+    SearchIterator::UP s = AndSearch::create(std::move(children), true);
+    s = MultiBitVectorIteratorBase::optimize(std::move(s));
+    EXPECT_TRUE(s);
+    if (docIdLimit < 0) {
+        s->initFullRange();
+    } else {
+        s->initRange(1, docIdLimit);
+    }
+    return s;
+}
+
+void
+countUntilEnd(SearchIterator & s) {
+    uint32_t seekCount = 0;
+    for (uint32_t docId = s.seekFirst(1); !s.isAtEnd(); docId = s.seekNext(docId+1)) {
+        seekCount++;
+    }
+    EXPECT_EQUAL(2459u, seekCount);
+}
+
+void
+countUntilDocId(SearchIterator & s) {
+    uint32_t seekCount = 0;
+    for (uint32_t docId = s.seekFirst(1), endId = s.getEndId(); docId < endId; docId = s.seekNext(docId+1)) {
+        seekCount++;
+    }
+    EXPECT_EQUAL(2459u, seekCount);
+}
+
+TEST_F("test that short vectors don't spin at end", Fixture) {
+    TermFieldMatchData tfmd;
+    countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size()));
+    countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size()));
+
+    countUntilDocId(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+    countUntilEnd(*createDual(f, tfmd, f._bvs[0]->size() + 1));
+
+    countUntilDocId(*createDual(f, tfmd, -1));
+    countUntilEnd(*createDual(f, tfmd, -1));
+}
+
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
     Verifier(size_t numBv, bool is_and);
-    ~Verifier();
+    ~Verifier() override;
 
     SearchIterator::UP create(bool strict) const override;
 
@@ -627,7 +664,7 @@ Verifier::create(bool strict) const {
     return mbvit;
 }
 
-void Test::testIteratorConformance() {
+TEST("testIteratorConformance") {
     for (bool is_and : {false, true}) {
         for (size_t i(1); i < 6; i++) {
             Verifier searchIteratorVerifier(i, is_and);
@@ -636,32 +673,4 @@ void Test::testIteratorConformance() {
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("multibitvectoriterator_test");
-    setup();
-    testBug7163266();
-    testThatOptimizePreservesUnpack<OrSearch>();
-    testThatOptimizePreservesUnpack<AndSearch>();
-    TEST_FLUSH();
-    testUnpackOfOr();
-    TEST_FLUSH();
-    testEndGuard(false);
-    testEndGuard(true);
-    TEST_FLUSH();
-    testAndNot();
-    TEST_FLUSH();
-    testAnd();
-    TEST_FLUSH();
-    testOr();
-    TEST_FLUSH();
-    testAndWith(false);
-    testAndWith(true);
-    TEST_FLUSH();
-    testIteratorConformance();
-    TEST_FLUSH();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

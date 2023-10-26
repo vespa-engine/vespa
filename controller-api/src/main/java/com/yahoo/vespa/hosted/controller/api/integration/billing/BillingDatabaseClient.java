@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
@@ -69,7 +69,7 @@ public interface BillingDatabaseClient {
      * @param agent     The agent that added the status
      * @param status    The new status of the bill
      */
-    void setStatus(Bill.Id billId, String agent, String status);
+    void setStatus(Bill.Id billId, String agent, BillStatus status);
 
     List<Bill.LineItem> getUnusedLineItems(TenantName tenantName);
 
@@ -144,4 +144,15 @@ public interface BillingDatabaseClient {
      * Performs necessary maintenance operations
      */
     void maintain();
+
+    /**
+     * Set the invoice id from an external system for the given bill
+     */
+    void setExportedInvoiceId(Bill.Id billId, String invoiceId);
+
+    /**
+     * Set the invoice item id from an external system for the given line item
+     */
+    void setExportedInvoiceItemId(String lineItemId, String invoiceItemId);
+
 }

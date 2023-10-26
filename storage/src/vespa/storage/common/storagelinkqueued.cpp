@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "storagelinkqueued.hpp"
 #include <vespa/log/log.h>
 
@@ -10,7 +10,6 @@ StorageLinkQueued::StorageLinkQueued(const std::string& name, framework::Compone
     : StorageLink(name),
       _compReg(cr),
       _replyDispatcher(*this),
-      _commandDispatcher(*this),
       _closeState(0)
 { }
 
@@ -23,23 +22,6 @@ StorageLinkQueued::~StorageLinkQueued()
                    "crashes on shutdown.",
             getName().c_str(), _closeState);
     }
-}
-
-void StorageLinkQueued::dispatchDown(
-        const std::shared_ptr<api::StorageMessage>& msg)
-{
-        // Verify acceptable state to send messages down
-    switch(getState()) {
-        case OPENED:
-        case CLOSING:
-        case FLUSHINGDOWN:
-            break;
-        default:
-            LOG(error, "Link %s trying to dispatch %s down while in state %u",
-                toString().c_str(), msg->toString().c_str(), getState());
-            assert(false);
-    }
-    _commandDispatcher.add(msg);
 }
 
 void StorageLinkQueued::dispatchUp(

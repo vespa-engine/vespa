@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.certificate;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateSerializer;
+import com.yahoo.vespa.hosted.controller.routing.EndpointConfig;
 
 import java.util.List;
 import java.util.Optional;
@@ -73,11 +75,11 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
     public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExisting) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
-        if (controller.routing().generatedEndpointsEnabled(applicationId)) {
+        if (controller.routing().endpointConfig(applicationId) == EndpointConfig.generated) {
             throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
         }
         try (var lock = curator.lock(TenantAndApplicationId.from(applicationId))) {
-            AssignedCertificate assignedCertificate = curator.readAssignedCertificate(applicationId)
+            AssignedCertificate assignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()))
                                                              .orElseThrow(() -> new RestApiException.NotFound("No certificate found for application " + applicationId.serializedForm()));
 
             String algo = this.endpointCertificateAlgo.with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm()).value();

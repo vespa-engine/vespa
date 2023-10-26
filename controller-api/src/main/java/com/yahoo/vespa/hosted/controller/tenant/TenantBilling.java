@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import java.util.Objects;
@@ -10,14 +10,20 @@ public class TenantBilling {
 
     private final TenantContact contact;
     private final TenantAddress address;
+    private final TaxId taxId;
+    private final PurchaseOrder purchaseOrder;
+    private final Email invoiceEmail;
 
-    public TenantBilling(TenantContact contact, TenantAddress address) {
+    public TenantBilling(TenantContact contact, TenantAddress address, TaxId taxId, PurchaseOrder purchaseOrder, Email invoiceEmail) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
+        this.taxId = Objects.requireNonNull(taxId);
+        this.purchaseOrder = Objects.requireNonNull(purchaseOrder);
+        this.invoiceEmail = Objects.requireNonNull(invoiceEmail);
     }
 
     public static TenantBilling empty() {
-        return new TenantBilling(TenantContact.empty(), TenantAddress.empty());
+        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxId.empty(), PurchaseOrder.empty(), Email.empty());
     }
 
     public TenantContact contact() {
@@ -28,12 +34,36 @@ public class TenantBilling {
         return address;
     }
 
+    public TaxId getTaxId() {
+        return taxId;
+    }
+
+    public PurchaseOrder getPurchaseOrder() {
+        return purchaseOrder;
+    }
+
+    public Email getInvoiceEmail() {
+        return invoiceEmail;
+    }
+
     public TenantBilling withContact(TenantContact updatedContact) {
-        return new TenantBilling(updatedContact, this.address);
+        return new TenantBilling(updatedContact, this.address, this.taxId, this.purchaseOrder, this.invoiceEmail);
     }
 
     public TenantBilling withAddress(TenantAddress updatedAddress) {
-        return new TenantBilling(this.contact, updatedAddress);
+        return new TenantBilling(this.contact, updatedAddress, this.taxId, this.purchaseOrder, this.invoiceEmail);
+    }
+
+    public TenantBilling withTaxId(TaxId updatedTaxId) {
+        return new TenantBilling(this.contact, this.address, updatedTaxId, this.purchaseOrder, this.invoiceEmail);
+    }
+
+    public TenantBilling withPurchaseOrder(PurchaseOrder updatedPurchaseOrder) {
+        return new TenantBilling(this.contact, this.address, this.taxId, updatedPurchaseOrder, this.invoiceEmail);
+    }
+
+    public TenantBilling withInvoiceEmail(Email updatedInvoiceEmail) {
+        return new TenantBilling(this.contact, this.address, this.taxId, this.purchaseOrder, updatedInvoiceEmail);
     }
 
     public boolean isEmpty() {
@@ -45,19 +75,26 @@ public class TenantBilling {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantBilling that = (TenantBilling) o;
-        return Objects.equals(contact, that.contact) && Objects.equals(address, that.address);
+        return Objects.equals(contact, that.contact) &&
+                Objects.equals(address, that.address) &&
+                Objects.equals(taxId, that.taxId) &&
+                Objects.equals(purchaseOrder, that.purchaseOrder) &&
+                Objects.equals(invoiceEmail, that.invoiceEmail);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(contact, address);
+        return Objects.hash(contact, address, taxId, purchaseOrder, invoiceEmail);
     }
 
     @Override
     public String toString() {
-        return "TenantInfoBillingContact{" +
+        return "TenantBilling{" +
                 "contact=" + contact +
                 ", address=" + address +
+                ", taxId='" + taxId + '\'' +
+                ", purchaseOrder='" + purchaseOrder + '\'' +
+                ", invoiceEmail=" + invoiceEmail +
                 '}';
     }
 }

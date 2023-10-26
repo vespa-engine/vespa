@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value_builder_factory.h"
 #include "fast_value_index.h"
@@ -36,7 +36,7 @@ struct FastCells {
     size_t capacity;
     size_t size;
     mutable alloc::Alloc memory;
-    FastCells(size_t initial_capacity);
+    explicit FastCells(size_t initial_capacity);
     FastCells(const FastCells &) = delete;
     FastCells & operator = (const FastCells &) = delete;
     ~FastCells();
@@ -184,6 +184,7 @@ struct FastValue final : Value, ValueBuilder<T> {
     }
     MemoryUsage get_memory_usage() const override {
         MemoryUsage usage = self_memory_usage<FastValue<T,transient>>();
+        usage.merge(vector_extra_memory_usage(my_type.dimensions()));
         usage.merge(vector_extra_memory_usage(get_view(my_handles)));
         usage.merge(my_index.map.estimate_extra_memory_usage());
         usage.merge(my_cells.estimate_extra_memory_usage());

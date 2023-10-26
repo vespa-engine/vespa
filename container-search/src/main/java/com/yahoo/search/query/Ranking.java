@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
 import com.yahoo.prelude.Freshness;
@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.RankFeatures;
@@ -44,6 +45,7 @@ public class Ranking implements Cloneable {
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
     public static final String MATCH_PHASE = "matchPhase";
+    public static final String GLOBAL_PHASE = "globalPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
     public static final String MATCHING = "matching";
@@ -65,6 +67,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
+        argumentType.addField(new FieldDescription(GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
@@ -103,6 +106,8 @@ public class Ranking implements Cloneable {
     private RankFeatures rankFeatures;
 
     private MatchPhase matchPhase = new MatchPhase();
+
+    private GlobalPhase globalPhase = new GlobalPhase();
 
     private Matching matching = new Matching();
 
@@ -215,6 +220,9 @@ public class Ranking implements Cloneable {
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
 
+    /** Returns the global-phase rank settings of this. This is never null. */
+    public GlobalPhase getGlobalPhase() { return globalPhase; }
+
     /** Returns the matching settings of this. This is never null. */
     public Matching getMatching() { return matching; }
 
@@ -279,6 +287,7 @@ public class Ranking implements Cloneable {
             clone.rankProperties = this.rankProperties.clone();
             clone.rankFeatures = this.rankFeatures.cloneFor(clone);
             clone.matchPhase = this.matchPhase.clone();
+            clone.globalPhase = this.globalPhase.clone();
             clone.matching = this.matching.clone();
             clone.softTimeout = this.softTimeout.clone();
             return clone;
@@ -305,12 +314,13 @@ public class Ranking implements Cloneable {
         if ( ! QueryHelper.equals(this.sorting, other.sorting)) return false;
         if ( ! QueryHelper.equals(this.location, other.location)) return false;
         if ( ! QueryHelper.equals(this.profile, other.profile)) return false;
+        if ( ! QueryHelper.equals(this.globalPhase, other.globalPhase)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rankFeatures, rankProperties, matchPhase, softTimeout, matching, sorting, location, profile);
+        return Objects.hash(rankFeatures, rankProperties, matchPhase, globalPhase, softTimeout, matching, sorting, location, profile);
     }
 
 }

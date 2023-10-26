@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_combiner_dfw.h"
 #include "copy_dfw.h"
@@ -13,6 +13,7 @@
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "summaryfeaturesdfw.h"
+#include "tokens_dfw.h"
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -81,6 +82,12 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if (command == command::copy) {
         if ( ! source.empty() ) {
             fieldWriter = std::make_unique<CopyDFW>(source);
+        } else {
+            throw_missing_source(command);
+        }
+    } else if (command == command::tokens) {
+        if (!source.empty()) {
+            fieldWriter = std::make_unique<TokensDFW>(source);
         } else {
             throw_missing_source(command);
         }

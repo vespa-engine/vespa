@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search summaryfieldcollision {
 
   document summaryfieldcollision {
@@ -13,13 +13,13 @@ search summaryfieldcollision {
   }
 
   document-summary sum1 {
-    summary f type string {
+    summary f {
       source: title
     }
   }
 
   document-summary sum2 {
-    summary f type string {
+    summary f {
       source: description
     }
   }

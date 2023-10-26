@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 def plot_graph(dat, titles, png, title, xlabel, ylabel, folder)
   plot_cmd = "";
   plot_cmd += "set terminal png\n"

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
@@ -6,8 +6,8 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
@@ -16,11 +16,12 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.T
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.containerConfigId;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -29,11 +30,8 @@ public class MetricsProxyContainerTest {
 
     @Test
     void one_metrics_proxy_container_is_added_to_every_node() {
-        var numberOfHosts = 7;
-        var tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-
-        VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
+        int numberOfHosts = 7;
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
@@ -48,11 +46,8 @@ public class MetricsProxyContainerTest {
 
     @Test
     void one_metrics_proxy_container_is_added_to_every_node_also_when_dedicated_CCC() {
-        var numberOfHosts = 7;
-        var tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-
-        VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
+        int numberOfHosts = 7;
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {

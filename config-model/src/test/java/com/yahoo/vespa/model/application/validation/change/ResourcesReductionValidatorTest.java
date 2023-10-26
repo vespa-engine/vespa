@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ResourcesReductionValidatorTest {
 
+    private static final String CONTAINER_CLUSTER = "default.indexing";
+
     private final NodeResources hostResources = new NodeResources(64, 128, 1000, 10);
     private final InMemoryProvisioner provisioner           = new InMemoryProvisioner(30, hostResources, true, InMemoryProvisioner.defaultHostResources);
     private final InMemoryProvisioner provisionerSelfHosted = new InMemoryProvisioner(30, hostResources, true, NodeResources.unspecified());
@@ -30,9 +32,9 @@ public class ResourcesReductionValidatorTest {
     void fail_when_reduction_by_over_50_percent() {
         var fromResources = new NodeResources(8, 64, 800, 1);
         var toResources = new NodeResources(8, 16, 800, 1);
-        VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
         try {
-            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null);
+            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
             assertResourceReductionException(expected,
@@ -45,9 +47,9 @@ public class ResourcesReductionValidatorTest {
     void fail_when_reducing_multiple_resources_by_over_50_percent() {
         var fromResources = new NodeResources(8, 64, 800, 1);
         var toResources = new NodeResources(3, 16, 200, 1);
-        VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
         try {
-            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null);
+            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
             assertResourceReductionException(expected,
@@ -58,20 +60,20 @@ public class ResourcesReductionValidatorTest {
 
     @Test
     void small_resource_decrease_is_allowed() {
-        VespaModel previous = tester.deploy(null, contentServices(6, new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, contentServices(6, new NodeResources(.5, 48, 600, 1)), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, contentServices(6, new NodeResources(1.5, 64, 800, 1)), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(6, new NodeResources(.5, 48, 600, 1)), Environment.prod, null, CONTAINER_CLUSTER);
     }
 
     @Test
     void reorganizing_resources_is_allowed() {
-        VespaModel previous = tester.deploy(null, contentServices(12, new NodeResources(2, 10, 100, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, contentServices(4, new NodeResources(6, 30, 300, 1)), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, contentServices(12, new NodeResources(2, 10, 100, 1)), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(4, new NodeResources(6, 30, 300, 1)), Environment.prod, null, CONTAINER_CLUSTER);
     }
 
     @Test
     void overriding_resource_decrease() {
-        VespaModel previous = tester.deploy(null, contentServices(6, new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, contentServices(6, new NodeResources(8, 16, 800, 1)), Environment.prod, resourcesReductionOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, contentServices(6, new NodeResources(8, 64, 800, 1)), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(6, new NodeResources(8, 16, 800, 1)), Environment.prod, resourcesReductionOverride, CONTAINER_CLUSTER); // Allowed due to override
     }
 
     @Test
@@ -108,23 +110,22 @@ public class ResourcesReductionValidatorTest {
     void reduction_is_detected_when_going_from_unspecified_resources_content() {
         NodeResources toResources = defaultResources.withDiskGb(defaultResources.diskGb() / 5);
         try {
-            VespaModel previous = tester.deploy(null, contentServices(6, null), Environment.prod, null).getFirst();
-            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null);
+            VespaModel previous = tester.deploy(null, contentServices(6, null), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+            tester.deploy(previous, contentServices(6, toResources), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
+        } catch (IllegalArgumentException expected) {
+            assertResourceReductionException(expected,
+                                             defaultResources.multipliedBy(6),
+                                             toResources.multipliedBy(6));
         }
-        catch (IllegalArgumentException expected) {
-                assertResourceReductionException(expected,
-                                                 defaultResources.multipliedBy(6),
-                                                 toResources.multipliedBy(6));
-            }
     }
 
     @Test
     void reduction_is_detected_when_going_to_unspecified_resources_content() {
         NodeResources fromResources = defaultResources.withVcpu(defaultResources.vcpu() * 3);
         try {
-            VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null).getFirst();
-            tester.deploy(previous, contentServices(6, null), Environment.prod, null);
+            VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+            tester.deploy(previous, contentServices(6, null), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
         }
         catch (IllegalArgumentException expected) {
@@ -140,8 +141,8 @@ public class ResourcesReductionValidatorTest {
         int toNodes = 14;
         try {
             ValidationTester tester = new ValidationTester(33);
-            VespaModel previous = tester.deploy(null, contentServices(fromNodes, null), Environment.prod, null).getFirst();
-            tester.deploy(previous, contentServices(toNodes, null), Environment.prod, null);
+            VespaModel previous = tester.deploy(null, contentServices(fromNodes, null), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+            tester.deploy(previous, contentServices(toNodes, null), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
         }
         catch (IllegalArgumentException expected) {
@@ -156,9 +157,9 @@ public class ResourcesReductionValidatorTest {
     void testSizeReductionValidationSelfhosted() {
         var tester = new ValidationTester(provisionerSelfHosted);
 
-        VespaModel previous = tester.deploy(null, contentServices(10, null), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, contentServices(10, null), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
         try {
-            tester.deploy(previous, contentServices(4, null), Environment.prod, null);
+            tester.deploy(previous, contentServices(4, null), Environment.prod, null, CONTAINER_CLUSTER);
             fail("Expected exception due to resources reduction");
         }
         catch (IllegalArgumentException expected) {
@@ -174,16 +175,16 @@ public class ResourcesReductionValidatorTest {
     void testSizeReductionValidationMinimalDecreaseIsAllowed() {
         ValidationTester tester = new ValidationTester(30);
 
-        VespaModel previous = tester.deploy(null, contentServices(3, null), Environment.prod, null).getFirst();
-        tester.deploy(previous, contentServices(2, null), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, contentServices(3, null), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(2, null), Environment.prod, null, CONTAINER_CLUSTER);
     }
 
     @Test
     void testOverridingSizeReductionValidation() {
         ValidationTester tester = new ValidationTester(33);
 
-        VespaModel previous = tester.deploy(null, contentServices(30, null), Environment.prod, null).getFirst();
-        tester.deploy(previous, contentServices(14, null), Environment.prod, resourcesReductionOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, contentServices(30, null), Environment.prod, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(14, null), Environment.prod, resourcesReductionOverride, CONTAINER_CLUSTER); // Allowed due to override
     }
 
     private void assertResourceReductionException(Exception e, NodeResources currentResources, NodeResources newResources) {

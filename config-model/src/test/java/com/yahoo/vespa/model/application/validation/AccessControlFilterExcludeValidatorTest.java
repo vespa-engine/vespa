@@ -1,8 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.MapConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -20,9 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -98,6 +102,7 @@ public class AccessControlFilterExcludeValidatorTest {
                                 .setHostedVespa(true)
                                 .setAthenzDomain(AthenzDomain.from("foo.bar"))
                                 .allowDisableMtls(allowExcludes))
+                .endpoints(Set.of(new ContainerEndpoint("container-cluster-with-access-control", ApplicationClusterEndpoint.Scope.zone, List.of("example.com"))))
                 .deployLogger(logger)
                 .zone(zone)
                 .build();

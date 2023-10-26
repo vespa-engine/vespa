@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search multiplesummaries {
 
   document multiplesummaries {
@@ -19,13 +19,13 @@ search multiplesummaries {
 
   document-summary other {
 
-    summary field1 type weightedset<string> {
+    summary field1 {
     }
 
-    summary field2 type tag {
+    summary field2 {
     }
 
-    summary field3 type array<int> {
+    summary field3 {
     }
 
   }

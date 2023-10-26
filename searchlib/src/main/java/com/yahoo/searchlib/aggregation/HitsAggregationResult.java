@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.FloatResultNode;
@@ -7,8 +7,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -20,7 +18,7 @@ import java.util.List;
  */
 public class HitsAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 87, HitsAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 87, HitsAggregationResult.class, HitsAggregationResult::new);
     private String summaryClass = "default";
     private int maxHits = -1;
     private List<Hit> hits = new ArrayList<>();

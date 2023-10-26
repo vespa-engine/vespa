@@ -1,7 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
 import com.yahoo.api.annotations.PublicApi;
+import com.yahoo.container.plugin.classanalysis.Analyze.JdkVersionCheck;
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
@@ -23,6 +24,7 @@ import java.util.Set;
  *
  * @author Tony Vaagenes
  * @author ollivir
+ * @author gjoranv
  */
 class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
 
@@ -32,10 +34,12 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     private boolean isPublicApi = false;
 
     private final Optional<ArtifactVersion> defaultExportPackageVersion;
+    private final JdkVersionCheck jdkVersionCheck;
 
-    AnalyzeClassVisitor(ArtifactVersion defaultExportPackageVersion) {
+    AnalyzeClassVisitor(ArtifactVersion defaultExportPackageVersion, JdkVersionCheck jdkVersionCheck) {
         super(Opcodes.ASM9);
         this.defaultExportPackageVersion = Optional.ofNullable(defaultExportPackageVersion);
+        this.jdkVersionCheck = jdkVersionCheck;
     }
 
     @Override
@@ -72,6 +76,11 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         this.name = Analyze.internalNameToClassName(name)
                 .orElseThrow(() -> new RuntimeException("Unable to resolve class name for " + name));
+
+        if (version > Opcodes.V17 && jdkVersionCheck == JdkVersionCheck.ENABLED) {
+            var jdkVersion = version - 44;
+            throw new RuntimeException("Class " + name + " is compiled for Java version " + jdkVersion + ", but only Java 17 is supported");
+        }
 
         addImportWithInternalName(superName);
         Arrays.asList(interfaces).forEach(this::addImportWithInternalName);

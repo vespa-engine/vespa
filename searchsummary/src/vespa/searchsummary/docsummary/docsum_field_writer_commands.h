@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -23,5 +23,6 @@ extern const vespalib::string matched_elements_filter;
 extern const vespalib::string positions;
 extern const vespalib::string rank_features;
 extern const vespalib::string summary_features;
+extern const vespalib::string tokens;
 
 }

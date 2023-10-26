@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import ai.vespa.metrics.ConfigServerMetrics;
@@ -169,8 +169,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
      * NB: Keep this metric set in sync with internal configserver metric pre-aggregation
      */
     private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
+        if (node.state() != State.active)
+            return;
         Metric.Context context;
-
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent()) {
             ApplicationId applicationId = allocation.get().owner();

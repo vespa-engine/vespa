@@ -1,12 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::Bouncer
- * @ingroup storageserver
- *
- * @brief Denies messages from entering if state is not good.
- *
- * If we are not in up state, but process is still running, only a few
- * messages should be allowed through. This link stops all messages not allowed.
+ * Component which rejects messages that can not be accepted by the node in
+ * its current state.
  */
 
 #pragma once
@@ -29,27 +24,28 @@ namespace storage {
 struct BouncerMetrics;
 
 class Bouncer : public StorageLink,
-                private StateListener,
-                private config::IFetcherCallback<vespa::config::content::core::StorBouncerConfig>
+                private StateListener
 {
-    std::unique_ptr<vespa::config::content::core::StorBouncerConfig> _config;
-    StorageComponent _component;
-    std::mutex       _lock;
-    lib::NodeState   _baselineNodeState;
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
     using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
-    BucketSpaceNodeStateMapping _derivedNodeStates;
-    const lib::State* _clusterState;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    std::unique_ptr<BouncerMetrics> _metrics;
+
+    std::unique_ptr<StorBouncerConfig> _config;
+    StorageComponent                   _component;
+    mutable std::mutex                 _lock;
+    lib::NodeState                     _baselineNodeState;
+    BucketSpaceNodeStateMapping        _derivedNodeStates;
+    const lib::State*                  _clusterState;
+    std::unique_ptr<BouncerMetrics>    _metrics;
+    bool                               _closed;
 
 public:
-    Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri);
+    Bouncer(StorageComponentRegister& compReg, const StorBouncerConfig& bootstrap_config);
     ~Bouncer() override;
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;
 
-    void configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config) override;
+    void on_configure(const StorBouncerConfig& config);
     const BouncerMetrics& metrics() const noexcept;
 
 private:
@@ -60,11 +56,12 @@ private:
     void abortCommandDueToClusterDown(api::StorageMessage&, const lib::State&);
     void rejectDueToInsufficientPriority(api::StorageMessage&, api::StorageMessage::Priority);
     void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
+    void reject_due_to_node_shutdown(api::StorageMessage&);
     static bool clusterIsUp(const lib::State& cluster_state);
     bool isDistributor() const;
-    bool isExternalLoad(const api::MessageType&) const noexcept;
-    bool isExternalWriteOperation(const api::MessageType&) const noexcept;
-    bool priorityRejectionIsEnabled(int configuredPriority) const noexcept {
+    static bool isExternalLoad(const api::MessageType&) noexcept;
+    static bool isExternalWriteOperation(const api::MessageType&) noexcept;
+    static bool priorityRejectionIsEnabled(int configuredPriority) noexcept {
         return (configuredPriority != -1);
     }
 
@@ -72,7 +69,7 @@ private:
      * If msg is a command containing a mutating timestamp (put, remove or
      * update commands), return that timestamp. Otherwise, return 0.
      */
-    uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
+    static uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     void handleNewState() noexcept override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;

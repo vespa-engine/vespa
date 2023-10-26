@@ -1,11 +1,12 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
@@ -45,9 +46,11 @@ ModifiedBucketCheckerTest::SetUp()
     _node->setupDummyPersistence();
 
     _top.reset(new DummyStorageLink);
+    using vespa::config::content::core::StorServerConfig;
+    auto bootstrap_cfg = config_from<StorServerConfig>(config::ConfigUri(_config->getConfigId()));
     _handler = new ModifiedBucketChecker(_node->getComponentRegister(),
                                          _node->getPersistenceProvider(),
-                                         config::ConfigUri(_config->getConfigId()));
+                                         *bootstrap_cfg);
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;
     _handler->push_back(std::unique_ptr<StorageLink>(_bottom));
@@ -136,7 +139,7 @@ TEST_F(ModifiedBucketCheckerTest, recheck_requests_are_chunked) {
     _top->open();
     cfgns::StorServerConfigBuilder cfgBuilder;
     cfgBuilder.bucketRecheckingChunkSize = 2;
-    _handler->configure(std::make_unique<cfgns::StorServerConfig>(cfgBuilder));
+    _handler->on_configure(*std::make_unique<cfgns::StorServerConfig>(cfgBuilder));
 
     modifyBuckets(5, 0);
     _handler->tick();
@@ -172,7 +175,7 @@ TEST_F(ModifiedBucketCheckerTest, invalid_chunk_size_config_is_rejected) {
     _top->open();
     cfgns::StorServerConfigBuilder cfgBuilder;
     cfgBuilder.bucketRecheckingChunkSize = 0;
-    EXPECT_THROW(_handler->configure(std::make_unique<cfgns::StorServerConfig>(cfgBuilder)),
+    EXPECT_THROW(_handler->on_configure(*std::make_unique<cfgns::StorServerConfig>(cfgBuilder)),
                  config::InvalidConfigException);
 }
 

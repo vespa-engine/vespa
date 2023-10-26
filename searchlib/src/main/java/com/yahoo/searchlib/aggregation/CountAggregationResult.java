@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.IntegerResultNode;
@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class CountAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 81, CountAggregationResult.class);
+    public static final int classId = registerClass(0x4000 + 81, CountAggregationResult.class, CountAggregationResult::new);
     private long count = 0;
 
     /** Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set. */

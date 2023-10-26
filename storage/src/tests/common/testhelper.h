@@ -1,5 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+#include <vespa/config/helper/configgetter.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/vdstestlib/config/dirconfig.h>
 #include <fstream>
@@ -20,6 +21,11 @@ std::string getRootFolder(vdstestlib::DirConfig & dc);
 
 void addSlobrokConfig(vdstestlib::DirConfig& dc,
                       const mbus::Slobrok& slobrok);
+
+template <typename ConfigT>
+std::unique_ptr<ConfigT> config_from(const ::config::ConfigUri& cfg_uri) {
+    return ::config::ConfigGetter<ConfigT>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
+}
 
 // Class used to print start and end of test. Enable debug when you want to see
 // which test creates what output or where we get stuck

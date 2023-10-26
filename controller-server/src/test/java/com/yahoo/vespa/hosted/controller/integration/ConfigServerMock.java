@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import ai.vespa.http.DomainName;
@@ -386,7 +386,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> zoneEndpoints) {
-        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints); // Wraps the same name service mock, which is updated by test harness.
+        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints, false); // Wraps the same name service mock, which is updated by test harness.
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
@@ -417,12 +417,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, appPackage));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
-        deployment.endpoints(); // Supplier with side effects >_<
 
         if (nodeRepository().list(id.zoneId(), NodeFilter.all().applications(id.applicationId())).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
 
-        this.containerEndpoints.put(id, deployment.endpoints().get().endpoints());
+        this.containerEndpoints.put(id, deployment.endpoints().endpoints());
         deployment.cloudAccount().ifPresent(account -> this.cloudAccounts.put(id, account));
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {

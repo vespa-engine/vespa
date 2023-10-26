@@ -3567,6 +3567,7 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
       "protected static int registerClass(int, java.lang.Class)",
+      "protected static int registerClass(int, java.lang.Class, java.util.function.Supplier)",
       "public static com.yahoo.vespa.objects.Identifiable create(com.yahoo.vespa.objects.Deserializer)",
       "public static com.yahoo.vespa.objects.Identifiable createFromId(int)",
       "protected static com.yahoo.vespa.objects.Serializer serializeOptional(com.yahoo.vespa.objects.Serializer, com.yahoo.vespa.objects.Identifiable)",
@@ -4044,7 +4045,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt)"
+      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt)",
+      "public abstract java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   },
@@ -4058,6 +4060,7 @@
       "public void <init>(java.lang.String)",
       "public ai.vespa.llm.client.openai.OpenAiClient$Builder model(java.lang.String)",
       "public ai.vespa.llm.client.openai.OpenAiClient$Builder temperature(double)",
+      "public ai.vespa.llm.client.openai.OpenAiClient$Builder maxTokens(long)",
       "public ai.vespa.llm.client.openai.OpenAiClient build()"
     ],
     "fields" : [ ]
@@ -4071,7 +4074,8 @@
       "public"
     ],
     "methods" : [
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt)"
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   },
@@ -4089,7 +4093,8 @@
     ],
     "fields" : [
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason length",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason none"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {
@@ -4166,7 +4171,8 @@
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.test.MockLanguageModel$Builder)",
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt)"
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   }

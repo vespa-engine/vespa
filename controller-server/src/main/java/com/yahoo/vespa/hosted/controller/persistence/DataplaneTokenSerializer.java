@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.slime.Cursor;
@@ -25,6 +25,7 @@ public class DataplaneTokenSerializer {
     private static final String creationTimeField = "creationTime";
     private static final String authorField = "author";
     private static final String expirationField = "expiration";
+    private static final String lastUpdatedField = "lastUpdated";
 
     public static Slime toSlime(List<DataplaneTokenVersions> dataplaneTokenVersions) {
         Slime slime = new Slime();
@@ -33,6 +34,7 @@ public class DataplaneTokenSerializer {
         dataplaneTokenVersions.forEach(tokenMetadata -> {
             Cursor tokenCursor = array.addObject();
             tokenCursor.setString(idField, tokenMetadata.tokenId().value());
+            tokenCursor.setLong(lastUpdatedField, tokenMetadata.lastUpdated().toEpochMilli());
             Cursor versionArray = tokenCursor.setArray(tokenVersionsField);
             tokenMetadata.tokenVersions().forEach(version -> {
                 Cursor versionCursor = versionArray.addObject();
@@ -65,7 +67,7 @@ public class DataplaneTokenSerializer {
                                 return new DataplaneTokenVersions.Version(fingerPrint, checkAccessHash, creationTime, expiration, author);
                             })
                             .toList();
-                    return new DataplaneTokenVersions(id, versions);
+                    return new DataplaneTokenVersions(id, versions, Instant.ofEpochMilli(entry.field(lastUpdatedField).asLong()));
                 })
                 .toList();
     }

@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty.testutils;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
@@ -12,6 +13,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
+import com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext;
 import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.security.SslContextBuilder;
@@ -32,6 +34,7 @@ public class TestDriver implements AutoCloseable {
 
     private final com.yahoo.jdisc.test.TestDriver jdiscCoreTestDriver;
     private final JettyHttpServer server;
+    private final JettyHttpServerContext context;
     private final SSLContext sslContext;
 
     private TestDriver(Builder builder) {
@@ -46,6 +49,7 @@ public class TestDriver implements AutoCloseable {
                 com.yahoo.jdisc.test.TestDriver.newSimpleApplicationInstance(combinedModule);
         ContainerBuilder containerBuilder = jdiscCoreTestDriver.newContainerBuilder();
         JettyHttpServer server = containerBuilder.getInstance(JettyHttpServer.class);
+        this.context = containerBuilder.getInstance(JettyHttpServerContext.class);
         containerBuilder.serverProviders().install(server);
         builder.handlers.forEach((binding, handler) -> containerBuilder.serverBindings().bind(binding, handler));
         jdiscCoreTestDriver.activateContainer(containerBuilder);
@@ -63,6 +67,7 @@ public class TestDriver implements AutoCloseable {
     @Override public void close() { shutdown(); }
 
     public boolean shutdown() {
+        context.deconstruct();
         server.close();
         server.release();
         return jdiscCoreTestDriver.close();
@@ -83,9 +88,10 @@ public class TestDriver implements AutoCloseable {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
+                        bind(JettyHttpServer.class).in(Singleton.class);
                         bind(ServerConfig.class).toInstance(serverConfig);
                         bind(ConnectorConfig.class).toInstance(connectorConfig);
-                        bind(FilterBindings.class).toInstance(new FilterBindings.Builder().build());
+                        bind(FilterBindings.class).toInstance(new FilterBindings.Builder().setStrictFiltering(serverConfig.strictFiltering()).build());
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                     }

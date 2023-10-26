@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
@@ -195,7 +195,7 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2023-10-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2023-11-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -256,7 +256,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-10-01",
+            List.of("tokle"), "2022-05-09", "2023-11-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             INSTANCE_ID);
@@ -292,7 +292,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2023-10-01",
+            List.of("vekterli"), "2022-11-03", "2024-02-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -305,15 +305,9 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-10-14",
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-11-14",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
-
-    public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-10-14",
-            "Whether to use randomized endpoint names",
-            "Takes effect on application deployment",
-            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-11-01",
@@ -335,10 +329,23 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_RECONFIGURABLE_DISPATCHER = defineFeatureFlag(
             "use-reconfigurable-dispatcher", false,
-            List.of("jonmv"), "2023-07-14", "2023-10-01",
+            List.of("jonmv"), "2023-07-14", "2023-11-01",
             "Whether to set up a ReconfigurableDispatcher with config self-sub for backend nodes",
             "Takes effect at redeployment",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag EXCLUSIVE_PROVISIONING = defineFeatureFlag(
+            "exclusive-provisioning", false,
+            List.of("hakonhall"), "2023-10-12", "2023-12-20",
+            "Whether to provision a host exclusively to an application ID only based on exclusive=\"true\" from services.xml. " +
+            "Enabling this will produce hosts with exclusiveTo[ApplicationId] without provisionedToApplicationId.",
+            "Takes immediate effect when provisioning new hosts");
+
+    public static final UnboundBooleanFlag MAKE_EXCLUSIVE = defineFeatureFlag(
+            "make-exclusive", false,
+            List.of("hakonhall"), "2023-10-20", "2023-12-20",
+            "Allow an exclusive allocation to a non-exclusive host, but if so, make the host exclusive.",
+            "Takes immediate effect on any following preparation of clusters");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
@@ -354,21 +361,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2023-10-14",
+            List.of("andreer"), "2023-08-21", "2023-11-14",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2023-10-14",
+            List.of("andreer"), "2023-08-28", "2023-11-14",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2023-10-14",
+            List.of("andreer"), "2023-08-28", "2023-11-14",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -379,20 +386,6 @@ public class Flags {
             "Minimum amount of advertised memory for exclusive nodes",
             "Takes effect immediately",
             INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
-            "assign-randomized-id", true,
-            List.of("mortent"), "2023-08-31", "2024-02-01",
-            "Whether to assign randomized id to the application",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
-    public static final UnboundIntFlag ASSIGNED_RANDOMIZED_ID_RATE = defineIntFlag(
-            "assign-randomized-id-rate", 5,
-            List.of("mortent"), "2023-09-11", "2024-02-01",
-            "Rate for requesting assigned ids for existing certificates. Rate is per maintainer cycle.",
-            "Takes effect immediately",
-            INSTANCE_ID);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 0,
@@ -411,16 +404,30 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2023-11-01",
-            "How to handle user config referencing unknown config definitions. Valid values are log, warn, fail",
+            List.of("hmusum"), "2023-09-25", "2023-11-15",
+            "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag LEGACY_ENDPOINTS = defineFeatureFlag(
-            "legacy-endpoints", true, List.of("mpolden", "tokle"), "2023-09-29", "2024-03-01",
-            "Whether legacy (non-anonymized) endpoints should be created in DNS",
-            "Takes effect on redeployment through controller",
-            INSTANCE_ID, APPLICATION_ID, TENANT_ID);
+    public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
+            "search-handler-threadpool", 2,
+            List.of("bjorncs", "baldersheim"), "2023-10-01", "2024-01-01",
+            "Adjust search handler threadpool size",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
+            "endpoint-config", "legacy",
+            List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
+            "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
+            "Takes effect on next deployment through controller",
+            TENANT_ID, APPLICATION_ID, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag CLOUD_TRIAL_NOTIFICATIONS = defineFeatureFlag(
+            "cloud-trial-notifications", false,
+            List.of("bjorncs", "oyving"), "2023-10-13", "2024-03-01",
+            "Whether to send cloud trial email notifications",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

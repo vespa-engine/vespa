@@ -1,13 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_inverter.h"
 #include "ordered_field_index_inserter.h"
-#include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -25,14 +21,9 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <stdexcept>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.fieldinverter");
-
 namespace search::memoryindex {
 
-using document::AlternateSpanList;
 using document::Annotation;
-using document::AnnotationType;
 using document::ArrayFieldValue;
 using document::DataType;
 using document::Document;
@@ -40,130 +31,34 @@ using document::DocumentType;
 using document::Field;
 using document::FieldValue;
 using document::IntFieldValue;
-using document::SimpleSpanList;
 using document::Span;
-using document::SpanList;
-using document::SpanNode;
-using document::SpanTree;
-using document::SpanTreeVisitor;
 using document::StringFieldValue;
 using document::StructFieldValue;
 using document::WeightedSetFieldValue;
 using index::DocIdAndPosOccFeatures;
 using index::Schema;
 using search::index::schema::CollectionType;
+using search::linguistics::TokenExtractor;
 using search::util::URL;
 using vespalib::make_string;
 using vespalib::datastore::Aligner;
-
-namespace documentinverterkludge::linguistics {
-
-const vespalib::string SPANTREE_NAME("linguistics");
-
-}
-
-using namespace documentinverterkludge;
-
-namespace {
-
-class SpanFinder : public SpanTreeVisitor {
-public:
-    int32_t begin_pos;
-    int32_t end_pos;
-
-    SpanFinder() : begin_pos(0x7fffffff), end_pos(-1) {}
-    Span span() { return Span(begin_pos, end_pos - begin_pos); }
-
-    void visit(const Span &node) override {
-        begin_pos = std::min(begin_pos, node.from());
-        end_pos = std::max(end_pos, node.from() + node.length());
-    }
-    void visit(const SpanList &node) override {
-        for (const auto & span_ : node) {
-            const_cast<SpanNode *>(span_)->accept(*this);
-        }
-    }
-    void visit(const SimpleSpanList &node) override {
-        for (const auto & span_ : node) {
-            const_cast<Span &>(span_).accept(*this);
-        }
-    }
-    void visit(const AlternateSpanList &node) override {
-        for (size_t i = 0; i < node.getNumSubtrees(); ++i) {
-            visit(node.getSubtree(i));
-        }
-    }
-};
-
-Span
-getSpan(const SpanNode &span_node)
-{
-    SpanFinder finder;
-    // The SpanNode will not be changed.
-    const_cast<SpanNode &>(span_node).accept(finder);
-    return finder.span();
-}
-
-}
 
 void
 FieldInverter::processAnnotations(const StringFieldValue &value, const Document& doc)
 {
     _terms.clear();
-    StringFieldValue::SpanTrees spanTrees = value.getSpanTrees();
-    const SpanTree *tree = StringFieldValue::findTree(spanTrees, linguistics::SPANTREE_NAME);
-    if (tree == nullptr) {
-        /* This is wrong unless field is exact match */
-        const vespalib::string &text = value.getValue();
-        if (text.empty()) {
-            return;
-        }
-        uint32_t wordRef = saveWord(text, &doc);
-        if (wordRef != 0u) {
-            add(wordRef);
-            stepWordPos();
-        }
-        return;
-    }
-    const vespalib::string &text = value.getValue();
-    for (const Annotation & annotation : *tree) {
-        const SpanNode *span = annotation.getSpanNode();
-        if ((span != nullptr) && annotation.valid() &&
-            (annotation.getType() == *AnnotationType::TERM))
-        {
-            Span sp = getSpan(*span);
-            if (sp.length() != 0) {
-                _terms.push_back(std::make_pair(sp,
-                                                annotation.getFieldValue()));
-            }
-        }
-    }
-    std::sort(_terms.begin(), _terms.end());
+    auto span_trees = value.getSpanTrees();
+    vespalib::stringref text = value.getValueRef();
+    _token_extractor.extract(_terms, span_trees, text, &doc);
     auto it  = _terms.begin();
     auto ite = _terms.end();
-    uint32_t wordRef;
-    bool mustStep = false;
     for (; it != ite; ) {
         auto it_begin = it;
-        for (; it != ite && it->first == it_begin->first; ++it) {
-            if (it->second) {  // it->second is a const FieldValue *.
-                wordRef = saveWord(*it->second, doc);
-            } else {
-                const Span &iSpan = it->first;
-                assert(iSpan.from() >= 0);
-                assert(iSpan.length() > 0);
-                wordRef = saveWord(vespalib::stringref(&text[iSpan.from()],
-                                                       iSpan.length()), &doc);
-            }
-            if (wordRef != 0u) {
-                add(wordRef);
-                mustStep = true;
-            }
+        for (; it != ite && it->span == it_begin->span; ++it) {
+            uint32_t wordRef = saveWord(it->word);
+            add(wordRef);
         }
-        if (mustStep) {
-            stepWordPos();
-            mustStep = false;
-        }
+        stepWordPos();
     }
 }
 
@@ -244,33 +139,19 @@ FieldInverter::endElement()
 }
 
 uint32_t
-FieldInverter::saveWord(const vespalib::stringref word, const Document* doc)
+FieldInverter::saveWord(vespalib::stringref word)
 {
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
-    size_t len = strnlen(word.data(), word.size());
-    if (len < word.size()) {
-        const Schema::IndexField &field = _schema.getIndexField(_fieldId);
-        LOG(error, "Detected NUL byte in word, length reduced from %zu to %zu, lid is %u, field is %s, truncated word is %s", word.size(), len, _docId, field.getName().c_str(), word.data());
-    }
-    if (len > max_word_len && doc != nullptr) {
-        const Schema::IndexField& field = _schema.getIndexField(_fieldId);
-        LOG(warning, "Dropped too long word (len %zu > max len %zu) from document %s field %s, word prefix is %.100s", len, max_word_len, doc->getId().toString().c_str(), field.getName().c_str(), word.data());
-        return 0u;
-    }
-    if (len == 0) {
-        return 0u;
-    }
-
-    const size_t unpadded_size = wordsSize + 4 + len + 1;
+    const size_t unpadded_size = wordsSize + 4 + word.size() + 1;
     const size_t fullyPaddedSize = Aligner<4>::align(unpadded_size);
     _words.reserve(vespalib::roundUp2inN(fullyPaddedSize));
     _words.resize(fullyPaddedSize);
 
     char * buf = &_words[0] + wordsSize;
     memset(buf, 0, 4);
-    memcpy(buf + 4, word.data(), len);
-    memset(buf + 4 + len, 0, fullyPaddedSize - unpadded_size + 1);
+    memcpy(buf + 4, word.data(), word.size());
+    memset(buf + 4 + word.size(), 0, fullyPaddedSize - unpadded_size + 1);
 
     uint32_t wordRef = (wordsSize + 4) >> 2;
     // assert(wordRef != 0);
@@ -278,20 +159,10 @@ FieldInverter::saveWord(const vespalib::stringref word, const Document* doc)
     return wordRef;
 }
 
-uint32_t
-FieldInverter::saveWord(const document::FieldValue &fv, const Document& doc)
-{
-    assert(fv.isA(FieldValue::Type::STRING));
-    using RawRef = std::pair<const char*, size_t>;
-    RawRef sRef = fv.getAsRaw();
-    return saveWord(vespalib::stringref(sRef.first, sRef.second), &doc);
-}
-
 void
 FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
 {
-    uint32_t wordRef = saveWord(word, nullptr);
-    assert(wordRef != 0);
+    uint32_t wordRef = saveWord(word);
     _positions.emplace_back(wordRef, docId);
 }
 
@@ -316,6 +187,17 @@ FieldInverter::endDoc()
     _pendingDocs.insert({ _docId, { _oldPosSize, newPosSize - _oldPosSize } });
     _docId = 0;
     _oldPosSize = newPosSize;
+}
+
+void
+FieldInverter::addWord(vespalib::stringref word, const document::Document& doc)
+{
+    word = _token_extractor.sanitize_word(word, &doc);
+    if (!word.empty()) {
+        uint32_t wordRef = saveWord(word);
+        add(wordRef);
+        stepWordPos();
+    }
 }
 
 void
@@ -367,6 +249,7 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId,
       _docId(0),
       _oldPosSize(0),
       _schema(schema),
+      _token_extractor(_schema.getIndexField(_fieldId).getName(), max_word_len),
       _words(),
       _elems(),
       _positions(),

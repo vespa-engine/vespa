@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentapiconverter.h"
 #include "priorityconverter.h"
@@ -23,9 +23,8 @@ using document::BucketSpace;
 
 namespace storage {
 
-DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
-                                           std::shared_ptr<const BucketResolver> bucketResolver)
-    : _priConverter(std::make_unique<PriorityConverter>(configUri)),
+DocumentApiConverter::DocumentApiConverter(std::shared_ptr<const BucketResolver> bucketResolver)
+    : _priConverter(std::make_unique<PriorityConverter>()),
       _bucketResolver(std::move(bucketResolver))
 {}
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stackdumpiterator.h"
 #include <vespa/vespalib/util/compress.h>
@@ -153,9 +153,10 @@ bool SimpleQueryStackDumpIterator::readNext() {
         break;
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
         {
-            if (p + sizeof(int64_t) > _bufEnd) return false;
-            _curr_integer_term = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
-            p += sizeof(int64_t);
+            if (p + sizeof(int64_t) > _bufEnd) {
+                return false;
+            }
+            _curr_integer_term = readUint64(p);
             _currArity = 0;
         }
         break;

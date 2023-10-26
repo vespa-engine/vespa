@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feedhandler.h"
 #include "ddbstate.h"
@@ -288,7 +288,6 @@ FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
     _activeFeedView->handleDeleteBucket(op, token);
     // Delete bucket itself, should no longer have documents.
     _bucketDBHandler->handleDeleteBucket(op.getBucketId());
-    initiateCommit(vespalib::steady_clock::now());
 }
 
 void

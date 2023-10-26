@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
@@ -54,19 +54,19 @@ class HttpRequestDispatch {
     private final RequestMetricReporter metricReporter;
 
     HttpRequestDispatch(JDiscContext jDiscContext,
-                               AccessLogEntry accessLogEntry,
-                               Context metricContext,
-                               HttpServletRequest servletRequest,
-                               HttpServletResponse servletResponse) throws IOException {
+                        AccessLogEntry accessLogEntry,
+                        Context metricContext,
+                        HttpServletRequest servletRequest,
+                        HttpServletResponse servletResponse) throws IOException {
         this.jDiscContext = jDiscContext;
 
         requestHandler = newRequestHandler(jDiscContext, accessLogEntry, servletRequest);
 
         this.jettyRequest = (Request) servletRequest;
-        this.metricReporter = new RequestMetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
+        this.metricReporter = new RequestMetricReporter(jDiscContext.metric(), metricContext, jettyRequest.getTimeStamp());
         this.servletResponseController = new ServletResponseController(servletRequest,
                                                                        servletResponse,
-                                                                       jDiscContext.janitor,
+                                                                       jDiscContext.janitor(),
                                                                        metricReporter,
                                                                        jDiscContext.developerMode());
         shutdownConnectionGracefullyIfThresholdReached(jettyRequest);
@@ -195,21 +195,21 @@ class HttpRequestDispatch {
 
     @SuppressWarnings("try")
     private ServletRequestReader handleRequest() throws IOException {
-        HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, jettyRequest);
+        HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container(), jettyRequest);
         ContentChannel requestContentChannel;
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler());
         }
-        return new ServletRequestReader(jettyRequest, requestContentChannel, jDiscContext.janitor, metricReporter);
+        return new ServletRequestReader(jettyRequest, requestContentChannel, jDiscContext.janitor(), metricReporter);
     }
 
     private static RequestHandler newRequestHandler(JDiscContext context,
                                                     AccessLogEntry accessLogEntry,
                                                     HttpServletRequest servletRequest) {
         RequestHandler requestHandler = wrapHandlerIfFormPost(
-                new FilteringRequestHandler(context.filterResolver, (Request)servletRequest),
-                servletRequest, context.serverConfig.removeRawPostBodyForWwwUrlEncodedPost());
+                new FilteringRequestHandler(context.filterResolver(), (Request)servletRequest),
+                servletRequest, context.removeRawPostBodyForWwwUrlEncodedPost());
 
         return new AccessLoggingRequestHandler(requestHandler, accessLogEntry);
     }

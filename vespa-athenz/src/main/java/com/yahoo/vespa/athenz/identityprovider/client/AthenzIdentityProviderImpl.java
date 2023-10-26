@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import ai.vespa.metrics.ContainerMetrics;
@@ -278,17 +278,17 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 identity, role, athenzUniqueInstanceId, null, keyPair);
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
-            updateRoleKeyManager(role, roleCertificate);
+            updateRoleKeyManager(role, keyPair.getPrivate(), roleCertificate);
             log.info(String.format("Requester role certificate for role %s, expires: %s", role.toResourceNameString(), roleCertificate.getNotAfter().toInstant().toString()));
             return roleCertificate;
         }
     }
 
-    private void updateRoleKeyManager(AthenzRole role, X509Certificate certificate) {
+    private void updateRoleKeyManager(AthenzRole role, PrivateKey privateKey, X509Certificate certificate) {
         MutableX509KeyManager keyManager = roleKeyManagerCache.computeIfAbsent(role, r -> new MutableX509KeyManager());
         keyManager.updateKeystore(
                 KeyStoreBuilder.withType(PKCS12)
-                        .withKeyEntry("default", autoReloadingX509KeyManager.getCurrentCertificateWithKey().privateKey(), certificate)
+                        .withKeyEntry("default", privateKey, certificate)
                         .build(),
                 new char[0]);
     }

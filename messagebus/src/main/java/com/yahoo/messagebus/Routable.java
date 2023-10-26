@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 import com.yahoo.text.Utf8String;
@@ -10,7 +10,7 @@ import com.yahoo.text.Utf8String;
  * A routable can be regarded as a protocol-defined value with additional message bus related state. The state is what
  * differentiates two Routables that carry the same value. This includes the application context attached to the
  * routable and the {@link CallStack} used to track the path of the routable within messagebus. When a routable is
- * copied (if the protocol supports it) only the value part is copied. The state must be explicitly transfered by
+ * copied (if the protocol supports it) only the value part is copied. The state must be explicitly transferred by
  * invoking the {@link #swapState(Routable)} method. That method is used to transfer the state from a message to the
  * corresponding reply, or to a different message if the application decides to replace it.
  *

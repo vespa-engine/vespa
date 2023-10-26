@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search summaryfield {
     document summaryfield {
         field foo type string {
@@ -10,13 +10,13 @@ search summaryfield {
         }
     }
     document-summary baz {
-        summary cox type string {
-            source: bar
+        summary cox {
+            source: foo
         }
-        summary alltags type array<string> {
+        summary alltags {
             source: mytags
         }
-        summary sometags type array<string> {
+        summary sometags {
             source: mytags
             matched-elements-only
         }

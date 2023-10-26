@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/persistence/messages.h>
@@ -124,11 +125,12 @@ ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t numBuckets,
 void
 ChangedBucketOwnershipHandlerTest::SetUp()
 {
+    using vespa::config::content::PersistenceConfig;
     vdstestlib::DirConfig config(getStandardConfig(true));
 
     _app.reset(new TestServiceLayerApp);
     _top.reset(new DummyStorageLink);
-    _handler = new ChangedBucketOwnershipHandler(config::ConfigUri(config.getConfigId()),
+    _handler = new ChangedBucketOwnershipHandler(*config_from<PersistenceConfig>(config::ConfigUri(config.getConfigId())),
                                                  _app->getComponentRegister());
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;
@@ -139,7 +141,7 @@ ChangedBucketOwnershipHandlerTest::SetUp()
     auto pconfig = std::make_unique<vespa::config::content::PersistenceConfigBuilder>();
     pconfig->abortOutdatedMutatingIdealStateOps = true;
     pconfig->abortOutdatedMutatingExternalLoadOps = true;
-    _handler->configure(std::move(pconfig));
+    _handler->on_configure(*pconfig);
 }
 
 namespace {
@@ -466,7 +468,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_remove_location) {
 TEST_F(ChangedBucketOwnershipHandlerTest, ideal_state_aborts_are_configurable) {
     auto config = std::make_unique<vespa::config::content::PersistenceConfigBuilder>();
     config->abortOutdatedMutatingIdealStateOps = false;
-    _handler->configure(std::move(config));
+    _handler->on_configure(*config);
     // Should not abort operation, even when ownership has changed.
     expectChangeAbortsMessage<api::CreateBucketCommand>(false, getBucketToAbort());
 }
@@ -508,7 +510,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, external_load_op_abort_updates_metric)
 TEST_F(ChangedBucketOwnershipHandlerTest, external_load_op_aborts_are_configurable) {
     auto config = std::make_unique<vespa::config::content::PersistenceConfigBuilder>();
     config->abortOutdatedMutatingExternalLoadOps = false;
-    _handler->configure(std::move(config));
+    _handler->on_configure(*config);
     // Should not abort operation, even when ownership has changed.
     document::DocumentId docId("id:foo:testdoctype1::bar");
     expectChangeAbortsMessage<api::RemoveCommand>(

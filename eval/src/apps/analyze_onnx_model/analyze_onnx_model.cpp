@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/onnx/onnx_wrapper.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -10,6 +10,10 @@
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
+#ifdef __linux__
+#include <malloc.h>
+#include <dlfcn.h>
+#endif
 
 using vespalib::make_string_short::fmt;
 
@@ -54,10 +58,13 @@ void extract(const vespalib::string &str, const vespalib::string &prefix, vespal
     }
 }
 struct MemoryUsage {
-    size_t size;
-    size_t rss;
+    size_t vm_size;
+    size_t rss_size;
+    size_t malloc_peak;
+    size_t malloc_current;
 };
 
+#ifdef __linux__
 static const vespalib::string UNKNOWN = "unknown";
 
 size_t convert(const vespalib::string & s) {
@@ -85,12 +92,38 @@ MemoryUsage extract_memory_usage() {
             extract(line, "VmRSS:", vm_rss);
         }
     }
-    return {convert(vm_size), convert(vm_rss)};
+    MemoryUsage usage = {};
+    usage.vm_size = convert(vm_size);
+    usage.rss_size = convert(vm_rss);
+
+#if __GLIBC_PREREQ(2, 33)
+    struct mallinfo2 info = mallinfo2();
+    usage.malloc_peak = size_t(info.usmblks);
+    usage.malloc_current = size_t(info.arena + info.hblkhd);
+#else
+    struct mallinfo info = mallinfo();
+
+    if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
+        // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
+        usage.malloc_peak = size_t(info.usmblks) * 1_Mi;
+        usage.malloc_current = size_t(info.arena + info.hblkhd) * 1_Mi;
+    } else {
+        usage.malloc_peak = size_t(info.usmblks);
+        usage.malloc_current = size_t(info.arena + info.hblkhd);
+    }
+#endif
+    return usage;
 }
+#else
+MemoryUsage extract_memory_usage() {
+    return { 0, 0, 0, 0 };
+}
+#endif
 
 void report_memory_usage(const vespalib::string &desc) {
-    MemoryUsage vm = extract_memory_usage();
-    fprintf(stderr, "vm_size: %zu kB, vm_rss: %zu kB (%s)\n", vm.size/1024, vm.rss/1024, desc.c_str());
+    MemoryUsage m = extract_memory_usage();
+    fprintf(stderr, "vm_size: %zu kB, vm_rss: %zu kB, malloc_peak: %zu kb, malloc_curr: %zu (%s)\n",
+            m.vm_size/1_Ki, m.rss_size/1_Ki, m.malloc_peak/1_Ki, m.malloc_current/1_Ki, desc.c_str());
 }
 
 struct Options {
@@ -286,8 +319,10 @@ int probe_types() {
         types.setString(output.name, output_type.to_spec());
     }
     MemoryUsage vm_after = extract_memory_usage();
-    root.setLong("vm_size", vm_after.size - vm_before.size);
-    root.setLong("vm_rss", vm_after.rss - vm_before.rss);
+    root.setLong("vm_size", vm_after.vm_size - vm_before.vm_size);
+    root.setLong("vm_rss", vm_after.rss_size - vm_before.rss_size);
+    root.setLong("malloc_peak", vm_after.malloc_peak - vm_before.malloc_peak);
+    root.setLong("malloc_current", vm_after.malloc_current - vm_before.malloc_current);
     write_compact(result, std_out);
     return 0;
 }

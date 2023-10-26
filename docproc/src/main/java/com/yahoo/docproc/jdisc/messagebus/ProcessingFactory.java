@@ -1,10 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc.messagebus;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.SystemTimer;
@@ -21,6 +17,10 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
@@ -41,32 +41,28 @@ class ProcessingFactory {
     }
 
     public List<Processing> fromMessage(Message message) {
-        List<Processing> processings = new ArrayList<>();
-        switch (message.getType()) {
-            case DocumentProtocol.MESSAGE_PUTDOCUMENT: {
+        return switch (message.getType()) {
+            case DocumentProtocol.MESSAGE_PUTDOCUMENT -> {
                 PutDocumentMessage putMessage = (PutDocumentMessage) message;
                 DocumentPut putOperation = new DocumentPut(createPutDocument(putMessage));
                 putOperation.setCondition(putMessage.getCondition());
                 putOperation.setCreateIfNonExistent(putMessage.getCreateIfNonExistent());
-                processings.add(createProcessing(putOperation, message));
-                break;
+                yield List.of(createProcessing(putOperation, message));
             }
-            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT: {
+            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT -> {
                 UpdateDocumentMessage updateMessage = (UpdateDocumentMessage) message;
                 DocumentUpdate updateOperation = updateMessage.getDocumentUpdate();
                 updateOperation.setCondition(updateMessage.getCondition());
-                processings.add(createProcessing(updateOperation, message));
-                break;
+                yield List.of(createProcessing(updateOperation, message));
             }
-            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT: {
+            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT -> {
                 RemoveDocumentMessage removeMessage = (RemoveDocumentMessage) message;
                 DocumentRemove removeOperation = new DocumentRemove(removeMessage.getDocumentId());
                 removeOperation.setCondition(removeMessage.getCondition());
-                processings.add(createProcessing(removeOperation, message));
-                break;
+                yield List.of(createProcessing(removeOperation, message));
             }
-        }
-        return processings;
+            default -> List.of();
+        };
     }
 
     private Document createPutDocument(PutDocumentMessage msg) {
@@ -82,7 +78,7 @@ class ProcessingFactory {
         String componentId = typeConfig.factorycomponent(); // Class name of the factory
         AbstractConcreteDocumentFactory cdf = docFactoryRegistry.getComponent(new ComponentId(componentId));
         if (cdf == null) {
-            log.fine("Unable to get document factory component '" + componentId + "' from document factory registry.");
+            log.fine(() -> "Unable to get document factory component '" + componentId + "' from document factory registry.");
             return document;
         }
         return cdf.getDocumentCopy(document.getDataType().getName(), document, document.getId());

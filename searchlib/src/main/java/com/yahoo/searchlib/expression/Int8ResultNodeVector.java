@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -14,12 +14,10 @@ import java.util.ArrayList;
  */
 public class Int8ResultNodeVector extends ResultNodeVector {
 
-    public static final int classId = registerClass(0x4000 + 116, Int8ResultNodeVector.class);
+    public static final int classId = registerClass(0x4000 + 116, Int8ResultNodeVector.class, Int8ResultNodeVector::new);
     private ArrayList<Int8ResultNode> vector = new ArrayList<>();
 
-    public Int8ResultNodeVector() {
-
-    }
+    public Int8ResultNodeVector() {}
 
     public Int8ResultNodeVector add(Int8ResultNode v) {
         vector.add(v);

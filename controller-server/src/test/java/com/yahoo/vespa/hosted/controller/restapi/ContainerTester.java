@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.container.JDisc;
@@ -141,6 +141,13 @@ public class ContainerTester {
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
         assertResponse(() -> request, expectedResponse, expectedStatusCode);
+    }
+
+    public void assertJsonResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
+        assertResponse(request,
+                       (response) -> assertEquals(SlimeUtils.toJson(SlimeUtils.jsonToSlimeOrThrow(expectedResponse).get(), false),
+                                                  SlimeUtils.toJson(SlimeUtils.jsonToSlimeOrThrow(response.getBodyAsString()).get(), false)),
+                       expectedStatusCode);
     }
 
     public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {

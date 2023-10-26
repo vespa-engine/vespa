@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.provision.TenantName;
@@ -23,9 +23,8 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
     private final Duration ttlForUnusedTenant;
     private final Clock clock;
 
-    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                      Duration interval, Clock clock) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, true);
+    TenantsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, Clock clock) {
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, true);
         this.ttlForUnusedTenant = defaultTtlForUnusedTenant;
         this.clock = clock;
     }

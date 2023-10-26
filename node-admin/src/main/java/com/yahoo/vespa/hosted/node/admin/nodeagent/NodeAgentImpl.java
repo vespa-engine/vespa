@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.component.Version;
@@ -518,6 +518,8 @@ public class NodeAgentImpl implements NodeAgent {
                     container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
+                serviceDumper.processServiceDumpRequest(context);
+
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
@@ -526,11 +528,11 @@ public class NodeAgentImpl implements NodeAgent {
                         firstSuccessfulHealthCheckInstant = Optional.of(timer.currentTime());
 
                     Duration timeLeft = Duration.between(timer.currentTime(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
-                    if (!container.get().resources().equalsCpu(getContainerResources(context)))
+                    if (   ! container.get().resources().equalsCpu(getContainerResources(context))
+                        &&   context.node().currentDockerImage().isPresent()) // Immediately resume first-time deployments, when healthy.
                         throw ConvergenceException.ofTransient("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
-                serviceDumper.processServiceDumpRequest(context);
 
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes

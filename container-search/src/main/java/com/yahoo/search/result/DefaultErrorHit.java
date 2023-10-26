@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import com.yahoo.collections.ArraySet;
@@ -75,6 +75,7 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
 
     /** Add all errors from another error hit to this */
     public void addErrors(ErrorHit errorHit) {
+        if (this == errorHit) return;
         for (Iterator<? extends ErrorMessage> i = errorHit.errorIterator(); i.hasNext();) {
             addError(i.next());
         }

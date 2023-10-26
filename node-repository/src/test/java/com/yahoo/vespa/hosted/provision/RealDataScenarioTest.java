@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.component.Version;
@@ -16,7 +16,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -119,7 +119,7 @@ public class RealDataScenarioTest {
                                             .flatMap(Collection::stream)
                                             .toList();
         NestedTransaction transaction = new NestedTransaction();
-        tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ProvisionLock(app, () -> {}), transaction));
+        tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ApplicationMutex(app, () -> {}), transaction));
         transaction.commit();
     }
 

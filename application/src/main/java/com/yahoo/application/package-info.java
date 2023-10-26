@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * This package provides an API for building Vespa or jDisc applications programmatically or from
  * an application package source, and instantiating those applications inside the current Java runtime.

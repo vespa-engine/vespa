@@ -1,15 +1,17 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/persistence/messages.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <tests/common/testhelper.h>
 #include <tests/persistence/common/filestortestfixture.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/messages.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <sstream>
 
 using storage::spi::test::makeSpiBucket;
@@ -73,18 +75,20 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
       manager(nullptr)
 {
     injector.inject(top);
-    auto fsm = std::make_unique<FileStorManager>(config::ConfigUri(fixture._config->getConfigId()), fixture._node->getPersistenceProvider(),
+    using vespa::config::content::StorFilestorConfig;
+    auto config = config_from<StorFilestorConfig>(config::ConfigUri(fixture._config->getConfigId()));
+    auto fsm = std::make_unique<FileStorManager>(*config, fixture._node->getPersistenceProvider(),
                                                  fixture._node->getComponentRegister(), *fixture._node, fixture._node->get_host_info());
     manager = fsm.get();
     top.push_back(std::move(fsm));
     top.open();
 }
 
-vespalib::string _Storage("storage");
+vespalib::string _storage("storage");
 
 api::StorageMessageAddress
 FileStorTestFixture::makeSelfAddress() {
-    return api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0);
+    return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, 0);
 }
 
 void

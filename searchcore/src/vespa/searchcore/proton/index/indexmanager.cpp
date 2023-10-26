@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexmanager.h"
 #include "diskindexwrapper.h"
 #include "memoryindexwrapper.h"
+#include <vespa/searchcorespi/index/indexmaintainerconfig.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/index/schemautil.h>

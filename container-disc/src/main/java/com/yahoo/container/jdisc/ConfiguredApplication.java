@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
 import com.google.inject.AbstractModule;
@@ -29,6 +29,7 @@ import com.yahoo.jdisc.application.DeactivatedContainer;
 import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jrt.Acceptor;
@@ -41,6 +42,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
+import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.security.tls.Capability;
@@ -53,8 +55,10 @@ import java.security.Provider;
 import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -377,20 +381,20 @@ public final class ConfiguredApplication implements Application {
         synchronized (monitor) {
             Set<ServerProvider> serversToClose = createIdentityHashSet(startedServers);
             serversToClose.removeAll(currentServers);
-            for (ServerProvider server : currentServers) {
+            for (ServerProvider server : ordered(currentServers, MbusServer.class, JettyHttpServer.class)) {
                 if ( ! startedServers.contains(server) && server.isMultiplexed()) {
                     server.start();
                     startedServers.add(server);
                 }
             }
-            if (serversToClose.size() > 0) {
+            if ( ! serversToClose.isEmpty()) {
                 log.info(String.format("Closing %d server instances", serversToClose.size()));
-                for (ServerProvider server : serversToClose) {
+                for (ServerProvider server : ordered(serversToClose, JettyHttpServer.class, MbusServer.class)) {
                     server.close();
                     startedServers.remove(server);
                 }
             }
-            for (ServerProvider server : currentServers) {
+            for (ServerProvider server : ordered(currentServers, MbusServer.class, JettyHttpServer.class)) {
                 if ( ! startedServers.contains(server)) {
                     server.start();
                     startedServers.add(server);
@@ -523,6 +527,22 @@ public final class ConfiguredApplication implements Application {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
         }
+    }
+
+    /** Returns a list with the given elements, ordered by the enumerated classes, ordering more specific matches first. */
+    @SafeVarargs
+    static <T> List<T> ordered(Collection<T> items, Class<? extends T>... order) {
+        List<T> ordered = new ArrayList<>(items);
+        ordered.sort(Comparator.comparingInt(item -> {
+            int best = order.length;
+            for (int i = 0; i < order.length; i++) {
+                if (   order[i].isInstance(item)
+                    && (   best == order.length
+                        || order[best].isAssignableFrom(order[i]))) best = i;
+            }
+            return  best;
+        }));
+        return ordered;
     }
 
     private static <E> Set<E> createIdentityHashSet() {

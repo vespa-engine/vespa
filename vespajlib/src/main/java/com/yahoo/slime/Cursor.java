@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 /**
@@ -94,7 +94,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Appends an array entry containing a new value of ARRAY type.
-     * Returns a valid Cursor (thay may again be used for adding new
+     * Returns a valid Cursor (that may again be used for adding new
      * sub-array entries) referencing the new entry value if
      * successful; otherwise returns an invalid Cursor.
      *
@@ -104,7 +104,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Appends an array entry containing a new value of OBJECT type.
-     * Returns a valid Cursor (thay may again be used for setting
+     * Returns a valid Cursor (that may again be used for setting
      * sub-fields inside the new object) referencing the new entry
      * value if successful; otherwise returns an invalid Cursor.
      *
@@ -190,7 +190,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Sets a field (identified with a symbol id) to contain a new
-     * value of ARRAY type.  Returns a valid Cursor (thay may again be
+     * value of ARRAY type.  Returns a valid Cursor (that may again be
      * used for adding new array entries) referencing the new field
      * value if successful; otherwise returns an invalid Cursor.
      *
@@ -201,7 +201,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Sets a field (identified with a symbol id) to contain a new
-     * value of OBJECT type.  Returns a valid Cursor (thay may again
+     * value of OBJECT type.  Returns a valid Cursor (that may again
      * be used for setting sub-fields inside the new object)
      * referencing the new field value if successful; otherwise
      * returns an invalid Cursor.
@@ -289,7 +289,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Sets a field (identified with a symbol name) to contain a new
-     * value of ARRAY type.  Returns a valid Cursor (thay may again be
+     * value of ARRAY type.  Returns a valid Cursor (that may again be
      * used for adding new array entries) referencing the new field
      * value if successful; otherwise returns an invalid Cursor.
      *
@@ -300,7 +300,7 @@ public interface Cursor extends Inspector {
 
     /**
      * Sets a field (identified with a symbol name) to contain a new
-     * value of OBJECT type.  Returns a valid Cursor (thay may again
+     * value of OBJECT type.  Returns a valid Cursor (that may again
      * be used for setting sub-fields inside the new object)
      * referencing the new field value if successful; otherwise
      * returns an invalid Cursor.

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.jrt.slobrok.api.Mirror;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Will pick 2 random candidates and select the one with least pending operations.
+ * Will pick 2 random candidates and select the one with the least pending operations.
  *
  * @author baldersheim
  */

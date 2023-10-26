@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 # @author Eirik Nygaard
 # @author Arnstein Ressem
@@ -51,9 +51,6 @@ find_package(JNI REQUIRED)
 
 find_package(GTest REQUIRED)
 
-find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
-
 find_package(Protobuf REQUIRED)
 
 include(build_settings.cmake)
@@ -100,7 +97,6 @@ vespa_install_data(tsan-suppressions.txt etc/vespa)
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
 
 add_subdirectory(airlift-zstd)
-add_subdirectory(ann_benchmark)
 add_subdirectory(application-model)
 add_subdirectory(client)
 add_subdirectory(cloud-tenant-cd)

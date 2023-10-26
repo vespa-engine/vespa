@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema child {
   document child {
     field parent_ref type reference<parent> {
@@ -10,22 +10,22 @@ schema child {
   import field parent_ref.str_int_map as my_str_int_map {}
 
   document-summary mysummary {
-    summary documentid type string {}
-    summary my_elem_array type array<elem> {}
-    summary my_elem_map type map<string, elem> {}
-    summary my_str_int_map type map<string, int> {}
+    summary documentid {}
+    summary my_elem_array {}
+    summary my_elem_map {}
+    summary my_str_int_map {}
   }
 
   document-summary filtered {
-    summary elem_array_filtered type array<elem> {
+    summary elem_array_filtered {
       source: my_elem_array
       matched-elements-only
     }
-    summary elem_map_filtered type map<string, elem> {
+    summary elem_map_filtered {
       source: my_elem_map
       matched-elements-only
     }
-    summary str_int_map_filtered type map<string, int> {
+    summary str_int_map_filtered {
       source: my_str_int_map
       matched-elements-only
     }

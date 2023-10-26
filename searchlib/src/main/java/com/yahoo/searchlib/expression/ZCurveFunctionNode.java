@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -32,13 +32,10 @@ public class ZCurveFunctionNode extends UnaryFunctionNode {
         }
     }
 
-    public static final int classId = registerClass(0x4000 + 139, ZCurveFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 139, ZCurveFunctionNode.class, ZCurveFunctionNode::new);
     private Dimension dim = Dimension.X;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public ZCurveFunctionNode() {
-        // used by deserializer
-    }
+    private ZCurveFunctionNode() {}
 
     public ZCurveFunctionNode(ExpressionNode arg, Dimension dimension) {
         addArg(arg);

@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <deployment version='1.0' major-version='6' athenz-domain='vespa' athenz-service='service'>
     <upgrade policy='canary'/>
     <test/>

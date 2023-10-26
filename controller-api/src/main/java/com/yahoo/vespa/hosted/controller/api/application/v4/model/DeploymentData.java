@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.yahoo.component.Version;
@@ -14,9 +14,12 @@ import com.yahoo.yolean.concurrent.Memoized;
 
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,6 +30,8 @@ import static java.util.Objects.requireNonNull;
  * @author jonmv
  */
 public class DeploymentData {
+
+    private static final Logger log = Logger.getLogger(DeploymentData.class.getName());
 
     private final ApplicationId instance;
     private final ZoneId zone;
@@ -39,7 +44,7 @@ public class DeploymentData {
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
     private final Supplier<Optional<CloudAccount>> cloudAccount;
-    private final List<DataplaneTokenVersions> dataPlaneTokens;
+    private final Supplier<List<DataplaneTokenVersions>> dataPlaneTokens;
     private final boolean dryRun;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
@@ -50,20 +55,20 @@ public class DeploymentData {
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Supplier<Optional<CloudAccount>> cloudAccount,
-                          List<DataplaneTokenVersions> dataPlaneTokens,
+                          Supplier<List<DataplaneTokenVersions>> dataPlaneTokens,
                           boolean dryRun) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
-        this.endpoints = new Memoized<>(requireNonNull(endpoints));
+        this.endpoints = wrap(requireNonNull(endpoints), Duration.ofSeconds(30), "deployment endpoints for " + instance + " in " + zone);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
-        this.quota = new Memoized<>(requireNonNull(quota));
+        this.quota = wrap(requireNonNull(quota), Duration.ofSeconds(10), "quota for " + instance);
         this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
         this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
-        this.cloudAccount = new Memoized<>(requireNonNull(cloudAccount));
-        this.dataPlaneTokens = dataPlaneTokens;
+        this.cloudAccount = wrap(requireNonNull(cloudAccount), Duration.ofSeconds(5), "cloud account for " + instance + " in " + zone);
+        this.dataPlaneTokens = wrap(dataPlaneTokens, Duration.ofSeconds(5), "data plane tokens for " + instance + " in " + zone);
         this.dryRun = dryRun;
     }
 
@@ -83,8 +88,8 @@ public class DeploymentData {
         return platform;
     }
 
-    public Supplier<DeploymentEndpoints> endpoints() {
-        return endpoints;
+    public DeploymentEndpoints endpoints() {
+        return endpoints.get();
     }
 
     public Optional<DockerImage> dockerImageRepo() {
@@ -112,11 +117,48 @@ public class DeploymentData {
     }
 
     public List<DataplaneTokenVersions> dataPlaneTokens() {
-        return dataPlaneTokens;
+        return dataPlaneTokens.get();
     }
 
     public boolean isDryRun() {
         return dryRun;
+    }
+
+    private static <T> Supplier<T> wrap(Supplier<T> delegate, Duration timeout, String description) {
+        return new TimingSupplier<>(new Memoized<>(delegate), timeout, description);
+    }
+
+    public static class TimingSupplier<T> implements Supplier<T> {
+
+        private final Supplier<T> delegate;
+        private final Duration timeout;
+        private final String description;
+
+        public TimingSupplier(Supplier<T> delegate, Duration timeout, String description) {
+            this.delegate = delegate;
+            this.timeout = timeout;
+            this.description = description;
+        }
+
+        @Override
+        public T get() {
+            long startNanos = System.nanoTime();
+            Throwable thrown = null;
+            try {
+                return delegate.get();
+            }
+            catch (Throwable t) {
+                thrown = t;
+                throw t;
+            }
+            finally {
+                long durationNanos = System.nanoTime() - startNanos;
+                Level level = durationNanos > timeout.toNanos() ? Level.WARNING : Level.FINE;
+                String thrownMessage = thrown == null ? "" : " with exception " + thrown;
+                log.log(level, () -> String.format("Getting %s took %.6f seconds%s", description, durationNanos / 1e9, thrownMessage));
+            }
+        }
+
     }
 
 }

@@ -1,3 +1,4 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema foo {
     document foo {
         field myref type reference<parent> {
@@ -9,7 +10,7 @@ schema foo {
     }
     import field myref.x as myx {}
     document-summary small {
-        summary myx type int {}
-        summary foo type string {}
+        summary myx {}
+        summary foo {}
     }
 }

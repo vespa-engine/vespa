@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.application.api.ValidationId;
@@ -24,7 +24,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
     @Test
     void testRedundancyOnFirstDeploymentValidation() {
         try {
-            tester.deploy(null, getServices(1), Environment.prod, null);
+            tester.deploy(null, getServices(1), Environment.prod, null, "contentClusterId.indexing");
             fail("Expected exception due to redundancy 1");
         }
         catch (IllegalArgumentException expected) {
@@ -38,7 +38,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
 
     @Test
     void testOverridingRedundancyOnFirstDeploymentValidation() {
-        tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride); // Allowed due to override
+        tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride, "contentClusterId.indexing"); // Allowed due to override
     }
 
     private static String getServices(int redundancy) {

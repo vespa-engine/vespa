@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -49,16 +49,19 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
     private static class Threadpool extends ContainerThreadpool {
 
+        private final int threads;
+
         Threadpool(DeployState ds, Element options) {
             super(ds, "search-handler", options);
+            threads = ds.featureFlags().searchHandlerThreadpool();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .maxThreads(-2)
-                    .minThreads(-2)
+                    .maxThreads(-threads)
+                    .minThreads(-threads)
                     .queueSize(-40);
         }
 

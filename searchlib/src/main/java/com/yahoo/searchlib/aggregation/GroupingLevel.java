@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.ExpressionNode;
@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
 public class GroupingLevel extends Identifiable {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 93, GroupingLevel.class);
+    public static final int classId = registerClass(0x4000 + 93, GroupingLevel.class, GroupingLevel::new);
 
     // The maximum number of groups allowed at this level.
     private long maxGroups = -1;

@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.NodeResources;
@@ -134,13 +135,34 @@ public class PlanRegistryMock implements PlanRegistry {
                     dgbCost,
                     gpuCost,
                     usage.getArchitecture(),
-                    usage.getMajorVersion()
+                    usage.getMajorVersion(),
+                    usage.getCloudAccount()
             );
         }
 
         @Override
         public double calculate(NodeResources resources) {
             return resources.cost();
+        }
+
+        @Override
+        public BigDecimal getCpuPrice() {
+            return cpuHourCost;
+        }
+
+        @Override
+        public BigDecimal getMemoryPrice() {
+            return memHourCost;
+        }
+
+        @Override
+        public BigDecimal getDiskPrice() {
+            return dgbHourCost;
+        }
+
+        @Override
+        public BigDecimal getGpuPrice() {
+            return gpuHourCost;
         }
     }
 }

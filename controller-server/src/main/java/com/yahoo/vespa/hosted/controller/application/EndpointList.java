@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
@@ -26,11 +26,6 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         if (endpoints.stream().distinct().count() != endpoints.size()) {
             throw new IllegalArgumentException("Expected all endpoints to be distinct, got " + endpoints);
         }
-    }
-
-    /** Returns the primary (non-legacy) endpoint, if any */
-    public Optional<Endpoint> primary() {
-        return not().legacy().asList().stream().findFirst();
     }
 
     /** Returns the subset of endpoints named according to given ID and scope */

@@ -800,6 +800,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.messagebus.MessageHandler, com.yahoo.messagebus.Messenger)",
       "public void <init>(com.yahoo.messagebus.MessageHandler)",
       "public boolean destroy()",
       "public void handleMessage(com.yahoo.messagebus.Message)",

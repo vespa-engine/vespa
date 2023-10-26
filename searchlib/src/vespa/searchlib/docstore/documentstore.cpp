@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentstore.h"
 #include "visitcache.h"
@@ -121,6 +121,10 @@ DocumentStore::Config::operator == (const Config &rhs) const {
             (_compression == rhs._compression);
 }
 
+size_t
+DocumentStore::getCacheCapacity() const {
+    return _cache->capacityBytes();
+}
 
 DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),

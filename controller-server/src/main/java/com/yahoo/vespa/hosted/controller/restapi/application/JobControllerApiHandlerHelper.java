@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -519,6 +519,8 @@ class JobControllerApiHandlerHelper {
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", nameOf(run.status()));
             toSlime(runObject, run.versions(), run.reason(), application);
+            run.cloudAccount().filter(account -> ! account.isUnspecified())
+               .ifPresent(cloudAccount -> runObject.setObject("enclave").setString("cloudAccount", cloudAccount.value()));
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {
                 Cursor runStepObject = runStepsArray.addObject();

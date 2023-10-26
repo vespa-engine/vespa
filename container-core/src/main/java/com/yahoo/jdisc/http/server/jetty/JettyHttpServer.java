@@ -1,15 +1,17 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
+import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
+import com.yahoo.jdisc.service.ServerProvider;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
@@ -36,7 +38,10 @@ import java.net.BindException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -45,27 +50,26 @@ import java.util.stream.Collectors;
  * @author Simon Thoresen Hult
  * @author bjorncs
  */
-public class JettyHttpServer extends AbstractServerProvider {
+public class JettyHttpServer extends AbstractResource implements ServerProvider {
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
 
+    private final ServerConfig config;
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
     private final ServerMetricReporter metricsReporter;
+    private final Deque<JDiscContext> contexts = new ConcurrentLinkedDeque<>();
 
     @Inject // ServerProvider implementors must use com.google.inject.Inject
-    public JettyHttpServer(CurrentContainer container,
-                           Metric metric,
+    public JettyHttpServer(Metric metric,
                            ServerConfig serverConfig,
-                           FilterBindings filterBindings,
-                           Janitor janitor,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
                            ConnectionLog connectionLog) {
-        super(container);
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
 
+        this.config = serverConfig;
         server = new Server();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         server.setRequestLog(new AccessLogRequestLog(requestLog));
@@ -81,14 +85,28 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
         server.addBeanToAllConnectors(new ResponseMetricAggregator(serverConfig.metric()));
 
-        JDiscContext jDiscContext = new JDiscContext(filterBindings, container, janitor, metric, serverConfig);
-
-        ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
+        ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(this::newestContext));
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
                                                       .map(JDiscServerConnector.class::cast)
                                                       .toList();
         server.setHandler(createRootHandler(connectors, jdiscServlet));
         this.metricsReporter = new ServerMetricReporter(metric, server);
+    }
+
+    JDiscContext registerContext(FilterBindings filterBindings, CurrentContainer container, Janitor janitor, Metric metric) {
+        JDiscContext context = JDiscContext.of(filterBindings, container, janitor, metric, config);
+        contexts.addFirst(context);
+        return context;
+    }
+
+    void deregisterContext(JDiscContext context) {
+        contexts.remove(context);
+    }
+
+    JDiscContext newestContext() {
+        JDiscContext context = contexts.peekFirst();
+        if (context == null) throw new IllegalStateException("JettyHttpServer has no registered JDiscContext");
+        return context;
     }
 
     private static void setupJmx(Server server, ServerConfig serverConfig) {

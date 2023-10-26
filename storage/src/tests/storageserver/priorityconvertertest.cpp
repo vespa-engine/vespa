@@ -1,7 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/storageserver/priorityconverter.h>
-#include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
@@ -12,8 +11,7 @@ struct PriorityConverterTest : Test {
     std::unique_ptr<PriorityConverter> _converter;
 
     void SetUp() override {
-        vdstestlib::DirConfig config(getStandardConfig(true));
-        _converter = std::make_unique<PriorityConverter>(config::ConfigUri(config.getConfigId()));
+        _converter = std::make_unique<PriorityConverter>();
     };
 };
 

@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.lucene;
 
 import com.yahoo.language.Language;
@@ -6,6 +7,7 @@ import org.apache.lucene.analysis.ar.ArabicAnalyzer;
 import org.apache.lucene.analysis.bg.BulgarianAnalyzer;
 import org.apache.lucene.analysis.bn.BengaliAnalyzer;
 import org.apache.lucene.analysis.ca.CatalanAnalyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.ckb.SoraniAnalyzer;
 import org.apache.lucene.analysis.cz.CzechAnalyzer;
 import org.apache.lucene.analysis.da.DanishAnalyzer;
@@ -58,7 +60,10 @@ class DefaultAnalyzers {
                 entry(Language.BENGALI, new BengaliAnalyzer()),
                 // analyzerClasses.put(Language.BRASILIAN, new BrazilianAnalyzer())
                 entry(Language.CATALAN, new CatalanAnalyzer()),
-                // cjk analyzer?
+                entry(Language.CHINESE_SIMPLIFIED, new CJKAnalyzer()),
+                entry(Language.CHINESE_TRADITIONAL, new CJKAnalyzer()),
+                entry(Language.JAPANESE, new CJKAnalyzer()),
+                entry(Language.KOREAN, new CJKAnalyzer()),
                 entry(Language.KURDISH, new SoraniAnalyzer()),
                 entry(Language.CZECH, new CzechAnalyzer()),
                 entry(Language.DANISH, new DanishAnalyzer()),

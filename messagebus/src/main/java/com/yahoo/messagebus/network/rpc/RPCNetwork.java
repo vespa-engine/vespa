@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
@@ -66,7 +66,7 @@ public class RPCNetwork implements Network, MethodHandler {
     private final Mirror mirror;
     private final Register register;
     private final TreeMap<Version, RPCSendAdapter> sendAdapters = new TreeMap<>();
-    private NetworkOwner owner;
+    private volatile NetworkOwner owner;
     private final SlobrokConfigSubscriber slobroksConfig;
     private final LinkedHashMap<String, Route> lruRouteMap = new LinkedHashMap<>(10000, 0.5f, true);
     private final ExecutorService executor =

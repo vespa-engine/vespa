@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
@@ -61,7 +61,7 @@ public class RankingExpressionTestCase {
         assertParse("query(var1) + query(var2) - query(var3) * (query(var4) / query(var5))", " $var1 + $var2 - $var3 *($var4 / $var5)");
         assertParse("if (if (f1.out < query(p1), 0, 1) < if (f2.out < query(p2), 0, 1), f3.out, query(p3))", "if(if(f1.out<$p1,0,1)<if(f2.out<$p2,0,1),f3.out,$p3)");
     }
-    
+
     @Test
     public void testProgrammaticBuilding() throws ParseException {
         ReferenceNode input = new ReferenceNode("input");
@@ -147,14 +147,14 @@ public class RankingExpressionTestCase {
          "10 + 8 * 1977"), "cox", functions
         );
     }
-    
+
     @Test
     public void testTensorSerialization() {
-        assertSerialization("map(constant(tensor0), f(a)(cos(a)))", 
+        assertSerialization("map(constant(tensor0), f(a)(cos(a)))",
                             "map(constant(tensor0), f(a)(cos(a)))");
-        assertSerialization("map(constant(tensor0), f(a)(cos(a))) + join(attribute(tensor1), map(reduce(map(attribute(tensor1), f(a)(a * a)), sum, x), f(a)(sqrt(a))), f(a,b)(a / b))", 
+        assertSerialization("map(constant(tensor0), f(a)(cos(a))) + join(attribute(tensor1), map(reduce(map(attribute(tensor1), f(a)(a * a)), sum, x), f(a)(sqrt(a))), f(a,b)(a / b))",
                             "map(constant(tensor0), f(a)(cos(a))) + l2_normalize(attribute(tensor1), x)");
-        assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
+        assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))",
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
         assertSerialization("tensor(x{}):{{x:a}:(1 + 2 + 3),{x:b}:(if (1 > 2, 3, 4)),{x:c}:(reduce(tensor0 * tensor1, sum))}",
                             "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }");
@@ -378,7 +378,7 @@ public class RankingExpressionTestCase {
             // (but not the same one due to primitivization)
             RankingExpression reparsedExpression = new RankingExpression(serializedExpression);
             // Serializing the primitivized expression should yield the same expression again
-            String reserializedExpression = 
+            String reserializedExpression =
                     reparsedExpression.getRankProperties(new SerializationContext()).values().iterator().next();
             assertEquals(expectedSerialization, reserializedExpression);
         }

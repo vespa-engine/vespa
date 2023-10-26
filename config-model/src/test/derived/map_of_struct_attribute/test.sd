@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema test {
   document test {
     struct elem {
@@ -30,7 +30,7 @@ schema test {
     }
   }
   document-summary rename {
-    summary new_str_elem_map type map<string,elem> { source: str_elem_map }
-    summary new_int_elem_map type map<int,elem> { source: int_elem_map }
+    summary new_str_elem_map { source: str_elem_map }
+    summary new_int_elem_map { source: int_elem_map }
   }
 }

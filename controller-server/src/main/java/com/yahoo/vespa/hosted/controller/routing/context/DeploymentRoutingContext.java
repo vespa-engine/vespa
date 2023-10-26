@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing.context;
 
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -45,7 +45,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
      *
      * @return the container endpoints relevant for this deployment, as declared in deployment spec
      */
-    public final PreparedEndpoints prepare(BasicServicesXml services, Optional<EndpointCertificate> certificate, LockedApplication application) {
+    public final PreparedEndpoints prepare(BasicServicesXml services, EndpointCertificate certificate, LockedApplication application) {
         return routing.prepare(deployment, services, certificate, application);
     }
 

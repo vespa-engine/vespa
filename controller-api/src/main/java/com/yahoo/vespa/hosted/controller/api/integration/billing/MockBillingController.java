@@ -1,7 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -22,18 +23,20 @@ import java.util.stream.Stream;
 public class MockBillingController implements BillingController {
 
     private final Clock clock;
+    private final BillingDatabaseClient dbClient;
 
     PlanId defaultPlan = PlanId.from("trial");
     List<TenantName> tenants = new ArrayList<>();
     Map<TenantName, PlanId> plans = new HashMap<>();
     Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
     Map<TenantName, List<Bill>> committedBills = new HashMap<>();
-    Map<TenantName, Bill> uncommittedBills = new HashMap<>();
+    public Map<TenantName, Bill> uncommittedBills = new HashMap<>();
     Map<TenantName, List<Bill.LineItem>> unusedLineItems = new HashMap<>();
     Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
 
-    public MockBillingController(Clock clock) {
+    public MockBillingController(Clock clock, BillingDatabaseClient dbClient) {
         this.clock = clock;
+        this.dbClient = dbClient;
     }
 
     @Override
@@ -71,7 +74,7 @@ public class MockBillingController implements BillingController {
                 .add(new Bill(
                         billId,
                         tenant,
-                        Bill.StatusHistory.open(clock),
+                        StatusHistory.open(clock),
                         List.of(),
                         startTime,
                         endTime
@@ -116,7 +119,7 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void updateBillStatus(Bill.Id billId, String agent, String status) {
+    public void updateBillStatus(Bill.Id billId, String agent, BillStatus status) {
         var now = clock.instant().atZone(ZoneOffset.UTC);
         committedBills.values().stream()
                 .flatMap(List::stream)
@@ -134,7 +137,7 @@ public class MockBillingController implements BillingController {
                             "line-item-id",
                             description,
                             amount,
-                            "some-plan",
+                            "paid",
                             agent,
                             ZonedDateTime.now()));
         }
@@ -203,6 +206,7 @@ public class MockBillingController implements BillingController {
         return count < limit;
     }
 
+
     public void setTenants(List<TenantName> tenants) {
         this.tenants = tenants;
     }
@@ -234,6 +238,6 @@ public class MockBillingController implements BillingController {
     private Bill emptyBill() {
         var start = clock.instant().atZone(ZoneOffset.UTC);
         var end = clock.instant().atZone(ZoneOffset.UTC);
-        return new Bill(Bill.Id.of("empty"), TenantName.defaultName(), Bill.StatusHistory.open(clock), List.of(), start, end);
+        return new Bill(Bill.Id.of("empty"), TenantName.defaultName(), StatusHistory.open(clock), List.of(), start, end);
     }
 }

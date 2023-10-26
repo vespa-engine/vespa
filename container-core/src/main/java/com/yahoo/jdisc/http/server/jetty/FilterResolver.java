@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
@@ -27,12 +27,10 @@ class FilterResolver {
 
     private final FilterBindings bindings;
     private final Metric metric;
-    private final boolean strictFiltering;
 
-    FilterResolver(FilterBindings bindings, Metric metric, boolean strictFiltering) {
+    FilterResolver(FilterBindings bindings, Metric metric) {
         this.bindings = bindings;
         this.metric = metric;
-        this.strictFiltering = strictFiltering;
     }
 
     Optional<RequestFilter> resolveRequestFilter(Request request, URI jdiscUri) {
@@ -40,7 +38,7 @@ class FilterResolver {
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
             request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, maybeFilterId.get());
-        } else if (!strictFiltering) {
+        } else if (!bindings.strictFiltering()) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(request, null));
         } else {
             String syntheticFilterId = RejectingRequestFilter.SYNTHETIC_FILTER_CHAIN_ID;

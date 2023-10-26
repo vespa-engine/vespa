@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics;
 
 /**
@@ -8,6 +9,8 @@ public enum ControllerMetrics implements VespaMetrics {
     ATHENZ_REQUEST_ERROR("athenz.request.error", Unit.REQUEST, "Controller: Athenz request error"),
     ARCHIVE_BUCKET_COUNT("archive.bucketCount", Unit.BUCKET, "Controller: Archive bucket count"),
 
+    DEPLOYMENT_JOBS_QUEUED("deployment.jobsQueued", Unit.TASK, "The number of deployment jobs queued"),
+    DEPLOYMENT_JOBS_ACTIVE("deployment.jobsActive", Unit.TASK, "The number of deployment jobs active"),
     DEPLOYMENT_START("deployment.start", Unit.DEPLOYMENT, "The number of started deployment jobs"),
     DEPLOYMENT_NODE_ALLOCATION_FAILURE("deployment.nodeAllocationFailure", Unit.DEPLOYMENT, "The number of deployments failed due to node allocation failures"),
     DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT("deployment.endpointCertificateTimeout", Unit.DEPLOYMENT, "The number of deployments failed due to timeout acquiring endpoint certificate"),
@@ -39,6 +42,7 @@ public enum ControllerMetrics implements VespaMetrics {
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),
     CERTIFICATE_POOL_AVAILABLE("certificate_pool_available", Unit.FRACTION, "Available certificates in the pool, fraction of configured size"),
+    BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
@@ -57,7 +61,12 @@ public enum ControllerMetrics implements VespaMetrics {
     METERING_MEMORY_GB("metering.memoryGB", Unit.GIGABYTE, "Controller: Metering memory GB"),
     METERING_VCPU("metering.vcpu", Unit.VCPU, "Controller: Metering VCPU"),
     METERING_LAST_REPORTED("metering_last_reported", Unit.SECONDS_SINCE_EPOCH, "Controller: Metering last reported"),
-    METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)");
+    METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)"),
+
+    MAIL_SENT("mail.sent", Unit.OPERATION, "Mail sent"),
+    MAIL_FAILED("mail.failed", Unit.OPERATION, "Mail delivery failed"),
+    MAIL_THROTTLED("mail.throttled", Unit.OPERATION, "Mail delivery throttled");
+
 
     private final String name;
     private final Unit unit;

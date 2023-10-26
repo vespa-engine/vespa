@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -68,6 +68,7 @@ using search::docsummary::IStringFieldConverter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
 using search::docsummary::SlimeFillerFilter;
+using vespalib::Memory;
 using vespalib::SimpleBuffer;
 using vespalib::Slime;
 using vespalib::eval::SimpleValue;
@@ -146,17 +147,27 @@ get_document_types_config()
 class MockStringFieldConverter : public IStringFieldConverter
 {
     std::vector<vespalib::string> _result;
+    bool _render_wset_as_array;
+    bool _insert;
 public:
-    MockStringFieldConverter()
+    MockStringFieldConverter(bool render_wset_as_array, bool insert)
         : IStringFieldConverter(),
-          _result()
+          _result(),
+          _render_wset_as_array(render_wset_as_array),
+          _insert(insert)
     {
     }
     ~MockStringFieldConverter() override = default;
-    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter&) override {
+    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override {
         _result.emplace_back(input.getValueRef());
+        if (_insert) {
+            inserter.insertString(Memory(input.getValueRef()));
+        }
     }
     const std::vector<vespalib::string>& get_result() const noexcept { return _result; }
+    bool render_weighted_set_as_array() const override {
+        return _render_wset_as_array;
+    }
 };
 
 }
@@ -188,6 +199,7 @@ protected:
     void expect_insert_summary_field_with_filter(const vespalib::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
     void expect_insert_summary_field_with_field_filter(const vespalib::string& exp, const FieldValue& fv, const SlimeFillerFilter* filter);
     void expect_insert_juniper_field(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv);
+    void expect_insert_summary_field_with_converter(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv, MockStringFieldConverter& converter);
 };
 
 SlimeFillerTest::SlimeFillerTest()
@@ -317,7 +329,7 @@ SlimeFillerTest::expect_insert_callback(const std::vector<vespalib::string>& exp
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    MockStringFieldConverter converter;
+    MockStringFieldConverter converter(false, false);
     SlimeFiller filler(inserter, &converter, SlimeFillerFilter::all());
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
@@ -351,7 +363,7 @@ SlimeFillerTest::expect_insert_summary_field_with_field_filter(const vespalib::s
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, filter);
+    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, nullptr, filter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -361,8 +373,20 @@ SlimeFillerTest::expect_insert_juniper_field(const std::vector<vespalib::string>
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    MockStringFieldConverter converter;
+    MockStringFieldConverter converter(false, false);
     SlimeFiller::insert_juniper_field(fv, inserter, converter);
+    auto act_slime = slime_to_string(slime);
+    EXPECT_EQ(exp_slime, act_slime);
+    auto act = converter.get_result();
+    EXPECT_EQ(exp, act);
+}
+
+void
+SlimeFillerTest::expect_insert_summary_field_with_converter(const std::vector<vespalib::string>& exp, const vespalib::string& exp_slime, const FieldValue& fv, MockStringFieldConverter& converter)
+{
+    Slime slime;
+    SlimeInserter inserter(slime);
+    SlimeFiller::insert_summary_field(fv, inserter, &converter);
     auto act_slime = slime_to_string(slime);
     EXPECT_EQ(exp_slime, act_slime);
     auto act = converter.get_result();
@@ -623,6 +647,18 @@ TEST_F(SlimeFillerTest, insert_juniper_field)
     expect_insert_juniper_field({}, "null", StringFieldValue(""));
     expect_insert_juniper_field({"foo","bar","baz"}, "[]", make_array());
     expect_insert_juniper_field({}, "null", make_empty_array());
+}
+
+TEST_F(SlimeFillerTest, string_field_is_not_converted_for_weighted_set_rendering)
+{
+    MockStringFieldConverter cvt_as_wset(false, true);
+    expect_insert_summary_field_with_converter({}, R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", make_weighted_set(), cvt_as_wset);
+}
+
+TEST_F(SlimeFillerTest, weighted_set_can_be_rendered_as_array)
+{
+    MockStringFieldConverter cvt_as_array(true, true);
+    expect_insert_summary_field_with_converter({"foo","bar","baz"}, R"(["foo","bar","baz"])", make_weighted_set(), cvt_as_array);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

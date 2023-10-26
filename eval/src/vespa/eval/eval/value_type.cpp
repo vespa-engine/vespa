@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value_type.h"
 #include "value_type_spec.h"
@@ -71,7 +71,7 @@ struct MyJoin {
     vespalib::string concat_dim;
     MyJoin(const DimensionList &lhs, const DimensionList &rhs)
         : mismatch(false), dimensions(), concat_dim() { my_join(lhs, rhs); }
-    MyJoin(const DimensionList &lhs, const DimensionList &rhs, vespalib::string concat_dim_in)
+    MyJoin(const DimensionList &lhs, const DimensionList &rhs, const vespalib::string & concat_dim_in)
         : mismatch(false), dimensions(), concat_dim(concat_dim_in) { my_join(lhs, rhs); }
     ~MyJoin();
 private:
@@ -152,6 +152,8 @@ ValueType::error_if(bool has_error, ValueType else_type)
     }
 }
 
+ValueType::ValueType(const ValueType &) = default;
+ValueType & ValueType::operator =(const ValueType &) = default;
 ValueType::~ValueType() = default;
 
 bool
@@ -302,6 +304,7 @@ std::vector<vespalib::string>
 ValueType::dimension_names() const
 {
     std::vector<vespalib::string> result;
+    result.reserve(_dimensions.size());
     for (const auto &dimension: _dimensions) {
         result.push_back(dimension.name);
     }
@@ -367,7 +370,7 @@ ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
     if (!verify_dimensions(dimensions_in)) {
         return error_type();
     }
-    return ValueType(cell_type, std::move(dimensions_in));
+    return {cell_type, std::move(dimensions_in)};
 }
 
 ValueType

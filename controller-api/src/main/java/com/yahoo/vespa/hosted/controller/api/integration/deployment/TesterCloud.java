@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -29,7 +29,7 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(DeploymentId deploymentId);
 
-    Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints);
+    Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints, boolean initialDeployment);
 
     /** Returns the test report as JSON if available */
     Optional<TestReport> getTestReport(DeploymentId deploymentId);

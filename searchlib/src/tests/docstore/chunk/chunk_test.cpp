@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
 
@@ -19,10 +19,10 @@ TEST("require that Chunk obey limits")
 {
     Chunk c(0, Chunk::Config(256));
     EXPECT_TRUE(c.hasRoom(1000)); // At least 1 is allowed no matter what the size is.
-    c.append(1, "abc", 3);
+    c.append(1, {"abc", 3});
     EXPECT_TRUE(c.hasRoom(229));
     EXPECT_FALSE(c.hasRoom(230));
-    c.append(2, "abc", 3);
+    c.append(2, {"abc", 3});
     EXPECT_TRUE(c.hasRoom(20));
 }
 
@@ -30,11 +30,11 @@ TEST("require that Chunk can produce unique list")
 {
     const char *d = "ABCDEF";
     Chunk c(0, Chunk::Config(100));
-    c.append(1, d, 1);
-    c.append(2, d, 2);
-    c.append(3, d, 3);
-    c.append(2, d, 4);
-    c.append(1, d, 5);
+    c.append(1, {d, 1});
+    c.append(2, {d, 2});
+    c.append(3, {d, 3});
+    c.append(2, {d, 4});
+    c.append(1, {d, 5});
     EXPECT_EQUAL(5u, c.count());
     const Chunk::LidList & all = c.getLids();
     EXPECT_EQUAL(5u, all.size());

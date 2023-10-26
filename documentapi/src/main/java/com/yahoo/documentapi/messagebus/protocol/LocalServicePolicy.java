@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.jrt.slobrok.api.Mirror;
@@ -23,7 +23,7 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
     private final Map<String, CacheEntry> cache = new HashMap<>();
 
     /**
-     * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occured.
+     * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occurred.
      * If no local service can be found, this policy simply returns the asterisk to allow the network to choose any.
      *
      * @param param The address to use for this, if empty this will resolve to hostname.

@@ -1,12 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
-#ifdef __APPLE__
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#else
 #include <onnxruntime/onnxruntime_cxx_api.h>
-#endif
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>

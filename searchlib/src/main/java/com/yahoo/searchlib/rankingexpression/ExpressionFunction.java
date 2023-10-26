@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -212,7 +212,7 @@ public class ExpressionFunction {
     public String toString() {
         return "function '" + name + "'";
     }
-    
+
     /**
      * An instance of a serialization of this function, using a particular serialization context (by {@link
      * ExpressionFunction#expand})

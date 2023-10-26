@@ -1,6 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -48,8 +50,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ContentClusterTest extends ContentBaseTest {
 
@@ -382,8 +391,8 @@ public class ContentClusterTest extends ContentBaseTest {
         return createEnd2EndOneNode(properties, services);
     }
 
-    VespaModel createEnd2EndOneNode(ModelContext.Properties properties, String services) {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
+    VespaModel createEnd2EndOneNode(ModelContext.Properties properties, String services, ContainerEndpoint ...containerEndpoint) {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties).endpoints(Set.of(containerEndpoint));
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
         return (new VespaModelCreatorWithMockPkg(null, services, sds)).create(deployStateBuilder);
     }
@@ -1333,7 +1342,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 "<?xml version='1.0' encoding='UTF-8' ?>" +
                         "<services version='1.0'>" +
                         "  <container id='default' version='1.0' />" +
-                        " </services>");
+                        " </services>", new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")));
         assertEquals(Map.of(), noContentModel.getContentClusters());
         assertNull(noContentModel.getAdmin().getClusterControllers(), "No cluster controller without content");
 
@@ -1348,7 +1357,7 @@ public class ContentClusterTest extends ContentBaseTest {
                         "      <document mode='index' type='type1' />" +
                         "    </documents>" +
                         "  </content>" +
-                        " </services>");
+                        " </services>", new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")));
         assertNotNull(oneContentModel.getAdmin().getClusterControllers(), "Shared cluster controller with content");
 
         String twoContentServices = "<?xml version='1.0' encoding='UTF-8' ?>" +
@@ -1379,7 +1388,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 " </services>";
         VespaModel twoContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                         .setMultitenant(true),
-                twoContentServices);
+                twoContentServices, new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")));
         assertNotNull(twoContentModel.getAdmin().getClusterControllers(), "Shared cluster controller with content");
 
         ClusterControllerContainerCluster clusterControllers = twoContentModel.getAdmin().getClusterControllers();

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -17,7 +17,7 @@ import java.util.Objects;
  */
 public class AttributeMapLookupNode extends AttributeNode {
 
-    public static final int classId = registerClass(0x4000 + 145, AttributeMapLookupNode.class);
+    public static final int classId = registerClass(0x4000 + 145, AttributeMapLookupNode.class, AttributeMapLookupNode::new);
     private String keyAttribute = "";
     private String valueAttribute = "";
     private String key = "";

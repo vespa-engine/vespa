@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.application.BindingRepository;
@@ -27,20 +27,22 @@ public class FilterBindings {
     private final Map<Integer, String> defaultResponseFilters;
     private final BindingSet<String> requestFilterBindings;
     private final BindingSet<String> responseFilterBindings;
-
+    private final boolean strictFiltering;
     private FilterBindings(
             Map<String, RequestFilter> requestFilters,
             Map<String, ResponseFilter> responseFilters,
             Map<Integer, String> defaultRequestFilters,
             Map<Integer, String> defaultResponseFilters,
             BindingSet<String> requestFilterBindings,
-            BindingSet<String> responseFilterBindings) {
+            BindingSet<String> responseFilterBindings,
+            boolean strictFiltering) {
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.defaultRequestFilters = defaultRequestFilters;
         this.defaultResponseFilters = defaultResponseFilters;
         this.requestFilterBindings = requestFilterBindings;
         this.responseFilterBindings = responseFilterBindings;
+        this.strictFiltering = strictFiltering;
     }
 
     public Optional<String> resolveRequestFilter(URI uri, int localPort) {
@@ -67,6 +69,8 @@ public class FilterBindings {
 
     public Collection<ResponseFilter> responseFilters() { return responseFilters.values(); }
 
+    public boolean strictFiltering() { return strictFiltering; }
+
     public static class Builder {
         private final Map<String, RequestFilter> requestFilters = new TreeMap<>();
         private final Map<String, ResponseFilter> responseFilters = new TreeMap<>();
@@ -74,6 +78,7 @@ public class FilterBindings {
         private final Map<Integer, String> defaultResponseFilters = new TreeMap<>();
         private final BindingRepository<String> requestFilterBindings = new BindingRepository<>();
         private final BindingRepository<String> responseFilterBindings = new BindingRepository<>();
+        private boolean strictFiltering = false;
 
         public Builder() {}
 
@@ -89,6 +94,8 @@ public class FilterBindings {
 
         public Builder setResponseFilterDefaultForPort(String id, int port) { defaultResponseFilters.put(port, id); return this; }
 
+        public Builder setStrictFiltering(boolean strictFiltering) { this.strictFiltering = strictFiltering; return this; }
+
         public FilterBindings build() {
             return new FilterBindings(
                     Collections.unmodifiableMap(requestFilters),
@@ -96,7 +103,8 @@ public class FilterBindings {
                     Collections.unmodifiableMap(defaultRequestFilters),
                     Collections.unmodifiableMap(defaultResponseFilters),
                     requestFilterBindings.activate(),
-                    responseFilterBindings.activate());
+                    responseFilterBindings.activate(),
+                    strictFiltering);
         }
     }
 }

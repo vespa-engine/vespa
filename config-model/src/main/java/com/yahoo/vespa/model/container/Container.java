@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.config.model.api.ModelContext;
@@ -109,7 +109,7 @@ public abstract class Container extends AbstractService implements
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
 
         appendJvmOptions(jvmOmitStackTraceInFastThrowOption(deployState.featureFlags()));
-        addEnvironmentVariable("VESPA_MALLOC_MMAP_THRESHOLD","0x200000");
+        addEnvironmentVariable("VESPA_MALLOC_MMAP_THRESHOLD","0x800000");
     }
 
     protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {

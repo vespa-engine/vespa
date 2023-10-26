@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc.messagebus;
 
 import com.yahoo.component.provider.ComponentRegistry;
@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * @author Einar M R Rosenvinge
@@ -68,7 +70,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     @Override
     public List<Processing> getProcessings() {
         if (deserialized.getAndSet(true)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return processingFactory.fromMessage(requestMsg);
     }
@@ -143,19 +145,17 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     @Override
     public String getServiceName() {
         String path = getUri().getPath();
-        return path.substring(7, path.length());
+        return path.substring(7);
     }
 
     @Override
     public boolean isProcessable() {
-        Message msg = requestMsg;
-        switch (msg.getType()) {
-        case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-        case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-        case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-            return true;
-        }
-        return false;
+        return switch (requestMsg.getType()) {
+            case DocumentProtocol.MESSAGE_PUTDOCUMENT,
+                 DocumentProtocol.MESSAGE_UPDATEDOCUMENT,
+                 DocumentProtocol.MESSAGE_REMOVEDOCUMENT -> true;
+            default -> false;
+        };
     }
 
     @Override
@@ -180,14 +180,12 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     private void dispatchRequest(Message msg, String uriPath, ResponseHandler handler) {
         try {
             new RequestDispatch() {
-
                 @Override
                 protected Request newRequest() {
                     return new MbusRequest(request,
                                            uriCache.computeIfAbsent(uriPath, __ -> URI.create("mbus://remotehost" + uriPath)),
                                            msg);
                 }
-
                 @Override
                 public ContentChannel handleResponse(Response response) {
                     return handler.handleResponse(response);
@@ -195,7 +193,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
             }.dispatch();
         } catch (Exception e) {
             dispatchResponse(Response.Status.INTERNAL_SERVER_ERROR);
-            e.printStackTrace();
+            log.log(WARNING, "Failed to dispatch request", e);
         }
     }
 

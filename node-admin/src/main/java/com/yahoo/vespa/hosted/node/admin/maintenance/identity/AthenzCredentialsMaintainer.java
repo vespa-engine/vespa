@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
 import com.yahoo.component.Version;
@@ -297,12 +297,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
                                  ContainerPath identityDocumentFile, IdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
-        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
-
         try {
+            // Do not rotate private key on every refresh.
+            // TODO: rotate key pair only on Vespa upgrade or similar
+            PrivateKey privateKey = readPrivateKeyFromFile(privateKeyFile);
+            KeyPair keyPair = KeyUtils.toKeyPair(privateKey);
+            CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
+            Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
+                    identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
+
             // Allow all zts hosts while removing SIS
             HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
             try (ZtsClient ztsClient = ztsClient(doc.ztsUrl(), privateKeyFile, certificateFile, ztsHostNameVerifier)) {
@@ -345,6 +348,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static X509Certificate readCertificateFromFile(ContainerPath certificateFile) throws IOException {
         String pemEncodedCertificate = new String(Files.readAllBytes(certificateFile));
         return X509CertificateUtils.fromPem(pemEncodedCertificate);
+    }
+
+    private static PrivateKey readPrivateKeyFromFile(ContainerPath privateKeyFile) throws IOException {
+        String pemEncodedKey = new String(Files.readAllBytes(privateKeyFile));
+        return KeyUtils.fromPemEncodedPrivateKey(pemEncodedKey);
     }
 
     private static boolean isCertificateExpired(Instant expiry, Instant now) {

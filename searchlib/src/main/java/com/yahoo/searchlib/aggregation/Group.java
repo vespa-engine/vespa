@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.AggregationRefNode;
@@ -18,7 +18,7 @@ import java.util.List;
 
 public class Group extends Identifiable {
 
-    public static final int classId = registerClass(0x4000 + 90, Group.class);
+    public static final int classId = registerClass(0x4000 + 90, Group.class, Group::new);
     private static final ObjectPredicate REF_LOCATOR = new RefLocator();
     private static final int MAX_AGGREGATIONS = 0x10000; // Backend limitation
     private static final int MAX_ORDERBY_EXPRESSIONS = 8; // Backend limitation

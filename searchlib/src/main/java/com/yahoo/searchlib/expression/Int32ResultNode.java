@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -15,13 +15,10 @@ import java.nio.ByteBuffer;
  */
 public class Int32ResultNode extends NumericResultNode {
 
-    public static final int classId = registerClass(0x4000 + 106, Int32ResultNode.class);
+    public static final int classId = registerClass(0x4000 + 106, Int32ResultNode.class, Int32ResultNode::new);
     private int value = 0;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public Int32ResultNode() {
-        // used by deserializer
-    }
+    public Int32ResultNode() { }
 
     /**
      * Constructs an instance of this class with given value.

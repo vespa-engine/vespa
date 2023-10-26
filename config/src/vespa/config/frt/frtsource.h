@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/config/common/configkey.h>
@@ -37,11 +37,11 @@ private:
     const FRTConfigRequestFactory &    _requestFactory;
     std::unique_ptr<ConfigAgent>       _agent;
     const ConfigKey                    _key;
-    std::mutex                         _lock; // Protects _inflight, _task and _closed
+    std::mutex                         _lock; // Protects _inflight, _task and _state
     std::condition_variable            _cond;
     RequestMap                         _inflight;
     std::unique_ptr<FNET_Task>         _task;
-    bool                               _closed;
+    enum class State : uint8_t { OPEN, CLOSING, CLOSED } _state;
 };
 
 } // namespace config

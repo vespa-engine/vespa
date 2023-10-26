@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.search
 
 ## name of this rank profile. maps to table index for internal use.
@@ -10,3 +10,14 @@ rankprofile[].fef.property[].name string
 ## the value of a generic property available to feature plugins
 rankprofile[].fef.property[].value string
 
+## output from cross-hits normalizing function
+rankprofile[].normalizer[].name string
+
+## input to cross-hits normalizing function
+rankprofile[].normalizer[].input string
+
+## type of cross-hits normalizing function
+rankprofile[].normalizer[].algo enum { LINEAR, RRANK } default=LINEAR
+
+## extra "k" param (if applicable)
+rankprofile[].normalizer[].kparam double default=60.0

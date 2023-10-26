@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "changedbucketownershiphandler.h"
 #include <vespa/storageapi/message/state.h>
@@ -22,12 +22,11 @@ LOG_SETUP(".bucketownershiphandler");
 namespace storage {
 
 ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
-        const config::ConfigUri& configUri,
+        const PersistenceConfig& bootstrap_config,
         ServiceLayerComponentRegister& compReg)
     : StorageLink("Changed bucket ownership handler"),
       _component(compReg, "changedbucketownershiphandler"),
       _metrics(),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _state_sync_executor(1), // single thread for sequential task execution
       _stateLock(),
       _currentState(), // Not set yet, so ownership will not be valid
@@ -37,25 +36,23 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _abortMutatingIdealStateOps(false),
       _abortMutatingExternalLoadOps(false)
 {
-    _configFetcher->subscribe<vespa::config::content::PersistenceConfig>(configUri.getConfigId(), this);
-    _configFetcher->start();
+    on_configure(bootstrap_config);
     _component.registerMetric(_metrics);
 }
 
 ChangedBucketOwnershipHandler::~ChangedBucketOwnershipHandler() = default;
 
 void
-ChangedBucketOwnershipHandler::configure(
-        std::unique_ptr<vespa::config::content::PersistenceConfig> config)
+ChangedBucketOwnershipHandler::on_configure(const vespa::config::content::PersistenceConfig& config)
 {
     _abortQueuedAndPendingOnStateChange.store(
-            config->abortOperationsWithChangedBucketOwnership,
+            config.abortOperationsWithChangedBucketOwnership,
             std::memory_order_relaxed);
     _abortMutatingIdealStateOps.store(
-            config->abortOutdatedMutatingIdealStateOps,
+            config.abortOutdatedMutatingIdealStateOps,
             std::memory_order_relaxed);
     _abortMutatingExternalLoadOps.store(
-            config->abortOutdatedMutatingExternalLoadOps,
+            config.abortOutdatedMutatingExternalLoadOps,
             std::memory_order_relaxed);
 }
 

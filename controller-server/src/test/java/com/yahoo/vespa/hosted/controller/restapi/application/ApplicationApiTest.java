@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
@@ -61,7 +61,6 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -1979,15 +1978,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addNotifications(TenantName tenantName) {
-        tester.controller().notificationsDb().setNotification(
+        tester.controller().notificationsDb().setApplicationPackageNotification(
                 NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
-                Notification.Type.applicationPackage,
-                Notification.Level.warning,
-                "Something something deprecated...");
-        tester.controller().notificationsDb().setNotification(
-                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), DeploymentContext.systemTest, 12)),
-                Notification.Type.deployment,
-                Notification.Level.error,
+                List.of("Something something deprecated..."));
+        tester.controller().notificationsDb().setDeploymentNotification(
+                new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), DeploymentContext.systemTest, 12),
                 "Failed to deploy: Node allocation failure");
     }
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
@@ -43,6 +43,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -523,7 +524,7 @@ public class ApplicationController {
                 try (Mutex lock = lock(applicationId)) {
                     LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                     application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
-                    return prepareEndpoints(deployment, job, application, applicationPackage, deployLogger);
+                    return prepareEndpoints(deployment, job, application, applicationPackage, deployLogger, lock);
                 }
             };
 
@@ -553,38 +554,32 @@ public class ApplicationController {
                 if (warnings.isEmpty())
                     controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
                 else
-                    controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+                    controller.notificationsDb().setApplicationPackageNotification(source, warnings);
             }
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
                                            i -> i.withNewDeployment(zone, revision, platform,
                                                                     clock.instant(), warningsFrom(dataAndResult.result().log()),
-                                                                    quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty)))));
+                                                                    quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty),
+                                                                    dataAndResult.data.dataPlaneTokens()))));
             return dataAndResult.result();
         }
     }
 
     private PreparedEndpoints prepareEndpoints(DeploymentId deployment, JobId job, LockedApplication application,
                                                ApplicationPackageStream applicationPackage,
-                                               Consumer<String> deployLogger) {
+                                               Consumer<String> deployLogger,
+                                               Mutex applicationLock) {
         Instance instance = application.get().require(job.application().instance());
         Tags tags = applicationPackage.truncatedPackage().deploymentSpec().instance(instance.name())
                                       .map(DeploymentInstanceSpec::tags)
                                       .orElseGet(Tags::empty);
-        Optional<EndpointCertificate> certificate = endpointCertificates.get(instance, deployment.zoneId(), applicationPackage.truncatedPackage().deploymentSpec());
-        certificate.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
-        BasicServicesXml services;
-        try {
-            services = applicationPackage.truncatedPackage().services(deployment, tags);
-        } catch (Exception e) {
-            // If the basic parsing done by the controller fails, we ignore the exception here so that
-            // complete parsing errors are propagated from the config server. Otherwise, throwing here
-            // will interrupt the request while it's being streamed to the config server
-            log.warning("Ignoring failure to parse services.xml for deployment " + deployment +
-                        " while streaming application package: " + Exceptions.toMessageString(e));
-            services = BasicServicesXml.empty;
-        }
+        EndpointCertificate certificate = endpointCertificates.get(deployment,
+                                                                   applicationPackage.truncatedPackage().deploymentSpec(),
+                                                                   applicationLock);
+        deployLogger.accept("Using CA signed certificate version %s".formatted(certificate.version()));
+        BasicServicesXml services = applicationPackage.truncatedPackage().services(deployment, tags);
         return controller.routing().of(deployment).prepare(services, certificate, application);
     }
 
@@ -700,12 +695,29 @@ public class ApplicationController {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> cloudAccountOverride.apply(decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec()));
-            List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
             Supplier<DeploymentEndpoints> endpoints = () -> {
                 if (preparedEndpoints == null) return DeploymentEndpoints.none;
                 PreparedEndpoints prepared = preparedEndpoints.get();
                 generatedEndpoints.set(prepared.endpoints().generated());
-                return new DeploymentEndpoints(prepared.containerEndpoints(), prepared.certificate());
+                return new DeploymentEndpoints(prepared.containerEndpoints(), Optional.of(prepared.certificate()));
+            };
+            Supplier<List<DataplaneTokenVersions>> dataplaneTokenVersions = () -> {
+                Tags tags = applicationPackage.truncatedPackage().deploymentSpec()
+                        .instance(application.instance())
+                        .map(DeploymentInstanceSpec::tags)
+                        .orElse(Tags.empty());
+                BasicServicesXml services = applicationPackage.truncatedPackage().services(deployment, tags);
+                Set<TokenId> referencedTokens = services.containers().stream()
+                                                        .flatMap(container -> container.dataPlaneTokens().stream())
+                                                        .collect(toSet());
+                List<DataplaneTokenVersions> currentTokens = controller.dataplaneTokenService().listTokens(application.tenant()).stream()
+                                                                      .filter(token -> referencedTokens.contains(token.tokenId()))
+                                                                      .toList();
+                return Stream.concat(currentTokens.stream(),
+                                     referencedTokens.stream()
+                                                     .filter(token -> currentTokens.stream().noneMatch(t -> t.tokenId().equals(token)))
+                                                     .map(token -> new DataplaneTokenVersions(token, List.of(), Instant.EPOCH)))
+                             .toList();
             };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
                     endpoints, dockerImageRepo, domain, deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);

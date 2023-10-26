@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import java.util.Iterator;
@@ -19,10 +19,10 @@ public class HitIterator implements Iterator<Hit> {
     private int index = -1;
 
     /** The list of hits to iterate over */
-    private List<Hit> hits;
+    private final List<Hit> hits;
 
     /** The result the hits belong to */
-    private HitGroup hitGroup;
+    private final HitGroup hitGroup;
 
     /** Whether the iterator is in a state where remove is OK */
     private boolean canRemove = false;

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * Vespa schema file grammar.
  * NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
@@ -65,7 +65,7 @@ private TensorDimension ::= WordWrapper (('{' '}') | ('[' INTEGER_REG ']'))
 
 SchemaFieldBody ::= ( DocumentFieldBodyOptions | NL )* // Fields of schemas and documents defined the same way here
 
-DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal)? BlockStart DocumentSummaryBody BlockEnd
+DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal (COMMA IdentifierWithDashVal)*)? BlockStart DocumentSummaryBody BlockEnd
                               { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                 implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                                }

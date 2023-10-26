@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.application.api.Bcp;
@@ -71,6 +71,24 @@ public class BcpGroupUpdater extends ControllerMaintainer {
                         var patch = new ApplicationPatch();
                         addTrafficShare(deployment, bcpGroups, patch);
                         addBcpGroupInfo(deployment.zone().region(), metrics.get(instance.id()), bcpGroups, patch);
+
+                        StringBuilder patchAsStringBuilder = new StringBuilder("Patch of instance ").append(instance.id().serializedForm()).append(": ")
+                            .append("\n\tcurrentReadShare: ")
+                                .append(patch.currentReadShare)
+                            .append("\n\tmaxReadShare: ")
+                                .append(patch.maxReadShare);
+                        for (Map.Entry<String, ApplicationPatch.ClusterPatch> entry : patch.clusters.entrySet()) {
+                            String key = entry.getKey();
+                            ApplicationPatch.ClusterPatch value = entry.getValue();
+                            patchAsStringBuilder.append("\n\tbcpGroupInfo for ").append(key).append(": ")
+                                                    .append("\n\t\tcpuCostPerQuery: ")
+                                                        .append(value.bcpGroupInfo.cpuCostPerQuery)
+                                                    .append("\n\t\tqueryRate: ")
+                                                        .append(value.bcpGroupInfo.queryRate)
+                                                    .append("\n\t\tgrowthRateHeadroom: ")
+                                                        .append(value.bcpGroupInfo.growthRateHeadroom);
+                        }
+                        log.log(Level.FINER, patchAsStringBuilder.toString());
                         nodeRepository.patchApplication(deployment.zone(), instance.id(), patch);
                     }
                     catch (Exception e) {
@@ -84,7 +102,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         double successFactorDeviation = asSuccessFactorDeviation(attempts, failures);
         if ( successFactorDeviation == -successFactorBaseline )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
-        else if ( successFactorDeviation < -0.1 )
+        else if ( successFactorDeviation < 0 )
             log.log(Level.FINE, "Could not update traffic share on all applications", lastException);
         return successFactorDeviation;
     }
@@ -103,7 +121,9 @@ public class BcpGroupUpdater extends ControllerMaintainer {
             currentReadShare += groupQps == 0 ? 0 : fraction * deploymentQps / groupQps;
             maxReadShare += group.size() == 1
                            ? currentReadShare
-                           : fraction * ( deploymentQps + group.maxQpsExcluding(deployment.zone().region()) / (group.size() - 1) ) / groupQps;
+                           : groupQps != 0
+                                ? fraction * (deploymentQps + group.maxQpsExcluding(deployment.zone().region()) / (group.size() - 1)) / groupQps
+                                : 0;
         }
         patch.currentReadShare = currentReadShare;
         patch.maxReadShare = maxReadShare;

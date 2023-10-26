@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import com.yahoo.container.Container;
@@ -36,7 +36,13 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 
 import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -106,6 +112,12 @@ public class SearchHandlerTest {
     @Test
     void testFailing() {
         assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=classLoadingError").readAll().contains("NoClassDefFoundError"));
+    }
+
+    @Test
+    void testTimeout() {
+        // 1µs is truncated to 0ms, so this will always time out.
+        assertTrue(driver.sendRequest("http://localhost?query=test&timeout=1µs").readAll().contains("Timed out"));
     }
 
     @Test

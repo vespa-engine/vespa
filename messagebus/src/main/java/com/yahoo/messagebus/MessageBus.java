@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.SystemTimer;
@@ -184,6 +184,8 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
 
         msn.start();
     }
+
+    Messenger messenger() { return msn; }
 
     /**
      * <p>Sets the destroyed flag to true. The very first time this method is

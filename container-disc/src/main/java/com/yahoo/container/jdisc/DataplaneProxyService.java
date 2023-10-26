@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
@@ -109,6 +109,10 @@ public class DataplaneProxyService extends AbstractComponent {
                                                    config.tokenPort(),
                                                    config.tokenEndpoints(),
                                                    root));
+                if (configChanged) {
+                    logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
+                            .formatted(String.join(", ", config.tokenEndpoints())));
+                }
                 if (configChanged && state == NginxState.RUNNING) {
                     changeState(NginxState.RELOAD_REQUIRED);
                 }

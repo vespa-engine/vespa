@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
 import com.yahoo.container.logging.AccessLogEntry;
@@ -477,7 +477,7 @@ public class HttpRequest {
      * @return the timestamp of when the underlying HTTP channel was connected, or request creation time
      */
     public long getConnectedAt(TimeUnit unit) {
-        return parentRequest.getConnectedAt(TimeUnit.MILLISECONDS);
+        return parentRequest.getConnectedAt(unit);
     }
 
     /**

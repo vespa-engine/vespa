@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * @class storage::StorageLink
  * @ingroup common
@@ -41,29 +41,41 @@ public:
 
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 
+    enum class MsgDownOnFlush { Allowed, Disallowed };
+    enum class MsgUpOnClosed  { Allowed, Disallowed };
+
 private:
-    std::string _name;
-    StorageLink* _up;
+    const std::string            _name;
+    StorageLink*                 _up;
     std::unique_ptr<StorageLink> _down;
-    std::atomic<State> _state;
+    std::atomic<State>           _state;
+    const MsgDownOnFlush         _msg_down_during_flushing;
+    const MsgUpOnClosed          _msg_up_during_closed;
 
 public:
+    StorageLink(const std::string& name,
+                MsgDownOnFlush allow_msg_down_during_flushing,
+                MsgUpOnClosed allow_msg_up_during_closed);
+    explicit StorageLink(const std::string& name);
+
     StorageLink(const StorageLink &) = delete;
     StorageLink & operator = (const StorageLink &) = delete;
-    StorageLink(const std::string& name)
-        : _name(name), _up(0), _down(), _state(CREATED) {}
     ~StorageLink() override;
 
-    const std::string& getName() const { return _name; }
-    bool isTop() const { return (_up == 0); }
-    bool isBottom() const { return (_down.get() == 0); }
-    unsigned int size() const { return (isBottom() ? 1 : _down->size() + 1); }
+    const std::string& getName() const noexcept { return _name; }
+    [[nodiscard]] bool isTop() const noexcept { return !_up; }
+    [[nodiscard]] bool isBottom() const noexcept { return !_down; }
+    [[nodiscard]] unsigned int size() const noexcept {
+        return (isBottom() ? 1 : _down->size() + 1);
+    }
 
     /** Adds the link to the end of the chain. */
     void push_back(StorageLink::UP);
 
     /** Get the current state of the storage link. */
-    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
+    [[nodiscard]] State getState() const noexcept {
+        return _state.load(std::memory_order_relaxed);
+    }
 
     /**
      * Called by storage server after the storage chain have been created.

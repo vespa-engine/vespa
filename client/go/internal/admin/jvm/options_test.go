@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package jvm
 
 import (
@@ -43,18 +43,18 @@ func TestHeapSizeMulti(t *testing.T) {
 	assert.Equal(t, aa, o.CurMinHeapSize(aa))
 	assert.Equal(t, aa, o.CurMaxHeapSize(aa))
 	assert.Equal(t, 2, len(o.jvmArgs))
-	o.AppendOption("-Xms234m")
-	o.AppendOption("-Xmx456m")
+	o.AppendOption("-Xms:234m")
+	o.AppendOption("-Xmx:456M")
 	assert.Equal(t, 4, len(o.jvmArgs))
 	assert.Equal(t, bb, o.CurMinHeapSize(aa))
 	assert.Equal(t, bb, o.CurMinHeapSize(dd))
 	assert.Equal(t, cc, o.CurMaxHeapSize(aa))
 	assert.Equal(t, cc, o.CurMaxHeapSize(dd))
-	o.AppendOption("-Xms1g")
-	o.AppendOption("-Xmx2g")
+	o.AppendOption("-Xms1G")
+	o.AppendOption("-Xmx:2g")
 	assert.Equal(t, GigaBytesOfMemory(1), o.CurMinHeapSize(aa))
 	assert.Equal(t, GigaBytesOfMemory(2), o.CurMaxHeapSize(aa))
-	o.AppendOption("-Xms16777216k")
+	o.AppendOption("-Xms:16777216K")
 	o.AppendOption("-Xmx32505856k")
 	assert.Equal(t, KiloBytesOfMemory(16777216), o.CurMinHeapSize(aa))
 	assert.Equal(t, KiloBytesOfMemory(32505856), o.CurMaxHeapSize(aa))

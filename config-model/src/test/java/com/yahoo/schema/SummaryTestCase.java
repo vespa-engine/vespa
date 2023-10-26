@@ -1,10 +1,12 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.objects.FieldBase;
+import com.yahoo.yolean.Exceptions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -47,8 +49,8 @@ public class SummaryTestCase {
         String sd = joinLines(
                 "schema disksummary {",
                 "  document-summary foobar {",
-                "      summary foo1 type string { source: inmemory }",
-                "      summary foo2 type string { source: ondisk }",
+                "      summary foo1 { source: inmemory }",
+                "      summary foo2 { source: ondisk }",
                 "  }",
                 "  document disksummary {",
                 "      field inmemory type string {",
@@ -67,7 +69,7 @@ public class SummaryTestCase {
                      "Fields [foo2] references non-attribute fields: " +
                      "Using this summary will cause disk accesses. " +
                      "Set 'from-disk' on this summary class to silence this warning.",
-                logger.entries.get(0).message);
+                     logger.entries.get(0).message);
     }
 
     @Test
@@ -83,8 +85,8 @@ public class SummaryTestCase {
                 "      }",
                 "  }",
                 "  document-summary foobar {",
-                "      summary foo1 type string { source: inmemory }",
-                "      summary foo2 type string { source: ondisk }",
+                "      summary foo1 { source: inmemory }",
+                "      summary foo2 { source: ondisk }",
                 "      from-disk",
                 "  }",
                 "}");
@@ -113,7 +115,7 @@ public class SummaryTestCase {
                 "      }",
                 "  }",
                 "  document-summary filtered {",
-                "      summary elem_array_filtered type array<elem> {",
+                "      summary elem_array_filtered {",
                 "          source: elem_array",
                 "          matched-elements-only",
                 "      }",
@@ -140,17 +142,17 @@ public class SummaryTestCase {
                 "    }",
                 "  }",
                 "  document-summary title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title",
                 "    }",
                 "  }",
                 "  document-summary title_artist inherits title {",
-                "    summary artist type string {",
+                "    summary artist {",
                 "      source: artist",
                 "    }",
                 "  }",
                 "  document-summary everything inherits title_artist {",
-                "    summary album type string {",
+                "    summary album {",
                 "      source: album",
                 "    }",
                 "  }",
@@ -176,9 +178,13 @@ public class SummaryTestCase {
             var actualFields = testValue.summary.getSummaryFields().values().stream()
                     .map(FieldBase::getName)
                     .toList();
-            assertEquals(Optional.ofNullable(testValue.parent),
-                    testValue.summary.inherited(),
-                    testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()));
+            if (testValue.parent != null)
+                assertEquals(testValue.parent, testValue.summary.inherited().get(0),
+                             testValue.summary.getName() + " inherits " + testValue.parent.getName());
+            else
+                assertTrue(testValue.summary.inherited().isEmpty(),
+                           testValue.summary.getName() + " does not inherit anything");
+
             assertEquals(testValue.fields, actualFields, "Summary " + testValue.summary.getName() + " has expected fields");
         });
     }
@@ -196,12 +202,12 @@ public class SummaryTestCase {
                 "    }",
                 "  }",
                 "  document-summary title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title",
                 "    }",
                 "  }",
                 "  document-summary title2 inherits title {",
-                "    summary title type string {",
+                "    summary title {",
                 "      source: title_short",
                 "    }",
                 "  }",
@@ -229,14 +235,86 @@ public class SummaryTestCase {
                             "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             ApplicationBuilder.createFromStrings(logger, schema);
-            assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
-                    logger.entries.get(0).message);
+            assertEquals("document summary 'test_summary' inherits 'nonesuch' but this is not present in schema 'test'",
+                         logger.entries.get(0).message);
             // fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
+            fail();
             // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
             //             e.getMessage());
         }
+    }
+
+    @Test
+    void testInheritingTwoSummariesWithConflictingFieldsFails() throws ParseException {
+        try {
+            String schema = """
+                schema test {
+                  document test {
+                    field field1 type string {
+                      indexing: summary | index | attribute
+                    }
+                    field field2 type int {
+                      indexing: summary | attribute
+                    }
+                  }
+                  document-summary parent1 {
+                    summary s1 {
+                        source: field1
+                    }
+                  }
+                  document-summary parent2 {
+                    summary field1 {
+                        source: field2
+                    }
+                  }
+                  document-summary child inherits parent1, parent2 {
+                  }
+                }
+                """;
+            DeployLoggerStub logger = new DeployLoggerStub();
+            ApplicationBuilder.createFromStrings(logger, schema);
+            fail("Expected failure");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("summary field1 type string in document summary 'default' is inconsistent with " +
+                         "summary field1 type int in document summary 'parent2': " +
+                         "All declarations of the same summary field must have the same type",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
+    void testInheritingTwoSummariesWithNonConflictingFieldsWorks() throws ParseException {
+        String schema = """
+                schema test {
+                  document test {
+                    field field1 type string {
+                      indexing: summary | index | attribute
+                    }
+                    field field2 type int {
+                      indexing: summary | attribute
+                    }
+                  }
+                  document-summary parent1 {
+                    summary s1 {
+                        source: field1
+                    }
+                  }
+                  document-summary parent2 {
+                    summary field1 {
+                        source: field1
+                    }
+                  }
+                  document-summary child inherits parent1, parent2 {
+                  }
+                }
+                """;
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, schema);
+        System.out.println("logger.entries = " + logger.entries);
+        assertTrue(logger.entries.isEmpty());
     }
 
     @Test
@@ -249,7 +327,7 @@ public class SummaryTestCase {
                         "    }" +
                         "  }" +
                         "  document-summary parent_summary {" +
-                        "    summary pf1 type string {}" +
+                        "    summary pf1 {}" +
                         "  }" +
                         "}");
         String child = joinLines(
@@ -260,13 +338,100 @@ public class SummaryTestCase {
                         "    }" +
                         "  }" +
                         "  document-summary child_summary inherits parent_summary {" +
-                        "    summary cf1 type string {}" +
+                        "    summary cf1 {}" +
                         "  }" +
                         "}");
         DeployLoggerStub logger = new DeployLoggerStub();
         ApplicationBuilder.createFromStrings(logger, parent, child);
-        logger.entries.forEach(e -> System.out.println(e));
-        //assertTrue(logger.entries.isEmpty());
+        assertTrue(logger.entries.isEmpty());
+
+    }
+    private void testSummaryTypeInField(boolean explicit) throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string {",
+                "      indexing: summary",
+                "      summary bar " + (explicit ? "type string ": "") + "{ }",
+                "    }",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, sd);
+        if (explicit) {
+            assertEquals(1, logger.entries.size());
+            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals("For test, field 'foo', summary 'bar':" +
+                    " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                    " Remove the type specification to silence this warning.", logger.entries.get(0).message);
+        } else {
+            assertTrue(logger.entries.isEmpty());
+        }
+    }
+
+    @Test
+    void testSummaryInFieldWithoutTypeEmitsNoWarning() throws ParseException {
+        testSummaryTypeInField(false);
+    }
+
+    @Test
+    void testSummaryInFieldWithTypeEmitsWarning() throws ParseException {
+        testSummaryTypeInField(true);
+    }
+
+    private void testSummaryField(boolean explicit) throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string { indexing: summary }",
+                "  }",
+                "  document-summary bar {",
+                "    summary foo " + (explicit ? "type string" : "") + "{ }",
+                "    from-disk",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        ApplicationBuilder.createFromStrings(logger, sd);
+        if (explicit) {
+            assertEquals(1, logger.entries.size());
+            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals("For test, document-summary 'bar', summary field 'foo':" +
+                    " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
+                    " Remove the type specification to silence this warning.", logger.entries.get(0).message);
+        } else {
+            assertTrue(logger.entries.isEmpty());
+        }
+    }
+
+    @Test
+    void testSummaryFieldWithoutTypeEmitsNoWarning() throws ParseException {
+        testSummaryField(false);
+    }
+
+    @Test
+    void testSummaryFieldWithTypeEmitsWarning() throws ParseException {
+        testSummaryField(true);
+    }
+
+    @Test
+    void testSummarySourceLoop() throws ParseException {
+        String sd = joinLines("schema test {",
+                "  document test {",
+                "    field foo type string { indexing: summary }",
+                "  }",
+                "  document-summary bar {",
+                "    summary foo { source: foo2 }",
+                "    summary foo2 { source: foo3 }",
+                "    summary foo3 { source: foo2 }",
+                "    from-disk",
+                "  }",
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        try {
+            ApplicationBuilder.createFromStrings(logger, sd);
+            fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test' summary class 'bar' summary field 'foo'" +
+            ": Source loop detected for summary field 'foo2'", e.getMessage());
+        }
     }
 
     private static class TestValue {

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import java.util.List;
@@ -13,9 +13,9 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                                   String rootRequestId, // The id of the first request made for this certificate. Should not change.
                                   Optional<String> leafRequestId, // The id of the last known request made for this certificate. Changes on refresh, may be outdated!
                                   List<String> requestedDnsSans, String issuer, Optional<Long> expiry,
-                                  Optional<Long> lastRefreshed, Optional<String> randomizedId) {
+                                  Optional<Long> lastRefreshed, Optional<String> generatedId) {
 
-    public EndpointCertificate withRandomizedId(String randomizedId) {
+    public EndpointCertificate withGeneratedId(String generatedId) {
         return new EndpointCertificate(
                 this.keyName,
                 this.certName,
@@ -27,7 +27,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                Optional.of(randomizedId));
+                Optional.of(generatedId));
     }
 
     public EndpointCertificate withKeyName(String keyName) {
@@ -42,7 +42,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withCertName(String certName) {
@@ -57,7 +57,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withVersion(int version) {
@@ -72,7 +72,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withLastRequested(long lastRequested) {
@@ -87,7 +87,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withLastRefreshed(long lastRefreshed) {
@@ -102,7 +102,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 Optional.of(lastRefreshed),
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withRootRequestId(String rootRequestId) {
@@ -117,7 +117,7 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
     }
 
     public EndpointCertificate withLeafRequestId(Optional<String> leafRequestId) {
@@ -132,7 +132,30 @@ public record EndpointCertificate(String keyName, String certName, int version, 
                 this.issuer,
                 this.expiry,
                 this.lastRefreshed,
-                this.randomizedId);
+                this.generatedId);
+    }
+
+    /** Returns whether given DNS name matches any of the requested SANs in this */
+    public boolean sanMatches(String dnsName) {
+        return sanMatches(dnsName, requestedDnsSans);
+    }
+
+    static boolean sanMatches(String dnsName, List<String> sanDnsNames) {
+        return sanDnsNames.stream().anyMatch(sanDnsName -> sanMatches(dnsName, sanDnsName));
+    }
+
+    private static boolean sanMatches(String dnsName, String sanDnsName) {
+        String[] sanNameParts = sanDnsName.split("\\.");
+        String[] dnsNameParts = dnsName.split("\\.");
+        if (sanNameParts.length != dnsNameParts.length || sanNameParts.length == 0) {
+            return false;
+        }
+        for (int i = 0; i < sanNameParts.length; i++) {
+            if (!sanNameParts[i].equals("*") && !sanNameParts[i].equals(dnsNameParts[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.model;
 
 import com.yahoo.cloud.config.LbServicesConfig;
@@ -81,7 +81,7 @@ public class LbServicesProducerTest {
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) {
         Zone zone = new Zone(Environment.prod, regionName);
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().zone(zone));
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("md.example.com")))).zone(zone));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
@@ -126,7 +126,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testRoutingConfigForTesterApplication() {
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.zone, List.of("md.example.com")))));
 
         // No config for tester application
         assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)

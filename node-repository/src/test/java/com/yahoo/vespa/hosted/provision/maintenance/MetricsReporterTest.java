@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
@@ -87,8 +87,10 @@ public class MetricsReporterTest {
                 HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).orchestrator(orchestrator).build();
         NodeRepository nodeRepository = tester.nodeRepository();
-        tester.makeProvisionedNodes(1, "default", NodeType.tenant, 0);
-        tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0);
+        tester.makeProvisionedNodes(1, "default", NodeType.tenant, 0)
+                .forEach(node -> tester.move(Node.State.active, node));
+        tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0)
+                .forEach(node -> tester.move(Node.State.active, node));
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
         expectedMetrics.put("zone.working", 1);
@@ -102,11 +104,11 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.failedHosts", 0);
         expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.breakfixedHosts", 0);
-        expectedMetrics.put("hostedVespa.provisionedNodes", 1);
+        expectedMetrics.put("hostedVespa.provisionedNodes", 0);
         expectedMetrics.put("hostedVespa.parkedNodes", 0);
         expectedMetrics.put("hostedVespa.readyNodes", 0);
         expectedMetrics.put("hostedVespa.reservedNodes", 0);
-        expectedMetrics.put("hostedVespa.activeNodes", 0);
+        expectedMetrics.put("hostedVespa.activeNodes", 1);
         expectedMetrics.put("hostedVespa.inactiveNodes", 0);
         expectedMetrics.put("hostedVespa.dirtyNodes", 0);
         expectedMetrics.put("hostedVespa.failedNodes", 0);
@@ -214,7 +216,7 @@ public class MetricsReporterTest {
 
         NestedTransaction transaction = new NestedTransaction();
         nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(),
-                                        new ApplicationTransaction(new ProvisionLock(InfrastructureApplication.TENANT_HOST.id(), () -> { }), transaction));
+                                        new ApplicationTransaction(new ApplicationMutex(InfrastructureApplication.TENANT_HOST.id(), () -> { }), transaction));
         transaction.commit();
 
         Orchestrator orchestrator = mock(Orchestrator.class);
@@ -363,7 +365,7 @@ public class MetricsReporterTest {
         Capacity capacity = Capacity.from(new ClusterResources(4, 1, resources));
         tester.deploy(app, spec, capacity);
 
-        // Host are now in use
+        // Hosts are now in use
         metricsReporter.maintain();
         assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
     }

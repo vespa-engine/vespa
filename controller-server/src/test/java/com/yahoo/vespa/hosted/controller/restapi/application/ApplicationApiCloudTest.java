@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
@@ -6,14 +6,19 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.RestApiException;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -35,14 +40,15 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,7 +78,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void tenant_info_profile() {
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"\",\"email\":\"\",\"emailVerified\":false},\"tenant\":{\"company\":\"\",\"website\":\"\"}}", 200);
 
         var updateRequest = request("/application/v4/tenant/scoober/info/profile", PUT)
                 .data("{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}")
@@ -92,34 +98,103 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     void tenant_info_billing() {
+        var expectedResponse = """
+                {
+                    "contact": {
+                        "name":"",
+                        "email":"",
+                        "emailVerified":false,
+                        "phone":""
+                    },
+                    "taxId":"",
+                    "purchaseOrder":"",
+                    "invoiceEmail":""
+                }
+                """;
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{}", 200);
+        tester.assertJsonResponse(request, expectedResponse, 200);
 
-        var fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
-        var fullBillingContact = "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":" + fullAddress + "}";
-
+        var fullBillingContact = """
+                {
+                    "contact": {
+                        "name":"name",
+                        "email":"foo@example",
+                        "phone":"phone"
+                    },
+                    "taxId":"1234L",
+                    "purchaseOrder":"PO9001",
+                    "invoiceEmail":"billing@mycomp.any",
+                    "address": {
+                        "addressLines":"addressLines",
+                        "postalCodeOrZip":"postalCodeOrZip",
+                        "city":"city",
+                        "stateRegionProvince":"stateRegionProvince",
+                        "country":"country"
+                    }
+                }
+                """;
         var updateRequest = request("/application/v4/tenant/scoober/info/billing", PUT)
                 .data(fullBillingContact)
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
 
-        tester.assertResponse(request, "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}}", 200);
+        expectedResponse = """
+                {
+                    "contact": {
+                        "name":"name",
+                        "email":"foo@example",
+                        "emailVerified": false,
+                        "phone":"phone"
+                    },
+                    "taxId":"1234L",
+                    "purchaseOrder":"PO9001",
+                    "invoiceEmail":"billing@mycomp.any",
+                    "address": {
+                        "addressLines":"addressLines",
+                        "postalCodeOrZip":"postalCodeOrZip",
+                        "city":"city",
+                        "stateRegionProvince":"stateRegionProvince",
+                        "country":"country"
+                    }
+                }
+                """;
+        tester.assertJsonResponse(request, expectedResponse, 200);
     }
 
     @Test
     void tenant_info_contacts() {
         var request = request("/application/v4/tenant/scoober/info/contacts", GET)
                 .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(request, "{\"contacts\":[]}", 200);
+        tester.assertResponse(request, "{\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
 
-        var fullContacts = "{\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\",\"emailVerified\":false},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\",\"emailVerified\":false}]}";
+        var fullContacts = """
+                {
+                    "contacts":[
+                        {
+                            "audiences":["tenant"]
+                            ,"email":"contact1@example.com",
+                            "emailVerified":false
+                        },
+                        {
+                            "audiences":["notifications"],
+                            "email":"contact2@example.com",
+                            "emailVerified":false
+                        },
+                        {
+                            "audiences":["tenant","notifications"],
+                            "email":"contact3@example.com",
+                            "emailVerified":false
+                        }
+                    ]
+                }
+                """;
         var updateRequest = request("/application/v4/tenant/scoober/info/contacts", PUT)
                 .data(fullContacts)
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
-        tester.assertResponse(request, fullContacts, 200);
+        tester.assertJsonResponse(request, fullContacts, 200);
     }
 
     @Test
@@ -127,7 +202,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":false,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
         var postPartial =
@@ -144,13 +219,79 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartialContacts, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"contactEmailVerified\":false,\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false}]}", 200);
+        var expectedResponse = """
+                {
+                    "name":"",
+                    "email":"",
+                    "website":"",
+                    "contactName":"newName",
+                    "contactEmail":"foo@example.com",
+                    "contactEmailVerified":false,
+                    "billingContact": {
+                        "name":"billingName",
+                        "email":"","emailVerified":false,
+                        "phone":"",
+                        "taxId":"",
+                        "purchaseOrder":"",
+                        "invoiceEmail":""
+                    },
+                    "contacts": [
+                        {"audiences":["tenant"],"email":"contact1@example.com","emailVerified":false}
+                    ]
+                }
+                """;
+        tester.assertJsonResponse(infoRequest, expectedResponse, 200);
 
-        String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
-        String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullContacts = "[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\",\"emailVerified\":false},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\",\"emailVerified\":false}]";
-        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"contactEmailVerified\":false,\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + ",\"contacts\":" + fullContacts + "}";
-
+        var fullInfo = """
+                {
+                    "name":"name",
+                    "email":"foo@example",
+                    "website":"https://yahoo.com",
+                    "contactName":"contactName",
+                    "contactEmail":"contact@example.com",
+                    "contactEmailVerified":false,
+                    "address": {
+                        "addressLines":"addressLines",
+                        "postalCodeOrZip":"postalCodeOrZip",
+                        "city":"city",
+                        "stateRegionProvince":"stateRegionProvince",
+                        "country":"country"
+                    },
+                    "billingContact": {
+                        "name":"name",
+                        "email":"foo@example",
+                        "emailVerified":false,
+                        "phone":"phone",
+                        "taxId":"",
+                        "purchaseOrder":"",
+                        "invoiceEmail":"",
+                        "address": {
+                            "addressLines":"addressLines",
+                            "postalCodeOrZip":"postalCodeOrZip",
+                            "city":"city",
+                            "stateRegionProvince":"stateRegionProvince",
+                            "country":"country"
+                        }
+                    },
+                    "contacts": [
+                        {
+                            "audiences":["tenant"],
+                            "email":"contact1@example.com",
+                            "emailVerified":false
+                        },
+                        {
+                            "audiences":["notifications"],
+                            "email":"contact2@example.com",
+                            "emailVerified":false
+                        },
+                        {
+                            "audiences":["tenant","notifications"]
+                            ,"email":"contact3@example.com",
+                            "emailVerified":false
+                        }
+                    ]
+                }
+                """;
         // Now set all fields
         var postFull =
                 request("/application/v4/tenant/scoober/info", PUT)
@@ -159,7 +300,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postFull, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Now compare the updated info with the full info we sent
-        tester.assertResponse(infoRequest, fullInfo, 200);
+        tester.assertJsonResponse(infoRequest, fullInfo, 200);
 
         var invalidBody = "{\"mail\":\"contact1@example.com\", \"mailType\":\"blurb\"}";
         var resendMailRequest =
@@ -182,7 +323,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
                         .roles(Set.of(Role.reader(tenantName)));
-        tester.assertResponse(infoRequest, "{}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":false,\"contacts\":[{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"developer@scoober\",\"emailVerified\":true}]}", 200);
 
         // name needs to be present and not blank
         var partialInfoMissingName = "{\"contactName\": \" \"}";
@@ -470,16 +611,82 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                       .roles(Role.developer(tenantName)),
                               "{\"tokens\":[]}", 200);
 
-        String regexGenerateToken = "\\{\"id\":\"myTokenId\",\"token\":\"vespa_cloud_.*\",\"fingerprint\":\".*\"}";
+        AtomicReference<String> tokenValue = new AtomicReference<>();
+        AtomicReference<String> fingerprint = new AtomicReference<>();
         tester.assertResponse(request("/application/v4/tenant/scoober/token/myTokenId", POST).roles(Role.developer(tenantName)),
-                       (response) -> assertTrue(new String(response.getBody(), UTF_8).matches(regexGenerateToken)),
-                       200);
-
-        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\"}]}]}";
-        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
-                                      .roles(Role.developer(tenantName)),
-                              (response) -> assertTrue(new String(response.getBody(), UTF_8).matches(regexListTokens)),
+                              (response) -> {
+                                  Cursor root = SlimeUtils.jsonToSlimeOrThrow(response.getBody()).get();
+                                  tokenValue.set(root.field("token").asString());
+                                  fingerprint.set(root.field("fingerprint").asString());
+                                  assertEquals("""
+                                               {
+                                                 "id": "myTokenId",
+                                                 "token": "%s",
+                                                 "fingerprint": "%s",
+                                                 "expiration": "2020-10-13T12:26:40Z"
+                                               }
+                                               """.formatted(tokenValue.get(), fingerprint.get()),
+                                               SlimeUtils.toJson(root, false));
+                              },
                               200);
+
+        tester.assertJsonResponse(request("/application/v4/tenant/scoober/token", GET)
+                                          .roles(Role.developer(tenantName)),
+                                  """
+                                  {
+                                    "tokens": [
+                                      {
+                                        "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
+                                        "versions": [
+                                          {
+                                            "fingerprint": "%s",
+                                            "created": "2020-09-13T12:26:40Z",
+                                            "author": "user@test",
+                                            "expiration": "2020-10-13T12:26:40Z",
+                                            "state": "unused"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                  """.formatted(fingerprint.get()),
+                                  200);
+
+        ControllerTester wrapped = new ControllerTester(tester);
+        wrapped.upgradeSystem(Version.fromString("7.1"));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                                     .submit()
+                                     .deploy();
+        wrapped.serviceRegistry().configServer().activeTokenFingerprints(null)
+               .put(HostName.of("host1"), Map.of(TokenId.of("myTokenId"), List.of(FingerPrint.of(fingerprint.get()), FingerPrint.of("ff:01"))));
+
+        tester.assertJsonResponse(request("/application/v4/tenant/scoober/token", GET)
+                                          .roles(Role.developer(tenantName)),
+                                  """
+                                  {
+                                    "tokens": [
+                                      {
+                                        "id": "myTokenId",
+                                        "lastUpdatedMillis": 1600000000000,
+                                        "versions": [
+                                          {
+                                            "fingerprint": "%s",
+                                            "created": "2020-09-13T12:26:40Z",
+                                            "author": "user@test",
+                                            "expiration": "2020-10-13T12:26:40Z",
+                                            "state": "active"
+                                          },
+                                          {
+                                            "fingerprint": "ff:01",
+                                            "state": "revoking"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                  """.formatted(fingerprint.get()),
+                                  200);
 
         // Rejects invalid tokenIds on create
         tester.assertResponse(request("/application/v4/tenant/scoober/token/foo+bar", POST).roles(Role.developer(tenantName)),

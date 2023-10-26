@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
 import com.yahoo.schema.Schema;
@@ -32,7 +32,7 @@ public class SummaryConsistencyTestCase {
                 "      }",
                 "  }",
                 "  document-summary unfiltered {",
-                "      summary elem_array_unfiltered type array<elem> {",
+                "      summary elem_array_unfiltered {",
                 "          source: elem_array",
                 "      }",
                 "  }",

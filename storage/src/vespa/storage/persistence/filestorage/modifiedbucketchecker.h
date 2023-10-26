@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/storageframework/generic/thread/runnable.h>
@@ -23,19 +23,18 @@ namespace spi { struct PersistenceProvider; }
 class ModifiedBucketChecker
     : public StorageLink,
       public framework::Runnable,
-      public Types,
-      private config::IFetcherCallback<
-              vespa::config::content::core::StorServerConfig>
+      public Types
 {
 public:
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
     using UP = std::unique_ptr<ModifiedBucketChecker>;
 
     ModifiedBucketChecker(ServiceLayerComponentRegister& compReg,
                           spi::PersistenceProvider& provide,
-                          const config::ConfigUri& configUri);
+                          const StorServerConfig& bootstrap_config);
     ~ModifiedBucketChecker() override;
 
-    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig>) override;
+    void on_configure(const vespa::config::content::core::StorServerConfig&);
 
     void run(framework::ThreadHandle& thread) override;
     bool tick();
@@ -88,7 +87,6 @@ private:
     spi::PersistenceProvider              & _provider;
     ServiceLayerComponent::UP               _component;
     std::unique_ptr<framework::Thread>      _thread;
-    std::unique_ptr<config::ConfigFetcher>  _configFetcher;
     std::mutex                              _monitor;
     std::condition_variable                 _cond;
     std::mutex                              _stateLock;

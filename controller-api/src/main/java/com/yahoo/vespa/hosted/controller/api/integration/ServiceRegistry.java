@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.config.provision.CloudName;
@@ -32,8 +32,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipI
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -90,6 +90,8 @@ public interface ServiceRegistry {
 
     ZoneRegistry zoneRegistry();
 
+    ConsoleUrls consoleUrls();
+
     ResourceTagger resourceTagger();
 
     EnclaveAccessService enclaveAccessService();
@@ -125,4 +127,5 @@ public interface ServiceRegistry {
     GcpSecretStore gcpSecretStore();
 
     BillingReporter billingReporter();
+
 }

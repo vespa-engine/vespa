@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import ai.vespa.metrics.ConfigServerMetrics;
@@ -111,7 +111,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         for (Node node : activeNodes) {
             Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
-            if (node.isDown() && node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node) && !undergoingCmr(node)) {
+            if (node.isDown() && node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node) && !affectedByMaintenance(node)) {
                 // Allow a grace period after node re-activation
                 if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
                     failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
@@ -146,7 +146,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeList allNodes) {
         Node host = node.parentHostname().flatMap(allNodes::node).orElse(node);
-        return reasonsToFailHost(host).size() > 0;
+        return !reasonsToFailHost(host).isEmpty();
     }
 
     private boolean applicationSuspended(Node node) {
@@ -159,17 +159,18 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         }
     }
 
-    private boolean undergoingCmr(Node node) {
+    /** Is a maintenance event affecting this node? */
+    private boolean affectedByMaintenance(Node node) {
         return node.reports().getReport("vcmr")
-                .map(report ->
-                        SlimeUtils.entriesStream(report.getInspector().field("upcoming"))
-                                .anyMatch(cmr -> {
-                                    var startTime = cmr.field("plannedStartTime").asLong();
-                                    var endTime = cmr.field("plannedEndTime").asLong();
-                                    var now = clock().instant().getEpochSecond();
-                                    return now > startTime && now < endTime;
-                                })
-                ).orElse(false);
+                   .map(report ->
+                                SlimeUtils.entriesStream(report.getInspector().field("upcoming"))
+                                          .anyMatch(cmr -> {
+                                              var startTime = cmr.field("plannedStartTime").asLong();
+                                              var endTime = cmr.field("plannedEndTime").asLong();
+                                              var now = clock().instant().getEpochSecond();
+                                              return now > startTime && now < endTime;
+                                          })
+                   ).orElse(false);
     }
 
     /** Is the node and all active children suspended? */

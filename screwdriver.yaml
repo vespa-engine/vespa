@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ---
 cache:
   job:
@@ -34,7 +34,7 @@ shared:
         du -sh /tmp/vespa/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
-          if [[ -z $VESPA_USE_SANITIZER ]] || [[ $VESPA_USE_SANITIZER == null ]]; then
+          if [[ -z "$VESPA_USE_SANITIZER" ]] || [[ "$VESPA_USE_SANITIZER" == null ]]; then
             # Remove what we have produced
             rm -rf $LOCAL_MVN_REPO/com/yahoo
             rm -rf $LOCAL_MVN_REPO/ai/vespa
@@ -117,6 +117,7 @@ jobs:
                   (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
             exit 1
           fi
+          meta set vespa.version $VESPA_VERSION
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf -y install docker-ce docker-ce-cli containerd.io
@@ -180,6 +181,7 @@ jobs:
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
           docker build --file Dockerfile.systemtest \
+                       --progress=plain \
                        --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=false \
                        --target systemtest \
@@ -237,6 +239,7 @@ jobs:
       - DOCKER_IMAGE_DEPLOY_KEY
       - DOCKER_HUB_DEPLOY_KEY
       - GHCR_DEPLOY_KEY
+      - ANN_BENCHMARK_DEPLOY_KEY
       - SVC_OKTA_VESPA_FACTORY_TOKEN
 
     environment:
@@ -264,6 +267,8 @@ jobs:
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
           screwdriver/release-container-image-docker.sh $VESPA_VERSION
+      - release-ann-benchmark: |
+          screwdriver/release-ann-benchmark.sh $VESPA_VERSION
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
       - update-released-time: |
@@ -362,12 +367,13 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
-      IMAGE_NAME: "vespaengine/vespa-el9-preview"
+      BASE_IMAGE: "el9"
+      IMAGE_NAME: "vespa-el9-preview"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
 
-    steps:
+    steps: &publish-el9-preview-steps
       - get-vespa-version: |
           set -x
           VESPA_VERSION=$(meta get vespa.version --external publish-release)
@@ -394,9 +400,10 @@ jobs:
                 --progress plain \
                 --load \
                 --platform linux/amd64 \
-                --build-arg VESPA_BASE_IMAGE=el9 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
+                --tag vespaengine/vespa:latest \
                 --tag vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
@@ -415,7 +422,7 @@ jobs:
                 --progress plain \
                 --push \
                 --platform linux/amd64,linux/arm64 \
-                --build-arg VESPA_BASE_IMAGE=el9 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
                 --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
@@ -424,6 +431,24 @@ jobs:
                 .
             fi
           fi
+
+  publish-el8-preview:
+    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 6 1 * *
+    environment:
+      BASE_IMAGE: "el8"
+      IMAGE_NAME: "vespa-el8-preview"
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+    steps: *publish-el9-preview-steps
 
   publish-cli-release:
     requires: [publish-release]
@@ -532,6 +557,6 @@ jobs:
           --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
           --hydra '{"max_concurrency": 1}' \
           --ignore-urls '/slack.vespa.ai/,/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/,/main.jsx/' \
-          --ignore-files '/fnet/index.html/' \
+          --ignore-files '/fnet/index.html/,/client/js/app/node_modules/,/controller-server/src/test/resources/mail/' \
           --swap-urls '(.*).md:\1.html' \
           _site

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
 import com.yahoo.collections.Pair;
@@ -53,7 +53,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static final int STD_INDENT = 4;
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
     /**
@@ -564,7 +564,7 @@ public class DocumentGenMojo extends AbstractMojo {
             out.write(ind(ind)+"public "+className+"(com.yahoo.document.datatypes.StructuredFieldValue src) {\n"+
                     ind(ind+1)+"super("+className+".type);\n");
         }
-        out.write(ind() + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();\n");
+        out.write(ind(ind+1) + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();\n");
         out.write(
                 ind(ind+1)+"for (java.util.Iterator<java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>>i=src.iterator() ; i.hasNext() ; ) {\n" +
                 ind(ind+2)+"java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> e = i.next();\n" +
@@ -851,14 +851,50 @@ public class DocumentGenMojo extends AbstractMojo {
         for (Field field: fields) {
             DataType dt = field.getDataType();
             out.write(
-            ind(ind)+"public "+toJavaType(dt)+" "+getter(field.getName())+"() { return "+field.getName()+"; }\n"+
-            ind(ind)+"public "+className+" "+setter(field.getName())+"("+toJavaType(dt)+" "+field.getName()+") { this."+field.getName()+"="+field.getName()+"; return this; }\n");
+                    ind(ind) + "public " + toJavaType(dt) + " " + getter(field.getName()) + "() { return " + field.getName() + "; }\n" +
+                    ind(ind) + "public " + className + " " + setter(field.getName()) + "(" + toJavaType(dt) + " " + field.getName() + ") {\n" +
+                    validateArgument(field.getDataType(), field.getName(), ind + 1) +
+                    ind(ind+1) + "this." + field.getName() + "=" + field.getName() + ";\n" +
+                    ind(ind+1) + "return this;\n" +
+                    ind(ind) + "}\n");
             if (spanTrees && dt.equals(DataType.STRING)) {
                 out.write(ind(ind)+"public java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> "+spanTreeGetter(field.getName())+"() { return "+field.getName()+"SpanTrees; }\n" +
                         ind(ind)+"public void "+spanTreeSetter(field.getName())+"(java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> spanTrees) { this."+field.getName()+"SpanTrees=spanTrees; }\n");
             }
         }
         out.write("\n");
+    }
+
+    private static String validateArgument(DataType type, String variable, int ind) {
+        if (type instanceof MapDataType mdt) {
+            return validateWrapped(mdt.getKeyType(), variable, variable + ".keySet()", ind) +
+                   validateWrapped(mdt.getValueType(), variable, variable + ".values()", ind);
+        }
+        else if (type instanceof CollectionDataType cdt) {
+            String elements = cdt instanceof WeightedSetDataType ? variable + ".keySet()" : variable;
+            return validateWrapped(cdt.getNestedType(), variable, elements, ind);
+        }
+        else if (   DataType.STRING.equals(type)
+                 || DataType.URI.equals(type)
+                 || type instanceof AnnotationReferenceDataType
+                 || type instanceof NewDocumentReferenceDataType) {
+            return ind(ind) + "if (" + variable + " != null) {\n" +
+                   ind(ind+1) + toJavaReference(type) + ".createFieldValue(" + variable + ");\n" +
+                   ind(ind) + "}\n";
+        }
+        else {
+            return "";
+        }
+    }
+
+    private static String validateWrapped(DataType type, String variable, String elements, int ind) {
+        String wrappedValidation = validateArgument(type, variable + "$", ind + 2);
+        if (wrappedValidation.isBlank()) return "";
+        return ind(ind) + "if (" + variable + " != null) {\n" +
+               ind(ind+1) + "for (" + toJavaType(type) + " " + variable + "$ : " + elements + ") {\n" +
+               wrappedValidation +
+               ind(ind+1) + "}\n" +
+               ind(ind) + "}\n";
     }
 
     private static String spanTreeSetter(String field) {
@@ -914,10 +950,10 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BOOL.equals(dt)) return "java.lang.Boolean";
         if (DataType.TAG.equals(dt)) return "java.lang.String";
         if (dt instanceof StructDataType) return className(dt.getName());
-        if (dt instanceof WeightedSetDataType) return "java.util.Map<"+toJavaType(((WeightedSetDataType)dt).getNestedType())+",java.lang.Integer>";
-        if (dt instanceof ArrayDataType) return "java.util.List<"+toJavaType(((ArrayDataType)dt).getNestedType())+">";
-        if (dt instanceof MapDataType) return "java.util.Map<"+toJavaType(((MapDataType)dt).getKeyType())+","+toJavaType(((MapDataType)dt).getValueType())+">";
-        if (dt instanceof AnnotationReferenceDataType) return className(((AnnotationReferenceDataType) dt).getAnnotationType().getName());
+        if (dt instanceof WeightedSetDataType wdt) return "java.util.Map<"+toJavaType(wdt.getNestedType())+",java.lang.Integer>";
+        if (dt instanceof ArrayDataType adt) return "java.util.List<"+toJavaType(adt.getNestedType())+">";
+        if (dt instanceof MapDataType mdt) return "java.util.Map<"+toJavaType(mdt.getKeyType())+","+toJavaType((mdt).getValueType())+">";
+        if (dt instanceof AnnotationReferenceDataType ardt) return className(ardt.getAnnotationType().getName());
         if (dt instanceof NewDocumentReferenceDataType) {
             return "com.yahoo.document.DocumentId";
         }
@@ -942,22 +978,22 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
         if (dt instanceof StructDataType) return  className(dt.getName()) +".type";
-        if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+
-            ((WeightedSetDataType)dt).createIfNonExistent()+", "+ ((WeightedSetDataType)dt).removeIfZero()+","+dt.getId()+")";
-        if (dt instanceof ArrayDataType) return "new com.yahoo.document.ArrayDataType("+toJavaReference(((ArrayDataType)dt).getNestedType())+")";
-        if (dt instanceof MapDataType) return "new com.yahoo.document.MapDataType("+toJavaReference(((MapDataType)dt).getKeyType())+", "+
-            toJavaReference(((MapDataType)dt).getValueType())+", "+dt.getId()+")";
+        if (dt instanceof WeightedSetDataType wdt) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(wdt.getNestedType())+", "+
+            wdt.createIfNonExistent()+", "+ wdt.removeIfZero()+","+dt.getId()+")";
+        if (dt instanceof ArrayDataType adt) return "new com.yahoo.document.ArrayDataType("+toJavaReference(adt.getNestedType())+")";
+        if (dt instanceof MapDataType mdt) return "new com.yahoo.document.MapDataType("+toJavaReference(mdt.getKeyType())+", "+
+            toJavaReference(mdt.getValueType())+", "+dt.getId()+")";
         // For annotation references and generated types, the references are to the actual objects of the correct types, so most likely this is never needed,
         // but there might be scenarios where we want to look up the AnnotationType in the AnnotationTypeRegistry here instead.
-        if (dt instanceof AnnotationReferenceDataType) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+((AnnotationReferenceDataType)dt).getAnnotationType().getName()+"\"))";
-        if (dt instanceof NewDocumentReferenceDataType) {
+        if (dt instanceof AnnotationReferenceDataType adt) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+adt.getAnnotationType().getName()+"\"))";
+        if (dt instanceof NewDocumentReferenceDataType nrdt) {
             // All concrete document types have a public `type` constant with their DocumentType.
             return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
-                    className(((NewDocumentReferenceDataType) dt).getTargetType().getName()), dt.getId());
+                    className(nrdt.getTargetType().getName()), dt.getId());
         }
-        if (dt instanceof TensorDataType) {
+        if (dt instanceof TensorDataType tdt) {
             return String.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",
-                    ((TensorDataType)dt).getTensorType().toString());
+                    tdt.getTensorType().toString());
         }
         return "com.yahoo.document.DataType.RAW";
     }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.component.ComponentId;
@@ -7,10 +7,13 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.admin.AdminModel;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
@@ -26,8 +29,11 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Demonstrates how a model can be added at build time to amend another model.
@@ -73,7 +79,9 @@ public class ModelAmendingTestCase {
                         "</services>";
         VespaModelTester tester = new VespaModelTester(amendingModelRepo);
         tester.addHosts(12);
-        VespaModel model = tester.createModel(services);
+        DeployState.Builder builder = new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("test1", ApplicationClusterEndpoint.Scope.zone, List.of("t1.example.com")),
+                                                                                 new ContainerEndpoint("test2", ApplicationClusterEndpoint.Scope.zone, List.of("t2.example.com"))));
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, builder);
 
         // Check that all hosts are amended
         for (HostResource host : model.getAdmin().hostSystem().getHosts()) {
@@ -120,7 +128,9 @@ public class ModelAmendingTestCase {
                         "</services>";
         VespaModelTester tester = new VespaModelTester(amendingModelRepo);
         tester.addHosts(12);
-        VespaModel model = tester.createModel(services);
+        DeployState.Builder builder = new DeployState.Builder().endpoints(Set.of(new ContainerEndpoint("test1", ApplicationClusterEndpoint.Scope.zone, List.of("t1.example.com")),
+                                                                                 new ContainerEndpoint("test2", ApplicationClusterEndpoint.Scope.zone, List.of("t2.example.com"))));
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, builder);
 
         // Check that all hosts are amended
         for (HostResource host : model.getAdmin().hostSystem().getHosts()) {

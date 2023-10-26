@@ -1,18 +1,20 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import com.yahoo.config.FileReference;
-import com.yahoo.config.model.ApplicationPackageTester;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
+import com.yahoo.config.FileReference;
+import com.yahoo.config.model.ApplicationPackageTester;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.model.VespaModel;
@@ -22,8 +24,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Helper for testing of imported models.
@@ -51,6 +56,7 @@ public class ImportedModelTester {
         this.modelName = modelName;
         this.applicationDir = applicationDir;
         deployState = deployStateBuilder.applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app())
+                                        .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                                         .modelImporters(importers)
                                         .build();
     }

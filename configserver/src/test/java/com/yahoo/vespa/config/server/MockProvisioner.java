@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.api.HostProvisioner;
@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
@@ -59,8 +59,8 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public ProvisionLock lock(ApplicationId application) {
-        return new ProvisionLock(application, () -> {});
+    public ApplicationMutex lock(ApplicationId application) {
+        return new ApplicationMutex(application, () -> {});
     }
 
 }

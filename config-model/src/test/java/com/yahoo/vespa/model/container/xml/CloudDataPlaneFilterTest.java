@@ -1,6 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
@@ -38,6 +40,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -91,6 +94,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
         assertEquals(1, caCerts.size());
         assertEquals(List.of(certificate), caCerts);
+        assertEquals(List.of("foo.bar"), connectorConfig.serverName().known());
         var srvCfg = root.getConfig(ServerConfig.class, "container/http");
         assertEquals("cloud-data-plane-insecure", srvCfg.defaultFilters().get(0).filterId());
         assertEquals(8080, srvCfg.defaultFilters().get(0).localPort());
@@ -191,6 +195,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
                                 .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
+                .endpoints(Set.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.zone, List.of("foo.bar"))))
                 .build();
         return createModel(root, state, null, clusterElem);
     }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
 import com.yahoo.document.ArrayDataType;
@@ -77,7 +77,7 @@ public class ArrayTestCase {
 
     @Test
     public void testWrappedList() {
-        Array<StringFieldValue> array = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
+        Array<StringFieldValue> array = new Array<>(DataType.getArray(DataType.STRING));
         List<String> list = new ArrayList<>();
         list.add("foo");
         list.add("bar");
@@ -217,10 +217,10 @@ public class ArrayTestCase {
         assertEquals(new StringFieldValue("apple"), subArray.get(1));
 
 
-        assertEquals(false, array.containsAll(Arrays.<StringFieldValue>asList(new StringFieldValue("bob"))));
-        assertEquals(true, array.containsAll(Arrays.<StringFieldValue>asList(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
+        assertEquals(false, array.containsAll(List.of(new StringFieldValue("bob"))));
+        assertEquals(true, array.containsAll(List.of(new StringFieldValue("foo"), new StringFieldValue("boo"), new StringFieldValue("apple"))));
 
-        array.removeAll(Arrays.<StringFieldValue>asList(new StringFieldValue("foo"), new StringFieldValue("boo")));
+        array.removeAll(List.of(new StringFieldValue("foo"), new StringFieldValue("boo")));
 
         assertEquals(1, array.size());
         assertEquals(1, list.size());
@@ -249,7 +249,7 @@ public class ArrayTestCase {
             assertFalse(it.hasNext());
         }
 
-        array.addAll(Arrays.<StringFieldValue>asList(new StringFieldValue("microsoft"), new StringFieldValue("google")));
+        array.addAll(List.of(new StringFieldValue("microsoft"), new StringFieldValue("google")));
 
         assertEquals(4, array.size());
         assertEquals(4, list.size());

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -37,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
@@ -625,19 +624,15 @@ public class JobController {
     private void validateTests(TenantAndApplicationId id, Submission submission) {
         var testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
         if ( ! testSummary.problems().isEmpty())
-            controller.notificationsDb().setNotification(NotificationSource.from(id),
-                                                         Type.testPackage,
-                                                         Notification.Level.warning,
-                                                         testSummary.problems());
-
+            controller.notificationsDb().setTestPackageNotification(id, testSummary.problems());
     }
 
     private void validateMajorVersion(TenantAndApplicationId id, Submission submission) {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
             if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
-                controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
-                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
-                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
+                controller.notificationsDb().setSubmissionNotification(id,
+                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to [Vespa " + (explicitMajor + 1) + " now](" +
+                                                             "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html)"); // ∠( ᐛ 」∠)＿
         });
     }
 
@@ -771,9 +766,10 @@ public class JobController {
 
             controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
             controller.applications().store(application.withRevisions(revisions -> revisions.with(version)));
+            Optional<Deployment> existing = application.get().get(id.instance()).map(instance -> instance.deployments().get(type.zone()));
             start(id,
                   type,
-                  new Versions(targetPlatform, version.id(), lastRun.map(run -> run.versions().targetPlatform()), lastRun.map(run -> run.versions().targetRevision())),
+                  new Versions(targetPlatform, version.id(), existing.map(Deployment::version), existing.map(Deployment::revision)),
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
                   Reason.empty());

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -430,6 +430,7 @@ public class DeploymentTrigger {
 
     private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
+        if (status.application().get(instance).map(Instance::change).map(Change::isRevisionPinned).orElse(false)) return false;
         if ( ! status.jobs().failingWithBrokenRevisionSince(revision, clock.instant().minus(maxFailingRevisionTime))
                      .isEmpty()) return false; // Don't deploy a broken revision.
         boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexfusiontarget.h"
 #include <cinttypes>
@@ -69,7 +69,8 @@ IndexFusionTarget::getApproxDiskGain() const
 bool
 IndexFusionTarget::needUrgentFlush() const
 {
-    bool urgent = (_fusionStats.numUnfused > _fusionStats.maxFlushed) && (_fusionStats._canRunFusion);
+    bool urgent = (_fusionStats.numUnfused > _fusionStats.maxFlushed || _indexMaintainer.urgent_disk_index_fusion()) &&
+                  (_fusionStats._canRunFusion);
     LOG(debug, "Num flushed: %d Urgent: %d", _fusionStats.numUnfused, urgent);
     return urgent;
 }

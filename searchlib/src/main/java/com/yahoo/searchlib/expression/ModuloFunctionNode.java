@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 /**
@@ -9,7 +9,7 @@ package com.yahoo.searchlib.expression;
  */
 public class ModuloFunctionNode extends NumericFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 64, ModuloFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 64, ModuloFunctionNode.class, ModuloFunctionNode::new);
 
     @Override
     protected int onGetClassId() {

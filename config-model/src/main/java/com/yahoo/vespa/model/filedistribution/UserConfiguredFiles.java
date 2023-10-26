@@ -1,8 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
@@ -12,18 +14,17 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-
 import com.yahoo.yolean.Exceptions;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.UserConfiguredUrls;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
@@ -37,14 +38,17 @@ public class UserConfiguredFiles implements Serializable {
     private final DeployLogger logger;
     private final UserConfiguredUrls userConfiguredUrls;
     private final String unknownConfigDefinition;
+    private final ApplicationPackage applicationPackage;
 
     public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger,
                                ModelContext.FeatureFlags featureFlags,
-                               UserConfiguredUrls userConfiguredUrls) {
+                               UserConfiguredUrls userConfiguredUrls,
+                               ApplicationPackage applicationPackage) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
         this.userConfiguredUrls = userConfiguredUrls;
         this.unknownConfigDefinition = featureFlags.unknownConfigDefinition();
+        this.applicationPackage = applicationPackage;
     }
 
     /**
@@ -69,8 +73,7 @@ public class UserConfiguredFiles implements Serializable {
         if (configDefinition == null) {
             String message = "Unable to find config definition " + key + ". Will not register files for file distribution for this config";
             switch (unknownConfigDefinition) {
-                case "log" -> logger.logApplicationPackage(Level.INFO, message);
-                case "warning" -> logger.logApplicationPackage(Level.WARNING, message);
+                case "warning" -> logger.logApplicationPackage(WARNING, message);
                 case "fail" -> throw new IllegalArgumentException("Unable to find config definition for " + key);
             }
             return;
@@ -156,9 +159,9 @@ public class UserConfiguredFiles implements Serializable {
             path = Path.fromString(builder.getValue());
         }
 
-        File file = path.toFile();
-        if (file.isDirectory() && (file.listFiles() == null || file.listFiles().length == 0))
-            throw new IllegalArgumentException("Directory '" + path.getRelative() + "' is empty");
+        ApplicationFile file = applicationPackage.getFile(path);
+        if (file.isDirectory() && (file.listFiles() == null || file.listFiles().isEmpty()))
+            logger.logApplicationPackage(INFO, "Directory '" + path.getRelative() + "' is empty");
 
         FileReference reference = registeredFiles.get(path);
         if (reference == null) {

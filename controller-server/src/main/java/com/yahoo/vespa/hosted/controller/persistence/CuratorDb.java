@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.collections.Pair;
@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
@@ -112,6 +111,7 @@ public class CuratorDb {
     private static final Path mailVerificationRoot = root.append("mailVerification");
     private static final Path dataPlaneTokenRoot = root.append("dataplaneTokens");
     private static final Path certificatePoolRoot = root.append("certificatePool");
+    private static final Path trialNotificationsRoot = root.append("trialNotifications");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -643,6 +643,10 @@ public class CuratorDb {
         curator.delete(endpointCertificatePath(application, instanceName));
     }
 
+    public void removeAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instanceName, NestedTransaction transaction) {
+        transaction.add(CuratorTransaction.from(CuratorOperations.delete(endpointCertificatePath(application, instanceName).getAbsolute()), curator));
+    }
+
     // TODO(mpolden): Remove this. Caller should make an explicit decision to read certificate for a particular instance
     public Optional<AssignedCertificate> readAssignedCertificate(ApplicationId applicationId) {
         return readAssignedCertificate(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()));
@@ -651,7 +655,7 @@ public class CuratorDb {
     public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
         return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
                                                                         .map(EndpointCertificateSerializer::fromSlime)
-                                                                        .map(cert -> new AssignedCertificate(application, instance, cert));
+                                                                        .map(cert -> new AssignedCertificate(application, instance, cert, false));
     }
 
     public List<AssignedCertificate> readAssignedCertificates() {
@@ -811,6 +815,16 @@ public class CuratorDb {
 
     public List<UnassignedCertificate> readUnassignedCertificates() {
         return curator.getChildren(certificatePoolRoot).stream().flatMap(id -> readUnassignedCertificate(id).stream()).toList();
+    }
+
+    // -------------- Cloud trial notification --------------------------------
+
+    public void writeTrialNotifications(TrialNotifications tn) {
+        curator.set(trialNotificationsRoot, asJson(tn.toSlime()));
+    }
+
+    public Optional<TrialNotifications> readTrialNotifications() {
+        return readSlime(trialNotificationsRoot).map(TrialNotifications::fromSlime);
     }
 
     // -------------- Paths ---------------------------------------------------

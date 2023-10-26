@@ -1,8 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.net.InetAddresses;
-import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
@@ -74,31 +73,6 @@ public record IP() {
         @Override
         public int hashCode() { return Objects.hash(version); }
     }
-
-    /** Comparator for sorting IP addresses by their natural order */
-    public static final Comparator<InetAddress> NATURAL_ORDER = (ip1, ip2) -> {
-        byte[] address1 = ip1.getAddress();
-        byte[] address2 = ip2.getAddress();
-
-        // IPv4 always sorts before IPv6
-        if (address1.length < address2.length) return -1;
-        if (address1.length > address2.length) return 1;
-
-        // Compare each octet
-        for (int i = 0; i < address1.length; i++) {
-            int b1 = UnsignedBytes.toInt(address1[i]);
-            int b2 = UnsignedBytes.toInt(address2[i]);
-            if (b1 == b2) {
-                continue;
-            }
-            if (b1 < b2) {
-                return -1;
-            } else {
-                return 1;
-            }
-        }
-        return 0;
-    };
 
     /**
      * IP configuration of a node
@@ -248,10 +222,22 @@ public record IP() {
             this.hostnames = List.copyOf(Objects.requireNonNull(hostnames, "hostnames must be non-null"));
         }
 
+        /** The number of hosts in this pool: each host has a name and/or one or two IP addresses. */
+        public long size() {
+            return hostnames().isEmpty() ?
+                   Math.max(ipAddresses.addresses.stream().filter(IP::isV4).count(),
+                            ipAddresses.addresses.stream().filter(IP::isV6).count()) :
+                   hostnames().size();
+        }
+
         public List<String> ips() { return ipAddresses.addresses; }
 
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
+         *
+         * <p>TODO(2023-09-20): Once all dynamically provisioned hosts have been reprovisioned, the order of IP addresses
+         * is significant and should be 1:1 with the order of hostnames, if both are filled.  This needs to be verified.
+         * This can be used to strengthen validation, and simplify the selection of the Allocation to return.</p>
          *
          * @param context allocation context
          * @param nodes   a locked list of all nodes in the repository

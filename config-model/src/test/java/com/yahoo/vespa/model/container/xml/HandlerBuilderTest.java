@@ -1,10 +1,11 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
@@ -14,8 +15,10 @@ import com.yahoo.vespa.model.container.component.Handler;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
@@ -24,7 +27,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for container model building with custom handlers.
@@ -59,6 +66,31 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
         Component<?, ?> handler = getComponent("default", "myHandler");
         assertThat(handler.getInjectedComponentIds(), hasItem("injected@myHandler"));
+    }
+
+    @Test
+    void warn_on_bindings_shared_by_multiple_handlers() {
+        class TestDeployLogger implements DeployLogger {
+            List<String> logs = new ArrayList<>();
+            @Override public void log(Level level, String message) { logs.add(message); }
+        }
+        var clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <handler id='myHandler1'>",
+                "    <binding>http://*/myhandler</binding>",
+                "    <binding>https://*/myhandler</binding>",
+                "  </handler>",
+                "  <handler id='myHandler2'>",
+                "    <binding>http://*/myhandler</binding>",
+                "    <binding>https://*/myhandler</binding>",
+                "  </handler>",
+                "</container>");
+        var logger = new TestDeployLogger();
+        createModel(root, logger, clusterElem);
+        assertEquals(
+                List.of("Binding 'http://*/myhandler' was already in use by handler 'myHandler1', but will now be taken over by handler: myHandler2",
+                        "Binding 'https://*/myhandler' was already in use by handler 'myHandler1', but will now be taken over by handler: myHandler2"),
+                logger.logs);
     }
 
     @Test

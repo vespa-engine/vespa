@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -49,9 +49,9 @@ private:
 
 public:
     ValueType(ValueType &&) noexcept = default;
-    ValueType(const ValueType &) = default;
+    ValueType(const ValueType &);
     ValueType &operator=(ValueType &&) noexcept = default;
-    ValueType &operator=(const ValueType &) = default;
+    ValueType &operator=(const ValueType &);
     ~ValueType();
     CellType cell_type() const { return _cell_type; }
     CellMeta cell_meta() const { return {_cell_type, is_double()}; }
@@ -88,7 +88,7 @@ public:
                      const std::vector<vespalib::string> &to) const;
     ValueType cell_cast(CellType to_cell_type) const;
 
-    static ValueType error_type() { return ValueType(); }
+    static ValueType error_type() { return {}; }
     static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
     static ValueType double_type() { return make_type(CellType::DOUBLE, {}); }
     static ValueType from_spec(const vespalib::string &spec);

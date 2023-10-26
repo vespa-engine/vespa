@@ -1,16 +1,16 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -32,37 +32,40 @@ public class ResourceSnapshot {
     private final Instant timestamp;
     private final ZoneId zoneId;
     private final int majorVersion;
+    private final CloudAccount account;
 
-    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, int majorVersion) {
+    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, int majorVersion, CloudAccount account) {
         this.applicationId = applicationId;
         this.resources = resources;
         this.timestamp = timestamp;
         this.zoneId = zoneId;
         this.majorVersion = majorVersion;
+        this.account = account;
     }
 
     public static ResourceSnapshot from(ApplicationId applicationId, int nodes, NodeResources resources, Instant timestamp, ZoneId zoneId) {
-        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, 0);
+        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, 0, CloudAccount.empty);
     }
 
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
-        Set<ApplicationId> applicationIds = nodes.stream()
-                                                 .filter(node -> node.owner().isPresent())
-                                                 .map(node -> node.owner().get())
-                                                 .collect(Collectors.toSet());
+        var application = exactlyOne("application", nodes.stream()
+                .filter(node -> node.owner().isPresent())
+                .map(node -> node.owner().get())
+                .collect(Collectors.toSet()));
 
-        Set<Integer> versions = nodes.stream()
+        var version = exactlyOne("version", nodes.stream()
                 .map(n -> n.wantedVersion().getMajor())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet()));
 
-        if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
-        if (versions.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one version");
+        var account = exactlyOne("account", nodes.stream()
+                .map(Node::cloudAccount)
+                .collect(Collectors.toSet()));
 
         var resources = nodes.stream()
                 .map(Node::resources)
                 .reduce(zero, ResourceSnapshot::addResources);
 
-        return new ResourceSnapshot(applicationIds.iterator().next(), resources, timestamp, zoneId, versions.iterator().next());
+        return new ResourceSnapshot(application, resources, timestamp, zoneId, version, account);
     }
 
     public ApplicationId getApplicationId() {
@@ -83,6 +86,10 @@ public class ResourceSnapshot {
 
     public int getMajorVersion() {
         return majorVersion;
+    }
+
+    public CloudAccount getAccount() {
+        return account;
     }
 
     @Override
@@ -121,5 +128,10 @@ public class ResourceSnapshot {
                 NodeResources.StorageType.any,
                 a.architecture() == NodeResources.Architecture.any ? b.architecture() : a.architecture(),
                 a.gpuResources().plus(b.gpuResources()));
+    }
+
+    private static <T> T exactlyOne(String resource, Collection<T> collection) {
+        if (collection.size() != 1) throw new IllegalArgumentException("More than one '" + resource + "', was: " + collection.size());
+        return collection.iterator().next();
     }
 }

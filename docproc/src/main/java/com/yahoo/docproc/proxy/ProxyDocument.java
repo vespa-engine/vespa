@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.proxy;
 
 import com.yahoo.docproc.Accesses;
@@ -46,7 +46,7 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     private final Map<String, String> fieldMap;
     private final Set<String> fieldsAllowed = new HashSet<>();
     private final String docProcName;
-    private Document doc;
+    private final Document doc;
 
     public ProxyDocument(DocumentProcessor docProc, Document doc, Map<String, String> fieldMap) {
         super(doc);

@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
@@ -14,13 +15,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 public record UnassignedCertificate(EndpointCertificate certificate, UnassignedCertificate.State state) {
 
     public UnassignedCertificate {
-        if (certificate.randomizedId().isEmpty()) {
-            throw new IllegalArgumentException("randomizedId must be set for a pooled certificate");
+        if (certificate.generatedId().isEmpty()) {
+            throw new IllegalArgumentException("generatedId must be set for a pooled certificate");
         }
     }
 
     public String id() {
-        return certificate.randomizedId().get();
+        return certificate.generatedId().get();
     }
 
     public UnassignedCertificate withState(State state) {

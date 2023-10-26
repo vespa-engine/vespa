@@ -1,10 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 
 plugins {
   id("java-library")
-  id("org.jetbrains.intellij") version "1.15.0"
+  id("org.jetbrains.intellij") version "1.16.0"
   id("org.jetbrains.grammarkit") version "2022.3.2"
   id("maven-publish") // to deploy the plugin into a Maven repo
 }

@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema multiplesummaries {
 
   document multiplesummaries {
@@ -80,35 +80,35 @@ schema multiplesummaries {
 
   document-summary third {
 
-    summary a type string {
+    summary a {
     }
 
-    summary adynamic type string {
+    summary adynamic {
     }
 
-    summary d type string {
+    summary d {
     }
 
-    summary e type string {
+    summary e {
     }
 
     summary f {
     }
 
-    summary g type array<int> {
+    summary g {
     }
 
-    summary h type weightedset<string> {
+    summary h {
     }
 
   }
 
   document-summary attributesonly1 {
 
-    summary a type string {
+    summary a {
     }
 
-    summary c type string {
+    summary c {
     }
 
   }
@@ -116,10 +116,10 @@ schema multiplesummaries {
   # Since a here is a dynamic summary field, it will be fetched from disk
   document-summary notattributesonly1 {
 
-    summary adynamic type string { # Should still be dynamic here
+    summary adynamic { # Should still be dynamic here
     }
 
-    summary c type string {
+    summary c {
     }
 
   }
@@ -127,25 +127,25 @@ schema multiplesummaries {
   # Since a here is a dynamic summary, it will be fetched from disk
   document-summary anothernotattributesonly2 {
 
-    summary adynamic2 type string { # Should still be dynamic here
+    summary adynamic2 { # Should still be dynamic here
         source: a
         dynamic
     }
 
-    summary c type string {
+    summary c {
     }
 
-    summary alltags type array<string> {
+    summary alltags {
         source: mytags
     }
-    summary sometags type array<string> {
+    summary sometags {
         source: mytags
         matched-elements-only
     }
-    summary anothera type string {
+    summary anothera {
         source: a
     }
-    summary anotherb type string {
+    summary anotherb {
         source: b
     }
   }
@@ -153,24 +153,24 @@ schema multiplesummaries {
   # Not attributes only because d is bolded
   document-summary notattributesonly3 {
 
-    summary a type string {
+    summary a {
     }
 
-    summary d type string {
+    summary d {
     }
 
   }
 
   document-summary attributesonly2 {
 
-    summary anotdynamic type string { # Should not be dynamic here
+    summary anotdynamic { # Should not be dynamic here
         source: adynamic
     }
 
-    summary c type string {
+    summary c {
     }
 
-    summary loc_position type long {
+    summary loc_position {
         source: loc_pos_zcurve
     }
 
@@ -178,33 +178,33 @@ schema multiplesummaries {
 
   document-summary attributesonly3 {
 
-    summary a type string {
+    summary a {
     }
 
-    summary anotbolded type string {
+    summary anotbolded {
         source: a
     }
 
-    summary loc_pos_zcurve type long {
+    summary loc_pos_zcurve {
     }
 
   }
 
   document-summary notattributesonly4 {
 
-    summary abolded2 type string {
+    summary abolded2 {
         source: a
         bolding: on
     }
 
-    summary c type string {
+    summary c {
     }
 
   }
 
   document-summary notattributesonly5 {
 
-    summary aboldeddynamic type string {
+    summary aboldeddynamic {
         source: a
         dynamic
         bolding: on

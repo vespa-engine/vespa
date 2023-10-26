@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import ai.vespa.http.DomainName;
@@ -57,7 +57,7 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints) {
+    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints, boolean initialDeployment) {
         return endpointsChecker.endpointsAvailable(endpoints);
     }
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
 import org.junit.Test;
@@ -7,7 +7,7 @@ import static java.lang.Character.MAX_SURROGATE;
 import static java.lang.Character.MIN_SURROGATE;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.14
  */
 public class StringFieldValueTestCase {
@@ -17,81 +17,62 @@ public class StringFieldValueTestCase {
         new StringFieldValue("\t");
         new StringFieldValue("\r");
         new StringFieldValue("\n");
-        for (int c = 0x20; c < 0xFDD0; c++) {
-            new StringFieldValue("" + Character.toChars(c));
-        }
         for (int c = 0x20; c < MIN_SURROGATE; c++) {
-            new StringFieldValue("" + Character.toChars(c)[0]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
-        for (int c = MAX_SURROGATE; c < 0xFDD0; c++) {
-            new StringFieldValue("" + Character.toChars(c)[0]);
+        for (int c = MAX_SURROGATE + 1; c < 0xFDD0; c++) {
+            new StringFieldValue(new String(Character.toChars(c)));
         }
-        for (int c = 0xFDE0; c < 0xFFFF; c++) {
-            new StringFieldValue("" + Character.toChars(c)[0]);
+        for (int c = 0xFDE0; c < 0xFFFE; c++) {
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x10000; c < 0x1FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x20000; c < 0x2FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x30000; c < 0x3FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x40000; c < 0x4FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x50000; c < 0x5FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x60000; c < 0x6FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x70000; c < 0x7FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x80000; c < 0x8FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x90000; c < 0x9FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xA0000; c < 0xAFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xB0000; c < 0xBFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xC0000; c < 0xCFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xD0000; c < 0xDFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xE0000; c < 0xEFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0xF0000; c < 0xFFFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
         for (int c = 0x100000; c < 0x10FFFE; c++) {
-            char[] chars = Character.toChars(c);
-            new StringFieldValue("" + chars[0] + chars[1]);
+            new StringFieldValue(new String(Character.toChars(c)));
         }
     }
 
@@ -270,6 +251,14 @@ public class StringFieldValueTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void requireThatControlCharFailsFDDF() {
         new StringFieldValue("\uFDDF");
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void requireThatControlCharFailsFFFE() {
+        new StringFieldValue("\uFFFE");
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void requireThatControlCharFailsFFFF() {
+        new StringFieldValue("\uFFFF");
     }
     @Test(expected = IllegalArgumentException.class)
     public void requireThatControlCharFails1FFFE() {

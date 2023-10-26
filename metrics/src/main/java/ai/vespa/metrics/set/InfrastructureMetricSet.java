@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ConfigServerMetrics;
@@ -143,6 +143,8 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ARCHIVE_BUCKET_COUNT.max());
         addMetric(metrics, ControllerMetrics.BILLING_TENANTS.max());
 
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_QUEUED, EnumSet.of(count, sum));
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE, EnumSet.of(count, sum));
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ABORT.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
@@ -174,9 +176,14 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.max());
+        addMetric(metrics, ControllerMetrics.BILLING_EXCEPTIONS.count());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.min());
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED.max());
+
+        addMetric(metrics, ControllerMetrics.MAIL_SENT.count());
+        addMetric(metrics, ControllerMetrics.MAIL_FAILED.count());
+        addMetric(metrics, ControllerMetrics.MAIL_THROTTLED.count());
 
         return metrics;
     }

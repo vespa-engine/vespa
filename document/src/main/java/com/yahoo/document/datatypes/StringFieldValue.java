@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
 import com.yahoo.collections.CollectionComparator;
@@ -106,7 +106,7 @@ public class StringFieldValue extends FieldValue {
     }
 
     /**
-     * Sets a new value for this StringFieldValue.&nbsp;NOTE that doing so will clear all span trees from this value,
+     * Sets a new value for this StringFieldValue. NOTE that doing so will clear all span trees from this value,
      * since they most certainly will not make sense for a new string value.
      *
      * @param o the new String to assign to this. An argument of null is equal to calling clear().

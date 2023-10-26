@@ -1,3 +1,4 @@
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <deployment version="1.0" major-version="8"
             athenz-domain="gemini-native.aws-core-dev" athenz-service="csp"
             cloud-account="337717828807">

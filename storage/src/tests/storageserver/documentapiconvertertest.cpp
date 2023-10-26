@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/base/testdocrepo.h>
@@ -77,7 +77,7 @@ struct DocumentApiConverterTest : Test {
     }
 
     void SetUp() override {
-        _converter = std::make_unique<DocumentApiConverter>(config::ConfigUri("raw:"), _bucketResolver);
+        _converter = std::make_unique<DocumentApiConverter>(_bucketResolver);
     };
 
     template <typename DerivedT, typename BaseT>

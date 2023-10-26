@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsum_store_document.h"
 #include "annotation_converter.h"
@@ -37,11 +37,11 @@ DocsumStoreDocument::get_field_value(const vespalib::string& field_name) const
 }
 
 void
-DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
+DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SlimeFiller::insert_summary_field(*field_value, inserter);
+        SlimeFiller::insert_summary_field(*field_value, inserter, converter);
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -145,11 +145,11 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 struct MyStoreOnlyConfig
 {
     StoreOnlyConfig _cfg;
-    MyStoreOnlyConfig()
+    MyStoreOnlyConfig(SubDbType subDbType)
         : _cfg(DocTypeName(DOCTYPE_NAME),
               SUB_NAME,
               BASE_DIR,
-              0, SubDbType::READY)
+              0, subDbType)
     {
     }
 };
@@ -188,8 +188,8 @@ template <bool FastAccessAttributesOnly>
 struct MyFastAccessConfig
 {
     FastAccessConfig _cfg;
-    MyFastAccessConfig()
-        : _cfg(MyStoreOnlyConfig()._cfg, true, true, FastAccessAttributesOnly)
+    MyFastAccessConfig(SubDbType subDbType)
+        : _cfg(MyStoreOnlyConfig(subDbType)._cfg, true, true, FastAccessAttributesOnly)
     {
     }
 };
@@ -225,8 +225,8 @@ MyFastAccessContext::~MyFastAccessContext() = default;
 struct MySearchableConfig
 {
     FastAccessConfig _cfg;
-    MySearchableConfig()
-        : _cfg(MyFastAccessConfig<false>()._cfg)
+    MySearchableConfig(SubDbType subDbType)
+        : _cfg(MyFastAccessConfig<false>(subDbType)._cfg)
     {
     }
 };
@@ -302,7 +302,7 @@ struct MyConfigSnapshot
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
                                  std::make_shared<BucketspacesConfig>(),
-                                 tuneFileDocumentDB, HwInfo());
+                                 tuneFileDocumentDB, HwInfo(HwInfo::Disk(128_Gi,false,false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8)));
         ::config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
         mgr.forwardConfig(_bootstrap);
@@ -328,7 +328,7 @@ struct FixtureBase
     IFeedView::SP            _tmpFeedView;
     FixtureBase()
         : _service(1),
-          _cfg(),
+          _cfg(Traits::subDbType),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _bucketDBHandler(*_bucketDB),
           _ctx(_service.write(), _bucketDB, _bucketDBHandler),
@@ -411,17 +411,20 @@ struct FixtureBase
     }
 };
 
-template <bool has_attr2_in, typename ConfigDirT, uint32_t ConfigSerial = CFG_SERIAL>
+template <bool has_attr2_in, typename ConfigDirT,
+        uint32_t ConfigSerial = CFG_SERIAL, SubDbType subDbType_in = SubDbType::READY>
 struct BaseTraitsT
 {
     static constexpr bool has_attr2 = has_attr2_in;
     using ConfigDir = ConfigDirT;
     static uint32_t configSerial() { return ConfigSerial; }
+    static constexpr SubDbType subDbType = subDbType_in;
 };
 
 using BaseTraits = BaseTraitsT<one_attr_schema, ConfigDir1>;
 
-struct StoreOnlyTraits : public BaseTraits
+template <SubDbType subDbType>
+struct StoreOnlyTraits : public BaseTraitsT<one_attr_schema, ConfigDir1, CFG_SERIAL, subDbType>
 {
     using Config = MyStoreOnlyConfig;
     using Context = MyStoreOnlyContext;
@@ -429,7 +432,8 @@ struct StoreOnlyTraits : public BaseTraits
     using FeedView = StoreOnlyFeedView;
 };
 
-using StoreOnlyFixture = FixtureBase<StoreOnlyTraits>;
+using StoreOnlyFixture = FixtureBase<StoreOnlyTraits<SubDbType::READY>>;
+using StoreOnlyFixtureRemoved = FixtureBase<StoreOnlyTraits<SubDbType::REMOVED>>;
 
 struct FastAccessTraits : public BaseTraits
 {
@@ -496,18 +500,39 @@ assertAttributes2(const std::vector<search::AttributeVector *> &attributes)
     EXPECT_EQUAL("attr2", attributes[1]->getName());
 }
 
+void
+assertCacheCapacity(const StoreOnlyDocSubDB & db, size_t expected_cache_capacity) {
+    const auto & summaryManager = db.getSummaryManager();
+    EXPECT_TRUE(dynamic_cast<SummaryManager *>(summaryManager.get()) != nullptr);
+    search::IDocumentStore & store = summaryManager->getBackingStore();
+    search::DocumentStore & docStore = dynamic_cast<search::DocumentStore &>(store);
+    EXPECT_EQUAL(expected_cache_capacity, docStore.getCacheCapacity());
+}
+
+void
+assertStoreOnly(StoreOnlyDocSubDB & db) {
+    EXPECT_TRUE(db.getSummaryManager());
+    EXPECT_TRUE(db.getSummaryAdapter());
+    EXPECT_TRUE( ! db.getAttributeManager());
+    EXPECT_TRUE( ! db.getIndexManager());
+    EXPECT_TRUE( ! db.getIndexWriter());
+    EXPECT_TRUE(db.getFeedView());
+    EXPECT_TRUE(db.getSearchView());
+    EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(db.getFeedView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(db.getSearchView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(db.getDocumentRetriever().get()) != nullptr);
+}
+
 TEST_F("require that managers and components are instantiated", StoreOnlyFixture)
 {
-    EXPECT_TRUE(f._subDb.getSummaryManager());
-    EXPECT_TRUE(f._subDb.getSummaryAdapter());
-    EXPECT_TRUE( ! f._subDb.getAttributeManager());
-    EXPECT_TRUE( ! f._subDb.getIndexManager());
-    EXPECT_TRUE( ! f._subDb.getIndexWriter());
-    EXPECT_TRUE(f._subDb.getFeedView());
-    EXPECT_TRUE(f._subDb.getSearchView());
-    EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(f._subDb.getFeedView().get()) != nullptr);
-    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != nullptr);
-    EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != nullptr);
+    assertStoreOnly(f._subDb);
+    assertCacheCapacity(f._subDb, 687194767);
+}
+
+TEST_F("require that managers and components are instantiated", StoreOnlyFixtureRemoved)
+{
+    assertStoreOnly(f._subDb);
+    assertCacheCapacity(f._subDb, 0);
 }
 
 TEST_F("require that managers and components are instantiated", FastAccessFixture)

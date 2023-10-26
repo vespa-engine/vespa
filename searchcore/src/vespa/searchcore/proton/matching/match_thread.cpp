@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "match_thread.h"
 #include "document_scorer.h"
@@ -498,7 +498,6 @@ MatchThread::run()
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         bool(resultContext->grouping)));
-        (void) processToken;  // Avoid unused warning
         get_token_timer.done();
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getDoom(), std::move(result), *resultContext);

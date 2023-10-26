@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/searchcorespi/index/iindexmaintaineroperations.h>
@@ -128,6 +128,9 @@ public:
     }
     void setMaxFlushed(uint32_t maxFlushed) override {
         _maintainer.setMaxFlushed(maxFlushed);
+    }
+    bool has_pending_urgent_flush() const override {
+        return _maintainer.has_pending_urgent_flush();
     }
 };
 

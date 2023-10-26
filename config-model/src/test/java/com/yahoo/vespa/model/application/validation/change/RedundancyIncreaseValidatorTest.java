@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
@@ -21,9 +21,9 @@ public class RedundancyIncreaseValidatorTest {
 
     @Test
     void testRedundancyIncreaseValidation() {
-        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null, "contentClusterId.indexing").getFirst();
         try {
-            tester.deploy(previous, getServices(3), Environment.prod, null);
+            tester.deploy(previous, getServices(3), Environment.prod, null, "contentClusterId.indexing");
             fail("Expected exception due to redundancy increase");
         }
         catch (IllegalArgumentException expected) {
@@ -37,8 +37,8 @@ public class RedundancyIncreaseValidatorTest {
 
     @Test
     void testOverridingContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices(3), Environment.prod, redundancyIncreaseOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices(2), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        tester.deploy(previous, getServices(3), Environment.prod, redundancyIncreaseOverride, "contentClusterId.indexing"); // Allowed due to override
     }
 
     private static String getServices(int redundancy) {

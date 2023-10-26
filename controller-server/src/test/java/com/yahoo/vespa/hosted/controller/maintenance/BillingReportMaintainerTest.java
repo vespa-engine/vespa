@@ -1,15 +1,19 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.InvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,8 +43,47 @@ public class BillingReportMaintainerTest {
         assertNotNull(b1.orElseThrow().reference());
     }
 
-    private Optional<BillingReference> billingReference(TenantName tenantName) {
-        var t = tester.controller().tenants().require(tenantName, CloudTenant.class);
-        return t.billingReference();
+    @Test
+    void only_open_bills_with_exported_id_are_maintained() {
+        var t1 = tester.createTenant("t1");
+        var billingController = tester.controller().serviceRegistry().billingController();
+        var billingDb = tester.controller().serviceRegistry().billingDatabase();
+
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
+
+        var bill1 = billingDb.createBill(t1, start, end, "non-exported");
+        var bill2 = billingDb.createBill(t1, start, end, "exported");
+        var bill3 = billingDb.createBill(t1, start, end, "exported-and-frozen");
+        billingDb.setStatus(bill3, "foo", BillStatus.FROZEN);
+
+        billingController.setPlan(t1, PlanRegistryMock.paidPlan.id(), false, true);
+
+        tester.controller().serviceRegistry().billingReporter().exportBill(billingDb.readBill(bill2).get(), "FOO", cloudTenant(t1));
+        tester.controller().serviceRegistry().billingReporter().exportBill(billingDb.readBill(bill3).get(), "FOO", cloudTenant(t1));
+        var updates = maintainer.maintainInvoices();
+        assertEquals(new InvoiceUpdate(1, 0, 0), updates);
+
+        assertTrue(billingDb.readBill(bill1).get().getExportedId().isEmpty());
+
+        var exportedBill = billingDb.readBill(bill2).get();
+        assertEquals("EXT-ID-123", exportedBill.getExportedId().get());
+        var lineItems = exportedBill.lineItems();
+        assertEquals(1, lineItems.size());
+        assertEquals("maintained", lineItems.get(0).id());
+
+        var frozenBill = billingDb.readBill(bill3).get();
+        assertEquals("EXT-ID-123", frozenBill.getExportedId().get());
+        assertEquals(0, frozenBill.lineItems().size());
+
     }
+
+    private CloudTenant cloudTenant(TenantName tenantName) {
+        return tester.controller().tenants().require(tenantName, CloudTenant.class);
+    }
+
+    private Optional<BillingReference> billingReference(TenantName tenantName) {
+        return cloudTenant(tenantName).billingReference();
+    }
+
 }

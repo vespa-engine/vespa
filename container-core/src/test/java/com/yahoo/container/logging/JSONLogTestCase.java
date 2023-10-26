@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
 import com.yahoo.yolean.trace.TraceNode;
@@ -291,6 +291,8 @@ public class JSONLogTestCase {
                 newRequestLogEntry("test",  new Coverage(100, 200, 200, 2)).build());
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"adaptive-timeout\":true}}",
                 newRequestLogEntry("test",  new Coverage(100, 200, 200, 4)).build());
+        verifyCoverage("\"coverage\":{\"coverage\":0,\"documents\":0,\"degraded\":{\"timeout\":true}}",
+                newRequestLogEntry("test",  new Coverage(0, 0, 0, 2)).build());
     }
 
     private String formatEntry(RequestLogEntry entry) {

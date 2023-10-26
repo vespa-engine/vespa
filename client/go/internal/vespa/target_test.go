@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package vespa
 
 import (
@@ -88,7 +88,7 @@ func TestCustomTargetWait(t *testing.T) {
 		client.NextResponseError(io.EOF)
 	}
 	// Then succeeds
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
 	assertService(t, false, target, "", time.Second)
 }
 
@@ -120,6 +120,8 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 func TestCloudTargetWait(t *testing.T) {
 	var logWriter bytes.Buffer
 	target, client := createCloudTarget(t, &logWriter)
+	client.NextResponseError(errAuth)
+	assertService(t, true, target, "deploy", time.Second) // No retrying on auth error
 	client.NextStatus(401)
 	assertService(t, true, target, "deploy", time.Second) // No retrying on 4xx
 	client.NextStatus(500)
@@ -151,10 +153,10 @@ func TestCloudTargetWait(t *testing.T) {
 	assert.Equal(t, 2, len(services))
 
 	client.NextResponse(response)
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 500})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 500})
 	assertService(t, true, target, "default", 0)
 	client.NextResponse(response)
-	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
 	assertService(t, false, target, "feed", 0)
 }
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
@@ -9,9 +9,9 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/juniper/juniper_separators.h>
+#include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/annotation_converter.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
-#include <vespa/searchsummary/docsummary/linguisticsannotation.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>

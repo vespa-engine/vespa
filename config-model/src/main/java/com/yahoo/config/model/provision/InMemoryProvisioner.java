@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
 import com.yahoo.config.provision.IntRange;
@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
@@ -234,7 +235,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     // Minimal capacity policies
     private NodeResources decideResources(NodeResources resources) {
         if (defaultNodeResources.isUnspecified()) return resources;
-        return resources.withUnspecifiedNumbersFrom(defaultNodeResources);
+        return resources.withUnspecifiedFieldsFrom(defaultNodeResources);
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResourcesOrUnspecified,

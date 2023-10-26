@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
@@ -74,7 +74,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
-import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -112,6 +111,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService.State;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -127,6 +127,8 @@ import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
+import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -692,7 +694,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             var contact = root.setObject("contact");
             contact.setString("name", billingContact.contact().name());
             contact.setString("email", billingContact.contact().email().getEmailAddress());
+            contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
+            root.setString("taxId", billingContact.getTaxId().value());
+            root.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
+            root.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
 
             toSlime(billingContact.address(), root); // will create "address" on the parent
         }
@@ -702,15 +708,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private SlimeJsonResponse putTenantInfoBilling(CloudTenant cloudTenant, Inspector inspector) {
         var info = cloudTenant.info();
-        var contact = info.billingContact().contact();
-        var address = info.billingContact().address();
+        var billing = info.billingContact();
+        var contact = billing.contact();
+        var address = billing.address();
 
-        var mergedContact = updateTenantInfoContact(inspector.field("contact"), cloudTenant.name(), contact, false);
-        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
+        var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
+        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), billing.address());
+        var mergedTaxId = optional("taxId", inspector).map(TaxId::new).orElse(billing.getTaxId());
+        var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
+        var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
 
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
-                .withAddress(mergedAddress);
+                .withAddress(mergedAddress)
+                .withTaxId(mergedTaxId)
+                .withPurchaseOrder(mergedPurchaseOrder)
+                .withInvoiceEmail(mergedInvoiceEmail);
 
         var mergedInfo = info.withBilling(mergedBilling);
 
@@ -763,6 +776,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 throw new IllegalArgumentException("'website' needs to be a valid address");
             }
         }
+        if (! mergedInfo.billingContact().getInvoiceEmail().isBlank()) {
+            // TODO: Validate invoice email is set if collection method is INVOICE
+            if (! mergedInfo.billingContact().getInvoiceEmail().getEmailAddress().contains("@"))
+                throw new IllegalArgumentException("'Invoice email' needs to be an email address");
+        }
     }
 
     private void toSlime(TenantAddress address, Cursor parentCursor) {
@@ -779,11 +797,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
-        Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
-        addressCursor.setString("phone", billingContact.contact().phone());
-        toSlime(billingContact.address(), addressCursor);
+        Cursor billingCursor = parentCursor.setObject("billingContact");
+        billingCursor.setString("name", billingContact.contact().name());
+        billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
+        billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
+        billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString("taxId", billingContact.getTaxId().value());
+        billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
+        billingCursor.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
+        toSlime(billingContact.address(), billingCursor);
     }
 
     private void toSlime(TenantContacts contacts, Cursor parentCursor) {
@@ -892,15 +914,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
-    private TenantContact updateTenantInfoContact(Inspector insp, TenantName tenantName, TenantContact oldContact, boolean isBillingContact) {
+    private TenantContact updateBillingContact(Inspector insp, TenantName tenantName, TenantContact oldContact) {
         if (!insp.valid()) return oldContact;
 
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    if (isBillingContact)
-                        return new Email(address, true);
-                    controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.BILLING);
                     return new Email(address, false);
                 })
                 .orElse(oldContact.email());
@@ -914,9 +934,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantName tenantName, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
+        var taxId = optional("taxId", insp).map(TaxId::new).orElse(oldContact.getTaxId());
+        var purchaseOrder = optional("purchaseOrder", insp).map(PurchaseOrder::new).orElse(oldContact.getPurchaseOrder());
+        var invoiceEmail = optional("invoiceEmail", insp).map(mail -> new Email(mail, false)).orElse(oldContact.getInvoiceEmail());
         return TenantBilling.empty()
-                .withContact(updateTenantInfoContact(insp, tenantName, oldContact.contact(), true))
-                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+                .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
+                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()))
+                .withTaxId(taxId)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private TenantContacts updateTenantInfoContacts(Inspector insp, TenantName tenantName, TenantContacts oldContacts) {
@@ -964,25 +990,41 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse listTokens(String tenant, HttpRequest request) {
-        var tokens = controller.dataplaneTokenService().listTokens(TenantName.from(tenant))
-                .stream().sorted(Comparator.comparing(DataplaneTokenVersions::tokenId)).toList();
         Slime slime = new Slime();
         Cursor tokensArray = slime.setObject().setArray("tokens");
-        for (DataplaneTokenVersions token : tokens) {
+        controller.dataplaneTokenService().listTokensWithState(TenantName.from(tenant)).forEach((token, states) -> {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
+            tokenObject.setLong("lastUpdatedMillis", token.lastUpdated().toEpochMilli());
             Cursor fingerprintsArray = tokenObject.setArray("versions");
-            var versions = token.tokenVersions().stream()
-                    .sorted(Comparator.comparing(DataplaneTokenVersions.Version::creationTime)).toList();
-            for (var tokenVersion : versions) {
+            for (var tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
                 fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("none"));
+                String tokenState = tokenVersion.expiration().map(controller.clock().instant()::isAfter).orElse(false)
+                                    ? "expired"
+                                    : valueOf(states.get(tokenVersion.fingerPrint()));
+                fingerprintObject.setString("state", tokenState);
             }
-        }
+            states.forEach((print, state) -> {
+                if (state != State.REVOKING) return;
+                Cursor fingerprintObject = fingerprintsArray.addObject();
+                fingerprintObject.setString("fingerprint", print.value());
+                fingerprintObject.setString("state", valueOf(state));
+            });
+        });
         return new SlimeJsonResponse(slime);
+    }
+
+    private static String valueOf(DataplaneTokenService.State state) {
+        return switch (state) {
+            case UNUSED: yield "unused";
+            case DEPLOYING: yield "deploying";
+            case ACTIVE: yield "active";
+            case REVOKING: yield "revoking";
+        };
     }
 
 
@@ -1032,6 +1074,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         if (!excludeMessages) {
+            cursor.setString("title", notification.title());
             Cursor messagesArray = cursor.setArray("messages");
             notification.messages().forEach(messagesArray::addString);
         }
@@ -1055,6 +1098,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             case deployment: yield "deployment";
             case feedBlock: yield "feedBlock";
             case reindex: yield "reindex";
+            case account: yield "account";
         };
     }
 
@@ -1684,6 +1728,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mailType = switch (type) {
             case "contact" -> PendingMailVerification.MailType.TENANT_CONTACT;
             case "notifications" -> PendingMailVerification.MailType.NOTIFICATIONS;
+            case "billing" -> PendingMailVerification.MailType.BILLING;
             default -> throw new IllegalArgumentException("Unknown mail type " + type);
         };
 
@@ -1983,10 +2028,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("region", deploymentId.zoneId().region().value());
         addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-        boolean includeAllEndpoints = request.getBooleanProperty("includeAllEndpoints") ||
-                                      request.getBooleanProperty("includeLegacyEndpoints");
+        boolean includeAllEndpoints = request.getBooleanProperty("includeAllEndpoints");
+        boolean includeWeightedEndpoints = includeAllEndpoints || request.getBooleanProperty("includeWeightedEndpoints");
+        boolean includeLegacyEndpoints  = includeAllEndpoints || request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : endpointsOf(deploymentId, application, includeAllEndpoints)) {
+        for (var endpoint : endpointsOf(deploymentId, application, includeLegacyEndpoints, includeWeightedEndpoints)) {
             toSlime(endpoint, endpointArray.addObject());
         }
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
@@ -2061,19 +2107,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
-    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeHidden) {
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeLegacy, boolean includeWeighted) {
         EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).direct();
         EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application).targets(deploymentId);
         EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
-        EndpointList generatedEndpoints = endpoints.generated();
-        if (!includeHidden) {
-            // If we have generated endpoints, hide non-generated
-            if (!generatedEndpoints.isEmpty()) {
-                endpoints = endpoints.generated();
-            }
-            // Hide legacy and weighted endpoints
-            endpoints = endpoints.not().legacy()
-                                 .not().scope(Endpoint.Scope.weighted);
+        if (!includeLegacy) {
+            endpoints = endpoints.not().legacy();
+        }
+        if (!includeWeighted) {
+            endpoints = endpoints.not().scope(Endpoint.Scope.weighted);
         }
         return endpoints;
     }
@@ -2223,7 +2265,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor array = slime.setObject().setArray("globalrotationoverride");
         Optional<Endpoint> primaryEndpoint = controller.routing().readDeclaredEndpointsOf(deploymentId.applicationId())
                                                        .requiresRotation()
-                                                       .primary();
+                                                       .first();
         if (primaryEndpoint.isPresent()) {
             DeploymentRoutingContext context = controller.routing().of(deploymentId);
             RoutingStatus status = context.routingStatus();

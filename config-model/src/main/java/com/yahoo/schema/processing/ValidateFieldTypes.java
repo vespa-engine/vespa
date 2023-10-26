@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
@@ -49,7 +49,9 @@ public class ValidateFieldTypes extends Processor {
     final protected void verifySummaryFields(String searchName, Map<String, DataType> seenFields) {
         for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField field : summary.getSummaryFields().values()) {
-                checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
+                if (!field.hasUnresolvedType()) {
+                    checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
+                }
             }
         }
     }

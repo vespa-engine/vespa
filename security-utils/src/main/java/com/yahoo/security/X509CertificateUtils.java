@@ -1,9 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -73,15 +74,18 @@ public class X509CertificateUtils {
     }
 
     private static X509Certificate toX509Certificate(Object pemObject) throws CertificateException {
-        if (pemObject instanceof X509Certificate) {
-            return (X509Certificate) pemObject;
+        if (pemObject instanceof X509Certificate certificate) {
+            return certificate;
         }
-        if (pemObject instanceof X509CertificateHolder) {
+        if (pemObject instanceof X509CertificateHolder certificateHolder) {
             return new JcaX509CertificateConverter()
                     .setProvider(BouncyCastleProviderHolder.getInstance())
-                    .getCertificate((X509CertificateHolder) pemObject);
+                    .getCertificate(certificateHolder);
         }
-        throw new IllegalArgumentException("Invalid type of PEM object: " + pemObject);
+        if (pemObject instanceof PrivateKeyInfo) {
+            throw new IllegalArgumentException("Expected X509 certificate, but got private key");
+        }
+        throw new IllegalArgumentException("Invalid type of PEM object, got " + pemObject.getClass().getName());
     }
 
     public static String toPem(X509Certificate certificate) {

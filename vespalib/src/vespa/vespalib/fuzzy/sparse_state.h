@@ -1,14 +1,13 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/config.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <cstdint>
 #include <ostream>
 #include <span>
-#include <xxh3.h> // TODO factor out?
 
 namespace vespalib::fuzzy {
 
@@ -80,15 +79,8 @@ public:
         size_t operator()(const FixedSparseState& s) const noexcept {
             static_assert(std::is_same_v<uint32_t, std::decay_t<decltype(s.indices[0])>>);
             static_assert(std::is_same_v<uint8_t,  std::decay_t<decltype(s.costs[0])>>);
-            // FIXME GCC 12.2 worse-than-useless(tm) warning false positives :I
-#pragma GCC diagnostic push
-#ifdef VESPA_USE_SANITIZER
-#  pragma GCC diagnostic ignored "-Wstringop-overread" // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98465 etc.
-#endif
-#pragma GCC diagnostic ignored "-Warray-bounds"
-            return (XXH3_64bits(s.indices.data(), s.sz * sizeof(uint32_t)) ^
-                    XXH3_64bits(s.costs.data(), s.sz));
-#pragma GCC diagnostic pop
+            return (xxhash::xxh3_64(s.indices.data(), s.sz * sizeof(uint32_t)) ^
+                    xxhash::xxh3_64(s.costs.data(), s.sz));
         }
     };
 };

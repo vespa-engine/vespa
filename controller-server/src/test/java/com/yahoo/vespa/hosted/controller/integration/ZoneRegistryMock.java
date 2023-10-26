@@ -1,9 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
@@ -21,7 +19,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
@@ -217,36 +214,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public RoutingMethod routingMethod(ZoneId zone) {
         return Objects.requireNonNull(zoneRoutingMethods.get(ZoneApiMock.from(zone)));
-    }
-
-    @Override
-    public URI dashboardUrl() {
-        return URI.create("https://dashboard.tld");
-    }
-
-    @Override
-    public URI dashboardUrl(ApplicationId id) {
-        return URI.create("https://dashboard.tld/" + id);
-    }
-
-    @Override
-    public URI dashboardUrl(TenantName tenantName, ApplicationName applicationName) {
-        return URI.create("https://dashboard.tld/" + tenantName + "/" + applicationName);
-    }
-
-    @Override
-    public URI dashboardUrl(TenantName tenantName) {
-        return URI.create("https://dashboard.tld/" + tenantName);
-    }
-
-    @Override
-    public URI dashboardUrl(RunId id) {
-        return URI.create("https://dashboard.tld/" + id.application() + "/" + id.type().jobName() + "/" + id.number());
-    }
-
-    @Override
-    public URI supportUrl() {
-        return URI.create("https://help.tld");
     }
 
     @Override

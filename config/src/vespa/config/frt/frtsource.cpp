@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigrequest.h"
 #include "frtconfigresponse.h"
 #include "frtsource.h"
@@ -39,7 +39,7 @@ FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const
       _lock(),
       _inflight(),
       _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
-      _closed(false)
+      _state(State::OPEN)
 {
     LOG(spam, "New source!");
 }
@@ -68,6 +68,9 @@ FRTSource::getConfig()
     FRT_RPCRequest * req = request->getRequest();
     {
         std::lock_guard guard(_lock);
+        if (_state != State::OPEN) {
+            return;
+        }
         _inflight[req] = std::move(request);
     }
     connection->invoke(req, clientTimeout, this);
@@ -126,11 +129,19 @@ FRTSource::close()
 {
     RequestMap inflight;
     {
-        std::lock_guard guard(_lock);
-        if (_closed)
+        std::unique_lock guard(_lock);
+        if (_state != State::OPEN) {
+            while (_state != State::CLOSED) {
+                _cond.wait(guard); // Wait for first close to finish
+            }
             return;
-        LOG(spam, "Killing task");
-        _task->Kill();
+        }
+        _state = State::CLOSING;
+    }
+    LOG(spam, "Killing task");
+    _task->Kill();
+    {
+        std::lock_guard guard(_lock);
         inflight = _inflight;
     }
     LOG(spam, "Aborting");
@@ -144,14 +155,17 @@ FRTSource::close()
         _cond.wait(guard);
     }
     LOG(spam, "closed");
+    _state = State::CLOSED;
+    _cond.notify_all();
 }
 
 void
 FRTSource::scheduleNextGetConfig()
 {
     std::lock_guard guard(_lock);
-    if (_closed)
+    if (_state != State::OPEN) {
         return;
+    }
     double sec = vespalib::to_s(_agent->getWaitTime());
     LOG(debug, "Scheduling task in %f seconds", sec);
     _task->Schedule(sec);

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 /**
@@ -7,7 +7,7 @@ package com.yahoo.jdisc.http.server.jetty;
  * ensures some extra information is automatically added to the contents of
  * getMessage().
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ExceptionWrapper extends RuntimeException {
     private final String message;

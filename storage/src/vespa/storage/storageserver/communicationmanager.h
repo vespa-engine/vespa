@@ -1,11 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class CommunicationManager
- * @ingroup storageserver
- *
- * @brief Class used for sending messages over the network.
- *
- * @version $Id$
+ * Class used for sending messages over the network.
  */
 
 #pragma once
@@ -65,7 +60,6 @@ public:
 class CommunicationManager final
     : public StorageLink,
       public framework::Runnable,
-      private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
       public mbus::IMessageHandler,
       public mbus::IReplyHandler,
       private framework::MetricUpdateHook,
@@ -80,8 +74,6 @@ private:
     std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
     std::unique_ptr<rpc::MessageCodecProvider> _message_codec_provider;
     Queue _eventQueue;
-    // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     using EarlierProtocol = std::pair<vespalib::steady_time , mbus::IProtocol::SP>;
     using EarlierProtocols = std::vector<EarlierProtocol>;
     std::mutex       _earlierGenerationsLock;
@@ -89,6 +81,7 @@ private:
 
     void onOpen() override;
     void onClose() override;
+    void onFlush(bool downwards) override;
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
@@ -96,7 +89,6 @@ private:
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
-    void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
     void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
                                              const vespalib::string& error_message);
@@ -105,6 +97,7 @@ private:
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 
+    std::unique_ptr<CommunicationManagerConfig> _bootstrap_config;
     std::unique_ptr<mbus::RPCMessageBus> _mbus;
     std::unique_ptr<mbus::DestinationSession> _messageBusSession;
     std::unique_ptr<mbus::SourceSession> _sourceSession;
@@ -126,8 +119,11 @@ public:
     CommunicationManager(const CommunicationManager&) = delete;
     CommunicationManager& operator=(const CommunicationManager&) = delete;
     CommunicationManager(StorageComponentRegister& compReg,
-                         const config::ConfigUri & configUri);
+                         const config::ConfigUri& configUri,
+                         const CommunicationManagerConfig& bootstrap_config);
     ~CommunicationManager() override;
+
+    void on_configure(const CommunicationManagerConfig& config);
 
     // MessageDispatcher overrides
     void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override;

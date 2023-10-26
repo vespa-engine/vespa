@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search implicitstructtypes {
     document implicitstructtypes {
         field doc_str type string {
@@ -10,8 +10,8 @@ search implicitstructtypes {
         }
     }
     document-summary docsum {
-        summary docsum_str type string {
-            source: doc_str_sum
+        summary docsum_str {
+            source: doc_str
         }
     }
 }

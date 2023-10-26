@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class FloatResultNodeVector extends ResultNodeVector {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 110, FloatResultNodeVector.class);
+    public static final int classId = registerClass(0x4000 + 110, FloatResultNodeVector.class, FloatResultNodeVector::new);
     private ArrayList<FloatResultNode> vector = new ArrayList<FloatResultNode>();
 
     @Override
@@ -23,8 +23,7 @@ public class FloatResultNodeVector extends ResultNodeVector {
         return classId;
     }
 
-    public FloatResultNodeVector() {
-    }
+    public FloatResultNodeVector() {}
 
     public FloatResultNodeVector add(FloatResultNode v) {
         vector.add(v);

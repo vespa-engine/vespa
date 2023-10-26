@@ -1,7 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import ai.vespa.metrics.ControllerMetrics;
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
@@ -11,9 +14,9 @@ import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
@@ -30,7 +33,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Manages pool of ready-to-use randomized endpoint certificates
+ * Manages a pool of ready-to-use endpoint certificates.
  *
  * @author andreer
  */
@@ -44,7 +47,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final Metric metric;
     private final Controller controller;
     private final IntFlag certPoolSize;
-    private final String dnsSuffix;
     private final StringFlag endpointCertificateAlgo;
     private final BooleanFlag useAlternateCertProvider;
 
@@ -58,7 +60,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         this.curator = controller.curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
-        this.dnsSuffix = Endpoint.dnsSuffix(controller.system());
     }
 
     protected double maintain() {
@@ -72,10 +73,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             metric.set(ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.baseName(), (poolSize > 0 ? ((double)available/poolSize) : 1.0), metric.createContext(Map.of()));
 
             if (certificatePool.size() < poolSize) {
-                provisionRandomizedCertificate();
+                provisionCertificate();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Exception caught while maintaining pool of unused randomized endpoint certs", e);
+            log.log(Level.SEVERE, "Failed to maintain certificate pool", e);
             return 1.0;
         }
         return 0.0;
@@ -90,46 +91,49 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                     OptionalInt maxCertVersion = secretStore.listSecretVersions(cert.certificate().certName()).stream().mapToInt(i -> i).max();
                     if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
                         curator.writeUnassignedCertificate(cert.withState(UnassignedCertificate.State.ready));
-                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(cert.id()));
+                        log.log(Level.INFO, "Readied certificate %s".formatted(cert.id()));
                     }
                 } catch (SecretNotFoundException s) {
                     // Likely because the certificate is very recently provisioned - ignore till next time - should we log?
-                    log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(cert.id()));
+                    log.log(Level.INFO, "Cannot ready certificate %s yet, will retry in %s".formatted(cert.id(), interval()));
                 }
             }
         }
     }
 
-    private void provisionRandomizedCertificate() {
+    private void provisionCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Set<String> existingNames = controller.curator().readUnassignedCertificates().stream().map(UnassignedCertificate::id).collect(Collectors.toSet());
 
             curator.readAssignedCertificates().stream()
                    .map(AssignedCertificate::certificate)
-                   .map(EndpointCertificate::randomizedId)
+                   .map(EndpointCertificate::generatedId)
                    .forEach(id -> id.ifPresent(existingNames::add));
 
-            String id = generateRandomId();
-            while (existingNames.contains(id)) id = generateRandomId();
+            String id = generateId();
+            while (existingNames.contains(id)) id = generateId();
+            List<String> dnsNames = wildcardDnsNames(id);
+            EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
+                    "preprovisioned.%s".formatted(id),
+                    dnsNames,
+                    Optional.empty(),
+                    endpointCertificateAlgo.value(),
+                    useAlternateCertProvider.value()).withGeneratedId(id);
 
-            EndpointCertificate f = endpointCertificateProvider.requestCaSignedCertificate(
-                            "preprovisioned.%s".formatted(id),
-                            List.of(
-                                    "*.%s.z%s".formatted(id, dnsSuffix),
-                                    "*.%s.g%s".formatted(id, dnsSuffix),
-                                    "*.%s.a%s".formatted(id, dnsSuffix)
-                            ),
-                            Optional.empty(),
-                            endpointCertificateAlgo.value(),
-                            useAlternateCertProvider.value())
-                                                               .withRandomizedId(id);
-
-            UnassignedCertificate certificate = new UnassignedCertificate(f, UnassignedCertificate.State.requested);
+            UnassignedCertificate certificate = new UnassignedCertificate(cert, UnassignedCertificate.State.requested);
             curator.writeUnassignedCertificate(certificate);
         }
     }
 
-    private String generateRandomId() {
+    private List<String> wildcardDnsNames(String id) {
+        DeploymentId defaultDeployment = new DeploymentId(ApplicationId.defaultId(), ZoneId.defaultId());
+        return controller.routing().certificateDnsNames(defaultDeployment,    // Not used for non-legacy names
+                                                        DeploymentSpec.empty, // Not used for non-legacy names
+                                                        id,
+                                                        false);
+    }
+
+    private String generateId() {
         return GeneratedEndpoint.createPart(controller.random(true));
     }
 

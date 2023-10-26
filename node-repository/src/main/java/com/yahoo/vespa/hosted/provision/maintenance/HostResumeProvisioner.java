@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.CloudAccount;
@@ -61,10 +61,13 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
             } catch (FatalProvisioningException e) {
+                // FatalProvisioningException is thrown if node is not found in the cloud, allow for
+                // some time for the state to propagate
+                if (host.history().age(clock().instant()).getSeconds() < 30) continue;
                 failures++;
                 log.log(Level.SEVERE, "Failed to provision " + host.hostname() + ", failing out the host recursively", e);
-                nodeRepository().nodes().failOrMarkRecursively(
-                        host.hostname(), Agent.HostResumeProvisioner, "Failed by HostResumeProvisioner due to provisioning failure");
+                nodeRepository().nodes().parkRecursively(
+                        host.hostname(), Agent.HostResumeProvisioner, true, "Failed by HostResumeProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NamingException)
                     log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));

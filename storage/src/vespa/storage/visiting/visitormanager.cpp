@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitormanager.h"
 #include "messages.h"
@@ -21,7 +21,7 @@ LOG_SETUP(".visitor.manager");
 
 namespace storage {
 
-VisitorManager::VisitorManager(const config::ConfigUri & configUri,
+VisitorManager::VisitorManager(const StorVisitorConfig& bootstrap_config,
                                StorageComponentRegister& componentRegister,
                                VisitorMessageSessionFactory& messageSF,
                                VisitorFactory::Map externalFactories,
@@ -35,7 +35,6 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _visitorLock(),
       _visitorCond(),
       _visitorCounter(0),
-      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_shared<VisitorMetrics>()),
       _maxFixedConcurrentVisitors(1),
       _maxVariableConcurrentVisitors(0),
@@ -51,8 +50,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _enforceQueueUse(false),
       _visitorFactories(std::move(externalFactories))
 {
-    _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
-    _configFetcher->start();
+    on_configure(bootstrap_config);
     _component.registerMetric(*_metrics);
     if (!defer_manager_thread_start) {
         create_and_start_manager_thread();
@@ -94,8 +92,6 @@ VisitorManager::updateMetrics(const MetricLockGuard &)
 void
 VisitorManager::onClose()
 {
-        // Avoid getting config during shutdown
-    _configFetcher->close();
     {
         std::lock_guard sync(_visitorLock);
         for (auto& enqueued : _visitorQueue) {
@@ -118,25 +114,25 @@ VisitorManager::print(std::ostream& out, bool verbose, const std::string& indent
 }
 
 void
-VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig> config)
+VisitorManager::on_configure(const vespa::config::content::core::StorVisitorConfig& config)
 {
     std::lock_guard sync(_visitorLock);
-    if (config->defaultdocblocksize % 512 != 0) {
+    if (config.defaultdocblocksize % 512 != 0) {
         throw config::InvalidConfigException(
-                "The default docblock size needs to be a multiplum of the "
+                "The default docblock size needs to be a multiple of the "
                 "disk block size. (512b)");
     }
 
     // Do some sanity checking of input. Cannot haphazardly mix and match
     // old and new max concurrency config values
-    if (config->maxconcurrentvisitors == 0
-        && config->maxconcurrentvisitorsFixed == 0)
+    if (config.maxconcurrentvisitors == 0
+        && config.maxconcurrentvisitorsFixed == 0)
     {
         throw config::InvalidConfigException(
                 "Maximum concurrent visitor count cannot be 0.");
     }
-    else if (config->maxconcurrentvisitorsFixed == 0
-                 && config->maxconcurrentvisitorsVariable != 0)
+    else if (config.maxconcurrentvisitorsFixed == 0
+                 && config.maxconcurrentvisitorsVariable != 0)
     {
         throw config::InvalidConfigException(
                 "Cannot specify 'variable' parameter for max concurrent "
@@ -147,21 +143,21 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
     uint32_t maxConcurrentVisitorsVariable;
 
     // Concurrency parameter fixed takes precedence over legacy maxconcurrent
-    if (config->maxconcurrentvisitorsFixed > 0) {
-        maxConcurrentVisitorsFixed = config->maxconcurrentvisitorsFixed;
-        maxConcurrentVisitorsVariable = config->maxconcurrentvisitorsVariable;
+    if (config.maxconcurrentvisitorsFixed > 0) {
+        maxConcurrentVisitorsFixed = config.maxconcurrentvisitorsFixed;
+        maxConcurrentVisitorsVariable = config.maxconcurrentvisitorsVariable;
     } else {
-       maxConcurrentVisitorsFixed = config->maxconcurrentvisitors;
+       maxConcurrentVisitorsFixed = config.maxconcurrentvisitors;
        maxConcurrentVisitorsVariable = 0;
     }
 
     bool liveUpdate = !_visitorThread.empty();
     if (liveUpdate) {
-        if (_visitorThread.size() != static_cast<uint32_t>(config->visitorthreads)) {
+        if (_visitorThread.size() != static_cast<uint32_t>(config.visitorthreads)) {
             LOG(warning, "Ignoring config change requesting %u visitor "
                          "threads, still running %u. Restart storage to apply "
                          "change.",
-                         config->visitorthreads,
+                         config.visitorthreads,
                          (uint32_t) _visitorThread.size());
         }
 
@@ -174,18 +170,18 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
                 maxConcurrentVisitorsFixed, maxConcurrentVisitorsVariable);
         }
 
-        if (_maxVisitorQueueSize != static_cast<uint32_t>(config->maxvisitorqueuesize)) {
+        if (_maxVisitorQueueSize != static_cast<uint32_t>(config.maxvisitorqueuesize)) {
             LOG(info, "Altered max visitor queue size setting from %u to %u.",
-                      _maxVisitorQueueSize, config->maxvisitorqueuesize);
+                      _maxVisitorQueueSize, config.maxvisitorqueuesize);
         }
     } else {
-        if (config->visitorthreads == 0) {
+        if (config.visitorthreads == 0) {
             throw config::InvalidConfigException(
                     "No visitor threads configured. If you don't want visitors "
                     "to run, don't use visitormanager.", VESPA_STRLOC);
         }
-        _metrics->initThreads(config->visitorthreads);
-        for (int32_t i=0; i<config->visitorthreads; ++i) {
+        _metrics->initThreads(config.visitorthreads);
+        for (int32_t i=0; i<config.visitorthreads; ++i) {
             _visitorThread.emplace_back(
                     // Naked new due to a lot of private inheritance in VisitorThread and VisitorManager
                     std::shared_ptr<VisitorThread>(new VisitorThread(i, _componentRegister, _messageSessionFactory,
@@ -195,9 +191,9 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
     }
     _maxFixedConcurrentVisitors = maxConcurrentVisitorsFixed;
     _maxVariableConcurrentVisitors = maxConcurrentVisitorsVariable;
-    _maxVisitorQueueSize = config->maxvisitorqueuesize;
+    _maxVisitorQueueSize = config.maxvisitorqueuesize;
 
-    auto cmd = std::make_shared<PropagateVisitorConfig>(*config);
+    auto cmd = std::make_shared<PropagateVisitorConfig>(config);
     for (auto& thread : _visitorThread) {
         thread.first->processMessage(0, cmd);
     }

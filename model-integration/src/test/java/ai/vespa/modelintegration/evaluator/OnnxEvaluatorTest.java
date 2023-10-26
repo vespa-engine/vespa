@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package ai.vespa.modelintegration.evaluator;
 
@@ -9,8 +9,15 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -170,6 +177,29 @@ public class OnnxEvaluatorTest {
         evaluator.close();
     }
 
+    @Test
+    public void testLoggingMessages() throws IOException {
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
+        Logger logger = Logger.getLogger(OnnxEvaluator.class.getName());
+        CustomLogHandler logHandler = new CustomLogHandler();
+        logger.addHandler(logHandler);
+        var runtime = new OnnxRuntime();
+        var model = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
+        OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
+        options.setGpuDevice(0);
+        var evaluator = runtime.evaluatorOf(model,options);
+        evaluator.close();
+        List<LogRecord> records = logHandler.getLogRecords();
+        assertEquals(1,records.size());
+        assertEquals(Level.INFO,records.get(0).getLevel());
+        String message = records.get(0).getMessage();
+        assertEquals("Failed to create session with CUDA using GPU device 0. " +
+                "Falling back to CPU. Reason: Error code - ORT_EP_FAIL - message:" +
+                " Failed to find CUDA shared provider", message);
+        logger.removeHandler(logHandler);
+
+    }
+
     private void assertEvaluate(OnnxRuntime runtime, String model, String output, String... input) {
         OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/" + model);
         Map<String, Tensor> inputs = new HashMap<>();
@@ -180,6 +210,27 @@ public class OnnxEvaluatorTest {
         Tensor result = evaluator.evaluate(inputs, "output");
         assertEquals(expected, result);
         assertEquals(expected.type().valueType(), result.type().valueType());
+    }
+
+    static class CustomLogHandler extends Handler {
+        private List<LogRecord> records = new ArrayList<>();
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() throws SecurityException {
+        }
+
+        public List<LogRecord> getLogRecords() {
+            return records;
+        }
     }
 
 }

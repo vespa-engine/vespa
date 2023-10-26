@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -15,9 +15,9 @@ import java.nio.ByteBuffer;
  */
 public class IntegerResultNode extends NumericResultNode {
 
-    public static final int classId = registerClass(0x4000 + 107, IntegerResultNode.class);
-    private static IntegerResultNode negativeInfinity = new IntegerResultNode(Long.MIN_VALUE);
-    private static IntegerResultNode positiveInfinity = new IntegerResultNode(Long.MAX_VALUE);
+    public static final int classId = registerClass(0x4000 + 107, IntegerResultNode.class, IntegerResultNode::new);
+    private static final IntegerResultNode negativeInfinity = new IntegerResultNode(Long.MIN_VALUE);
+    private static final IntegerResultNode positiveInfinity = new IntegerResultNode(Long.MAX_VALUE);
     private long value;
 
     /**
@@ -138,13 +138,13 @@ public class IntegerResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Long.valueOf(value);
+        return value;
     }
 
     @Override
     protected int onCmp(ResultNode rhs) {
         long value = rhs.getInteger();
-        return (this.value < value) ? -1 : (this.value > value) ? 1 : 0;
+        return Long.compare(this.value, value);
     }
 
     @Override

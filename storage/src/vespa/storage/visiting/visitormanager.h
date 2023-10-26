@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * @class storage::VisitorManager
  * @ingroup storageserver
@@ -44,10 +44,11 @@ class VisitorManager : public framework::Runnable,
                        public StorageLink,
                        public framework::HtmlStatusReporter,
                        private VisitorMessageHandler,
-                       private config::IFetcherCallback<vespa::config::content::core::StorVisitorConfig>,
                        private framework::MetricUpdateHook
 {
 private:
+    using StorVisitorConfig = vespa::config::content::core::StorVisitorConfig;
+
     StorageComponentRegister& _componentRegister;
     VisitorMessageSessionFactory& _messageSessionFactory;
     std::vector<std::pair<std::shared_ptr<VisitorThread>,
@@ -64,7 +65,6 @@ private:
     mutable std::mutex      _visitorLock;
     std::condition_variable _visitorCond;
     uint64_t _visitorCounter;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::shared_ptr<VisitorMetrics> _metrics;
     uint32_t _maxFixedConcurrentVisitors;
     uint32_t _maxVariableConcurrentVisitors;
@@ -82,7 +82,7 @@ private:
     bool _enforceQueueUse;
     VisitorFactory::Map _visitorFactories;
 public:
-    VisitorManager(const config::ConfigUri & configUri,
+    VisitorManager(const StorVisitorConfig& bootstrap_config,
                    StorageComponentRegister&,
                    VisitorMessageSessionFactory&,
                    VisitorFactory::Map external = VisitorFactory::Map(),
@@ -93,6 +93,8 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     uint32_t getActiveVisitorCount() const;
     void setTimeBetweenTicks(uint32_t time);
+
+    void on_configure(const vespa::config::content::core::StorVisitorConfig&);
 
     void setMaxConcurrentVisitors(uint32_t count) { // Used in unit testing
         _maxFixedConcurrentVisitors = count;
@@ -122,7 +124,6 @@ public:
 
 private:
     using MonitorGuard = std::unique_lock<std::mutex>;
-    void configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig>) override;
     void run(framework::ThreadHandle&) override;
 
     /**

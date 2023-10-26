@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import java.util.List;
@@ -19,6 +19,10 @@ public interface PlanRegistry {
 
     /** Get a set of all plans */
     List<Plan> all();
+
+    default Plan require(String planId) {
+        return plan(planId).orElseThrow();
+    }
 
     /** Get a plan give a plan ID */
     default Optional<Plan> plan(String planId) {

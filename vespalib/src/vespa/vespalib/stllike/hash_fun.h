@@ -1,8 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <cstdint>
 
 namespace vespalib {
 
@@ -64,9 +63,18 @@ template<typename T> struct hash<const T *> {
     size_t operator() (const T * arg) const noexcept { return size_t(arg); }
 };
 
+namespace xxhash {
+
+uint64_t xxh3_64(uint64_t value) noexcept;
+uint64_t xxh3_64(const void *str, size_t sz) noexcept;
+
+}
+
 // reuse old string hash function
 size_t hashValue(const char *str) noexcept;
-size_t hashValue(const void *str, size_t sz) noexcept;
+inline size_t hashValue(const void *buf, size_t sz) noexcept {
+    return xxhash::xxh3_64(buf, sz);
+}
 
 struct hash_strings {
     size_t operator() (const vespalib::string & arg) const noexcept { return hashValue(arg.data(), arg.size()); }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -84,6 +84,13 @@ public class SyncFileInfo {
         } else if (filename.startsWith("start-services.out-")) {
             compression = Compression.ZSTD;
             dir = "logs/start-services/";
+        } else if (filename.startsWith("nginx-error")) {
+            compression = Compression.ZSTD;
+            if ("nginx-error.log".equals(filename)) {
+                if (!rotatedOnly) remoteFilename = "nginx-error.log";
+                minDurationBetweenSync = rotatedOnly ? Duration.ofHours(1) : Duration.ZERO;
+            }
+            dir = "logs/nginx/";
         } else {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
             if (rotatedOnly && compression != Compression.NONE)

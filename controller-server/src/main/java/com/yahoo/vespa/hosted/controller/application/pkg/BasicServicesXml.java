@@ -1,6 +1,9 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.text.XML;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
+import com.yahoo.vespa.hosted.controller.application.pkg.BasicServicesXml.Container.AuthMethod;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -37,22 +40,30 @@ public record BasicServicesXml(List<Container> containers) {
         for (var childNode : XML.getChildren(root)) {
             if (childNode.getTagName().equals(CONTAINER_TAG)) {
                 String id = childNode.getAttribute("id");
-                if (id.isEmpty()) throw new IllegalArgumentException(CONTAINER_TAG + " tag requires 'id' attribute");
-                List<Container.AuthMethod> methods = parseAuthMethods(childNode);
-                containers.add(new Container(id, methods));
+                if (id.isEmpty()) {
+                    id = CONTAINER_TAG; // ID defaults to tag name when unset. See ConfigModelBuilder::getIdString
+                }
+                List<Container.AuthMethod> methods = new ArrayList<>();
+                List<TokenId> tokens = new ArrayList<>();
+                parseAuthMethods(childNode, methods, tokens);
+                containers.add(new Container(id, methods, tokens));
             }
         }
         return new BasicServicesXml(containers);
     }
 
-    private static List<BasicServicesXml.Container.AuthMethod> parseAuthMethods(Element containerNode) {
-        List<BasicServicesXml.Container.AuthMethod> methods = new ArrayList<>();
+    private static void parseAuthMethods(Element containerNode, List<AuthMethod> methods, List<TokenId> tokens) {
         for (var node : XML.getChildren(containerNode)) {
             if (node.getTagName().equals(CLIENTS_TAG)) {
                 for (var clientNode : XML.getChildren(node)) {
                     if (clientNode.getTagName().equals(CLIENT_TAG)) {
-                        boolean tokenEnabled = XML.getChildren(clientNode).stream()
-                                                  .anyMatch(n -> n.getTagName().equals(TOKEN_TAG));
+                        boolean tokenEnabled = false;
+                        for (var child : XML.getChildren(clientNode)) {
+                            if (TOKEN_TAG.equals(child.getTagName())) {
+                                tokenEnabled = true;
+                                tokens.add(TokenId.of(child.getAttribute("id")));
+                            }
+                        }
                         methods.add(tokenEnabled ? Container.AuthMethod.token : Container.AuthMethod.mtls);
                     }
                 }
@@ -61,7 +72,6 @@ public record BasicServicesXml(List<Container> containers) {
         if (methods.isEmpty()) {
             methods.add(Container.AuthMethod.mtls);
         }
-        return methods;
     }
 
     /**
@@ -70,15 +80,16 @@ public record BasicServicesXml(List<Container> containers) {
      * @param id          ID of container
      * @param authMethods Authentication methods supported by this container
      */
-    public record Container(String id, List<AuthMethod> authMethods) {
+    public record Container(String id, List<AuthMethod> authMethods, List<TokenId> dataPlaneTokens) {
 
-        public Container(String id, List<AuthMethod> authMethods) {
+        public Container(String id, List<AuthMethod> authMethods, List<TokenId> dataPlaneTokens) {
             this.id = Objects.requireNonNull(id);
             this.authMethods = Objects.requireNonNull(authMethods).stream()
                                       .distinct()
                                       .sorted()
                                       .toList();
             if (authMethods.isEmpty()) throw new IllegalArgumentException("Container must have at least one auth method");
+            this.dataPlaneTokens = dataPlaneTokens.stream().sorted().distinct().toList();
         }
 
         public enum AuthMethod {

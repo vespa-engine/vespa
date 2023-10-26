@@ -1,29 +1,29 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/metrics/updatehook.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/metrics/updatehook.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/testhelper.h>
-#include <vespa/vdslib/state/random.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -148,7 +148,9 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noD
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
-    auto manager = std::make_unique<BucketManager>(config::ConfigUri(config.getConfigId()), _node->getComponentRegister());
+    auto config_uri = config::ConfigUri(config.getConfigId());
+    using vespa::config::content::core::StorServerConfig;
+    auto manager = std::make_unique<BucketManager>(*config_from<StorServerConfig>(config_uri), _node->getComponentRegister());
     _manager = manager.get();
     _top->push_back(std::move(manager));
     if (fakePersistenceLayer) {
@@ -156,7 +158,8 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noD
         _bottom = bottom.get();
         _top->push_back(std::move(bottom));
     } else {
-        auto bottom = std::make_unique<FileStorManager>(config::ConfigUri(config.getConfigId()),
+        using vespa::config::content::StorFilestorConfig;
+        auto bottom = std::make_unique<FileStorManager>(*config_from<StorFilestorConfig>(config_uri),
                                                         _node->getPersistenceProvider(), _node->getComponentRegister(),
                                                         *_node, _node->get_host_info());
         _top->push_back(std::move(bottom));

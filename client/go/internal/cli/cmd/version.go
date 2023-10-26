@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package cmd
 
 import (
@@ -22,7 +22,7 @@ func newVersionCmd(cli *CLI) *cobra.Command {
 	var skipVersionCheck bool
 	cmd := &cobra.Command{
 		Use:               "version",
-		Short:             "Show current version and check for updates",
+		Short:             "Show current CLI version and check for updates",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),

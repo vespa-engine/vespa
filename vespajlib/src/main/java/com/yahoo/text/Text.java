@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
 import java.util.Locale;
@@ -50,13 +50,12 @@ public final class Text {
 
         return (codepoint < 0x80)
                 ? allowedAsciiChars[codepoint]
-                : (codepoint <  Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
+                : (codepoint < Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
     }
     private static boolean isTextCharAboveMinSurrogate(int codepoint) {
-        if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
+        if (codepoint <= Character.MAX_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
-        if (codepoint <  0x10000)  return true;
         if (codepoint >= 0x10FFFE) return false;
         return (codepoint & 0xffff) < 0xFFFE;
     }
@@ -75,7 +74,7 @@ public final class Text {
             if (Character.isHighSurrogate(string.charAt(i))) {
                 if ( charCount == 1) {
                     return OptionalInt.of(string.codePointAt(i));
-                } else if ( !Character.isLowSurrogate(string.charAt(i+1))) {
+                } else if ( ! Character.isLowSurrogate(string.charAt(i+1))) {
                     return OptionalInt.of(string.codePointAt(i+1));
                 }
             }
@@ -171,15 +170,15 @@ public final class Text {
     }
 
     /**
-     * Returns a string which is never larger than the given number of characters.
+     * Returns a string which is never larger than the given number of code points.
      * If the string is longer than the given length it will be truncated.
      * If length is 4 or less the string will be truncated to length.
      * If length is longer than 4, it will be truncated at length-4 with " ..." added at the end.
      */
     public static String truncate(String s, int length) {
-        if (s.length() <= length) return s;
-        if (length <= 4) return s.substring(0, length);
-        return s.substring(0, length - 4) + " ...";
+        if (s.codePointCount(0, s.length()) <= length) return s;
+        if (length <= 4) return substringByCodepoints(s, 0, length);
+        return substringByCodepoints(s, 0, length - 4) + " ...";
     }
 
     public static String substringByCodepoints(String s, int fromCP, int toCP) {
@@ -209,4 +208,5 @@ public final class Text {
     public static String format(String format, Object... args) {
 	return String.format(Locale.US, format, args);
     }
+
 }

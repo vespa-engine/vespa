@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.completion;
 
 import com.yahoo.api.annotations.Beta;
@@ -19,8 +19,10 @@ public record Completion(String text, FinishReason finishReason) {
         length,
 
         /** The completion is the predicted ending of the prompt. */
-        stop
+        stop,
 
+        /** The completion is not finished yet, more tokens are incoming. */
+        none
     }
 
     public Completion(String text, FinishReason finishReason) {

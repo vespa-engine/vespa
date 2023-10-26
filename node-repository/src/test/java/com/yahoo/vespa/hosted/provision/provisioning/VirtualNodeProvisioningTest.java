@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -15,7 +15,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -594,7 +594,7 @@ public class VirtualNodeProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(5, 1, r)));
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
-        var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().applications().lock(app1)), new NestedTransaction());
+        var tx = new ApplicationTransaction(new ApplicationMutex(app1, tester.nodeRepository().applications().lock(app1)), new NestedTransaction());
         tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(Node.State.active).owner(app1).retired().asList(), tx);
         tx.nested().commit();
 

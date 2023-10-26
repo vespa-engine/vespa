@@ -1,11 +1,11 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**************************************************************************
  * Author: Bård Kvalheim
  *
  * A test suite. Modified from the suite written by Chuck Allison.
  * http://www.cuj.com/archive/1809/feature.html
  *
- * Licensed to Yahoo, and relicensed under the terms of the Apache 2.0 license
+ * Licensed to Vespa.ai, and relicensed under the terms of the Apache 2.0 license
  *
  * The usage of suite is simple:
  *

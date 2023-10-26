@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.document;
 
 import java.io.Serializable;
@@ -44,9 +44,8 @@ public class Ranking implements Cloneable, Serializable {
     /** Returns true if the given rank settings are the same */
     @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Ranking)) return false;
+        if ( ! (o instanceof Ranking other)) return false;
 
-        Ranking other=(Ranking)o;
         if (this.filter != other.filter) return false;
         if (this.literal != other.literal) return false;
         if (this.normal != other.normal) return false;

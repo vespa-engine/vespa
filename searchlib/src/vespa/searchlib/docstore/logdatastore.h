@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -71,6 +71,7 @@ public:
         WriteableFileChunk::Config  _fileConfig;
     };
 public:
+    using ConstBufferRef = vespalib::ConstBufferRef;
     /**
      * Construct a log based data store.
      * All files are stored in base directory.
@@ -117,8 +118,8 @@ public:
     Config & getConfig() { return _config; }
 
     void write(MonitorGuard guard, WriteableFileChunk & destination, uint64_t serialNum, uint32_t lid,
-               const void * buffer, size_t len, vespalib::CpuUsage::Category cpu_category);
-    void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len);
+               ConstBufferRef data, vespalib::CpuUsage::Category cpu_category);
+    void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, ConstBufferRef data);
 
     /**
      * This will spinn through the data and verify the content of both
@@ -155,7 +156,7 @@ public:
         if (lid < getDocIdLimit()) {
             return vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
         } else {
-            return LidInfo();
+            return {};
         }
     }
     FileId getActiveFileId(const MonitorGuard & guard) const;

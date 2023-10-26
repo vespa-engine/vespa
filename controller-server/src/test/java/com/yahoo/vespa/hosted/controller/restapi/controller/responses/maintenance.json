@@ -49,6 +49,9 @@
       "name": "CostReportMaintainer"
     },
     {
+      "name": "DataPlaneTokenRedeployer"
+    },
+    {
       "name": "DefaultOsUpgrader"
     },
     {
@@ -133,5 +136,7 @@
       "name": "VersionStatusUpdater"
     }
   ],
-  "inactive": ["DeploymentExpirer"]
+  "inactive": [
+    "DeploymentExpirer"
+  ]
 }

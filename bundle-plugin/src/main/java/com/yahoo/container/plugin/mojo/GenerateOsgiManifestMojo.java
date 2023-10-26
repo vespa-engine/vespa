@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.mojo;
 
 import com.google.common.collect.Sets;
 import com.yahoo.container.plugin.classanalysis.Analyze;
+import com.yahoo.container.plugin.classanalysis.Analyze.JdkVersionCheck;
 import com.yahoo.container.plugin.classanalysis.ClassFileMetaData;
 import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages;
@@ -337,7 +338,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory)
                 .filter(file -> file.getName().endsWith(".class"))
-                .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion)))
+                .map(classFile -> Analyze.analyzeClass(classFile, JdkVersionCheck.ENABLED, artifactVersionOrNull(bundleVersion)))
                 .toList();
 
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);

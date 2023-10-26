@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,14 +34,15 @@ class JDiscHttpServlet extends HttpServlet {
     public static final String ATTRIBUTE_NAME_ACCESS_LOG_ENTRY = JDiscHttpServlet.class.getName() + "_access-log-entry";
 
     private final static Logger log = Logger.getLogger(JDiscHttpServlet.class.getName());
-    private final JDiscContext context;
 
     private static final Set<String> servletSupportedMethods =
             Stream.of(Method.OPTIONS, Method.GET, Method.HEAD, Method.POST, Method.PUT, Method.DELETE, Method.TRACE)
                   .map(Method::name)
                   .collect(Collectors.toSet());
 
-    public JDiscHttpServlet(JDiscContext context) {
+    private final Supplier<JDiscContext> context;
+
+    public JDiscHttpServlet(Supplier<JDiscContext> context) {
         this.context = context;
     }
 
@@ -89,8 +91,8 @@ class JDiscHttpServlet extends HttpServlet {
         request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector((Request) request));
 
         Metric.Context metricContext = getMetricContext(request);
-        context.metric.add(MetricDefinitions.NUM_REQUESTS, 1, metricContext);
-        context.metric.add(MetricDefinitions.JDISC_HTTP_REQUESTS, 1, metricContext);
+        context.get().metric().add(MetricDefinitions.NUM_REQUESTS, 1, metricContext);
+        context.get().metric().add(MetricDefinitions.JDISC_HTTP_REQUESTS, 1, metricContext);
 
         String method = request.getMethod().toUpperCase();
         if (servletSupportedMethods.contains(method)) {
@@ -114,7 +116,7 @@ class JDiscHttpServlet extends HttpServlet {
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, metricContext, request, response).dispatchRequest();
+                    new HttpRequestDispatch(context.get(), accessLogEntry, metricContext, request, response).dispatchRequest();
                     break;
                 default:
                     if (log.isLoggable(Level.INFO)) {

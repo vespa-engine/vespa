@@ -1,17 +1,13 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,9 +21,9 @@ public class ContentClusterRemovalValidatorTest {
 
     @Test
     void testContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null, "contentClusterId.indexing").getFirst();
         try {
-            tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null);
+            tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null, "newContentClusterId.indexing");
             fail("Expected exception due to content cluster id change");
         }
         catch (IllegalArgumentException expected) {
@@ -39,8 +35,8 @@ public class ContentClusterRemovalValidatorTest {
 
     @Test
     void testOverridingContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
-        var result = tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        var result = tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride, "newContentClusterId.indexing"); // Allowed due to override
         assertEquals(result.getFirst().getContainerClusters().values().stream()
                            .flatMap(cluster -> cluster.getContainers().stream())
                            .map(container -> container.getServiceInfo())

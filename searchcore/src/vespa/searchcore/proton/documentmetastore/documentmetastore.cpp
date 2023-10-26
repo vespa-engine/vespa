@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastore.h"
 #include "documentmetastoresaver.h"
@@ -1066,8 +1066,7 @@ DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint3
 vespalib::GenerationHandler::Guard
 DocumentMetaStore::getGuard() const
 {
-    const vespalib::GenerationHandler & genHandler = getGenerationHandler();
-    return genHandler.takeGuard();
+    return getGenerationHandler().takeGuard();
 }
 
 uint64_t

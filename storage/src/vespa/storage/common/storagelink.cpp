@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagelink.h"
 #include <vespa/storageapi/messageapi/storagecommand.h>
@@ -13,6 +13,23 @@ LOG_SETUP(".application.link");
 using namespace storage::api;
 
 namespace storage {
+
+StorageLink::StorageLink(const std::string& name,
+                         MsgDownOnFlush allow_msg_down_during_flushing,
+                         MsgUpOnClosed allow_msg_up_during_closed)
+    : _name(name),
+      _up(nullptr),
+      _down(),
+      _state(CREATED),
+      _msg_down_during_flushing(allow_msg_down_during_flushing),
+      _msg_up_during_closed(allow_msg_up_during_closed)
+{
+}
+
+StorageLink::StorageLink(const std::string& name)
+    : StorageLink(name, MsgDownOnFlush::Disallowed, MsgUpOnClosed::Disallowed)
+{
+}
 
 StorageLink::~StorageLink() {
     LOG(debug, "Destructing link %s.", toString().c_str());
@@ -129,9 +146,15 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
         case CLOSING:
         case FLUSHINGDOWN:
             break;
+        case FLUSHINGUP:
+            if (_msg_down_during_flushing == MsgDownOnFlush::Allowed) {
+                break;
+            }
+            [[fallthrough]];
         default:
-            LOG(error, "Link %s trying to send %s down while in state %s",
-                toString().c_str(), msg->toString().c_str(), stateToString(getState()));
+            LOG(error, "Link %s trying to send %s down while in state %s. Stacktrace: %s",
+                toString().c_str(), msg->toString().c_str(), stateToString(getState()),
+                vespalib::getStackTrace(0).c_str());
             assert(false);
     }
     assert(msg);
@@ -171,9 +194,15 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
         case FLUSHINGDOWN:
         case FLUSHINGUP:
             break;
+        case CLOSED:
+            if (_msg_up_during_closed == MsgUpOnClosed::Allowed) {
+                break;
+            }
+            [[fallthrough]];
         default:
-            LOG(error, "Link %s trying to send %s up while in state %s",
-                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
+            LOG(error, "Link %s trying to send %s up while in state %s. Stacktrace: %s",
+                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()),
+                vespalib::getStackTrace(0).c_str());
             assert(false);
     }
     assert(msg);
@@ -281,15 +310,14 @@ Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration tim
 
 void
 Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
-    {
-        std::lock_guard sync(_lock);
-        _queue.emplace(std::move(msg));
-    }
+    std::lock_guard sync(_lock);
+    _queue.emplace(std::move(msg));
     _cond.notify_one();
 }
 
 void
 Queue::signal() {
+    std::lock_guard sync(_lock);
     _cond.notify_one();
 }
 

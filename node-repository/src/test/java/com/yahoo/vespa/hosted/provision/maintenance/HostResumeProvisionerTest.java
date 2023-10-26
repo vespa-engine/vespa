@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
@@ -98,7 +98,11 @@ public class HostResumeProvisionerTest {
                 Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(List::isEmpty));
 
         hostResumeProvisioner.maintain();
-        assertEquals(Set.of("host100", "host100-1"), tester.nodeRepository().nodes().list(Node.State.failed).hostnames());
+        assertEquals(Set.of(), tester.nodeRepository().nodes().list(Node.State.parked).deprovisioning().hostnames());
+        tester.clock().advance(Duration.ofSeconds(60));
+
+        hostResumeProvisioner.maintain();
+        assertEquals(Set.of("host100", "host100-1"), tester.nodeRepository().nodes().list(Node.State.parked).deprovisioning().hostnames());
     }
 
     private void deployApplication() {

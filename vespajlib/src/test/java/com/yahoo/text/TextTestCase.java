@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
 import org.junit.Ignore;
@@ -104,6 +104,9 @@ public class TextTestCase {
         assertEquals("",   Text.truncate("ab", 0));
         assertEquals("ab c",  Text.truncate("ab cde", 4));
         assertEquals("a ...", Text.truncate("ab cde", 5));
+        assertEquals("abc ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 7));
+        assertEquals("abc\uD83D\uDE48 ...", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 8));
+        assertEquals("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", Text.truncate("abc\uD83D\uDE48\uD83D\uDE49\uD83D\uDE4Adef", 9));
     }
 
     @Test
@@ -152,6 +155,6 @@ public class TextTestCase {
         sum = benchmarkIsValid(strings, 100000000);
         diff = System.nanoTime() - start;
         System.out.println("Validation num isValid = " + sum + ". Took " + diff + "ns");
-
     }
+
 }

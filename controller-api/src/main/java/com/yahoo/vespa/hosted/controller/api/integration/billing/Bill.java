@@ -1,22 +1,18 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -42,14 +38,22 @@ public class Bill {
     private final StatusHistory statusHistory;
     private final ZonedDateTime startTime;
     private final ZonedDateTime endTime;
+    private final String exportedId;
 
-    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems,
+                ZonedDateTime startTime, ZonedDateTime endTime) {
+        this(id, tenant, statusHistory, lineItems, startTime, endTime, null);
+    }
+
+    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems,
+                ZonedDateTime startTime, ZonedDateTime endTime, String exportedId) {
         this.id = id;
         this.tenant = tenant;
         this.lineItems = List.copyOf(lineItems);
         this.statusHistory = statusHistory;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.exportedId = exportedId;
     }
 
     public Id id() {
@@ -60,7 +64,7 @@ public class Bill {
         return tenant;
     }
 
-    public String status() {
+    public BillStatus status() {
         return statusHistory.current();
     }
 
@@ -78,6 +82,10 @@ public class Bill {
 
     public ZonedDateTime getEndTime() {
         return endTime;
+    }
+
+    public Optional<String> getExportedId() {
+        return Optional.ofNullable(exportedId);
     }
 
     public LocalDate getStartDate() {
@@ -196,6 +204,8 @@ public class Bill {
         private BigDecimal gpuCost;
         private NodeResources.Architecture architecture;
         private int majorVersion;
+        private CloudAccount cloudAccount;
+        private String exportedId;
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
             this.id = id;
@@ -204,10 +214,15 @@ public class Bill {
             this.plan = plan;
             this.agent = agent;
             this.addedAt = addedAt;
+            this.cloudAccount = CloudAccount.empty;
         }
 
-        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture, int majorVersion) {
+        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt,
+                        ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours, BigDecimal cpuCost,
+                        BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture,
+                        int majorVersion, CloudAccount cloudAccount, String exportedId)
+        {
             this(id, description, amount, plan, agent, addedAt);
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -227,6 +242,8 @@ public class Bill {
             this.architecture = architecture;
             this.majorVersion = majorVersion;
             this.gpuCost = gpuCost;
+            this.cloudAccount = cloudAccount;
+            this.exportedId = exportedId;
         }
 
         /** The opaque ID of this */
@@ -319,6 +336,14 @@ public class Bill {
             return majorVersion;
         }
 
+        public CloudAccount getCloudAccount() {
+            return cloudAccount;
+        }
+
+        public Optional<String> getExportedId() {
+            return Optional.ofNullable(exportedId);
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -357,30 +382,6 @@ public class Bill {
                     ", zoneId=" + zoneId +
                     '}';
         }
-    }
-
-    public static class StatusHistory {
-        SortedMap<ZonedDateTime, String> history;
-
-        public StatusHistory(SortedMap<ZonedDateTime, String> history) {
-            this.history = history;
-        }
-
-        public static StatusHistory open(Clock clock) {
-            var now = clock.instant().atZone(ZoneOffset.UTC);
-            return new StatusHistory(
-                    new TreeMap<>(Map.of(now, "OPEN"))
-            );
-        }
-
-        public String current() {
-            return history.get(history.lastKey());
-        }
-
-        public SortedMap<ZonedDateTime, String> getHistory() {
-            return history;
-        }
-
     }
 
 }

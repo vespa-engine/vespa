@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 import com.yahoo.messagebus.routing.Route;
@@ -48,7 +48,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
      */
     SourceSession(MessageBus mbus, SourceSessionParams params) {
         this.mbus = mbus;
-        sequencer = new Sequencer(mbus);
+        sequencer = new Sequencer(mbus, mbus.messenger());
         if (!params.hasReplyHandler()) {
              throw new NullPointerException("Reply handler is null.");
         }

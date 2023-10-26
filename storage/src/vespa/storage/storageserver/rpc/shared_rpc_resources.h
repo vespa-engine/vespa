@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "rpc_target_factory.h"
@@ -41,6 +41,8 @@ public:
     const slobrok::api::MirrorAPI& slobrok_mirror() const noexcept { return *_slobrok_mirror; }
     // To be called after all RPC handlers have been registered.
     void start_server_and_register_slobrok(vespalib::stringref my_handle);
+
+    void sync_all_threads();
 
     void shutdown();
     [[nodiscard]] int listen_port() const noexcept; // Only valid if server has been started

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -93,12 +93,13 @@ public class ApplicationApiHandler extends SessionHandler {
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
-                // Multipart exception happens when controller abandons the request due to other exceptions while deploying.
-                log.log(e instanceof MultiPartFormParser.MultiPartException ? FINE : WARNING,
-                        "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "': " + Exceptions.toMessageString(e));
-
                 var message = "Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage();
-                log.log(INFO, message + ", parts: " + parts, e);
+                if (e instanceof MultiPartFormParser.MultiPartException)
+                    log.log(INFO, "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "': " +
+                            Exceptions.toMessageString(e) + ". This is usually caused by controller abandoning request " +
+                            "while streaming data to config server");
+                else
+                    log.log(INFO, message + ", parts: " + parts, e);
                 throw new BadRequestException(message);
             }
         } else {

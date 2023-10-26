@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
 import com.yahoo.schema.document.Stemming;
@@ -119,6 +119,9 @@ public class SchemaTestCase {
                         "    field pf1 type string {" +
                         "      indexing: summary" +
                         "    }" +
+                        "    field pf2 type string {" +
+                        "      indexing: summary" +
+                        "    }" +
                         "  }" +
                         "  fieldset parent_set {" +
                         "    fields: pf1" +
@@ -139,8 +142,11 @@ public class SchemaTestCase {
                         "  onnx-model parent_model {" +
                         "    file: models/my_model.onnx" +
                         "  }" +
-                        "  document-summary parent_summary {" +
-                        "    summary pf1 type string {}" +
+                        "  document-summary parent_summary1 {" +
+                        "    summary pf1 {}" +
+                        "  }" +
+                        "  document-summary parent_summary2 {" +
+                        "    summary pf2 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
                         "  raw-as-base64-in-summary" +
@@ -170,8 +176,8 @@ public class SchemaTestCase {
                         "  onnx-model child1_model {" +
                         "    file: models/my_model.onnx" +
                         "  }" +
-                        "  document-summary child1_summary inherits parent_summary {" +
-                        "    summary c1f1 type string {}" +
+                        "  document-summary child1_summary inherits parent_summary1 {" +
+                        "    summary c1f1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as child1_imported {}" +
                         "}");
@@ -201,8 +207,8 @@ public class SchemaTestCase {
                         "  onnx-model child2_model {" +
                         "    file: models/my_model.onnx" +
                         "  }" +
-                        "  document-summary child2_summary inherits parent_summary {" +
-                        "    summary c2f1 type string {}" +
+                        "  document-summary child2_summary inherits parent_summary1, parent_summary2 {" +
+                        "    summary c2f1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as child2_imported {}" +
                         "}");
@@ -239,14 +245,15 @@ public class SchemaTestCase {
         assertNotNull(child1.onnxModels().get("child1_model"));
         assertTrue(child1.onnxModels().containsKey("parent_model"));
         assertTrue(child1.onnxModels().containsKey("child1_model"));
-        assertNotNull(child1.getSummary("parent_summary"));
+        assertNotNull(child1.getSummary("parent_summary1"));
         assertNotNull(child1.getSummary("child1_summary"));
-        assertEquals("parent_summary", child1.getSummary("child1_summary").inherited().get().getName());
-        assertTrue(child1.getSummaries().containsKey("parent_summary"));
+        assertEquals("parent_summary1", child1.getSummary("child1_summary").inherited().get(0).getName());
+        assertTrue(child1.getSummaries().containsKey("parent_summary1"));
         assertTrue(child1.getSummaries().containsKey("child1_summary"));
         assertNotNull(child1.getSummaryField("pf1"));
         assertNotNull(child1.getSummaryField("c1f1"));
         assertNotNull(child1.getExplicitSummaryField("pf1"));
+        assertNotNull(child1.getExplicitSummaryField("pf2"));
         assertNotNull(child1.getExplicitSummaryField("c1f1"));
         assertNotNull(child1.getUniqueNamedSummaryFields().get("pf1"));
         assertNotNull(child1.getUniqueNamedSummaryFields().get("c1f1"));
@@ -274,24 +281,29 @@ public class SchemaTestCase {
         assertNotNull(child2.onnxModels().get("child2_model"));
         assertTrue(child2.onnxModels().containsKey("parent_model"));
         assertTrue(child2.onnxModels().containsKey("child2_model"));
-        assertNotNull(child2.getSummary("parent_summary"));
+        assertNotNull(child2.getSummary("parent_summary1"));
+        assertNotNull(child2.getSummary("parent_summary2"));
         assertNotNull(child2.getSummary("child2_summary"));
-        assertEquals("parent_summary", child2.getSummary("child2_summary").inherited().get().getName());
-        assertTrue(child2.getSummaries().containsKey("parent_summary"));
+        assertEquals("parent_summary1", child2.getSummary("child2_summary").inherited().get(0).getName());
+        assertEquals("parent_summary2", child2.getSummary("child2_summary").inherited().get(1).getName());
+        assertTrue(child2.getSummaries().containsKey("parent_summary1"));
+        assertTrue(child2.getSummaries().containsKey("parent_summary2"));
         assertTrue(child2.getSummaries().containsKey("child2_summary"));
         assertNotNull(child2.getSummaryField("pf1"));
         assertNotNull(child2.getSummaryField("c2f1"));
         assertNotNull(child2.getExplicitSummaryField("pf1"));
         assertNotNull(child2.getExplicitSummaryField("c2f1"));
         assertNotNull(child2.getUniqueNamedSummaryFields().get("pf1"));
+        assertNotNull(child2.getUniqueNamedSummaryFields().get("pf2"));
         assertNotNull(child2.getUniqueNamedSummaryFields().get("c2f1"));
         assertNotNull(child2.temporaryImportedFields().get().fields().get("parent_imported"));
         assertNotNull(child2.temporaryImportedFields().get().fields().get("child2_imported"));
         DocumentSummary child2DefaultSummary = child2.getSummary("default");
-        assertEquals(6, child2DefaultSummary.getSummaryFields().size());
+        assertEquals(7, child2DefaultSummary.getSummaryFields().size());
         assertTrue(child2DefaultSummary.getSummaryFields().containsKey("child2_field"));
         assertTrue(child2DefaultSummary.getSummaryFields().containsKey("parent_field"));
         assertTrue(child2DefaultSummary.getSummaryFields().containsKey("pf1"));
+        assertTrue(child2DefaultSummary.getSummaryFields().containsKey("pf2"));
         assertTrue(child2DefaultSummary.getSummaryFields().containsKey("c2f1"));
         DocumentSummary child2AttributeprefetchSummary = child2.getSummary("attributeprefetch");
         assertEquals(4, child2AttributeprefetchSummary.getSummaryFields().size());
@@ -328,7 +340,7 @@ public class SchemaTestCase {
                         "    file: models/my_model.onnx" +
                         "  }" +
                         "  document-summary parent_summary {" +
-                        "    summary pf1 type string {}" +
+                        "    summary pf1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
                         "  raw-as-base64-in-summary" +

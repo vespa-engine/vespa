@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "logdatastore.h"
 #include "storebybucket.h"
@@ -22,8 +22,8 @@ namespace fs = std::filesystem;
 namespace search {
 
 namespace {
-    constexpr size_t DEFAULT_MAX_FILESIZE = 1000000000ul;
-    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32_Mi;
+    constexpr size_t DEFAULT_MAX_FILESIZE = 256_Mi;
+    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 1_Mi;
 }
 
 using common::FileHeaderContext;
@@ -187,22 +187,22 @@ LogDataStore::write(uint64_t serialNum, uint32_t lid, const void * buffer, size_
 {
     std::unique_lock guard(_updateLock);
     WriteableFileChunk & active = getActive(guard);
-    write(std::move(guard), active, serialNum,  lid, buffer, len, CpuCategory::WRITE);
+    write(std::move(guard), active, serialNum,  lid, {buffer, len}, CpuCategory::WRITE);
 }
 
 void
-LogDataStore::write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len)
+LogDataStore::write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, ConstBufferRef data)
 {
     auto & destination = static_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
-    write(std::move(guard), destination, destination.getSerialNum(), lid, buffer, len, CpuCategory::COMPACT);
+    write(std::move(guard), destination, destination.getSerialNum(), lid, data, CpuCategory::COMPACT);
 }
 
 void
 LogDataStore::write(MonitorGuard guard, WriteableFileChunk & destination,
-                    uint64_t serialNum, uint32_t lid, const void * buffer, size_t len,
+                    uint64_t serialNum, uint32_t lid, ConstBufferRef data,
                     CpuUsage::Category cpu_category)
 {
-    LidInfo lm = destination.append(serialNum, lid, buffer, len, cpu_category);
+    LidInfo lm = destination.append(serialNum, lid, data, cpu_category);
     setLid(guard, lid, lm);
     if (destination.getFileId() == getActiveFileId(guard)) {
         requireSpace(std::move(guard), destination, cpu_category);
@@ -263,7 +263,7 @@ vespalib::system_time
 LogDataStore::getLastFlushTime() const
 {
     if (lastSyncToken() == 0) {
-        return vespalib::system_time();
+        return {};
     }
     MonitorGuard guard(_updateLock);
     vespalib::system_time timeStamp(getActive(guard).getModificationTime());
@@ -286,7 +286,7 @@ LogDataStore::remove(uint64_t serialNum, uint32_t lid)
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
         }
-        lm = getActive(guard).append(serialNum, lid, nullptr, 0, CpuCategory::WRITE);
+        lm = getActive(guard).append(serialNum, lid, {}, CpuCategory::WRITE);
         assert( lm.empty() );
         vespalib::atomic::store_ref_release(_lidInfo[lid], lm);
     }
@@ -450,20 +450,24 @@ void LogDataStore::compactFile(FileId fileId)
     NameId compactedNameId = fc->getNameId();
     LOG(info, "Compacting file '%s' which has bloat '%2.2f' and bucket-spread '%1.4f",
               fc->getName().c_str(), 100*fc->getDiskBloat()/double(fc->getDiskFootprint()), fc->getBucketSpread());
-    IWriteData::UP compacter;
+    std::unique_ptr<IWriteData> compacter;
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
-        size_t disk_footprint = fc->getDiskFootprint();
-        size_t disk_bloat = fc->getDiskBloat();
-        size_t compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        size_t compacted_size;
+        {
+            MonitorGuard guard(_updateLock);
+            size_t disk_footprint = fc->getDiskFootprint();
+            size_t disk_bloat = fc->getDiskBloat();
+            compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        }
         if ( ! shouldCompactToActiveFile(compacted_size)) {
             MonitorGuard guard(_updateLock);
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
-        compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this, _executor,
-                                            *_bucketizer, fc->getFileId(), destinationFileId);
+        compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this,
+                                                      _executor, *_bucketizer, fc->getFileId(), destinationFileId);
     } else {
         compacter = std::make_unique<docstore::Compacter>(*this);
     }
@@ -645,7 +649,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
         if (fc && (fc->getNameId() == nameId)) {
             LOG(error, "We already have a file registered with internal fileId=%u, and external nameId=%" PRIu64,
                        fileId.getId(), nameId.getId());
-            return FileChunk::UP();
+            return {};
         }
     }
     uint32_t docIdLimit = (getDocIdLimit() != 0) ? getDocIdLimit() : std::numeric_limits<uint32_t>::max();
@@ -721,7 +725,7 @@ LogDataStore::verifyModificationTime(const NameIdSet & partList)
     vespalib::string datName(createDatFileName(nameId));
     vespalib::string idxName(createIdxFileName(nameId));
     vespalib::file_time prevDatTime = fs::last_write_time(fs::path(datName));
-    vespalib::file_time prevIdxTime = fs::last_write_time(fs::path(idxName));;
+    vespalib::file_time prevIdxTime = fs::last_write_time(fs::path(idxName));
     for (auto it(++partList.begin()), mt(partList.end()); it != mt; ++it) {
         vespalib::string prevDatNam(datName);
         vespalib::string prevIdxNam(idxName);
@@ -729,7 +733,7 @@ LogDataStore::verifyModificationTime(const NameIdSet & partList)
         datName = createDatFileName(nameId);
         idxName = createIdxFileName(nameId);
         vespalib::file_time datTime = fs::last_write_time(fs::path(datName));
-        vespalib::file_time idxTime = fs::last_write_time(fs::path(idxName));;
+        vespalib::file_time idxTime = fs::last_write_time(fs::path(idxName));
         ns_log::Logger::LogLevel logLevel = ns_log::Logger::debug;
         if ((datTime < prevDatTime) && hasNonHeaderData(datName)) {
             VLOG(logLevel, "Older file '%s' is newer (%s) than file '%s' (%s)\nDirectory =\n%s",
@@ -992,10 +996,10 @@ class LogDataStore::WrapVisitor : public IWriteData
     IDataStoreVisitor &_visitor;
     
 public:
-    void write(MonitorGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
+    void write(MonitorGuard guard, uint32_t chunkId, uint32_t lid, ConstBufferRef data) override {
         (void) chunkId;
         guard.unlock();
-        _visitor.visit(lid, buffer, sz);
+        _visitor.visit(lid, data.c_str(), data.size());
     }
 
     WrapVisitor(IDataStoreVisitor &visitor) : _visitor(visitor) { }

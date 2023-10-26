@@ -1,9 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -96,12 +94,6 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
-    // TODO: Remove after July 2023
-    @Deprecated
-    public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
-    }
-
     /** Creates a ClusterSpec when requesting a cluster */
     public static Builder request(Type type, Id id) {
         return new Builder(type, id);
@@ -121,6 +113,7 @@ public final class ClusterSpec {
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
+        private boolean provisionForApplication = false;
         private Optional<Id> combinedId = Optional.empty();
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
@@ -152,6 +145,11 @@ public final class ClusterSpec {
 
         public Builder exclusive(boolean exclusive) {
             this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder provisionForApplication(boolean provisionForApplication) {
+            this.provisionForApplication = provisionForApplication;
             return this;
         }
 

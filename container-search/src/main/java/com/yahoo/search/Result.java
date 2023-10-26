@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
 import com.yahoo.collections.ListMap;
@@ -70,8 +70,8 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      */
     public Result(Query query, HitGroup hits) {
         super(query);
-        if (query==null) throw new NullPointerException("The query reference in a result cannot be null");
-        this.hits=hits;
+        if (query == null) throw new NullPointerException("The query reference in a result cannot be null");
+        this.hits = hits;
         hits.setQuery(query);
         if (query.getRanking().getSorting() != null) {
             setHitOrderer(new HitSortOrderer(query.getRanking().getSorting()));

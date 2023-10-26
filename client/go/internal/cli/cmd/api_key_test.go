@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Author: mpolden
 
 package cmd
@@ -25,7 +25,7 @@ func testAPIKey(t *testing.T, subcommand []string) {
 	err = cli.Run(args...)
 	assert.Nil(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "Success: API private key written to")
+	assert.Contains(t, stdout.String(), "Success: Developer private key written to")
 
 	err = cli.Run(subcommand...)
 	assert.NotNil(t, err)

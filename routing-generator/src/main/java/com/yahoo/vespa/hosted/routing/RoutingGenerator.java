@@ -1,6 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.routing;
 
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.SystemInfo;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -29,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,13 +62,14 @@ public class RoutingGenerator extends AbstractComponent {
     private volatile RoutingTable routingTable = null;
 
     @Inject
-    public RoutingGenerator(ZoneConfig zoneConfig, RoutingStatus routingStatus, Metric metric) {
+    public RoutingGenerator(ZoneConfig zoneConfig, RoutingStatus routingStatus, Metric metric, SystemInfo systemInfo) {
         this(new ConfigSourceSet(zoneConfig.configserver()), new Nginx(FileSystems.getDefault(),
                                                                        new ProcessExecuter(),
                                                                        Sleeper.DEFAULT,
                                                                        Clock.systemUTC(),
                                                                        routingStatus,
-                                                                       metric),
+                                                                       metric,
+                                                                       systemInfo.zone().environment() == Environment.prod),
              Clock.systemUTC());
     }
 

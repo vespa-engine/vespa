@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package vespa
 
@@ -37,6 +37,7 @@ const (
 )
 
 var errWaitTimeout = errors.New("wait timed out")
+var errAuth = errors.New("auth failed")
 
 // Authenticator authenticates the given HTTP request.
 type Authenticator interface {
@@ -108,12 +109,10 @@ type LogOptions struct {
 
 // Do sends request to this service. Authentication of the request happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	s.once.Do(func() {
-		util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
-	})
+	util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", errAuth, err)
 		}
 	}
 	return s.httpClient.Do(request, timeout)
@@ -124,12 +123,8 @@ func (s *Service) SetClient(client util.HTTPClient) { s.httpClient = client }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) error {
-	url := s.BaseURL
-	if s.deployAPI {
-		url += "/status.html" // because /ApplicationStatus is not publicly reachable in Vespa Cloud
-	} else {
-		url += "/ApplicationStatus"
-	}
+	// A path that does not need authentication, on any target
+	url := strings.TrimRight(s.BaseURL, "/") + "/status.html"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -220,7 +215,9 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
 		response, err = service.Do(reqFn(), 10*time.Second)
-		if err == nil {
+		if errors.Is(err, errAuth) {
+			return status, fmt.Errorf("aborting wait: %w", err)
+		} else if err == nil {
 			status = response.StatusCode
 			body, err := io.ReadAll(response.Body)
 			if err != nil {

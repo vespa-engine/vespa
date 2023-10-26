@@ -1,6 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -8,9 +10,13 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -41,7 +47,7 @@ public class ImplicitIndexingClusterTest {
 
 
         VespaModel vespaModel = buildMultiTenantVespaModel(servicesXml);
-        ContainerCluster jdisc = vespaModel.getContainerClusters().get("jdisc");
+        ContainerCluster<ApplicationContainer> jdisc = vespaModel.getContainerClusters().get("jdisc");
         assertNotNull(jdisc.getDocproc(), "Docproc not added to jdisc");
         assertNotNull(jdisc.getDocprocChains().allChains().getComponent("indexing"), "Indexing chain not added to jdisc");
     }
@@ -50,6 +56,7 @@ public class ImplicitIndexingClusterTest {
         ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .properties(properties)
+                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .modelHostProvisioner(new InMemoryProvisioner(6, false));
 
         return new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()

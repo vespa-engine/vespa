@@ -1,6 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -161,16 +162,17 @@ VisitorTest::initializeTest(const TestParams& params)
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d1", rootFolder.c_str())));
 
-    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
     if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
         _messageSessionFactory->_autoReplyError = params._autoReplyError;
         _messageSessionFactory->_createAutoReplyVisitorSessions = true;
     }
     _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
     _top = std::make_unique<DummyStorageLink>();
+    using vespa::config::content::core::StorVisitorConfig;
+    auto bootstrap_cfg = config_from<StorVisitorConfig>(config::ConfigUri(config.getConfigId()));
     _top->push_back(std::unique_ptr<StorageLink>(_manager
-            = new VisitorManager(config::ConfigUri(config.getConfigId()),
-                                 _node->getComponentRegister(), *_messageSessionFactory)));
+            = new VisitorManager(*bootstrap_cfg, _node->getComponentRegister(), *_messageSessionFactory)));
     _bottom = new DummyStorageLink();
     _top->push_back(std::unique_ptr<StorageLink>(_bottom));
     _manager->setTimeBetweenTicks(10);

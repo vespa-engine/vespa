@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
 import com.yahoo.component.chain.dependencies.Before;
@@ -22,12 +22,13 @@ import java.util.Iterator;
 @Before(GroupingExecutor.COMPONENT_NAME)
 public class FlatteningSearcher extends Searcher {
 
-    private final CompoundName flatten = CompoundName.from("grouping.flatten");
+    private final CompoundName groupingFlatten = CompoundName.from("grouping.flatten");
+    private final CompoundName flatten = CompoundName.from("flatten");
 
     @Override
     public Result search(Query query, Execution execution) {
+        if ( ! query.properties().getBoolean(groupingFlatten, true)) return execution.search(query);
         if ( ! query.properties().getBoolean(flatten, true)) return execution.search(query);
-        if ( ! query.properties().getBoolean("flatten", true)) return execution.search(query);
 
         query.trace("Flattening groups", 2);
         int originalHits = query.getHits();

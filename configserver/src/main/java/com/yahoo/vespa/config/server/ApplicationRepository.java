@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import ai.vespa.http.DomainName;
@@ -476,10 +476,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .flatMap(ApplicationData::lastDeployedSession);
         if (lastDeployedSession.isEmpty()) return activationTime(application);
 
-        Instant createTime = getRemoteSession(tenant, lastDeployedSession.get()).getCreateTime();
+        Optional<Instant> createTime;
+        try {
+            createTime = Optional.of(getRemoteSession(tenant, lastDeployedSession.get()).getCreateTime());
+        }
+        catch (Exception e) {
+            // Fallback to activation time, e.g. when last deployment failed before writing session data for new session
+            createTime = activationTime(application);
+        }
         log.log(Level.FINEST, application + " last deployed " + createTime);
 
-        return Optional.of(createTime);
+        return createTime;
     }
 
     @Override
@@ -501,7 +508,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Session session = getLocalSession(tenant, sessionId);
         Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
-        return session.getApplicationId();
+        return sessionRepository(tenant).read(session).applicationId();
     }
 
     public Transaction deactivateCurrentActivateNew(Optional<Session> active, Session prepared, boolean force) {
@@ -556,6 +563,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                   currentActiveSessionId + ")");
         }
     }
+
+    private static SessionRepository sessionRepository(Tenant tenant) { return tenant.getSessionRepository(); }
 
     // ---------------- Application operations ----------------------------------------------------------------
 
@@ -651,11 +660,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant);
 
         List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse, instant);
-        if (fileReferencesToDelete.size() > 0) {
-            log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
+        // Do max 20 at a time
+        var toDelete = fileReferencesToDelete.subList(0, Math.min(fileReferencesToDelete.size(), 20));
+        if (toDelete.size() > 0) {
+            log.log(Level.FINE, () -> "Will delete file references not in use: " + toDelete);
+            toDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
+            log.log(Level.FINE, () -> "Deleted " + toDelete.size() + " file references not in use");
         }
-        return fileReferencesToDelete;
+        return toDelete;
     }
 
     private boolean isFileReferenceInUse(FileReference fileReference) {
@@ -675,7 +687,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Instant instant) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(Level.FINEST, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))

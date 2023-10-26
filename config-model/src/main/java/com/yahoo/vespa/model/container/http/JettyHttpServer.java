@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
@@ -9,6 +9,7 @@ import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.ArrayList;
@@ -24,23 +25,21 @@ import java.util.TreeSet;
 public class JettyHttpServer extends SimpleComponent implements ServerConfig.Producer {
 
     private final ContainerCluster<?> cluster;
-    private volatile boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
     private final SortedSet<String> ignoredUserAgentsList = new TreeSet<>();
 
     public JettyHttpServer(String componentId, ContainerCluster<?> cluster, DeployState deployState) {
         super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
-        this.isHostedVespa = deployState.isHosted();
         this.cluster = cluster;
-        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
+        FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
-        inject(filterBindingsProviderComponent);
+        addChild(new SimpleComponent(childComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext.class.getName())) {
+            { inject(filterBindingsProviderComponent); }
+        });
         for (String agent : deployState.featureFlags().ignoredHttpUserAgents()) {
             addIgnoredUserAgent(agent);
         }
     }
-
-    public void setHostedVespa(boolean isHostedVespa) { this.isHostedVespa = isHostedVespa; }
 
     public void addConnector(ConnectorFactory connectorFactory) {
         connectorFactories.add(connectorFactory);
@@ -62,10 +61,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                 .ignoredUserAgents(ignoredUserAgentsList)
                 .searchHandlerPaths(List.of("/search"))
         );
-        if (isHostedVespa) {
-            // Enable connection log hosted Vespa
+        if (cluster.getAllComponents().stream().anyMatch(c -> c instanceof ConnectionLogComponent))
             builder.connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
-        }
         configureJettyThreadpool(builder);
         builder.stopTimeout(300);
     }
@@ -79,7 +76,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         }
     }
 
-    static ComponentModel providerComponentModel(String parentId, String className) {
+    static ComponentModel childComponentModel(String parentId, String className) {
         final ComponentSpecification classNameSpec = new ComponentSpecification(
                 className);
         return new ComponentModel(new BundleInstantiationSpecification(
@@ -90,9 +87,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
 
     public static final class FilterBindingsProviderComponent extends SimpleComponent {
         public FilterBindingsProviderComponent(String parentId) {
-            super(providerComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
+            super(childComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
         }
-
     }
 
 }

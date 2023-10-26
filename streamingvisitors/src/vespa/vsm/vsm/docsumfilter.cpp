@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumfilter.h"
 #include <vespa/juniper/juniper_separators.h>
@@ -132,6 +132,7 @@ public:
     }
     ~SnippetModifierJuniperConverter() override = default;
     void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    bool render_weighted_set_as_array() const override;
 };
 
 void
@@ -145,6 +146,12 @@ SnippetModifierJuniperConverter::convert(const document::StringFieldValue &input
     } else {
         _juniper_converter.convert(input.getValueRef(), inserter);
     }
+}
+
+bool
+SnippetModifierJuniperConverter::render_weighted_set_as_array() const
+{
+    return false;
 }
 
 /**
@@ -172,7 +179,7 @@ public:
     DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document);
     ~DocsumStoreVsmDocument() override;
     DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const override;
-    void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
+    void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
     void insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
     void insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
@@ -212,13 +219,13 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
 }
 
 void
-DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
+DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
         if (entry_idx >= 0) {
             assert((uint32_t) entry_idx < _result_class.getNumEntries());
-            _docsum_filter.insert_summary_field(entry_idx, _vsm_document, inserter);
+            _docsum_filter.insert_summary_field(entry_idx, _vsm_document, inserter, converter);
             return;
         }
         try {
@@ -226,7 +233,7 @@ DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name,
             auto value(field.getDataType().createFieldValue());
             if (value) {
                 if (_document->getValue(field, *value)) {
-                    SlimeFiller::insert_summary_field(*value, inserter);
+                    SlimeFiller::insert_summary_field(*value, inserter, converter);
                 }
             }
         } catch (document::FieldNotFoundException&) {
@@ -393,14 +400,14 @@ DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
 }
 
 void
-DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter)
+DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter)
 {
     const auto& field_spec = _fields[entry_idx];
     auto single_source_field_id = get_single_source_field_id(field_spec);
     if (single_source_field_id.has_value()) {
         auto field_value = doc.getField(single_source_field_id.value());
         if (field_value != nullptr) {
-            SlimeFiller::insert_summary_field_with_field_filter(*field_value, inserter, field_spec.get_filter());
+            SlimeFiller::insert_summary_field_with_field_filter(*field_value, inserter, converter, field_spec.get_filter());
         }
         return;
     }

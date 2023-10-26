@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.component.Version;
@@ -50,7 +50,7 @@ import java.util.Optional;
  */
 public class NodeSerializer {
 
-    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster, and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
     //          such that what is serialized on version N+1 can be read by version N:
     //          - ADDING FIELDS: Always ok
@@ -92,6 +92,7 @@ public class NodeSerializer {
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
     private static final String exclusiveToApplicationIdKey = "exclusiveTo";
+    private static final String provisionedForApplicationIdKey = "provisionedFor";
     private static final String hostTTLKey = "hostTTL";
     private static final String hostEmptyAtKey = "hostEmptyAt";
     private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
@@ -182,6 +183,7 @@ public class NodeSerializer {
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
+        node.provisionedForApplicationId().ifPresent(applicationId -> object.setString(provisionedForApplicationIdKey, applicationId.serializedForm()));
         node.hostTTL().ifPresent(hostTTL -> object.setLong(hostTTLKey, hostTTL.toMillis()));
         node.hostEmptyAt().ifPresent(emptyAt -> object.setLong(hostEmptyAtKey, emptyAt.toEpochMilli()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
@@ -237,7 +239,7 @@ public class NodeSerializer {
     private void toSlime(List<String> addresses, Cursor array, boolean dummyDueToErasure) {
         // Validating IP address string literals is expensive, so we do it at serialization time instead of Node
         // construction time
-        addresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
+        addresses.stream().map(IP::parse).map(IP::asString).forEach(array::addString);
     }
 
     private void toSlime(List<HostName> hostnames, Cursor object) {
@@ -281,6 +283,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(modelNameKey)),
                         SlimeUtils.optionalString(object.field(reservedToKey)).map(TenantName::from),
                         SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm),
+                        SlimeUtils.optionalString(object.field(provisionedForApplicationIdKey)).map(ApplicationId::fromSerializedForm),
                         SlimeUtils.optionalDuration(object.field(hostTTLKey)),
                         SlimeUtils.optionalInstant(object.field(hostEmptyAtKey)),
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),

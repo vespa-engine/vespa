@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 import java.util.function.Consumer;
@@ -115,7 +115,7 @@ public interface Inspector {
     Inspector entry(int idx);
 
     /**
-     * Access an field in an object by symbol id.
+     * Access a field in an object by symbol id.
      *
      * If the current Inspector doesn't connect to an object value, or
      * the object value does not contain a field with the given symbol
@@ -126,7 +126,7 @@ public interface Inspector {
     Inspector field(int sym);
 
     /**
-     * Access an field in an object by symbol name.
+     * Access a field in an object by symbol name.
      *
      * If the current Inspector doesn't connect to an object value, or
      * the object value does not contain a field with the given symbol

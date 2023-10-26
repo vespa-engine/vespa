@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
 import java.util.Collection;
@@ -10,10 +10,10 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ListAnnotationContainer extends IteratingAnnotationContainer {
-    private final List<Annotation> annotations = new LinkedList<Annotation>();
+    private final List<Annotation> annotations = new LinkedList<>();
 
     @Override
     void annotateAll(Collection<Annotation> annotations) {
@@ -55,7 +55,7 @@ public class ListAnnotationContainer extends IteratingAnnotationContainer {
         private boolean nextCalled = false;
 
         AnnotationIterator(ListIterator<Annotation> baseIt, IdentityHashMap<SpanNode, SpanNode> nodes) {
-            this.base = new PeekableListIterator<Annotation>(baseIt);
+            this.base = new PeekableListIterator(baseIt);
             this.nodes = nodes;
         }
 

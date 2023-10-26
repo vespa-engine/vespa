@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
 /**
@@ -110,7 +110,7 @@ public class Coverage {
         return switch (fullReason) {
             case EXPLICITLY_FULL: yield true;
             case EXPLICITLY_INCOMPLETE: yield false;
-            case DOCUMENT_COUNT: yield docs == active;
+            case DOCUMENT_COUNT: yield (docs == active) && !((active == 0) && isDegradedByTimeout()) ;
         };
     }
 
@@ -162,6 +162,9 @@ public class Coverage {
         long total = targetActive;
         if (docs < total) {
             return (int) Math.round(docs * 100.0d / total);
+        }
+        if ((total == 0) && isDegradedByTimeout()) {
+            return 0;
         }
         return getFullResultSets() * 100 / getResultSets();
     }

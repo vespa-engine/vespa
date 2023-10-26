@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_flushengine STATIC
     SOURCES
     active_flush_stats.cpp
@@ -13,6 +13,7 @@ vespa_add_library(searchcore_flushengine STATIC
     flushtargetproxy.cpp
     flushtask.cpp
     prepare_restart_flush_strategy.cpp
+    priority_flush_token.cpp
     threadedflushtarget.cpp
     tls_stats_factory.cpp
     tls_stats_map.cpp

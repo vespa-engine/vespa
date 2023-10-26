@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.Sets;
@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMoc
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
@@ -72,7 +73,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devAwsUsEast2a;
@@ -951,8 +951,6 @@ public class ControllerTest {
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodZone = ZoneId.from("prod", "us-west-1");
-        var stagingZone = ZoneId.from("staging", "us-east-3");
-        var testZone = ZoneId.from("test", "us-east-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                 .region(prodZone.region())
@@ -961,16 +959,23 @@ public class ControllerTest {
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
         assertTrue(cert.isPresent(), "Provisions certificate in " + Environment.prod);
-        assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
-                                "app1.tenant1.global.vespa.oath.cloud",
-                                "*.app1.tenant1.global.vespa.oath.cloud"),
-                        Stream.of(prodZone, testZone, stagingZone)
-                                .flatMap(zone -> Stream.of("", "*.")
-                                        .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
-                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
-                                                ".vespa.oath.cloud")))
-                        .collect(Collectors.toUnmodifiableSet()),
-                Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(cert.get().rootRequestId())));
+        assertEquals(List.of("*.app1.tenant1.global.vespa.oath.cloud",
+                             "*.app1.tenant1.us-east-1.test.vespa.oath.cloud",
+                             "*.app1.tenant1.us-east-3.staging.vespa.oath.cloud",
+                             "*.app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "*.f5549014.a.vespa.oath.cloud",
+                             "*.f5549014.g.vespa.oath.cloud",
+                             "*.f5549014.z.vespa.oath.cloud",
+                             "app1.tenant1.global.vespa.oath.cloud",
+                             "app1.tenant1.us-east-1.test.vespa.oath.cloud",
+                             "app1.tenant1.us-east-3.staging.vespa.oath.cloud",
+                             "app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud"),
+                     tester.controllerTester().serviceRegistry().endpointCertificateMock()
+                           .dnsNamesOf(cert.get().rootRequestId())
+                           .stream()
+                           .sorted()
+                           .toList());
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
@@ -1086,12 +1091,15 @@ public class ControllerTest {
         var zone3 = ZoneId.from("prod", "eu-west-1");
         tester.controllerTester().zoneRegistry()
                 .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
+        tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-1"), null, () -> "foo");
+        tester.clock().advance(Duration.ofSeconds(1));
+        tester.controller().dataplaneTokenService().generateToken(context.application().id().tenant(), TokenId.of("token-2"), null, () -> "foo");
 
         var applicationPackageBuilder = new ApplicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
-                .container("qrs", AuthMethod.mtls)
+                .container("qrs", AuthMethod.mtls, AuthMethod.token)
                 .container("default", AuthMethod.mtls)
                 .endpoint("default", "default")
                 .endpoint("foo", "qrs")
@@ -1108,6 +1116,8 @@ public class ControllerTest {
                                 "application.tenant." + zone.region().value() + ".vespa.oath.cloud"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(zone)),
                     "Expected container endpoints in " + zone);
+            assertEquals(Map.of(TokenId.of("token-1"), tester.clock().instant().minusSeconds(1)),
+                         context.deployment(zone).dataPlaneTokens());
         }
         assertEquals(Set.of("application.tenant.global.vespa.oath.cloud",
                             "foo.application.tenant.global.vespa.oath.cloud",
@@ -1335,6 +1345,7 @@ public class ControllerTest {
                         Type.testPackage,
                         Level.warning,
                         NotificationSource.from(app.application().id()),
+                        "There are problems with tests for [application](https://console.tld/tenant/tenant/application/application/prod/instance)",
                         List.of("test package has staging tests, so it should also include staging setup",
                                 "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
                 tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));
@@ -1548,7 +1559,7 @@ public class ControllerTest {
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
                                                            () -> DeploymentEndpoints.none, Optional.empty(), Optional.empty(),
-                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(), false);
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, () -> List.of(), false);
         tester.configServer().deploy(deploymentData);
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());

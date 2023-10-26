@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.BiMap;
@@ -15,6 +15,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -27,6 +28,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.PurchaseOrder;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -88,9 +91,13 @@ public class TenantSerializer {
     private static final String invalidateUserSessionsBeforeField = "invalidateUserSessionsBefore";
     private static final String tenantRolesLastMaintainedField = "tenantRolesLastMaintained";
     private static final String billingReferenceField = "billingReference";
+    private static final String planIdField = "planId";
     private static final String cloudAccountsField = "cloudAccounts";
     private static final String accountField = "account";
     private static final String templateVersionField = "templateVersion";
+    private static final String taxIdField = "taxId";
+    private static final String purchaseOrderField = "purchaseOrder";
+    private static final String invoiceEmailField = "invoiceEmail";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -137,6 +144,7 @@ public class TenantSerializer {
         toSlime(tenant.archiveAccess(), root);
         tenant.billingReference().ifPresent(b -> toSlime(b, root));
         tenant.invalidateUserSessionsBefore().ifPresent(instant -> root.setLong(invalidateUserSessionsBeforeField, instant.toEpochMilli()));
+        root.setString(planIdField, tenant.planId().value());
     }
 
     private void toSlime(ArchiveAccess archiveAccess, Cursor root) {
@@ -215,7 +223,10 @@ public class TenantSerializer {
         Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
         List<CloudAccountInfo> cloudAccountInfos = cloudAccountsFromSlime(tenantObject.field(cloudAccountsField));
         Optional<BillingReference> billingReference = billingReferenceFrom(tenantObject.field(billingReferenceField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained, cloudAccountInfos, billingReference);
+        PlanId planId = planId(tenantObject.field(planIdField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores,
+                               archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained,
+                               cloudAccountInfos, billingReference, planId);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
@@ -250,6 +261,7 @@ public class TenantSerializer {
                 .withAWSRole(awsArchiveAccessRole)
                 .withGCPMember(gcpArchiveAccessMember);
     }
+
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
         if (!infoObject.valid()) return TenantInfo.empty();
 
@@ -275,12 +287,19 @@ public class TenantSerializer {
     }
 
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        var taxId = new TaxId(billingObject.field(taxIdField).asString());
+        var purchaseOrder = new PurchaseOrder(billingObject.field(purchaseOrderField).asString());
+        var invoiceEmail = new Email(billingObject.field(invoiceEmailField).asString(), false);
+
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
-                        new Email(billingObject.field("email").asString(), true),
+                        new Email(billingObject.field("email").asString(), billingObject.field("emailVerified").asBool()),
                         billingObject.field("phone").asString()))
-                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
+                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")))
+                .withTaxId(taxId)
+                .withPurchaseOrder(purchaseOrder)
+                .withInvoiceEmail(invoiceEmail);
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
@@ -337,11 +356,15 @@ public class TenantSerializer {
     private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
-        Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
-        addressCursor.setString("phone", billingContact.contact().phone());
-        toSlime(billingContact.address(), addressCursor);
+        Cursor billingCursor = parentCursor.setObject("billingContact");
+        billingCursor.setString("name", billingContact.contact().name());
+        billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
+        billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
+        billingCursor.setString("phone", billingContact.contact().phone());
+        billingCursor.setString(taxIdField, billingContact.getTaxId().value());
+        billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder().value());
+        billingCursor.setString(invoiceEmailField, billingContact.getInvoiceEmail().getEmailAddress());
+        toSlime(billingContact.address(), billingCursor);
     }
 
     private void toSlime(List<TenantSecretStore> tenantSecretStores, Cursor parentCursor) {
@@ -373,6 +396,12 @@ public class TenantSerializer {
         return Optional.of(new BillingReference(
                 object.field("reference").asString(),
                 SlimeUtils.instant(object.field("updated"))));
+    }
+
+    private PlanId planId(Inspector object) {
+        if (! object.valid()) return PlanId.from("none");
+
+        return PlanId.from(object.asString());
     }
 
     private TenantContacts tenantContactsFrom(Inspector object) {

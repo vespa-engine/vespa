@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa status command
 // author: bratseth
 
@@ -25,9 +25,14 @@ func newStatusCmd(cli *CLI) *cobra.Command {
 			"status document", // TODO: Remove on Vespa 9
 			"status query",    // TODO: Remove on Vespa 9
 		},
-		Short: "Verify that container service(s) are ready to use",
+		Short: "Show Vespa endpoints and status",
+		Long: `Show Vespa endpoints and status.
+
+This command shows the current endpoints, and their status, of a deployed Vespa
+application.`,
 		Example: `$ vespa status
-$ vespa status --cluster mycluster`,
+$ vespa status --cluster mycluster
+$ vespa status --cluster mycluster --wait 600`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
@@ -37,7 +42,8 @@ $ vespa status --cluster mycluster`,
 			if err != nil {
 				return err
 			}
-			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
+			var failingContainers []*vespa.Service
 			if cluster == "" {
 				services, err := waiter.Services(t)
 				if err != nil {
@@ -47,28 +53,46 @@ $ vespa status --cluster mycluster`,
 					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
 				}
 				for _, s := range services {
-					printReadyService(s, cli)
+					if !printServiceStatus(s, waiter, cli) {
+						failingContainers = append(failingContainers, s)
+					}
 				}
-				return nil
 			} else {
 				s, err := waiter.Service(t, cluster)
 				if err != nil {
 					return err
 				}
-				printReadyService(s, cli)
-				return nil
+				if !printServiceStatus(s, waiter, cli) {
+					failingContainers = append(failingContainers, s)
+				}
 			}
+			return failingServicesErr(failingContainers...)
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
+func failingServicesErr(services ...*vespa.Service) error {
+	if len(services) == 0 {
+		return nil
+	}
+	var nameOrURL []string
+	for _, s := range services {
+		if s.Name != "" {
+			nameOrURL = append(nameOrURL, s.Name)
+		} else {
+			nameOrURL = append(nameOrURL, s.BaseURL)
+		}
+	}
+	return fmt.Errorf("services not ready: %s", strings.Join(nameOrURL, ", "))
+}
+
 func newStatusDeployCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
 		Use:               "deploy",
-		Short:             "Verify that the deploy service is ready to use",
+		Short:             "Show status of the Vespa deploy service",
 		Example:           `$ vespa status deploy`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
@@ -78,12 +102,14 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			s, err := waiter.DeployService(t)
 			if err != nil {
 				return err
 			}
-			printReadyService(s, cli)
+			if !printServiceStatus(s, waiter, cli) {
+				return failingServicesErr(s)
+			}
 			return nil
 		},
 	}
@@ -95,10 +121,17 @@ func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
 		Use:   "deployment",
-		Short: "Verify that deployment has converged on latest, or given, ID",
+		Short: "Show status of a Vespa deployment",
+		Long: `Show status of a Vespa deployment.
+
+This commands shows whether a Vespa deployment has converged on the latest run
+ (Vespa Cloud) or config generation (self-hosted). If an argument is given,
+show the convergence status of that particular run or generation.
+`,
 		Example: `$ vespa status deployment
 $ vespa status deployment -t cloud [run-id]
 $ vespa status deployment -t local [session-id]
+$ vespa status deployment -t local [session-id] --wait 600
 `,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
@@ -116,7 +149,7 @@ $ vespa status deployment -t local [session-id]
 			if err != nil {
 				return err
 			}
-			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
 				return err
@@ -134,8 +167,19 @@ $ vespa status deployment -t local [session-id]
 	return cmd
 }
 
-func printReadyService(s *vespa.Service, cli *CLI) {
+func printServiceStatus(s *vespa.Service, waiter *Waiter, cli *CLI) bool {
 	desc := s.Description()
 	desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
-	log.Print(desc, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
+	err := s.Wait(waiter.Timeout)
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
+	if err == nil {
+		sb.WriteString(color.GreenString("ready"))
+	} else {
+		sb.WriteString(color.RedString("not ready"))
+		sb.WriteString(": ")
+		sb.WriteString(err.Error())
+	}
+	fmt.Fprintln(cli.Stdout, sb.String())
+	return err == nil
 }

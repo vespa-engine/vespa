@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
@@ -498,7 +498,7 @@ public class FilterTestCase {
                 .build();
         MetricConsumerMock metricConsumerMock = new MetricConsumerMock();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock, false);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock);
 
         testDriver.client().get("/status.html");
         assertThat(requestHandler.awaitInvocation(), is(true));
@@ -519,9 +519,10 @@ public class FilterTestCase {
         FilterBindings filterBindings = new FilterBindings.Builder()
                 .addRequestFilter("my-request-filter", filter)
                 .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .setStrictFiltering(true)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock());
 
         testDriver.client().get("/unfiltered/")
                 .expectStatusCode(is(Response.Status.FORBIDDEN))
@@ -551,7 +552,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
 
-        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock());
 
         testDriver.client().get("/filtered/")
                 .expectStatusCode(is(Response.Status.OK));
@@ -561,28 +562,27 @@ public class FilterTestCase {
     }
 
     private static JettyTestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
-        return newDriver(requestHandler, filterBindings, new MetricConsumerMock(), false);
+        return newDriver(requestHandler, filterBindings, new MetricConsumerMock());
     }
 
     private static JettyTestDriver newDriver(
             MyRequestHandler requestHandler,
             FilterBindings filterBindings,
-            MetricConsumerMock metricConsumer,
-            boolean strictFiltering) {
+            MetricConsumerMock metricConsumer) {
         return JettyTestDriver.newInstance(
                 requestHandler,
-                newFilterModule(filterBindings, metricConsumer, strictFiltering));
+                newFilterModule(filterBindings, metricConsumer));
     }
 
     private static com.google.inject.Module newFilterModule(
-            FilterBindings filterBindings, MetricConsumerMock metricConsumer, boolean strictFiltering) {
+            FilterBindings filterBindings, MetricConsumerMock metricConsumer) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
 
                         bind(FilterBindings.class).toInstance(filterBindings);
-                        bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder().strictFiltering(strictFiltering)));
+                        bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
@@ -602,7 +602,7 @@ public class FilterTestCase {
         @Override
         public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
             try {
-                headerCopy.set(new HashMap<String, List<String>>(request.headers()));
+                headerCopy.set(new HashMap<>(request.headers()));
                 ResponseDispatch.newInstance(Response.Status.OK).dispatch(handler);
                 return null;
             } finally {

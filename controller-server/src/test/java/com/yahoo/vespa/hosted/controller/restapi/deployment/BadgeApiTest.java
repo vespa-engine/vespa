@@ -1,6 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
+import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -9,12 +10,15 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author jonmv
@@ -79,6 +83,18 @@ public class BadgeApiTest extends ControllerContainerTest {
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=0"),
                 Files.readString(Paths.get(responseFiles + "single-done.svg")), 200);
+
+        tester.assertResponse(() -> authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default", "", Method.HEAD),
+                              __ -> { },
+                              200);
+
+        tester.assertResponse(() -> authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default", "", Method.OPTIONS),
+                              response -> Assertions.assertEquals(List.of(Map.entry("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"),
+                                                                          Map.entry("Access-Control-Allow-Origin", "*"),
+                                                                          Map.entry("Allow", "GET, HEAD, OPTIONS"),
+                                                                          Map.entry("Content-Type", "image/svg+xml; charset=UTF-8")),
+                                                                  response.getHeaders().entries()),
+                              200);
     }
 
 }

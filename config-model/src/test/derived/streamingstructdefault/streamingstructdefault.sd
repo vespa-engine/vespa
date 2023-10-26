@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema streamingstructdefault {
   document streamingstructdefault {
     struct sct {
@@ -14,7 +14,7 @@ schema streamingstructdefault {
     }
   }
   document-summary default {
-    summary sum1 type string {
+    summary sum1 {
       source: f1, f2.s1
       dynamic
     }

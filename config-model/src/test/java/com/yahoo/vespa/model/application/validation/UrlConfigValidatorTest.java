@@ -1,8 +1,11 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -19,7 +22,9 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.config.provision.Environment.prod;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,6 +89,7 @@ public class UrlConfigValidatorTest {
         var builder = new DeployState.Builder()
                 .applicationPackage(app)
                 .zone(new Zone(systemName, prod, RegionName.from("us-east-3")))
+                .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .properties(new TestProperties().setHostedVespa(isHosted))
                 .fileRegistry(new MockFileRegistry());
 

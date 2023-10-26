@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_define_module(
     DEPENDS
     vespalog
@@ -20,6 +20,7 @@ vespa_define_module(
     src/tests/docsummary/attribute_combiner
     src/tests/docsummary/attributedfw
     src/tests/docsummary/document_id_dfw
+    src/tests/docsummary/tokens_converter
     src/tests/docsummary/matched_elements_filter
     src/tests/docsummary/query_term_filter_factory
     src/tests/docsummary/result_class

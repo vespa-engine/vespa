@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import com.yahoo.config.provision.TenantName;
@@ -76,6 +76,7 @@ public class PendingMailVerification {
 
     public enum MailType {
         TENANT_CONTACT,
-        NOTIFICATIONS
+        NOTIFICATIONS,
+        BILLING
     }
 }

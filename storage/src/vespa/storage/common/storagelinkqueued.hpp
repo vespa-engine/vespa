@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -14,11 +14,11 @@ namespace storage {
 
 template<typename Message>
 void
-StorageLinkQueued::Dispatcher<Message>::terminate() {
+StorageLinkQueued::Dispatcher<Message>::shutdown() {
     if (_thread) {
         _thread->interrupt();
         {
-            std::lock_guard<std::mutex> guard(_sync);
+            std::lock_guard guard(_sync);
             _syncCond.notify_one();
         }
         _thread->join();
@@ -43,7 +43,7 @@ StorageLinkQueued::Dispatcher<Message>::Dispatcher(StorageLinkQueued& parent, un
 
 template<typename Message>
 StorageLinkQueued::Dispatcher<Message>::~Dispatcher() {
-    terminate();
+    shutdown();
 }
 
 template<typename Message>
@@ -56,7 +56,7 @@ void StorageLinkQueued::Dispatcher<Message>::start()
 template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::add(const std::shared_ptr<Message>& m)
 {
-    std::unique_lock<std::mutex> guard(_sync);
+    std::unique_lock guard(_sync);
 
     if ( ! _thread) start();
     while ((_messages.size() > _maxQueueSize) && !_thread->interrupted()) {
@@ -73,7 +73,7 @@ void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
         h.registerTick(framework::PROCESS_CYCLE);
         std::shared_ptr<Message> message;
         {
-            std::unique_lock<std::mutex> guard(_sync);
+            std::unique_lock guard(_sync);
             while (!h.interrupted() && _messages.empty()) {
                 _syncCond.wait_for(guard, 100ms);
                 h.registerTick(framework::WAIT_CYCLE);
@@ -94,7 +94,7 @@ void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
         {
             // Since flush() only waits for stack to be empty, we must
             // pop stack AFTER send have been called.
-            std::lock_guard<std::mutex> guard(_sync);
+            std::lock_guard guard(_sync);
             _messages.pop_front();
             _syncCond.notify_one();
         }
@@ -106,7 +106,7 @@ template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::flush()
 {
     using namespace std::chrono_literals;
-    std::unique_lock<std::mutex> guard(_sync);
+    std::unique_lock guard(_sync);
     while (!_messages.empty()) {
         _syncCond.wait_for(guard, 100ms);
     }

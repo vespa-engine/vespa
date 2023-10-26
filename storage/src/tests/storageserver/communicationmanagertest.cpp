@@ -1,31 +1,33 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/storageserver/communicationmanager.h>
-
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
-#include <vespa/storage/persistence/messages.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <tests/common/teststorageapp.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
+#include <vespa/storage/persistence/messages.h>
+#include <vespa/storage/storageserver/communicationmanager.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage {
 
-vespalib::string _Storage("storage");
+vespalib::string _storage("storage");
+
+using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
 
 struct CommunicationManagerTest : Test {
 
@@ -33,13 +35,11 @@ struct CommunicationManagerTest : Test {
 
     void doTestConfigPropagation(bool isContentNode);
 
-    std::shared_ptr<api::StorageCommand> createDummyCommand(
-            api::StorageMessage::Priority priority)
-    {
+    static std::shared_ptr<api::StorageCommand> createDummyCommand(api::StorageMessage::Priority priority) {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
                                                      document::DocumentId("id:ns:mytype::mydoc"),
                                                      document::AllFields::NAME);
-        cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
+        cmd->setAddress(api::StorageMessageAddress::create(&_storage, lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
     }
@@ -77,19 +77,22 @@ TEST_F(CommunicationManagerTest, simple) {
     TestServiceLayerApp storNode(storConfig.getConfigId());
     TestDistributorApp distNode(distConfig.getConfigId());
 
-    CommunicationManager distributor(distNode.getComponentRegister(),
-                                     config::ConfigUri(distConfig.getConfigId()));
-    CommunicationManager storage(storNode.getComponentRegister(),
-                                 config::ConfigUri(storConfig.getConfigId()));
-    DummyStorageLink *distributorLink = new DummyStorageLink();
-    DummyStorageLink *storageLink = new DummyStorageLink();
+    auto dist_cfg_uri = config::ConfigUri(distConfig.getConfigId());
+    auto stor_cfg_uri = config::ConfigUri(storConfig.getConfigId());
+
+    CommunicationManager distributor(distNode.getComponentRegister(), dist_cfg_uri,
+                                     *config_from<CommunicationManagerConfig>(dist_cfg_uri));
+    CommunicationManager storage(storNode.getComponentRegister(), stor_cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(stor_cfg_uri));
+    auto* distributorLink = new DummyStorageLink();
+    auto* storageLink = new DummyStorageLink();
     distributor.push_back(std::unique_ptr<StorageLink>(distributorLink));
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     distributor.open();
     storage.open();
 
-    auto stor_addr  = api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1);
-    auto distr_addr = api::StorageMessageAddress::create(&_Storage, lib::NodeType::DISTRIBUTOR, 1);
+    auto stor_addr  = api::StorageMessageAddress::create(&_storage, lib::NodeType::STORAGE, 1);
+    auto distr_addr = api::StorageMessageAddress::create(&_storage, lib::NodeType::DISTRIBUTOR, 1);
     // It is undefined when the logical nodes will be visible in each others Slobrok
     // mirrors, so explicitly wait until mutual visibility is ensured. Failure to do this
     // might cause the below message to be immediately bounced due to failing to map the
@@ -136,9 +139,10 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
         node = std::make_unique<TestDistributorApp>(config.getConfigId());
     }
 
-    CommunicationManager commMgr(node->getComponentRegister(),
-                                 config::ConfigUri(config.getConfigId()));
-    DummyStorageLink *storageLink = new DummyStorageLink();
+    auto cfg_uri = config::ConfigUri(config.getConfigId());
+    CommunicationManager commMgr(node->getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
+    auto* storageLink = new DummyStorageLink();
     commMgr.push_back(std::unique_ptr<StorageLink>(storageLink));
     commMgr.open();
 
@@ -153,13 +157,12 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
     }
 
     // Test live reconfig of limits.
-    using ConfigBuilder
-        = vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
+    using ConfigBuilder = vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
     auto liveCfg = std::make_unique<ConfigBuilder>();
     liveCfg->mbusContentNodeMaxPendingCount = 777777;
     liveCfg->mbusDistributorNodeMaxPendingCount = 999999;
 
-    commMgr.configure(std::move(liveCfg));
+    commMgr.on_configure(*liveCfg);
     if (isContentNode) {
         EXPECT_EQ(777777, mbus.getMaxPendingCount());
     } else {
@@ -182,9 +185,10 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     addSlobrokConfig(storConfig, slobrok);
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
-    CommunicationManager storage(storNode.getComponentRegister(),
-                                 config::ConfigUri(storConfig.getConfigId()));
-    DummyStorageLink *storageLink = new DummyStorageLink();
+    auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
+    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
+    auto* storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
 
@@ -215,9 +219,10 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     addSlobrokConfig(storConfig, slobrok);
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
-    CommunicationManager storage(storNode.getComponentRegister(),
-                                 config::ConfigUri(storConfig.getConfigId()));
-    DummyStorageLink *storageLink = new DummyStorageLink();
+    auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
+    CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
+                                 *config_from<CommunicationManagerConfig>(cfg_uri));
+    auto* storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
 
@@ -256,8 +261,9 @@ struct CommunicationManagerFixture {
         addSlobrokConfig(stor_config, slobrok);
 
         node = std::make_unique<TestServiceLayerApp>(stor_config.getConfigId());
-        comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(),
-                                                          config::ConfigUri(stor_config.getConfigId()));
+        auto cfg_uri = config::ConfigUri(stor_config.getConfigId());
+        comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(), cfg_uri,
+                                                          *config_from<CommunicationManagerConfig>(cfg_uri));
         bottom_link = new DummyStorageLink();
         comm_mgr->push_back(std::unique_ptr<StorageLink>(bottom_link));
         comm_mgr->open();

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
@@ -992,7 +992,7 @@ public class SelectParser implements Parser {
         if (origin != null) {
             out.setOrigin(origin);
         }
-        if (annotations !=  null){
+        if (annotations !=  null) {
             Boolean usePositionData = getBoolAnnotation(USE_POSITION_DATA, annotations, null);
             if (usePositionData != null) {
                 out.setPositionData(usePositionData);

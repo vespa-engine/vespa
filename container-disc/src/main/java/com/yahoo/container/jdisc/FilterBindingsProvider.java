@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
 import com.yahoo.component.annotation.Inject;
@@ -38,6 +38,7 @@ public class FilterBindingsProvider implements Provider<FilterBindings> {
             FilterBindings.Builder builder = new FilterBindings.Builder();
             configureLegacyFilters(builder, componentId, legacyRequestFilters);
             configureFilters(builder, config, filterChainRepository);
+            builder.setStrictFiltering(config.strictFiltering());
             this.filterBindings = builder.build();
         } catch (Exception e) {
             throw new RuntimeException(

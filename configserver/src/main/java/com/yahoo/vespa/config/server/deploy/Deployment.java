@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
 import ai.vespa.metrics.ConfigServerMetrics;
@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.transaction.NestedTransaction;
@@ -313,7 +313,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
                             Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
 
-            try (ProvisionLock lock = provisioner.get().lock(session.getApplicationId())) {
+            try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
                 provisioner.get().activate(preparedHosts, context, transaction);

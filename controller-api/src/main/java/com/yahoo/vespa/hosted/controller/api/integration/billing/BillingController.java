@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
@@ -90,7 +90,7 @@ public interface BillingController {
     boolean deleteInstrument(TenantName tenant, String userId, String instrumentId);
 
     /** Change the status of the given bill */
-    void updateBillStatus(Bill.Id billId, String agent, String status);
+    void updateBillStatus(Bill.Id billId, String agent, BillStatus status);
 
     /** Add a line item to the given bill */
     void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent);
@@ -130,7 +130,4 @@ public interface BillingController {
 
     default void updateCache(List<TenantName> tenants) {}
 
-    default String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
-        return "NOT_IMPLEMENTED";
-    }
 }

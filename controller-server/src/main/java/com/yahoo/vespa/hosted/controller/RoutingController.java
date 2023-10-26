@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.hash.HashCode;
@@ -14,9 +14,9 @@ import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.BasicServicesXml;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
+import com.yahoo.vespa.hosted.controller.routing.EndpointConfig;
 import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpointList;
 import com.yahoo.vespa.hosted.controller.routing.PreparedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.RoutingId;
@@ -51,7 +52,6 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,6 +64,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,11 +81,12 @@ import static java.util.stream.Collectors.toMap;
  */
 public class RoutingController {
 
+    private static final Logger LOG = Logger.getLogger(RoutingController.class.getName());
+
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag generatedEndpoints;
-    private final BooleanFlag legacyEndpoints;
+    private final StringFlag endpointConfig;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -91,8 +94,7 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.generatedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
-        this.legacyEndpoints = Flags.LEGACY_ENDPOINTS.bindTo(controller.flagSource());
+        this.endpointConfig = Flags.ENDPOINT_CONFIG.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -122,8 +124,23 @@ public class RoutingController {
         return rotationRepository;
     }
 
+    /** Returns the endpoint config to use for given instance */
+    public EndpointConfig endpointConfig(ApplicationId instance) {
+        String flagValue = endpointConfig.with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
+                                         .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                                         .with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
+                                         .value();
+        return switch (flagValue) {
+            case "legacy" -> EndpointConfig.legacy;
+            case "combined" -> EndpointConfig.combined;
+            case "generated" -> EndpointConfig.generated;
+            default -> throw new IllegalArgumentException("Invalid endpoint-config flag value: '" + flagValue + "', must be " +
+                                                          "'legacy', 'combined' or 'generated'");
+        };
+    }
+
     /** Prepares and returns the endpoints relevant for given deployment */
-    public PreparedEndpoints prepare(DeploymentId deployment, BasicServicesXml services, Optional<EndpointCertificate> certificate, LockedApplication application) {
+    public PreparedEndpoints prepare(DeploymentId deployment, BasicServicesXml services, EndpointCertificate certificate, LockedApplication application) {
         EndpointList endpoints = EndpointList.EMPTY;
         DeploymentSpec spec = application.get().deploymentSpec();
 
@@ -135,9 +152,9 @@ public class RoutingController {
         }
 
         // Add zone-scoped endpoints
-        Map<EndpointId, GeneratedEndpointList> generatedForDeclaredEndpoints = new HashMap<>();
+        Map<EndpointId, List<GeneratedEndpoint>> generatedForDeclaredEndpoints = new HashMap<>();
         Set<ClusterSpec.Id> clustersWithToken = new HashSet<>();
-        boolean generatedEndpointsEnabled = generatedEndpointsEnabled(deployment.applicationId());
+        EndpointConfig config = endpointConfig(deployment.applicationId());
         RoutingPolicyList applicationPolicies = policies().read(TenantAndApplicationId.from(deployment.applicationId()));
         RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
         for (var container : services.containers()) {
@@ -149,11 +166,12 @@ public class RoutingController {
             Optional<RoutingPolicy> clusterPolicy = deploymentPolicies.cluster(clusterId).first();
             List<GeneratedEndpoint> generatedForCluster = clusterPolicy.map(policy -> policy.generatedEndpoints().cluster().asList())
                                                                        .orElseGet(List::of);
-            // Generate endpoints if cluster does not have any
-            if (generatedForCluster.isEmpty()) {
-                generatedForCluster = generateEndpoints(tokenSupported, certificate, Optional.empty());
+            // Generate endpoint for each auth method, if not present
+            generatedForCluster = generateEndpoints(AuthMethod.mtls, certificate, Optional.empty(), generatedForCluster);
+            if (tokenSupported) {
+                generatedForCluster = generateEndpoints(AuthMethod.token, certificate, Optional.empty(), generatedForCluster);
             }
-            GeneratedEndpointList generatedEndpoints = generatedEndpointsEnabled ? GeneratedEndpointList.copyOf(generatedForCluster) : GeneratedEndpointList.EMPTY;
+            GeneratedEndpointList generatedEndpoints = config.supportsGenerated() ? GeneratedEndpointList.copyOf(generatedForCluster) : GeneratedEndpointList.EMPTY;
             endpoints = endpoints.and(endpointsOf(deployment, clusterId, generatedEndpoints).scope(Scope.zone));
         }
 
@@ -162,18 +180,34 @@ public class RoutingController {
             ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
             applicationPolicies.cluster(clusterId).asList().stream()
                                .flatMap(policy -> policy.generatedEndpoints().declared().asList().stream())
-                               .forEach(ge -> generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> GeneratedEndpointList.of(ge)));
+                               .forEach(ge -> {
+                                   List<GeneratedEndpoint> generated = generatedForDeclaredEndpoints.computeIfAbsent(ge.endpoint().get(), (k) -> new ArrayList<>());
+                                   if (!generated.contains(ge)) {
+                                       generated.add(ge);
+                                   }
+                               });
         }
         // Generate endpoints if declared endpoint does not have any
         Stream.concat(spec.endpoints().stream(), spec.instances().stream().flatMap(i -> i.endpoints().stream()))
               .forEach(endpoint -> {
                   EndpointId endpointId = EndpointId.of(endpoint.endpointId());
-                  generatedForDeclaredEndpoints.computeIfAbsent(endpointId, (k) -> {
+                  generatedForDeclaredEndpoints.compute(endpointId, (k, old) -> {
+                      if (old == null) {
+                          old = List.of();
+                      }
+                      List<GeneratedEndpoint> generatedEndpoints = generateEndpoints(AuthMethod.mtls, certificate, Optional.of(endpointId), old);
                       boolean tokenSupported = clustersWithToken.contains(ClusterSpec.Id.from(endpoint.containerId()));
-                      return generatedEndpointsEnabled ? GeneratedEndpointList.copyOf(generateEndpoints(tokenSupported, certificate, Optional.of(endpointId))) : null;
+                      if (tokenSupported){
+                          generatedEndpoints = generateEndpoints(AuthMethod.token, certificate, Optional.of(endpointId), generatedEndpoints);
+                      }
+                      return generatedEndpoints;
                   });
               });
-        Map<EndpointId, GeneratedEndpointList> generatedEndpoints = generatedEndpointsEnabled ? generatedForDeclaredEndpoints : Map.of();
+        Map<EndpointId, GeneratedEndpointList> generatedEndpoints = config.supportsGenerated()
+                ? generatedForDeclaredEndpoints.entrySet()
+                                               .stream()
+                                               .collect(Collectors.toMap(Map.Entry::getKey, kv -> GeneratedEndpointList.copyOf(kv.getValue())))
+                : Map.of();
         endpoints = endpoints.and(declaredEndpointsOf(application.get().id(), spec, generatedEndpoints).targets(deployment));
         PreparedEndpoints prepared = new PreparedEndpoints(deployment,
                                                            endpoints,
@@ -183,13 +217,9 @@ public class RoutingController {
         // Register rotation-backed endpoints in DNS
         registerRotationEndpointsInDns(prepared);
 
-        return prepared;
-    }
+        LOG.log(Level.FINE, () -> "Prepared endpoints: " + prepared);
 
-    private List<GeneratedEndpoint> generateEndpoints(boolean tokenSupported, Optional<EndpointCertificate> certificate, Optional<EndpointId> endpoint) {
-        return certificate.flatMap(EndpointCertificate::randomizedId)
-                          .map(id -> generateEndpoints(id, tokenSupported, endpoint))
-                          .orElseGet(List::of);
+        return prepared;
     }
 
     // -------------- Implicit endpoints (scopes 'zone' and 'weighted') --------------
@@ -197,19 +227,22 @@ public class RoutingController {
     /** Returns the zone- and region-scoped endpoints of given deployment */
     public EndpointList endpointsOf(DeploymentId deployment, ClusterSpec.Id cluster, GeneratedEndpointList generatedEndpoints) {
         requireGeneratedEndpoints(generatedEndpoints, false);
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         boolean tokenSupported = !generatedEndpoints.authMethod(AuthMethod.token).isEmpty();
-        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         boolean isProduction = deployment.zoneId().environment().isProduction();
+        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         List<Endpoint> endpoints = new ArrayList<>();
         Endpoint.EndpointBuilder zoneEndpoint = Endpoint.of(deployment.applicationId())
                                                         .routingMethod(routingMethod)
                                                         .on(Port.fromRoutingMethod(routingMethod))
+                                                        .legacy(generatedEndpointsAvailable)
                                                         .target(cluster, deployment);
         endpoints.add(zoneEndpoint.in(controller.system()));
         ZoneApi zone = controller.zoneRegistry().zones().all().get(deployment.zoneId()).get();
         Endpoint.EndpointBuilder regionEndpoint = Endpoint.of(deployment.applicationId())
                                                           .routingMethod(routingMethod)
                                                           .on(Port.fromRoutingMethod(routingMethod))
+                                                          .legacy(generatedEndpointsAvailable)
                                                           .targetRegion(cluster,
                                                                         zone.getCloudNativeRegionName(),
                                                                         zone.getCloudName());
@@ -226,12 +259,14 @@ public class RoutingController {
             };
             if (include) {
                 endpoints.add(zoneEndpoint.generatedFrom(generatedEndpoint)
+                                          .legacy(false)
                                           .authMethod(generatedEndpoint.authMethod())
                                           .in(controller.system()));
                 // Only a single region endpoint is needed, not one per auth method
                 if (isProduction && generatedEndpoint.authMethod() == AuthMethod.mtls) {
                     GeneratedEndpoint weightedGeneratedEndpoint = generatedEndpoint.withClusterPart(weightedClusterPart(cluster, deployment));
                     endpoints.add(regionEndpoint.generatedFrom(weightedGeneratedEndpoint)
+                                                .legacy(false)
                                                 .authMethod(AuthMethod.none)
                                                 .in(controller.system()));
                 }
@@ -257,6 +292,7 @@ public class RoutingController {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var availableRoutingMethods = routingMethodsOfAll(deployments);
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
@@ -265,10 +301,11 @@ public class RoutingController {
             Endpoint.EndpointBuilder builder = Endpoint.of(routingId.instance())
                                                        .target(routingId.endpointId(), cluster, deployments)
                                                        .on(Port.fromRoutingMethod(method))
+                                                       .legacy(generatedEndpointsAvailable)
                                                        .routingMethod(method);
             endpoints.add(builder.in(controller.system()));
             for (var ge : generatedEndpoints) {
-                endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
+                endpoints.add(builder.generatedFrom(ge).legacy(false).authMethod(ge.authMethod()).in(controller.system()));
             }
         }
         return filterEndpoints(routingId.instance(), EndpointList.copyOf(endpoints));
@@ -280,16 +317,18 @@ public class RoutingController {
         requireGeneratedEndpoints(generatedEndpoints, true);
         ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
         RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+        boolean generatedEndpointsAvailable = !generatedEndpoints.isEmpty();
         Endpoint.EndpointBuilder builder = Endpoint.of(application)
                                                    .targetApplication(endpoint,
                                                                       cluster,
                                                                       deployments)
                                                    .routingMethod(routingMethod)
+                                                   .legacy(generatedEndpointsAvailable)
                                                    .on(Port.fromRoutingMethod(routingMethod));
         List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(builder.in(controller.system()));
         for (var ge : generatedEndpoints) {
-            endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
+            endpoints.add(builder.generatedFrom(ge).legacy(false).authMethod(ge.authMethod()).in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -361,7 +400,24 @@ public class RoutingController {
     }
 
     /** Returns certificate DNS names (CN and SAN values) for given deployment */
-    public List<String> certificateDnsNames(DeploymentId deployment, DeploymentSpec deploymentSpec) {
+    public List<String> certificateDnsNames(DeploymentId deployment, DeploymentSpec deploymentSpec, String generatedId, boolean legacy) {
+        List<String> endpointDnsNames = new ArrayList<>();
+        if (legacy) {
+            endpointDnsNames.addAll(legacyCertificateDnsNames(deployment, deploymentSpec));
+        }
+        for (Scope scope : List.of(Scope.zone, Scope.global, Scope.application)) {
+            endpointDnsNames.add(Endpoint.of(deployment.applicationId())
+                                         .wildcardGenerated(generatedId, scope)
+                                         .routingMethod(RoutingMethod.exclusive)
+                                         .on(Port.tls())
+                                         .certificateName()
+                                         .in(controller.system())
+                                         .dnsName());
+        }
+        return Collections.unmodifiableList(endpointDnsNames);
+    }
+
+    private List<String> legacyCertificateDnsNames(DeploymentId deployment, DeploymentSpec deploymentSpec) {
         List<String> endpointDnsNames = new ArrayList<>();
 
         // We add first an endpoint name based on a hash of the application ID,
@@ -428,10 +484,7 @@ public class RoutingController {
     }
 
     private EndpointList filterEndpoints(ApplicationId instance, EndpointList endpoints) {
-        if (generatedEndpointsEnabled(instance) && !legacyEndpointsEnabled(instance)) {
-            return endpoints.generated();
-        }
-        return endpoints;
+        return endpointConfig(instance) == EndpointConfig.generated ? endpoints.generated() : endpoints;
     }
 
     private void registerRotationEndpointsInDns(PreparedEndpoints prepared) {
@@ -471,19 +524,22 @@ public class RoutingController {
         }
     }
 
-    /** Generate endpoints for all authentication methods, using given application part */
-    private List<GeneratedEndpoint> generateEndpoints(String applicationPart, boolean token, Optional<EndpointId> endpoint) {
-        return Arrays.stream(AuthMethod.values())
-                     .filter(method -> switch (method) {
-                         case token -> token;
-                         case mtls -> true;
-                         case none -> false;
-                     })
-                     .map(method -> new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
-                                                          applicationPart,
-                                                          method,
-                                                          endpoint))
-                     .toList();
+    /** Returns generated endpoints. A new endpoint is generated if no matching endpoint already exists */
+    private List<GeneratedEndpoint> generateEndpoints(AuthMethod authMethod, EndpointCertificate certificate,
+                                                      Optional<EndpointId> declaredEndpoint,
+                                                      List<GeneratedEndpoint> current) {
+        if (current.stream().anyMatch(e -> e.authMethod() == authMethod && e.endpoint().equals(declaredEndpoint))) {
+            return current;
+        }
+        Optional<String> applicationPart = certificate.generatedId();
+        if (applicationPart.isPresent()) {
+            current = new ArrayList<>(current);
+            current.add(new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
+                                              applicationPart.get(),
+                                              authMethod,
+                                              declaredEndpoint));
+        }
+        return current;
     }
 
     /** Generate the  cluster part of a {@link GeneratedEndpoint} for use in a {@link Endpoint.Scope#weighted} endpoint */
@@ -548,20 +604,6 @@ public class RoutingController {
             }
         });
         return Collections.unmodifiableList(routingMethods);
-    }
-
-    public boolean generatedEndpointsEnabled(ApplicationId instance) {
-        return generatedEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
-                                 .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
-                                 .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
-                                 .value();
-    }
-
-    public boolean legacyEndpointsEnabled(ApplicationId instance) {
-        return legacyEndpoints.with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
-                              .with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
-                              .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
-                              .value();
     }
 
     private static void requireGeneratedEndpoints(GeneratedEndpointList generatedEndpoints, boolean declared) {

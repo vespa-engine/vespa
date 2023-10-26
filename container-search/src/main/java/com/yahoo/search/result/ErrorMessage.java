@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import com.yahoo.container.protect.Error;
@@ -114,7 +114,7 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
     public static final int timeoutCode = Error.TIMEOUT.code;
     /** Creates an error indicating that a request to a backend timed out. */
     public static ErrorMessage createTimeout(String detailedMessage) {
-        return new ErrorMessage(timeoutCode, "Timed out",detailedMessage);
+        return new ErrorMessage(timeoutCode, "Timed out", detailedMessage);
     }
 
     public static final int emptyDocsumsCode = Error.EMPTY_DOCUMENTS.code;

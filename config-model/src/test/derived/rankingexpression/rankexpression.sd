@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema rankexpression {
   
   document rankexpression {
@@ -439,6 +439,34 @@ schema rankexpression {
       global-phase {
         expression: sum(mymul)
       }
+  }
+
+  rank-profile withnorm {
+      first-phase {
+        expression: attribute(foo1)
+      }
+      function normBar() {
+        expression: attribute(foo1) + attribute(year)
+      }
+      global-phase {
+        expression: normalize_linear(nativeRank) + reciprocal_rank(normBar(), 42.0)
+        rerank-count: 123
+      }
+      match-features: nativeRank
+  }
+
+  rank-profile withfusion {
+      first-phase {
+        expression: attribute(foo1)
+      }
+      function normBar() {
+        expression: attribute(foo1) + attribute(year)
+      }
+      global-phase {
+        expression: reciprocal_rank_fusion(normBar, nativeRank)
+        rerank-count: 456
+      }
+      match-features: nativeRank
   }
 
 }

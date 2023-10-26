@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.CloudAccount;
@@ -276,7 +276,7 @@ public class Run {
     /** Whether this is a dry run deployment. */
     public boolean isDryRun() { return dryRun; }
 
-    /** Cloud account override to use for this run, if set. This should only be used by staging tests. */
+    /** Cloud account used for deployments in this run. This is set by the first deployment. */
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /** The specific reason for triggering this run, if any. This should be empty for jobs triggered bvy deployment orchestration. */

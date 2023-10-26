@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
@@ -38,10 +38,9 @@ public class ProvisionedExpirer extends Expirer {
         for (Node expiredNode : expired) {
             if (expiredNode.type() != NodeType.host)
                 continue;
-            nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
-            if (MAXIMUM_ALLOWED_EXPIRED_HOSTS < ++previouslyExpired) {
-                nodeRepository.nodes().deprovision(expiredNode.hostname(), Agent.ProvisionedExpirer, nodeRepository.clock().instant());
-            }
+            boolean forceDeprovision = MAXIMUM_ALLOWED_EXPIRED_HOSTS < ++previouslyExpired;
+            nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer,
+                    forceDeprovision, "Node is stuck in provisioned");
         }
     }
 

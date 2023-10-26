@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -10,6 +10,7 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::docsummary {
 
 class IJuniperConverter;
+class IStringFieldConverter;
 
 /**
  * Interface class providing access to a document retrieved from an IDocsumStore.
@@ -21,7 +22,7 @@ class IDocsumStoreDocument
 public:
     virtual ~IDocsumStoreDocument() = default;
     virtual DocsumStoreFieldValue get_field_value(const vespalib::string& field_name) const = 0;
-    virtual void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const = 0;
+    virtual void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter = nullptr) const = 0;
     virtual void insert_juniper_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const = 0;
     virtual void insert_document_id(vespalib::slime::Inserter& inserter) const = 0;
 };

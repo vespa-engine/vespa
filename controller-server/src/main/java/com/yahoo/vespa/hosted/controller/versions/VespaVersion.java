@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
@@ -53,9 +53,15 @@ public record VespaVersion(Version version,
         if (productionOnThis.with(UpgradePolicy.canary).unpinned().size() < all.withProductionDeployment().with(UpgradePolicy.canary).unpinned().size())
             return Confidence.low;
 
-        // 'high' if 90% of all unpinned default upgrade applications upgraded
-        if (productionOnThis.with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() >=
-            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() * 0.9)
+        // 'low' unless at least half of all canary applications are upgraded
+        if (productionOnThis.with(UpgradePolicy.canary).size() < all.withProductionDeployment().with(UpgradePolicy.canary).size() * 0.5)
+            return Confidence.low;
+
+        // 'high' if 90% of all unpinned default upgrade applications, and 50% of all of them, have upgraded
+        if (   productionOnThis.with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() >=
+               all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() * 0.9
+            && productionOnThis.with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() >=
+               all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() * 0.5)
             return Confidence.high;
 
         return Confidence.normal;

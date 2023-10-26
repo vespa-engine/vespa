@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.search.core
 
 ## Base directory. The default is ignored as it is assigned by the model
@@ -238,7 +238,7 @@ summary.log.maxfilesize long default=1000000000
 
 ## Max number of lid entries per file
 ## TODO Decide based on memory on node.
-summary.log.maxnumlids int default=40000000
+summary.log.maxnumlids int default=8388608
 
 ## Max disk bloat factor. This will trigger compacting.
 summary.log.maxdiskbloatfactor double default=0.1

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
 import com.yahoo.language.process.Embedder;
@@ -62,7 +62,8 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, last.toLowerCase()), accessor);
     }
 
-    private static final Map<CompoundName, GetterSetter> properyAccessors = createPropertySetterMap();
+    private static final Map<CompoundName, GetterSetter> propertyAccessors = createPropertySetterMap();
+
     private static Map<CompoundName, GetterSetter> createPropertySetterMap() {
         Map<CompoundName, GetterSetter> map = new HashMap<>();
         map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), GetterSetter.of(query -> query.getModel().getQueryString(), (query, value) -> query.getModel().setQueryString(asString(value, ""))));
@@ -84,7 +85,6 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.KEEPRANKCOUNT), GetterSetter.of(query -> query.getRanking().getKeepRankCount(), (query, value) -> query.getRanking().setKeepRankCount(asInteger(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RANKSCOREDROPLIMIT), GetterSetter.of(query -> query.getRanking().getRankScoreDropLimit(), (query, value) -> query.getRanking().setRankScoreDropLimit(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES), GetterSetter.of(query -> query.getRanking().getListFeatures(), (query, value) -> query.getRanking().setListFeatures(asBoolean(value,false))));
-
         addDualCasedRM(map, Matching.TERMWISELIMIT, GetterSetter.of(query -> query.getRanking().getMatching().getTermwiseLimit(), (query, value) -> query.getRanking().getMatching().setTermwiselimit(asDouble(value, 1.0))));
         addDualCasedRM(map, Matching.NUMTHREADSPERSEARCH, GetterSetter.of(query -> query.getRanking().getMatching().getNumThreadsPerSearch(), (query, value) -> query.getRanking().getMatching().setNumThreadsPerSearch(asInteger(value, 1))));
         addDualCasedRM(map, Matching.NUMSEARCHPARTITIIONS, GetterSetter.of(query -> query.getRanking().getMatching().getNumSearchPartitions(), (query, value) -> query.getRanking().getMatching().setNumSearchPartitions(asInteger(value, 1))));
@@ -101,6 +101,9 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.MINGROUPS), GetterSetter.of(query -> query.getRanking().getMatchPhase().getDiversity().getMinGroups(), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setMinGroups(asLong(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.FACTOR), GetterSetter.of(query -> query.getRanking().getMatchPhase().getDiversity().getCutoffFactor(), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setCutoffFactor(asDouble(value, 10.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.STRATEGY), GetterSetter.of(query -> query.getRanking().getMatchPhase().getDiversity().getCutoffStrategy(), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setCutoffStrategy(asString(value, "loose"))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.GLOBAL_PHASE, Ranking.RERANKCOUNT),
+                GetterSetter.of(query -> query.getRanking().getGlobalPhase().getRerankCount(),
+                                (query, value) -> query.getRanking().getGlobalPhase().setRerankCount(asInteger(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getEnable(), (query, value) -> query.getRanking().getSoftTimeout().setEnable(asBoolean(value, true))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getFactor(), (query, value) -> query.getRanking().getSoftTimeout().setFactor(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getTailcost(), (query, value) -> query.getRanking().getSoftTimeout().setTailcost(asDouble(value, null))));
@@ -148,7 +151,7 @@ public class QueryProperties extends Properties {
     public Object get(CompoundName key,
                       Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
-        GetterSetter propertyAccessor = properyAccessors.get(key);
+        GetterSetter propertyAccessor = propertyAccessors.get(key);
         if (propertyAccessor != null && propertyAccessor.getter != null) return propertyAccessor.getter.get(query);
 
         if (key.first().equals(Ranking.RANKING)) {
@@ -164,7 +167,7 @@ public class QueryProperties extends Properties {
     }
 
     private void setInternal(CompoundName key, Object value, Map<String,String> context) {
-        GetterSetter propertyAccessor = properyAccessors.get(key);
+        GetterSetter propertyAccessor = propertyAccessors.get(key);
         if (propertyAccessor != null && propertyAccessor.setter != null) {
             propertyAccessor.setter.set(query, value);
             return;

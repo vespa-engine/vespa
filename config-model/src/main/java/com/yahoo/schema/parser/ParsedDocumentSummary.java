@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.schema.parser;
 
@@ -10,8 +11,9 @@ import java.util.Map;
  * This class holds the extracted information after parsing a
  * "document-summary" block, using simple data structures as far as
  * possible.  Do not put advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 class ParsedDocumentSummary extends ParsedBlock {
 
     private boolean omitSummaryFeatures;
@@ -45,4 +47,5 @@ class ParsedDocumentSummary extends ParsedBlock {
     void inherit(String other) {
         inherited.add(other);
     }
+
 }

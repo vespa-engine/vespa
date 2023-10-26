@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
 import com.yahoo.jdisc.References;
@@ -119,7 +119,7 @@ public abstract class RequestDispatch implements Future<Response>, ResponseHandl
                     try {
                         return futureResponse.get();
                     } catch (InterruptedException | ExecutionException e) {
-                        throw new IllegalStateException(e); // Should not happens since both futures are complete
+                        throw new IllegalStateException(e); // Should not happen since both futures are complete
                     }
                 });
     }

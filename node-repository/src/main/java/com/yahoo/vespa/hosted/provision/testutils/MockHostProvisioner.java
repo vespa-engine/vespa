@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.config.provision.CloudAccount;
@@ -73,13 +73,13 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public void provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
+    public Runnable provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
         if (behaviour(Behaviour.failProvisionRequest)) throw new NodeAllocationException("No capacity for provision request", true);
         Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
-                                .filter(f -> request.sharing() == HostSharing.exclusive ? compatible(f, request.resources())
-                                                                              : satisfies(f, request.resources()))
+                                .filter(f -> request.sharing().isExclusiveAllocation() ? compatible(f, request.resources())
+                                                                                       : satisfies(f, request.resources()))
                                 .filter(f -> realHostResourcesWithinLimits.test(f.resources()))
                                 .findFirst()
                                 .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + request.resources(), true));
@@ -91,7 +91,8 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostHostname,
                                           hostFlavor,
                                           request.type(),
-                                          request.sharing() == HostSharing.exclusive ? Optional.of(request.owner()) : Optional.empty(),
+                                          request.sharing() == HostSharing.provision ? Optional.of(request.owner()) : Optional.empty(),
+                                          request.sharing().isExclusiveAllocation() ? Optional.of(request.owner()) : Optional.empty(),
                                           Optional.empty(),
                                           createHostnames(request.type(), hostFlavor, index),
                                           request.resources(),
@@ -100,6 +101,7 @@ public class MockHostProvisioner implements HostProvisioner {
         }
         provisionedHosts.addAll(hosts);
         whenProvisioned.accept(hosts);
+        return () -> {};
     }
 
     @Override

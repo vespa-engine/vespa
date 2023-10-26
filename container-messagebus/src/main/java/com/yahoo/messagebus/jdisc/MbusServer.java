@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
 import com.google.inject.Inject;
@@ -48,8 +48,8 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     @Override
     public void start() {
         log.log(Level.FINE, "Starting message bus server.");
-        session.connect();
         runState.set(State.RUNNING);
+        session.connect();
     }
 
     @Override
@@ -66,7 +66,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
 
     @Override
     protected void destroy() {
-        log.log(Level.FINE, "Destroying message bus server.");
+        log.log(Level.INFO, "Destroying message bus server: " + session.name());
         runState.set(State.STOPPED);
         sessionReference.close();
     }

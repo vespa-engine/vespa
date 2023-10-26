@@ -1,8 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "flushcontext.h"
 #include "iflushstrategy.h"
+#include "priority_flush_token.h"
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -43,13 +44,15 @@ private:
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
-        FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP &target);
+        FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP &target, std::shared_ptr<PriorityFlushToken> priority_flush_token);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
+        std::shared_ptr<PriorityFlushToken> _priority_flush_token;
     };
     using FlushMap = std::map<uint32_t, FlushInfo>;
     using FlushHandlerMap = HandlerMap<IFlushHandler>;
+    using PendingPrunes = std::map<std::shared_ptr<IFlushHandler>, std::shared_ptr<PriorityFlushToken>>;
     std::atomic<bool>              _closed;
     const uint32_t                 _maxConcurrentNormal;
     const vespalib::duration       _idleInterval;
@@ -58,6 +61,7 @@ private:
     std::atomic<bool>              _has_thread;
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
+    mutable std::shared_ptr<PriorityFlushToken> _priority_flush_token;
     vespalib::ThreadStackExecutor  _executor;
     mutable std::mutex             _lock;
     std::condition_variable        _cond;
@@ -67,7 +71,7 @@ private:
     std::mutex                     _strategyLock;
     std::condition_variable        _strategyCond;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
-    std::set<IFlushHandler::SP>    _pendingPrune;
+    PendingPrunes                       _pendingPrune;
     std::shared_ptr<search::FlushToken> _normal_flush_token;
     std::shared_ptr<search::FlushToken> _gc_flush_token;
 
@@ -78,8 +82,8 @@ private:
     vespalib::string flushNextTarget(const vespalib::string & name, const FlushContext::List & contexts);
     void flushAll(const FlushContext::List &lst);
     bool prune();
-    uint32_t initFlush(const FlushContext &ctx);
-    uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
+    uint32_t initFlush(const FlushContext &ctx, std::shared_ptr<PriorityFlushToken> priority_flush_token);
+    uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target, std::shared_ptr<PriorityFlushToken> priority_flush_token);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard, IFlushTarget::Priority priority) const;
     void wait_for_slot_or_pending_prune(IFlushTarget::Priority priority);
@@ -179,6 +183,7 @@ public:
     FlushMetaSet getCurrentlyFlushingSet() const;
 
     void setStrategy(IFlushStrategy::SP strategy);
+    void mark_currently_flushing_tasks(std::shared_ptr<PriorityFlushToken> priority_flush_token);
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
 };

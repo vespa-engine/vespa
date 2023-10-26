@@ -1289,7 +1289,8 @@
       "public boolean useReconfigurableDispatcher()",
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
-      "public java.lang.String unknownConfigDefinition()"
+      "public java.lang.String unknownConfigDefinition()",
+      "public int searchHandlerThreadpool()"
     ],
     "fields" : [ ]
   },
@@ -1419,6 +1420,31 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.OnnxMemoryStats" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, long, long, long)",
+      "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.fasterxml.jackson.databind.JsonNode)",
+      "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.yahoo.config.application.api.ApplicationFile)",
+      "public static com.yahoo.path.Path memoryStatsFilePath(com.yahoo.path.Path)",
+      "public long peakMemoryUsage()",
+      "public com.fasterxml.jackson.databind.JsonNode toJson()",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long vmSize()",
+      "public long vmRss()",
+      "public long mallocPeak()",
+      "public long mallocCurrent()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.OnnxModelCost$Calculator" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -1430,8 +1456,25 @@
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
-      "public abstract void registerModel(com.yahoo.config.ModelReference)",
       "public abstract void registerModel(java.net.URI)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.OnnxModelCost$DisabledOnnxModelCost" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.model.api.OnnxModelCost",
+      "com.yahoo.config.model.api.OnnxModelCost$Calculator"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
+      "public long aggregatedModelCostInBytes()",
+      "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
+      "public void registerModel(java.net.URI)"
     ],
     "fields" : [ ]
   },
@@ -1444,7 +1487,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.application.api.DeployLogger)",
+      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.application.api.DeployLogger)",
+      "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
       "public static com.yahoo.config.model.api.OnnxModelCost disabled()"
     ],
     "fields" : [ ]

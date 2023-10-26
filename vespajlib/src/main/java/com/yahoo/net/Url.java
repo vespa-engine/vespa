@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
 import java.util.regex.Matcher;
@@ -10,9 +10,9 @@ import java.util.regex.Pattern;
 public class Url {
 
     private static final Pattern pattern = Pattern.compile(
-            //12            3  456          7 8               9ab   c                     d e              f        g   h        i j
-            //          2 1                6           87  5                c            b          ed a4         f           hg      ji
-            "^(([^:/?#]+):)?(//((([^:@/?#]+)(:([^@/?#]+))?@))?(((\\[([^\\]]+)\\]|[^:/?#]+)(:([^/?#]+))?)))?([^?#]+)?(\\?([^#]*))?(#(.*))?");
+            //12            3  45          6 7              89   a                 b c             d        e   f        g h
+            //          2 1               5           76  4            a          9          cb 8         d           fe      hg
+            "^(([^:/?#]+):)?(//(([^:@/?#]+)(:([^@/?#]+))?@)?((\\[([^]]+)]|[^:/?#]+)(:([^/?#]+))?))?([^?#]+)?(\\?([^#]*))?(#(.*))?");
     private final String image;
     private final int schemeBegin;
     private final int schemeEnd;
@@ -122,17 +122,17 @@ public class Url {
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Malformed URL.");
         }
-        String host = matcher.group(12);
-        if (host == null) {
-            host = matcher.group(11);
-        }
+        String host = matcher.group(10);
         if (host == null) {
             host = matcher.group(9);
         }
-        String port = matcher.group(14);
-        return new Url(matcher.group(2), matcher.group(6), matcher.group(8), host,
-                       port != null ? Integer.valueOf(port) : null, matcher.group(15), matcher.group(17),
-                       matcher.group(19));
+        if (host == null) {
+            host = matcher.group(8);
+        }
+        String port = matcher.group(12);
+        return new Url(matcher.group(2), matcher.group(5), matcher.group(7), host,
+                       port != null ? Integer.valueOf(port) : null, matcher.group(13), matcher.group(15),
+                       matcher.group(17));
     }
 
     public int getSchemeBegin() {

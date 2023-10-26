@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -52,7 +52,7 @@ public:
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;
     void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const override;
 
-    LidInfo append(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len,
+    LidInfo append(uint64_t serialNum, uint32_t lid, vespalib::ConstBufferRef data,
                    vespalib::CpuUsage::Category cpu_category);
     void flush(bool block, uint64_t syncToken, vespalib::CpuUsage::Category cpu_category);
     uint64_t   getSerialNum() const { return _serialNum; }
@@ -64,7 +64,7 @@ public:
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
-    size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
+    void updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);
     DataStoreFileChunkStats getStats() const override;
@@ -79,7 +79,7 @@ private:
     bool frozen() const override { return _frozen.load(std::memory_order_acquire); }
     void waitForChunkFlushedToDisk(uint32_t chunkId) const;
     void waitForAllChunksFlushedToDisk() const;
-    void fileWriter(const uint32_t firstChunkId);
+    void fileWriter(uint32_t firstChunkId);
     void internalFlush(uint32_t, uint64_t serialNum, vespalib::CpuUsage::Category cpu_category);
     void enque(ProcessedChunkUP, vespalib::CpuUsage::Category cpu_category);
     int32_t flushLastIfNonEmpty(bool force);

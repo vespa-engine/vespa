@@ -1,7 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.mojo;
 
 import com.yahoo.container.plugin.classanalysis.Analyze;
+import com.yahoo.container.plugin.classanalysis.Analyze.JdkVersionCheck;
 import com.yahoo.container.plugin.classanalysis.ClassFileMetaData;
 import com.yahoo.container.plugin.classanalysis.ExportPackageAnnotation;
 import com.yahoo.container.plugin.classanalysis.PackageTally;
@@ -206,7 +207,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
 
     private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry, ArtifactVersion version) throws MojoExecutionException {
         try {
-            return Analyze.analyzeClass(jarFile.getInputStream(entry), version);
+            return Analyze.analyzeClass(jarFile.getInputStream(entry), JdkVersionCheck.DISABLED, version);
         } catch (Exception e) {
             throw new MojoExecutionException(
                     String.format("While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);

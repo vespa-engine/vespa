@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeResources;
@@ -29,7 +29,7 @@ public class CapacityCheckerTest {
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         assertTrue(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList().containsAll(failurePath.get().hostsCausingFailure));
-        assertEquals(4, failurePath.get().hostsCausingFailure.size());
+        assertEquals(5, failurePath.get().hostsCausingFailure.size());
     }
 
     @Test

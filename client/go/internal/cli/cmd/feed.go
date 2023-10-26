@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package cmd
 
 import (
@@ -57,8 +58,8 @@ func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
 	cmd := &cobra.Command{
 		Use:   "feed json-file [json-file]...",
-		Short: "Feed multiple document operations to a Vespa cluster",
-		Long: `Feed multiple document operations to a Vespa cluster.
+		Short: "Feed multiple document operations to Vespa",
+		Long: `Feed multiple document operations to Vespa.
 
 This command can be used to feed large amounts of documents to a Vespa cluster
 efficiently.
@@ -107,7 +108,7 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]uti
 	}
 	services := make([]util.HTTPClient, 0, n)
 	baseURL := ""
-	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	for i := 0; i < n; i++ {
 		service, err := waiter.Service(target, cli.config.cluster())
 		if err != nil {

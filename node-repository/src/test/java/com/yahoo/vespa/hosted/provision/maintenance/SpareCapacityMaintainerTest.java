@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -11,7 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -321,7 +321,7 @@ public class SpareCapacityMaintainerTest {
             }
             nodes = nodeRepository.nodes().reserve(nodes);
             var transaction = new NestedTransaction();
-            nodes = nodeRepository.nodes().activate(nodes, new ApplicationTransaction(new ProvisionLock(application, () -> { }), transaction));
+            nodes = nodeRepository.nodes().activate(nodes, new ApplicationTransaction(new ApplicationMutex(application, () -> { }), transaction));
             transaction.commit();
         }
 

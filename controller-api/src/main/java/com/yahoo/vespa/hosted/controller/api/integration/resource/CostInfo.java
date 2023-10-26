@@ -1,7 +1,8 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -24,11 +25,14 @@ public class CostInfo {
     private final BigDecimal gpuCost;
     private final NodeResources.Architecture architecture;
     private final int majorVersion;
+    private final CloudAccount cloudAccount;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
                     BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours,
-                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture, int majorVersion) {
+                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture,
+                    int majorVersion, CloudAccount cloudAccount)
+    {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
         this.cpuHours = cpuHours;
@@ -41,6 +45,7 @@ public class CostInfo {
         this.gpuCost = gpuCost;
         this.architecture = architecture;
         this.majorVersion = majorVersion;
+        this.cloudAccount = cloudAccount;
     }
 
     public ApplicationId getApplicationId() {
@@ -95,4 +100,7 @@ public class CostInfo {
         return majorVersion;
     }
 
+    public CloudAccount getCloudAccount() {
+        return cloudAccount;
+    }
 }

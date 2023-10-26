@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.ConsoleUrls;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
@@ -53,12 +54,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
-import com.yahoo.vespa.hosted.controller.tenant.BillingReference;
-import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -71,6 +70,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ControllerVersion controllerVersion;
     private final ZoneRegistryMock zoneRegistryMock;
     private final ConfigServerMock configServerMock;
+    private final ConsoleUrls consoleUrls = new ConsoleUrls(URI.create("https://console.tld"));
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MockVpcEndpointService vpcEndpointService = new MockVpcEndpointService(clock, memoryNameService);
     private final MockMailer mockMailer = new MockMailer();
@@ -90,7 +90,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockEnclaveAccessService mockAMIService = new MockEnclaveAccessService();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final MockRoleService roleService = new MockRoleService();
-    private final MockBillingController billingController = new MockBillingController(clock);
     private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final NoopEndpointSecretManager secretManager = new NoopEndpointSecretManager();
@@ -101,6 +100,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final PlanRegistry planRegistry = new PlanRegistryMock();
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
+    private final MockBillingController billingController = new MockBillingController(clock, billingDb);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
 
     public ServiceRegistryMock(SystemName system) {
@@ -221,6 +221,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
+    public ConsoleUrls consoleUrls() {
+        return consoleUrls;
+    }
+
+    @Override
     public MockResourceTagger resourceTagger() {
         return mockResourceTagger;
     }
@@ -320,6 +325,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     @Override
     public BillingReporter billingReporter() {
-        return new BillingReporterMock(clock());
+        return new BillingReporterMock(clock(), billingDb);
     }
+
 }

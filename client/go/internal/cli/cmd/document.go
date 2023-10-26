@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa document command
 // author: bratseth
 
@@ -298,7 +298,7 @@ func documentService(cli *CLI, waitSecs int) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	return waiter.Service(target, cli.config.cluster())
 }
 

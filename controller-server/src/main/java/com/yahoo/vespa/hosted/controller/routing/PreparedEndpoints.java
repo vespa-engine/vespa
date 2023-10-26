@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -27,13 +28,13 @@ import java.util.stream.Collectors;
 public record PreparedEndpoints(DeploymentId deployment,
                                 EndpointList endpoints,
                                 List<AssignedRotation> rotations,
-                                Optional<EndpointCertificate> certificate) {
+                                EndpointCertificate certificate) {
 
-    public PreparedEndpoints(DeploymentId deployment, EndpointList endpoints, List<AssignedRotation> rotations, Optional<EndpointCertificate> certificate) {
+    public PreparedEndpoints(DeploymentId deployment, EndpointList endpoints, List<AssignedRotation> rotations, EndpointCertificate certificate) {
         this.deployment = Objects.requireNonNull(deployment);
         this.endpoints = Objects.requireNonNull(endpoints);
         this.rotations = List.copyOf(Objects.requireNonNull(rotations));
-        this.certificate = Objects.requireNonNull(certificate);
+        this.certificate = requireMatchingSans(certificate, endpoints);
     }
 
     /** Returns the endpoints contained in this as {@link com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint} */
@@ -98,6 +99,17 @@ public record PreparedEndpoints(DeploymentId deployment,
             case weighted -> "weighted";
             case zone -> "zone";
         };
+    }
+
+    private static EndpointCertificate requireMatchingSans(EndpointCertificate certificate, EndpointList endpoints) {
+        Objects.requireNonNull(certificate);
+        for (var endpoint : endpoints.not().scope(Endpoint.Scope.weighted)) { // Weighted endpoints are not present in certificate
+            if (!certificate.sanMatches(endpoint.dnsName())) {
+                throw new IllegalArgumentException(endpoint + " has no matching SAN. Certificate contains " +
+                                                   certificate.requestedDnsSans());
+            }
+        }
+        return certificate;
     }
 
 }

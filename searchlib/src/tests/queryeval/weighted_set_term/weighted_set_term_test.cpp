@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
@@ -147,23 +147,31 @@ struct MockFixture {
 
 } // namespace <unnamed>
 
-void run_simple(bool field_is_filter, bool term_is_not_needed)
+void run_simple(bool field_is_filter, bool term_is_not_needed, bool singleTerm)
 {
     FakeSearchable index;
     setupFakeSearchable(index);
     FakeResult expect;
     if (field_is_filter || term_is_not_needed) {
-        expect.doc(3)
-            .doc(5)
-            .doc(7);
+        expect.doc(3);
+        if ( ! singleTerm) {
+            expect.doc(5)
+                  .doc(7);
+        }
     } else {
-        expect.doc(3).elem(0).weight(30).pos(0)
-            .doc(5).elem(0).weight(50).pos(0)
-            .doc(7).elem(0).weight(70).pos(0);
+        expect.doc(3).elem(0).weight(30).pos(0);
+        if (!singleTerm) {
+            expect.doc(5).elem(0).weight(50).pos(0)
+                  .doc(7).elem(0).weight(70).pos(0);
+        }
     }
     WS ws;
-    ws.add("7", 70).add("5", 50).add("3", 30).add("100", 1000)
-      .set_field_is_filter(field_is_filter)
+    if (singleTerm) {
+        ws.add("3", 30);
+    } else {
+        ws.add("7", 70).add("5", 50).add("3", 30).add("100", 1000);
+    }
+    ws.set_field_is_filter(field_is_filter)
       .set_term_is_not_needed(term_is_not_needed);
 
     EXPECT_TRUE(ws.isGenericSearch(index, "field", true));
@@ -178,15 +186,35 @@ void run_simple(bool field_is_filter, bool term_is_not_needed)
 }
 
 TEST("testSimple") {
-    TEST_DO(run_simple(false, false));
+    TEST_DO(run_simple(false, false, false));
 }
 
 TEST("testSimple filter field") {
-    TEST_DO(run_simple(true, false));
+    TEST_DO(run_simple(true, false, false));
 }
 
 TEST("testSimple unranked") {
-    TEST_DO(run_simple(false, true));
+    TEST_DO(run_simple(false, true, false));
+}
+
+TEST("testSimple unranked filter filed") {
+    TEST_DO(run_simple(true, true, false));
+}
+
+TEST("testSimple single") {
+    TEST_DO(run_simple(false, false, true));
+}
+
+TEST("testSimple single filter field") {
+    TEST_DO(run_simple(true, false, true));
+}
+
+TEST("testSimple single unranked") {
+    TEST_DO(run_simple(false, true, true));
+}
+
+TEST("testSimple single unranked filter field") {
+    TEST_DO(run_simple(true, true, true));
 }
 
 void run_multi(bool field_is_filter, bool term_is_not_needed)

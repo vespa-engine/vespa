@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -17,6 +17,7 @@ class IStringFieldConverter
 public:
     virtual ~IStringFieldConverter() = default;
     virtual void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) = 0;
+    virtual bool render_weighted_set_as_array() const = 0;
 };
 
 }

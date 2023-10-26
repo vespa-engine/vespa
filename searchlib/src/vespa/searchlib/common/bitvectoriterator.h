@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -20,17 +20,16 @@ protected:
     const BitVector & _bv;
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void doUnpack(uint32_t docId) override final {
+    void doUnpack(uint32_t docId) final {
         _tfmd.resetOnlyDocId(docId);
     }
-    bool isBitVector() const override { return true; }
+    BitVectorMeta asBitVector() const noexcept override { return {&_bv, _docIdLimit, isInverted()}; }
     fef::TermFieldMatchData  &_tfmd;
 public:
     virtual bool isInverted() const = 0;
-    const void *getBitValues() const { return _bv.getStart(); }
 
     Trinary is_strict() const override { return Trinary::False; }
-    uint32_t getDocIdLimit() const { return _docIdLimit; }
+    uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
     static UP create(const BitVector *const other, fef::TermFieldMatchData &matchData, bool strict, bool inverted = false);
     static UP create(const BitVector *const other, uint32_t docIdLimit,
                      fef::TermFieldMatchData &matchData, bool strict, bool inverted = false);

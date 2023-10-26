@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -19,6 +19,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -55,6 +56,9 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -134,6 +138,9 @@ public class ApplicationSerializer {
     private static final String lastWrittenField = "lastWritten";
     private static final String lastQueriesPerSecondField = "lastQueriesPerSecond";
     private static final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private static final String dataPlaneTokensField = "dataPlaneTokens";
+    private static final String tokenIdField = "id";
+    private static final String tokenUpdatedField = "updated";
 
     // DeploymentJobs fields
     private static final String jobStatusField = "jobStatus";
@@ -221,6 +228,12 @@ public class ApplicationSerializer {
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
         object.setDouble(quotaUsageRateField, deployment.quota().rate());
         deployment.cost().ifPresent(cost -> object.setDouble(deploymentCostField, cost));
+        Cursor dataPlaneTokensArray = object.setArray(dataPlaneTokensField);
+        deployment.dataPlaneTokens().forEach((id, updated) -> {
+            Cursor tokenObject = dataPlaneTokensArray.addObject();
+            tokenObject.setString(tokenIdField, id.value());
+            tokenObject.setLong(tokenUpdatedField, updated.toEpochMilli());
+        });
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -433,7 +446,10 @@ public class ApplicationSerializer {
                                                         SlimeUtils.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
                                                         SlimeUtils.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
                               QuotaUsage.create(SlimeUtils.optionalDouble(deploymentObject.field(quotaUsageRateField))),
-                              SlimeUtils.optionalDouble(deploymentObject.field(deploymentCostField)));
+                              SlimeUtils.optionalDouble(deploymentObject.field(deploymentCostField)),
+                              SlimeUtils.entriesStream(deploymentObject.field(dataPlaneTokensField))
+                                        .collect(toMap(entry -> TokenId.of(entry.field(tokenIdField).asString()),
+                                                       entry -> Instant.ofEpochMilli(entry.field(tokenUpdatedField).asLong()))));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {

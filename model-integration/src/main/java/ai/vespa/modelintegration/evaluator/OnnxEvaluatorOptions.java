@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package ai.vespa.modelintegration.evaluator;
 
@@ -41,6 +41,7 @@ public class OnnxEvaluatorOptions {
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(executionMode == PARALLEL ? interOpThreads : 1);
         options.setIntraOpNumThreads(intraOpThreads);
+        options.setCPUArenaAllocator(false);
         if (loadCuda) {
             options.addCUDA(gpuDeviceNumber);
         }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -53,10 +53,9 @@ public class MathFunctionNode extends MultiArgFunctionNode {
         }
     }
 
-    public static final int classId = registerClass(0x4000 + 136, MathFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 136, MathFunctionNode.class, MathFunctionNode::new);
     private Function fnc;
 
-    @SuppressWarnings("UnusedDeclaration")
     public MathFunctionNode() {
         this(Function.LOG);
     }
@@ -75,69 +74,31 @@ public class MathFunctionNode extends MultiArgFunctionNode {
     @Override
     protected boolean onExecute() {
         getArg(0).execute();
-        double result = 0.0;
-        switch (fnc) {
-        case EXP:
-            result = Math.exp(getArg(0).getResult().getFloat());
-            break;
-        case POW:
-            result = Math.pow(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat());
-            break;
-        case LOG:
-            result = Math.log(getArg(0).getResult().getFloat());
-            break;
-        case LOG1P:
-            result = Math.log1p(getArg(0).getResult().getFloat());
-            break;
-        case LOG10:
-            result = Math.log10(getArg(0).getResult().getFloat());
-            break;
-        case SIN:
-            result = Math.sin(getArg(0).getResult().getFloat());
-            break;
-        case ASIN:
-            result = Math.asin(getArg(0).getResult().getFloat());
-            break;
-        case COS:
-            result = Math.cos(getArg(0).getResult().getFloat());
-            break;
-        case ACOS:
-            result = Math.acos(getArg(0).getResult().getFloat());
-            break;
-        case TAN:
-            result = Math.tan(getArg(0).getResult().getFloat());
-            break;
-        case ATAN:
-            result = Math.atan(getArg(0).getResult().getFloat());
-            break;
-        case SQRT:
-            result = Math.sqrt(getArg(0).getResult().getFloat());
-            break;
-        case SINH:
-            result = Math.sinh(getArg(0).getResult().getFloat());
-            break;
-        case ASINH:
-            throw new IllegalArgumentException("Inverse hyperbolic sine(asinh) is not supported in java");
-        case COSH:
-            result = Math.cosh(getArg(0).getResult().getFloat());
-            break;
-        case ACOSH:
-            throw new IllegalArgumentException("Inverse hyperbolic cosine (acosh) is not supported in java");
-        case TANH:
-            result = Math.tanh(getArg(0).getResult().getFloat());
-            break;
-        case ATANH:
-            throw new IllegalArgumentException("Inverse hyperbolic tangents (atanh) is not supported in java");
-        case FLOOR:
-            result = Math.floor(getArg(0).getResult().getFloat());
-            break;
-        case CBRT:
-            result = Math.cbrt(getArg(0).getResult().getFloat());
-            break;
-        case HYPOT:
-            result = Math.hypot(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat());
-            break;
-        }
+        double result = switch (fnc) {
+            case EXP -> Math.exp(getArg(0).getResult().getFloat());
+            case POW -> Math.pow(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat());
+            case LOG -> Math.log(getArg(0).getResult().getFloat());
+            case LOG1P -> Math.log1p(getArg(0).getResult().getFloat());
+            case LOG10 -> Math.log10(getArg(0).getResult().getFloat());
+            case SIN -> Math.sin(getArg(0).getResult().getFloat());
+            case ASIN -> Math.asin(getArg(0).getResult().getFloat());
+            case COS -> Math.cos(getArg(0).getResult().getFloat());
+            case ACOS -> Math.acos(getArg(0).getResult().getFloat());
+            case TAN -> Math.tan(getArg(0).getResult().getFloat());
+            case ATAN -> Math.atan(getArg(0).getResult().getFloat());
+            case SQRT -> Math.sqrt(getArg(0).getResult().getFloat());
+            case SINH -> Math.sinh(getArg(0).getResult().getFloat());
+            case ASINH -> throw new IllegalArgumentException("Inverse hyperbolic sine(asinh) is not supported in java");
+            case COSH -> Math.cosh(getArg(0).getResult().getFloat());
+            case ACOSH ->
+                    throw new IllegalArgumentException("Inverse hyperbolic cosine (acosh) is not supported in java");
+            case TANH -> Math.tanh(getArg(0).getResult().getFloat());
+            case ATANH ->
+                    throw new IllegalArgumentException("Inverse hyperbolic tangents (atanh) is not supported in java");
+            case FLOOR -> Math.floor(getArg(0).getResult().getFloat());
+            case CBRT -> Math.cbrt(getArg(0).getResult().getFloat());
+            case HYPOT -> Math.hypot(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat());
+        };
         ((FloatResultNode)getResult()).setValue(result);
         return true;
     }

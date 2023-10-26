@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 /**
@@ -20,7 +20,7 @@ public final class ErrorCode {
     /** No addresses found for the services of the message route. */
     public static final int NO_ADDRESS_FOR_SERVICE = TRANSIENT_ERROR + 2;
 
-    /** A connection problem occured while sending. */
+    /** A connection problem occurred while sending. */
     public static final int CONNECTION_ERROR       = TRANSIENT_ERROR + 3;
 
     /** The session specified for the message is unknown. */
@@ -50,10 +50,10 @@ public final class ErrorCode {
     /** No services found for the message route. */
     public static final int NO_SERVICES_FOR_ROUTE  = FATAL_ERROR + 3;
 
-    /** An error occured while encoding the message. */
+    /** An error occurred while encoding the message. */
     public static final int ENCODE_ERROR           = FATAL_ERROR + 5;
 
-    /** A fatal network error occured while sending. */
+    /** A fatal network error occurred while sending. */
     public static final int NETWORK_ERROR          = FATAL_ERROR + 6;
 
     /** The protocol specified for the message is unknown. */
@@ -77,7 +77,7 @@ public final class ErrorCode {
     /** Exception thrown by routing policy. */
     public static final int POLICY_ERROR           = FATAL_ERROR + 13;
 
-    /** An error occured while sequencing a message. */
+    /** An error occurred while sequencing a message. */
     public static final int SEQUENCE_ERROR         = FATAL_ERROR + 14;
 
     /** An application specific non-recoverable error. */

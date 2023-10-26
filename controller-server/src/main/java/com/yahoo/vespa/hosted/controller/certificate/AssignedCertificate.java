@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.provision.InstanceName;
@@ -15,10 +15,19 @@ import java.util.Optional;
  */
 public record AssignedCertificate(TenantAndApplicationId application,
                                   Optional<InstanceName> instance,
-                                  EndpointCertificate certificate) {
+                                  EndpointCertificate certificate,
+                                  boolean shouldValidate) {
 
     public AssignedCertificate with(EndpointCertificate certificate) {
-        return new AssignedCertificate(application, instance, certificate);
+        return new AssignedCertificate(application, instance, certificate, shouldValidate);
+    }
+
+    public AssignedCertificate withoutInstance() {
+        return new AssignedCertificate(application, Optional.empty(), certificate, shouldValidate);
+    }
+
+    public AssignedCertificate withShouldValidate(boolean shouldValidate) {
+        return new AssignedCertificate(application, instance, certificate, shouldValidate);
     }
 
 }

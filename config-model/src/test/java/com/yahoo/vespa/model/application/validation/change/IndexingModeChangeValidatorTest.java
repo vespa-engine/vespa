@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
@@ -10,9 +10,10 @@ import com.yahoo.vespa.model.application.validation.ValidationTester;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -33,7 +34,7 @@ public class IndexingModeChangeValidatorTest {
         }
         catch (ValidationException e) {
             assertEquals("indexing-mode-change:\n" +
-                    "\tDocument type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'\n" +
+                    "\tDocument type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'\n" +
                     "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
                     e.getMessage());
         }
@@ -49,7 +50,7 @@ public class IndexingModeChangeValidatorTest {
                 tester.deploy(oldModel, getServices("streaming"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
-                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
+                "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'",
                 changeActions);
     }
 
@@ -63,7 +64,7 @@ public class IndexingModeChangeValidatorTest {
                 tester.deploy(oldModel, getServices("store-only"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
-                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'store-only'",
+                "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'store-only'",
                 changeActions);
     }
 
@@ -79,10 +80,10 @@ public class IndexingModeChangeValidatorTest {
 
     private static String getServices(String indexingMode) {
         return "<services version='1.0'>" +
-               "  <container id='default-container' version='1.0'>" +
+               "  <container id='default' version='1.0'>" +
                "    <nodes count='1'/>" +
                "  </container>" +
-               "  <content id='default' version='1.0'>" +
+               "  <content id='default-content' version='1.0'>" +
                "    <redundancy>1</redundancy>" +
                "    <documents>" +
                "      <document type='music' mode='" + indexingMode + "'/>" +

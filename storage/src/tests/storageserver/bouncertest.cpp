@@ -1,20 +1,22 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/stat.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/storageserver/bouncer.h>
 #include <vespa/storage/storageserver/bouncer_metrics.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storageapi/message/stat.h>
+#include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -51,9 +53,10 @@ struct BouncerTest : public Test {
             api::Timestamp timestamp,
             document::BucketSpace bucketSpace);
 
-    void expectMessageBouncedWithRejection();
-    void expectMessageBouncedWithAbort();
-    void expectMessageNotBounced();
+    void expectMessageBouncedWithRejection() const;
+    void expect_message_bounced_with_node_down_abort() const;
+    void expect_message_bounced_with_shutdown_abort() const;
+    void expectMessageNotBounced() const;
 };
 
 BouncerTest::BouncerTest()
@@ -72,7 +75,10 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
         _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
     }
     _upper.reset(new DummyStorageLink());
-    _manager = new Bouncer(_node->getComponentRegister(), config::ConfigUri(config.getConfigId()));
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+    auto cfg_uri = config::ConfigUri(config.getConfigId());
+    auto cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
+    _manager = new Bouncer(_node->getComponentRegister(), *cfg);
     _lower = new DummyStorageLink();
     _upper->push_back(std::unique_ptr<StorageLink>(_manager));
     _upper->push_back(std::unique_ptr<StorageLink>(_lower));
@@ -181,7 +187,7 @@ TEST_F(BouncerTest, allow_notify_bucket_change_even_when_distributor_down) {
 }
 
 void
-BouncerTest::expectMessageBouncedWithRejection()
+BouncerTest::expectMessageBouncedWithRejection() const
 {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
@@ -191,7 +197,7 @@ BouncerTest::expectMessageBouncedWithRejection()
 }
 
 void
-BouncerTest::expectMessageBouncedWithAbort()
+BouncerTest::expect_message_bounced_with_node_down_abort() const
 {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
@@ -204,7 +210,17 @@ BouncerTest::expectMessageBouncedWithAbort()
 }
 
 void
-BouncerTest::expectMessageNotBounced()
+BouncerTest::expect_message_bounced_with_shutdown_abort() const
+{
+    ASSERT_EQ(1, _upper->getNumReplies());
+    EXPECT_EQ(0, _upper->getNumCommands());
+    auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::ABORTED, "Node is shutting down"), reply.getResult());
+    EXPECT_EQ(0, _lower->getNumCommands());
+}
+
+void
+BouncerTest::expectMessageNotBounced() const
 {
     EXPECT_EQ(size_t(0), _upper->getNumReplies());
     EXPECT_EQ(size_t(1), _lower->getNumCommands());
@@ -214,9 +230,9 @@ void
 BouncerTest::configureRejectionThreshold(int newThreshold)
 {
     using Builder = vespa::config::content::core::StorBouncerConfigBuilder;
-    auto config = std::make_unique<Builder>();
-    config->feedRejectionPriorityThreshold = newThreshold;
-    _manager->configure(std::move(config));
+    Builder config;
+    config.feedRejectionPriorityThreshold = newThreshold;
+    _manager->on_configure(config);
 }
 
 TEST_F(BouncerTest, reject_lower_prioritized_feed_messages_when_configured) {
@@ -296,7 +312,7 @@ TEST_F(BouncerTest, abort_request_when_derived_bucket_space_node_state_is_marked
     auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
-    expectMessageBouncedWithAbort();
+    expect_message_bounced_with_node_down_abort();
     EXPECT_EQ(1, _manager->metrics().unavailable_node_aborts.getValue());
 
     _upper->reset();
@@ -360,6 +376,24 @@ TEST_F(BouncerTest, operation_with_sufficient_bucket_bits_is_not_rejected) {
     auto cmd = make_remove_with_used_bits(spi::BucketLimits::MinUsedBits);
     _upper->sendDown(std::move(cmd));
     expectMessageNotBounced();
+}
+
+TEST_F(BouncerTest, requests_are_rejected_after_close) {
+    _manager->close();
+    _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
+    expect_message_bounced_with_shutdown_abort();
+}
+
+TEST_F(BouncerTest, replies_are_swallowed_after_close) {
+    _manager->close();
+    auto req = createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space());
+    auto reply = req->makeReply();
+    _upper->sendDown(std::move(reply));
+
+    EXPECT_EQ(0, _upper->getNumCommands());
+    EXPECT_EQ(0, _upper->getNumReplies());
+    EXPECT_EQ(0, _lower->getNumCommands());
+    EXPECT_EQ(0, _lower->getNumReplies());
 }
 
 } // storage

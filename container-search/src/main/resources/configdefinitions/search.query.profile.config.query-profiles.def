@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Query profiles and their types - a query profile is a nested composite of query parameters with an id
 # A set of query parameters can be fetched from a query profile rather than being
 # submitted explicitly.

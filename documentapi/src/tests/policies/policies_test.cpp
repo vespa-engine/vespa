@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testframe.h"
 #include <vespa/documentapi/documentapi.h>
@@ -806,7 +806,7 @@ Test::requireThatContentPolicyIsRandomWithoutState()
     ContentPolicy &policy = setupContentPolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
-    ASSERT_TRUE(policy.getSystemState() == nullptr);
+    ASSERT_FALSE(policy.getSystemState());
 
     std::set<string> lst;
     for (uint32_t i = 0; i < 666; i++) {
@@ -858,12 +858,12 @@ Test::requireThatContentPolicyIsTargetedWithState()
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
     ContentPolicy &policy = setupContentPolicy(frame, param, "storage/cluster.mycluster/distributor/*/default", 5);
-    ASSERT_TRUE(policy.getSystemState() == nullptr);
+    ASSERT_FALSE(policy.getSystemState());
     {
         std::vector<mbus::RoutingNode*> leaf;
         ASSERT_TRUE(frame.select(leaf, 1));
         leaf[0]->handleReply(std::make_unique<WrongDistributionReply>("distributor:5 storage:5"));
-        ASSERT_TRUE(policy.getSystemState() != nullptr);
+        ASSERT_TRUE(policy.getSystemState());
         EXPECT_EQUAL(policy.getSystemState()->toString(), "distributor:5 storage:5");
     }
     std::set<string> lst;
@@ -897,12 +897,12 @@ Test::requireThatContentPolicyCombinesSystemAndSlobrokState()
     ContentPolicy &policy = setupContentPolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 1);
-    ASSERT_TRUE(policy.getSystemState() == nullptr);
+    ASSERT_FALSE(policy.getSystemState());
     {
         std::vector<mbus::RoutingNode*> leaf;
         ASSERT_TRUE(frame.select(leaf, 1));
         leaf[0]->handleReply(std::make_unique<WrongDistributionReply>("distributor:99 storage:99"));
-        ASSERT_TRUE(policy.getSystemState() != nullptr);
+        ASSERT_TRUE(policy.getSystemState());
         EXPECT_EQUAL(policy.getSystemState()->toString(), "distributor:99 storage:99");
     }
     for (int i = 0; i < 666; i++) {

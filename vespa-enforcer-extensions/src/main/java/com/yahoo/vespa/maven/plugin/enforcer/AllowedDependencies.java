@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
@@ -75,7 +76,11 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
         var spec = loadDependencySpec(specFile);
         var resolved = resolve(spec, dependencies);
         if (System.getProperties().containsKey(WRITE_SPEC_PROP)) {
-            writeDependencySpec(specFile, resolved, System.getProperties().containsKey(GUESS_VERSION));
+            // Guess property for version by default, can be disabled with <prop>=false
+            var guessProperty = Optional.ofNullable(System.getProperty(GUESS_VERSION))
+                    .map(p -> p.isEmpty() || Boolean.parseBoolean(p))
+                    .orElse(true);
+            writeDependencySpec(specFile, resolved, guessProperty);
             getLog().info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
             warnOnDuplicateVersions(resolved);
@@ -217,7 +222,7 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
         resolved.matchedRules().forEach(r -> content.add(r.asString()));
         resolved.unmatchedDeps().forEach(d -> content.add(d.asString(guessVersion ? project.getProperties() : null)));
         try (var out = Files.newBufferedWriter(specFile)) {
-            out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n\n");
+            out.write("# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n\n");
             for (var line : content) {
                 out.write(line); out.write('\n');
             }

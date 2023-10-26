@@ -1,7 +1,9 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -17,8 +19,10 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author bratseth
@@ -50,7 +54,7 @@ public class NodeResourceChangeValidatorTest {
         ConfigChangeAction contentAction = validate(model(1, 1, 1, 1), model(1, 1, 2, 1)).get(0);
         assertEquals(ConfigChangeAction.Type.RESTART, contentAction.getType());
         assertEquals("service 'searchnode' of type searchnode on host3", contentAction.getServices().get(0).toString());
-        assertEquals(false, contentAction.ignoreForInternalRedeploy());
+        assertFalse(contentAction.ignoreForInternalRedeploy());
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {
@@ -61,6 +65,10 @@ public class NodeResourceChangeValidatorTest {
         var properties = new TestProperties();
         properties.setHostedVespa(true);
         var deployState = new DeployState.Builder().properties(properties)
+                                                   .endpoints(Set.of(
+                                                           new ContainerEndpoint("container1", ApplicationClusterEndpoint.Scope.zone, List.of("c1.example.com")),
+                                                           new ContainerEndpoint("container2", ApplicationClusterEndpoint.Scope.zone, List.of("c2.example.com"))
+                                                   ))
                                                    .modelHostProvisioner(new Provisioner());
         return new VespaModelCreatorWithMockPkg(
                 null,

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.component.Version;
@@ -480,14 +480,19 @@ public class NodeSerializerTest {
         assertFalse(node.hostTTL().isPresent());
         assertFalse(node.exclusiveToClusterType().isPresent());
 
-        ApplicationId exclusiveToApp = ApplicationId.from("tenant1", "app1", "instance1");
+        ApplicationId provisionedForApp = ApplicationId.from("tenant1", "app1", "instance1");
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(builder.exclusiveToApplicationId(provisionedForApp).build()));
+        assertEquals(Optional.of(provisionedForApp), node.exclusiveToApplicationId());
+        assertEquals(Optional.empty(), node.provisionedForApplicationId());
+
         ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
-        node = builder.exclusiveToApplicationId(exclusiveToApp)
+        node = builder.provisionedForApplicationId(provisionedForApp)
                       .hostTTL(Duration.ofDays(1))
                       .hostEmptyAt(clock.instant().minus(Duration.ofDays(1)).truncatedTo(MILLIS))
                       .exclusiveToClusterType(exclusiveToCluster).build();
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
-        assertEquals(exclusiveToApp, node.exclusiveToApplicationId().get());
+        assertEquals(provisionedForApp, node.exclusiveToApplicationId().get());
+        assertEquals(provisionedForApp, node.provisionedForApplicationId().get());
         assertEquals(Duration.ofDays(1), node.hostTTL().get());
         assertEquals(clock.instant().minus(Duration.ofDays(1)).truncatedTo(MILLIS), node.hostEmptyAt().get());
         assertEquals(exclusiveToCluster, node.exclusiveToClusterType().get());
@@ -508,7 +513,7 @@ public class NodeSerializerTest {
         CloudAccount account = CloudAccount.from("012345678912");
         Node node = Node.create("id", "host1.example.com", nodeFlavors.getFlavorOrThrow("default"), State.provisioned, NodeType.host)
                         .cloudAccount(account)
-                        .exclusiveToApplicationId(ApplicationId.defaultId())
+                        .provisionedForApplicationId(ApplicationId.defaultId())
                         .build();
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(account, node.cloudAccount());

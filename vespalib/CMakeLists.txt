@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
 set(VESPALIB_DIRECTIO_TESTDIR src/tests/directio)
 set(VESPALIB_PROCESS_MEMORY_STATS_TESTDIR src/tests/util/process_memory_stats)

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -13,7 +13,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class FixedWidthBucketFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 77, FixedWidthBucketFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 77, FixedWidthBucketFunctionNode.class, FixedWidthBucketFunctionNode::new);
     private NumericResultNode width = null;
 
     /**

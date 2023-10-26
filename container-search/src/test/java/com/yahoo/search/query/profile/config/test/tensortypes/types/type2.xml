@@ -1,4 +1,4 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile-type id="type2">
     <field name="ranking.features.query(tensor_2)" type="tensor&lt;float&gt;(x[2])" />
     <field name="ranking.features.query(tensor_3)" type="tensor&lt;float&gt;(x[3])" />

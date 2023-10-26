@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "common.h"
@@ -119,7 +119,9 @@ struct mallinfo2 mallinfo2() __THROW {
     info.smblks = 0;
     info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
     info.hblks = vespamalloc::_GmemP->mmapPool().getMmappedBytes();
-    info.usmblks = 0;
+    size_t highwaterMark = vespamalloc::_GmemP->dataSegment().dataSize() +
+                           vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
+    info.usmblks = highwaterMark;
     info.fsmblks = 0;
     info.fordblks = vespamalloc::_GmemP->dataSegment().freeSize();
     info.uordblks = info.arena + info.hblks - info.fordblks;
@@ -135,7 +137,9 @@ struct mallinfo mallinfo() __THROW {
     info.smblks = 0;
     info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
     info.hblks = (vespamalloc::_GmemP->mmapPool().getMmappedBytes() >> 20);
-    info.usmblks = 0;
+    size_t highwaterMark = vespamalloc::_GmemP->dataSegment().dataSize() +
+                           vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
+    info.usmblks = (highwaterMark >> 20);
     info.fsmblks = 0;
     info.fordblks = (vespamalloc::_GmemP->dataSegment().freeSize() >> 20);
     info.uordblks = info.arena + info.hblks - info.fordblks;

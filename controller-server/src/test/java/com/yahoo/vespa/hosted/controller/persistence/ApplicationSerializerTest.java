@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -13,6 +13,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -121,15 +122,15 @@ public class ApplicationSerializerTest {
         ApplicationVersion applicationVersion2 = new ApplicationVersion(id, Optional.of(source), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochMilli(496)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), Optional.empty(), 0);
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, CloudAccount.empty, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
-                DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
+                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty(), Map.of(TokenId.of("foo"), Instant.ofEpochMilli(333))));
         deployments.add(new Deployment(zone2, CloudAccount.from("001122334455"), applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                new DeploymentMetrics(2, 3, 4, 5, 6,
-                        Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
-                        Map.of(DeploymentMetrics.Warning.all, 3)),
-                DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                        OptionalDouble.of(200), OptionalDouble.of(10)),
-                QuotaUsage.create(OptionalDouble.of(23.5)),
-                OptionalDouble.of(12.3)));
+                                       new DeploymentMetrics(2, 3, 4, 5, 6,
+                                                             Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
+                                                             Map.of(DeploymentMetrics.Warning.all, 3)),
+                                       DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10)),
+                                       QuotaUsage.create(OptionalDouble.of(23.5)),
+                                       OptionalDouble.of(12.3), Map.of()));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                 new RotationStatus.Targets(
@@ -237,6 +238,9 @@ public class ApplicationSerializerTest {
 
         // Test quota
         assertEquals(original.require(id1.instance()).deployments().get(zone2).quota().rate(), serialized.require(id1.instance()).deployments().get(zone2).quota().rate(), 0.001);
+
+        assertEquals(original.require(id1.instance()).deployments().get(zone1).dataPlaneTokens(), serialized.require(id1.instance()).deployments().get(zone1).dataPlaneTokens());
+        assertEquals(original.require(id1.instance()).deployments().get(zone2).dataPlaneTokens(), serialized.require(id1.instance()).deployments().get(zone2).dataPlaneTokens());
     }
 
     @Test

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
 import com.yahoo.concurrent.CompletableFutures;
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * <p>This class implements a Future&lt;Boolean&gt; that is conjunction of zero or more other Future&lt;Boolean&gt;s,
+ * <p>This class implements a Future&lt;Boolean&gt; that is a conjunction of zero or more other Future&lt;Boolean&gt;s,
  * i.e. it evaluates to <code>true</code> if, and only if, all its operands evaluate to <code>true</code>. To use this class,
  * simply create an instance of it and add operands to it using the {@link #addOperand(CompletableFuture)} method.</p>
  *

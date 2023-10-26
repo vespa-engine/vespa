@@ -1,3 +1,4 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema child inherits parent {
 
     document child inherits parent {
@@ -35,7 +36,7 @@ schema child inherits parent {
     }
 
     document-summary child_summary inherits parent_summary {
-        summary cf1 type string {}
+        summary cf1 {}
     }
 
     import field importedschema_ref.importedfield2 as child_imported {}

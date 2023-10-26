@@ -1,19 +1,20 @@
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
 [![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
-The open big data serving engine - Store, search, organize and make machine-learned inferences
-over big data at serving time.
+Search, make inferences in, and organize vectors, tensors, text and structured data, at serving time and any scale.
 
-This is the primary repository for Vespa where all development is happening.
-New production releases from this repository's master branch are made each weekday from Monday through Thursday.
+This repository contains all the code required to build and run all of Vespa yourself,
+and where you can see all development as it is happening.
+All the content in this repository is licensed under the Apache 2.0 license.
+
+A new release of Vespa is made from this repository's master branch every morning CET Monday through Thursday.
+Build status: [![Vespa Build Status](https://api.screwdriver.cd/v4/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 - Home page: [https://vespa.ai](https://vespa.ai)
 - Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
 - Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
 - Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
-
-Vespa build status: [![Vespa Build Status](https://api.screwdriver.cd/v4/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
 
@@ -37,12 +38,12 @@ hundreds of thousands of queries from Vespa per second.
 
 ## Install
 
-Run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](https://docs.vespa.ai/en/getting-started.html)
-Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai](https://cloud.vespa.ai)
+Deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai](https://cloud.vespa.ai),
+or run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](https://docs.vespa.ai/en/getting-started.html)
 
 ## Usage
 
-- The application created in the getting started guide is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
+- The application created in the getting started guides linked above are fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
 - See [developing applications](https://docs.vespa.ai/en/developer-guide.html) on adding your own Java components to your Vespa application.
 - [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)

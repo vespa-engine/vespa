@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ## Named lists of special tokens - string which should be
 ## treated as words no matter what characters they consist of.
 ## A special token can also optionally be replaced by another

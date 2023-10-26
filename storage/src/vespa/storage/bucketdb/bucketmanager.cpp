@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmanager.h"
 #include "minimumusedbitstracker.h"
@@ -33,10 +33,9 @@ using namespace std::chrono_literals;
 
 namespace storage {
 
-BucketManager::BucketManager(const config::ConfigUri & configUri, ServiceLayerComponentRegister& compReg)
+BucketManager::BucketManager(const StorServerConfig& bootstrap_config, ServiceLayerComponentRegister& compReg)
     : StorageLink("Bucket manager"),
       framework::StatusReporter("bucketdb", "Bucket database"),
-      _configUri(configUri),
       _workerLock(),
       _workerCond(),
       _clusterStateLock(),
@@ -60,8 +59,7 @@ BucketManager::BucketManager(const config::ConfigUri & configUri, ServiceLayerCo
     ns.setMinUsedBits(58);
     _component.getStateUpdater().setReportedNodeState(ns);
 
-    auto server_config = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(configUri.getConfigId(), configUri.getContext());
-    _simulated_processing_delay = std::chrono::milliseconds(std::max(0, server_config->simulatedBucketRequestLatencyMsec));
+    _simulated_processing_delay = std::chrono::milliseconds(std::max(0, bootstrap_config.simulatedBucketRequestLatencyMsec));
 }
 
 BucketManager::~BucketManager()
@@ -414,9 +412,7 @@ BucketManager::dump(std::ostream& out) const
 
 void BucketManager::onOpen()
 {
-    if (!_configUri.empty()) {
-        startWorkerThread();
-    }
+    startWorkerThread();
 }
 
 void BucketManager::startWorkerThread()

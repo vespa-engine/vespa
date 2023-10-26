@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
@@ -16,7 +16,9 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -699,6 +701,80 @@ public class VersionStatusTest {
         for (var version : List.of(version2, version3)) {
             assertOnVersion(version, context.instanceId(), tester);
         }
+    }
+
+    @Test
+    void testPinnedAppsAreIgnoredForIncreasingConfidenceWhenLessThanHalfArePinned() {
+        DeploymentContext canaries[] = new DeploymentContext[3];
+        DeploymentContext defaults[] = new DeploymentContext[3];
+        DeploymentTester tester = new DeploymentTester().atMondayMorning();
+        Version version1 = new Version("6.2");
+        tester.controllerTester().upgradeSystem(version1);
+
+        for (int i = 0; i < 3; i++) {
+            canaries[i] = tester.newDeploymentContext("t" + i, "a", "default");
+            canaries[i].submit(canaryApplicationPackage).deploy();
+            defaults[i] = tester.newDeploymentContext("t" + i, "b", "default");
+            defaults[i].submit(defaultApplicationPackage).deploy();
+        }
+
+        assertEquals(Confidence.high, confidence(tester.controller(), version1));
+
+        // All apps are pinned to version1, and then version2 releases. Initial confidence is low.
+        for (int i = 0; i < 3; i++) {
+            tester.deploymentTrigger().forceChange(canaries[i].instanceId(), Change.empty().withPlatformPin());
+            tester.deploymentTrigger().forceChange(defaults[i].instanceId(), Change.empty().withPlatformPin());
+        }
+        Version version2 = new Version("6.3");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(Confidence.low, confidence(tester.controller(), version2));
+
+        // One canary and one default are unpinned and upgrade. Confidence remains low,
+        // as more than half the apps are pinned, and less tan 100%/90% have upgraded.
+        tester.deploymentTrigger().cancelChange(canaries[0].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().forceChange(canaries[0].instanceId(), Change.of(version2));
+        canaries[0].deployPlatform(version2);
+        tester.deploymentTrigger().cancelChange(defaults[0].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().forceChange(defaults[0].instanceId(), Change.of(version2));
+        defaults[0].deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.low, confidence(tester.controller(), version2));
+
+        // All apps are unpinned, and another canary and default upgrade. Confidence still remains low,
+        // as less than half of the unpinned apps have upgraded.
+        tester.deploymentTrigger().cancelChange(canaries[1].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().cancelChange(canaries[2].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().forceChange(canaries[1].instanceId(), Change.of(version2));
+        tester.deploymentTrigger().cancelChange(defaults[1].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().cancelChange(defaults[2].instanceId(), ChangesToCancel.ALL);
+        tester.deploymentTrigger().forceChange(defaults[1].instanceId(), Change.of(version2));
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.low, confidence(tester.controller(), version2));
+
+        // The second canary upgrades while the last is unpinned.
+        canaries[1].deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.low, confidence(tester.controller(), version2));
+
+        // When the last remaining canary is pinned, less than half are pinned, and all have upgraded,
+        // so confidence finally increases to normal.
+        tester.deploymentTrigger().forceChange(canaries[2].instanceId(), Change.empty().withPlatformPin());
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.normal, confidence(tester.controller(), version2));
+
+        // The second default upgrades while the last is unpinned.
+        defaults[1].deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.normal, confidence(tester.controller(), version2));
+
+        // When the last remaining default is pinned, less than half are pinned, and more than 90% have upgraded,
+        // so confidence increases to high.
+        tester.deploymentTrigger().forceChange(defaults[2].instanceId(), Change.empty().withPlatformPin());
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.high, confidence(tester.controller(), version2));
     }
 
     private void assertOnVersion(Version version, ApplicationId instance, DeploymentTester tester) {

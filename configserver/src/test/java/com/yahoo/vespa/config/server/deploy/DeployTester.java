@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -140,7 +140,19 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public PrepareResult deployApp(String applicationPath, String vespaVersion)  {
-        return deployApp(applicationPath, new PrepareParams.Builder().vespaVersion(vespaVersion));
+        String endpoints = """
+                [
+                  {
+                    "clusterId": "container",
+                    "names": [
+                      "c.example.com"
+                    ],
+                    "scope": "zone",
+                    "routingMethod": "exclusive"
+                  }
+                ]
+                """;
+        return deployApp(applicationPath, new PrepareParams.Builder().containerEndpoints(endpoints).vespaVersion(vespaVersion));
     }
 
     /**

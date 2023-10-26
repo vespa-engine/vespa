@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
 import com.yahoo.component.ComponentId;
@@ -12,6 +12,9 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
+import com.yahoo.search.result.DefaultErrorHit;
+import com.yahoo.search.result.ErrorHit;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
@@ -72,18 +75,21 @@ public class FlatteningSearcherTestCase {
                 ));
         Execution execution = newExecution(new FlatteningSearcher(),
                 new GroupingExecutor(ComponentId.fromString("grouping")),
-                new ResultProvider(Arrays.asList(
+                new ResultProvider(List.of(
                         new GroupingListHit(List.of(group0), null),
-                        new GroupingListHit(List.of(group1), null))));
+                        new GroupingListHit(List.of(group1), null))),
+                new HitsProvider(List.of(
+                        new DefaultErrorHit("source 1", ErrorMessage.createBackendCommunicationError("backend communication error 1")),
+                        new DefaultErrorHit("source 2", ErrorMessage.createBackendCommunicationError("backend communication error 1")))));
         Result result = execution.search(query);
-        assertEquals(5, result.hits().size());
+        assertEquals(6, result.hits().size());
         assertFlat(result);
         assertEquals(2, result.getTotalHitCount());
     }
 
     private void assertFlat(Result result) {
         for (var hit : result.hits())
-            assertTrue(hit instanceof FastHit);
+            assertTrue(hit instanceof FastHit || hit instanceof ErrorHit);
     }
 
     private FS4Hit fs4Hit(double relevance) {
@@ -123,6 +129,21 @@ public class FlatteningSearcherTestCase {
             ++pass;
             Result result = exec.search(query);
             result.hits().add(hit);
+            return result;
+        }
+    }
+    @After (GroupingExecutor.COMPONENT_NAME)
+    private static class HitsProvider extends Searcher {
+        private final List<Hit> hits;
+        HitsProvider(List<Hit> hits) {
+            this.hits = hits;
+        }
+        @Override
+        public Result search(Query query, Execution exec) {
+            Result result = exec.search(query);
+            for (Hit hit : hits) {
+                result.hits().add(hit);
+            }
             return result;
         }
     }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpc_target.h"
 #include "shared_rpc_resources.h"
 #include <vespa/fnet/frt/supervisor.h>
@@ -103,6 +103,10 @@ void SharedRpcResources::wait_until_slobrok_is_ready() {
         LOG(debug, "Waiting for Slobrok to become ready");
         std::this_thread::sleep_for(10ms);
     }
+}
+
+void SharedRpcResources::sync_all_threads() {
+    _transport->sync();
 }
 
 void SharedRpcResources::shutdown() {

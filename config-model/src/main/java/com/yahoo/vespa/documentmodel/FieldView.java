@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.Field;
@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author    baldersheim
+ * @author baldersheim
  */
 public class FieldView implements Serializable {
 
@@ -30,8 +30,9 @@ public class FieldView implements Serializable {
 
     /**
      * This method will add a field to a view. All fields must come from the same document type. Not enforced here.
-     * @param field The field to add.
-     * @return Itself for chaining purposes.
+     *
+     * @param field the field to add.
+     * @return itself for chaining purposes.
      */
     public FieldView add(Field field) {
         if (fields.containsKey(field.getName())) {

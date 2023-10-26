@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.BucketResultNode;
@@ -24,7 +24,7 @@ public class Grouping extends Identifiable {
     }
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 91, Grouping.class);
+    public static final int classId = registerClass(0x4000 + 91, Grouping.class, Grouping::new);
 
     // The client id for this grouping request.
     private int id = 0;

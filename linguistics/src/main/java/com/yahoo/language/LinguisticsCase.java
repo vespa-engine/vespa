@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language;
 
 import com.yahoo.text.Lowercase;
@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /**
  * This class provides a case normalization operation to be used e.g. when
- * document search should be case insensitive.
+ * document search should be case-insensitive.
  *
  * @author Simon Thoresen Hult
  */

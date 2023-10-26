@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -42,10 +43,16 @@ public class Upgrader extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;
+    private final Random random;
 
     public Upgrader(Controller controller, Duration interval) {
+        this(controller, interval, controller.random(false));
+    }
+
+    Upgrader(Controller controller, Duration interval, Random random) {
         super(controller, interval);
         this.curator = controller.curator();
+        this.random = random;
     }
 
     /**
@@ -75,7 +82,7 @@ public class Upgrader extends ControllerMaintainer {
     private InstanceList instances(DeploymentStatusList deploymentStatuses) {
         return InstanceList.from(deploymentStatuses)
                            .withDeclaredJobs()
-                           .shuffle(controller().random(false))
+                           .shuffle(random)
                            .byIncreasingDeployedVersion()
                            .unpinned();
     }

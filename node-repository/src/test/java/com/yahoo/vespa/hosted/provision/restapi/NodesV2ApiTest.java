@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.application.container.handler.Request;
@@ -874,7 +874,7 @@ public class NodesV2ApiTest {
 
         // dockerhost1 displays both values.
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"),
-                       "dockerhost1-with-firmware-data.json");
+                   "dockerhost1-with-firmware-data.json");
 
         // host1 has no wantedFirmwareCheck, as it's not a docker host.
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
@@ -899,11 +899,11 @@ public class NodesV2ApiTest {
         String requestUriTemplate = "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=%s";
 
         assertFile(new Request(String.format(requestUriTemplate,
-                String.join(",", hostsToRemove.subList(0, 3)))),
-                "capacity-hostremoval-possible.json");
+                                             String.join(",", hostsToRemove.subList(0, 3)))),
+                   "capacity-hostremoval-possible.json");
         assertFile(new Request(String.format(requestUriTemplate,
-                String.join(",", hostsToRemove))),
-                "capacity-hostremoval-impossible.json");
+                                             String.join(",", hostsToRemove))),
+                   "capacity-hostremoval-impossible.json");
     }
 
 
@@ -1020,9 +1020,13 @@ public class NodesV2ApiTest {
         String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false); // Initially there is no exclusiveTo
 
-        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToApplicationId\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i1\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "\"exclusiveTo\":\"t1:a1:i1\",", true);
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"provisionedFor\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "\"provisionedFor\":\"t1:a1:i1\",", true);
 
         assertResponse(new Request(url, Utf8.toBytes("{\"hostTTL\": 86400000}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
@@ -1033,11 +1037,17 @@ public class NodesV2ApiTest {
         tester.assertPartialResponse(new Request(url), "\"hostEmptyAt\":789", true);
 
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToClusterType\": \"admin\"}"), Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "\"exclusiveToClusterType\":\"admin\",", true);
 
+        tester.assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i2\"}"), Request.Method.PATCH),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'exclusiveTo': exclusiveToApplicationId must be the same as provisionedForApplicationId when this is set\"}");
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"provisionedFor\": null}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"hostTTL\":null, \"hostEmptyAt\":null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+
         tester.assertPartialResponse(new Request(url), "\"exclusiveTo", false);
         tester.assertPartialResponse(new Request(url), "\"hostTTL\"", false);
         tester.assertPartialResponse(new Request(url), "\"hostEmptyAt\"", false);
@@ -1093,7 +1103,7 @@ public class NodesV2ApiTest {
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
                (reservedTo.map(tenantName -> ", \"reservedTo\":\"" + tenantName.value() + "\"").orElse("")) +
-               (exclusiveTo.map(appId -> ", \"exclusiveTo\":\"" + appId.serializedForm() + "\"").orElse("")) +
+               (exclusiveTo.map(appId -> ", \"provisionedFor\":\"" + appId.serializedForm() + "\"").orElse("")) +
                (switchHostname.map(s -> ", \"switchHostname\":\"" + s + "\"").orElse("")) +
                (additionalIpAddresses.isEmpty() ? "" : ", \"additionalIpAddresses\":[\"" + String.join("\",\"", additionalIpAddresses) + "\"]") +
                (additionalHostnames.isEmpty() ? "" : ", \"additionalHostnames\":[\"" + String.join("\",\"", additionalHostnames) + "\"]") +

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.application.Networking;
@@ -8,6 +8,7 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.ComparisonFailure;
 
@@ -61,8 +62,9 @@ public class RestApiTester {
     public void assertFile(Request request, String responseFile) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
         expectedResponse = include(expectedResponse);
-        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
+        expectedResponse = JsonTestHelper.normalize(expectedResponse);
         String responseString = container.handleRequest(request).getBodyAsString();
+        responseString = JsonTestHelper.normalize(responseString);
         if (expectedResponse.contains("(ignore)")) {
             // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
             // until the first stop character

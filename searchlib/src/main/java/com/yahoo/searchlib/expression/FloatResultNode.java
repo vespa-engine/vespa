@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -16,9 +16,9 @@ import java.nio.ByteBuffer;
 public class FloatResultNode extends NumericResultNode {
 
     // The global class identifier shared with C++.
-    public static final int classId = registerClass(0x4000 + 52, FloatResultNode.class);
-    private static FloatResultNode negativeInfinity = new FloatResultNode(Double.NEGATIVE_INFINITY);
-    private static FloatResultNode positiveInfinity = new FloatResultNode(Double.POSITIVE_INFINITY);
+    public static final int classId = registerClass(0x4000 + 52, FloatResultNode.class, FloatResultNode::new);
+    private static final FloatResultNode negativeInfinity = new FloatResultNode(Double.NEGATIVE_INFINITY);
+    private static final FloatResultNode positiveInfinity = new FloatResultNode(Double.POSITIVE_INFINITY);
     // The numeric value of this node.
     private double value;
 
@@ -129,7 +129,7 @@ public class FloatResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Double.valueOf(value);
+        return value;
     }
 
     @Override
@@ -141,7 +141,7 @@ public class FloatResultNode extends NumericResultNode {
             if (Double.isNaN(b)) {
                 return 1;
             } else {
-                return (value < b) ? -1 : (value > b) ? 1 : 0;
+                return Double.compare(value, b);
             }
         }
     }

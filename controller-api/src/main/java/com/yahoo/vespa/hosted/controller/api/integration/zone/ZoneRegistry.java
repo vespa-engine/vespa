@@ -1,8 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
@@ -18,7 +16,6 @@ import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
 import java.net.URI;
 import java.time.Duration;
@@ -96,24 +93,6 @@ public interface ZoneRegistry {
 
     /** Returns the routing method used by given zone */
     RoutingMethod routingMethod(ZoneId zone);
-
-    /** Returns a URL where an informative dashboard can be found. */
-    URI dashboardUrl();
-
-    /** Returns a URL which displays information about the given tenant. */
-    URI dashboardUrl(TenantName id);
-
-    /** Returns a URL which displays information about the given application. */
-    URI dashboardUrl(TenantName tenantName, ApplicationName applicationName);
-
-    /** Returns a URL which displays information about the given application instance. */
-    URI dashboardUrl(ApplicationId id);
-
-    /** Returns a URL which displays information about the given job run. */
-    URI dashboardUrl(RunId id);
-
-    /** Returns a URL used to request support from the Vespa team. */
-    URI supportUrl();
 
     /** Returns a URL to the controller's api endpoint */
     URI apiUrl();

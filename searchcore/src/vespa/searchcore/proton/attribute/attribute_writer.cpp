@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_writer.h"
 #include "attributemanager.h"
@@ -549,6 +549,7 @@ public:
                 for (auto lidToRemove : _lidsToRemove) {
                     applyRemoveToAttribute(_serialNum, lidToRemove, attr, _onWriteDone);
                 }
+                attr.commitIfChangeVectorTooLarge();
             }
         }
     }

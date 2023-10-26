@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import com.google.common.base.Predicate;
@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 /**
  * <p>A group of ordered hits. Since hitGroup is itself a kind of Hit,
@@ -504,9 +503,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
         int currentIndex = -1;
         ListenableArrayList<Hit> newHits = new ListenableArrayList<>(numHits);
-        for (Iterator<Hit> i = hits.iterator(); i.hasNext();) {
-            Hit hit = i.next();
-
+        for (Hit hit : hits) {
             if (hit.isAuxiliary()) {
                 newHits.add(hit);
             } else {
@@ -700,7 +697,6 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     // -------------- State bookkeeping
 
     /** Ensures result invariants. Must be called when a hit is added to this result. */
-    @SuppressWarnings("deprecation")
     private void handleNewHit(Hit hit) {
         if (!hit.isAuxiliary())
             concreteHitCount++;
@@ -848,8 +844,8 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         HitGroup hitGroupClone = (HitGroup) super.clone();
         hitGroupClone.hits = new ListenableArrayList<>(this.hits.size());
         hitGroupClone.unmodifiableHits = Collections.unmodifiableList(hitGroupClone.hits);
-        for (Iterator<Hit> i = this.hits.iterator(); i.hasNext();) {
-            Hit hitClone = i.next().clone();
+        for (Hit value : this.hits) {
+            Hit hitClone = value.clone();
             hitGroupClone.hits.add(hitClone);
         }
         if (this.errorHit != null) { // Find the cloned error and assign it
@@ -944,7 +940,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     }
 
     private Iterable<Hit> fillableHits() {
-        Predicate<Hit> isFillable = hit -> hit.isFillable();
+        Predicate<Hit> isFillable = Hit::isFillable;
 
         return Iterables.filter(hits, isFillable);
     }

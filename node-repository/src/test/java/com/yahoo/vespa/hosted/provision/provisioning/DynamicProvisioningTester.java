@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -200,7 +200,7 @@ public class DynamicProvisioningTester {
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
                                             Autoscaling autoscaling) {
-        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+        assertTrue("Resources should be present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
                    autoscaling.resources().isPresent());
         var resources = autoscaling.resources().get();
         assertResources(message, nodeCount, groupCount, approxCpu, approxMemory, approxDisk, resources);

@@ -1,9 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::StorageNode
- * @ingroup storageserver
- *
- * @brief Main storage server class.
+ * Main storage server class.
  *
  * This class sets up the entire storage server.
  *
@@ -12,13 +9,14 @@
 
 #pragma once
 
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config-upgrading.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/common/doneinitializehandler.h>
-#include <vespa/config-bucketspaces.h>
+#include <vespa/storage/config/config-stor-bouncer.h>
+#include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
@@ -51,33 +49,45 @@ struct StorageNodeContext;
 namespace lib { class NodeType; }
 
 
-class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
-                    private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
-                    private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
-                    private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
-                    private framework::MetricUpdateHook,
+class StorageNode : private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
                     private framework::defaultimplementation::ShutdownListener
 {
 public:
+    using BucketspacesConfig         = vespa::config::content::core::BucketspacesConfig;
+    using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using StorBouncerConfig          = vespa::config::content::core::StorBouncerConfig;
+    using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
+    using StorServerConfig           = vespa::config::content::core::StorServerConfig;
+
     enum RunMode { NORMAL, SINGLE_THREADED_TEST_MODE };
 
     StorageNode(const StorageNode &) = delete;
     StorageNode & operator = (const StorageNode &) = delete;
-    /**
-     * @param excludeStorageChain With this option set, no chain will be set
-     * up. This can be useful in unit testing if you need a storage server
-     * instance, but you want to have full control over the components yourself.
-     */
-    StorageNode(const config::ConfigUri & configUri,
+
+    struct BootstrapConfigs {
+        std::unique_ptr<StorBouncerConfig>          bouncer_cfg;
+        std::unique_ptr<BucketspacesConfig>         bucket_spaces_cfg;
+        std::unique_ptr<CommunicationManagerConfig> comm_mgr_cfg;
+        std::unique_ptr<StorDistributionConfig>     distribution_cfg;
+        std::unique_ptr<StorServerConfig>           server_cfg;
+
+        BootstrapConfigs();
+        ~BootstrapConfigs();
+        BootstrapConfigs(BootstrapConfigs&&) noexcept;
+        BootstrapConfigs& operator=(BootstrapConfigs&&) noexcept;
+    };
+
+    StorageNode(const config::ConfigUri& configUri,
                 StorageNodeContext& context,
+                BootstrapConfigs bootstrap_configs,
                 ApplicationGenerationFetcher& generationFetcher,
                 std::unique_ptr<HostInfo> hostInfo,
                 RunMode = NORMAL);
     ~StorageNode() override;
 
     virtual const lib::NodeType& getNodeType() const = 0;
-    bool attemptedStopped() const;
+    [[nodiscard]] bool attemptedStopped() const;
     void notifyDoneInitializing() override;
     void waitUntilInitialized(vespalib::duration timeout = 15s);
     void updateMetrics(const MetricLockGuard & guard) override;
@@ -93,18 +103,17 @@ public:
     void requestShutdown(vespalib::stringref reason) override;
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
 
+    void configure(std::unique_ptr<StorServerConfig> config);
+    void configure(std::unique_ptr<StorDistributionConfig> config);
+    void configure(std::unique_ptr<BucketspacesConfig>);
+    void configure(std::unique_ptr<CommunicationManagerConfig> config);
+    void configure(std::unique_ptr<StorBouncerConfig> config);
+
     // For testing
     StorageLink* getChain() { return _chain.get(); }
     virtual void initializeStatusWebServer();
-protected:
-    using StorServerConfig = vespa::config::content::core::StorServerConfig;
-    using UpgradingConfig = vespa::config::content::UpgradingConfig;
-    using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
-    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 private:
     bool _singleThreadedDebugMode;
-        // Subscriptions to config
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
 
     std::unique_ptr<HostInfo> _hostInfo;
 
@@ -130,32 +139,49 @@ private:
     // The storage chain can depend on anything.
     std::unique_ptr<StorageLink>               _chain;
 
-    /** Implementation of config callbacks. */
-    void configure(std::unique_ptr<StorServerConfig> config) override;
-    void configure(std::unique_ptr<UpgradingConfig> config) override;
-    void configure(std::unique_ptr<StorDistributionConfig> config) override;
-    virtual void configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
-                           bool hasChanged, int64_t generation);
-    void configure(std::unique_ptr<BucketspacesConfig>) override;
+    template <typename ConfigT>
+    struct ConfigWrapper {
+        std::unique_ptr<ConfigT> staging;
+        std::unique_ptr<ConfigT> active;
+
+        ConfigWrapper() noexcept;
+        explicit ConfigWrapper(std::unique_ptr<ConfigT> initial_active) noexcept;
+        ~ConfigWrapper();
+
+        void promote_staging_to_active() noexcept;
+    };
+
+    template <typename ConfigT>
+    void stage_config_change(ConfigWrapper<ConfigT>& my_cfg, std::unique_ptr<ConfigT> new_cfg);
 
 protected:
     // Lock taken while doing configuration of the server.
     std::mutex _configLock;
-    std::mutex _initial_config_mutex;
+    std::mutex _initial_config_mutex; // TODO can probably be removed
     using InitialGuard = std::lock_guard<std::mutex>;
-    // Current running config. Kept, such that we can see what has been
-    // changed in live config updates.
-    std::unique_ptr<StorServerConfig> _serverConfig;
-    std::unique_ptr<UpgradingConfig> _clusterConfig;
-    std::unique_ptr<StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<document::config::DocumenttypesConfig> _doctypesConfig;
-    std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
-    // New configs gotten that has yet to have been handled
-    std::unique_ptr<StorServerConfig> _newServerConfig;
-    std::unique_ptr<UpgradingConfig> _newClusterConfig;
-    std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<document::config::DocumenttypesConfig> _newDoctypesConfig;
-    std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
+
+    ConfigWrapper<StorBouncerConfig>          _bouncer_config;
+    ConfigWrapper<BucketspacesConfig>         _bucket_spaces_config;
+    ConfigWrapper<CommunicationManagerConfig> _comm_mgr_config;
+    ConfigWrapper<StorDistributionConfig>     _distribution_config;
+    ConfigWrapper<StorServerConfig>           _server_config;
+
+    [[nodiscard]] const StorBouncerConfig& bouncer_config() const noexcept {
+        return *_bouncer_config.active;
+    }
+    [[nodiscard]] const BucketspacesConfig& bucket_spaces_config() const noexcept {
+        return *_bucket_spaces_config.active;
+    }
+    [[nodiscard]] const CommunicationManagerConfig& communication_manager_config() const noexcept {
+        return *_comm_mgr_config.active;
+    }
+    [[nodiscard]] const StorDistributionConfig& distribution_config() const noexcept {
+        return *_distribution_config.active;
+    }
+    [[nodiscard]] const StorServerConfig& server_config() const noexcept {
+        return *_server_config.active;
+    }
+
     std::unique_ptr<StorageComponent> _component;
     std::unique_ptr<NodeIdentity> _node_identity;
     config::ConfigUri _configUri;
@@ -174,13 +200,13 @@ protected:
     std::unique_ptr<StateManager> releaseStateManager();
 
     void initialize(const NodeStateReporter & reporter);
-    virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
     virtual void perform_post_chain_creation_init_steps() = 0;
     virtual void createChain(IStorageChainBuilder &builder) = 0;
     virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();
-    virtual void removeConfigSubscriptions();
+
+    virtual void on_bouncer_config_changed() { /* no-op by default */ }
 public:
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };

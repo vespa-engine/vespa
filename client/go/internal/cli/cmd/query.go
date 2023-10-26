@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa query command
 // author: bratseth
 
@@ -64,7 +64,7 @@ func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool) e
 	if err != nil {
 		return err
 	}
-	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	service, err := waiter.Service(target, cli.config.cluster())
 	if err != nil {
 		return err

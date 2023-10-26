@@ -1,9 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
@@ -18,11 +19,9 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -199,14 +198,9 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .filter(this::unlessNodeOwnerIsSystemApplication)
                 .filter(this::isNodeStateMeterable)
                 .filter(this::isClusterTypeMeterable)
-                // Grouping by ApplicationId -> Architecture -> ResourceSnapshot
-                .collect(Collectors.groupingBy(node ->
-                        node.owner().get(),
-                        groupSnapshotsByArchitectureAndMajorVersion(zoneId)))
+                .collect(groupSnapshots(zoneId))
                 .values()
                 .stream()
-                .flatMap(byArch -> byArch.values().stream())
-                .flatMap(byMajor -> byMajor.values().stream())
                 .toList();
     }
 
@@ -281,17 +275,15 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         ));
     }
 
-    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Integer, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
-        return Collectors.groupingBy(
-                (Node node) -> node.resources().architecture(),
-                Collectors.collectingAndThen(
-                        Collectors.groupingBy(
-                                (Node node) -> node.wantedVersion().getMajor(),
-                                Collectors.toList()),
-                        convertNodeListToResourceSnapshot(zoneId)));
+    private Collector<Node, ?, Map<ResourceKey, ResourceSnapshot>> groupSnapshots(ZoneId zoneId) {
+        return Collectors.collectingAndThen(
+             Collectors.groupingBy(
+                    (Node node) -> new ResourceKey(node.owner().get(), node.resources().architecture(), node.wantedVersion().getMajor(), node.cloudAccount()),
+                    Collectors.toList()),
+            convertNodeListToResourceSnapshot(zoneId));
     }
 
-    private Function<Map<Integer, List<Node>>, Map<Integer, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+    private Function<Map<ResourceKey, List<Node>>, Map<ResourceKey, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
         return nodesByMajor -> {
             return nodesByMajor.entrySet().stream()
                     .collect(Collectors.toMap(
@@ -299,4 +291,10 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                             entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId)));
         };
     }
+
+    private record ResourceKey(
+            ApplicationId applicationId,
+            NodeResources.Architecture architecture,
+            int majorVersion,
+            CloudAccount account) {}
 }

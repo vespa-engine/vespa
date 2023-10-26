@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
@@ -620,6 +620,15 @@ public class QueryTestCase {
         assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(-7, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+    }
+
+    @Test
+    void globalphase_parameters_are_resolved() {
+        var q = new Query("?query=foo");
+        assertNull(q.getRanking().getGlobalPhase().getRerankCount());
+        q = new Query("?query=foo&" +
+                      "ranking.globalPhase.rerankCount=42");
+        assertEquals(42, q.getRanking().getGlobalPhase().getRerankCount());
     }
 
     @Test

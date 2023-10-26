@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=jdisc.http
 
 # The TCP port to listen to for this connector.
@@ -131,13 +131,16 @@ http2Enabled                   bool  default=true
 
 http2.streamIdleTimeout double default=600
 
-http2.maxConcurrentStreams int default=4096
+http2.maxConcurrentStreams int default=512
 
 # Override the default server name when authority is missing from request.
 serverName.fallback string default=""
 
 # The list of accepted server names. Empty list to accept any. Elements follows format of 'serverName.default'.
 serverName.allowed[] string
+
+# The list of known server names. Used for e.g matching metric dimensions.
+serverName.known[] string
 
 # HTTP request headers that contain remote address
 accessLog.remoteAddressHeaders[]      string

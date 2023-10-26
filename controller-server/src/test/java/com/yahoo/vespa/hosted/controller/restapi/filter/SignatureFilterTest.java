@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import ai.vespa.hosted.api.Method;
@@ -11,6 +11,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -70,7 +71,7 @@ public class SignatureFilterTest {
         filter = new SignatureFilter(tester.controller());
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
-        tester.curator().writeTenant(CloudTenant.create(appId.tenant(), Instant.EPOCH, null));
+        tester.curator().writeTenant(CloudTenant.create(appId.tenant(), Instant.EPOCH, new SimplePrincipal("owner@my-tenant.my-app")));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -120,7 +121,8 @@ public class SignatureFilterTest {
                 Optional.empty(),
                 Instant.EPOCH,
                 List.of(),
-                Optional.empty()));
+                Optional.empty(),
+                PlanId.from("none")));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                 new SecurityContext(new SimplePrincipal("user"),
                         Set.of(Role.reader(id.tenant()),

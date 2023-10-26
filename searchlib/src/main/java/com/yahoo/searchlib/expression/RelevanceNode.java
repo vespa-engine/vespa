@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -13,17 +13,13 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class RelevanceNode extends ExpressionNode {
 
-    public static final int classId = registerClass(0x4000 + 59, RelevanceNode.class);
+    public static final int classId = registerClass(0x4000 + 59, RelevanceNode.class, RelevanceNode::new);
     private FloatResultNode relevance = new FloatResultNode();
 
-    public RelevanceNode() {
-
-    }
+    public RelevanceNode() {}
 
     @Override
-    public void onPrepare() {
-
-    }
+    public void onPrepare() {}
 
     @Override
     public boolean onExecute() {

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "servicelayernode.h"
 #include "bouncer.h"
@@ -24,16 +24,33 @@ LOG_SETUP(".node.servicelayer");
 
 namespace storage {
 
-ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceLayerNodeContext& context,
+ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs() = default;
+ServiceLayerNode::ServiceLayerBootstrapConfigs::~ServiceLayerBootstrapConfigs() = default;
+ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs(ServiceLayerBootstrapConfigs&&) noexcept = default;
+ServiceLayerNode::ServiceLayerBootstrapConfigs&
+ServiceLayerNode::ServiceLayerBootstrapConfigs::operator=(ServiceLayerBootstrapConfigs&&) noexcept = default;
+
+ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
+                                   ServiceLayerNodeContext& context,
+                                   ServiceLayerBootstrapConfigs bootstrap_configs,
                                    ApplicationGenerationFetcher& generationFetcher,
                                    spi::PersistenceProvider& persistenceProvider,
                                    const VisitorFactory::Map& externalVisitors)
-    : StorageNode(configUri, context, generationFetcher, std::make_unique<HostInfo>()),
+    : StorageNode(configUri, context, std::move(bootstrap_configs.storage_bootstrap_configs),
+                  generationFetcher, std::make_unique<HostInfo>()),
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
+      _persistence_bootstrap_config(std::move(bootstrap_configs.persistence_cfg)),
+      _visitor_bootstrap_config(std::move(bootstrap_configs.visitor_cfg)),
+      _filestor_bootstrap_config(std::move(bootstrap_configs.filestor_cfg)),
+      _bouncer(nullptr),
       _bucket_manager(nullptr),
+      _changed_bucket_ownership_handler(nullptr),
       _fileStorManager(nullptr),
+      _merge_throttler(nullptr),
+      _visitor_manager(nullptr),
+      _modified_bucket_checker(nullptr),
       _init_has_been_called(false)
 {
 }
@@ -85,20 +102,6 @@ ServiceLayerNode::~ServiceLayerNode()
 }
 
 void
-ServiceLayerNode::subscribeToConfigs()
-{
-    StorageNode::subscribeToConfigs();
-    _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
-}
-
-void
-ServiceLayerNode::removeConfigSubscriptions()
-{
-    StorageNode::removeConfigSubscriptions();
-    _configFetcher.reset();
-}
-
-void
 ServiceLayerNode::initializeNodeSpecific()
 {
     // Give node state to mount point initialization, such that we can
@@ -106,7 +109,7 @@ ServiceLayerNode::initializeNodeSpecific()
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
 
-    ns.setCapacity(_serverConfig->nodeCapacity);
+    ns.setCapacity(server_config().nodeCapacity);
     LOG(debug, "Adjusting reported node state to include capacity: %s", ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
 }
@@ -117,10 +120,10 @@ ServiceLayerNode::initializeNodeSpecific()
 void
 ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
-    if (_newServerConfig) {
+    if (_server_config.staging) {
         bool updated = false;
-        vespa::config::content::core::StorServerConfigBuilder oldC(*_serverConfig);
-        StorServerConfig& newC(*_newServerConfig);
+        vespa::config::content::core::StorServerConfigBuilder oldC(*_server_config.active);
+        StorServerConfig& newC(*_server_config.staging);
         {
             updated = false;
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
@@ -132,7 +135,8 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                 ns.setCapacity(newC.nodeCapacity);
             }
             if (updated) {
-                _serverConfig.reset(new vespa::config::content::core::StorServerConfig(oldC));
+                // FIXME this always gets overwritten by StorageNode::handleLiveConfigUpdate...! Intentional?
+                _server_config.active = std::make_unique<vespa::config::content::core::StorServerConfig>(oldC);
                 _component->getStateUpdater().setReportedNodeState(ns);
             }
         }
@@ -162,22 +166,31 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
 {
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
 
-    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri);
+    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, communication_manager_config());
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
-    builder.add(std::make_unique<Bouncer>(compReg, _configUri));
-    auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
-    auto merge_throttler = merge_throttler_up.get();
+    auto bouncer = std::make_unique<Bouncer>(compReg, bouncer_config());
+    _bouncer = bouncer.get();
+    builder.add(std::move(bouncer));
+    auto merge_throttler_up = std::make_unique<MergeThrottler>(server_config(), compReg);
+    _merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
-    builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
-    auto bucket_manager = std::make_unique<BucketManager>(_configUri, _context.getComponentRegister());
+    auto bucket_ownership_handler = std::make_unique<ChangedBucketOwnershipHandler>(*_persistence_bootstrap_config, compReg);
+    _changed_bucket_ownership_handler = bucket_ownership_handler.get();
+    builder.add(std::move(bucket_ownership_handler));
+    auto bucket_manager = std::make_unique<BucketManager>(server_config(), _context.getComponentRegister());
     _bucket_manager = bucket_manager.get();
     builder.add(std::move(bucket_manager));
-    builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(),
-                                                 static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
-    builder.add(std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, _configUri));
+    auto visitor_manager = std::make_unique<VisitorManager>(*_visitor_bootstrap_config, _context.getComponentRegister(),
+                                                            static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors);
+    _visitor_manager = visitor_manager.get();
+    builder.add(std::move(visitor_manager));
+    auto bucket_checker = std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, server_config());
+    _modified_bucket_checker = bucket_checker.get();
+    builder.add(std::move(bucket_checker));
     auto state_manager = releaseStateManager();
-    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
+    auto filstor_manager = std::make_unique<FileStorManager>(*_filestor_bootstrap_config, _persistenceProvider,
+                                                             _context.getComponentRegister(),
                                                              getDoneInitializeHandler(), state_manager->getHostInfo());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
@@ -186,8 +199,43 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     // Lifetimes of all referenced components shall outlive the last call going
     // through the SPI, as queues are flushed and worker threads joined when
     // the storage link chain is closed prior to destruction.
-    auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *merge_throttler);
+    auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *_merge_throttler);
     _fileStorManager->error_wrapper().register_error_listener(std::move(error_listener));
+
+    // Purge config no longer needed
+    _persistence_bootstrap_config.reset();
+    _visitor_bootstrap_config.reset();
+    _filestor_bootstrap_config.reset();
+}
+
+void
+ServiceLayerNode::on_configure(const StorServerConfig& config)
+{
+    assert(_merge_throttler);
+    _merge_throttler->on_configure(config);
+    assert(_modified_bucket_checker);
+    _modified_bucket_checker->on_configure(config);
+}
+
+void
+ServiceLayerNode::on_configure(const PersistenceConfig& config)
+{
+    assert(_changed_bucket_ownership_handler);
+    _changed_bucket_ownership_handler->on_configure(config);
+}
+
+void
+ServiceLayerNode::on_configure(const StorVisitorConfig& config)
+{
+    assert(_visitor_manager);
+    _visitor_manager->on_configure(config);
+}
+
+void
+ServiceLayerNode::on_configure(const StorFilestorConfig& config)
+{
+    assert(_fileStorManager);
+    _fileStorManager->on_configure(config);
 }
 
 ResumeGuard
@@ -212,6 +260,11 @@ void ServiceLayerNode::perform_post_chain_creation_init_steps() {
     _fileStorManager->initialize_bucket_databases_from_provider();
     _bucket_manager->force_db_sweep_and_metric_update();
     _fileStorManager->complete_internal_initialization();
+}
+
+void ServiceLayerNode::on_bouncer_config_changed() {
+    assert(_bouncer);
+    _bouncer->on_configure(bouncer_config());
 }
 
 } // storage

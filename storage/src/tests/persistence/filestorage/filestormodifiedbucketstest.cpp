@@ -1,11 +1,12 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/persistence/spi/test.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/persistence/spi/test.h>
+#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/storageapi/message/bucket.h>
 
 using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
@@ -36,10 +37,10 @@ struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector
           _fixture(fixture)
     {}
     void inject(DummyStorageLink& link) const override {
+        using vespa::config::content::core::StorServerConfig;
+        auto cfg = config_from<StorServerConfig>(config::ConfigUri(_fixture._config->getConfigId()));
        link.push_back(std::make_unique<ModifiedBucketChecker>(
-               _node.getComponentRegister(),
-               _node.getPersistenceProvider(),
-               config::ConfigUri(_fixture._config->getConfigId())));
+               _node.getComponentRegister(), _node.getPersistenceProvider(), *cfg));
     }
 };
 

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 /**
@@ -9,14 +9,12 @@ package com.yahoo.searchlib.expression;
  */
 public class NumElemFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 132, NumElemFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 132, NumElemFunctionNode.class, NumElemFunctionNode::new);
 
     /**
      * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
-    public NumElemFunctionNode() {
-
-    }
+    public NumElemFunctionNode() {}
 
     /**
      * Constructs an instance of this class with given argument.

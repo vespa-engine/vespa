@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
 import java.util.concurrent.BlockingQueue;
@@ -8,8 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A thread pool executor which maintains the last time a worker completed
- * package private for testing
+ * A thread pool executor which maintains the last time a worker completed.
  *
  * @author Steinar Knutsen
  * @author baldersheim

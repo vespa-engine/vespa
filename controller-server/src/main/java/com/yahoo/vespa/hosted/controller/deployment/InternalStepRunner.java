@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import ai.vespa.http.HttpURL;
@@ -86,7 +86,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
@@ -128,7 +127,7 @@ public class InternalStepRunner implements StepRunner {
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
-        this.mails = new DeploymentFailureMails(controller.zoneRegistry());
+        this.mails = new DeploymentFailureMails(controller.serviceRegistry().consoleUrls());
         this.timeouts = Timeouts.of(controller.system());
     }
 
@@ -186,7 +185,7 @@ public class InternalStepRunner implements StepRunner {
         return deploy(() -> controller.applications().deploy(id.job(),
                                                              setTheStage,
                                                              logger::log,
-                                                             account -> getCloudAccountWithOverrideForStaging(id, account)),
+                                                             account -> getAndSetCloudAccountWithOverrideForStaging(id, account)),
                       controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
@@ -224,7 +223,7 @@ public class InternalStepRunner implements StepRunner {
         return account;
     }
 
-    private Optional<CloudAccount> getCloudAccountWithOverrideForStaging(RunId id, Optional<CloudAccount> account) {
+    private Optional<CloudAccount> getAndSetCloudAccountWithOverrideForStaging(RunId id, Optional<CloudAccount> account) {
         if (id.type().environment() == Environment.staging) {
             Instant doom = controller.clock().instant().plusSeconds(60); // Sleeping is bad, but we're already in a sleepy code path: deployment.
             while (true) {
@@ -233,10 +232,6 @@ public class InternalStepRunner implements StepRunner {
                 if (stored.isPresent())
                     return stored.filter(not(CloudAccount.empty::equals));
 
-                // TODO jonmv: remove with next release
-                if (run.stepStatus(deployTester).get() != unfinished)
-                    return account; // Use original value for runs which started prior to this code change, and resumed after. Extremely unlikely :>
-
                 long millisToDoom = Duration.between(controller.clock().instant(), doom).toMillis();
                 if (millisToDoom > 0)
                     uncheckInterruptedAndRestoreFlag(() -> Thread.sleep(min(millisToDoom, 5000)));
@@ -244,6 +239,7 @@ public class InternalStepRunner implements StepRunner {
                     throw new CloudAccountNotSetException("Cloud account not yet set; must deploy tests first");
             }
         }
+        account.ifPresent(cloudAccount -> controller.jobController().locked(id, run -> run.with(cloudAccount)));
         return account;
     }
 
@@ -273,7 +269,8 @@ public class InternalStepRunner implements StepRunner {
                 case CERTIFICATE_NOT_READY -> {
                     logger.log("No valid CA signed certificate for app available to config server");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log(WARNING, "CA signed certificate for app not available to config server within " + timeouts.endpointCertificate());
+                        logger.log(WARNING, "CA signed certificate for app not available to config server within " +
+                                            timeouts.endpointCertificate().toMinutes() + " minutes");
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -291,8 +288,8 @@ public class InternalStepRunner implements StepRunner {
                 case LOAD_BALANCER_NOT_READY, PARENT_HOST_NOT_READY -> {
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
                     Instant someTimeAfterStart = startTime.plusSeconds(200);
-                    Instant inALittleWhile = controller.clock().instant().plusSeconds(60);
-                    controller.jobController().locked(id, run -> run.sleepingUntil(someTimeAfterStart.isAfter(inALittleWhile) ? someTimeAfterStart : inALittleWhile));
+                    if (someTimeAfterStart.isAfter(controller.clock().instant()))
+                        controller.jobController().locked(id, run -> run.sleepingUntil(someTimeAfterStart));
                     return result;
                 }
                 case NODE_ALLOCATION_FAILURE -> {
@@ -330,10 +327,10 @@ public class InternalStepRunner implements StepRunner {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
                     logger.log("Retrieving CA signed certificate for the application. " +
-                               "This may take up to " + timeouts.endpointCertificate() + " on first deployment.");
+                               "This may take up to " + timeouts.endpointCertificate().toMinutes() + " minutes on first deployment.");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log(WARNING, "CA signed certificate for app not available within " +
-                                   timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
+                                   timeouts.endpointCertificate().toMinutes() + " minutes: " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return Optional.empty();
@@ -408,7 +405,7 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            Availability availability = endpointsAvailable(id.application(), id.type().zone(), deployment.get(), logger);
+            Availability availability = endpointsAvailable(id.application(), id.type().zone(), deployment.get(), run.versions().sourceRevision().isEmpty(), logger);
             if (availability.status() == Status.available) {
                 if (controller.routing().policies().processDnsChallenges(new DeploymentId(id.application(), id.type().zone()))) {
                     logger.log("Installation succeeded!");
@@ -479,7 +476,7 @@ public class InternalStepRunner implements StepRunner {
                                      .toList());
 
         controller.jobController().locked(id, lockedRun -> {
-            Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
+            Instant noNodesDownSince = nodeList.allowedDown().isEmpty() ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
             return lockedRun.noNodesDownSince(noNodesDownSince).withSummary(summary);
         });
 
@@ -550,7 +547,7 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, DualLogger logger) {
+    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, boolean initialDeployment, DualLogger logger) {
         DeploymentId deploymentId = new DeploymentId(id, zone);
         Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readStepRunnerEndpointsOf(Set.of(deploymentId));
         logEndpoints(endpoints, logger);
@@ -570,7 +567,8 @@ public class InternalStepRunner implements StepRunner {
                                                                   policy.canonicalName().filter(__ -> resolveEndpoints),
                                                                   policy.isPublic(),
                                                                   deployment.cloudAccount());
-                         }).toList());
+                         }).toList(),
+                initialDeployment);
     }
 
     private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {
@@ -725,6 +723,8 @@ public class InternalStepRunner implements StepRunner {
 
                     DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
                     boolean requireTests = spec.steps().stream().anyMatch(step -> step.concerns(id.type().environment()));
+                    logger.log(WARNING, "No tests were actually run, but this test suite is explicitly declared in 'deployment.xml'. " +
+                                        "Either add tests, ensure they're correctly configured, or remove the test declaration.");
                     return Optional.of(requireTests ? testFailure : noTests);
                 }
             case SUCCESS:
@@ -856,7 +856,7 @@ public class InternalStepRunner implements StepRunner {
 
     private void updateConsoleNotification(Run run, boolean isRemoved) {
         NotificationSource source = NotificationSource.from(run.id());
-        Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
+        Consumer<String> updater = msg -> controller.notificationsDb().setDeploymentNotification(run.id(), msg);
         switch (isRemoved ? success : run.status()) {
             case aborted, cancelled: return; // wait and see how the next run goes.
             case noTests:

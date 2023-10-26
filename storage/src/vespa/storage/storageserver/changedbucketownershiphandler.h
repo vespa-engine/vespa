@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
@@ -56,10 +56,7 @@ namespace lib {
  *   - RemoveCommand
  *   - RevertCommand
  */
-class ChangedBucketOwnershipHandler
-    : public StorageLink,
-      private config::IFetcherCallback<vespa::config::content::PersistenceConfig>
-{
+class ChangedBucketOwnershipHandler : public StorageLink {
 public:
     class Metrics : public metrics::MetricSet {
     public:
@@ -115,12 +112,11 @@ public:
 private:
     class ClusterStateSyncAndApplyTask;
 
-    using ConfigFetcherUP       = std::unique_ptr<config::ConfigFetcher>;
+    using PersistenceConfig = vespa::config::content::PersistenceConfig;
     using ClusterStateBundleCSP = std::shared_ptr<const lib::ClusterStateBundle>;
 
     ServiceLayerComponent         _component;
     Metrics                       _metrics;
-    ConfigFetcherUP               _configFetcher;
     vespalib::ThreadStackExecutor _state_sync_executor;
     mutable std::mutex            _stateLock;
     ClusterStateBundleCSP         _currentState;
@@ -185,7 +181,7 @@ private:
     bool enabledExternalLoadAborting() const;
 
 public:
-    ChangedBucketOwnershipHandler(const config::ConfigUri& configUri,
+    ChangedBucketOwnershipHandler(const PersistenceConfig& bootstrap_config,
                                   ServiceLayerComponentRegister& compReg);
     ~ChangedBucketOwnershipHandler() override;
 
@@ -194,7 +190,7 @@ public:
     bool onInternalReply(const std::shared_ptr<api::InternalReply>& reply) override;
     void onClose() override;
 
-    void configure(std::unique_ptr<vespa::config::content::PersistenceConfig>) override;
+    void on_configure(const PersistenceConfig&);
 
     /**
      * We want to ensure distribution config changes are thread safe wrt. our

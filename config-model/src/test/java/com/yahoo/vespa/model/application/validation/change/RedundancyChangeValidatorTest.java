@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.provision.Environment;
@@ -23,8 +24,8 @@ public class RedundancyChangeValidatorTest {
     public void testChangingRedundancyToOne() {
         try {
             var tester = new ValidationTester(6);
-            VespaModel previous = tester.deploy(null, getServices("test", 2), Environment.prod, null).getFirst();
-            tester.deploy(previous, getServices("test", 1), Environment.prod, null);
+            VespaModel previous = tester.deploy(null, getServices("test", 2), Environment.prod, null, "test.indexing").getFirst();
+            tester.deploy(previous, getServices("test", 1), Environment.prod, null, "test.indexing");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -40,11 +41,11 @@ public class RedundancyChangeValidatorTest {
     @Test
     public void testChangingRedundancyToOneWithValidationOverride() {
         var tester = new ValidationTester(6);
-        VespaModel previous = tester.deploy(null, getServices("test", 2), Environment.prod, null).getFirst();
-        previous = tester.deploy(previous, getServices("test", 1), Environment.prod, redundancyOverride).getFirst();
+        VespaModel previous = tester.deploy(null, getServices("test", 2), Environment.prod, null, "test.indexing").getFirst();
+        previous = tester.deploy(previous, getServices("test", 1), Environment.prod, redundancyOverride, "test.indexing").getFirst();
 
         // Staying at one does not require an override
-        tester.deploy(previous, getServices("test", 1), Environment.prod, null);
+        tester.deploy(previous, getServices("test", 1), Environment.prod, null, "test.indexing");
     }
 
     private static String getServices(String contentClusterId, int redundancy) {

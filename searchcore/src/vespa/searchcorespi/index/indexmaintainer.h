@@ -1,19 +1,12 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "iindexmanager.h"
-#include "disk_indexes.h"
 #include "fusionspec.h"
-#include "idiskindex.h"
 #include "iindexmaintaineroperations.h"
 #include "indexdisklayout.h"
-#include "indexmaintainerconfig.h"
 #include "indexmaintainercontext.h"
-#include "imemoryindex.h"
 #include "warmupindexcollection.h"
-#include "ithreadingservice.h"
-#include "indexsearchable.h"
-#include "indexcollection.h"
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
@@ -26,6 +19,9 @@ namespace search::common { class FileHeaderContext; }
 namespace vespalib { class Gate; }
 
 namespace searchcorespi::index {
+
+class DiskIndexes;
+class IndexMaintainerConfig;
 
 /**
  * The IndexMaintainer provides a holistic view of a set of disk and
@@ -42,16 +38,15 @@ class IndexMaintainer : public IIndexManager,
     public:
         using SaveInfo = search::FixedSourceSelector::SaveInfo;
         using SerialNum = search::SerialNum;
-        using SaveInfoSP = std::shared_ptr<SaveInfo>;
 
-        IMemoryIndex::SP _index;
-        SerialNum        _serialNum;
-        SaveInfoSP       _saveInfo;
-        uint32_t         _absoluteId;
+        std::shared_ptr<IMemoryIndex> _index;
+        SerialNum                     _serialNum;
+        std::shared_ptr<SaveInfo>     _saveInfo;
+        uint32_t                      _absoluteId;
 
-        FrozenMemoryIndexRef(const IMemoryIndex::SP &index,
+        FrozenMemoryIndexRef(const std::shared_ptr<IMemoryIndex> &index,
                              SerialNum serialNum,
-                             SaveInfo::UP saveInfo,
+                             std::unique_ptr<SaveInfo> saveInfo,
                              uint32_t absoluteId)
             : _index(index),
               _serialNum(serialNum),
@@ -78,20 +73,21 @@ class IndexMaintainer : public IIndexManager,
 
     const vespalib::string _base_dir;
     const WarmupConfig     _warmupConfig;
-    DiskIndexes::SP        _disk_indexes;
+    std::shared_ptr<DiskIndexes>  _disk_indexes;
     IndexDiskLayout        _layout;
-    Schema                 _schema;             // Protected by SL + IUL
-    Schema::SP             _activeFusionSchema; // Protected by SL + IUL
+    Schema                  _schema;             // Protected by SL + IUL
+    std::shared_ptr<Schema> _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
-    Schema::SP             _activeFusionPrunedSchema;
+    std::shared_ptr<Schema> _activeFusionPrunedSchema;
     uint32_t               _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
-    ISourceSelector::SP             _selector;
-    ISearchableIndexCollection::SP  _source_list; // Protected by SL + NSL, only set by master thread
+    std::shared_ptr<ISourceSelector> _selector;
+    std::shared_ptr<ISearchableIndexCollection> _source_list; // Protected by SL + NSL, only set by master thread
     uint32_t               _last_fusion_id;   // Protected by SL + IUL
     uint32_t               _next_id;          // Protected by SL + IUL
     uint32_t               _current_index_id; // Protected by SL + IUL
-    IMemoryIndex::SP       _current_index;    // Protected by SL + IUL
+    uint32_t               _urgent_flush_id;  // Protected by SL + IUL
+    std::shared_ptr<IMemoryIndex> _current_index;    // Protected by SL + IUL
     bool                   _flush_empty_current_index;
     std::atomic<SerialNum> _current_serial_num;// Writes protected by IUL
     std::atomic<SerialNum> _flush_serial_num;  // Writes protected by SL
@@ -130,24 +126,26 @@ class IndexMaintainer : public IIndexManager,
      * and pruning of removed fields, since this will trigger more retries for
      * some of the operations.
      */
-    std::mutex _state_lock;  // Outer lock (SL)
-    mutable std::mutex _index_update_lock;  // Inner lock (IUL)
-    mutable std::mutex _new_search_lock;  // Inner lock   (NSL)
-    std::mutex _remove_lock;  // Lock for removing indexes.
-    // Protected by SL + IUL
-    FusionSpec         _fusion_spec;    // Protected by FL
-    mutable std::mutex _fusion_lock;    // Fusion spec lock (FL)
-    uint32_t       _maxFlushed;
-    uint32_t       _maxFrozen;
-    ChangeGens     _changeGens; // Protected by SL + IUL
-    std::mutex     _schemaUpdateLock;	// Serialize rewrite of schema
+    std::mutex                       _state_lock;        // Outer lock (SL)
+    mutable std::mutex               _index_update_lock; // Inner lock (IUL)
+    mutable std::mutex               _new_search_lock;   // Inner lock (NSL)
+    std::mutex                       _remove_lock;       // Lock for removing indexes.
+    FusionSpec                       _fusion_spec;       // Protected by FL
+    mutable std::mutex               _fusion_lock;       // Fusion spec lock (FL)
+    uint32_t                         _maxFlushed;        // Protected by NSL
+    const uint32_t                   _maxFrozen;
+    ChangeGens                       _changeGens;        // Protected by SL + IUL
+    std::mutex                       _schemaUpdateLock;  // Serialize rewrite of schema
     const search::TuneFileAttributes _tuneFileAttributes;
     const IndexMaintainerContext     _ctx;
-    IIndexMaintainerOperations      &_operations;
+    IIndexMaintainerOperations&      _operations;
 
     search::FixedSourceSelector & getSourceSelector() { return static_cast<search::FixedSourceSelector &>(*_selector); }
     const search::FixedSourceSelector & getSourceSelector() const { return static_cast<const search::FixedSourceSelector &>(*_selector); }
-    uint32_t getNewAbsoluteId();
+    // get absolute id of current memory index, caller holds SL or IUL
+    uint32_t get_absolute_id() const noexcept { return _last_fusion_id + _current_index_id; }
+    // set id for new memory index, other callers than constructor holds SL and IUL
+    void set_id_for_new_memory_index();
     vespalib::string getFlushDir(uint32_t sourceId) const;
     vespalib::string getFusionDir(uint32_t sourceId) const;
 
@@ -168,26 +166,26 @@ class IndexMaintainer : public IIndexManager,
 
     void updateActiveFusionPrunedSchema(const Schema &schema);
     void deactivateDiskIndexes(vespalib::string indexDir);
-    IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir);
-    IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex);
+    std::shared_ptr<IDiskIndex> loadDiskIndex(const vespalib::string &indexDir);
+    std::shared_ptr<IDiskIndex> reloadDiskIndex(const IDiskIndex &oldIndex);
 
-    IDiskIndex::SP flushMemoryIndex(IMemoryIndex &memoryIndex,
-                                    uint32_t indexId,
-                                    uint32_t docIdLimit,
-                                    SerialNum serialNum,
-                                    search::FixedSourceSelector::SaveInfo &saveInfo);
+    std::shared_ptr<IDiskIndex> flushMemoryIndex(IMemoryIndex &memoryIndex,
+                                                 uint32_t indexId,
+                                                 uint32_t docIdLimit,
+                                                 SerialNum serialNum,
+                                                 search::FixedSourceSelector::SaveInfo &saveInfo);
 
-    ISearchableIndexCollection::UP loadDiskIndexes(const FusionSpec &spec, ISearchableIndexCollection::UP sourceList);
-    void replaceSource(uint32_t sourceId, const IndexSearchable::SP &source);
-    void appendSource(uint32_t sourceId, const IndexSearchable::SP &source);
-    void swapInNewIndex(LockGuard & guard, ISearchableIndexCollection::SP indexes, IndexSearchable & source);
-    ISearchableIndexCollection::UP createNewSourceCollection(const LockGuard &newSearchLock);
+    std::unique_ptr<ISearchableIndexCollection> loadDiskIndexes(const FusionSpec &spec, std::unique_ptr<ISearchableIndexCollection> sourceList);
+    void replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source);
+    void appendSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source);
+    void swapInNewIndex(LockGuard & guard, std::shared_ptr<ISearchableIndexCollection> indexes, IndexSearchable & source);
+    std::unique_ptr<ISearchableIndexCollection> createNewSourceCollection(const LockGuard &newSearchLock);
 
     struct FlushArgs {
-        IMemoryIndex::SP old_index;	// Last memory index
+        std::shared_ptr<IMemoryIndex> old_index;	// Last memory index
         uint32_t         old_absolute_id;
-        ISearchableIndexCollection::SP            old_source_list; // Delays destruction
-        search::FixedSourceSelector::SaveInfo::SP save_info;
+        std::shared_ptr<ISearchableIndexCollection> old_source_list; // Delays destruction
+        std::shared_ptr<search::FixedSourceSelector::SaveInfo> save_info;
         SerialNum        flush_serial_num;
         searchcorespi::FlushStats  * stats;
         bool             _skippedEmptyLast; // Don't flush empty memory index
@@ -198,7 +196,7 @@ class IndexMaintainer : public IIndexManager,
         // or data structure limitations).
         FrozenMemoryIndexRefs _extraIndexes;
         ChangeGens _changeGens;
-        Schema::SP _prunedSchema;
+        std::shared_ptr<Schema> _prunedSchema;
 
         FlushArgs();
         FlushArgs(const FlushArgs &) = delete;
@@ -208,15 +206,15 @@ class IndexMaintainer : public IIndexManager,
         ~FlushArgs();
     };
 
-    bool doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index);
+    bool doneInitFlush(FlushArgs *args, std::shared_ptr<IMemoryIndex> *new_index);
     void doFlush(FlushArgs args);
     void flushFrozenMemoryIndexes(FlushArgs &args, FlushIds &flushIds);
     void flushLastMemoryIndex(FlushArgs &args, FlushIds &flushIds);
     void updateFlushStats(const FlushArgs &args);
     void flushMemoryIndex(FlushArgs &args, uint32_t docIdLimit,
                           search::FixedSourceSelector::SaveInfo &saveInfo, FlushIds &flushIds);
-    void reconfigureAfterFlush(FlushArgs &args, IDiskIndex::SP &diskIndex);
-    bool doneFlush(FlushArgs *args, IDiskIndex::SP *disk_index);
+    void reconfigureAfterFlush(FlushArgs &args, std::shared_ptr<IDiskIndex>& diskIndex);
+    bool doneFlush(FlushArgs *args, std::shared_ptr<IDiskIndex> *disk_index);
 
 
     class FusionArgs {
@@ -224,8 +222,8 @@ class IndexMaintainer : public IIndexManager,
         uint32_t   _new_fusion_id;
         ChangeGens _changeGens;
         Schema     _schema;
-        Schema::SP _prunedSchema;
-        ISearchableIndexCollection::SP _old_source_list; // Delays destruction
+        std::shared_ptr<Schema> _prunedSchema;
+        std::shared_ptr<ISearchableIndexCollection> _old_source_list; // Delays destruction
 
         FusionArgs();
         ~FusionArgs();
@@ -233,23 +231,23 @@ class IndexMaintainer : public IIndexManager,
 
     void scheduleFusion(const FlushIds &flushIds);
     bool canRunFusion(const FusionSpec &spec) const;
-    bool doneFusion(FusionArgs *args, IDiskIndex::SP *new_index);
+    bool doneFusion(FusionArgs *args, std::shared_ptr<IDiskIndex> *new_index);
 
     class SetSchemaArgs {
     public:
         Schema           _newSchema;
         Schema           _oldSchema;
-        IMemoryIndex::SP _oldIndex;
-        ISearchableIndexCollection::SP _oldSourceList; // Delays destruction
+        std::shared_ptr<IMemoryIndex> _oldIndex;
+        std::shared_ptr<ISearchableIndexCollection> _oldSourceList; // Delays destruction
 
         SetSchemaArgs();
         ~SetSchemaArgs();
     };
 
-    void doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex);
+    void doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex, SerialNum serial_num);
 
     Schema getSchema(void) const;
-    Schema::SP getActiveFusionPrunedSchema() const;
+    std::shared_ptr<Schema> getActiveFusionPrunedSchema() const;
     search::TuneFileAttributes getAttrTune();
     ChangeGens getChangeGens();
 
@@ -289,7 +287,7 @@ public:
      * Starts a new MemoryIndex, and dumps the previous one to disk.
      * Updates flush stats when finished if specified.
      **/
-    FlushTask::UP initFlush(SerialNum serialNum, FlushStats * stats);
+    std::unique_ptr<FlushTask> initFlush(SerialNum serialNum, FlushStats * stats);
     FusionSpec getFusionSpec();
 
     /**
@@ -353,12 +351,12 @@ public:
         return flush_serial_num();
     }
 
-    IIndexCollection::SP getSourceCollection() const {
+    std::shared_ptr<IIndexCollection> getSourceCollection() const {
         LockGuard lock(_new_search_lock);
         return _source_list;
     }
 
-    searchcorespi::IndexSearchable::SP getSearchable() const override {
+    std::shared_ptr<searchcorespi::IndexSearchable> getSearchable() const override {
         LockGuard lock(_new_search_lock);
         return _source_list;
     }
@@ -371,6 +369,12 @@ public:
     IFlushTarget::List getFlushTargets() override;
     void setSchema(const Schema & schema, SerialNum serialNum) override ;
     void setMaxFlushed(uint32_t maxFlushed) override;
+    void consider_urgent_flush(const Schema& old_schema, const Schema& new_schema, uint32_t flush_id);
+    void consider_initial_urgent_flush();
+    uint32_t get_urgent_flush_id() const;
+    bool urgent_memory_index_flush() const;
+    bool urgent_disk_index_fusion() const;
+    bool has_pending_urgent_flush() const override;
 };
 
 }

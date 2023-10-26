@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
 import com.yahoo.component.annotation.Inject;
@@ -54,7 +54,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
                         createQueue(queueSize),
                         ThreadFactoryFactory.getThreadFactory(name),
                         threadPoolMetric);
-        // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
+        // Pre-start needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we want to achieve with the Q that will prefer thread locality.
         executor.prestartAllCoreThreads();

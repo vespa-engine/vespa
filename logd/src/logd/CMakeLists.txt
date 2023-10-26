@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # logd is the only cpp module using the protobuf files for the log protocol.
 # We have choosen to generate the cpp code where it is used, instead of changing the java logserver module to also generate and export cpp code just for this case.

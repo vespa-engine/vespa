@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -17,10 +17,10 @@ namespace search::queryeval {
 class FilterWrapper : public SearchIterator {
 private:
     std::vector<fef::TermFieldMatchData> _unused_md;
-    fef::TermFieldMatchDataArray _tfmda;
-    std::unique_ptr<SearchIterator> _wrapped_search;
+    fef::TermFieldMatchDataArray         _tfmda;
+    std::unique_ptr<SearchIterator>      _wrapped_search;
 public:
-    FilterWrapper(size_t num_fields)
+    explicit FilterWrapper(size_t num_fields)
       : _unused_md(num_fields),
         _tfmda(),
         _wrapped_search()
@@ -54,6 +54,9 @@ public:
     }
     BitVector::UP get_hits(uint32_t begin_id) override {
         return _wrapped_search->get_hits(begin_id);
+    }
+    BitVectorMeta asBitVector() const noexcept override {
+        return _wrapped_search->asBitVector();
     }
     Trinary is_strict() const override {
         return _wrapped_search->is_strict();

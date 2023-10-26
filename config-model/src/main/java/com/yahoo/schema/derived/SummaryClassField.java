@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
 import com.yahoo.document.CollectionDataType;
@@ -92,6 +92,8 @@ public class SummaryClassField {
                 return Type.FEATUREDATA;
             } else if (transform != null && transform.equals(SummaryTransform.SUMMARYFEATURES)) {
                 return Type.FEATUREDATA;
+            } else if (transform != null && transform.equals(SummaryTransform.TOKENS)) {
+                return Type.JSONSTRING;
             } else {
                 return Type.LONGSTRING;
             }

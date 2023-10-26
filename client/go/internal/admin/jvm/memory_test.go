@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package jvm
 
@@ -41,10 +41,19 @@ func TestConversion(t *testing.T) {
 	result, err = ParseJvmMemorySpec("17g")
 	assert.Nil(t, err)
 	assert.Equal(t, v1, result)
+	result, err = ParseJvmMemorySpec("17G")
+	assert.Nil(t, err)
+	assert.Equal(t, v1, result)
 	result, err = ParseJvmMemorySpec("17000m")
 	assert.Nil(t, err)
 	assert.Equal(t, v2, result)
+	result, err = ParseJvmMemorySpec("17000M")
+	assert.Nil(t, err)
+	assert.Equal(t, v2, result)
 	result, err = ParseJvmMemorySpec("17000000k")
+	assert.Nil(t, err)
+	assert.Equal(t, v3, result)
+	result, err = ParseJvmMemorySpec("17000000K")
 	assert.Nil(t, err)
 	assert.Equal(t, v3, result)
 }

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.test;
 
 import com.yahoo.api.annotations.Beta;
@@ -11,6 +11,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
 import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -75,6 +76,9 @@ public abstract class ServerProviderConformanceTest {
         Iterable<ByteBuffer> newResponseContent();
 
         void validateResponse(V response) throws Throwable;
+
+        default AutoCloseable configureServerProvider(GuiceRepository guice) { return () -> { }; }
+
     }
 
     /**
@@ -2784,6 +2788,7 @@ public abstract class ServerProviderConformanceTest {
         builder.serverBindings().bind(builder.getInstance(Key.get(String.class, Names.named("serverBinding"))),
                                       requestHandler);
         final T serverProvider = builder.guiceModules().getInstance(adapter.getServerProviderClass());
+        AutoCloseable scaffolding = adapter.configureServerProvider(builder.guiceModules());
         builder.serverProviders().install(serverProvider);
         if (builder.getInstance(Key.get(Boolean.class, Names.named("activateContainer")))) {
             driver.activateContainer(builder);
@@ -2804,6 +2809,7 @@ public abstract class ServerProviderConformanceTest {
             requestHandler.awaitAsyncTasks();
         }
 
+        scaffolding.close();
         serverProvider.close();
         driver.close();
     }

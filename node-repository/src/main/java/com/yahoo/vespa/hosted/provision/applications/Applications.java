@@ -1,9 +1,10 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
@@ -64,18 +65,18 @@ public class Applications {
     }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application) {
-        return db.lock(application);
+    public ApplicationMutex lock(ApplicationId application) {
+        return new ApplicationMutex(application, db.lock(application));
     }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) {
-        return db.lock(application, timeout);
+    public ApplicationMutex lock(ApplicationId application, Duration timeout) {
+        return new ApplicationMutex(application, db.lock(application, timeout));
     }
 
     /** Create a lock which provides exclusive rights to perform a maintenance deployment */
-    public Mutex lockMaintenance(ApplicationId application) {
-        return db.lockMaintenance(application);
+    public ApplicationMutex lockMaintenance(ApplicationId application) {
+        return new ApplicationMutex(application, db.lockMaintenance(application));
     }
 
 }

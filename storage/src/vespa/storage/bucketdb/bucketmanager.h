@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * Storage link handling requests concerning buckets.
  *
@@ -10,10 +10,10 @@
 #include "bucketmanagermetrics.h"
 #include "storbucketdb.h"
 #include <vespa/config/subscription/configuri.h>
-#include <vespa/storage/bucketdb/config-stor-bucketdb.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
@@ -34,6 +34,7 @@ class BucketManager : public StorageLink,
                       private framework::MetricUpdateHook
 {
 public:
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
     /** Type used for message queues */
     using BucketInfoRequestList = std::list<std::shared_ptr<api::RequestBucketInfoCommand>>;
     using BucketInfoRequestMap = std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
@@ -41,7 +42,6 @@ public:
 private:
     using ReplyQueue = std::vector<api::StorageReply::SP>;
     using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::hash>;
-    config::ConfigUri    _configUri;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**
@@ -82,7 +82,7 @@ private:
     };
 
 public:
-    BucketManager(const config::ConfigUri&, ServiceLayerComponentRegister&);
+    BucketManager(const StorServerConfig& bootstrap_config, ServiceLayerComponentRegister&);
     BucketManager(const BucketManager&) = delete;
     BucketManager& operator=(const BucketManager&) = delete;
     ~BucketManager() override;

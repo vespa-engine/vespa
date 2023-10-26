@@ -1,10 +1,13 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -13,8 +16,15 @@ import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * @author ogronnesby
@@ -29,11 +39,6 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     private static final Set<Role> tenantAdmin = Set.of(Role.administrator(tenant));
     private static final Set<Role> financeAdmin = Set.of(Role.hostedAccountant());
 
-    private static final String ACCESS_DENIED = "{\n" +
-            "  \"code\" : 403,\n" +
-            "  \"message\" : \"Access denied\"\n" +
-            "}";
-
     private MockBillingController billingController;
     private ContainerTester tester;
 
@@ -44,7 +49,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var clock = (ManualClock) tester.controller().serviceRegistry().clock();
         clock.setInstant(Instant.parse("2021-04-13T00:00:00Z"));
         billingController = (MockBillingController) tester.serviceRegistry().billingController();
-        billingController.addBill(tenant, BillingApiHandlerTest.createBill(), true);
+        billingController.addBill(tenant, createBill(), true);
     }
 
     @Override
@@ -103,7 +108,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
 
         var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
         tester.assertResponse(singleRequest, """
-                {"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"123.00","status":"OPEN","statusHistory":[{"at":"2020-05-23T00:00:00Z","status":"OPEN"}],"items":[{"id":"some-id","description":"description","amount":"123.00","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"majorVersion":0,"cpu":{},"memory":{},"disk":{}}]}""");
+                {"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"123.00","status":"OPEN","statusHistory":[{"at":"2020-05-23T00:00:00Z","status":"OPEN"}],"items":[{"id":"some-id","description":"description","amount":"123.00","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"majorVersion":0,"cpu":{},"memory":{},"disk":{},"gpu":{}}]}""");
     }
 
     @Test
@@ -116,18 +121,27 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
 
         var accountantRequest = request("/billing/v2/accountant").roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, """
-                {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":null,"unbilled":"0.00"}]}""");
+                {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"1970-01-01","unbilled":"0.00"}]}""");
+    }
+
+    @Test
+    void require_accountant_preview() {
+        var accountantRequest = request("/billing/v2/accountant/preview").roles(Role.hostedAccountant());
+        billingController.uncommittedBills.put(tenant, createBill());
+
+        tester.assertResponse(accountantRequest, """
+                        {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"2020-05-23","unbilled":"123.00"}]}""");
     }
 
     @Test
     void require_accountant_tenant_preview() {
-        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1").roles(Role.hostedAccountant());
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/preview").roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"id\":\"empty\",\"from\":\"2021-04-13\",\"to\":\"2021-04-12\",\"total\":\"0.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2021-04-13T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[]}");
     }
 
     @Test
     void require_accountant_tenant_bill() {
-        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1", Request.Method.POST)
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/preview", Request.Method.POST)
                 .roles(Role.hostedAccountant())
                 .data("{\"from\": \"2020-05-01\",\"to\": \"2020-06-01\"}");
         tester.assertResponse(accountantRequest, "{\"message\":\"Created bill id-123\"}");
@@ -138,5 +152,127 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var accountantRequest = request("/billing/v2/accountant/plans")
                 .roles(Role.hostedAccountant());
         tester.assertResponse(accountantRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");
+    }
+
+   @Test
+    void require_additional_items_empty() {
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, """
+                {"items":[]}""");
+   }
+
+   @Test
+    void require_additional_items_with_content() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                        {
+                            "description": "Additional support costs",
+                            "amount": "123.45"
+                        }""");
+           tester.assertResponse(accountantRequest, """
+                {"message":"Added line item for tenant tenant1"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/items")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"items":[{"id":"line-item-id","description":"Additional support costs","amount":"123.45","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"majorVersion":0,"cpu":{},"memory":{},"disk":{},"gpu":{}}]}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/item/line-item-id", Request.Method.DELETE)
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Successfully deleted line item line-item-id"}""");
+       }
+   }
+
+   @Test
+    void require_current_plan() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"id":"trial","name":"Free Trial - for testing purposes"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                           {"id": "paid"}""");
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Plan: paid"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/plan")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"id":"paid","name":"Paid Plan - for testing purposes"}""");
+       }
+   }
+
+   @Test
+    void require_current_collection() {
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"collection":"AUTO"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection", Request.Method.POST)
+                   .roles(Role.hostedAccountant())
+                   .data("""
+                           {"collection": "INVOICE"}""");
+           tester.assertResponse(accountantRequest, """
+                   {"message":"Collection: INVOICE"}""");
+       }
+
+       {
+           var accountantRequest = request("/billing/v2/accountant/tenant/tenant1/collection")
+                   .roles(Role.hostedAccountant());
+           tester.assertResponse(accountantRequest, """
+                   {"collection":"INVOICE"}""");
+       }
+   }
+
+   @Test
+    void require_accountant_tenant() {
+        var accountantRequest = request("/billing/v2/accountant/tenant/tenant1")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, """
+                {"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes","billed":false,"supported":false},"billing":{},"collection":"AUTO"}""");
+   }
+
+    private static Bill createBill() {
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
+        var statusHistory = new StatusHistory(new TreeMap<>(Map.of(start, BillStatus.OPEN)));
+        return new Bill(
+                Bill.Id.of("id-1"),
+                TenantName.defaultName(),
+                statusHistory,
+                List.of(createLineItem(start)),
+                start,
+                end
+        );
+    }
+
+    static Bill.LineItem createLineItem(ZonedDateTime addedAt) {
+        return new Bill.LineItem(
+                "some-id",
+                "description",
+                new BigDecimal("123.00"),
+                "paid",
+                "Smith",
+                addedAt
+        );
     }
 }

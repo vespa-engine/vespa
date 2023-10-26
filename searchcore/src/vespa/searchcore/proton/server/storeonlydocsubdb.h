@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "idocumentsubdb.h"
@@ -176,7 +176,7 @@ protected:
                                        const search::TuneFileAttributes &tuneFile,
                                        std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
-    void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
+    void setupDocumentMetaStore(const DocumentMetaStoreInitializerResult & dmsResult);
     void initFeedView(const DocumentDBConfig &configSnapshot);
     virtual IFlushTargetList getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);

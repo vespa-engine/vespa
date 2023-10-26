@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * @class storage::MergeThrottler
  * @ingroup storageserver
@@ -35,10 +35,11 @@ class AbortBucketOperationsCommand;
 
 class MergeThrottler : public framework::Runnable,
                        public StorageLink,
-                       public framework::HtmlStatusReporter,
-                       private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>
+                       public framework::HtmlStatusReporter
 {
 public:
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
+
     class MergeFailureMetrics : public metrics::MetricSet {
     public:
         metrics::SumMetric<metrics::LongCountMetric> sum;
@@ -172,7 +173,6 @@ private:
     mutable std::mutex _messageLock;
     std::condition_variable _messageCond;
     mutable std::mutex _stateLock;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     // Messages pending to be processed by the worker thread
     std::vector<api::StorageMessage::SP> _messagesDown;
     std::vector<api::StorageMessage::SP> _messagesUp;
@@ -190,7 +190,7 @@ public:
      * windowSizeIncrement used for allowing unit tests to start out with more
      * than 1 as their window size.
      */
-    MergeThrottler(const config::ConfigUri & configUri, StorageComponentRegister&);
+    MergeThrottler(const StorServerConfig& bootstrap_config, StorageComponentRegister&);
     ~MergeThrottler() override;
 
     /** Implements document::Runnable::run */
@@ -203,6 +203,8 @@ public:
     bool onDown(const std::shared_ptr<api::StorageMessage>& msg) override;
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& stateCmd) override;
+
+    void on_configure(const StorServerConfig& new_config);
 
     /*
      * When invoked, merges to the node will be BUSY-bounced by the throttler
@@ -281,11 +283,6 @@ private:
          */
         [[nodiscard]] bool isChainCompleted() const noexcept;
     };
-
-    /**
-     * Callback method for config system (IFetcherCallback)
-     */
-    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig) override;
 
     // NOTE: unless explicitly specified, all the below functions require
     // _sync lock to be held upon call (usually implicitly via MessageGuard)

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing.rotation;
 
 import com.yahoo.config.provision.RegionName;
@@ -146,7 +146,7 @@ public class RotationRepositoryTest {
         application2.submit(applicationPackage).deploy();
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
         assertEquals("https://cd.app2.tenant2.global.cd.vespa.oath.cloud/",
-                tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
+                tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).first().get().url().toString());
     }
 
     @Test

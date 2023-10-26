@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -44,6 +45,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
+import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
@@ -75,13 +77,16 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
+    private final InfraApplicationRedeployer infraApplicationRedeployer;
 
     @Inject
-    public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository, NodeFlavors flavors) {
+    public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository,
+                             NodeFlavors flavors, InfraDeployer infraDeployer) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = flavors;
+        this.infraApplicationRedeployer = new InfraApplicationRedeployer(infraDeployer, nodeRepository);
     }
 
     @Override
@@ -138,7 +143,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Path path = new Path(request.getUri());
         // Check paths to disallow illegal state changes
         if (path.matches("/nodes/v2/state/ready/{hostname}")) {
-            nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API");
+            if (nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API"))
+                infraApplicationRedeployer.readied(nodeRepository.nodes().node(path.get("hostname")).get().type());
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
@@ -147,7 +153,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                                        " and marked " + hostnamesAsString(failedOrMarkedNodes.failing().asList()) + " as wantToFail");
         }
         else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
-            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), agent(request), "Parked through the nodes/v2 API");
+            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), agent(request), false, "Parked through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to " + Node.State.parked);
         }
         else if (path.matches("/nodes/v2/state/dirty/{hostname}")) {
@@ -299,6 +305,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
         optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
         optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
+        optionalString(inspector.field("provisionedFor")).map(ApplicationId::fromSerializedForm).ifPresent(builder::provisionedForApplicationId);
         optionalString(inspector.field("exclusiveTo")).map(ApplicationId::fromSerializedForm).ifPresent(builder::exclusiveToApplicationId);
         optionalString(inspector.field("switchHostname")).ifPresent(builder::switchHostname);
         return builder.build();
@@ -505,6 +512,12 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         catch (URISyntaxException e) {
             throw new RuntimeException("Will not happen", e);
         }
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        infraApplicationRedeployer.close();
     }
 
 }

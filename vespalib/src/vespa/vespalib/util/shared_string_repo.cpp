@@ -1,7 +1,7 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "shared_string_repo.h"
-#include <xxhash.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <charconv>
 #include <cassert>
 
@@ -232,7 +232,7 @@ string_id
 SharedStringRepo::resolve(vespalib::stringref str) {
     uint32_t direct_id = try_make_direct_id(str);
     if (direct_id >= ID_BIAS) {
-        uint64_t full_hash = XXH3_64bits(str.data(), str.size());
+        uint64_t full_hash = xxhash::xxh3_64(str.data(), str.size());
         uint32_t part = full_hash & PART_MASK;
         uint32_t local_hash = full_hash >> PART_BITS;
         uint32_t local_idx = _partitions[part].resolve(AltKey{str, local_hash});

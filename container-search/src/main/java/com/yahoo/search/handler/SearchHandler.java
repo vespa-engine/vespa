@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import ai.vespa.metrics.ContainerMetrics;
@@ -261,6 +261,9 @@ public class SearchHandler extends LoggingRequestHandler {
         } else if (searchChain == null) {
             result = new Result(query,
                                 ErrorMessage.createInvalidQueryParameter("No search chain named '" + searchChainName + "' was found"));
+        } else if (query.getTimeLeft() <= 0) {
+            result = new Result(query,
+                                ErrorMessage.createTimeout("No time left after waiting for " + query.getDurationTime() + "ms to execute query"));
         } else {
             String pathAndQuery = UriTools.rawRequest(request.getUri());
             result = search(pathAndQuery, query, searchChain);

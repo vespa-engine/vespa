@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexproperties.h"
 #include "properties.h"
@@ -439,7 +439,7 @@ TargetHitsMaxAdjustmentFactor::lookup(const Properties& props, double defaultVal
 }
 
 const vespalib::string FuzzyAlgorithm::NAME("vespa.matching.fuzzy.algorithm");
-const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::BruteForce);
+const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::DfaTable);
 
 vespalib::FuzzyMatchingAlgorithm
 FuzzyAlgorithm::lookup(const Properties& props)

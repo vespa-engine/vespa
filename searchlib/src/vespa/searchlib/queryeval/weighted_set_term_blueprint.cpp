@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "weighted_set_term_blueprint.h"
 #include "weighted_set_term_search.h"
@@ -96,11 +96,19 @@ SearchIterator::UP
 WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     assert(tfmda.size() == 1);
+    if ((_terms.size() == 1) && tfmda[0]->isNotNeeded()) {
+        if (LeafBlueprint * leaf = _terms[0]->asLeaf(); leaf != nullptr) {
+            // Always returnin a strict iterator independently of what was required,
+            // as that is what we do with all the children when there are more.
+            return leaf->createLeafSearch(tfmda, true);
+        }
+    }
     fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<SearchIterator*> children(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
+    std::vector<SearchIterator*> children;
+    children.reserve(_terms.size());
+    for (const auto & _term : _terms) {
         // TODO: pass ownership with unique_ptr
-        children[i] = _terms[i]->createSearch(*md, true).release();
+        children.push_back(_term->createSearch(*md, true).release());
     }
     return WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md));
 }

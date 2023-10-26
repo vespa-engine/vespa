@@ -7,6 +7,7 @@
   "flavor": "large-variant",
   "reservedTo": "myTenant",
   "exclusiveTo": "tenant1:app1:instance1",
+  "provisionedFor": "tenant1:app1:instance1",
   "cpuCores": 64.0,
   "resources": {
     "vcpu": 64.0,

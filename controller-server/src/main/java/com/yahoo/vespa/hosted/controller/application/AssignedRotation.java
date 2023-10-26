@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ClusterSpec;
@@ -21,16 +21,6 @@ public record AssignedRotation(ClusterSpec.Id clusterId, EndpointId endpointId, 
         this.endpointId = Objects.requireNonNull(endpointId);
         this.rotationId = Objects.requireNonNull(rotationId);
         this.regions = Set.copyOf(Objects.requireNonNull(regions));
-    }
-
-    @Override
-    public String toString() {
-        return "AssignedRotation{" +
-               "clusterId=" + clusterId +
-               ", endpointId='" + endpointId + '\'' +
-               ", rotationId=" + rotationId +
-               ", regions=" + regions +
-               '}';
     }
 
     private static <T> T requireNonEmpty(T object, String value, String field) {

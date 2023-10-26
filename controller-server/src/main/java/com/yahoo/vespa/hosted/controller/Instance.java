@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
@@ -7,6 +7,8 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -30,6 +32,8 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.naturalOrder;
 
 /**
  * An instance of an application.
@@ -65,19 +69,24 @@ public class Instance {
     }
 
     public Instance withNewDeployment(ZoneId zone, RevisionId revision, Version version, Instant instant,
-                                      Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage, CloudAccount cloudAccount) {
+                                      Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage, CloudAccount cloudAccount,
+                                      List<DataplaneTokenVersions> dataPlaneTokens) {
+        Map<TokenId, Instant> dataPlaneTokenIds = dataPlaneTokens.stream().collect(Collectors.toMap(token -> token.tokenId(),
+                                                                                                    token -> token.lastUpdated()));
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, cloudAccount, revision,
                                                                                       version, instant,
                                                                                       DeploymentMetrics.none,
                                                                                       DeploymentActivity.none,
                                                                                       QuotaUsage.none,
-                                                                                      OptionalDouble.empty()));
+                                                                                      OptionalDouble.empty(),
+                                                                                      dataPlaneTokenIds));
         Deployment newDeployment = new Deployment(zone, cloudAccount, revision, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
                                                   quotaUsage,
-                                                  previousDeployment.cost());
+                                                  previousDeployment.cost(),
+                                                  dataPlaneTokenIds);
         return with(newDeployment);
     }
 

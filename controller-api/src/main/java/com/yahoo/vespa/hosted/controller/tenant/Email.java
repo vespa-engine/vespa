@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import java.util.Objects;
@@ -25,7 +25,7 @@ public class Email {
     }
 
     public static Email empty() {
-        return new Email("", true);
+        return new Email("", false);
     }
 
     public Email withEmailAddress(String emailAddress) {
@@ -34,6 +34,10 @@ public class Email {
 
     public Email withVerification(boolean isVerified) {
         return new Email(emailAddress, isVerified);
+    }
+
+    public boolean isBlank() {
+        return emailAddress.isBlank();
     }
 
     @Override

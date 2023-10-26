@@ -1,5 +1,7 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
@@ -36,6 +39,8 @@ import static java.util.logging.Level.WARNING;
 class SingletonManager {
 
     private static final Logger logger = Logger.getLogger(SingletonManager.class.getName());
+    private static final String partPattern = "[a-zA-Z0-9$_]([a-zA-Z0-9$_-]+){0,63}";
+    private static final Pattern idPattern = Pattern.compile(partPattern + "(\\." + partPattern + ")*");
 
     private final Curator curator;
     private final Clock clock;
@@ -53,9 +58,8 @@ class SingletonManager {
     }
 
     synchronized CompletableFuture<?> register(String singletonId, SingletonWorker singleton) {
-        if (singletonId.isEmpty() || singletonId.contains("/") || singletonId.contains("..")) {
-            throw new IllegalArgumentException("singleton ID must be non-empty, and may not contain '/' or '..', but got " + singletonId);
-        }
+        Validation.requireMatch(singletonId, "Singleton ID", idPattern);
+        Validation.requireLength(singletonId, "Singleton ID", 1, 255);
         String old = registrations.putIfAbsent(singleton, singletonId);
         if (old != null) throw new IllegalArgumentException(singleton + " already registered with ID " + old);
         count.merge(singletonId, 1, Integer::sum);
@@ -425,7 +429,8 @@ class SingletonManager {
                 finally {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(ACTIVATION_MILLIS, durationMillis, context);
-                    logger.log(INFO, "Activation completed in %.3f seconds".formatted(durationMillis * 1e-3));
+                    logger.log(INFO, "Activation completed " + (failed ? "un" : "") +
+                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
                     else isActive = true;
                     ping();
@@ -447,7 +452,8 @@ class SingletonManager {
                 finally {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(DEACTIVATION_MILLIS, durationMillis, context);
-                    logger.log(INFO, "Deactivation completed in %.3f seconds".formatted(durationMillis * 1e-3));
+                    logger.log(INFO, "Deactivation completed " + (failed ? "un" : "") +
+                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
                     isActive = false;
                     ping();

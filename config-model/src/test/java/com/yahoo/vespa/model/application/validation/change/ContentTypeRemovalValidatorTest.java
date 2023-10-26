@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
@@ -24,9 +24,9 @@ public class ContentTypeRemovalValidatorTest {
     void testContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null, "test.indexing").getFirst();
         try {
-            tester.deploy(previous, getServices("book"), Environment.prod, null);
+            tester.deploy(previous, getServices("book"), Environment.prod, null, "test.indexing");
             fail("Expected exception due to removal of schema 'music");
         }
         catch (IllegalArgumentException expected) {
@@ -41,8 +41,8 @@ public class ContentTypeRemovalValidatorTest {
     void testOverridingContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices("book"), Environment.prod, removalOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null, "test.indexing").getFirst();
+        tester.deploy(previous, getServices("book"), Environment.prod, removalOverride, "test.indexing"); // Allowed due to override
     }
 
     private static String getServices(String documentType) {

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -40,14 +40,11 @@ public class TimeStampFunctionNode extends UnaryFunctionNode {
         }
     }
 
-    public static final int classId = registerClass(0x4000 + 75, TimeStampFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 75, TimeStampFunctionNode.class, TimeStampFunctionNode::new);
     private TimePart timePart = TimePart.Year;
     private boolean isGmt = false;
 
-    @SuppressWarnings("UnusedDeclaration")
-    public TimeStampFunctionNode() {
-        // used by deserializer
-    }
+    public TimeStampFunctionNode() {}
 
     /**
      * <p>Create a bucket expression with the given width and the given subexpression.</p>

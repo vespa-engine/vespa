@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -119,6 +119,7 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler, 
         mbus.connect(name, broadcastName);
     }
 
-    @Override public void disconnect() { close(); }
+    @Override
+    public void disconnect() { close(); }
 
 }

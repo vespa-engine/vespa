@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -22,7 +22,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -220,7 +220,7 @@ public class ProvisioningTester {
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
                     parent = parent.with(IP.Config.of(List.of("::" + 0 + ":0"), List.of("::" + 0 + ":2")));
-                nodeRepository.nodes().activate(List.of(parent), new ApplicationTransaction(new ProvisionLock(application, () -> { }), t));
+                nodeRepository.nodes().activate(List.of(parent), new ApplicationTransaction(new ApplicationMutex(application, () -> { }), t));
                 t.commit();
             }
         }
@@ -271,7 +271,7 @@ public class ProvisioningTester {
     public void deactivate(ApplicationId applicationId) {
         try (var lock = nodeRepository.applications().lock(applicationId)) {
             NestedTransaction deactivateTransaction = new NestedTransaction();
-            nodeRepository.remove(new ApplicationTransaction(new ProvisionLock(applicationId, lock),
+            nodeRepository.remove(new ApplicationTransaction(new ApplicationMutex(applicationId, lock),
                                                              deactivateTransaction));
             deactivateTransaction.commit();
         }

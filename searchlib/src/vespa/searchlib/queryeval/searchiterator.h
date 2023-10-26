@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -331,7 +331,23 @@ public:
     /**
      * @return true if it is a bitvector
      */
-    virtual bool isBitVector() const { return false; }
+    class BitVectorMeta {
+    public:
+        BitVectorMeta() noexcept : BitVectorMeta(nullptr, 0, false) {}
+        BitVectorMeta(const BitVector * bv, uint32_t docidLimit, bool inverted_in) noexcept
+            : _bv(bv), _docidLimit(docidLimit), _inverted(inverted_in)
+        {}
+        const BitVector * vector() const noexcept { return _bv; }
+        bool inverted () const noexcept { return _inverted; }
+        uint32_t getDocidLimit() const noexcept { return _docidLimit; }
+        bool valid() const noexcept { return _bv != nullptr; }
+    private:
+        const BitVector * _bv;
+        uint32_t          _docidLimit;
+        bool              _inverted;
+    };
+    bool isBitVector() const noexcept { return asBitVector().valid(); }
+    virtual BitVectorMeta asBitVector() const noexcept { return {}; }
     /**
      * @return true if it is a source blender
      */

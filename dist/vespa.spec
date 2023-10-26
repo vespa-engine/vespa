@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Hack to speed up jar packing for now
 %define __jar_repack %{nil}
@@ -42,7 +42,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies = 1.0.1
+BuildRequires: vespa-build-dependencies = 1.2.0
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -196,7 +196,7 @@ Requires: vespa-protobuf = 3.21.12
 Requires: protobuf
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.15.1
+Requires: vespa-onnxruntime = 1.16.1
 
 %description libs
 
@@ -280,29 +280,6 @@ Requires: %{name}-base-libs = %{version}-%{release}
 
 Vespa - The open big data serving engine - devel package
 
-%package ann-benchmark
-
-Summary: Vespa - The open big data serving engine - ann-benchmark
-
-Requires: %{name}-base-libs = %{version}-%{release}
-Requires: %{name}-libs = %{version}-%{release}
-%if 0%{?el8}
-Requires: python39
-%endif
-%if 0%{?el9}
-Requires: python3
-%endif
-%if 0%{?fedora}
-Requires: python3
-%endif
-
-%description ann-benchmark
-
-Vespa - The open big data serving engine - ann-benchmark
-
-Python binding for the Vespa implementation of an HNSW index for
-nearest neighbor search used for low-level benchmarking.
-
 %prep
 %if 0%{?installdir:1}
 %if 0%{?source_base:1}
@@ -383,10 +360,6 @@ export JAVA_HOME=%{?_java_home}
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
-%if 0%{?el8}
-python3.9 -m pip install --user pytest
-%endif
-export PYTHONPATH="$PYTHONPATH:/usr/local/lib/$(basename $(readlink -f $(which python3)))/site-packages"
 #%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C -Dmaven.javadoc.skip=true test
 make test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
@@ -537,7 +510,6 @@ fi
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
 %{_prefix}/libexec
-%exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
 %exclude %{_prefix}/libexec/vespa/vespa-wrapper
 %exclude %{_prefix}/libexec/vespa/find-pid
@@ -762,13 +734,5 @@ fi
 %dir %{_prefix}
 %{_prefix}/include
 %{_prefix}/share/cmake
-
-%files ann-benchmark
-%if %{_defattr_is_vespa_vespa}
-%defattr(-,%{_vespa_user},%{_vespa_group},-)
-%endif
-%dir %{_prefix}
-%dir %{_prefix}/libexec
-%{_prefix}/libexec/vespa_ann_benchmark
 
 %changelog

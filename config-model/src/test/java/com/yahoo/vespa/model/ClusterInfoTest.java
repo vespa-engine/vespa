@@ -1,6 +1,9 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -19,14 +22,14 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author bratseth
@@ -250,6 +253,7 @@ public class ClusterInfoTest {
                                                                   .setCloudAccount(account)
                                                                   .setApplicationId(ApplicationId.from(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.from(instance)))
                                                                   .setZone(new Zone(Environment.prod, RegionName.from(region))))
+                                  .endpoints(Set.of(new ContainerEndpoint("testcontainer", ApplicationClusterEndpoint.Scope.zone, List.of("tc.example.com"))))
                                   .modelHostProvisioner(provisioner)
                                   .provisioned(provisioner.provisioned())
                                   .build();

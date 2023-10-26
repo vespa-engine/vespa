@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -131,7 +131,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                                     "    }",
                                     "  }",
                                     "  document-summary my_summary {",
-                                    "    summary other_campaign_ref type reference<campaign> {}",
+                                    "    summary other_campaign_ref {}",
                                     "  }",
                                     "}"));
         builder.build(true);
@@ -146,11 +146,11 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "    field foo type string { indexing: summary }",
                 "  }",
                 "  document-summary bar {",
-                "    summary foo type string {}",
+                "    summary foo {}",
                 "    omit-summary-features",
                 "  }",
                 "  document-summary baz {",
-                "    summary foo type string {}",
+                "    summary foo {}",
                 "  }",
                 "}");
         var search = ApplicationBuilder.createFromString(sd).getSchema();
@@ -221,9 +221,23 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     void documentid_summary_field_has_corresponding_summary_transform() throws ParseException {
         var schema = buildSchema("field foo type string { indexing: summary }",
                 joinLines("document-summary bar {",
-                        "    summary documentid type string {}",
+                        "    summary documentid {}",
                         "}"));
         assertOverride(schema, "documentid", SummaryTransform.DOCUMENT_ID.getName(), "", "bar");
+    }
+
+    @Test
+    void tokens_override() throws ParseException {
+        var schema = buildSchema("field foo type string { indexing: summary }",
+                joinLines("document-summary bar {",
+                        "    summary baz {",
+                        "        source: foo ",
+                        "        tokens",
+                        "     }",
+                        "    from-disk",
+                        "}"));
+        assertOverride(schema, "baz", SummaryTransform.TOKENS.getName(), "foo", "bar");
+        assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
     }
 
     @Test

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.linguistics;
 
 import com.yahoo.document.annotation.Annotation;
@@ -12,6 +12,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
+import com.yahoo.text.Text;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class LinguisticsAnnotator {
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                 ? text.getString()
-                : text.getString().substring(0, config.getMaxTokenizeLength());
+                : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
         Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
                                                     config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
@@ -88,9 +89,9 @@ public class LinguisticsAnnotator {
      * Creates a TERM annotation which has the lowercase value as annotation (only) if it is different from the
      * original.
      *
-     * @param termToLowerCase The term to lower case.
-     * @param origTerm        The original term.
-     * @return the created TERM annotation.
+     * @param termToLowerCase the term to lower case
+     * @param origTerm        the original term
+     * @return the created TERM annotation
      */
     public static Annotation lowerCaseTermAnnotation(String termToLowerCase, String origTerm) {
         String annotationValue = toLowerCase(termToLowerCase);

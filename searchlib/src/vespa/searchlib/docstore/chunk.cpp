@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "chunk.h"
 #include "chunkformats.h"
@@ -8,15 +8,16 @@
 namespace search {
 
 LidMeta
-Chunk::append(uint32_t lid, const void * buffer, size_t len)
+Chunk::append(uint32_t lid, ConstBufferRef data)
 {
     vespalib::nbostream & os = getData();
     size_t oldSz(os.size());
+    uint32_t len = data.size();
     std::lock_guard guard(_lock);
-    os << lid << static_cast<uint32_t>(len);
-    os.write(buffer, len);
+    os << lid << len;
+    os.write(data.c_str(), len);
     _lids.emplace_back(lid, len, oldSz);
-    return LidMeta(lid, len);
+    return {lid, len};
 }
 
 ssize_t

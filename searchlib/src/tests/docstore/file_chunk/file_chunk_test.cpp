@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/docstore/filechunk.h>
@@ -43,10 +43,10 @@ struct BucketizerObserver : public IBucketizer {
     document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
         (void) guard;
         lids.push_back(lid);
-        return document::BucketId();
+        return {};
     }
     vespalib::GenerationHandler::Guard getGuard() const override {
-        return vespalib::GenerationHandler::Guard();
+        return {};
     }
 };
 
@@ -129,7 +129,7 @@ struct WriteFixture : public FixtureBase {
     }
     WriteFixture &append(uint32_t lid) {
         vespalib::string data = getData(lid);
-        chunk.append(nextSerialNum(), lid, data.c_str(), data.size(), CpuUsage::Category::WRITE);
+        chunk.append(nextSerialNum(), lid, {data.c_str(), data.size()}, CpuUsage::Category::WRITE);
         return *this;
     }
     void updateLidMap(uint32_t docIdLimit) {
@@ -202,7 +202,7 @@ assertUpdateLidMap(FixtureType &f)
     f.assertBucketizer(expLids);
     size_t entrySize = 10 + 8;
     EXPECT_EQUAL(9 * entrySize, f.chunk.getAddedBytes());
-    EXPECT_EQUAL(3u, f.chunk.getBloatCount());
+    EXPECT_EQUAL(3u, f.chunk.getErasedCount());
     EXPECT_EQUAL(3 * entrySize, f.chunk.getErasedBytes());
 }
 

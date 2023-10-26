@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -12,7 +12,7 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class InterpolatedLookupNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 39, InterpolatedLookupNode.class);
+    public static final int classId = registerClass(0x4000 + 39, InterpolatedLookupNode.class, InterpolatedLookupNode::new);
     private String attribute;
 
     /**

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.objects;
 
 import com.yahoo.collections.Pair;
@@ -7,6 +7,7 @@ import com.yahoo.text.Utf8;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.function.Supplier;
 
 /**
  * The base class to do cross-language serialization and deserialization of complete object structures without
@@ -155,10 +156,9 @@ public class Identifiable extends Selectable implements Cloneable {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Identifiable)) {
+        if (!(obj instanceof Identifiable rhs)) {
             return false;
         }
-        Identifiable rhs = (Identifiable)obj;
         return (getClassId() == rhs.getClassId());
     }
 
@@ -172,7 +172,6 @@ public class Identifiable extends Selectable implements Cloneable {
     /**
      * Registers the given class specification for the given identifier in the class registry. This method returns the
      * supplied identifier, so that subclasses can declare a static classId member like so:
-     *
      * <code>public static int classId = registerClass(&lt;id&gt;, &lt;ClassName&gt;.class);</code>
      *
      * @param id   the class identifier to register with
@@ -186,6 +185,14 @@ public class Identifiable extends Selectable implements Cloneable {
         registry.add(id, spec);
         return id;
     }
+    protected static int registerClass(int id, Class<? extends Identifiable> spec, Supplier<? extends Identifiable> creator) {
+        if (registry == null) {
+            registry = new Registry();
+        }
+        registry.add(id, spec, creator);
+        return id;
+    }
+
 
     /**
      * Deserializes a single {@link Identifiable} object from the given byte buffer. The object itself may perform
@@ -282,7 +289,7 @@ public class Identifiable extends Selectable implements Cloneable {
     private static class Registry {
 
         // The map from class id to class descriptor.
-        private HashMap<Integer, Pair<Class<? extends Identifiable>, Constructor<? extends Identifiable>>> typeMap =
+        private final HashMap<Integer, Pair<Class<? extends Identifiable>, Supplier<? extends Identifiable>>> typeMap =
                 new HashMap<>();
 
         /**
@@ -293,18 +300,22 @@ public class Identifiable extends Selectable implements Cloneable {
          * @throws IllegalArgumentException Thrown if two classes attempt to register with the same identifier.
          */
         private void add(int id, Class<? extends Identifiable> spec) {
+
+            CreateFromConstructor creator;
+            try {
+                creator = new CreateFromConstructor(spec.getConstructor());
+            } catch (NoSuchMethodException e) {
+                creator = null;
+            }
+            add(id, spec, creator);
+        }
+        private void add(int id, Class<? extends Identifiable> spec, Supplier<? extends Identifiable> construct) {
             Class<?> old = get(id);
             if (old == null) {
-                Constructor<? extends Identifiable> constructor;
-                try {
-                    constructor = spec.getConstructor();
-                } catch (NoSuchMethodException e) {
-                    constructor = null;
-                }
-                typeMap.put(id, new Pair<Class<? extends Identifiable>, Constructor<? extends Identifiable>>(spec, constructor));
+                typeMap.put(id, new Pair<Class<? extends Identifiable>, Supplier<? extends Identifiable>>(spec, construct));
             } else if (!spec.equals(old)) {
-                throw new IllegalArgumentException("Can not register class '" + spec.toString() + "' with id " + id +
-                                                   ", because it already maps to class '" + old.toString() + "'.");
+                throw new IllegalArgumentException("Can not register class '" + spec + "' with id " + id +
+                        ", because it already maps to class '" + old + "'.");
             }
         }
 
@@ -315,42 +326,42 @@ public class Identifiable extends Selectable implements Cloneable {
          * @return The class specification, may be null.
          */
         private Class<? extends Identifiable> get(int id) {
-            Pair<Class<? extends Identifiable>, Constructor<? extends Identifiable>> pair = typeMap.get(id);
+            var pair = typeMap.get(id);
             return (pair != null) ? pair.getFirst() : null;
         }
 
         /**
-         * Creates an instance of the class mapped to by the given identifier. This method proxies {@link
-         * #createFromClass(Constructor)}.
-         *
+         * Creates an instance of the class mapped to by the given identifier.
          * @param id The id of the class to create.
          * @return The instantiated object.
          */
         private Identifiable createFromId(int id) {
-            Pair<Class<? extends Identifiable>, Constructor<? extends Identifiable>> pair = typeMap.get(id);
-            return createFromClass((pair != null) ? pair.getSecond() : null);
+            var pair = typeMap.get(id);
+            return (pair != null) ? pair.getSecond().get() : null;
         }
 
         /**
          * Creates an instance of a given class specification. All instantiation-type exceptions are consumed and
          * wrapped inside a runtime exception so that calling methods can let this propagate without declaring them
          * thrown.
-         *
-         * @param spec The class to instantiate.
-         * @return The instantiated object.
-         * @throws IllegalArgumentException Thrown if instantiation failed.
          */
-        private Identifiable createFromClass(Constructor<? extends Identifiable> spec) {
-            Identifiable obj = null;
-            if (spec != null) {
-                try {
-                    obj = spec.newInstance();
-                } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                    throw new IllegalArgumentException("Failed to create object from class '" +
-                                                       spec.getName() + "'.", e);
-                }
+        private static class CreateFromConstructor implements Supplier<Identifiable> {
+            private final Constructor<? extends Identifiable> constructor;
+            CreateFromConstructor(Constructor<? extends Identifiable> constructor) {
+                this.constructor = constructor;
             }
-            return obj;
+            public Identifiable get() {
+                Identifiable obj = null;
+                if (constructor != null) {
+                    try {
+                        obj = constructor.newInstance();
+                    } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                        throw new IllegalArgumentException("Failed to create object from class '" +
+                                constructor.getName() + "'.", e);
+                    }
+                }
+                return obj;
+            }
         }
     }
 

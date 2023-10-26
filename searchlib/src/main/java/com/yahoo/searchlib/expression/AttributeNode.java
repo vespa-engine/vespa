@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -13,15 +13,13 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class AttributeNode extends FunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 55, AttributeNode.class);
+    public static final int classId = registerClass(0x4000 + 55, AttributeNode.class, AttributeNode::new);
     private String attribute;
 
     /**
      * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
-    public AttributeNode() {
-
-    }
+    public AttributeNode() { }
 
     /**
      * Constructs an instance of this class with given attribute name.

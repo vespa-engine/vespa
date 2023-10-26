@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.application.api.DeployLogger;
@@ -155,7 +155,8 @@ public class SummaryClass extends Derived {
                 summaryField.getTransform() == SummaryTransform.GEOPOS ||
                 summaryField.getTransform() == SummaryTransform.POSITIONS ||
                 summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
-                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
+                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER ||
+                summaryField.getTransform() == SummaryTransform.TOKENS)
         {
             return summaryField.getSingleSource();
         } else if (summaryField.getTransform().isDynamic()) {

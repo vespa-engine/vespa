@@ -1,12 +1,14 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
+using namespace vespalib::make_string_short;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
@@ -114,9 +116,9 @@ TEST(FastValueTest, insert_subspace) {
 }
 
 TEST(FastValueTest, insert_empty_subspace) {
-    auto addr = [](){ return ConstArrayRef<string_id>(); };
+    auto addr = []() { return ConstArrayRef<string_id>(); };
     auto type = ValueType::from_spec("double");
-    auto value = std::make_unique<FastValue<double,true>>(type, 0, 1, 1);
+    auto value = std::make_unique<FastValue<double, true>>(type, 0, 1, 1);
     EXPECT_EQ(value->index().size(), 0);
     {
         auto [cells, added] = value->insert_subspace(addr());
@@ -124,7 +126,8 @@ TEST(FastValueTest, insert_empty_subspace) {
         EXPECT_EQ(value->index().size(), 1);
         ASSERT_EQ(cells.size(), 1);
         cells[0] = 10.0;
-    }{
+    }
+    {
         auto [cells, added] = value->insert_subspace(addr());
         EXPECT_FALSE(added);
         EXPECT_EQ(value->index().size(), 1);
@@ -135,6 +138,27 @@ TEST(FastValueTest, insert_empty_subspace) {
     auto actual = spec_from_value(*value);
     auto expected = TensorSpec("double").add({}, 11.0);
     EXPECT_EQ(actual, expected);
+}
+
+void
+verifyFastValueSize(TensorSpec spec, uint32_t elems, size_t expected) {
+    for (uint32_t i=0; i < elems; i++) {
+        spec.add({{"country", fmt("no%d", i)}}, 17.0);
+    }
+    auto value = value_from_spec(spec, FastValueBuilderFactory::get());
+    EXPECT_EQ(expected, value->get_memory_usage().allocatedBytes());
+}
+
+TEST(FastValueTest, document_fast_value_memory_usage) {
+    EXPECT_EQ(232, sizeof(FastValue<float,true>));
+    FastValue<float,true> test(ValueType::from_spec("tensor<float>(country{})"), 1, 1, 1);
+    EXPECT_EQ(412, test.get_memory_usage().allocatedBytes());
+
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 1, 412);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 10, 792);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 20, 1280);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 50, 2296);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 100, 4288);
 }
 
 using SA = std::vector<vespalib::stringref>;

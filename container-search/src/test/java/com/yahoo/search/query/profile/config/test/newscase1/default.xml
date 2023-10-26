@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="default">
 
     <dimensions>custid_1,custid_2</dimensions>

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.component.Version;
@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.transaction.Mutex;
@@ -106,22 +106,8 @@ public class Nodes {
     public NodeList list(Node.State... inState) {
         NodeList allNodes = NodeList.copyOf(db.readNodes());
         NodeList nodes = inState.length == 0 ? allNodes : allNodes.state(Set.of(inState));
-        nodes = NodeList.copyOf(nodes.stream().map(node -> specifyFully(node, allNodes)).toList());
+        nodes = NodeList.copyOf(nodes.stream().toList());
         return nodes;
-    }
-
-    // Repair underspecified node resources. TODO: Remove this after June 2023
-    private Node specifyFully(Node node, NodeList allNodes) {
-        if (node.resources().isUnspecified()) return node;
-
-        if (node.resources().bandwidthGbpsIsUnspecified())
-            node = node.with(new Flavor(node.resources().withBandwidthGbps(0.3)), Agent.system, clock.instant());
-        if ( node.resources().architecture() == NodeResources.Architecture.any) {
-            Optional<Node> parent = allNodes.parentOf(node);
-            if (parent.isPresent())
-                node = node.with(new Flavor(node.resources().with(parent.get().resources().architecture())), Agent.system, clock.instant());
-        }
-        return node;
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -236,6 +222,23 @@ public class Nodes {
      */
     public void setRemovable(NodeList nodes, boolean reusable) {
         performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)), mutex));
+    }
+
+    /** Sets the exclusiveToApplicationId field.  The nodes must be tenant hosts without the field already. */
+    public void setExclusiveToApplicationId(List<Node> hosts, ApplicationMutex lock) {
+        List<Node> hostsToWrite = hosts.stream()
+                                       .filter(host -> !host.exclusiveToApplicationId().equals(Optional.of(lock.application())))
+                                       .peek(host -> {
+                                           if (host.type() != NodeType.host)
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                                                                  ": the node is not a tenant host");
+                                           if (host.exclusiveToApplicationId().isPresent())
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                                                                  ": it is already set exclusive to " + host.exclusiveToApplicationId().get());
+                                       })
+                                       .map(host -> host.withExclusiveToApplicationId(lock.application()))
+                                       .toList();
+        write(hostsToWrite, lock);
     }
 
     /**
@@ -400,8 +403,8 @@ public class Nodes {
      *
      * @return List of all the parked nodes in their new state
      */
-    public List<Node> parkRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.parked, agent, Optional.of(reason));
+    public List<Node> parkRecursively(String hostname, Agent agent, boolean forceDeprovision, String reason) {
+        return moveRecursively(hostname, Node.State.parked, agent, forceDeprovision, Optional.of(reason));
     }
 
     /**
@@ -430,12 +433,12 @@ public class Nodes {
         }
     }
 
-    private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
+    private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason) {
         try (RecursiveNodeMutexes locked = lockAndGetRecursively(hostname, Optional.empty())) {
             List<Node> moved = new ArrayList<>();
             NestedTransaction transaction = new NestedTransaction();
             for (NodeMutex node : locked.nodes().nodes())
-                moved.add(move(node.node().hostname(), toState, agent, false, reason, transaction));
+                moved.add(move(node.node().hostname(), toState, agent, forceDeprovision, reason, transaction));
             transaction.commit();
             return moved;
         }
@@ -481,11 +484,12 @@ public class Nodes {
         }
     }
 
-    /*
-     * This method is used by the REST API to handle readying nodes for new allocations. For Linux
-     * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
+    /**
+     * This method is used by the REST API to handle readying nodes for new allocations.
+     * Tenant containers will be removed, while other nodes will be moved to the ready state.
+     * Returns true if a node was updated, or false if the node was removed, or already was ready.
      */
-    public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
+    public boolean markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         try (NodeMutex nodeMutex = lockAndGetRequired(hostname)) {
             Node node = nodeMutex.node();
             if (node.type() == NodeType.tenant) {
@@ -495,17 +499,18 @@ public class Nodes {
                 NestedTransaction transaction = new NestedTransaction();
                 db.removeNodes(List.of(node), transaction);
                 transaction.commit();
-                return node;
+                return false;
             }
 
-            if (node.state() == Node.State.ready) return node;
+            if (node.state() == Node.State.ready) return false;
 
             Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
             List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
             if (!failureReasons.isEmpty())
                 illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
-            return setReady(nodeMutex, agent, reason);
+            setReady(nodeMutex, agent, reason);
+            return true;
         }
     }
 
@@ -618,17 +623,9 @@ public class Nodes {
      * @return the nodes in their new state
      */
     public List<Node> restartActive(Predicate<Node> filter) {
-        return restart(NodeFilter.in(Set.of(Node.State.active)).and(filter));
-    }
-
-    /**
-     * Increases the restart generation of the any nodes matching given filter.
-     *
-     * @return the nodes in their new state
-     */
-    public List<Node> restart(Predicate<Node> filter) {
-        return performOn(filter, (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
-                                                       lock));
+        return performOn(NodeFilter.in(Set.of(State.active)).and(filter),
+                         (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
+                                               lock));
     }
 
     /**

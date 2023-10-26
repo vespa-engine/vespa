@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.docproc.DocumentProcessor;
@@ -79,6 +79,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -498,6 +499,29 @@ public class DocumentGenPluginTest {
         assertEquals(book.getFieldValue("year").getWrappedValue(), 2011);
         assertEquals(book.getIsbn(), "ISBN YEP");
         assertEquals(book.getFieldValue("isbn"), new StringFieldValue("ISBN YEP"));
+    }
+
+    @Test
+    public void testSetterValidation() {
+        Book book = new Book(new DocumentId("id:book:book::0"));
+
+        book.setAuthor("Herman Melville");
+        assertEquals("The string field value contains illegal code point 0x16",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> book.setAuthor("He\u0016rman Malville")).getMessage());
+
+        book.setRef(new DocumentId("id:ns:parent::foo"));
+        assertEquals("Can't assign document ID 'id:ns:common::bar' (of type 'common') to reference of document type 'parent'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> book.setRef(new DocumentId("id:ns:common::bar"))).getMessage());
+
+        book.setStringmap(Map.of("foo", "bar"));
+        assertEquals("The string field value contains illegal code point 0x16",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> book.setStringmap(Map.of("foo", "bar\u0016"))).getMessage());
+        assertEquals("The string field value contains illegal code point 0x16",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> book.setStringmap(Map.of("bar\u0016", "foo"))).getMessage());
     }
 
     public static class BookProcessor extends DocumentProcessor {

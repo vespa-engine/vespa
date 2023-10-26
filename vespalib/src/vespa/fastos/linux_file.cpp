@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
 ******************************************************************************
 * @author  Oivind H. Danielsen
@@ -202,7 +202,7 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
         if (writtenNow > 0) {
             written += writtenNow;
         } else {
-            return (written > 0) ? written : writtenNow;;
+            return (written > 0) ? written : writtenNow;
         }
     }
     return written;
@@ -239,8 +239,8 @@ FastOS_Linux_File::internalWrite2(const void *buffer, size_t length)
         }
         if (writeRes > 0) {
             _filePointer += writeRes;
-            if (_filePointer > _cachedSize) {
-                _cachedSize = _filePointer;
+            if (_filePointer > _cachedSize.load(std::memory_order_relaxed)) {
+                _cachedSize.store(_filePointer, std::memory_order_relaxed);
             }
         }
     } else {
@@ -277,7 +277,7 @@ FastOS_Linux_File::SetSize(int64_t newSize)
     bool rc = FastOS_UNIX_File::SetSize(newSize);
 
     if (rc) {
-        _cachedSize = newSize;
+        _cachedSize.store(newSize, std::memory_order_relaxed);
     }
     return rc;
 }
@@ -334,19 +334,21 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBe
         if (padAfter == _directIOFileAlign) {
             padAfter = 0;
         }
-        if (int64_t(offset+length+padAfter) > _cachedSize) {
+        int64_t fileSize = _cachedSize.load(std::memory_order_relaxed);
+        if (int64_t(offset+length+padAfter) > fileSize) {
             // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
             // The main reason is that it will not reflect the file being extended by another filedescriptor.
-            _cachedSize = getSize();
+            fileSize = getSize();
+            _cachedSize.store(fileSize, std::memory_order_relaxed);
         }
         if ((padAfter != 0) &&
-            (static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
-            (static_cast<int64_t>(offset + length) <= _cachedSize))
+            (static_cast<int64_t>(offset + length + padAfter) > fileSize) &&
+            (static_cast<int64_t>(offset + length) <= fileSize))
         {
-            padAfter = _cachedSize - (offset + length);
+            padAfter = fileSize - (offset + length);
         }
 
-        if (static_cast<uint64_t>(offset + length + padAfter) <= static_cast<uint64_t>(_cachedSize)) {
+        if (static_cast<uint64_t>(offset + length + padAfter) <= static_cast<uint64_t>(fileSize)) {
             return true;
         }
     }

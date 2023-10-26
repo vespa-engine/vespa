@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -12,6 +12,8 @@
 #include <vespa/searchsummary/docsummary/docsum_store_field_value.h>
 
 using search::docsummary::IDocsumStore;
+
+namespace search::docsummary { class IStringFieldConverter; }
 
 namespace vsm {
 
@@ -66,7 +68,7 @@ public:
     std::unique_ptr<const search::docsummary::IDocsumStoreDocument> get_document(uint32_t id) override;
 
     search::docsummary::DocsumStoreFieldValue get_summary_field(uint32_t entry_idx, const Document& doc);
-    void insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter);
+    void insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter, search::docsummary::IStringFieldConverter* converter);
     bool has_flatten_juniper_command(uint32_t entry_idx) const;
     FieldModifier* get_field_modifier(uint32_t entry_idx);
 };

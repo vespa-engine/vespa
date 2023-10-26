@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema child {
   document child {
     field a_ref type reference<parent_a> {
@@ -22,14 +22,14 @@ schema child {
   }
 
   document-summary mysummary {
-    summary a_ref type reference<parent_a> {}
-    summary b_ref_with_summary type reference<parent_b> {}
-    summary my_int_field type int {}
-    summary my_string_field type string {}
-    summary my_int_array_field type array<int> {}
-    summary my_int_wset_field type weightedset<int> {}
-    summary my_ancient_int_field type int {}
-    summary my_filtered_int_array_field type array<int> {
+    summary a_ref {}
+    summary b_ref_with_summary {}
+    summary my_int_field {}
+    summary my_string_field {}
+    summary my_int_array_field {}
+    summary my_int_wset_field {}
+    summary my_ancient_int_field {}
+    summary my_filtered_int_array_field {
       source: my_int_array_field
       matched-elements-only
     }

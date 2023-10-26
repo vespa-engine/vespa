@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.Deserializer;
@@ -12,16 +12,11 @@ import com.yahoo.vespa.objects.Serializer;
  */
 public class UcaFunctionNode extends UnaryFunctionNode {
 
-    public static final int classId = registerClass(0x4000 + 140, UcaFunctionNode.class);
+    public static final int classId = registerClass(0x4000 + 140, UcaFunctionNode.class, UcaFunctionNode::new);
     private String locale = "en-US";
     private String strength = "TERTIARY";
 
-    /**
-     * Constructs an empty result node.
-     */
-    public UcaFunctionNode() {
-        // empty
-    }
+    public UcaFunctionNode() {}
 
     /**
      * Create an UCA node with a specific locale.

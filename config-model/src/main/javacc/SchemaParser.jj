@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 options {
     UNICODE_INPUT = true;
@@ -201,6 +201,7 @@ TOKEN :
 | < FULL: "full" >
 | < STATIC: "static" >
 | < DYNAMIC: "dynamic" >
+| < TOKENS: "tokens" >
 | < MATCHED_ELEMENTS_ONLY: "matched-elements-only" >
 | < SSCONTEXTUAL: "contextual" >
 | < SSOVERRIDE: "override" >
@@ -1089,6 +1090,9 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
     (<TYPE>   type = dataType())?
     lbrace() {
         psf = new ParsedSummaryField(name, type);
+	if (type != null) {
+	    psf.setHasExplicitType();
+	}
     }
     (summaryItem(psf) (<NL>)*)* <RBRACE>
     {
@@ -1128,6 +1132,7 @@ void summaryInFieldShort(ParsedField field) :
     <COLON> ( <DYNAMIC> { psf.setDynamic(); }
               | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
               | (<FULL> | <STATIC>) { psf.setFull(); }
+              | <TOKENS> { psf.setTokens(); }
             )
 }
 
@@ -1138,13 +1143,17 @@ void summaryInFieldLong(ParsedField field) :
 {
     String name = field.name();
     ParsedType type = field.getType();
+    boolean explicitType = false;
     ParsedSummaryField psf;
 }
 {
-    ( [ name = identifier() [ <TYPE> type = dataType() ] ]
+    ( [ name = identifier() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
       lbrace()
       {
           psf = field.summaryFieldFor(name, type);
+	  if (explicitType) {
+              psf.setHasExplicitType();
+          }
       }
       (summaryItem(psf) (<NL>)*)* <RBRACE> )
 }
@@ -1173,6 +1182,7 @@ void summaryTransform(ParsedSummaryField field) : { }
     ( <DYNAMIC>              { field.setDynamic(); }
      | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
+     | <TOKENS> { field.setTokens(); }
     )
 }
 
@@ -1461,10 +1471,8 @@ void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
     String name;
 }
 {
-    <INHERITS> name = identifierWithDash()
-    {
-        documentSummary.inherit(name);
-    }
+    <INHERITS> name = identifierWithDash() { documentSummary.inherit(name); }
+    ( <COMMA>  name = identifierWithDash() { documentSummary.inherit(name); } )*
 }
 
 /**
@@ -2767,6 +2775,7 @@ String identifier() : { }
       | <TERTIARY>
       | <TEXT>
       | <TO>
+      | <TOKENS>
       | <TRUE>
       | <TYPE>
       | <UCA>

@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.vespa.flags.FetchVector;
@@ -17,6 +17,8 @@ public class DimensionHelper {
     private static final Map<FetchVector.Dimension, String> serializedDimensions = new HashMap<>();
 
     static {
+        // WARNING: If you ever change the serialized form of a dimension, ensure the new serialized
+        // flag data are pushed out everywhere before removing support for old format, see VESPA-27760.
         serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
         serializedDimensions.put(FetchVector.Dimension.CLOUD, "cloud");
         serializedDimensions.put(FetchVector.Dimension.CLOUD_ACCOUNT, "cloud-account");

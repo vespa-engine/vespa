@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -11,7 +11,7 @@ namespace vespalib::eval {
  * downcasting to actual builder with specialized cell type.
  **/
 struct ValueBuilderBase {
-    virtual ~ValueBuilderBase() {}
+    virtual ~ValueBuilderBase() = default;
 };
 
 /**
@@ -59,7 +59,7 @@ private:
     {
         assert(check_cell_type<T>(type.cell_type()));
         auto base = create_value_builder_base(type, transient, num_mapped_dims_in, subspace_size_in, expected_subspaces);
-        ValueBuilder<T> *builder = static_cast<ValueBuilder<T>*>(base.get());
+        auto *builder = static_cast<ValueBuilder<T>*>(base.get());
         base.release();
         return std::unique_ptr<ValueBuilder<T>>(builder);
     }
@@ -82,7 +82,7 @@ public:
         return create_value_builder<T>(type, false, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
     }
     std::unique_ptr<Value> copy(const Value &value) const;
-    virtual ~ValueBuilderFactory() {}
+    virtual ~ValueBuilderFactory() = default;
 protected:
     virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type, bool transient,
             size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const = 0;

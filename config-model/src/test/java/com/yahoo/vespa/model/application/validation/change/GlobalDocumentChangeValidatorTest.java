@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.provision.Environment;
@@ -25,9 +25,9 @@ public class GlobalDocumentChangeValidatorTest {
 
     private void testChangeGlobalAttribute(boolean allowed, boolean oldGlobal, boolean newGlobal, String validationOverrides) {
         ValidationTester tester = new ValidationTester();
-        VespaModel oldModel = tester.deploy(null, getServices(oldGlobal), Environment.prod, validationOverrides).getFirst();
+        VespaModel oldModel = tester.deploy(null, getServices(oldGlobal), Environment.prod, validationOverrides, "default.indexing").getFirst();
         try {
-            tester.deploy(oldModel, getServices(newGlobal), Environment.prod, validationOverrides).getSecond();
+            tester.deploy(oldModel, getServices(newGlobal), Environment.prod, validationOverrides, "default.indexing").getSecond();
             assertTrue(allowed);
         } catch (IllegalStateException e) {
             assertFalse(allowed);
@@ -37,7 +37,8 @@ public class GlobalDocumentChangeValidatorTest {
                     e.getMessage());
         }
     }
-    private static final String getServices(boolean isGlobal) {
+
+    private static String getServices(boolean isGlobal) {
         return "<services version='1.0'>" +
                 "  <content id='default' version='1.0'>" +
                 "    <redundancy>1</redundancy>" +
