@@ -50,15 +50,23 @@ public class ReservedFunctionNames extends Processor {
         Set<String> temp = new HashSet<>();
         Arrays.stream(RankingExpressionParserConstants.tokenImage)
                 .map(token -> token.substring(1, token.length()-1)).forEach(name -> temp.add(name));
+        temp.add("attribute");
+        temp.add("constant");
         temp.add("customTokenInputIds");
+        temp.add("firstphase");
+        temp.add("globalphase");
         temp.add("normalize_linear");
         temp.add("onnx");
         temp.add("onnx_vespa");
+        temp.add("query");
         temp.add("reciprocal_rank");
         temp.add("reciprocal_rank_fusion");
+        temp.add("secondphase");
+        temp.add("tensor");
         temp.add("tokenAttentionMask");
         temp.add("tokenInputIds");
         temp.add("tokenTypeIds");
+        temp.add("value");
         temp.add("xgboost");
         return Set.copyOf(temp);
     }
