@@ -367,12 +367,13 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
+      BASE_IMAGE: "el9"
       IMAGE_NAME: "vespaengine/vespa-el9-preview"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
 
-    steps:
+    steps: &publish-el9-preview-steps
       - get-vespa-version: |
           set -x
           VESPA_VERSION=$(meta get vespa.version --external publish-release)
@@ -399,10 +400,10 @@ jobs:
                 --progress plain \
                 --load \
                 --platform linux/amd64 \
-                --build-arg VESPA_BASE_IMAGE=el9 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag vespaengine/$IMAGE_NAME:latest \
+                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
           # Run quick start guide
@@ -420,7 +421,7 @@ jobs:
                 --progress plain \
                 --push \
                 --platform linux/amd64,linux/arm64 \
-                --build-arg VESPA_BASE_IMAGE=el9 \
+                --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
                 --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
@@ -429,6 +430,24 @@ jobs:
                 .
             fi
           fi
+
+  publish-el8-preview:
+    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 6 1 * *
+    environment:
+      BASE_IMAGE: "el8"
+      IMAGE_NAME: "vespaengine/vespa-el8-preview"
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+    steps: *publish-el9-preview-steps
 
   publish-cli-release:
     requires: [publish-release]
