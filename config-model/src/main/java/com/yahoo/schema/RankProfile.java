@@ -111,7 +111,7 @@ public class RankProfile implements Cloneable {
     private String inheritedSummaryFeaturesProfileName;
 
     private Set<ReferenceNode> matchFeatures;
-    private Set<String> hiddenMatchFeatures;
+    private Set<ReferenceNode> hiddenMatchFeatures;
     private String inheritedMatchFeaturesProfileName;
 
     private Set<ReferenceNode> rankFeatures;
@@ -609,7 +609,7 @@ public class RankProfile implements Cloneable {
                 .orElse(Set.of());
     }
 
-    public Set<String> getHiddenMatchFeatures() {
+    public Set<ReferenceNode> getHiddenMatchFeatures() {
         if (hiddenMatchFeatures != null) return Collections.unmodifiableSet(hiddenMatchFeatures);
         return uniquelyInherited(p -> p.getHiddenMatchFeatures(), f -> ! f.isEmpty(), "hidden match features")
                 .orElse(Set.of());
@@ -628,17 +628,13 @@ public class RankProfile implements Cloneable {
     }
 
     private void addImplicitMatchFeatures(List<FeatureList> list) {
-        if (matchFeatures == null) {
-            var inherited = getMatchFeatures();
-            matchFeatures = new LinkedHashSet<>(inherited);
-        }
         if (hiddenMatchFeatures == null)
             hiddenMatchFeatures = new LinkedHashSet<>();
+        var current = getMatchFeatures();
         for (var features : list) {
             for (ReferenceNode feature : features) {
-                if (! matchFeatures.contains(feature)) {
-                    matchFeatures.add(feature);
-                    hiddenMatchFeatures.add(feature.toString());
+                if (! current.contains(feature)) {
+                    hiddenMatchFeatures.add(feature);
                 }
             }
         }
