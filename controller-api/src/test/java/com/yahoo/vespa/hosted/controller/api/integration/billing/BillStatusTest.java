@@ -13,6 +13,7 @@ public class BillStatusTest {
     void legacy_states_are_converted() {
         assertEquals(BillStatus.OPEN, BillStatus.from("ISSUED"));
         assertEquals(BillStatus.OPEN, BillStatus.from("EXPORTED"));
+        assertEquals(BillStatus.VOID, BillStatus.from("CANCELED"));
     }
 
 }
