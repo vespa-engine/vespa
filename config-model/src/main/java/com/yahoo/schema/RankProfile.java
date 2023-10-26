@@ -628,8 +628,10 @@ public class RankProfile implements Cloneable {
     }
 
     private void addImplicitMatchFeatures(List<FeatureList> list) {
-        if (matchFeatures == null)
-            matchFeatures = new LinkedHashSet<>();
+        if (matchFeatures == null) {
+            var inherited = getMatchFeatures();
+            matchFeatures = new LinkedHashSet<>(inherited);
+        }
         if (hiddenMatchFeatures == null)
             hiddenMatchFeatures = new LinkedHashSet<>();
         for (var features : list) {
