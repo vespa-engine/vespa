@@ -121,7 +121,9 @@ public class BcpGroupUpdater extends ControllerMaintainer {
             currentReadShare += groupQps == 0 ? 0 : fraction * deploymentQps / groupQps;
             maxReadShare += group.size() == 1
                            ? currentReadShare
-                           : fraction * ( deploymentQps + group.maxQpsExcluding(deployment.zone().region()) / (group.size() - 1) ) / groupQps;
+                           : groupQps != 0
+                                ? fraction * (deploymentQps + group.maxQpsExcluding(deployment.zone().region()) / (group.size() - 1)) / groupQps
+                                : 0;
         }
         patch.currentReadShare = currentReadShare;
         patch.maxReadShare = maxReadShare;
