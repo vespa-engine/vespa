@@ -75,6 +75,8 @@ enum PathGroup {
     billing(Matcher.tenant,
             "/billing/v2/tenant/{tenant}/{*}"),
 
+    billingAux("/billing/v2/countries"),
+
     accountant("/billing/v2/accountant/{*}"),
 
     userSearch("/user/v1/find"),
@@ -306,7 +308,7 @@ enum PathGroup {
     }
 
     static Set<PathGroup> billingPathsNoToken() {
-        return EnumSet.of(PathGroup.billing);
+        return EnumSet.of(PathGroup.billing, PathGroup.billingAux);
     }
 
     /** Returns whether this group matches path in given context */

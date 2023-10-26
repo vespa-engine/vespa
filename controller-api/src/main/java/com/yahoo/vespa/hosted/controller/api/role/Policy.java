@@ -159,7 +159,7 @@ enum Policy {
 
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
-                                    .on(PathGroup.billing)
+                                    .on(PathGroup.billing, PathGroup.billingAux)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     accessRequests(Privilege.grant(Action.all())

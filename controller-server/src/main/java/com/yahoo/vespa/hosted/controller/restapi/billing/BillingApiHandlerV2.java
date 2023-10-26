@@ -74,6 +74,12 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private static RestApi createRestApi(BillingApiHandlerV2 self) {
         return RestApi.builder()
                 /*
+                 * This is the API that is tenant agnostic
+                 */
+                .addRoute(RestApi.route("/billing/v2/countries")
+                        .get(self::acceptedCountries))
+
+                /*
                  * This is the API that is available to tenants to view their status
                  */
                 .addRoute(RestApi.route("/billing/v2/tenant/{tenant}")
@@ -114,6 +120,27 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                         .get(self::plans))
                 .addExceptionMapper(RuntimeException.class, (c, e) -> ErrorResponses.logThrowing(c.request(), log, e))
                 .build();
+    }
+
+    // ---------- AUX API -------------
+
+    private SlimeJsonResponse acceptedCountries(RestApi.RequestContext ctx) {
+        var response = new Slime();
+        var countries = response.setObject().setArray("countries");
+        billing.getAcceptedCountries().countries().forEach(country -> {
+            var countryCursor = countries.addObject();
+            countryCursor.setString("code", country.code());
+            countryCursor.setString("name", country.displayName());
+            var taxTypesCursors = countryCursor.setArray("taxTypes");
+            country.taxTypes().forEach(taxType -> {
+                var taxTypeCursor = taxTypesCursors.addObject();
+                taxTypeCursor.setString("id", taxType.id());
+                taxTypeCursor.setString("description", taxType.description());
+                taxTypeCursor.setString("pattern", taxType.pattern());
+                taxTypeCursor.setString("example", taxType.example());
+            });
+        });
+        return new SlimeJsonResponse(response, /*compact*/false);
     }
 
     // ---------- TENANT API ----------

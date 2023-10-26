@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.io.File;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -250,6 +251,12 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertResponse(accountantRequest, """
                 {"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes","billed":false,"supported":false},"billing":{},"collection":"AUTO"}""");
    }
+
+    @Test
+    void lists_accepted_countries() {
+        var req = request("/billing/v2/countries").roles(tenantReader);
+        tester.assertJsonResponse(req, new File("accepted-countries.json"));
+    }
 
     private static Bill createBill() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
