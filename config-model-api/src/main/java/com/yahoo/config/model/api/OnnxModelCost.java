@@ -14,7 +14,7 @@ import java.net.URI;
  */
 public interface OnnxModelCost {
 
-    Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger); // TODO: Remove when 8.249 is oldest model in use
+    Calculator newCalculator(ApplicationPackage appPkg, DeployLogger deployLogger); // TODO: Remove when 8.250 is oldest model in use
     Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
 
     interface Calculator {
