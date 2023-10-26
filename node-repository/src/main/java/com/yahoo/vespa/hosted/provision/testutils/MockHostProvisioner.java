@@ -73,7 +73,7 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public void provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
+    public Runnable provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
         if (behaviour(Behaviour.failProvisionRequest)) throw new NodeAllocationException("No capacity for provision request", true);
         Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
@@ -101,6 +101,7 @@ public class MockHostProvisioner implements HostProvisioner {
         }
         provisionedHosts.addAll(hosts);
         whenProvisioned.accept(hosts);
+        return () -> {};
     }
 
     @Override

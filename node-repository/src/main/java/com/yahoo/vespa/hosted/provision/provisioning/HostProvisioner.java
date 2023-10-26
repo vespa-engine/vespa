@@ -50,8 +50,10 @@ public interface HostProvisioner {
      *                        written to ZK immediately in case the config server goes down while waiting
      *                        for the provisioning to finish.
      * @throws NodeAllocationException if the cloud provider cannot satisfy the request
+     * @return a runnable that waits for the provisioning request to finish. It can be run without holding any locks,
+     * but may fail with an exception that should be propagated to the user initiating prepare()
      */
-    void provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;
+    Runnable provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;
 
     /**
      * Continue provisioning of given list of Nodes.

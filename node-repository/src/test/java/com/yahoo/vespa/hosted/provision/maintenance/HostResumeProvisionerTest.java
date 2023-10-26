@@ -98,7 +98,11 @@ public class HostResumeProvisionerTest {
                 Stream.of(host, node).map(n -> n.ipConfig().primary()).allMatch(List::isEmpty));
 
         hostResumeProvisioner.maintain();
-        assertEquals(Set.of("host100", "host100-1"), tester.nodeRepository().nodes().list(Node.State.failed).hostnames());
+        assertEquals(Set.of(), tester.nodeRepository().nodes().list(Node.State.parked).deprovisioning().hostnames());
+        tester.clock().advance(Duration.ofSeconds(60));
+
+        hostResumeProvisioner.maintain();
+        assertEquals(Set.of("host100", "host100-1"), tester.nodeRepository().nodes().list(Node.State.parked).deprovisioning().hostnames());
     }
 
     private void deployApplication() {
