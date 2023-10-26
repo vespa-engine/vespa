@@ -628,12 +628,20 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
             // this cluster requires exclusivity, but the parent is not exclusive
             if (exclusiveAllocation && parent.flatMap(Node::exclusiveToApplicationId).isEmpty())
-                return Preparer.requireParentHostLock(makeExclusive, type(), hostSharing) ?
+                return canMakeHostExclusive(makeExclusive, type(), hostSharing) ?
                        ExclusivityViolation.PARENT_HOST_NOT_EXCLUSIVE :
                        ExclusivityViolation.YES;
         }
 
         return ExclusivityViolation.NONE;
+    }
+
+    /**
+     * Whether it is allowed to take a host not exclusive to anyone, and make it exclusive to an application.
+     * Returns false if {@code makeExclusive} is false, which can be used to guard this feature.
+     */
+    public static boolean canMakeHostExclusive(boolean makeExclusive, NodeType type, boolean allowHostSharing) {
+        return makeExclusive && type == NodeType.tenant && !allowHostSharing;
     }
 
 }
