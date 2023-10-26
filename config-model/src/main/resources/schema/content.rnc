@@ -150,10 +150,12 @@ Dispatch = element dispatch {
     DispatchGroup*
 }
 
+# TODO: Deprecated, remove in Vespa 9
 DispatchGroup = element group {
     DispatchNode+
 }
 
+# TODO: Deprecated, remove in Vespa 9
 DispatchNode = element node {
     attribute distribution-key { xsd:nonNegativeInteger }
 }
@@ -293,6 +295,8 @@ Group = element group {
 }
 
 Tuning = element tuning {
+   # TODO: Deprecated, remove in Vespa 9
+   # Use the one under the content tag.
    element dispatch {
       element max-hits-per-partition { xsd:nonNegativeInteger }?
    }? &
@@ -326,11 +330,13 @@ Tuning = element tuning {
          }?
       }? &
       element resizing {
+         # resizing is deprecated and will be gone on vespa 9
          element initialdocumentcount { xsd:nonNegativeInteger }? &
          element amortize-count { xsd:nonNegativeInteger }?
       }? &
       element index {
          element io {
+            # io.read and io.write is deprecated and will be gone on vespa 9
             element write { TuningIoOptionsLight }? &
             element read { TuningIoOptionsLight }? &
             element search { TuningIoOptionsSearch }?
@@ -341,12 +347,14 @@ Tuning = element tuning {
          }?
       }? &
       element attribute {
+         # attribute element is deprecated and will be gone on vespa 9
          element io {
             element write { TuningIoOptionsLight }?
          }
       }? &
       element summary {
          element io {
+            # summary.io.write is deprecated and will be gone on vespa 9
             element write { TuningIoOptionsLight }? &
             element read { TuningIoOptionsFull }?
          }? &
@@ -354,6 +362,7 @@ Tuning = element tuning {
             element cache {
                element maxsize { xsd:nonNegativeInteger }? &
                element maxsize-percent { xsd:double { minInclusive = "0.0" maxInclusive = "50.0" } }? &
+               # initialentries is deprecated and will be gone on vespa 9
                element initialentries { xsd:nonNegativeInteger }? &
                TuningCompression?
             }? &
