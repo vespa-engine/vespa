@@ -312,7 +312,7 @@ public class ModelContextImpl implements ModelContext {
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
-                    .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                    .with(FetchVector.Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
                     .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
                     .boxedValue();
@@ -325,7 +325,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
-                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                       .with(FetchVector.Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -338,7 +338,7 @@ public class ModelContextImpl implements ModelContext {
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
-                       .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                       .with(FetchVector.Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
                        .with(FetchVector.Dimension.CLUSTER_ID, clusterId.value())
                        .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
@@ -416,7 +416,7 @@ public class ModelContextImpl implements ModelContext {
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm())
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.toSerializedFormWithoutInstance());
+                    .with(FetchVector.Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
             this.allowDisableMtls = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_DISABLE_MTLS);
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = flagValue(flagSource, applicationId, PermanentFlags.TLS_CIPHERS_OVERRIDE);
@@ -528,7 +528,7 @@ public class ModelContextImpl implements ModelContext {
     private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
         return flag.bindTo(source)
                 .with(FetchVector.Dimension.INSTANCE_ID, appId.serializedForm())
-                .with(FetchVector.Dimension.APPLICATION_ID, appId.toSerializedFormWithoutInstance())
+                .with(FetchVector.Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
                 .boxedValue();
     }
 }

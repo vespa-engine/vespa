@@ -14,6 +14,7 @@ import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -76,7 +77,10 @@ public class Preparer {
 
         loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
 
-        boolean makeExclusive = makeExclusiveFlag.value();
+        boolean makeExclusive = makeExclusiveFlag.with(FetchVector.Dimension.TENANT_ID, application.tenant().value())
+                                                 .with(FetchVector.Dimension.INSTANCE_ID, application.serializedForm())
+                                                 .with(FetchVector.Dimension.VESPA_VERSION, cluster.vespaVersion().toFullString())
+                                                 .value();
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
         LockedNodeList allNodes = nodeRepository.nodes().list(PROBE_LOCK);
