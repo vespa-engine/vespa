@@ -72,22 +72,6 @@ enum PathGroup {
                        "/application/v4/tenant/{tenant}/archive-access/aws",
                        "/application/v4/tenant/{tenant}/archive-access/gcp"),
 
-
-    billingToken(Matcher.tenant,
-                 "/billing/v1/tenant/{tenant}/token"),
-
-    billingInstrument(Matcher.tenant,
-                      "/billing/v1/tenant/{tenant}/instrument/{*}"),
-
-    billingPlan(Matcher.tenant,
-            "/billing/v1/tenant/{tenant}/plan/{*}"),
-
-    billingCollection(Matcher.tenant,
-            "/billing/v1/tenant/{tenant}/collection/{*}"),
-
-    billingList(Matcher.tenant,
-                "/billing/v1/tenant/{tenant}/billing/{*}"),
-
     billing(Matcher.tenant,
             "/billing/v2/tenant/{tenant}/{*}"),
 
@@ -247,11 +231,6 @@ enum PathGroup {
     /** Paths used for receiving payment callbacks */
     paymentProcessor("/payment/notification"),
 
-    /** Paths used for invoice management */
-    hostedAccountant("/billing/v1/invoice/{*}",
-                     "/billing/v1/billing",
-                     "/billing/v1/plans"),
-
     /** Path used for listing endpoint certificate request and re-requesting endpoint certificates */
     endpointCertificates("/endpointcertificates/"),
 
@@ -322,20 +301,12 @@ enum PathGroup {
 
     static Set<PathGroup> operatorRestrictedPaths() {
         var paths = billingPathsNoToken();
-        paths.add(PathGroup.billingToken);
         paths.add(accessRequestApproval);
         return paths;
     }
 
     static Set<PathGroup> billingPathsNoToken() {
-        return EnumSet.of(
-                PathGroup.billingCollection,
-                PathGroup.billingInstrument,
-                PathGroup.billingList,
-                PathGroup.billingPlan,
-                PathGroup.billing,
-                PathGroup.hostedAccountant
-        );
+        return EnumSet.of(PathGroup.billing);
     }
 
     /** Returns whether this group matches path in given context */
