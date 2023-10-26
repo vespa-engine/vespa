@@ -16,24 +16,27 @@ import java.io.OutputStream;
 public class SlimeJsonResponse extends HttpResponse {
 
     protected final Slime slime;
+    private final boolean compact;
 
     public SlimeJsonResponse() {
         this(new Slime());
     }
 
-    public SlimeJsonResponse(Slime slime) {
-        super(200);
-        this.slime = slime;
-    }
+    public SlimeJsonResponse(Slime slime) { this(200, slime, true); }
 
-    public SlimeJsonResponse(int statusCode, Slime slime) {
+    public SlimeJsonResponse(Slime slime, boolean compact) { this(200, slime, compact); }
+
+    public SlimeJsonResponse(int statusCode, Slime slime) { this(statusCode, slime, true); }
+
+    public SlimeJsonResponse(int statusCode, Slime slime, boolean compact) {
         super(statusCode);
         this.slime = slime;
+        this.compact = compact;
     }
 
     @Override
     public void render(OutputStream stream) throws IOException {
-        new JsonFormat(true).encode(stream, slime);
+        new JsonFormat(compact).encode(stream, slime);
     }
 
     @Override
