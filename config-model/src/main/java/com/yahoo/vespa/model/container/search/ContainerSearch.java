@@ -8,6 +8,7 @@ import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.ReconfigurableDispatcher;
 import com.yahoo.search.handler.observability.SearchStatusExtension;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
@@ -87,7 +88,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private void initializeDispatchers(Collection<SearchCluster> searchClusters) {
         for (SearchCluster searchCluster : searchClusters) {
             if (searchCluster instanceof IndexedSearchCluster indexed) {
-                var dispatcher = new DispatcherComponent(indexed, ReconfigurableDispatcher.class);
+                // For local testing, using Application, there is no cloud config, and we need to use the static dispatcher.
+                Class<? extends Dispatcher> dispatcherClass = System.getProperty("vespa.local", "false").equals("true")
+                                                              ? Dispatcher.class
+                                                              : ReconfigurableDispatcher.class;
+                var dispatcher = new DispatcherComponent(indexed, dispatcherClass);
                 owningCluster.addComponent(dispatcher);
             }
             if (globalPhase) {
