@@ -4,21 +4,22 @@ import onnx
 from onnx import helper, TensorProto
 
 INPUT_1 = helper.make_tensor_value_info('input1', TensorProto.BFLOAT16, [1])
-OUTPUT = helper.make_tensor_value_info('output', TensorProto.FLOAT, [1])
+OUTPUT = helper.make_tensor_value_info('output', TensorProto.BFLOAT16, [1])
 
 nodes = [
     helper.make_node(
-        'Cast',
+        'Sign',
         ['input1'],
         ['output'],
-        to=TensorProto.FLOAT
     ),
 ]
 graph_def = helper.make_graph(
     nodes,
-    'cast',
-    [INPUT_1],
+    'sign',
+    [
+        INPUT_1
+    ],
     [OUTPUT],
 )
-model_def = helper.make_model(graph_def, producer_name='cast_bfloat16_float.py', opset_imports=[onnx.OperatorSetIdProto(version=19)])
-onnx.save(model_def, 'cast_bfloat16_float.onnx')
+model_def = helper.make_model(graph_def, producer_name='sign_bfloat16.py', opset_imports=[onnx.OperatorSetIdProto(version=19)])
+onnx.save(model_def, 'sign_bfloat16.onnx')
