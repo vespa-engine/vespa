@@ -100,6 +100,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final PlanRegistry planRegistry = new PlanRegistryMock();
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
+    private final BillingReporterMock billingReporter = new BillingReporterMock(clock, billingDb);
     private final MockBillingController billingController = new MockBillingController(clock, billingDb);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
 
@@ -325,7 +326,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     @Override
     public BillingReporter billingReporter() {
-        return new BillingReporterMock(clock(), billingDb);
+        return billingReporter;
     }
 
 }
