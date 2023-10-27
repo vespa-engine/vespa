@@ -696,7 +696,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             contact.setString("email", billingContact.contact().email().getEmailAddress());
             contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
-            root.setString("taxId", billingContact.getTaxId().value());
+            var taxIdCursor = root.setObject("taxId");
+            taxIdCursor.setString("type", billingContact.getTaxId().type().value());
+            taxIdCursor.setString("code", billingContact.getTaxId().code().value());
             root.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
             root.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
 
@@ -714,9 +716,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), billing.address());
-        var mergedTaxId = optional("taxId", inspector).map(TaxId::new).orElse(billing.getTaxId());
+        var mergedTaxId = updateTaxId(inspector.field("taxId"), billing.getTaxId());
         var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
         var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
+
+        if (!inspector.field("taxId").valid() && inspector.field("address").valid()) {
+            throw new IllegalArgumentException("Tax ID information is mandatory for setting up billing");
+        }
 
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
@@ -802,7 +808,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         billingCursor.setString("email", billingContact.contact().email().getEmailAddress());
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
-        billingCursor.setString("taxId", billingContact.getTaxId().value());
+        var taxIdCursor = billingCursor.setObject("taxId");
+        taxIdCursor.setString("type", billingContact.getTaxId().type().value());
+        taxIdCursor.setString("code", billingContact.getTaxId().code().value());
         billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
         billingCursor.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
@@ -914,6 +922,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
+    private TaxId updateTaxId(Inspector insp, TaxId old) {
+        if (!insp.valid()) return old;
+        return new TaxId(getString(insp.field("type"), old.type().value()),
+                         getString(insp.field("code"), old.code().value()));
+    }
+
     private TenantContact updateBillingContact(Inspector insp, TenantName tenantName, TenantContact oldContact) {
         if (!insp.valid()) return oldContact;
 
@@ -934,13 +948,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantName tenantName, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
-        var taxId = optional("taxId", insp).map(TaxId::new).orElse(oldContact.getTaxId());
         var purchaseOrder = optional("purchaseOrder", insp).map(PurchaseOrder::new).orElse(oldContact.getPurchaseOrder());
         var invoiceEmail = optional("invoiceEmail", insp).map(mail -> new Email(mail, false)).orElse(oldContact.getInvoiceEmail());
         return TenantBilling.empty()
                 .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()))
-                .withTaxId(taxId)
+                .withTaxId(updateTaxId(insp.field("taxId"), oldContact.getTaxId()))
                 .withPurchaseOrder(purchaseOrder)
                 .withInvoiceEmail(invoiceEmail);
     }
