@@ -284,7 +284,7 @@ public class SearchNode extends AbstractService implements
         if (nodeResources.isPresent()) {
             var nodeResourcesTuning = new NodeResourcesTuning(nodeResources.get(),
                                                               tuning.map(Tuning::threadsPerSearch).orElse(1),
-                                                              fractionOfMemoryReserved, redundancyProvider.redundancy());
+                                                              fractionOfMemoryReserved);
             nodeResourcesTuning.getConfig(builder);
 
             tuning.ifPresent(t -> t.getConfig(builder));

@@ -56,7 +56,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("flushstrategy", e)) {
                 handleFlushStrategy(e, t.searchNode);
             } else if (equals("resizing", e)) {
-                handleResizing(deployLogger, e, t.searchNode);
+                deployLogger.logApplicationPackage(Level.WARNING, "saerchnode.resizing is deprecated and ignored");
             } else if (equals("index", e)) {
                 handleIndex(deployLogger, e, t.searchNode);
             } else if (equals("attribute", e)) {
@@ -160,18 +160,6 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                         fs.conservativeDiskLimitFactor = asDouble(subElem);
                     }
                 }
-            }
-        }
-    }
-
-    private void handleResizing(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
-        sn.resizing = new Tuning.SearchNode.Resizing();
-        for (Element e : XML.getChildren(spec)) {
-            if (equals("initialdocumentcount", e)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "resizing.initialdocumentcount is deprecated.");
-                sn.resizing.initialDocumentCount = asInt(e);
-            } else if (equals("amortize-count", e)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "resizing.amortize-count is deprecated and ignored");
             }
         }
     }

@@ -23,21 +23,16 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double TLS_SIZE_FRACTION = 0.02;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
-    // This is an approximate number based on observation of a node using 33G memory with 765M docs
-    private final static long MEMORY_COST_PER_DOCUMENT_DB_ONLY = 46L;
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
-    private final Redundancy redundancy;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
-                               double fractionOfMemoryReserved,
-                               Redundancy redundancy) {
+                               double fractionOfMemoryReserved) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
-        this.redundancy = redundancy;
     }
 
     @Override
@@ -52,18 +47,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
         tuneSummaryReadIo(builder.summary.read);
         tuneSummaryCache(builder.summary.cache);
         tuneSearchReadIo(builder.search.mmap);
-        for (ProtonConfig.Documentdb.Builder dbb : builder.documentdb) {
-            getConfig(dbb);
-        }
-    }
-
-    private void getConfig(ProtonConfig.Documentdb.Builder builder) {
-        // TODO => Move this to backend to enable ignoring this setting.
-        ProtonConfig.Documentdb dbCfg = builder.build();
-        if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
-            long numDocs = (long)usableMemoryGb() * GB / MEMORY_COST_PER_DOCUMENT_DB_ONLY;
-            builder.allocation.initialnumdocs(numDocs/redundancy.readyCopies());
-        }
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
