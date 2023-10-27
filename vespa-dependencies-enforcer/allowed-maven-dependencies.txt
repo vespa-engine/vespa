@@ -45,7 +45,7 @@ com.yahoo.athenz:athenz-zpe-java-client:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zts-core:${athenz.vespa.version}
 com.yahoo.rdl:rdl-java:1.5.4
 commons-beanutils:commons-beanutils:${commons-beanutils.vespa.version}
-commons-cli:commons-cli:1.5.0
+commons-cli:commons-cli:${commons-cli.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-collections:commons-collections:${commons-collections.vespa.version}
 commons-fileupload:commons-fileupload:1.5
