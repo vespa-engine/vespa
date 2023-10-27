@@ -69,6 +69,8 @@ public enum SummaryTransform {
         return this==DYNAMICBOLDED || this==DYNAMICTEASER;
     }
 
+    public boolean isTokens() { return this == TOKENS; }
+
     /** Returns whether this transform always gets its value by accessing memory only */
     public boolean isInMemory() {
         return switch (this) {

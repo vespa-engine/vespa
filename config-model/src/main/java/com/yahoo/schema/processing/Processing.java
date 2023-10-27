@@ -57,6 +57,7 @@ public class Processing {
                 AdjustSummaryTransforms::new,
                 SummaryNamesFieldCollisions::new,
                 SummaryFieldsMustHaveValidSource::new,
+                TokensTransformValidator::new,
                 MatchedElementsOnlyResolver::new,
                 MakeDefaultSummaryTheSuperSet::new,
                 Bolding::new,
