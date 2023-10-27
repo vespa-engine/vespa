@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -192,7 +191,7 @@ public class SystemFlagsDataArchive {
         flagData.rules().forEach(rule -> rule.conditions().forEach(condition -> {
             int force_switch_expression_dummy = switch (condition.type()) {
                 case RELATIONAL -> switch (condition.dimension()) {
-                    case APPLICATION_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL,
+                    case APPLICATION, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL,
                             ENVIRONMENT, HOSTNAME, INSTANCE_ID, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
                             throw new FlagValidationException(condition.type().toWire() + " " +
                                                               DimensionHelper.toWire(condition.dimension()) +
@@ -207,7 +206,7 @@ public class SystemFlagsDataArchive {
                 };
 
                 case WHITELIST, BLACKLIST -> switch (condition.dimension()) {
-                    case APPLICATION_ID -> validateConditionValues(condition, SystemFlagsDataArchive::validateTenantApplication);
+                    case APPLICATION -> validateConditionValues(condition, SystemFlagsDataArchive::validateTenantApplication);
                     case CONSOLE_USER_EMAIL -> validateConditionValues(condition, email -> {
                         if (!email.contains("@"))
                             throw new FlagValidationException("Invalid email address: " + email);

@@ -127,7 +127,7 @@ public class RoutingController {
     /** Returns the endpoint config to use for given instance */
     public EndpointConfig endpointConfig(ApplicationId instance) {
         String flagValue = endpointConfig.with(FetchVector.Dimension.TENANT_ID, instance.tenant().value())
-                                         .with(FetchVector.Dimension.APPLICATION_ID, TenantAndApplicationId.from(instance).serialized())
+                                         .with(FetchVector.Dimension.APPLICATION, TenantAndApplicationId.from(instance).serialized())
                                          .with(FetchVector.Dimension.INSTANCE_ID, instance.serializedForm())
                                          .value();
         return switch (flagValue) {

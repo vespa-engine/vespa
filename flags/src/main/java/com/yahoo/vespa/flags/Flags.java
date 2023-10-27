@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
@@ -345,7 +345,8 @@ public class Flags {
             "make-exclusive", false,
             List.of("hakonhall"), "2023-10-20", "2023-12-20",
             "Allow an exclusive allocation to a non-exclusive host, but if so, make the host exclusive.",
-            "Takes immediate effect on any following preparation of clusters");
+            "Takes immediate effect on any following preparation of clusters",
+            INSTANCE_ID, TENANT_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
@@ -414,14 +415,14 @@ public class Flags {
             List.of("bjorncs", "baldersheim"), "2023-10-01", "2024-01-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            APPLICATION);
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
             List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
-            TENANT_ID, APPLICATION_ID, INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag CLOUD_TRIAL_NOTIFICATIONS = defineFeatureFlag(
             "cloud-trial-notifications", false,
