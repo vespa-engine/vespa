@@ -56,7 +56,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("flushstrategy", e)) {
                 handleFlushStrategy(e, t.searchNode);
             } else if (equals("resizing", e)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "saerchnode.resizing is deprecated and ignored");
+                deployLogger.logApplicationPackage(Level.WARNING, "searchnode.resizing is deprecated and ignored");
             } else if (equals("index", e)) {
                 handleIndex(deployLogger, e, t.searchNode);
             } else if (equals("attribute", e)) {
