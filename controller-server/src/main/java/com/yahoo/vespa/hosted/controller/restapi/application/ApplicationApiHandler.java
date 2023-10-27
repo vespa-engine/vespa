@@ -716,7 +716,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         var mergedContact = updateBillingContact(inspector.field("contact"), cloudTenant.name(), contact);
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), billing.address());
-        var mergedTaxId = updateTaxId(inspector.field("taxId"), billing.getTaxId());
+        var mergedTaxId = updateAndValidateTaxId(inspector.field("taxId"), billing.getTaxId());
         var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
         var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
 
@@ -922,10 +922,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
-    private TaxId updateTaxId(Inspector insp, TaxId old) {
+    private TaxId updateAndValidateTaxId(Inspector insp, TaxId old) {
         if (!insp.valid()) return old;
-        return new TaxId(getString(insp.field("type"), old.type().value()),
+        var taxId = new TaxId(getString(insp.field("type"), old.type().value()),
                          getString(insp.field("code"), old.code().value()));
+        controller.serviceRegistry().billingController().validateTaxId(taxId);
+        return taxId;
     }
 
     private TenantContact updateBillingContact(Inspector insp, TenantName tenantName, TenantContact oldContact) {
@@ -953,7 +955,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return TenantBilling.empty()
                 .withContact(updateBillingContact(insp, tenantName, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()))
-                .withTaxId(updateTaxId(insp.field("taxId"), oldContact.getTaxId()))
+                .withTaxId(updateAndValidateTaxId(insp.field("taxId"), oldContact.getTaxId()))
                 .withPurchaseOrder(purchaseOrder)
                 .withInvoiceEmail(invoiceEmail);
     }
