@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -216,6 +217,15 @@ public class MockBillingController implements BillingController {
                         List.of(new AcceptedCountries.TaxType("ca_gst_hst", "Canadian GST/HST number", "([0-9]{9}) ?RT ?([0-9]{4})", "123456789RT0002"),
                                 new AcceptedCountries.TaxType("ca_pst_bc", "Canadian PST number (British Columbia)", "PST-?([0-9]{4})-?([0-9]{4})", "PST-1234-5678")))
                 ));
+    }
+
+    @Override
+    public void validateTaxId(TaxId id) throws IllegalArgumentException {
+        if (id.isEmpty() || id.isLegacy()) return;
+        if (!List.of("eu_vat", "no_vat").contains(id.type().value()))
+            throw new IllegalArgumentException("Unknown tax id type '%s'".formatted(id.type().value()));
+        if (!id.code().value().matches("\\w+"))
+            throw new IllegalArgumentException("Invalid tax id code '%s'".formatted(id.code().value()));
     }
 
 

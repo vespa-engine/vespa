@@ -125,7 +125,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "phone":"phone"
                     },
-                    "taxId":{"type": "no_mva", "code": "123456789MVA"},
+                    "taxId":{"type": "no_vat", "code": "123456789MVA"},
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -151,7 +151,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "phone":"phone"
                     },
                     "taxId": {
-                        "type": "no_mva",
+                        "type": "no_vat",
                         "code": "123456789MVA"
                     },
                     "purchaseOrder":"PO9001",
