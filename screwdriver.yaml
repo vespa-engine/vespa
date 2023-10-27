@@ -118,28 +118,29 @@ jobs:
                     (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
               exit 1
             fi
-            meta set vespa.version $VESPA_VERSION
-          fi
-      - checkout: |
-          mkdir -p workdir
-          cd workdir
-          WORKDIR=$(pwd)
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            git clone -q https://github.com/vespa-engine/vespa
-            (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
-            git clone -q https://github.com/vespa-engine/system-test
-            (cd system-test && git checkout $SYSTEM_TEST_REF)
-            git clone -q https://github.com/vespa-engine/sample-apps
-            # Set correct version in pom.xml files
-            (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
-            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
-            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
           else
-            mkdir -p $WORKDIR/vespa
-            (cd $SD_SOURCE_DIR && git archive HEAD --format tar) | tar x -C $WORKDIR/vespa
-            git clone -q --depth 1 https://github.com/vespa-engine/system-test
-            git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
+            # We'll just use the version number from the latest factory build for PRs
+            VESPA_VERSION=$(meta get vespa.version --external component-build)
           fi
+          meta set vespa.version $VESPA_VERSION
+      - checkout: |
+          WORKDIR=$(pwd)/..
+          cd $WORKDIR
+
+          git clone -q --depth 1 https://github.com/vespa-engine/system-test
+          git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
+
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            (cd vespa && git checkout $VESPA_REF)
+            (cd system-test && git checkout $SYSTEM_TEST_REF)
+          fi
+
+          # We set the tag locally to make the SRPM build like Copr does it
+          (cd vespa && git tag v$VESPA_VERSION)
+          # Set correct version in pom.xml files
+          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
           $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
 
