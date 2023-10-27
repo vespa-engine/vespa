@@ -51,7 +51,7 @@ commons-collections:commons-collections:${commons-collections.vespa.version}
 commons-fileupload:commons-fileupload:1.5
 commons-io:commons-io:${commons-io.vespa.version}
 commons-logging:commons-logging:${commons-logging.vespa.version}
-io.airlift:aircompressor:${aircompress.vespa.version}
+io.airlift:aircompressor:${aircompressor.vespa.version}
 io.airlift:airline:${airline.vespa.version}
 io.dropwizard.metrics:metrics-core:${dropwizard.metrics.vespa.version}
 io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}

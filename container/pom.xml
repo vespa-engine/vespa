@@ -36,7 +36,7 @@
         </exclusion>
         <exclusion>
           <groupId>io.airlift</groupId>
-          <artifactId>aircompress</artifactId>
+          <artifactId>aircompressor</artifactId>
         </exclusion>
         <exclusion>
           <groupId>net.java.dev.jna</groupId>

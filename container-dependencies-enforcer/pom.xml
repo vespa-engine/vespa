@@ -66,7 +66,6 @@
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}:provided</include>
-                                        <include>io.airlift:aircompressor:${aircompress.vespa.version}:provided</include>
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.vespa.version}:provided</include>
@@ -156,6 +155,7 @@
                                         <include>com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.vespa.version}:test</include>
+                                        <include>io.airlift:aircompressor:${aircompressor.vespa.version}:test</include>
                                         <include>io.airlift:airline:${airline.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_common:${prometheus.client.vespa.version}:test</include>
