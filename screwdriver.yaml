@@ -53,13 +53,12 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 90
-      screwdriver.cd/buildPeriodically: H 4 * * *
+      #screwdriver.cd/buildPeriodically: H 4 * * *
 
     environment:
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
@@ -87,6 +86,7 @@ jobs:
           df -h
 
   component-build:
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -108,33 +108,37 @@ jobs:
       - SVC_OKTA_VESPA_FACTORY_TOKEN
     steps:
       - get-vespa-version: |
-          VERSION_INFO=$(screwdriver/factory-command.sh create-build)
-          VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
-          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
-          SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
-          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
-            echo "Must have valid Vespa version and reference to continue \
-                  (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
-            exit 1
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            VERSION_INFO=$(screwdriver/factory-command.sh create-build)
+            VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
+            VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
+            SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
+            if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
+              echo "Must have valid Vespa version and reference to continue \
+                    (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
+              exit 1
+            fi
+            meta set vespa.version $VESPA_VERSION
           fi
-          meta set vespa.version $VESPA_VERSION
-      - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf -y install docker-ce docker-ce-cli containerd.io
-          docker system info
       - checkout: |
           mkdir -p workdir
           cd workdir
           WORKDIR=$(pwd)
-          git clone -q https://github.com/vespa-engine/vespa
-          (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
-          git clone -q https://github.com/vespa-engine/system-test
-          (cd system-test && git checkout $SYSTEM_TEST_REF)
-          git clone -q https://github.com/vespa-engine/sample-apps
-          # Set correct version in pom.xml files
-          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            git clone -q https://github.com/vespa-engine/vespa
+            (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
+            git clone -q https://github.com/vespa-engine/system-test
+            (cd system-test && git checkout $SYSTEM_TEST_REF)
+            git clone -q https://github.com/vespa-engine/sample-apps
+            # Set correct version in pom.xml files
+            (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
+            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
+          else
+            git archive HEAD --format tar | tar x -C vespa
+            git clone -q --depth 1 https://github.com/vespa-engine/system-test
+            git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
+          fi
       - make-srpm: |
           $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
 
@@ -210,8 +214,10 @@ jobs:
             FACTORY_BUILD_STATUS=failure
             DESCRIPTION="Build failed"
           fi
-          echo "Reporting build status as $FACTORY_BUILD_STATUS"
-          $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            echo "Reporting build status as $FACTORY_BUILD_STATUS"
+            $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
+          fi
 
   publish-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
