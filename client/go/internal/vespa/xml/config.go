@@ -223,15 +223,40 @@ func ParseNodeCount(s string) (int, int, error) {
 
 // IsProdRegion returns whether string s is a valid production region.
 func IsProdRegion(s string, system vespa.System) bool {
-	// TODO: Add support for cd and main systems
-	if system.Name == vespa.PublicCDSystem.Name {
-		return s == "aws-us-east-1c"
-	}
-	switch s {
-	case "aws-us-east-1c", "aws-us-west-2a",
-		"aws-eu-west-1a", "aws-ap-northeast-1a",
-		"gcp-us-central1-f":
-		return true
+	switch system.Name {
+	case vespa.CDSystem.Name:
+		switch s {
+		case "aws-us-east-1a", "cd-us-east-1",
+			"cd-us-west-1":
+			return true
+		}
+	case vespa.MainSystem.Name:
+		switch s {
+		case "prod.ap-northeast-1", "prod.ap-northeast-2",
+			"prod.ap-southeast-1", "prod.aws-ap-northeast-2a",
+			"prod.aws-apse1-az1", "prod.aws-apse1-az3",
+			"prod.aws-ap-southeast-1a", "prod.aws-euw1-az1",
+			"prod.aws-euw1-az3", "prod.aws-eu-west-1a",
+			"prod.aws-use1-az2", "prod.aws-us-east-1a",
+			"prod.aws-us-east-1b", "prod.aws-us-east-2a",
+			"prod.aws-usw2-az2", "prod.aws-usw2-az3",
+			"prod.aws-us-west-2a", "prod.eu-west-1",
+			"prod.us-central-1", "prod.us-east-3",
+			"prod.us-west-1":
+			return true
+		}
+	case vespa.PublicCDSystem.Name:
+		switch s {
+		case "aws-us-east-1c", "gcp-us-central1-f":
+			return true
+		}
+	case vespa.PublicSystem.Name:
+		switch s {
+		case "aws-us-east-1c", "aws-us-west-2a",
+			"aws-eu-west-1a", "aws-ap-northeast-1a",
+			"gcp-europe-west3-b", "gcp-us-central1-f":
+			return true
+		}
 	}
 	return false
 }
