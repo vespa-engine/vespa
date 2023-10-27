@@ -4,8 +4,6 @@ package com.yahoo.vespa.flags.json;
 import com.yahoo.vespa.flags.FetchVector;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -19,7 +17,7 @@ public class DimensionHelper {
     static {
         // WARNING: If you ever change the serialized form of a dimension, ensure the new serialized
         // flag data are pushed out everywhere before removing support for old format, see VESPA-27760.
-        serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
+        serializedDimensions.put(FetchVector.Dimension.APPLICATION, "application");
         serializedDimensions.put(FetchVector.Dimension.CLOUD, "cloud");
         serializedDimensions.put(FetchVector.Dimension.CLOUD_ACCOUNT, "cloud-account");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_ID, "cluster-id");

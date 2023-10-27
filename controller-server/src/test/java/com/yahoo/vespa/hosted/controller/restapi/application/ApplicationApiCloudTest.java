@@ -106,7 +106,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "emailVerified":false,
                         "phone":""
                     },
-                    "taxId":"",
+                    "taxId": {
+                      "type": "",
+                      "code": ""
+                    },
                     "purchaseOrder":"",
                     "invoiceEmail":""
                 }
@@ -122,7 +125,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "phone":"phone"
                     },
-                    "taxId":"1234L",
+                    "taxId":{"type": "no_mva", "code": "123456789MVA"},
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -147,7 +150,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "emailVerified": false,
                         "phone":"phone"
                     },
-                    "taxId":"1234L",
+                    "taxId": {
+                        "type": "no_mva",
+                        "code": "123456789MVA"
+                    },
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -231,7 +237,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "name":"billingName",
                         "email":"","emailVerified":false,
                         "phone":"",
-                        "taxId":"",
+                        "taxId": {
+                          "type": "",
+                          "code": ""
+                        },
                         "purchaseOrder":"",
                         "invoiceEmail":""
                     },
@@ -262,7 +271,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "emailVerified":false,
                         "phone":"phone",
-                        "taxId":"",
+                        "taxId": {
+                          "type": "",
+                          "code": ""
+                        },
                         "purchaseOrder":"",
                         "invoiceEmail":"",
                         "address": {

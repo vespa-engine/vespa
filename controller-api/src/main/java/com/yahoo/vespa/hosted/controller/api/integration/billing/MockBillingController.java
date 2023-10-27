@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -204,6 +203,19 @@ public class MockBillingController implements BillingController {
                 .count();
 
         return count < limit;
+    }
+
+    @Override
+    public AcceptedCountries getAcceptedCountries() {
+        return new AcceptedCountries(List.of(
+                new AcceptedCountries.Country(
+                        "NO", "Norway",
+                        List.of(new AcceptedCountries.TaxType("no_vat", "Norwegian VAT number", "[0-9]{9}MVA", "123456789MVA"))),
+                new AcceptedCountries.Country(
+                        "CA", "Canada",
+                        List.of(new AcceptedCountries.TaxType("ca_gst_hst", "Canadian GST/HST number", "([0-9]{9}) ?RT ?([0-9]{4})", "123456789RT0002"),
+                                new AcceptedCountries.TaxType("ca_pst_bc", "Canadian PST number (British Columbia)", "PST-?([0-9]{4})-?([0-9]{4})", "PST-1234-5678")))
+                ));
     }
 
 

@@ -109,9 +109,7 @@ type LogOptions struct {
 
 // Do sends request to this service. Authentication of the request happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	s.once.Do(func() {
-		util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
-	})
+	util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
 			return nil, fmt.Errorf("%w: %s", errAuth, err)

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -129,5 +128,8 @@ public interface BillingController {
     }
 
     default void updateCache(List<TenantName> tenants) {}
+
+    /** Get the list of countries that are accepted */
+    AcceptedCountries getAcceptedCountries();
 
 }

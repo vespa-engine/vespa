@@ -4,7 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.StatusHistory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -13,8 +16,16 @@ import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.io.File;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * @author ogronnesby
@@ -29,11 +40,6 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     private static final Set<Role> tenantAdmin = Set.of(Role.administrator(tenant));
     private static final Set<Role> financeAdmin = Set.of(Role.hostedAccountant());
 
-    private static final String ACCESS_DENIED = "{\n" +
-            "  \"code\" : 403,\n" +
-            "  \"message\" : \"Access denied\"\n" +
-            "}";
-
     private MockBillingController billingController;
     private ContainerTester tester;
 
@@ -44,7 +50,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var clock = (ManualClock) tester.controller().serviceRegistry().clock();
         clock.setInstant(Instant.parse("2021-04-13T00:00:00Z"));
         billingController = (MockBillingController) tester.serviceRegistry().billingController();
-        billingController.addBill(tenant, BillingApiHandlerTest.createBill(), true);
+        billingController.addBill(tenant, createBill(), true);
     }
 
     @Override
@@ -122,7 +128,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     @Test
     void require_accountant_preview() {
         var accountantRequest = request("/billing/v2/accountant/preview").roles(Role.hostedAccountant());
-        billingController.uncommittedBills.put(tenant, BillingApiHandlerTest.createBill());
+        billingController.uncommittedBills.put(tenant, createBill());
 
         tester.assertResponse(accountantRequest, """
                         {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"2020-05-23","unbilled":"123.00"}]}""");
@@ -245,4 +251,35 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertResponse(accountantRequest, """
                 {"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes","billed":false,"supported":false},"billing":{},"collection":"AUTO"}""");
    }
+
+    @Test
+    void lists_accepted_countries() {
+        var req = request("/billing/v2/countries").roles(tenantReader);
+        tester.assertJsonResponse(req, new File("accepted-countries.json"));
+    }
+
+    private static Bill createBill() {
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
+        var statusHistory = new StatusHistory(new TreeMap<>(Map.of(start, BillStatus.OPEN)));
+        return new Bill(
+                Bill.Id.of("id-1"),
+                TenantName.defaultName(),
+                statusHistory,
+                List.of(createLineItem(start)),
+                start,
+                end
+        );
+    }
+
+    static Bill.LineItem createLineItem(ZonedDateTime addedAt) {
+        return new Bill.LineItem(
+                "some-id",
+                "description",
+                new BigDecimal("123.00"),
+                "paid",
+                "Smith",
+                addedAt
+        );
+    }
 }

@@ -1,12 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
+
+import java.util.logging.Level;
 
 /**
  * Builder for the tuning config for a search cluster.
@@ -20,7 +23,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         Tuning tuning = new Tuning(parent);
         for (Element e : XML.getChildren(spec)) {
             if (equals("searchnode", e))
-                handleSearchNode(e, tuning);
+                handleSearchNode(deployState.getDeployLogger(), e, tuning);
         }
         return tuning;
     }
@@ -45,7 +48,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         return Double.parseDouble(e.getFirstChild().getNodeValue());
     }
 
-    private void handleSearchNode(Element spec, Tuning t) {
+    private void handleSearchNode(DeployLogger deployLogger, Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {
             if (equals("requestthreads", e)) {
@@ -53,13 +56,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("flushstrategy", e)) {
                 handleFlushStrategy(e, t.searchNode);
             } else if (equals("resizing", e)) {
-                handleResizing(e, t.searchNode);
+                handleResizing(deployLogger, e, t.searchNode);
             } else if (equals("index", e)) {
-                handleIndex(e, t.searchNode);
+                handleIndex(deployLogger, e, t.searchNode);
             } else if (equals("attribute", e)) {
-                handleAttribute(e, t.searchNode);
+                deployLogger.logApplicationPackage(Level.WARNING, "searchnode.attribute is deprecated and ignored.");
             } else if (equals("summary", e)) {
-                handleSummary(e, t.searchNode);
+                handleSummary(deployLogger, e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
             } else if (equals("feeding", e)) {
@@ -161,18 +164,19 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleResizing(Element spec, Tuning.SearchNode sn) {
+    private void handleResizing(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
         sn.resizing = new Tuning.SearchNode.Resizing();
         for (Element e : XML.getChildren(spec)) {
             if (equals("initialdocumentcount", e)) {
+                deployLogger.logApplicationPackage(Level.WARNING, "resizing.initialdocumentcount is deprecated.");
                 sn.resizing.initialDocumentCount = asInt(e);
             } else if (equals("amortize-count", e)) {
-                sn.resizing.amortizeCount = asInt(e);
+                deployLogger.logApplicationPackage(Level.WARNING, "resizing.amortize-count is deprecated and ignored");
             }
         }
     }
 
-    private void handleIndex(Element spec, Tuning.SearchNode sn) {
+    private void handleIndex(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
         sn.index = new Tuning.SearchNode.Index();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
@@ -180,9 +184,9 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 Tuning.SearchNode.Index.Io io = sn.index.io;
                 for (Element e2 : XML.getChildren(e)) {
                     if (equals("write", e2)) {
-                        io.write = Tuning.SearchNode.IoType.fromString(asString(e2));
+                        deployLogger.logApplicationPackage(Level.WARNING, "index.io.write is deprecated and ignored.");
                     } else if (equals("read", e2)) {
-                        io.read = Tuning.SearchNode.IoType.fromString(asString(e2));
+                        deployLogger.logApplicationPackage(Level.WARNING, "index.io.read is deprecated and ignored.");
                     } else if (equals("search", e2)) {
                         io.search = Tuning.SearchNode.IoType.fromString(asString(e2));
                     }
@@ -201,28 +205,14 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleAttribute(Element spec, Tuning.SearchNode sn) {
-        sn.attribute = new Tuning.SearchNode.Attribute();
-        for (Element e : XML.getChildren(spec)) {
-            if (equals("io", e)) {
-                sn.attribute.io = new Tuning.SearchNode.Attribute.Io();
-                for (Element e2 : XML.getChildren(e)) {
-                    if (equals("write", e2)) {
-                        sn.attribute.io.write = Tuning.SearchNode.IoType.fromString(asString(e2));
-                    }
-                }
-            }
-        }
-    }
-
-    private void handleSummary(Element spec, Tuning.SearchNode sn) {
+    private void handleSummary(DeployLogger deployLogger, Element spec, Tuning.SearchNode sn) {
         sn.summary = new Tuning.SearchNode.Summary();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
                 sn.summary.io = new Tuning.SearchNode.Summary.Io();
                 for (Element e2 : XML.getChildren(e)) {
                     if (equals("write", e2)) {
-                        sn.summary.io.write = Tuning.SearchNode.IoType.fromString(asString(e2));
+                        deployLogger.logApplicationPackage(Level.WARNING, "summary.io.write is deprecated and ignored.");
                     } else if (equals("read", e2)) {
                         sn.summary.io.read = Tuning.SearchNode.IoType.fromString(asString(e2));
                     }

@@ -9,8 +9,10 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Component specification for {@link com.yahoo.jdisc.http.server.jetty.ConnectorFactory} with hosted specific configuration.
@@ -39,7 +41,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
-        this.knownServerNames = Set.copyOf(builder.knownServerNames);
+        this.knownServerNames = Collections.unmodifiableSet(new TreeSet<>(builder.knownServerNames));
     }
 
     private static SslProvider createSslProvider(Builder builder) {

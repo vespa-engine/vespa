@@ -8,13 +8,10 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-
-import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
  * Ensure that summary field transforms for fields having the same name
@@ -35,9 +32,6 @@ public class SummaryConsistency extends Processor {
 
             for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 assertConsistency(summaryField, schema, validate);
-                makeAttributeTransformIfAppropriate(summaryField, schema);
-                makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
-                makeCopyTransformIfAppropriate(summaryField, schema);
             }
         }
     }
@@ -57,38 +51,6 @@ public class SummaryConsistency extends Processor {
             if (validate)
                 assertConsistentTypes(existing, summaryField);
             makeConsistentOrThrow(existing, summaryField, schema);
-        }
-    }
-
-    /** If the source is an attribute, make this use the attribute transform */
-    private void makeAttributeTransformIfAppropriate(SummaryField summaryField, Schema schema) {
-        if (summaryField.getTransform() != SummaryTransform.NONE) return;
-        Attribute attribute = schema.getAttribute(summaryField.getSingleSource());
-        if (attribute == null) return;
-        summaryField.setTransform(SummaryTransform.ATTRIBUTE);
-    }
-
-    /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
-    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
-        if (summaryField.getTransform() == SummaryTransform.NONE) {
-            String sourceFieldName = summaryField.getSingleSource();
-            ImmutableSDField source = schema.getField(sourceFieldName);
-            if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
-                summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
-            }
-        }
-    }
-
-    /*
-     * This function must be called after makeAttributeCombinerTransformIfAppropriate().
-     */
-    private void makeCopyTransformIfAppropriate(SummaryField summaryField, Schema schema) {
-        if (summaryField.getTransform() == SummaryTransform.NONE) {
-            String sourceFieldName = summaryField.getSingleSource();
-            ImmutableSDField source = schema.getField(sourceFieldName);
-            if (source != null && source.usesStructOrMap() && summaryField.hasExplicitSingleSource()) {
-                summaryField.setTransform(SummaryTransform.COPY);
-            }
         }
     }
 

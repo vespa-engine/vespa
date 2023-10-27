@@ -1127,7 +1127,7 @@ FileStorHandlerImpl::Stripe::flush()
 namespace {
 
 bool
-message_type_is_merge_related(api::MessageType::Id msg_type_id) {
+message_type_is_merge_related(api::MessageType::Id msg_type_id) noexcept {
     switch (msg_type_id) {
     case api::MessageType::MERGEBUCKET_ID:
     case api::MessageType::MERGEBUCKET_REPLY_ID:
@@ -1135,6 +1135,11 @@ message_type_is_merge_related(api::MessageType::Id msg_type_id) {
     case api::MessageType::GETBUCKETDIFF_REPLY_ID:
     case api::MessageType::APPLYBUCKETDIFF_ID:
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
+    // DeleteBucket is usually (but not necessarily) executed in the context of a higher-level
+    // merge operation, but we include it here since we want to enforce that not all threads
+    // in a stripe can dispatch a bucket delete at the same time. This also provides a strict
+    // upper bound on the number of in-flight bucket deletes in the persistence core.
+    case api::MessageType::DELETEBUCKET_ID:
         return true;
     default: return false;
     }

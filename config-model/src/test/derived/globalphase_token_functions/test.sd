@@ -42,4 +42,23 @@ schema test {
         }
     }
 
+    rank-profile with-fun {
+        function use_model() {
+            expression: attribute(outputidx) + 1.0
+        }
+        global-phase {
+            expression: use_model
+        }
+    }
+    rank-profile with-fun-mf inherits with-fun {
+        first-phase {
+            expression: nativeRank
+        }
+        match-features: use_model
+    }
+    rank-profile fun-mf-child inherits with-fun-mf {
+        first-phase {
+            expression: 42 * attribute(outputidx)
+        }
+    }
 }

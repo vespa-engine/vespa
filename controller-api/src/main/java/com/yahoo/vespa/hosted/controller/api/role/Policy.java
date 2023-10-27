@@ -26,10 +26,7 @@ enum Policy {
                       .in(SystemName.all()),
              Privilege.grant(Action.read)
                       .on(PathGroup.billingPathsNoToken())
-                      .in(SystemName.all()),
-             Privilege.grant(Action.read)
-                      .on(PathGroup.billingToken)
-                      .in(SystemName.PublicCd)),
+                      .in(SystemName.all())),
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)
@@ -155,40 +152,14 @@ enum Policy {
                                 .on(PathGroup.paymentProcessor)
                                 .in(SystemName.PublicCd)),
 
-    /** Read your own instrument information */
-    paymentInstrumentRead(Privilege.grant(Action.read)
-                                   .on(PathGroup.billingInstrument)
-                                   .in(SystemName.PublicCd, SystemName.Public)),
-
-    /** Ability to update tenant payment instrument */
-    paymentInstrumentUpdate(Privilege.grant(Action.update)
-                                     .on(PathGroup.billingInstrument)
-                                     .in(SystemName.PublicCd, SystemName.Public)),
-
-    /** Ability to remove your own payment instrument */
-    paymentInstrumentDelete(Privilege.grant(Action.delete)
-                                     .on(PathGroup.billingInstrument)
-                                     .in(SystemName.PublicCd, SystemName.Public)),
-
-    /** Get the token to view instrument form */
-    paymentInstrumentCreate(Privilege.grant(Action.read)
-                                    .on(PathGroup.billingToken)
-                                    .in(SystemName.PublicCd, SystemName.Public)),
-
     /** Ability to update tenant payment instrument */
     planUpdate(Privilege.grant(Action.update)
-            .on(PathGroup.billingPlan, PathGroup.billing)
+            .on(PathGroup.billing)
             .in(SystemName.PublicCd, SystemName.Public)),
-
-    /** Ability to update tenant collection method */
-    collectionMethodUpdate(Privilege.grant(Action.update)
-            .on(PathGroup.billingCollection)
-            .in(SystemName.PublicCd, SystemName.Public)),
-
 
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
-                                    .on(PathGroup.billingList, PathGroup.billing)
+                                    .on(PathGroup.billing, PathGroup.billingAux)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     accessRequests(Privilege.grant(Action.all())
@@ -197,7 +168,7 @@ enum Policy {
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
-                                    .on(PathGroup.hostedAccountant, PathGroup.accountant, PathGroup.userSearch)
+                                    .on(PathGroup.accountant, PathGroup.userSearch)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Listing endpoint certificates and re-requesting certificates */
