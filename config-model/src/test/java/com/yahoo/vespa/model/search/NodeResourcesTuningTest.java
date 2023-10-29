@@ -1,15 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.content.Redundancy;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,35 +35,6 @@ public class NodeResourcesTuningTest {
     @Test
     void reserved_memory_on_content_node() {
         assertEquals(0.7, memoryOverheadGb, delta);
-    }
-
-    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb, Redundancy redundancy) {
-        ProtonConfig.Builder builder = new ProtonConfig.Builder();
-        for (Pair<String, String> sdMode : sdAndMode) {
-            builder.documentdb.add(new ProtonConfig.Documentdb.Builder()
-                                   .inputdoctypename(sdMode.getFirst())
-                                   .configid("some/config/id/" + sdMode.getFirst())
-                                   .mode(ProtonConfig.Documentdb.Mode.Enum.valueOf(sdMode.getSecond())));
-        }
-        return configFromMemorySetting(gb, builder, redundancy);
-    }
-
-    private void verify_that_initial_numdocs_is_dependent_of_mode(int readyCopies) {
-        ProtonConfig cfg = getProtonMemoryConfig(List.of(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")),
-                24 + memoryOverheadGb, new Redundancy(readyCopies+1,readyCopies+1, readyCopies,1, readyCopies));
-        assertEquals(3, cfg.documentdb().size());
-        assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
-        assertEquals("a", cfg.documentdb(0).inputdoctypename());
-        assertEquals(24 * GB / (46 * readyCopies), cfg.documentdb(1).allocation().initialnumdocs());
-        assertEquals("b", cfg.documentdb(1).inputdoctypename());
-        assertEquals(24 * GB / (46 * readyCopies), cfg.documentdb(2).allocation().initialnumdocs());
-        assertEquals("c", cfg.documentdb(2).inputdoctypename());
-    }
-
-    @Test
-    void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
-        verify_that_initial_numdocs_is_dependent_of_mode(1);
-        verify_that_initial_numdocs_is_dependent_of_mode(2);
     }
 
     @Test
@@ -227,9 +194,9 @@ public class NodeResourcesTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), fractionOfMemoryReserved);
     }
 
-    private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder, Redundancy redundancy) {
+    private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder) {
         return getConfig(new FlavorsConfig.Flavor.Builder()
-                                 .minMainMemoryAvailableGb(memoryGb), builder, redundancy);
+                                 .minMainMemoryAvailableGb(memoryGb), builder);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
@@ -255,11 +222,7 @@ public class NodeResourcesTuningTest {
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
-        return getConfig(flavorBuilder, protonBuilder, new Redundancy(1,1,1,1,1));
-    }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          Redundancy redundancy) {
-        return getConfig(flavorBuilder, protonBuilder,1, redundancy);
+        return getConfig(flavorBuilder, protonBuilder,1);
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, double fractionOfMemoryReserved) {
         return getConfig(flavorBuilder, protonBuilder, 1, fractionOfMemoryReserved);
@@ -267,24 +230,14 @@ public class NodeResourcesTuningTest {
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
                                           int numThreadsPerSearch) {
-        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, new Redundancy(1,1,1,1,1));
-    }
-
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int numThreadsPerSearch, Redundancy redundancy) {
-        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, 0, redundancy);
+        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, 0);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
                                           int numThreadsPerSearch, double fractionOfMemoryReserved) {
-        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, fractionOfMemoryReserved,
-                new Redundancy(1,1,1,1,1));
-    }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int numThreadsPerSearch, double fractionOfMemoryReserved, Redundancy redundancy) {
         flavorBuilder.name("my_flavor");
         NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
-                numThreadsPerSearch, fractionOfMemoryReserved, redundancy);
+                numThreadsPerSearch, fractionOfMemoryReserved);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

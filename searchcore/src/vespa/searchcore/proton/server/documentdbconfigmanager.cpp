@@ -11,7 +11,6 @@
 #include <vespa/config-ranking-constants.h>
 #include <vespa/config-ranking-expressions.h>
 #include <vespa/config-summary.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/helper/legacy.h>
@@ -53,7 +52,7 @@ using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
 
-const ConfigKeySet
+ConfigKeySet
 DocumentDBConfigManager::createConfigKeySet() const
 {
     ConfigKeySet set;
@@ -223,13 +222,19 @@ find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs
     return default_document_db_config_entry;
 }
 
-const AllocConfig
-build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
+AllocConfig
+build_alloc_config(const HwInfo & hwInfo, const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
 {
+    // This is an approximate number based on observation of a node using 33G memory with 765M docs
+    constexpr uint64_t MIN_MEMORY_COST_PER_DOCUMENT = 46;
+
     auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
     auto& alloc_config = document_db_config_entry.allocation;
+    uint32_t target_numdocs = (document_db_config_entry.mode != ProtonConfig::Documentdb::Mode::INDEX)
+            ? (hwInfo.memory().sizeBytes() / (MIN_MEMORY_COST_PER_DOCUMENT * proton_config.distribution.searchablecopies))
+            : alloc_config.initialnumdocs;
     auto& distribution_config = proton_config.distribution;
-    search::GrowStrategy grow_strategy(alloc_config.initialnumdocs, alloc_config.growfactor, alloc_config.growbias, alloc_config.initialnumdocs, alloc_config.multivaluegrowfactor);
+    search::GrowStrategy grow_strategy(target_numdocs, alloc_config.growfactor, alloc_config.growbias, target_numdocs, alloc_config.multivaluegrowfactor);
     CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio, alloc_config.maxCompactBuffers, alloc_config.activeBuffersRatio);
     return AllocConfig(AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
                        distribution_config.redundancy, distribution_config.searchablecopies);
@@ -341,7 +346,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
                                  newMaintenanceConfig,
                                  storeConfig,
                                  ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()),
-                                 build_alloc_config(_bootstrapConfig->getProtonConfig(), _docTypeName),
+                                 build_alloc_config(_bootstrapConfig->getHwInfo(), _bootstrapConfig->getProtonConfig(), _docTypeName),
                                  _configId,
                                  _docTypeName);
     assert(newSnapshot->valid());
