@@ -173,16 +173,6 @@ public class DocumentDatabaseTestCase {
                 "", List.of(DEFAULT, DEFAULT));
     }
 
-    @Test
-    void requireThatMixedModeInitialDocumentCountIsReflected() {
-        final long INITIAL = 1000000000L;
-        String feedTuning = "<resizing>" +
-                "  <initialdocumentcount>1000000000</initialdocumentcount>" +
-                "</resizing>\n";
-        verifyInitialDocumentCount(List.of(DocType.create("a", "index"), DocType.create("b", "streaming")),
-                feedTuning, List.of(INITIAL, INITIAL));
-    }
-
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
         IndexschemaConfig icfg = model.getConfig(IndexschemaConfig.class, configId);
         assertEquals(1, icfg.indexfield().size());
