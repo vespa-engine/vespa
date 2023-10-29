@@ -35,7 +35,7 @@ public class ClusterCapacity {
     private final String clusterType;
 
     @JsonCreator
-    public ClusterCapacity(@JsonProperty("count") int count,
+    public ClusterCapacity(@JsonProperty("count") Integer count,
                            @JsonProperty("vcpu") Double vcpu,
                            @JsonProperty("memoryGb") Double memoryGb,
                            @JsonProperty("diskGb") Double diskGb,
@@ -44,7 +44,7 @@ public class ClusterCapacity {
                            @JsonProperty("storageType") String storageType,
                            @JsonProperty("architecture") String architecture,
                            @JsonProperty("clusterType") String clusterType) {
-        this.count = (int) requireNonNegative("count", count);
+        this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
         this.diskGb = diskGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("diskGb", diskGb));
