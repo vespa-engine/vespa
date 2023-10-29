@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
@@ -32,10 +33,11 @@ public class ClusterCapacity {
     private final String diskSpeed;
     private final String storageType;
     private final String architecture;
-    private final String clusterType;
+    private final Optional<String> clusterType;
+    private final Optional<String> clusterId;
 
     @JsonCreator
-    public ClusterCapacity(@JsonProperty("count") int count,
+    public ClusterCapacity(@JsonProperty("count") Integer count,
                            @JsonProperty("vcpu") Double vcpu,
                            @JsonProperty("memoryGb") Double memoryGb,
                            @JsonProperty("diskGb") Double diskGb,
@@ -43,8 +45,9 @@ public class ClusterCapacity {
                            @JsonProperty("diskSpeed") String diskSpeed,
                            @JsonProperty("storageType") String storageType,
                            @JsonProperty("architecture") String architecture,
-                           @JsonProperty("clusterType") String clusterType) {
-        this.count = (int) requireNonNegative("count", count);
+                           @JsonProperty("clusterType") String clusterType,
+                           @JsonProperty("clusterId") String clusterId) {
+        this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
         this.diskGb = diskGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("diskGb", diskGb));
@@ -52,51 +55,42 @@ public class ClusterCapacity {
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
-        this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
-    }
-
-    /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
-    public ClusterCapacity withCount(int count) {
-        return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeed, storageType, architecture, clusterType);
+        this.clusterType = clusterType == null ? Optional.empty() : Optional.of(validateEnum("clusterType", validClusterTypes, clusterType));
+        this.clusterId = clusterId == null ? Optional.empty() : Optional.of(clusterId);
     }
 
     @JsonGetter("count") public int count() { return count; }
-    @JsonGetter("vcpu") public Double vcpuOrNull() {
-        return vcpu.isPresent() ? vcpu.getAsDouble() : null;
-    }
-    @JsonGetter("memoryGb") public Double memoryGbOrNull() {
-        return memoryGb.isPresent() ? memoryGb.getAsDouble() : null;
-    }
-    @JsonGetter("diskGb") public Double diskGbOrNull() {
-        return diskGb.isPresent() ? diskGb.getAsDouble() : null;
-    }
-    @JsonGetter("bandwidthGbps") public Double bandwidthGbpsOrNull() {
-        return bandwidthGbps.isPresent() ? bandwidthGbps.getAsDouble() : null;
-    }
+    @JsonGetter("vcpu") public Double vcpuOrNull() { return vcpu.isPresent() ? vcpu.getAsDouble() : null; }
+    @JsonGetter("memoryGb") public Double memoryGbOrNull() { return memoryGb.isPresent() ? memoryGb.getAsDouble() : null; }
+    @JsonGetter("diskGb") public Double diskGbOrNull() { return diskGb.isPresent() ? diskGb.getAsDouble() : null; }
+    @JsonGetter("bandwidthGbps") public Double bandwidthGbpsOrNull() { return bandwidthGbps.isPresent() ? bandwidthGbps.getAsDouble() : null; }
     @JsonGetter("diskSpeed") public String diskSpeed() { return diskSpeed; }
     @JsonGetter("storageType") public String storageType() { return storageType; }
     @JsonGetter("architecture") public String architecture() { return architecture; }
-    @JsonGetter("clusterType") public String clusterType() { return clusterType; }
+    @JsonGetter("clusterType") public String clusterTypeOrNull() { return clusterType.orElse(null); }
+    @JsonGetter("clusterId") public String clusterIdOrNull() { return clusterId.orElse(null); }
 
-    @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
-    @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
-    @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
+    @JsonIgnore public double vcpu() { return vcpu.orElse(0.0); }
+    @JsonIgnore public double memoryGb() { return memoryGb.orElse(0.0); }
+    @JsonIgnore public double diskGb() { return diskGb.orElse(0.0); }
     @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
+    @JsonIgnore public Optional<String> clusterType() { return clusterType; }
+    @JsonIgnore public Optional<String> clusterId() { return clusterId; }
 
     @Override
     public String toString() {
         return "ClusterCapacity{" +
-                "count=" + count +
-                ", vcpu=" + vcpu +
-                ", memoryGb=" + memoryGb +
-                ", diskGb=" + diskGb +
-                ", bandwidthGbps=" + bandwidthGbps +
-                ", diskSpeed=" + diskSpeed +
-                ", storageType=" + storageType +
-                ", architecture=" + architecture +
-                ", clusterType=" + clusterType +
-                '}';
+               "count=" + count +
+               ", vcpu=" + vcpu +
+               ", memoryGb=" + memoryGb +
+               ", diskGb=" + diskGb +
+               ", bandwidthGbps=" + bandwidthGbps +
+               ", diskSpeed=" + diskSpeed +
+               ", storageType=" + storageType +
+               ", architecture=" + architecture +
+               ", clusterType=" + clusterType +
+               ", clusterId=" + clusterId +
+               '}';
     }
 
     @Override
@@ -105,19 +99,20 @@ public class ClusterCapacity {
         if (o == null || getClass() != o.getClass()) return false;
         ClusterCapacity that = (ClusterCapacity) o;
         return count == that.count &&
-                vcpu.equals(that.vcpu) &&
-                memoryGb.equals(that.memoryGb) &&
-                diskGb.equals(that.diskGb) &&
-                bandwidthGbps.equals(that.bandwidthGbps) &&
-                diskSpeed.equals(that.diskSpeed) &&
-                storageType.equals(that.storageType) &&
-                architecture.equals(that.architecture) &&
-                clusterType.equals(that.clusterType);
+               vcpu.equals(that.vcpu) &&
+               memoryGb.equals(that.memoryGb) &&
+               diskGb.equals(that.diskGb) &&
+               bandwidthGbps.equals(that.bandwidthGbps) &&
+               diskSpeed.equals(that.diskSpeed) &&
+               storageType.equals(that.storageType) &&
+               architecture.equals(that.architecture) &&
+               clusterType.equals(that.clusterType) &&
+               clusterId.equals(that.clusterId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType);
+        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, clusterId);
     }
 
 }

@@ -231,6 +231,8 @@ public final class ClusterSpec {
             return this == container || this == combined;
         }
 
+        public String value() { return name(); }
+
         public static Type from(String typeName) {
             return switch (typeName) {
                 case "admin" -> admin;

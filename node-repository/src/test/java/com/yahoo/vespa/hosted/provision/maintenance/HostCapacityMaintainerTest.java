@@ -99,7 +99,7 @@ public class HostCapacityMaintainerTest {
     @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         tester = new DynamicProvisioningTester().addInitialNodes();
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(1, 1.0, 3.0, 2.0, 1.0, "fast", "remote", "x86_64", null));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(1, 1.0, 3.0, 2.0, 1.0, "fast", "remote", "x86_64", null, null));
         Optional<Node> failedHost = node("host2");
         assertTrue(failedHost.isPresent());
 
@@ -112,8 +112,8 @@ public class HostCapacityMaintainerTest {
     public void provision_deficit_and_deprovision_excess() {
         tester = new DynamicProvisioningTester().addInitialNodes();
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(2, 48.0, 128.0, 1000.0, 10.0, "fast", "remote", "x86_64", null),
-                                    new ClusterCapacity(1, 16.0, 24.0, 100.0, 1.0, "fast", "remote", "x86_64", null));
+                                    new ClusterCapacity(2, 48.0, 128.0, 1000.0, 10.0, "fast", "remote", "x86_64", null, null),
+                                    new ClusterCapacity(1, 16.0, 24.0, 100.0, 1.0, "fast", "remote", "x86_64", null, null));
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(9, tester.nodeRepository.nodes().list().size());
@@ -149,7 +149,7 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester().addInitialNodes();
         // Makes provisioned hosts 48-128-1000-10
         tester.hostProvisioner.setHostFlavor("host4");
-        var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null);
+        var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null, null);
         setPreprovisionCapacityFlag(tester, clusterCapacity);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
@@ -182,7 +182,7 @@ public class HostCapacityMaintainerTest {
 
         setPreprovisionCapacityFlag(tester,
                                     clusterCapacity,
-                                    new ClusterCapacity(2, 24.0, 64.0, 100.0, 1.0, "fast", "remote", "x86_64", null));
+                                    new ClusterCapacity(2, 24.0, 64.0, 100.0, 1.0, "fast", "remote", "x86_64", null, null));
 
         tester.maintain();
 
@@ -196,7 +196,7 @@ public class HostCapacityMaintainerTest {
         // If the preprovision capacity is reduced, we should see shared hosts deprovisioned.
 
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null));
+                                    new ClusterCapacity(1, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null, null));
 
         tester.maintain();
 
@@ -214,8 +214,8 @@ public class HostCapacityMaintainerTest {
 
         // If a host with another architecture is added to preprovision capacity, a shared host should be added.
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null),
-                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "arm64", null));
+                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null, null),
+                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "arm64", null, null));
         tester.hostProvisioner.setHostFlavor("arm64");
         tester.maintain();
 
@@ -229,7 +229,7 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester();  // No nodes initially
         // Makes provisioned hosts 2-30-20-3-arm64
         tester.hostProvisioner.setHostFlavor("arm64");
-        var clusterCapacity = new ClusterCapacity(1, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", null);
+        var clusterCapacity = new ClusterCapacity(1, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", null, null);
         setPreprovisionCapacityFlag(tester, clusterCapacity);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
@@ -245,7 +245,7 @@ public class HostCapacityMaintainerTest {
         verifyFirstMaintainArm64(tester);
 
         // Add a second cluster for cluster type admin. Need new hosts
-        setPreprovisionCapacityFlag(tester, clusterCapacity, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", "admin"));
+        setPreprovisionCapacityFlag(tester, clusterCapacity, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", "admin", "logserver"));
 
         tester.maintain();
         assertEquals("2 provisioned hosts",
@@ -288,10 +288,12 @@ public class HostCapacityMaintainerTest {
                                     new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
-                                                        "container"),
+                                                        "container",
+                                                        null),
                                     new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
+                                                        null,
                                                         null));
         tester.flagSource.withBooleanFlag(Flags.MAKE_EXCLUSIVE.id(), true);
         tester.maintain();
@@ -329,7 +331,7 @@ public class HostCapacityMaintainerTest {
                                     new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
-                                                        null));
+                                                        null, null));
         tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(),
                                           new SharedHost(List.of(new HostResources(48d, 128d, 200d, 20d, "fast", "remote", null, 4, "x86_64"))),
                                           SharedHost.class);
@@ -366,7 +368,7 @@ public class HostCapacityMaintainerTest {
                                     new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
-                                                        null));
+                                                        null, null));
         tester.maintain();
 
         // Hosts are provisioned
@@ -384,7 +386,7 @@ public class HostCapacityMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Must be able to allocate 2 nodes with "no resource requirement"
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, null, null));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, null, null, null));
 
         // Next maintenance run does nothing
         tester.assertNodesUnchanged();
@@ -407,7 +409,7 @@ public class HostCapacityMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Increasing the capacity provisions additional hosts
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(3, 0.0, 0.0, 0.0, 0.0, null, null, null, null));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(3, 0.0, 0.0, 0.0, 0.0, null, null, null, null, null));
         assertEquals(0, tester.provisionedHostsMatching(sharedHostNodeResources));
         assertTrue(node("host102").isEmpty());
         tester.maintain();
@@ -427,6 +429,7 @@ public class HostCapacityMaintainerTest {
                                                         resources1.diskSpeed().name(),
                                                         resources1.storageType().name(),
                                                         resources1.architecture().name(),
+                                                        null,
                                                         null));
         tester.assertNodesUnchanged();
 
@@ -440,6 +443,7 @@ public class HostCapacityMaintainerTest {
                                                         resources1.diskSpeed().name(),
                                                         resources1.storageType().name(),
                                                         resources1.architecture().name(),
+                                                        null,
                                                         null));
 
         assertEquals(1, tester.provisionedHostsMatching(sharedHostNodeResources));

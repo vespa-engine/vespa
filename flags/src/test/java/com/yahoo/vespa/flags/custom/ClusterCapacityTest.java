@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -12,7 +13,7 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
@@ -28,11 +29,13 @@ public class ClusterCapacityTest {
         assertEquals("fast", deserialized.diskSpeed());
         assertEquals("local", deserialized.storageType());
         assertEquals("x86_64", deserialized.architecture());
+        assertEquals(Optional.empty(), deserialized.clusterType());
+        assertEquals(Optional.empty(), deserialized.clusterId());
     }
 
     @Test
     void serialization2() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", null, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
@@ -48,15 +51,17 @@ public class ClusterCapacityTest {
         assertEquals("any", deserialized.diskSpeed());
         assertEquals("remote", deserialized.storageType());
         assertEquals("arm64", deserialized.architecture());
+        assertEquals(Optional.empty(), deserialized.clusterType());
+        assertEquals(Optional.empty(), deserialized.clusterId());
     }
 
     @Test
     void serialization3() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin");
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "id");
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
+                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin","clusterId":"id"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
@@ -68,12 +73,13 @@ public class ClusterCapacityTest {
         assertEquals("any", deserialized.diskSpeed());
         assertEquals("remote", deserialized.storageType());
         assertEquals("arm64", deserialized.architecture());
-        assertEquals("admin", deserialized.clusterType());
+        assertEquals(Optional.of("admin"), deserialized.clusterType());
+        assertEquals(Optional.of("id"), deserialized.clusterId());
     }
 
     @Test
     void serializationWithNoNodeResources() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null, null, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("{\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\"}", json);
@@ -87,6 +93,8 @@ public class ClusterCapacityTest {
         assertEquals("fast", deserialized.diskSpeed());
         assertEquals("any", deserialized.storageType());
         assertEquals("x86_64", deserialized.architecture());
+        assertEquals(Optional.empty(), deserialized.clusterType());
+        assertEquals(Optional.empty(), deserialized.clusterId());
 
 
         // Test that using no values for diskSpeed, storageType and architecture will give expected values (the default values)
@@ -100,6 +108,8 @@ public class ClusterCapacityTest {
         assertEquals("fast", deserialized.diskSpeed());
         assertEquals("any", deserialized.storageType());
         assertEquals("x86_64", deserialized.architecture());
+        assertEquals(Optional.empty(), deserialized.clusterType());
+        assertEquals(Optional.empty(), deserialized.clusterId());
     }
 
 }
