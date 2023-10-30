@@ -40,10 +40,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author ogronnesby
@@ -114,6 +118,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/tenant/{tenant}/collection")
                         .get(self::accountantTenantCollection)
                         .post(Slime.class, self::setAccountantTenantCollection))
+                .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/summary")
+                        .get(self::accountantInvoiceSummary))
                 .addRoute(RestApi.route("/billing/v2/accountant/bill/{invoice}/export")
                         .put(Slime.class, self::putAccountantInvoiceExport))
                 .addRoute(RestApi.route("/billing/v2/accountant/plans")
@@ -432,6 +438,22 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         return slime;
     }
 
+    private Slime accountantInvoiceSummary(RestApi.RequestContext requestContext) {
+        var billId = requestContext.pathParameters().getString("invoice").map(Bill.Id::of).orElseThrow(RestApiException.NotFound::new);
+        var requestParam = requestContext.queryParameters().getString("keys").stream()
+                .flatMap(s -> Arrays.stream(s.split(",")))
+                .map(Bill.ItemKeyType::valueOf)
+                .toList();
+
+        var requestKeys = Bill.ItemRequest.of(requestParam);
+        var bill = billing.getBill(billId);
+        var response = bill.summarizeBy(requestKeys);
+
+        var slime = new Slime();
+        toSlime(slime.setObject(), bill, response);
+        return slime;
+    }
+
     private MessageResponse setAccountantTenantCollection(RestApi.RequestContext requestContext, Slime body) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
@@ -572,6 +594,43 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             slime.setString("id", billingReference.get().reference());
             slime.setLong("lastUpdated", billingReference.get().updated().toEpochMilli());
         }
+    }
+
+    private void toSlime(Cursor slime, Bill bill, Map<Bill.ItemKey, Bill.ItemSummary> summaries) {
+        slime.setString("id", bill.id().toString());
+        var summaryCursor = slime.setArray("summary");
+        summaries.forEach((key, summary) -> {
+            toSlime(summaryCursor.addObject(), key, summary);
+        });
+    }
+
+    private void toSlime(Cursor slime, Bill.ItemKey key, Bill.ItemSummary summary) {
+        toSlime(slime.setObject("key"), key);
+        toSlime(slime.setObject("summary"), summary);
+    }
+
+    private void toSlime(Cursor slime, Bill.ItemKey key) {
+        key.keys().forEach((keyType, keyValue) -> {
+            slime.setString(keyType.name(), keyValue.toString());
+        });
+    }
+
+    private void toSlime(Cursor slime, Bill.ItemSummary summary) {
+        var cpu = slime.setObject("cpu");
+        cpu.setString("cost", summary.cpuCost().toPlainString());
+        cpu.setString("hours", summary.cpuUsage().toPlainString());
+
+        var ram = slime.setObject("memory");
+        ram.setString("cost", summary.ramCost().toPlainString());
+        ram.setString("hours", summary.ramUsage().toPlainString());
+
+        var disk = slime.setObject("disk");
+        disk.setString("cost", summary.diskCost().toPlainString());
+        disk.setString("hours", summary.diskUsage().toPlainString());
+
+        var gpu = slime.setObject("gpu");
+        gpu.setString("cost", summary.gpuCost().toPlainString());
+        gpu.setString("hours", summary.gpuUsage().toPlainString());
     }
 
     private List<Object[]> toCsv(Bill bill) {
