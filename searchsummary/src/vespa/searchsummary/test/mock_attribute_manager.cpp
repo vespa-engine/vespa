@@ -20,9 +20,13 @@ template <typename AttributeType, typename ValueType>
 void
 MockAttributeManager::build_attribute(const vespalib::string& name, BasicType type,
                                       CollectionType col_type,
-                                      const std::vector<std::vector<ValueType>>& values)
+                                      const std::vector<std::vector<ValueType>>& values,
+                                      std::optional<bool> uncased)
 {
     Config cfg(type, col_type);
+    if (uncased.has_value()) {
+        cfg.set_match(uncased.value() ? Config::Match::UNCASED  : Config::Match::CASED);
+    }
     auto attr_base = AttributeFactory::createAttribute(name, cfg);
     assert(attr_base);
     auto attr = std::dynamic_pointer_cast<AttributeType>(attr_base);
@@ -55,9 +59,10 @@ MockAttributeManager::~MockAttributeManager() = default;
 void
 MockAttributeManager::build_string_attribute(const vespalib::string& name,
                                              const std::vector<std::vector<vespalib::string>>& values,
-                                             CollectionType col_type)
+                                             CollectionType col_type,
+                                             std::optional<bool> uncased)
 {
-    build_attribute<StringAttribute, vespalib::string>(name, BasicType::Type::STRING, col_type, values);
+    build_attribute<StringAttribute, vespalib::string>(name, BasicType::Type::STRING, col_type, values, uncased);
 }
 
 void
@@ -65,7 +70,7 @@ MockAttributeManager::build_float_attribute(const vespalib::string& name,
                                             const std::vector<std::vector<double>>& values,
                                             CollectionType col_type)
 {
-    build_attribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, col_type, values);
+    build_attribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, col_type, values, std::nullopt);
 }
 
 void
@@ -73,14 +78,14 @@ MockAttributeManager::build_int_attribute(const vespalib::string& name, BasicTyp
                                           const std::vector<std::vector<int64_t>>& values,
                                           CollectionType col_type)
 {
-    build_attribute<IntegerAttribute, int64_t>(name, type, col_type, values);
+    build_attribute<IntegerAttribute, int64_t>(name, type, col_type, values, std::nullopt);
 }
 
 void
 MockAttributeManager::build_raw_attribute(const vespalib::string& name,
                                           const std::vector<std::vector<std::vector<char>>>& values)
 {
-    build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values);
+    build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values, std::nullopt);
 }
 
 }

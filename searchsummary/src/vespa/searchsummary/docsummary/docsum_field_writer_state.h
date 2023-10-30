@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
