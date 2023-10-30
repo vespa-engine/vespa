@@ -5,17 +5,21 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.FailedInvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InvoiceUpdate;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.ModifiableInvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,17 +67,31 @@ public class BillingReportMaintainer extends ControllerMaintainer {
         });
     }
 
-    InvoiceUpdate maintainInvoices() {
+    List<InvoiceUpdate> maintainInvoices() {
+        var updates = new ArrayList<InvoiceUpdate>();
+
         var billsNeedingMaintenance = databaseClient.readBills().stream()
                 .filter(bill -> bill.getExportedId().isPresent())
                 .filter(exported -> exported.status() == BillStatus.OPEN)
                 .toList();
 
-        var updates = new InvoiceUpdate.Counter();
         for (var bill : billsNeedingMaintenance) {
-            updates.add(reporter.maintainInvoice(bill));
+            var exportedId = bill.getExportedId().orElseThrow();
+            var update = reporter.maintainInvoice(bill);
+            if (update instanceof ModifiableInvoiceUpdate modifiable && ! modifiable.isEmpty()) {
+                log.fine(invoiceMessage(bill.id(), exportedId) + " was updated with " + modifiable.itemsUpdate());
+            } else if (update instanceof FailedInvoiceUpdate failed && failed.reason == FailedInvoiceUpdate.Reason.REMOVED) {
+                log.fine(invoiceMessage(bill.id(), exportedId) +  " has been deleted in the external system");
+                // Reset the exportedId to null, so that we don't maintain it again
+                databaseClient.setExportedInvoiceId(bill.id(), null);
+            }
+            updates.add(update);
         }
-        return updates.finish();
+        return updates;
+    }
+
+    private String invoiceMessage(Bill.Id billId, String invoiceId) {
+        return "Invoice '" + invoiceId + "' for bill '" + billId.value() + "'";
     }
 
     private Map<TenantName, CloudTenant> cloudTenants() {
