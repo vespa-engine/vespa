@@ -26,7 +26,7 @@ public class MailTemplating {
     public enum Template {
         MAIL("mail"),  DEFAULT_MAIL_CONTENT("default-mail-content"), NOTIFICATION_MESSAGE("notification-message"),
         MAIL_VERIFICATION("mail-verification"), TRIAL_SIGNED_UP("trial-signed-up"), TRIAL_MIDWAY_CHECKIN("trial-midway-checkin"),
-        TRIAL_EXPIRES_SOON("trial-expires-soon"), TRIAL_EXPIRES_IMMEDIATELY("trial-expires-immediately"), TRIAL_EXPIRED("trial-expired")
+        TRIAL_EXPIRES_IMMEDIATELY("trial-expires-immediately"), TRIAL_EXPIRED("trial-expired")
         ;
 
         public static Optional<Template> fromId(String id) {

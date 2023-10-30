@@ -21,7 +21,7 @@ public record TrialNotifications(List<Status> tenants) {
     public TrialNotifications { tenants = List.copyOf(tenants); }
 
     public record Status(TenantName tenant, State state, Instant lastUpdate) {}
-    public enum State { SIGNED_UP, MID_CHECK_IN, EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED, UNKNOWN }
+    public enum State { SIGNED_UP, MID_CHECK_IN, EXPIRES_IMMEDIATELY, EXPIRED, UNKNOWN }
 
     public Slime toSlime() {
         var slime = new Slime();
