@@ -29,7 +29,7 @@ public class BillingReporterMock implements BillingReporter {
     }
 
     @Override
-    public InvoiceUpdate maintainInvoice(Bill bill) {
+    public InvoiceUpdate maintainInvoice(CloudTenant tenant, Bill bill) {
         if (exportedBills.containsKey(bill.id())) {
             dbClient.addLineItem(bill.tenant(), maintainedMarkerItem(), Optional.of(bill.id()));
             return ModifiableInvoiceUpdate.of(bill.id(), 1, 0, 0);

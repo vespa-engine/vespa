@@ -70,6 +70,7 @@ public class BillingReportMaintainer extends ControllerMaintainer {
     List<InvoiceUpdate> maintainInvoices() {
         var updates = new ArrayList<InvoiceUpdate>();
 
+        var tenants = cloudTenants();
         var billsNeedingMaintenance = databaseClient.readBills().stream()
                 .filter(bill -> bill.getExportedId().isPresent())
                 .filter(exported -> exported.status() == BillStatus.OPEN)
@@ -77,7 +78,7 @@ public class BillingReportMaintainer extends ControllerMaintainer {
 
         for (var bill : billsNeedingMaintenance) {
             var exportedId = bill.getExportedId().orElseThrow();
-            var update = reporter.maintainInvoice(bill);
+            var update = reporter.maintainInvoice(tenants.get(bill.tenant()), bill);
             if (update instanceof ModifiableInvoiceUpdate modifiable && ! modifiable.isEmpty()) {
                 log.fine(invoiceMessage(bill.id(), exportedId) + " was updated with " + modifiable.itemsUpdate());
             } else if (update instanceof FailedInvoiceUpdate failed && failed.reason == FailedInvoiceUpdate.Reason.REMOVED) {
