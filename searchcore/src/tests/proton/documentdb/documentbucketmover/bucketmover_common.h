@@ -37,13 +37,24 @@ struct MyMoveHandler : public IDocumentMoveHandler {
     using MoveOperationVector = std::vector<MoveOperation>;
     bucketdb::BucketDBOwner &_bucketDb;
     MoveOperationVector _moves;
+    std::set<uint32_t> _lids2Fail;
+    size_t _numFailedMoves;
     size_t _numCachedBuckets;
-    bool _storeMoveDoneContexts;
+    bool   _storeMoveDoneContexts;
+
     std::vector<vespalib::IDestructorCallback::SP> _moveDoneContexts;
 
-    MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext = false);
+    explicit MyMoveHandler(bucketdb::BucketDBOwner &bucketDb) : MyMoveHandler(bucketDb, false){}
+    MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext);
     ~MyMoveHandler() override;
     MoveResult handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
+
+    void addLid2Fail(uint32_t lid) {
+        _lids2Fail.insert(lid);
+    }
+    void removeLids2Fail(uint32_t lid) {
+        _lids2Fail.erase(lid);
+    }
 
     void reset() {
         _moves.clear();
@@ -66,7 +77,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     DocumentVector _docs;
     uint32_t _lid2Fail;
 
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo)
+    explicit MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo)
         : _repo(std::move(repo)),
           _docs(),
           _lid2Fail(0)
@@ -78,7 +89,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
     void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override {}
 
-    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
+    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
 
     Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
@@ -130,11 +141,13 @@ struct MySubDb {
         return _docs.getBucket(userId);
     }
 
-    DocumentVector docs(uint32_t userId) {
+    DocumentVector docs(uint32_t userId) const {
         return _docs.getGidOrderDocs(userId);
     }
 
     void setBucketState(const BucketId &bucketId, bool active);
+    // Will remove from metastore so it is invisible.
+    bool remove(uint32_t subDbId, uint32_t lid);
 };
 
 struct MyCountJobRunner : public IMaintenanceJobRunner {
