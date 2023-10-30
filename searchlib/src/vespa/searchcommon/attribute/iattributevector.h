@@ -419,6 +419,13 @@ public:
      */
     virtual bool isImported() const = 0;
 
+    /*
+     * Returns whether the match setting for the attribute is uncased.
+     * This is only relevant for string attributes (i.e. when isStringType()
+     * returns true). The default for string attributes is uncased matching.
+     */
+    virtual bool has_uncased_matching() const noexcept { return true; }
+
     /**
      * Will serialize the values for the documentid in ascending order. The serialized form can be used by memcmp and
      * sortorder will be preserved.

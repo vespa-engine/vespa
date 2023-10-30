@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_combiner_dfw.h"
+#include "attribute_tokens_dfw.h"
 #include "copy_dfw.h"
 #include "docsum_field_writer_commands.h"
 #include "docsum_field_writer_factory.h"
@@ -16,8 +17,10 @@
 #include "tokens_dfw.h"
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 
 using vespalib::IllegalArgumentException;
+using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -88,6 +91,21 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if (command == command::tokens) {
         if (!source.empty()) {
             fieldWriter = std::make_unique<TokensDFW>(source);
+        } else {
+            throw_missing_source(command);
+        }
+    } else if (command == command::attribute_tokens) {
+        if (!source.empty()) {
+            if (has_attribute_manager()) {
+                auto ctx = getEnvironment().getAttributeManager()->createContext();
+                const auto* attr = ctx->getAttribute(source);
+                if (attr == nullptr) {
+                    Issue::report("No valid attribute vector found: field='%s', command='%s', source='%s'",
+                                  field_name.c_str(), command.c_str(), source.c_str());
+                } else {
+                    fieldWriter = std::make_unique<AttributeTokensDFW>(source);
+                }
+            }
         } else {
             throw_missing_source(command);
         }

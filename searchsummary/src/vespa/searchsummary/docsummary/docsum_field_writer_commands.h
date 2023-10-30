@@ -13,6 +13,7 @@ namespace search::docsummary::command {
 extern const vespalib::string abs_distance;
 extern const vespalib::string attribute;
 extern const vespalib::string attribute_combiner;
+extern const vespalib::string attribute_tokens;
 extern const vespalib::string copy;
 extern const vespalib::string documentid;
 extern const vespalib::string dynamic_teaser;
