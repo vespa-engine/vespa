@@ -17,6 +17,7 @@ public class ClusterId {
     public static final ClusterId PROXY_HOST = new ClusterId(InfrastructureApplication.PROXY_HOST.applicationName());
     public static final ClusterId ROUTING = new ClusterId(InfrastructureApplication.PROXY.applicationName());
     public static final ClusterId TENANT_HOST = new ClusterId(InfrastructureApplication.TENANT_HOST.applicationName());
+    public static final ClusterId CLUSTER_CONTROLLER = new ClusterId("cluster-controllers");
 
     private final String id;
 

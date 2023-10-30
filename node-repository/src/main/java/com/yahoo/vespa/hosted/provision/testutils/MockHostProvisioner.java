@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +51,7 @@ public class MockHostProvisioner implements HostProvisioner {
     private final Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
     private final Set<String> upgradableFlavors = new HashSet<>();
     private final Map<Behaviour, Integer> behaviours = new HashMap<>();
+    private final LinkedList<Optional<ClusterSpec.Type>> exclusiveToClusterTypes = new LinkedList<>();
 
     private int deprovisionedHosts = 0;
 
@@ -72,6 +74,11 @@ public class MockHostProvisioner implements HostProvisioner {
         return behaviours.computeIfPresent(behaviour, (k, old) -> old == 0 ? null : --old) != null;
     }
 
+    public void setExclusiveToClusterIds(List<Optional<ClusterSpec.Type>> exclusiveToClusterTypes) {
+        this.exclusiveToClusterTypes.clear();
+        this.exclusiveToClusterTypes.addAll(exclusiveToClusterTypes);
+    }
+
     @Override
     public Runnable provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
         if (behaviour(Behaviour.failProvisionRequest)) throw new NodeAllocationException("No capacity for provision request", true);
@@ -87,13 +94,16 @@ public class MockHostProvisioner implements HostProvisioner {
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : request.indices()) {
             String hostHostname = request.type() == host ? "host" + index : request.type().name() + index;
+            Optional<ClusterSpec.Type> exclusiveToClusterType = exclusiveToClusterTypes.isEmpty() ?
+                                                                Optional.empty() :
+                                                                exclusiveToClusterTypes.removeFirst();
             hosts.add(new ProvisionedHost("id-of-" + request.type().name() + index,
                                           hostHostname,
                                           hostFlavor,
                                           request.type(),
                                           request.sharing() == HostSharing.provision ? Optional.of(request.owner()) : Optional.empty(),
                                           request.sharing().isExclusiveAllocation() ? Optional.of(request.owner()) : Optional.empty(),
-                                          Optional.empty(),
+                                          exclusiveToClusterType,
                                           createHostnames(request.type(), hostFlavor, index),
                                           request.resources(),
                                           request.osVersion(),

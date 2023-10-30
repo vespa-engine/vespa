@@ -67,7 +67,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.provision.ClusterSpec.Type.admin;
+import static com.yahoo.config.provision.ClusterSpec.Type.container;
+import static com.yahoo.config.provision.ClusterSpec.Type.content;
 import static com.yahoo.config.provision.NodeResources.Architecture.arm64;
+import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -251,6 +255,56 @@ public class HostCapacityMaintainerTest {
         assertEquals("2 provisioned hosts",
                      2, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 30, DiskSpeed.any, remote, arm64)));
+    }
+
+    @Test
+    public void preprovision_sample_instance_in_dev() {
+        tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(), new MockNameResolver());
+        setPreprovisionCapacityFlag(tester,
+                                    new ClusterCapacity(1, 16d, 24d, 100d, 0.3, "fast", "any", "any", "container", null),
+                                    new ClusterCapacity(1, 24d, 64d, 100d, 0.3, "fast", "any", "any", "content", null),
+                                    new ClusterCapacity(1, 0.25, 1.32, 10d, 0.3, "fast", "any", "any", "admin", "cluster-controllers"),
+                                    new ClusterCapacity(1, 1d, 4d, 50d, 0.3, "fast", "any", "any", "admin", "logserver"));
+
+        HostResources hostResources1 = new HostResources(16d, 24d, 100d, 1d, "fast", "remote", "container", 1, "x86_64");
+        HostResources hostResources2 = new HostResources(24d, 64d, 100d, 10d, "fast", "remote", "content", 1, "x86_64");
+        HostResources hostResources3 = new HostResources(48d, 128d, 1000d, 10d, "fast", "remote", "admin", 6, "x86_64");
+        tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(),
+                                          new SharedHost(List.of(hostResources1, hostResources2, hostResources3)),
+                                          SharedHost.class);
+
+        tester.hostProvisioner.setHostFlavor("host2", container);
+        tester.hostProvisioner.setHostFlavor("host3", content);
+        tester.hostProvisioner.setHostFlavor("host4", admin);
+
+        tester.hostProvisioner.setExclusiveToClusterIds(List.of(Optional.of(container), Optional.of(content), Optional.of(admin)));
+
+        assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(0, tester.nodeRepository.nodes().list().size());
+
+        // preprovisioning should create one host for container, one for content, and one for admin
+        tester.maintain();
+        assertEquals(3, tester.hostProvisioner.provisionedHosts().size());
+        assertHosts(1, hostResources1);
+        assertHosts(1, hostResources2);
+        assertHosts(1, hostResources3);
+        assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
+
+        // Running the maintainers again should cause no changes
+        tester.assertNodesUnchanged();
+        assertEquals(3, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
+    }
+
+    private void assertHosts(int count, HostResources hostResources) {
+        NodeResources nodeResources = new NodeResources(hostResources.vcpu(),
+                                                        hostResources.memoryGb(),
+                                                        hostResources.diskGb(),
+                                                        hostResources.bandwidthGbps(),
+                                                        NodeResources.DiskSpeed.valueOf(hostResources.diskSpeed()),
+                                                        remote,
+                                                        x86_64);
+        assertEquals(count, tester.provisionedHostsMatching(nodeResources));
     }
 
     private void verifyFirstMaintain(DynamicProvisioningTester tester) {
