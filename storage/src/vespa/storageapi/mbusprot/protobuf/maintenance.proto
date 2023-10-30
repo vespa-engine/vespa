@@ -33,12 +33,13 @@ message MergeNode {
 }
 
 message MergeBucketRequest {
-    Bucket             bucket                = 1;
-    uint32             cluster_state_version = 2;
-    uint64             max_timestamp         = 3;
-    repeated MergeNode nodes                 = 4;
-    repeated uint32    node_chain            = 5;
-    bool               unordered_forwarding  = 6;
+    Bucket             bucket                     = 1;
+    uint32             cluster_state_version      = 2;
+    uint64             max_timestamp              = 3;
+    repeated MergeNode nodes                      = 4;
+    repeated uint32    node_chain                 = 5;
+    bool               unordered_forwarding       = 6;
+    uint32             estimated_memory_footprint = 7;
 }
 
 message MergeBucketResponse {

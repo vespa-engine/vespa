@@ -46,6 +46,18 @@ merge_throttling_policy.min_window_size int default=16
 merge_throttling_policy.max_window_size int default=128
 merge_throttling_policy.window_size_increment double default=2.0
 
+## If positive, nodes enforce a soft limit on the estimated amount of memory that
+## can be used by merges touching a particular content node. If a merge arrives
+## to the node that would violate the soft limit, it will be bounced with BUSY.
+## Note that this also counts merges where the node is part of the source-only set,
+## since these use memory when/if data is read from the local node.
+##
+## Semantics:
+##    > 0  explicit limit in bytes
+##   == 0  limit automatically derived by content node
+##    < 0  unlimited (legacy behavior)
+max_merge_memory_usage_bytes long default=-1
+
 ## If the persistence provider indicates that it has exhausted one or more
 ## of its internal resources during a mutating operation, new merges will
 ## be bounced for this duration. Not allowing further merges helps take
