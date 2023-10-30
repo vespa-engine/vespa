@@ -23,16 +23,14 @@ BucketHandler::addBucketStateChangedHandler(IBucketStateChangedHandler *handler)
 }
 
 void
-BucketHandler::removeBucketStateChangedHandler(IBucketStateChangedHandler *
-                                               handler)
+BucketHandler::removeBucketStateChangedHandler(IBucketStateChangedHandler * handler)
 {
     _handlers.erase(handler);
 }
 
 void
 BucketHandler::notifyBucketStateChanged(const document::BucketId &bucketId,
-                                        storage::spi::BucketInfo::ActiveState
-                                        newState)
+                                        storage::spi::BucketInfo::ActiveState newState)
 {
     for (auto &handler : _handlers) {
         handler->notifyBucketStateChanged(bucketId, newState);

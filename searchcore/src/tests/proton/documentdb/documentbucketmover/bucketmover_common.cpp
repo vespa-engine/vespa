@@ -21,15 +21,21 @@ MyBucketModifiedHandler::notifyBucketModified(const BucketId &bucket) {
 MyMoveHandler::MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext)
     : _bucketDb(bucketDb),
       _moves(),
-      _numCachedBuckets(),
+      _lids2Fail(),
+      _numFailedMoves(0),
+      _numCachedBuckets(0),
       _storeMoveDoneContexts(storeMoveDoneContext),
       _moveDoneContexts()
 {}
 
 MyMoveHandler::~MyMoveHandler() = default;
 
-void
+IDocumentMoveHandler::MoveResult
 MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) {
+    if (_lids2Fail.contains(op.getPrevLid())) {
+        _numFailedMoves++;
+        return MoveResult::FAILURE;
+    }
     _moves.push_back(op);
     if (_bucketDb.takeGuard()->isCachedBucket(op.getBucketId())) {
         ++_numCachedBuckets;
@@ -37,6 +43,7 @@ MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
     if (_storeMoveDoneContexts) {
         _moveDoneContexts.push_back(std::move(moveDoneCtx));
     }
+    return MoveResult::SUCCESS;
 }
 
 MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
@@ -67,6 +74,13 @@ MySubDb::insertDocs(const UserDocuments &docs_) {
         }
     }
     _docs.merge(docs_);
+}
+
+bool
+MySubDb::remove(uint32_t subDbId, uint32_t lid) {
+    if (_subDb.sub_db_id() != subDbId) return false;
+    if (!_metaStore.validLid(lid)) return false;
+    return _metaStore.remove(lid, 0u);
 }
 
 bool

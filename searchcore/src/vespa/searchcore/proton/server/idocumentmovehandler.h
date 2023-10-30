@@ -15,7 +15,8 @@ class MoveOperation;
  */
 struct IDocumentMoveHandler
 {
-    virtual void handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
+    enum class MoveResult { SUCCESS, FAILURE};
+    [[nodiscard]] virtual MoveResult handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
     virtual ~IDocumentMoveHandler() = default;
 };
 

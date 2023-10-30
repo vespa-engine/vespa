@@ -156,6 +156,9 @@ private:
     size_t pending() const {
         return _started.load(std::memory_order_relaxed) - _completed.load(std::memory_order_relaxed);
     }
+    void enableReschedule() {
+        _needReschedule.store(true, std::memory_order_relaxed);
+    }
 };
 }
 

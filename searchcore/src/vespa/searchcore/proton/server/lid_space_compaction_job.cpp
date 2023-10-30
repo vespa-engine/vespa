@@ -34,11 +34,11 @@ namespace {
 
 bool
 isSameDocument(const search::DocumentMetaData &a, const search::DocumentMetaData &b) {
+    //TODO Timestamp check can be removed once logic has proved itself in large scale.
     return (a.lid == b.lid) &&
            (a.bucketId == b.bucketId) &&
            (a.gid == b.gid) &&
-           (a.timestamp ==
-            b.timestamp); // Timestamp check can be removed once logic has proved itself in large scale.
+           (a.timestamp == b.timestamp);
 }
 
 }
@@ -111,7 +111,6 @@ CompactionJob::completeMove(const search::DocumentMetaData & metaThen, std::uniq
     // Reread meta data as document might have been altered after move was initiated
     // If so it will fail the timestamp sanity check later on.
     search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
-    // This should be impossible and should probably be an assert
     if ( ! isSameDocument(metaThen, metaNow)) return;
     if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
 

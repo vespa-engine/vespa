@@ -75,6 +75,9 @@ struct ControllerFixtureBase : public ::testing::Test
         _bucketHandler.notifyBucketStateChanged(bucket, BucketInfo::ActiveState::NOT_ACTIVE);
         return *this;
     }
+    bool removeFromSubDB(uint32_t subdbId, uint32_t lid) {
+        return _ready.remove(subdbId, lid) || _notReady.remove(subdbId, lid);
+    }
     void failRetrieveForLid(uint32_t lid) {
         _ready.failRetrieveForLid(lid);
         _notReady.failRetrieveForLid(lid);
@@ -237,6 +240,7 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error)
     });
     sync();
     EXPECT_FALSE(_bmj->done());
+    EXPECT_TRUE(docsMoved().empty());
     fixRetriever();
     masterExecute([this]() {
         EXPECT_TRUE(_bmj->scanAndMove(4, 3));
@@ -246,6 +250,38 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error)
     EXPECT_EQ(2u, docsMoved().size());
     assertEqual(_ready.bucket(2), _ready.docs(2)[0], 1, 2, docsMoved()[0]);
     assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[1]);
+    EXPECT_EQ(1u, bucketsModified().size());
+    EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
+}
+
+TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_handler_error)
+{
+    // bucket 2 should be moved
+    addReady(_ready.bucket(1));
+    _bmj->recompute();
+    _moveHandler.addLid2Fail(5);
+    masterExecute([this]() {
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
+    });
+    sync();
+    EXPECT_FALSE(_bmj->done());
+    EXPECT_EQ(1u, _moveHandler._numFailedMoves);
+    EXPECT_EQ(1u, docsMoved().size());
+    assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[0]);
+    const auto & doc = docsMoved()[0];
+    EXPECT_TRUE(removeFromSubDB(doc.getPrevSubDbId(), doc.getPrevLid()));  // Explicit remove as movehandler only observes move attempt.
+    _moveHandler.removeLids2Fail(5);
+    masterExecute([this]() {
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
+    });
+    sync();
+    EXPECT_EQ(2u, docsMoved().size());
+    // First document is from previous move round. Handler just appends all operations.
+    assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[0]);
+    assertEqual(_ready.bucket(2), _ready.docs(2)[0], 1, 2, docsMoved()[1]);
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
 }
