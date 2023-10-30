@@ -32,7 +32,13 @@ public class GlobalPhaseSetupTest {
         assertEquals(0, setup.normalizers.size());
         assertEquals(9, setup.matchFeaturesToHide.size());
         assertEquals(1, setup.globalPhaseEvalSpec.fromQuery().size());
-        assertEquals(9, setup.globalPhaseEvalSpec.fromMF().size());
+        var wantMF = setup.globalPhaseEvalSpec.fromMF();
+        assertEquals(8, wantMF.size());
+        wantMF.sort((a, b) -> a.matchFeatureName().compareTo(b.matchFeatureName()));
+        assertEquals("attribute(t1)", wantMF.get(0).matchFeatureName());
+        assertEquals("attribute(t1)", wantMF.get(0).inputName());
+        assertEquals("myplus", wantMF.get(5).matchFeatureName());
+        assertEquals("rankingExpression(myplus)", wantMF.get(5).inputName());
     }
 
     @Test void queryFeaturesWithDefaults() {
