@@ -3,6 +3,7 @@
     {
       "code": "NO",
       "name": "Norway",
+      "taxIdMandatory": true,
       "taxTypes": [
         {
           "id": "no_vat",
@@ -15,6 +16,7 @@
     {
       "code": "CA",
       "name": "Canada",
+      "taxIdMandatory": true,
       "taxTypes": [
         {
           "id": "ca_gst_hst",

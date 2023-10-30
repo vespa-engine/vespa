@@ -131,6 +131,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             var countryCursor = countries.addObject();
             countryCursor.setString("code", country.code());
             countryCursor.setString("name", country.displayName());
+            countryCursor.setBool("taxIdMandatory", country.taxIdMandatory());
             var taxTypesCursors = countryCursor.setArray("taxTypes");
             country.taxTypes().forEach(taxType -> {
                 var taxTypeCursor = taxTypesCursors.addObject();

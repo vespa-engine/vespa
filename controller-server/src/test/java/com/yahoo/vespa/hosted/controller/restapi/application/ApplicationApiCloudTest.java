@@ -107,6 +107,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "phone":""
                     },
                     "taxId": {
+                      "country": "",
                       "type": "",
                       "code": ""
                     },
@@ -125,7 +126,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"foo@example",
                         "phone":"phone"
                     },
-                    "taxId":{"type": "no_vat", "code": "123456789MVA"},
+                    "taxId":{"country": "NO", "type": "no_vat", "code": "123456789MVA"},
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
                     "address": {
@@ -151,6 +152,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "phone":"phone"
                     },
                     "taxId": {
+                        "country": "NO",
                         "type": "no_vat",
                         "code": "123456789MVA"
                     },
@@ -238,6 +240,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "email":"","emailVerified":false,
                         "phone":"",
                         "taxId": {
+                          "country": "",
                           "type": "",
                           "code": ""
                         },
@@ -272,6 +275,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         "emailVerified":false,
                         "phone":"phone",
                         "taxId": {
+                          "country": "",
                           "type": "",
                           "code": ""
                         },
