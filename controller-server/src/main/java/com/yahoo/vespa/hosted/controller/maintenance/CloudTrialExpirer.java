@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRED;
 import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRES_IMMEDIATELY;
-import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.EXPIRES_SOON;
 import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.MID_CHECK_IN;
 import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.SIGNED_UP;
 import static com.yahoo.vespa.hosted.controller.persistence.TrialNotifications.State.UNKNOWN;
@@ -95,6 +94,14 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
         return tombstoneTenants(idleOldPlanTenants);
     }
+
+    /*
+     * Trial plan notification states. Transition to a new state triggers a notification/email
+     * - SIGNED_UP: Tenant has signed up for trial
+     * - MID_CHECK_IN: Tenant is halfway through trial (7 days)
+     * - EXPIRES_IMMEDIATELY: Tenant has 1 day left of trial
+     * - EXPIRED: Tenant has expired
+     */
     private boolean notifyTenants() {
         try {
             var currentStatus = controller().curator().readTrialNotifications()
@@ -129,12 +136,8 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                         && !List.of(EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, EXPIRES_IMMEDIATELY));
                     notifyExpiresImmediately(tenant);
-                } else if ("trial".equals(plan) && ageInDays >= 12
-                        && !List.of(EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
-                    updatedStatus.add(updatedStatus(tenant, now, EXPIRES_SOON));
-                    notifyExpiresSoon(tenant);
                 } else if ("trial".equals(plan) && ageInDays >= 7
-                        && !List.of(MID_CHECK_IN, EXPIRES_SOON, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
+                        && !List.of(MID_CHECK_IN, EXPIRES_IMMEDIATELY, EXPIRED).contains(state)) {
                     updatedStatus.add(updatedStatus(tenant, now, MID_CHECK_IN));
                     notifyMidCheckIn(tenant);
                 } else {
@@ -152,44 +155,28 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     private void notifySignup(Tenant tenant) {
         var consoleMsg = "Welcome to Vespa Cloud trial! [Manage plan](%s)".formatted(billingUrl(tenant));
-        queueNotification(tenant, consoleMsg, "Welcome to Vespa Cloud",
-                          "Welcome to Vespa Cloud! We hope you will enjoy your trial. " +
-                                  "Please reach out to us if you have any questions or feedback.");
+        queueNotification(tenant, consoleMsg, "Welcome to Vespa Cloud", MailTemplating.Template.TRIAL_SIGNED_UP);
     }
 
     private void notifyMidCheckIn(Tenant tenant) {
         var consoleMsg = "You're halfway through the **14 day** trial period. [Manage plan](%s)".formatted(billingUrl(tenant));
-        queueNotification(tenant, consoleMsg, "How is your Vespa Cloud trial going?",
-                          "How is your Vespa Cloud trial going? " +
-                        "Please reach out to us if you have any questions or feedback.");
-    }
-
-    private void notifyExpiresSoon(Tenant tenant) {
-        var consoleMsg = "Your Vespa Cloud trial expires in **2** days. [Manage plan](%s)".formatted(billingUrl(tenant));
-        queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial expires in 2 days",
-                          "Your Vespa Cloud trial expires in 2 days. " +
-                        "Please reach out to us if you have any questions or feedback.");
+        queueNotification(tenant, consoleMsg, "How is your Vespa Cloud trial going?", MailTemplating.Template.TRIAL_MIDWAY_CHECKIN);
     }
 
     private void notifyExpiresImmediately(Tenant tenant) {
         var consoleMsg = "Your Vespa Cloud trial expires **tomorrow**. [Manage plan](%s)".formatted(billingUrl(tenant));
-        queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial expires tomorrow",
-                          "Your Vespa Cloud trial expires tomorrow. " +
-                        "Please reach out to us if you have any questions or feedback.");
+        queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial expires tomorrow", MailTemplating.Template.TRIAL_EXPIRES_IMMEDIATELY);
     }
 
     private void notifyExpired(Tenant tenant) {
         var consoleMsg = "Your Vespa Cloud trial has expired. [Upgrade plan](%s)".formatted(billingUrl(tenant));
-        queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial has expired",
-                          "Your Vespa Cloud trial has expired. " +
-                        "Please reach out to us if you have any questions or feedback.");
+        queueNotification(tenant, consoleMsg, "Your Vespa Cloud trial has expired", MailTemplating.Template.TRIAL_EXPIRED);
     }
 
-    private void queueNotification(Tenant tenant, String consoleMsg, String emailSubject, String emailMsg) {
+    private void queueNotification(Tenant tenant, String consoleMsg, String emailSubject, MailTemplating.Template template) {
         var mail = Optional.of(Notification.MailContent.fromTemplate(MailTemplating.Template.DEFAULT_MAIL_CONTENT)
                                        .subject(emailSubject)
-                                       .with("mailMessageTemplate", "cloud-trial-notification")
-                                       .with("cloudTrialMessage", emailMsg)
+                                       .with("mailMessageTemplate", template.getId())
                                        .with("mailTitle", emailSubject)
                                        .with("consoleLink", controller().serviceRegistry().consoleUrls().tenantOverview(tenant.name()))
                                        .build());
