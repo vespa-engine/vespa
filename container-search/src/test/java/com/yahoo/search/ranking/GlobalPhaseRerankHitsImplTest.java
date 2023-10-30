@@ -38,7 +38,11 @@ public class GlobalPhaseRerankHitsImplTest {
         return new FunEvalSpec(() -> new EvalSum(constValue), Collections.emptyList(), Collections.emptyList());
     }
     static FunEvalSpec makeSumSpec(List<String> fromQuery, List<String> fromMF) {
-        return new FunEvalSpec(() -> new EvalSum(0.0), fromQuery, fromMF);
+        List<MatchFeatureInput> mfList = new ArrayList<>();
+        for (String mf : fromMF) {
+            mfList.add(new MatchFeatureInput(mf, mf));
+        }
+        return new FunEvalSpec(() -> new EvalSum(0.0), fromQuery, mfList);
     }
     static class ExpectingNormalizer extends Normalizer {
         List<Double> expected;

@@ -469,4 +469,42 @@ schema rankexpression {
       match-features: nativeRank
   }
 
+  rank-profile function-with-arg-as-summary-feature {
+      function plusOne(x) {
+        expression: x + 1
+      }
+      function useAttr(name, weight) {
+        expression: attribute(name) * weight
+      }
+      first-phase {
+        expression: nativeRank
+      }
+      summary-features {
+        attribute(t1)
+        plusOne(41)
+        useAttr(foo1, 17)
+      }
+  }
+
+  rank-profile function-with-arg-in-global-phase {
+      function plusOne(x) {
+        expression: x + 1
+      }
+      function useAttr(name, weight) {
+        expression: attribute(name) * weight
+      }
+      function withIndirect(name) {
+        expression: useAttr(name, 1.25)
+      }
+      first-phase {
+        expression: nativeRank
+      }
+      global-phase {
+        expression: sum(useAttr(t1, 42) + plusOne(2) + withIndirect(foo1) + plusOne(attribute(foo2)))
+      }
+      match-features {
+          plusOne(attribute(foo2))
+      }
+  }
+
 }
