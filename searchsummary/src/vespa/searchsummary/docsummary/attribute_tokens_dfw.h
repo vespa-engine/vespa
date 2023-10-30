@@ -7,8 +7,9 @@
 namespace search::docsummary {
 
 /*
- * Class for writing annotated string field values from document as
- * arrays containing the tokens.
+ * Class for writing values from a string attribute vector as arrays
+ * containing the tokens. The string values are not split but they are
+ * lowercased if the string attribute vector uses uncased matching.
  */
 class AttributeTokensDFW : public DocsumFieldWriter
 {
