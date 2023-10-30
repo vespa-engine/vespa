@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -107,7 +108,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 return getMetricsArray(metricSetId);
             }
             if ("prometheus".equals(format)) {
-                return buildPrometheusOutput(metricSetId);
+                return buildPrometheusOutput();
             }
 
             String output = getAllMetricsPackets(metricSetId) + "\n";
@@ -132,9 +133,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     /**
      * Returns metrics in Prometheus format
      */
-    private byte[] buildPrometheusOutput(String metricSetId) throws IOException {
-        var metrics = getPacketsForSnapshot(getSnapshot(), metricSetId, applicationName, timer.currentTimeMillis());
-        return PrometheusHelper.buildPrometheusOutput(metrics, timer.currentTimeMillis());
+    private byte[] buildPrometheusOutput() throws IOException {
+        return PrometheusHelper.buildPrometheusOutput(getSnapshot(), applicationName, timer.currentTimeMillis());
     }
 
     private static String jsonToString(JsonNode jsonObject) throws JsonProcessingException {
