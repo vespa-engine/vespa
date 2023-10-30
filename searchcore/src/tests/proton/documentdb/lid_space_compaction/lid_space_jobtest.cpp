@@ -122,11 +122,8 @@ JobTestBase::notifyNodeRetired(bool nodeRetired) {
 }
 
 void
-JobTestBase::assertJobContext(uint32_t moveToLid,
-                      uint32_t moveFromLid,
-                      uint32_t handleMoveCnt,
-                      uint32_t wantedLidLimit,
-                      uint32_t compactStoreCnt) const
+JobTestBase::assertJobContext(uint32_t moveToLid, uint32_t moveFromLid, uint32_t handleMoveCnt,
+                              uint32_t wantedLidLimit, uint32_t compactStoreCnt) const
 {
     sync();
     EXPECT_EQ(moveToLid, _handler->_moveToLid);
