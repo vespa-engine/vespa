@@ -9,7 +9,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_tokens_dfw_test");
 
-using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::docsummary::AttributeTokensDFW;
 using search::docsummary::GetDocsumsState;
