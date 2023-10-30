@@ -60,6 +60,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean speedTest = false;
     Compression compression = auto;
     URI proxy;
+    Duration connectionTtl = Duration.ZERO;
 
 
     public FeedClientBuilderImpl() {
@@ -92,6 +93,13 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     public FeedClientBuilderImpl setMaxStreamPerConnection(int max) {
         if (max < 1) throw new IllegalArgumentException("Max streams per connection must be at least 1, but was " + max);
         this.maxStreamsPerConnection = max;
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder setConnectionTimeToLive(Duration ttl) {
+        if (ttl.isNegative()) throw new IllegalArgumentException("Connection TTL cannot be negative, but was " + ttl);
+        this.connectionTtl = ttl;
         return this;
     }
 

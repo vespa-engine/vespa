@@ -159,7 +159,10 @@ class JettyCluster implements Cluster {
                     dest, Pool.StrategyType.RANDOM, connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
             pool.preCreateConnections(connectionsPerEndpoint);
             if (secureProxy) pool.setMaxDuration(Duration.ofMinutes(1).toMillis());
-            else pool.setMaximizeConnections(true);
+            else {
+                pool.setMaximizeConnections(true);
+                pool.setMaxDuration(b.connectionTtl.toMillis());
+            }
             return pool;
         });
         HttpClient httpClient = new HttpClient(transport);
