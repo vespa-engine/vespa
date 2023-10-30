@@ -123,10 +123,8 @@ jobs:
           dnf -y install docker-ce docker-ce-cli containerd.io
           docker system info
       - checkout: |
-          mkdir -p workdir
-          cd workdir
+          cd ..
           WORKDIR=$(pwd)
-          git clone -q https://github.com/vespa-engine/vespa
           (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
           git clone -q https://github.com/vespa-engine/system-test
           (cd system-test && git checkout $SYSTEM_TEST_REF)
