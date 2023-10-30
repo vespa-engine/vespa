@@ -266,9 +266,9 @@ public class HostCapacityMaintainerTest {
                                     new ClusterCapacity(1, 0.25, 1.32, 10d, 0.3, "fast", "any", "any", "admin", "cluster-controllers"),
                                     new ClusterCapacity(1, 1d, 4d, 50d, 0.3, "fast", "any", "any", "admin", "logserver"));
 
-        HostResources hostResources1 = new HostResources(16d, 24d, 100d, 1d, "fast", "remote", "container", 1, "x86_64");
-        HostResources hostResources2 = new HostResources(24d, 64d, 100d, 10d, "fast", "remote", "content", 1, "x86_64");
-        HostResources hostResources3 = new HostResources(48d, 128d, 1000d, 10d, "fast", "remote", "admin", 6, "x86_64");
+        HostResources hostResources1 = new HostResources(16d, 24d, 100d, 1d, "fast", "remote", "container", 1, "any");
+        HostResources hostResources2 = new HostResources(24d, 64d, 100d, 10d, "fast", "remote", "content", 1, "any");
+        HostResources hostResources3 = new HostResources(48d, 128d, 1000d, 10d, "fast", "remote", "admin", 6, "any");
         tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(),
                                           new SharedHost(List.of(hostResources1, hostResources2, hostResources3)),
                                           SharedHost.class);
