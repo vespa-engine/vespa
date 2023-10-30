@@ -103,15 +103,6 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    void requireThatWeCanParseResizingTag() {
-        Tuning t = createTuning(parseXml("<resizing>",
-                "<initialdocumentcount>128</initialdocumentcount>",
-                "<amortize-count>13</amortize-count>",
-                "</resizing>"));
-        assertEquals(128, t.searchNode.resizing.initialDocumentCount.intValue());
-    }
-
-    @Test
     void requireThatWeCanParseIndexTag() {
         Tuning t = createTuning(parseXml("<index>", "<io>",
                 "<search>mmap</search>",

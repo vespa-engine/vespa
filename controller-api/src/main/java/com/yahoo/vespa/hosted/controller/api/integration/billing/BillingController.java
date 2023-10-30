@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.TaxId;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -131,5 +132,8 @@ public interface BillingController {
 
     /** Get the list of countries that are accepted */
     AcceptedCountries getAcceptedCountries();
+
+    /** Validation of tax id */
+    void validateTaxId(TaxId id) throws IllegalArgumentException;
 
 }

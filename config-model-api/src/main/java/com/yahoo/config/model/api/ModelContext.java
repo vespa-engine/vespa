@@ -116,7 +116,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli", "havardpe"}, removeAfter = "8.207") default boolean enableConditionalPutRemoveWriteRepair() { return true; }
         @ModelFeatureFlag(owners = {"mortent", "olaa"}, removeAfter = "8.227") default boolean enableDataplaneProxy() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableNestedMultivalueGrouping() { return false; }
-        @ModelFeatureFlag(owners = {"jonmv"}) default boolean useReconfigurableDispatcher() { return false; }
+        @ModelFeatureFlag(owners = {"jonmv"}, removeAfter = "8.250") default boolean useReconfigurableDispatcher() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }

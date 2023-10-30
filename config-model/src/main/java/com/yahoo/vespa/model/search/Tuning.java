@@ -119,21 +119,6 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             }
         }
 
-        public static class Resizing implements ProtonConfig.Producer {
-            // TODO GC as soon as resource computation is moved to backend.
-            public Integer initialDocumentCount = null;
-
-            @Override
-            public void getConfig(ProtonConfig.Builder builder) {
-                if (initialDocumentCount!=null) {
-                    for (ProtonConfig.Documentdb.Builder db : builder.documentdb) {
-                        db.allocation.initialnumdocs(initialDocumentCount);
-                    }
-                }
-            }
-
-        }
-
         public static class Index implements ProtonConfig.Producer {
             public static class Io implements ProtonConfig.Producer {
                 public IoType search = null;
@@ -347,7 +332,6 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
         public RequestThreads threads = null;
         public LidSpace lidSpace = null;
         public FlushStrategy strategy = null;
-        public Resizing resizing = null;
         public Index index = null;
         public Summary summary = null;
         public Initialize initialize = null;
@@ -359,7 +343,6 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             if (threads != null) threads.getConfig(builder);
             if (lidSpace != null) lidSpace.getConfig(builder);
             if (strategy != null) strategy.getConfig(builder);
-            if (resizing != null) resizing.getConfig(builder);
             if (index != null) index.getConfig(builder);
             if (summary != null) summary.getConfig(builder);
             if (initialize != null) initialize.getConfig(builder);
