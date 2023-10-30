@@ -14,10 +14,12 @@ class HitRescorer {
     private static final Logger logger = Logger.getLogger(HitRescorer.class.getName());
 
     private final Supplier<Evaluator> mainEvalSrc;
-    private final List<String> mainFromMF;
+    private final List<MatchFeatureInput> mainFromMF;
     private final List<NormalizerContext> normalizers;
 
-    public HitRescorer(Supplier<Evaluator> mainEvalSrc, List<String> mainFromMF, List<NormalizerContext> normalizers) {
+    public HitRescorer(Supplier<Evaluator> mainEvalSrc,
+                       List<MatchFeatureInput> mainFromMF,
+                       List<NormalizerContext> normalizers) {
         this.mainEvalSrc = mainEvalSrc;
         this.mainFromMF = mainFromMF;
         this.normalizers = normalizers;
@@ -48,13 +50,13 @@ class HitRescorer {
         return newScore;
     }
 
-    private static double evalScorer(WrappedHit wrapped, Evaluator scorer, List<String> fromMF) {
-        for (String argName : fromMF) {
-            var asTensor = wrapped.getTensor(argName);
+    private static double evalScorer(WrappedHit wrapped, Evaluator scorer, List<MatchFeatureInput> fromMF) {
+        for (var argSpec : fromMF) {
+            var asTensor = wrapped.getTensor(argSpec.matchFeatureName());
             if (asTensor != null) {
-                scorer.bind(argName, asTensor);
+                scorer.bind(argSpec.inputName(), asTensor);
             } else {
-                logger.warning("Missing match-feature for Evaluator argument: " + argName);
+                logger.warning("Missing match-feature for Evaluator argument: " + argSpec.inputName());
                 return 0.0;
             }
         }

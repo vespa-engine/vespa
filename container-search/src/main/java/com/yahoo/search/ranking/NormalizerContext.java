@@ -4,4 +4,8 @@ package com.yahoo.search.ranking;
 import java.util.List;
 import java.util.function.Supplier;
 
-record NormalizerContext(String name, Normalizer normalizer, Supplier<Evaluator> evalSource, List<String> fromMF) {}
+record NormalizerContext(String name,
+                         Normalizer normalizer,
+                         Supplier<Evaluator> evalSource,
+                         List<MatchFeatureInput> fromMF)
+{}
