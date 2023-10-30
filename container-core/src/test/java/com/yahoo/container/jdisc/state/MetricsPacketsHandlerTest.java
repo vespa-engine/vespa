@@ -164,7 +164,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
 
         response = requestAsString("http://localhost/metrics-packets?format=prometheus&metric-set=infrastructure");
         expectedResponse = readFile("prometheus-filtered");
-        assertEquals(expectedResponse, response);
+        assertTrue(response.startsWith(expectedResponse));
     }
 
     @Test

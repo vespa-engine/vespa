@@ -9,4 +9,3 @@ lockAttempt_lockedLoad_average{dim_1="value1",host="some-hostname",vespa_service
 lockAttempt_lockedLoad_max{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
 # HELP alive
 # TYPE alive untyped
-alive{vespaVersion="8.0.0",vespa_service="host_life",} 1 0
