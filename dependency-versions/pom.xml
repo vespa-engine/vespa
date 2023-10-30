@@ -102,7 +102,7 @@
         <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <jaxb.runtime.vespa.version>4.0.4</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>11.0.17</jetty.vespa.version>
+        <jetty.vespa.version>11.0.18</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.13.0</jna.vespa.version>
