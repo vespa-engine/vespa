@@ -13,7 +13,7 @@ public record AcceptedCountries(List<Country> countries) {
         countries = List.copyOf(countries);
     }
 
-    public record Country(String code, String displayName, List<TaxType> taxTypes) {
+    public record Country(String code, String displayName, boolean taxIdMandatory, List<TaxType> taxTypes) {
         public Country {
             taxTypes = List.copyOf(taxTypes);
         }

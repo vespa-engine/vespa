@@ -721,10 +721,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
         var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
 
-        if (!inspector.field("taxId").valid() && inspector.field("address").valid()) {
-            throw new IllegalArgumentException("Tax ID information is mandatory for setting up billing");
-        }
-
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
                 .withAddress(mergedAddress)
