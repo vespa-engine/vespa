@@ -55,7 +55,7 @@ public class RemoteSession extends Session {
 
     @Override
     public String toString() {
-        return super.toString() + ",application set=" + applicationVersions;
+        return super.toString() + ", application versions=" + applicationVersions;
     }
 
 }

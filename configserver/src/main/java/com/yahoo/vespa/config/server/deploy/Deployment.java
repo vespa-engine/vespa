@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
 
 /**
  * The process of deploying an application.
@@ -162,6 +163,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void deleteSession() {
         sessionRepository().deleteLocalSession(session.getSessionId());
+        try (var transaction = sessionRepository().createSetStatusTransaction(session, DELETE)) {
+            transaction.commit();
+        }
     }
 
     private SessionRepository sessionRepository() {
