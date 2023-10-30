@@ -1,0 +1,42 @@
+# HELP gauge_metric_average
+# TYPE gauge_metric_average untyped
+gauge_metric_average{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 0.2 0
+# HELP gauge_metric_last
+# TYPE gauge_metric_last untyped
+gauge_metric_last{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 0.2 0
+# HELP gauge_metric_max
+# TYPE gauge_metric_max untyped
+gauge_metric_max{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 0.2 0
+# HELP gauge_metric_min
+# TYPE gauge_metric_min untyped
+gauge_metric_min{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 0.2 0
+# HELP gauge_metric_sum
+# TYPE gauge_metric_sum untyped
+gauge_metric_sum{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 0.2 0
+# HELP gauge_metric_count
+# TYPE gauge_metric_count untyped
+gauge_metric_count{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 1 0
+# HELP configserver_requests_count
+# TYPE configserver_requests_count untyped
+configserver_requests_count{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 120 0
+# HELP lockAttempt_lockedLoad_average
+# TYPE lockAttempt_lockedLoad_average untyped
+lockAttempt_lockedLoad_average{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
+# HELP lockAttempt_lockedLoad_last
+# TYPE lockAttempt_lockedLoad_last untyped
+lockAttempt_lockedLoad_last{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
+# HELP lockAttempt_lockedLoad_max
+# TYPE lockAttempt_lockedLoad_max untyped
+lockAttempt_lockedLoad_max{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
+# HELP lockAttempt_lockedLoad_min
+# TYPE lockAttempt_lockedLoad_min untyped
+lockAttempt_lockedLoad_min{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
+# HELP lockAttempt_lockedLoad_sum
+# TYPE lockAttempt_lockedLoad_sum untyped
+lockAttempt_lockedLoad_sum{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 500.0 0
+# HELP lockAttempt_lockedLoad_count
+# TYPE lockAttempt_lockedLoad_count untyped
+lockAttempt_lockedLoad_count{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 1 0
+# HELP counter_metric_count
+# TYPE counter_metric_count untyped
+counter_metric_count{dim_1="value1",host="some-hostname",vespa_service="state-handler-test-base",} 5 0
