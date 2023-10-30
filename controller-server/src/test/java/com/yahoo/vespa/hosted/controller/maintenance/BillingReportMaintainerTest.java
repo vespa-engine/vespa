@@ -113,6 +113,35 @@ public class BillingReportMaintainerTest {
         assertEquals(0, updates.size());
     }
 
+    @Test
+    void it_is_allowed_to_re_export_bills_whose_invoice_has_been_deleted_in_the_external_system() {
+        var t1 = tester.createTenant("t1");
+        var billingDb = tester.controller().serviceRegistry().billingDatabase();
+
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
+
+        var bill1 = billingDb.createBill(t1, start, end, "exported-then-deleted");
+
+        var reporter = (BillingReporterMock)tester.controller().serviceRegistry().billingReporter();
+
+        // Export the bill, then delete it in the external system
+        reporter.exportBill(billingDb.readBill(bill1).get(), "FOO", cloudTenant(t1));
+        maintainer.maintainInvoices();
+        reporter.deleteExportedBill(bill1);
+        maintainer.maintainInvoices();
+
+        // Ensure it is currently ignored by the maintainer
+        var updates = maintainer.maintainInvoices();
+        assertEquals(0, updates.size());
+
+        // Re-export the bill and verify that it is maintained again
+        reporter.exportBill(billingDb.readBill(bill1).get(), "FOO", cloudTenant(t1));
+        updates = maintainer.maintainInvoices();
+        assertEquals(1, updates.size());
+        assertEquals(ModifiableInvoiceUpdate.class, updates.get(0).getClass());
+    }
+
     private CloudTenant cloudTenant(TenantName tenantName) {
         return tester.controller().tenants().require(tenantName, CloudTenant.class);
     }
