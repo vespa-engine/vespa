@@ -238,7 +238,7 @@ public class TenantSerializerTest {
                                 .withAddress("Central Station")
                                 .withRegion("Irish Sea"))
                         .withPurchaseOrder(new PurchaseOrder("PO42"))
-                        .withTaxId(new TaxId("no_vat", "123456789MVA"))
+                        .withTaxId(new TaxId("NO", "no_vat", "123456789MVA"))
                         .withInvoiceEmail(new Email("billing@mycomp.any", false))
                 );
 

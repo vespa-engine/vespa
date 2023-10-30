@@ -221,7 +221,7 @@ public class MockBillingController implements BillingController {
 
     @Override
     public void validateTaxId(TaxId id) throws IllegalArgumentException {
-        if (id.isEmpty() || id.isLegacy()) return;
+        if (id.isEmpty() || id.isLegacy() || id.country().isEmpty()) return;
         if (!List.of("eu_vat", "no_vat").contains(id.type().value()))
             throw new IllegalArgumentException("Unknown tax id type '%s'".formatted(id.type().value()));
         if (!id.code().value().matches("\\w+"))

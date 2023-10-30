@@ -96,6 +96,7 @@ public class TenantSerializer {
     private static final String accountField = "account";
     private static final String templateVersionField = "templateVersion";
     private static final String taxIdField = "taxId";
+    private static final String taxIdCountryField = "country";
     private static final String taxIdTypeField = "type";
     private static final String taxIdCodeField = "code";
     private static final String purchaseOrderField = "purchaseOrder";
@@ -293,9 +294,10 @@ public class TenantSerializer {
         var taxId = switch (taxIdInspector.type()) {
             case STRING -> TaxId.legacy(taxIdInspector.asString());
             case OBJECT -> {
+                var taxIdCountry = taxIdInspector.field(taxIdCountryField).asString();
                 var taxIdType = taxIdInspector.field(taxIdTypeField).asString();
                 var taxIdCode = taxIdInspector.field(taxIdCodeField).asString();
-                yield new TaxId(new TaxId.Type(taxIdType), new TaxId.Code(taxIdCode));
+                yield new TaxId(new TaxId.Country(taxIdCountry), new TaxId.Type(taxIdType), new TaxId.Code(taxIdCode));
             }
             case NIX -> TaxId.empty();
             default -> throw new IllegalStateException(taxIdInspector.type().name());
@@ -374,6 +376,7 @@ public class TenantSerializer {
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
         var taxIdCursor = billingCursor.setObject(taxIdField);
+        taxIdCursor.setString(taxIdCountryField, billingContact.getTaxId().country().value());
         taxIdCursor.setString(taxIdTypeField, billingContact.getTaxId().type().value());
         taxIdCursor.setString(taxIdCodeField, billingContact.getTaxId().code().value());
         billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder().value());
