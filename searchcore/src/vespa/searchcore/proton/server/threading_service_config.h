@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/config-proton.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/time.h>
 #include <cstdint>
 

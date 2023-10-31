@@ -153,7 +153,7 @@ DocumentDB::create(const vespalib::string &baseDir,
                    std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                    ConfigStore::UP config_store,
                    InitializeThreads initializeThreads,
-                   const HwInfo &hwInfo)
+                   const vespalib::HwInfo &hwInfo)
 {
     return DocumentDB::SP(
             new DocumentDB(baseDir, std::move(currentSnapshot), tlsSpec, queryLimiter, docTypeName, bucketSpace,
@@ -176,7 +176,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                        ConfigStore::UP config_store,
                        InitializeThreads initializeThreads,
-                       const HwInfo &hwInfo)
+                       const vespalib::HwInfo &hwInfo)
     : DocumentDBConfigOwner(),
       IReplayConfig(),
       IFeedHandlerOwner(),

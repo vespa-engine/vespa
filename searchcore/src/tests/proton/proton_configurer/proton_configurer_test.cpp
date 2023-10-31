@@ -43,6 +43,7 @@ using search::index::Schema;
 using search::fef::OnnxModels;
 using search::fef::RankingConstants;
 using search::fef::RankingExpressions;
+using vespalib::HwInfo;
 
 struct DBConfigFixture {
     using UP = std::unique_ptr<DBConfigFixture>;

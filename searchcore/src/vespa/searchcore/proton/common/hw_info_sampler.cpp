@@ -22,6 +22,7 @@ using config::FileSpec;
 using vespa::config::search::core::HwinfoConfig;
 using vespa::config::search::core::HwinfoConfigBuilder;
 using vespalib::alloc::Alloc;
+using vespalib::HwInfo;
 
 using Clock = std::chrono::system_clock;
 

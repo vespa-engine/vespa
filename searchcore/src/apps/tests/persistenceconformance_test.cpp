@@ -4,7 +4,6 @@
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
@@ -34,6 +33,7 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -60,6 +60,7 @@ using search::index::Schema;
 using search::transactionlog::TransLogServer;
 using storage::spi::ConformanceTest;
 using storage::spi::PersistenceProvider;
+using vespalib::HwInfo;
 
 using PersistenceFactory = ConformanceTest::PersistenceFactory;
 using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;

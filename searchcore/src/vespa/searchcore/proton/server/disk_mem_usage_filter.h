@@ -5,9 +5,9 @@
 #include "i_disk_mem_usage_notifier.h"
 #include "disk_mem_usage_state.h"
 #include "disk_mem_usage_metrics.h"
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
 #include <filesystem>
@@ -48,7 +48,7 @@ public:
 
 private:
     mutable Mutex                _lock;
-    HwInfo                       _hwInfo;
+    vespalib::HwInfo             _hwInfo;
     std::atomic<bool>            _acceptWrite;
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
@@ -68,7 +68,7 @@ private:
     void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
-    DiskMemUsageFilter(const HwInfo &hwInfo);
+    DiskMemUsageFilter(const vespalib::HwInfo &hwInfo);
     ~DiskMemUsageFilter() override;
     void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
     [[nodiscard]] bool setConfig(Config config);
@@ -76,7 +76,7 @@ public:
     uint64_t getDiskUsedSize() const;
     TransientResourceUsage get_transient_resource_usage() const;
     Config getConfig() const;
-    const HwInfo &getHwInfo() const { return _hwInfo; }
+    const vespalib::HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;
     DiskMemUsageMetrics get_metrics() const;
     bool acceptWriteOperation() const override;

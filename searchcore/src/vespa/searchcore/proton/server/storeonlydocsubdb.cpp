@@ -74,7 +74,7 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     bucketdb::IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
                                     DocumentDBTaggedMetrics &metrics,
                                     std::mutex &configMutex,
-                                    const HwInfo &hwInfo)
+                                    const vespalib::HwInfo &hwInfo)
     : _owner(owner),
       _tlSyncer(tlSyncer),
       _getSerialNum(getSerialNum),

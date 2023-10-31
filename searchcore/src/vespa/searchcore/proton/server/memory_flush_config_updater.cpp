@@ -92,7 +92,7 @@ MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char
 
 MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
                                                    const ProtonConfig::Flush::Memory &config,
-                                                   const HwInfo::Memory &memory)
+                                                   const vespalib::HwInfo::Memory &memory)
     : _mutex(),
       _flushStrategy(flushStrategy),
       _currConfig(config),
@@ -131,7 +131,7 @@ MemoryFlushConfigUpdater::setNodeRetired(bool nodeRetired)
 namespace {
 
 size_t
-getHardMemoryLimit(const HwInfo::Memory &memory)
+getHardMemoryLimit(const vespalib::HwInfo::Memory &memory)
 {
     return memory.sizeBytes() / 4;
 }
@@ -139,7 +139,7 @@ getHardMemoryLimit(const HwInfo::Memory &memory)
 }
 
 MemoryFlush::Config
-MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config, const HwInfo::Memory &memory)
+MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config, const vespalib::HwInfo::Memory &memory)
 {
     const size_t hardMemoryLimit = getHardMemoryLimit(memory);
     size_t totalMaxMemory = config.maxmemory;

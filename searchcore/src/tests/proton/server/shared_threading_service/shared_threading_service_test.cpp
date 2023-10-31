@@ -13,6 +13,7 @@ using ProtonConfig = vespa::config::search::core::ProtonConfig;
 using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
 using namespace proton;
 using storage::spi::dummy::DummyBucketExecutor;
+using vespalib::HwInfo;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 

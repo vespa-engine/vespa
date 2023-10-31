@@ -2,7 +2,6 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_manager_explorer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchlib/attribute/interlock.h>
@@ -12,6 +11,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
@@ -28,6 +28,7 @@ using vespalib::Slime;
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
+using vespalib::HwInfo;
 
 const vespalib::string TEST_DIR = "test_output";
 

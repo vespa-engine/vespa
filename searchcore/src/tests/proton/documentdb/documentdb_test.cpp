@@ -56,6 +56,7 @@ using searchcorespi::IFlushTarget;
 using searchcorespi::index::IndexFlushTarget;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
+using vespalib::HwInfo;
 using vespalib::Slime;
 
 namespace {

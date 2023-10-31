@@ -114,7 +114,7 @@ setFS4Compression(const ProtonConfig & proton)
 }
 
 DiskMemUsageSampler::Config
-diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
+diskMemUsageSamplerConfig(const ProtonConfig &proton, const vespalib::HwInfo &hwInfo)
 {
     return { proton.writefilter.memorylimit,
              proton.writefilter.disklimit,
@@ -123,7 +123,7 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 }
 
 uint32_t
-computeRpcTransportThreads(const ProtonConfig & cfg, const HwInfo::Cpu &cpuInfo) {
+computeRpcTransportThreads(const ProtonConfig & cfg, const vespalib::HwInfo::Cpu &cpuInfo) {
     bool areSearchAndDocsumAsync = cfg.docsum.async && cfg.search.async;
     return (cfg.rpc.transportthreads > 0)
             ? cfg.rpc.transportthreads
@@ -291,7 +291,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     ensureWritableDir(protonConfig.basedir);
-    const HwInfo & hwInfo = configSnapshot->getHwInfo();
+    const vespalib::HwInfo & hwInfo = configSnapshot->getHwInfo();
     _hw_info = hwInfo;
     _numThreadsPerSearch = std::min(hwInfo.cpu().cores(), uint32_t(protonConfig.numthreadspersearch));
 

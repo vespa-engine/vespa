@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_filter.h>
 #include <vespa/searchcore/proton/server/resource_usage_state.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 using namespace proton;
+using vespalib::HwInfo;
 
 namespace fs = std::filesystem;
 

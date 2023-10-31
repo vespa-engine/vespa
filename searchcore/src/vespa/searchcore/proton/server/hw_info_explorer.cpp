@@ -5,7 +5,7 @@
 
 namespace proton {
 
-HwInfoExplorer::HwInfoExplorer(const HwInfo& info)
+HwInfoExplorer::HwInfoExplorer(const vespalib::HwInfo& info)
     : _info(info)
 {
 }

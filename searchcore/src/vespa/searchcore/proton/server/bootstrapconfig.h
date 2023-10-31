@@ -3,12 +3,12 @@
 #pragma once
 
 #include <vespa/config-proton.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/config/retriever/configsnapshot.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace vespa::config::content::core::internal { class InternalBucketspacesType; }
 
@@ -38,7 +38,7 @@ private:
     FiledistributorrpcConfigSP     _fileDistributorRpc;
     BucketspacesConfigSP           _bucketspaces;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
-    HwInfo                         _hwInfo;
+    vespalib::HwInfo               _hwInfo;
     int64_t                        _generation;
 
 public:
@@ -49,7 +49,7 @@ public:
                     const FiledistributorrpcConfigSP &filedistRpcConfSP,
                     const BucketspacesConfigSP &bucketspaces,
                     const search::TuneFileDocumentDB::SP &_tuneFileDocumentDB,
-                    const HwInfo & hwInfo);
+                    const vespalib::HwInfo & hwInfo);
     ~BootstrapConfig();
 
     const document::config::DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
@@ -62,7 +62,7 @@ public:
     const BucketspacesConfigSP &getBucketspacesConfigSP() const { return _bucketspaces; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     int64_t getGeneration() const { return _generation; }
-    const HwInfo & getHwInfo() const { return _hwInfo; }
+    const vespalib::HwInfo & getHwInfo() const { return _hwInfo; }
 
     /**
      * Shared pointers are checked for identity, not equality.

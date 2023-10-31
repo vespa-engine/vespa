@@ -98,6 +98,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::GateCallback;
+using vespalib::HwInfo;
 using vespalib::Slime;
 using vespalib::geo::ZCurve;
 using namespace vespalib::slime;

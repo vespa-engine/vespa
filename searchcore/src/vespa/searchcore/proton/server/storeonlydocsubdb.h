@@ -106,7 +106,7 @@ public:
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         DocumentDBTaggedMetrics &_metrics;
         std::mutex &_configMutex;
-        const HwInfo &_hwInfo;
+        const vespalib::HwInfo &_hwInfo;
 
         Context(IDocumentSubDBOwner &owner,
                 search::transactionlog::SyncProxy &tlSyncer,
@@ -118,7 +118,7 @@ public:
                 bucketDBHandlerInitializer,
                 DocumentDBTaggedMetrics &metrics,
                 std::mutex &configMutex,
-                const HwInfo &hwInfo);
+                const vespalib::HwInfo &hwInfo);
         ~Context();
     };
 
@@ -145,7 +145,7 @@ protected:
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
     std::mutex                             &_configMutex;
-    HwInfo                                  _hwInfo;
+    vespalib::HwInfo                        _hwInfo;
     const IGetSerialNum                    &_getSerialNum;
 private:
     TlsSyncer                                  _tlsSyncer;

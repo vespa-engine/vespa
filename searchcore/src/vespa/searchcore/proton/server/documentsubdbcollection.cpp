@@ -37,7 +37,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const vespalib::Clock &clock,
         std::mutex &configMutex,
         const vespalib::string &baseDir,
-        const HwInfo &hwInfo)
+        const vespalib::HwInfo &hwInfo)
     : _subDBs(),
       _owner(owner),
       _calc(),

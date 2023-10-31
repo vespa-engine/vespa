@@ -17,12 +17,12 @@
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <map>
@@ -45,6 +45,7 @@ using std::map;
 using vespalib::VarHolder;
 using search::GrowStrategy;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::HwInfo;
 
 struct DoctypeFixture {
     using UP = std::unique_ptr<DoctypeFixture>;

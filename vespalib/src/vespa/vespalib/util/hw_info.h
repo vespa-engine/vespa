@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <algorithm>
 
-namespace proton {
+namespace vespalib {
 
 /*
  * Class describing some hardware on the machine.

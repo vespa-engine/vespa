@@ -11,7 +11,7 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const HwInfo &hwInfo)
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const vespalib::HwInfo &hwInfo)
     : _filter(hwInfo),
       _path(path_in),
       _sampleInterval(60s),
@@ -77,7 +77,7 @@ constexpr uint64_t symlink_disk_usage = 4_Ki;
 constexpr uint64_t directory_disk_usage = 4_Ki;
 
 uint64_t
-sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
+sampleDiskUsageOnFileSystem(const fs::path &path, const vespalib::HwInfo::Disk &disk)
 {
     auto space_info = fs::space(path);
     uint64_t result = (space_info.capacity - space_info.available);

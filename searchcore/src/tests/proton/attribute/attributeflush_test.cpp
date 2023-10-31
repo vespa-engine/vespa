@@ -39,6 +39,7 @@ using AVCollectionType = search::attribute::CollectionType;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
 using std::chrono::duration_cast;
+using vespalib::HwInfo;
 using namespace std::literals;
 
 using GateSP = std::shared_ptr<Gate>;

@@ -11,7 +11,7 @@ using storage::spi::AttributeResourceUsage;
 namespace proton {
 
 void
-convertDiskStatsToSlime(const HwInfo &hwInfo, uint64_t diskUsedSizeBytes, Cursor &object)
+convertDiskStatsToSlime(const vespalib::HwInfo &hwInfo, uint64_t diskUsedSizeBytes, Cursor &object)
 {
     object.setLong("capacity", hwInfo.disk().sizeBytes());
     object.setLong("used", diskUsedSizeBytes);

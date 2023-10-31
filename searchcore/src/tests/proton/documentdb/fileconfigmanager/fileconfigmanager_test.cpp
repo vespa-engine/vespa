@@ -37,6 +37,7 @@ using search::fef::RankingExpressions;
 using DBCM = DocumentDBConfigHelper;
 using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;
 using vespalib::nbostream;
+using vespalib::HwInfo;
 
 vespalib::string myId("myconfigid");
 

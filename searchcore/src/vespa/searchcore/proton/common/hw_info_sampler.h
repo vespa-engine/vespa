@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "hw_info.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <chrono>
 
 namespace proton {
@@ -43,19 +43,19 @@ public:
     };
 
 private:
-    HwInfo _hwInfo;
+    vespalib::HwInfo _hwInfo;
     using Clock = std::chrono::system_clock;
     Clock::time_point _sampleTime;
     double _diskWriteSpeed;
 
-    void setup(const HwInfo::Disk &disk, const HwInfo::Memory &memory, const HwInfo::Cpu &cpu);
+    void setup(const vespalib::HwInfo::Disk &disk, const vespalib::HwInfo::Memory &memory, const vespalib::HwInfo::Cpu &cpu);
     void setDiskWriteSpeed(const vespalib::string &path, const Config &config);
     void sampleDiskWriteSpeed(const vespalib::string &path, const Config &config);
 public:
     HwInfoSampler(const vespalib::string &path, const Config &config);
     ~HwInfoSampler();
 
-    const HwInfo &hwInfo() const { return _hwInfo; }
+    const vespalib::HwInfo &hwInfo() const { return _hwInfo; }
     std::chrono::time_point<Clock> sampleTime() const { return _sampleTime; }
     double diskWriteSpeed() const { return _diskWriteSpeed; }
 };

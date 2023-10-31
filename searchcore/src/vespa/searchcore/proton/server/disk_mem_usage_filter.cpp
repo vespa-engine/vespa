@@ -2,7 +2,7 @@
 
 #include "disk_mem_usage_filter.h"
 #include "i_disk_mem_usage_listener.h"
-#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -45,7 +45,7 @@ void
 makeDiskStatsMessage(std::ostream &os,
                      double diskUsed,
                      double diskLimit,
-                     const HwInfo &hwInfo,
+                     const vespalib::HwInfo &hwInfo,
                      uint64_t usedDiskSizeBytes)
 {
     os << "stats: { ";
@@ -59,7 +59,7 @@ void
 makeDiskLimitMessage(std::ostream &os,
                      double diskUsed,
                      double diskLimit,
-                     const HwInfo &hwInfo,
+                     const vespalib::HwInfo &hwInfo,
                      uint64_t usedDiskSizeBytes)
 {
     os << "diskLimitReached: { ";
@@ -73,7 +73,7 @@ vespalib::string
 makeUnblockingMessage(double memoryUsed,
                       double memoryLimit,
                       const vespalib::ProcessMemoryStats &memoryStats,
-                      const HwInfo &hwInfo,
+                      const vespalib::HwInfo &hwInfo,
                       double diskUsed,
                       double diskLimit,
                       uint64_t usedDiskSizeBytes)
@@ -163,7 +163,7 @@ DiskMemUsageFilter::get_relative_transient_disk_usage(const Guard&) const
     return  static_cast<double>(_transient_usage.disk()) / _hwInfo.disk().sizeBytes();
 }
 
-DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
+DiskMemUsageFilter::DiskMemUsageFilter(const vespalib::HwInfo &hwInfo)
     : _lock(),
       _hwInfo(hwInfo),
       _acceptWrite(true),

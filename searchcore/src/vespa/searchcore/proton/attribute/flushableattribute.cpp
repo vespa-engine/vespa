@@ -154,7 +154,7 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
                                        fileHeaderContext,
                                        vespalib::ISequencedTaskExecutor &
                                        attributeFieldWriter,
-                                       const HwInfo &hwInfo)
+                                       const vespalib::HwInfo &hwInfo)
     : LeafFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
       _cleanUpAfterFlush(true),

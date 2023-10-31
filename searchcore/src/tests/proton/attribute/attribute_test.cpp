@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
@@ -55,6 +54,7 @@
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 
@@ -100,6 +100,7 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::GateCallback;
 using vespalib::IDestructorCallback;
+using vespalib::HwInfo;
 
 using AVBasicType = search::attribute::BasicType;
 using AVCollectionType = search::attribute::CollectionType;
