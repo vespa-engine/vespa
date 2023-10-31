@@ -240,7 +240,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     }
 
     private String getDestinationString() {
-        return destinations.stream().map(destination -> "document summary '" + destination + "'").collect(Collectors.joining(", "));
+        return destinations.stream().map(destination -> "document-summary '" + destination + "'").collect(Collectors.joining(", "));
     }
 
     @Override

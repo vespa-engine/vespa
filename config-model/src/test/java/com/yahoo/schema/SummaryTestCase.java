@@ -65,10 +65,10 @@ public class SummaryTestCase {
         ApplicationBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
-        assertEquals("In schema 'disksummary', document summary 'foobar': " +
+        assertEquals("In schema 'disksummary', document-summary 'foobar': " +
                      "Fields [foo2] references non-attribute fields: " +
                      "Using this summary will cause disk accesses. " +
-                     "Set 'from-disk' on this summary class to silence this warning.",
+                     "Set 'from-disk' on this document-summary to silence this warning.",
                      logger.entries.get(0).message);
     }
 
@@ -217,8 +217,8 @@ public class SummaryTestCase {
             ApplicationBuilder.createFromString(sd, logger);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
-                    "source 'title_short' for this summary field, an equally named field in summary class 'title' " +
+            assertEquals("For schema 'music', document-summary 'title2', summary field 'title': Can not use " +
+                    "source 'title_short' for this summary field, an equally named field in document-summary 'title' " +
                     "uses a different source: 'title'.", e.getMessage());
         }
     }
@@ -235,13 +235,13 @@ public class SummaryTestCase {
                             "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             ApplicationBuilder.createFromStrings(logger, schema);
-            assertEquals("document summary 'test_summary' inherits 'nonesuch' but this is not present in schema 'test'",
+            assertEquals("document-summary 'test_summary' inherits 'nonesuch' but this is not present in schema 'test'",
                          logger.entries.get(0).message);
             // fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
             fail();
-            // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
+            // assertEquals("document-summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
             //             e.getMessage());
         }
     }
@@ -278,8 +278,8 @@ public class SummaryTestCase {
             fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("summary field1 type string in document summary 'default' is inconsistent with " +
-                         "summary field1 type int in document summary 'parent2': " +
+            assertEquals("summary field1 type string in document-summary 'default' is inconsistent with " +
+                         "summary field1 type int in document-summary 'parent2': " +
                          "All declarations of the same summary field must have the same type",
                          Exceptions.toMessageString(e));
         }
@@ -429,7 +429,7 @@ public class SummaryTestCase {
             ApplicationBuilder.createFromStrings(logger, sd);
             fail("expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("For schema 'test' summary class 'bar' summary field 'foo'" +
+            assertEquals("For schema 'test' document-summary 'bar' summary field 'foo'" +
             ": Source loop detected for summary field 'foo2'", e.getMessage());
         }
     }

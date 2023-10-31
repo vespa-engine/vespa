@@ -188,7 +188,7 @@ public class ConvertParsedSchemas {
             while (true) {
                 if (seen.contains(parsedField.name())) {
                     throw new IllegalArgumentException("For schema '" + schema.getName() +
-                            "' summary class '" + docsum.name() +
+                            "' document-summary '" + docsum.name() +
                             "' summary field '" + origName +
                             "': Source loop detected for summary field '" + parsedField.name() + "'");
                 }
@@ -210,7 +210,7 @@ public class ConvertParsedSchemas {
                     return null; // Imported field, cannot resolve now
                 } else if (source.equals(parsedField.name()) || !summaryFields.containsKey(source)) {
                     throw new IllegalArgumentException("For schema '" + schema.getName() +
-                            "', summary class '" + docsum.name() +
+                            "', document-summary '" + docsum.name() +
                             "', summary field '" + parsedField.name() +
                             "': there is no valid source '" + source + "'.");
                 }

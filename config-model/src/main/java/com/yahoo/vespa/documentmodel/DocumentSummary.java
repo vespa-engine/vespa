@@ -120,7 +120,7 @@ public class DocumentSummary extends FieldView {
 
     @Override
     public String toString() {
-        return "document summary '" + getName() + "'";
+        return "document-summary '" + getName() + "'";
     }
 
     public void validate(DeployLogger logger) {
