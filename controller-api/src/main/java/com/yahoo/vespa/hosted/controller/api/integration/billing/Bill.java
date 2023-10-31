@@ -409,6 +409,14 @@ public class Bill {
         architecture(item -> {
             var arch = item.getArchitecture();
             return arch.orElse(null);
+        }),
+        application(item -> {
+            var app = item.applicationId();
+            return app.orElse(null);
+        }),
+        environment(item -> {
+            var zone = item.zoneId();
+            return zone.map(ZoneId::environment).orElse(null);
         });
 
         private final Function<LineItem, Object> extractor;
