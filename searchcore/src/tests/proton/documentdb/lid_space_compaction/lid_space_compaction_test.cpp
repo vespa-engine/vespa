@@ -56,6 +56,22 @@ TEST_F(JobTest, job_returns_false_when_multiple_move_operations_or_compaction_ar
     assertJobContext(4, 7, 3, 7, 1);
 }
 
+TEST_F(JobTest, job_document_is_not_moved_if_meta_has_changed)
+{
+    setupThreeDocumentsToCompact();
+    EXPECT_FALSE(run());
+    assertJobContext(2, 9, 1, 0, 0);
+    auto orig_ts = _handler->_docs[8].first.timestamp;
+    _handler->_docs[8].first.timestamp = 0;
+    EXPECT_FALSE(run());
+    assertJobContext(2, 9, 1, 0, 0);
+    _handler->_docs[8].first.timestamp = orig_ts;
+    EXPECT_FALSE(run());
+    assertJobContext(3, 7, 2, 0, 0);
+    endScan().compact();
+    assertJobContext(3, 7, 2, 8, 1);
+}
+
 TEST_F(JobTest, job_can_restart_documents_scan_if_lid_bloat_is_still_to_large)
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR);

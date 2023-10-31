@@ -233,7 +233,7 @@ CompactionJob::run()
         if (shouldRestartScanDocuments(stats)) {
             _scanItr = _handler->getIterator();
         } else {
-            _scanItr = IDocumentScanIterator::UP();
+            _scanItr.reset();
             _shouldCompactLidSpace = true;
             return false;
         }
