@@ -243,7 +243,7 @@ public:
 MyServiceLayerProcess::MyServiceLayerProcess(const config::ConfigUri&  configUri,
                                              PersistenceProvider& provider,
                                              std::unique_ptr<storage::IStorageChainBuilder> chain_builder)
-    : ServiceLayerProcess(configUri),
+    : ServiceLayerProcess(configUri, vespalib::HwInfo()),
       _provider(provider)
 {
     if (chain_builder) {

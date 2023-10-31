@@ -31,8 +31,15 @@ namespace storage {
 namespace {
 
 using StorServerConfig = vespa::config::content::core::StorServerConfig;
+using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBuilder;
 
 vespalib::string _storage("storage");
+
+std::unique_ptr<StorServerConfig> default_server_config() {
+    vdstestlib::DirConfig dir_config(getStandardConfig(true));
+    auto cfg_uri = ::config::ConfigUri(dir_config.getConfigId());
+    return config_from<StorServerConfig>(cfg_uri);
+}
 
 struct MergeBuilder {
     document::BucketId           _bucket;
@@ -157,6 +164,11 @@ struct MergeThrottlerTest : Test {
     void SetUp() override;
     void TearDown() override;
 
+    MergeThrottler& throttler(size_t idx) noexcept {
+        assert(idx < _throttlers.size());
+        return *_throttlers[idx];
+    }
+
     api::MergeBucketCommand::SP sendMerge(const MergeBuilder&);
 
     void send_and_expect_reply(
@@ -186,17 +198,14 @@ MergeThrottlerTest::~MergeThrottlerTest() = default;
 void
 MergeThrottlerTest::SetUp()
 {
-    vdstestlib::DirConfig dir_config(getStandardConfig(true));
-    auto cfg_uri = ::config::ConfigUri(dir_config.getConfigId());
-    auto config = config_from<StorServerConfig>(cfg_uri);
-
+    auto config = default_server_config();
     for (int i = 0; i < _storageNodeCount; ++i) {
         auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i));
         server->setClusterState(lib::ClusterState("distributor:100 storage:100 version:1"));
         std::unique_ptr<DummyStorageLink> top;
 
         top = std::make_unique<DummyStorageLink>();
-        auto* throttler = new MergeThrottler(*config, server->getComponentRegister());
+        auto* throttler = new MergeThrottler(*config, server->getComponentRegister(), vespalib::HwInfo());
         // MergeThrottler will be sandwiched in between two dummy links
         top->push_back(std::unique_ptr<StorageLink>(throttler));
         auto* bottom = new DummyStorageLink;
@@ -1228,7 +1237,7 @@ void
 MergeThrottlerTest::receive_chained_merge_with_full_queue(bool disable_queue_limits, bool unordered_fwd)
 {
     // Note: uses node with index 1 to not be the first node in chain
-    _throttlers[1]->set_disable_queue_limits_for_chained_merges(disable_queue_limits);
+    _throttlers[1]->set_disable_queue_limits_for_chained_merges_locking(disable_queue_limits);
     size_t max_pending = throttler_max_merges_pending(1);
     size_t max_enqueued = _throttlers[1]->getMaxQueueSize();
     for (size_t i = 0; i < max_pending + max_enqueued; ++i) {
@@ -1514,15 +1523,15 @@ TEST_F(MergeThrottlerTest, backpressure_evicts_all_queued_merges) {
 TEST_F(MergeThrottlerTest, exceeding_memory_soft_limit_rejects_merges_even_with_available_active_window_slots) {
     ASSERT_GT(throttler_max_merges_pending(0), 1); // Sanity check for the test itself
 
-    _throttlers[0]->set_max_merge_memory_usage_bytes(10_Mi);
+    throttler(0).set_max_merge_memory_usage_bytes_locking(10_Mi);
 
-    ASSERT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 0);
+    ASSERT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 0);
 
     std::shared_ptr<api::StorageMessage> fwd_cmd;
     ASSERT_NO_FATAL_FAILURE(fwd_cmd = send_and_expect_forwarding(
             MergeBuilder(document::BucketId(16, 0)).nodes(0, 1, 2).memory_usage(5_Mi).create()));
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi);
 
     // Accepting this merge would exceed memory limits. It is sent as part of a forwarded unordered
     // merge and can therefore NOT be enqueued; it must be bounced immediately.
@@ -1532,7 +1541,7 @@ TEST_F(MergeThrottlerTest, exceeding_memory_soft_limit_rejects_merges_even_with_
                     .memory_usage(8_Mi).create(),
             MessageType::MERGEBUCKET_REPLY, ReturnCode::BUSY));
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi); // Unchanged
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi); // Unchanged
 
     // Fail the forwarded merge. This shall immediately free up the memory usage, allowing a new merge in.
     auto fwd_reply = dynamic_cast<api::MergeBucketCommand&>(*fwd_cmd).makeReply();
@@ -1542,38 +1551,38 @@ TEST_F(MergeThrottlerTest, exceeding_memory_soft_limit_rejects_merges_even_with_
             std::shared_ptr<api::StorageReply>(std::move(fwd_reply)),
             MessageType::MERGEBUCKET_REPLY, ReturnCode::ABORTED)); // Unwind reply for failed merge
 
-    ASSERT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 0);
+    ASSERT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 0);
 
-    // New merge is accepted
-    _topLinks[0]->sendDown(MergeBuilder(document::BucketId(16, 2)).nodes(0, 1, 2).unordered(true).memory_usage(9_Mi).create());
-    _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime); // Forwarded to node 1
+    // New merge is accepted and forwarded
+    ASSERT_NO_FATAL_FAILURE(send_and_expect_forwarding(
+            MergeBuilder(document::BucketId(16, 2)).nodes(0, 1, 2).unordered(true).memory_usage(9_Mi).create()));
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 9_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 9_Mi);
 }
 
 TEST_F(MergeThrottlerTest, exceeding_memory_soft_limit_can_enqueue_unordered_merge_sent_directly_from_distributor) {
-    _throttlers[0]->set_max_merge_memory_usage_bytes(10_Mi);
+    throttler(0).set_max_merge_memory_usage_bytes_locking(10_Mi);
 
     ASSERT_NO_FATAL_FAILURE(send_and_expect_forwarding(
             MergeBuilder(document::BucketId(16, 0)).nodes(0, 1, 2).memory_usage(5_Mi).create()));
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi);
 
     // Accepting this merge would exceed memory limits. It is sent directly from a distributor and
     // can therefore be enqueued.
     _topLinks[0]->sendDown(MergeBuilder(document::BucketId(16, 1)).nodes(0, 1, 2).unordered(true).memory_usage(8_Mi).create());
-    waitUntilMergeQueueIs(*_throttlers[0], 1, _messageWaitTime); // Should end up in queue
+    waitUntilMergeQueueIs(throttler(0), 1, _messageWaitTime); // Should end up in queue
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi); // Unchanged
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 5_Mi); // Unchanged
 }
 
 TEST_F(MergeThrottlerTest, at_least_one_merge_is_accepted_even_if_exceeding_memory_soft_limit) {
-    _throttlers[0]->set_max_merge_memory_usage_bytes(5_Mi);
+    throttler(0).set_max_merge_memory_usage_bytes_locking(5_Mi);
 
     _topLinks[0]->sendDown(MergeBuilder(document::BucketId(16, 0)).nodes(0, 1, 2).unordered(true).memory_usage(100_Mi).create());
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime); // Forwarded, _not_ bounced
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 100_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 100_Mi);
 }
 
 TEST_F(MergeThrottlerTest, queued_merges_are_not_counted_towards_memory_usage) {
@@ -1582,19 +1591,87 @@ TEST_F(MergeThrottlerTest, queued_merges_are_not_counted_towards_memory_usage) {
     // send for below in the test code.
     ASSERT_LT(throttler_max_merges_pending(0), 1000);
 
-    _throttlers[0]->set_max_merge_memory_usage_bytes(50_Mi);
+    throttler(0).set_max_merge_memory_usage_bytes_locking(50_Mi);
     // Fill up active window on node 0. Note: these merges do not have any associated memory cost.
     fill_throttler_queue_with_n_commands(0, 0);
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 0_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 0_Mi);
 
     _topLinks[0]->sendDown(MergeBuilder(document::BucketId(16, 1000)).nodes(0, 1, 2).unordered(true).memory_usage(10_Mi).create());
-    waitUntilMergeQueueIs(*_throttlers[0], 1, _messageWaitTime); // Should end up in queue
+    waitUntilMergeQueueIs(throttler(0), 1, _messageWaitTime); // Should end up in queue
 
-    EXPECT_EQ(_throttlers[0]->getMetrics().estimated_merge_memory_usage.getLast(), 0_Mi);
+    EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 0_Mi);
 }
 
-// TODO define and test auto-deduced max memory usage
+namespace {
+
+vespalib::HwInfo make_mem_info(uint64_t mem_size) {
+    return {{0, false, false}, {mem_size}, {1}};
+}
+
+}
+
+TEST_F(MergeThrottlerTest, memory_limit_can_be_auto_deduced_from_hw_info) {
+    StorServerConfigBuilder cfg(*default_server_config());
+    auto& cfg_limit = cfg.mergeThrottlingMemoryLimit;
+    auto& mt = throttler(0);
+
+    // Enable auto-deduction of limits
+    cfg_limit.maxUsageBytes = 0;
+
+    cfg_limit.autoLowerBoundBytes = 100'000;
+    cfg_limit.autoUpperBoundBytes = 750'000;
+    cfg_limit.autoPhysMemScaleFactor = 0.5;
+
+    mt.set_hw_info_locking(make_mem_info(1'000'000));
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 500'000);
+    EXPECT_EQ(throttler(0).getMetrics().merge_memory_limit.getLast(), 500'000);
+
+    cfg_limit.autoPhysMemScaleFactor = 0.75;
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 750'000);
+    EXPECT_EQ(throttler(0).getMetrics().merge_memory_limit.getLast(), 750'000);
+
+    cfg_limit.autoPhysMemScaleFactor = 0.25;
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 250'000);
+
+    // Min-capped
+    cfg_limit.autoPhysMemScaleFactor = 0.05;
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 100'000);
+
+    // Max-capped
+    cfg_limit.autoPhysMemScaleFactor = 0.90;
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 750'000);
+}
+
+TEST_F(MergeThrottlerTest, memory_limit_can_be_set_explicitly) {
+    StorServerConfigBuilder cfg(*default_server_config());
+    auto& cfg_limit = cfg.mergeThrottlingMemoryLimit;
+    auto& mt = throttler(0);
+
+    cfg_limit.maxUsageBytes = 1'234'567;
+    mt.set_hw_info_locking(make_mem_info(1'000'000));
+    mt.on_configure(cfg);
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 1'234'567);
+    EXPECT_EQ(throttler(0).getMetrics().merge_memory_limit.getLast(), 1'234'567);
+}
+
+TEST_F(MergeThrottlerTest, memory_limit_can_be_set_to_unlimited) {
+    StorServerConfigBuilder cfg(*default_server_config());
+    auto& cfg_limit = cfg.mergeThrottlingMemoryLimit;
+    auto& mt = throttler(0);
+
+    cfg_limit.maxUsageBytes = -1;
+    mt.set_hw_info_locking(make_mem_info(1'000'000));
+    mt.on_configure(cfg);
+    // Zero implies infinity
+    EXPECT_EQ(mt.max_merge_memory_usage_bytes_locking(), 0);
+    EXPECT_EQ(throttler(0).getMetrics().merge_memory_limit.getLast(), 0);
+}
 
 // TODO test message queue aborting (use rendezvous functionality--make guard)
 

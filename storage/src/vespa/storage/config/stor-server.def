@@ -54,9 +54,29 @@ merge_throttling_policy.window_size_increment double default=2.0
 ##
 ## Semantics:
 ##    > 0  explicit limit in bytes
-##   == 0  limit automatically derived by content node
+##   == 0  limit automatically deduced by content node
 ##    < 0  unlimited (legacy behavior)
-max_merge_memory_usage_bytes long default=-1
+merge_throttling_memory_limit.max_usage_bytes long default=-1
+
+## If merge_throttling_memory_limit.max_usage_bytes == 0, this factor is used
+## as a multiplier to automatically deduce a memory limit for merges on the
+## content node. Note that the result of this multiplication is capped at both
+## ends by the auto_(lower|upper)_bound_bytes config values.
+##
+## Default: 3% of physical memory
+merge_throttling_memory_limit.auto_phys_mem_scale_factor double default=0.03
+
+## The absolute minimum memory limit that can be set when automatically
+## deducing the limit from physical memory on the node.
+##
+## Default: 128MiB
+merge_throttling_memory_limit.auto_lower_bound_bytes long default=134217728
+
+## The absolute maximum memory limit that can be set when automatically
+## deducing the limit from physical memory on the node.
+##
+## Default: 2GiB
+merge_throttling_memory_limit.auto_upper_bound_bytes long default=2147483648
 
 ## If the persistence provider indicates that it has exhausted one or more
 ## of its internal resources during a mutating operation, new merges will

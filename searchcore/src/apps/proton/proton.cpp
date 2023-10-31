@@ -109,7 +109,8 @@ class ProtonServiceLayerProcess : public storage::ServiceLayerProcess {
 public:
     ProtonServiceLayerProcess(const config::ConfigUri & configUri,
                               proton::Proton & proton, FNET_Transport& transport,
-                              const vespalib::string& file_distributor_connection_spec);
+                              const vespalib::string& file_distributor_connection_spec,
+                              const vespalib::HwInfo& hw_info);
     ~ProtonServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -130,8 +131,9 @@ public:
 
 ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & configUri,
                                                      proton::Proton & proton, FNET_Transport& transport,
-                                                     const vespalib::string& file_distributor_connection_spec)
-    : ServiceLayerProcess(configUri),
+                                                     const vespalib::string& file_distributor_connection_spec,
+                                                     const vespalib::HwInfo& hw_info)
+    : ServiceLayerProcess(configUri, hw_info),
       _proton(proton),
       _transport(transport),
       _file_distributor_connection_spec(file_distributor_connection_spec),
@@ -259,18 +261,18 @@ App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
             proton.init(configSnapshot);
         }
         vespalib::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
-        configSnapshot.reset();
         std::unique_ptr<ProtonServiceLayerProcess> spiProton;
 
         if ( ! params.serviceidentity.empty()) {
             spiProton = std::make_unique<ProtonServiceLayerProcess>(identityUri.createWithNewId(params.serviceidentity), proton, transport,
-                                                                    file_distributor_connection_spec);
+                                                                    file_distributor_connection_spec, configSnapshot->getHwInfo());
             spiProton->setupConfig(subscribeTimeout);
             spiProton->createNode();
             EV_STARTED("servicelayer");
         } else {
             proton.getMetricManager().init(identityUri);
         }
+        configSnapshot.reset();
         EV_STARTED("proton");
         while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
             std::this_thread::sleep_for(1000ms);

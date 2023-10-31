@@ -30,8 +30,9 @@ ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs(Ser
 ServiceLayerNode::ServiceLayerBootstrapConfigs&
 ServiceLayerNode::ServiceLayerBootstrapConfigs::operator=(ServiceLayerBootstrapConfigs&&) noexcept = default;
 
-ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
+ServiceLayerNode::ServiceLayerNode(const config::ConfigUri& configUri,
                                    ServiceLayerNodeContext& context,
+                                   const vespalib::HwInfo& hw_info,
                                    ServiceLayerBootstrapConfigs bootstrap_configs,
                                    ApplicationGenerationFetcher& generationFetcher,
                                    spi::PersistenceProvider& persistenceProvider,
@@ -41,6 +42,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri,
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
+      _hw_info(hw_info),
       _persistence_bootstrap_config(std::move(bootstrap_configs.persistence_cfg)),
       _visitor_bootstrap_config(std::move(bootstrap_configs.visitor_cfg)),
       _filestor_bootstrap_config(std::move(bootstrap_configs.filestor_cfg)),
@@ -172,7 +174,7 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto bouncer = std::make_unique<Bouncer>(compReg, bouncer_config());
     _bouncer = bouncer.get();
     builder.add(std::move(bouncer));
-    auto merge_throttler_up = std::make_unique<MergeThrottler>(server_config(), compReg);
+    auto merge_throttler_up = std::make_unique<MergeThrottler>(server_config(), compReg, _hw_info);
     _merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
     auto bucket_ownership_handler = std::make_unique<ChangedBucketOwnershipHandler>(*_persistence_bootstrap_config, compReg);

@@ -1,26 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::MergeThrottler
- * @ingroup storageserver
- *
- * @brief Throttler and forwarder of merge commands
+ * Throttler and forwarder of merge commands
  */
 #pragma once
 
-#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/document/bucket/bucket.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/metrictimer.h>
+#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/valuemetric.h>
 #include <vespa/storage/common/message_guard.h>
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/document/bucket/bucket.h>
-#include <vespa/metrics/metricset.h>
-#include <vespa/metrics/summetric.h>
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/metrictimer.h>
-#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 #include <chrono>
 
@@ -72,6 +70,7 @@ public:
         metrics::LongValueMetric queueSize;
         metrics::LongValueMetric active_window_size;
         metrics::LongValueMetric estimated_merge_memory_usage;
+        metrics::LongValueMetric merge_memory_limit;
         metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
@@ -165,6 +164,7 @@ private:
         RELEASED
     };
 
+    vespalib::HwInfo                              _hw_info;
     ActiveMergeMap                                _merges;
     MergePriorityQueue                            _queue;
     size_t                                        _maxQueueSize;
@@ -192,7 +192,9 @@ public:
      * windowSizeIncrement used for allowing unit tests to start out with more
      * than 1 as their window size.
      */
-    MergeThrottler(const StorServerConfig& bootstrap_config, StorageComponentRegister&);
+    MergeThrottler(const StorServerConfig& bootstrap_config,
+                   StorageComponentRegister& comp_reg,
+                   const vespalib::HwInfo& hw_info);
     ~MergeThrottler() override;
 
     /** Implements document::Runnable::run */
@@ -225,8 +227,10 @@ public:
     // For unit testing only
     const mbus::DynamicThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::DynamicThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
-    void set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept;
-    void set_max_merge_memory_usage_bytes(uint32_t max_memory_bytes) noexcept;
+    void set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept;
+    void set_max_merge_memory_usage_bytes_locking(uint32_t max_memory_bytes) noexcept;
+    [[nodiscard]] uint32_t max_merge_memory_usage_bytes_locking() const noexcept;
+    void set_hw_info_locking(const vespalib::HwInfo& hw_info);
     // For unit testing only
     std::mutex& getStateLock() { return _stateLock; }
 
@@ -407,6 +411,8 @@ private:
     void handleOutdatedMerges(const api::SetSystemStateCommand&);
     void rejectOperationsInThreadQueue(MessageGuard&, uint32_t minimumStateVersion);
     void markActiveMergesAsAborted(uint32_t minimumStateVersion);
+
+    [[nodiscard]] size_t deduced_memory_limit(const StorServerConfig& cfg) const noexcept;
 
     void update_active_merge_window_size_metric() noexcept;
     void update_active_merge_memory_usage_metric() noexcept;

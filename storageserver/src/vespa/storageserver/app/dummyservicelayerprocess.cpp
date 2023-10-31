@@ -7,7 +7,7 @@ namespace storage {
 // DummyServiceLayerProcess implementation
 
 DummyServiceLayerProcess::DummyServiceLayerProcess(const config::ConfigUri & configUri)
-    : ServiceLayerProcess(configUri)
+    : ServiceLayerProcess(configUri, vespalib::HwInfo())
 {
 }
 

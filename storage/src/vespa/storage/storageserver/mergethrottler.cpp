@@ -69,6 +69,7 @@ MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
       active_window_size("active_window_size", {}, "Number of merges active within the pending window size", this),
       estimated_merge_memory_usage("estimated_merge_memory_usage", {}, "An estimated upper bound of the "
                                    "memory usage of the merges currently in the active window", this),
+      merge_memory_limit("merge_memory_limit", {}, "The active soft limit for memory used by merge operations on this node", this),
       bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
@@ -184,9 +185,11 @@ MergeThrottler::MergeNodeSequence::chain_contains_this_node() const noexcept
 
 MergeThrottler::MergeThrottler(
         const StorServerConfig& bootstrap_config,
-        StorageComponentRegister& compReg)
+        StorageComponentRegister& comp_reg,
+        const vespalib::HwInfo& hw_info)
     : StorageLink("Merge Throttler"),
       framework::HtmlStatusReporter("merges", "Merge Throttler"),
+      _hw_info(hw_info),
       _merges(),
       _queue(),
       _maxQueueSize(1024),
@@ -195,13 +198,13 @@ MergeThrottler::MergeThrottler(
       _messageLock(),
       _stateLock(),
       _metrics(std::make_unique<Metrics>()),
-      _component(compReg, "mergethrottler"),
+      _component(comp_reg, "mergethrottler"),
       _thread(),
       _rendezvous(RendezvousState::NONE),
       _throttle_until_time(),
       _backpressure_duration(std::chrono::seconds(30)),
       _active_merge_memory_used_bytes(0),
-      _max_merge_memory_usage_bytes(-1), // -1 ==> unlimited
+      _max_merge_memory_usage_bytes(0), // 0 ==> unlimited
       _use_dynamic_throttling(false),
       _disable_queue_limits_for_chained_merges(false),
       _closing(false)
@@ -250,12 +253,14 @@ MergeThrottler::on_configure(const StorServerConfig& new_config)
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::duration<double>(new_config.resourceExhaustionMergeBackPressureDurationSecs));
     _disable_queue_limits_for_chained_merges = new_config.disableQueueLimitsForChainedMerges;
-    if (new_config.maxMergeMemoryUsageBytes > 0) {
-        _max_merge_memory_usage_bytes = static_cast<size_t>(new_config.maxMergeMemoryUsageBytes);
+    if (new_config.mergeThrottlingMemoryLimit.maxUsageBytes > 0) {
+        _max_merge_memory_usage_bytes = static_cast<size_t>(new_config.mergeThrottlingMemoryLimit.maxUsageBytes);
+    } else if ((new_config.mergeThrottlingMemoryLimit.maxUsageBytes == 0) && (_hw_info.memory().sizeBytes() > 0)) {
+        _max_merge_memory_usage_bytes = deduced_memory_limit(new_config);
     } else {
-        _max_merge_memory_usage_bytes = 0; // TODO auto-deduce based on local limits
+        _max_merge_memory_usage_bytes = 0; // Implies unlimited
     }
-
+    _metrics->merge_memory_limit.set(static_cast<int64_t>(_max_merge_memory_usage_bytes));
 }
 
 MergeThrottler::~MergeThrottler()
@@ -1325,15 +1330,39 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
 }
 
 void
-MergeThrottler::set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept {
+MergeThrottler::set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept {
     std::lock_guard lock(_stateLock);
     _disable_queue_limits_for_chained_merges = disable_limits;
 }
 
 void
-MergeThrottler::set_max_merge_memory_usage_bytes(uint32_t max_memory_bytes) noexcept {
+MergeThrottler::set_max_merge_memory_usage_bytes_locking(uint32_t max_memory_bytes) noexcept {
     std::lock_guard lock(_stateLock);
     _max_merge_memory_usage_bytes = max_memory_bytes;
+}
+
+uint32_t
+MergeThrottler::max_merge_memory_usage_bytes_locking() const noexcept {
+    std::lock_guard lock(_stateLock);
+    return _max_merge_memory_usage_bytes;
+}
+
+void
+MergeThrottler::set_hw_info_locking(const vespalib::HwInfo& hw_info) {
+    std::lock_guard lock(_stateLock);
+    _hw_info = hw_info;
+}
+
+size_t
+MergeThrottler::deduced_memory_limit(const StorServerConfig& cfg) const noexcept {
+    const auto min_limit = static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoLowerBoundBytes, 1L));
+    const auto max_limit = std::max(static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoUpperBoundBytes, 1L)), min_limit);
+    const auto mem_scale_factor = std::max(cfg.mergeThrottlingMemoryLimit.autoPhysMemScaleFactor, 0.0);
+
+    const auto node_mem   = static_cast<double>(_hw_info.memory().sizeBytes());
+    const auto scaled_mem = static_cast<size_t>(node_mem * mem_scale_factor);
+
+    return std::min(std::max(scaled_mem, min_limit), max_limit);
 }
 
 void
