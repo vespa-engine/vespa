@@ -263,7 +263,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var req = request("/billing/v2/accountant/bill/id-1/summary?keys=plan,architecture")
                 .roles(Role.hostedAccountant());
         tester.assertResponse(req, """
-                {"id":"BillId{value='id-1'}","summary":[{"key":{"plan":"paid","architecture":"Optional.empty"},"summary":{"cpu":{"cost":"0","hours":"0"},"memory":{"cost":"0","hours":"0"},"disk":{"cost":"0","hours":"0"},"gpu":{"cost":"0","hours":"0"}}}]}""");
+                {"id":"BillId{value='id-1'}","summary":[{"key":{"plan":"paid","architecture":null},"summary":{"cpu":{"cost":"0","hours":"0"},"memory":{"cost":"0","hours":"0"},"disk":{"cost":"0","hours":"0"},"gpu":{"cost":"0","hours":"0"}}}]}""");
     }
 
     private static Bill createBill() {

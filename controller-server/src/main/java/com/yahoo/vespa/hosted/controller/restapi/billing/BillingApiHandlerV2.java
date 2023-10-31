@@ -611,7 +611,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private void toSlime(Cursor slime, Bill.ItemKey key) {
         key.keys().forEach((keyType, keyValue) -> {
-            slime.setString(keyType.name(), keyValue.toString());
+            if (keyValue == null) slime.setNix(keyType.name());
+            else slime.setString(keyType.name(), keyValue.toString());
         });
     }
 

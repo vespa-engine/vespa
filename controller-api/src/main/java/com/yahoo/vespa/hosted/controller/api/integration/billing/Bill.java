@@ -402,8 +402,14 @@ public class Bill {
     public enum ItemKeyType {
         plan(LineItem::plan),
         version(LineItem::getMajorVersion),
-        account(LineItem::getCloudAccount),
-        architecture(LineItem::getArchitecture);
+        account(item -> {
+            var account = item.getCloudAccount();
+            return account.isUnspecified() ? null : account;
+        }),
+        architecture(item -> {
+            var arch = item.getArchitecture();
+            return arch.orElse(null);
+        });
 
         private final Function<LineItem, Object> extractor;
 
