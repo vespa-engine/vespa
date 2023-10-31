@@ -136,7 +136,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
                 waitForActivation(applicationId, timeoutBudget, activation);
             } catch (Exception e) {
-                log.log(Level.FINE, "Activating session " + session.getSessionId() + " failed, deleting it");
                 throw e;
             }
 
