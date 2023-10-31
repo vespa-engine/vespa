@@ -34,9 +34,6 @@ public interface BillingController {
      */
     List<TenantName> tenantsWithPlan(List<TenantName> existing, PlanId planId);
 
-    /** The display name of the given plan */
-    String getPlanDisplayName(PlanId planId);
-
     /**
      * The quota for the given tenant.
      * This method will return default quota for tenants that do not exist.
@@ -63,7 +60,6 @@ public interface BillingController {
      * @return The ID of the new bill.
      */
     Bill.Id createBillForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
-    Bill.Id createBillForPeriod(TenantName tenant, LocalDate startDate, LocalDate endDate, String agent);
 
     /**
      * Create an unpersisted bill of unbilled use for the given tenant from the end of last bill until the given date.
@@ -80,35 +76,14 @@ public interface BillingController {
     /** Get line items that have been manually added to a tenant, but is not yet part of a bill */
     List<Bill.LineItem> getUnusedLineItems(TenantName tenant);
 
-    /** Get the payment instrument for the given tenant */
-    Optional<PaymentInstrument> getDefaultInstrument(TenantName tenant);
-
-    /** Get the auth token needed to talk to payment services */
-    String createClientToken(String tenant, String userId);
-
-    /** Delete a payment instrument from the list of the tenant's instruments */
-    boolean deleteInstrument(TenantName tenant, String userId, String instrumentId);
-
-    /** Change the status of the given bill */
-    void updateBillStatus(Bill.Id billId, String agent, BillStatus status);
-
     /** Add a line item to the given bill */
     void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent);
 
     /** Delete a line item - only available for unused line items */
     void deleteLineItem(String lineItemId);
 
-    /** Set the given payment instrument as the active instrument for the tenant */
-    boolean setActivePaymentInstrument(InstrumentOwner paymentInstrument);
-
-    /** List the payment instruments from the tenant */
-    InstrumentList listInstruments(TenantName tenant, String userId);
-
     /** Get all bills for the given tenant */
     List<Bill> getBillsForTenant(TenantName tenant);
-
-    /** Get all bills from the system */
-    List<Bill> getBills();
 
     /** Get the bill with the given id */
     Bill getBill(Bill.Id billId);

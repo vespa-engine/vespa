@@ -28,7 +28,6 @@ public class MockBillingController implements BillingController {
     PlanId defaultPlan = PlanId.from("trial");
     List<TenantName> tenants = new ArrayList<>();
     Map<TenantName, PlanId> plans = new HashMap<>();
-    Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
     Map<TenantName, List<Bill>> committedBills = new HashMap<>();
     public Map<TenantName, Bill> uncommittedBills = new HashMap<>();
     Map<TenantName, List<Bill.LineItem>> unusedLineItems = new HashMap<>();
@@ -49,11 +48,6 @@ public class MockBillingController implements BillingController {
         return tenants.stream()
                 .filter(t -> plans.getOrDefault(t, PlanId.from("trial")).equals(planId))
                 .toList();
-    }
-
-    @Override
-    public String getPlanDisplayName(PlanId planId) {
-        return "Plan with id: " + planId.value();
     }
 
     @Override
@@ -83,11 +77,6 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Bill.Id createBillForPeriod(TenantName tenant, LocalDate startDate, LocalDate endDate, String agent) {
-        return createBillForPeriod(tenant, startDate.atStartOfDay(ZoneOffset.UTC), endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC), agent);
-    }
-
-    @Override
     public Bill createUncommittedBill(TenantName tenant, LocalDate until) {
         return uncommittedBills.getOrDefault(tenant, emptyBill());
     }
@@ -100,31 +89,6 @@ public class MockBillingController implements BillingController {
     @Override
     public List<Bill.LineItem> getUnusedLineItems(TenantName tenant) {
         return unusedLineItems.getOrDefault(tenant, List.of());
-    }
-
-    @Override
-    public Optional<PaymentInstrument> getDefaultInstrument(TenantName tenant) {
-        return Optional.ofNullable(activeInstruments.get(tenant));
-    }
-
-    @Override
-    public String createClientToken(String tenant, String userId) {
-        return "some-token";
-    }
-
-    @Override
-    public boolean deleteInstrument(TenantName tenant, String userId, String instrumentId) {
-        activeInstruments.remove(tenant);
-        return true;
-    }
-
-    @Override
-    public void updateBillStatus(Bill.Id billId, String agent, BillStatus status) {
-        var now = clock.instant().atZone(ZoneOffset.UTC);
-        committedBills.values().stream()
-                .flatMap(List::stream)
-                .filter(bill -> billId.equals(bill.id()))
-                .forEach(bill -> bill.statusHistory().history.put(now, status));
     }
 
     @Override
@@ -152,25 +116,8 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public boolean setActivePaymentInstrument(InstrumentOwner paymentInstrument) {
-        var instrumentId = paymentInstrument.getPaymentInstrumentId();
-        activeInstruments.put(paymentInstrument.getTenantName(), createInstrument(instrumentId));
-        return true;
-    }
-
-    @Override
-    public InstrumentList listInstruments(TenantName tenant, String userId) {
-        return null;
-    }
-
-    @Override
     public List<Bill> getBillsForTenant(TenantName tenant) {
         return committedBills.getOrDefault(tenant, List.of());
-    }
-
-    @Override
-    public List<Bill> getBills() {
-        return committedBills.values().stream().flatMap(Collection::stream).toList();
     }
 
     @Override
