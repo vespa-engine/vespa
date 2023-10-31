@@ -126,12 +126,13 @@ jobs:
       - checkout: |
           WORKDIR=$(pwd)/..
           cd $WORKDIR
-          git clone -q https://github.com/vespa-engine/system-test
-          git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
 
           if [[ -z "$SD_PULL_REQUEST" ]]; then
+            git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
             (cd vespa && git checkout $VESPA_REF)
             (cd system-test && git checkout $SYSTEM_TEST_REF)
+          else
+            git clone -q --depth 1 https://github.com/vespa-engine/system-test
           fi
 
           # We set the tag locally to make the SRPM build like Copr does it
@@ -168,13 +169,15 @@ jobs:
           cat build_java.log
           time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
       - build-sample-apps: |
-          (cd $WORKDIR/sample-apps && time ../vespa/mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            (cd $WORKDIR/sample-apps && time ../vespa/mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
+          fi
       - verify-rpm-build: |
           cd $WORKDIR
           ulimit -c 0
           time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
                         --define "_debugsource_template %{nil}" \
-                        --define "_binary_payload w2T$(nproc).xzdio"
+                        --define "_binary_payload w3T$(nproc).zstdio" \
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
           mkdir -p $WORKDIR/system-test/docker/rpms
           mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
