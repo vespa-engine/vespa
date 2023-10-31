@@ -18,4 +18,5 @@ public class PurchaseOrder extends StringWrapper<PurchaseOrder> {
     public static PurchaseOrder empty() {
         return new PurchaseOrder("");
     }
+    public boolean isEmpty() { return value().isEmpty(); }
 }
