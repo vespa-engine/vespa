@@ -32,6 +32,9 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
     attr.densepostinglistthreshold = liveAttr.densepostinglistthreshold;
     attr.distancemetric = liveAttr.distancemetric;
     attr.index = liveAttr.index;
+    attr.match = liveAttr.match;
+    attr.dictionary.match = liveAttr.dictionary.match;
+    attr.dictionary.type = liveAttr.dictionary.type;
 }
 
 

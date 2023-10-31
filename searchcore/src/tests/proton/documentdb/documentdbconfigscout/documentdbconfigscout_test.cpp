@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config-attributes.h>
+#include <ostream>
 
 using namespace document;
 using namespace proton;
@@ -16,6 +17,25 @@ using std::shared_ptr;
 using std::make_shared;
 
 using DDBCSP = shared_ptr<DocumentDBConfig>;
+
+namespace vespa::config::search::internal {
+
+std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Match match) {
+    os << AttributesConfig::Attribute::getMatchName(match);
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Dictionary::Match match) {
+    os << AttributesConfig::Attribute::Dictionary::getMatchName(match);
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Dictionary::Type type) {
+    os << AttributesConfig::Attribute::Dictionary::getTypeName(type);
+    return os;
+}
+
+}
 
 namespace
 {
@@ -49,6 +69,44 @@ assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
     return true;
 }
 
+bool
+assert_string_attribute(const AttributesConfig::Attribute& attribute,
+                        const vespalib::string& name,
+                        std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
+{
+    using Attribute = AttributesConfig::Attribute;
+    using Dictionary = Attribute::Dictionary;
+    using Match = Attribute::Match;
+    if (!assertDefaultAttribute(attribute, name)) {
+        return false;
+    }
+    if (!EXPECT_EQUAL(name, attribute.name)) {
+        return false;
+    }
+    if (uncased.has_value()) {
+        if (uncased.value()) {
+            if (!EXPECT_EQUAL(Match::UNCASED, attribute.match)) {
+                return false;
+            }
+            if (!EXPECT_EQUAL(Dictionary::Match::UNCASED, attribute.dictionary.match)) {
+                return false;
+            }
+        } else {
+            if (!EXPECT_EQUAL(Match::CASED, attribute.match)) {
+                return false;
+            }
+            if (!EXPECT_EQUAL(Dictionary::Match::CASED, attribute.dictionary.match)) {
+                return false;
+            }
+        }
+    }
+    if (dictionary_type.has_value()) {
+        if (!EXPECT_EQUAL(dictionary_type.value(), attribute.dictionary.type)) {
+            return false;
+        }
+    }
+    return true;
+}
 
 bool
 assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
@@ -114,7 +172,7 @@ assertTensorAttribute(const AttributesConfig::Attribute &attribute,
 bool
 assertAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(6u, attributes.size())) {
+    if (!EXPECT_EQUAL(8u, attributes.size())) {
         return false;
     }
     if (!assertDefaultAttribute(attributes[0], "a1")) {
@@ -134,7 +192,13 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
     }                                                                         
     if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
         return false;
-    }                                                                         
+    }
+    if (!assert_string_attribute(attributes[6], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::BTREE)) {
+        return false;
+    }
+    if (!assert_string_attribute(attributes[7], "string2", true, std::nullopt)) {
+        return false;
+    }
     return true;
 }
 
@@ -142,7 +206,7 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(7u, attributes.size())) {
+    if (!EXPECT_EQUAL(9u, attributes.size())) {
         return false;
     }
     if (!assertFastSearchAttribute(attributes[0], "a0")) {
@@ -166,6 +230,12 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
     if (!assertTensorAttribute(attributes[6], "tensor2", "tensor(x[200])", 32)) {
         return false;
     }                                                                         
+    if (!assert_string_attribute(attributes[7], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH)) {
+        return false;
+    }
+    if (!assert_string_attribute(attributes[8], "string2", false, std::nullopt)) {
+        return false;
+    }
     return true;
 }
 
@@ -173,7 +243,7 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
 bool
 assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
 {
-    if (!EXPECT_EQUAL(6u, attributes.size())) {
+    if (!EXPECT_EQUAL(8u, attributes.size())) {
         return false;
     }
     if (!assertFastSearchAndMoreAttribute(attributes[0], "a1")) {
@@ -194,6 +264,12 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
     if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
         return false;
     }                                                                         
+    if (!assert_string_attribute(attributes[6], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH)) {
+        return false;
+    }
+    if (!assert_string_attribute(attributes[7], "string2", false, std::nullopt)) {
+        return false;
+    }
     return true;
 }
 
@@ -206,6 +282,30 @@ setupDefaultAttribute(const vespalib::string & name)
     return attribute;
 }
 
+AttributesConfig::Attribute
+setup_string_attribute(const vespalib::string& name, std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
+{
+    using Attribute = AttributesConfig::Attribute;
+    using Datatype = Attribute::Datatype;
+    using Dictionary = Attribute::Dictionary;
+    using Match = Attribute::Match;
+    Attribute attribute;
+    attribute.name = name;
+    attribute.datatype = Datatype::STRING;
+    if (uncased.has_value()) {
+        if (uncased.value()) {
+            attribute.match = Match::UNCASED;
+            attribute.dictionary.match = Dictionary::Match::UNCASED;
+        } else {
+            attribute.match = Match::CASED;
+            attribute.dictionary.match = Dictionary::Match::CASED;
+        }
+    }
+    if (dictionary_type.has_value()) {
+        attribute.dictionary.type = dictionary_type.value();
+    }
+    return attribute;
+}
 
 AttributesConfig::Attribute
 setupFastSearchAttribute(const vespalib::string & name)
@@ -249,6 +349,8 @@ setupDefaultAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.push_back(setupDefaultAttribute("a4"));
     attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 16));
     attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[100])", 16));
+    attributes.push_back(setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::BTREE));
+    attributes.push_back(setup_string_attribute("string2", true, std::nullopt));
 }
 
 
@@ -265,6 +367,8 @@ setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.back().createifnonexistent = true;
     attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 32));
     attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[200])", 32));
+    attributes.push_back(setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH));
+    attributes.push_back(setup_string_attribute("string2", false, std::nullopt));
 }
 
 }
