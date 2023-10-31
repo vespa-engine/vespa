@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
  * @author gjoranv
  */
 public enum BillStatus {
-    OPEN,       // All bills start in this state. The bill can be modified and exported/synced to external systems.
-    FROZEN,     // Syncing to external systems is switched off. No changes can be made.
-    CLOSED,     // End state for a valid bill.
-    VOID;       // End state, indicating that the bill is not valid.
+    OPEN,        // All bills start in this state. The bill can be modified and exported/synced to external systems.
+    FROZEN,      // Syncing to external systems is switched off. No changes can be made.
+    SUCCESSFUL,  // Final state for a valid bill.
+    VOID;        // Final state, indicating that the bill is not valid.
 
     // Legacy states, used by historical bills
     private static final String LEGACY_ISSUED = "ISSUED";
@@ -22,6 +22,13 @@ public enum BillStatus {
 
     public String value() {
         return value;
+    }
+
+    /**
+     * Returns true if the bill is in a final state.
+     */
+    public boolean isFinal() {
+        return this == SUCCESSFUL || this == VOID;
     }
 
     public static BillStatus from(String status) {
