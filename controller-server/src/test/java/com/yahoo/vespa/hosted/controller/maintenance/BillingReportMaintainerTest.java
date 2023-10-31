@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporterMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.FailedInvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.ModifiableInvoiceUpdate;
@@ -26,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class BillingReportMaintainerTest {
     private final ControllerTester tester = new ControllerTester(SystemName.PublicCd);
     private final BillingReportMaintainer maintainer = new BillingReportMaintainer(tester.controller(), Duration.ofMinutes(10));
+    private final BillingDatabaseClient billingDb = tester.controller().serviceRegistry().billingDatabase();
+    private final BillingReporterMock reporter = (BillingReporterMock) tester.controller().serviceRegistry().billingReporter();
 
     @Test
     void only_billable_tenants_are_maintained() {
@@ -48,19 +52,13 @@ public class BillingReportMaintainerTest {
     @Test
     void only_open_bills_with_exported_id_are_maintained() {
         var t1 = tester.createTenant("t1");
-        var billingDb = tester.controller().serviceRegistry().billingDatabase();
 
-        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
-        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-
-        var bill1 = billingDb.createBill(t1, start, end, "non-exported");
-        var bill2 = billingDb.createBill(t1, start, end, "exported");
-        var bill3 = billingDb.createBill(t1, start, end, "exported-and-frozen");
+        var bill1 = createBill(t1, "non-exported", billingDb);
+        var bill2 = createBill(t1, "exported", billingDb);
+        var bill3 = createBill(t1, "exported-and-frozen", billingDb);
         billingDb.setStatus(bill3, "foo", BillStatus.FROZEN);
 
-        var reporter = tester.controller().serviceRegistry().billingReporter();
-        reporter.exportBill(billingDb.readBill(bill2).get(), "FOO", cloudTenant(t1));
-        reporter.exportBill(billingDb.readBill(bill3).get(), "FOO", cloudTenant(t1));
+        exportBills(t1, bill2, bill3);
         var updates = maintainer.maintainInvoices();
 
         assertTrue(billingDb.readBill(bill1).get().getExportedId().isEmpty());
@@ -85,15 +83,8 @@ public class BillingReportMaintainerTest {
     @Test
     void bills_whose_invoice_has_been_deleted_in_the_external_system_are_no_longer_maintained() {
         var t1 = tester.createTenant("t1");
-        var billingDb = tester.controller().serviceRegistry().billingDatabase();
-
-        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
-        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-
-        var bill1 = billingDb.createBill(t1, start, end, "exported-then-deleted");
-
-        var reporter = (BillingReporterMock)tester.controller().serviceRegistry().billingReporter();
-        reporter.exportBill(billingDb.readBill(bill1).get(), "FOO", cloudTenant(t1));
+        var bill1 = createBill(t1, "exported-then-deleted", billingDb);
+        exportBills(t1, bill1);
 
         var updates = maintainer.maintainInvoices();
         assertEquals(1, updates.size());
@@ -116,17 +107,11 @@ public class BillingReportMaintainerTest {
     @Test
     void it_is_allowed_to_re_export_bills_whose_invoice_has_been_deleted_in_the_external_system() {
         var t1 = tester.createTenant("t1");
-        var billingDb = tester.controller().serviceRegistry().billingDatabase();
 
-        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
-        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
-
-        var bill1 = billingDb.createBill(t1, start, end, "exported-then-deleted");
-
-        var reporter = (BillingReporterMock)tester.controller().serviceRegistry().billingReporter();
+        var bill1 = createBill(t1, "exported-then-deleted", billingDb);
 
         // Export the bill, then delete it in the external system
-        reporter.exportBill(billingDb.readBill(bill1).get(), "FOO", cloudTenant(t1));
+        exportBills(t1, bill1);
         maintainer.maintainInvoices();
         reporter.deleteExportedBill(bill1);
         maintainer.maintainInvoices();
@@ -136,10 +121,23 @@ public class BillingReportMaintainerTest {
         assertEquals(0, updates.size());
 
         // Re-export the bill and verify that it is maintained again
-        reporter.exportBill(billingDb.readBill(bill1).get(), "FOO", cloudTenant(t1));
+        exportBills(t1, bill1);
         updates = maintainer.maintainInvoices();
         assertEquals(1, updates.size());
         assertEquals(ModifiableInvoiceUpdate.class, updates.get(0).getClass());
+    }
+
+    private static Bill.Id createBill(TenantName tenantName, String agent, BillingDatabaseClient billingDb) {
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
+        return billingDb.createBill(tenantName, start, end, agent);
+    }
+
+    private void exportBills(TenantName tenantName, Bill.Id... billIds) {
+        for (var billId : billIds) {
+            var bill = billingDb.readBill(billId).get();
+            reporter.exportBill(bill, "FOO", cloudTenant(tenantName));
+        }
     }
 
     private CloudTenant cloudTenant(TenantName tenantName) {
