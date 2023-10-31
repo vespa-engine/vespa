@@ -597,7 +597,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     }
 
     private void toSlime(Cursor slime, Bill bill, Map<Bill.ItemKey, Bill.ItemSummary> summaries) {
-        slime.setString("id", bill.id().toString());
+        slime.setString("id", bill.id().value());
         var summaryCursor = slime.setArray("summary");
         summaries.forEach((key, summary) -> {
             toSlime(summaryCursor.addObject(), key, summary);
