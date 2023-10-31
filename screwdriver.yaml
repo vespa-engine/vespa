@@ -131,6 +131,8 @@ jobs:
             git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
             (cd vespa && git checkout $VESPA_REF)
             (cd system-test && git checkout $SYSTEM_TEST_REF)
+            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
+            (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
           else
             git clone -q --depth 1 https://github.com/vespa-engine/system-test
           fi
@@ -139,8 +141,6 @@ jobs:
           (cd vespa && git tag v$VESPA_VERSION)
           # Set correct version in pom.xml files
           (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
