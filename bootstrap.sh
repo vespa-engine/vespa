@@ -72,7 +72,7 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 
 # Set up maven wrapper.
 echo "Setting up maven wrapper in $(pwd)"
-mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
+mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml ${MAVEN_EXTRA_OPTS}
 force_move maven-plugins .mvn
 force_move maven-plugins mvnw
 rm -f maven-plugins/mvnw.cmd
