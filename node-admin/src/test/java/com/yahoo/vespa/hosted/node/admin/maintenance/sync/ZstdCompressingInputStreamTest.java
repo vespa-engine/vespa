@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
+import com.yahoo.compress.ZstdCompressor;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -9,7 +10,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Random;
 
-import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.ZstdCompressingInputStream.compressor;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -35,6 +35,7 @@ public class ZstdCompressingInputStreamTest {
     private static void assertCompression(byte[] data, int bufferSize) {
         byte[] compressedData = compress(data, bufferSize);
         byte[] decompressedData = new byte[data.length];
+        var compressor = new ZstdCompressor();
         compressor.decompress(compressedData, 0, compressedData.length, decompressedData, 0, decompressedData.length);
 
         assertArrayEquals(data, decompressedData);

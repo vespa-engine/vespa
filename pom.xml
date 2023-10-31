@@ -24,7 +24,6 @@
     </developers>
 
     <modules>
-        <module>airlift-zstd</module>
         <module>application</module>
         <module>application-model</module>
         <module>bundle-plugin-test</module>

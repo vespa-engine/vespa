@@ -96,7 +96,6 @@ vespa_install_data(tsan-suppressions.txt etc/vespa)
 # Include vespa config definitions in every target
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
 
-add_subdirectory(airlift-zstd)
 add_subdirectory(application-model)
 add_subdirectory(client)
 add_subdirectory(cloud-tenant-cd)
