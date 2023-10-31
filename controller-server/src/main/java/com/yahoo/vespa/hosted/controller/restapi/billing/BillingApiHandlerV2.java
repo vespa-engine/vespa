@@ -42,12 +42,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author ogronnesby
@@ -450,7 +448,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var response = bill.summarizeBy(requestKeys);
 
         var slime = new Slime();
-        toSlime(slime.setObject(), bill, response);
+        toSlime(slime.setObject(), bill, response, bill.lineItems().stream().filter(Bill.LineItem::isAdditional).toList());
         return slime;
     }
 
@@ -596,12 +594,21 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         }
     }
 
-    private void toSlime(Cursor slime, Bill bill, Map<Bill.ItemKey, Bill.ItemSummary> summaries) {
+    private void toSlime(Cursor slime, Bill bill, Map<Bill.ItemKey, Bill.ItemSummary> summaries, List<Bill.LineItem> additional) {
         slime.setString("id", bill.id().value());
         var summaryCursor = slime.setArray("summary");
         summaries.forEach((key, summary) -> {
             toSlime(summaryCursor.addObject(), key, summary);
         });
+        var additionalCursor = slime.setArray("additional");
+        additional.forEach(item -> {
+            additionalSummaryToSlime(additionalCursor, item);
+        });
+    }
+
+    private void additionalSummaryToSlime(Cursor slime, Bill.LineItem item) {
+        slime.setString("description", item.description());
+        slime.setString("amount", item.amount().toPlainString());
     }
 
     private void toSlime(Cursor slime, Bill.ItemKey key, Bill.ItemSummary summary) {
