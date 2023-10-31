@@ -224,19 +224,19 @@ public class Nodes {
         performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)), mutex));
     }
 
-    /** Sets the exclusiveToApplicationId field.  The nodes must be tenant hosts without the field already. */
-    public void setExclusiveToApplicationId(List<Node> hosts, ApplicationMutex lock) {
+    /** Sets the exclusiveToApplicationId field of the hosts to 'application'. */
+    public void setExclusiveToApplicationId(List<Node> hosts, ApplicationMutex lock, ApplicationId application) {
         List<Node> hostsToWrite = hosts.stream()
-                                       .filter(host -> !host.exclusiveToApplicationId().equals(Optional.of(lock.application())))
+                                       .filter(host -> !host.exclusiveToApplicationId().equals(Optional.of(application)))
                                        .peek(host -> {
                                            if (host.type() != NodeType.host)
-                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + application +
                                                                                   ": the node is not a tenant host");
                                            if (host.exclusiveToApplicationId().isPresent())
-                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + lock.application() +
+                                               throw new IllegalArgumentException("Unable to set " + host + " exclusive to " + application +
                                                                                   ": it is already set exclusive to " + host.exclusiveToApplicationId().get());
                                        })
-                                       .map(host -> host.withExclusiveToApplicationId(lock.application()))
+                                       .map(host -> host.withExclusiveToApplicationId(application))
                                        .toList();
         write(hostsToWrite, lock);
     }
