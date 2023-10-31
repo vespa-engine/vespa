@@ -158,15 +158,15 @@ jobs:
           fi
 
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin SHARE=$WORKDIR/vespa-install/usr/share install-all
-          time ./bootstrap.sh java
+          time ./bootstrap.sh full
           time ./mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install &> build_java.log &
           cmake3 -DVESPA_UNPRIVILEGED=no $VESPA_CMAKE_SANITIZERS_OPTION .
           time make -j ${NUM_THREADS}
           time ctest3 --output-on-failure -j ${NUM_THREADS}
           ccache --show-stats
-          time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
           wait
           cat build_java.log
+          time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
       - build-sample-apps: |
           (cd $WORKDIR/sample-apps && time ../vespa/mvnw -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
       - verify-rpm-build: |
