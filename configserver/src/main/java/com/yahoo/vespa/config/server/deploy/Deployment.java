@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
 
 /**
  * The process of deploying an application.
@@ -131,15 +132,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            try {
-                Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
-                waitForActivation(applicationId, timeoutBudget, activation);
-            } catch (Exception e) {
-                log.log(Level.FINE, "Activating session " + session.getSessionId() + " failed, deleting it");
-                deleteSession();
-                throw e;
-            }
-
+            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+            waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId, session.getMetaData().getGeneration());
 
@@ -162,6 +156,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void deleteSession() {
         sessionRepository().deleteLocalSession(session.getSessionId());
+        try (var transaction = sessionRepository().createSetStatusTransaction(session, DELETE)) {
+            transaction.commit();
+        }
     }
 
     private SessionRepository sessionRepository() {
