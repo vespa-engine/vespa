@@ -10,11 +10,18 @@ import com.yahoo.config.provision.zone.ZoneId;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 /**
@@ -344,6 +351,14 @@ public class Bill {
             return Optional.ofNullable(exportedId);
         }
 
+        public boolean isAdditional() {
+            return cpuCost != null && diskCost != null && memoryCost != null && gpuCost != null;
+        }
+
+        public boolean isResource() {
+            return ! isAdditional();
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -382,6 +397,84 @@ public class Bill {
                     ", zoneId=" + zoneId +
                     '}';
         }
+    }
+
+    public enum ItemKeyType {
+        plan(LineItem::plan),
+        version(LineItem::getMajorVersion),
+        account(item -> {
+            var account = item.getCloudAccount();
+            return account.isUnspecified() ? null : account;
+        }),
+        architecture(item -> {
+            var arch = item.getArchitecture();
+            return arch.orElse(null);
+        });
+
+        private final Function<LineItem, Object> extractor;
+
+        ItemKeyType(Function<LineItem, Object> extractor) {
+            this.extractor = extractor;
+        }
+
+        public Function<LineItem, Object> extractor() {
+            return extractor;
+        }
+    }
+
+    public record ItemKey(EnumMap<ItemKeyType, Object> keys) {}
+
+    public record ItemRequest(TreeSet<ItemKeyType> keyTypes) {
+        public static ItemRequest of(Collection<ItemKeyType> keyTypes) {
+            return new ItemRequest(new TreeSet<>(keyTypes));
+        }
+    }
+    public record ItemSummary(
+            BigDecimal cpuUsage,
+            BigDecimal ramUsage,
+            BigDecimal diskUsage,
+            BigDecimal gpuUsage,
+            BigDecimal cpuCost,
+            BigDecimal ramCost,
+            BigDecimal diskCost,
+            BigDecimal gpuCost) {
+
+        static ItemSummary from(List<LineItem> items) {
+            return new ItemSummary(
+                    sum(items, LineItem::getCpuHours),
+                    sum(items, LineItem::getMemoryHours),
+                    sum(items, LineItem::getDiskHours),
+                    sum(items, LineItem::getGpuHours),
+                    sum(items, LineItem::getCpuCost),
+                    sum(items, LineItem::getMemoryCost),
+                    sum(items, LineItem::getDiskCost),
+                    sum(items, LineItem::getGpuCost));
+        }
+
+        private static BigDecimal sum(List<LineItem> items, Function<LineItem, Optional<BigDecimal>> mapper) {
+            return items.stream().map(mapper).map(o -> o.orElse(BigDecimal.ZERO)).reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+    }
+
+    public Map<ItemKey, ItemSummary> summarizeBy(ItemRequest request) {
+        var itemsByKey = this.lineItems.stream()
+                .filter(LineItem::isResource)
+                .collect(
+                    Collectors.groupingBy(
+                        (LineItem item) -> createKeyFromItem(request, item),
+                        Collectors.toList()));
+
+        return itemsByKey.entrySet().stream()
+                .map(item -> Map.entry(item.getKey(), ItemSummary.from(item.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static ItemKey createKeyFromItem(ItemRequest request, LineItem item) {
+        var key = new EnumMap<>(ItemKeyType.class);
+        for (var keyType : request.keyTypes()) {
+            key.put(keyType, keyType.extractor().apply(item));
+        }
+        return new ItemKey(key);
     }
 
 }

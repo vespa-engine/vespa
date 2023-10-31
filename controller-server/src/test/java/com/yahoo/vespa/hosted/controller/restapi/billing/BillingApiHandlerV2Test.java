@@ -258,6 +258,14 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertJsonResponse(req, new File("accepted-countries.json"));
     }
 
+    @Test
+    void summarize_bill() {
+        var req = request("/billing/v2/accountant/bill/id-1/summary?keys=plan,architecture")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(req, """
+                {"id":"BillId{value='id-1'}","summary":[{"key":{"plan":"paid","architecture":null},"summary":{"cpu":{"cost":"0","hours":"0"},"memory":{"cost":"0","hours":"0"},"disk":{"cost":"0","hours":"0"},"gpu":{"cost":"0","hours":"0"}}}]}""");
+    }
+
     private static Bill createBill() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
         var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
