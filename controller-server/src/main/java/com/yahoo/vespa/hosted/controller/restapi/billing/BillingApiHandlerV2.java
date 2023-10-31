@@ -413,7 +413,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         if (response.isSuccess()) {
             return new MessageResponse("Plan: " + planId.value());
         } else {
-            throw new RestApiException.BadRequest("Could not change plan: " + response.getErrorMessage());
+            throw new RestApiException.BadRequest("Could not change plan: " + response.getErrorMessage().get());
         }
     }
 
