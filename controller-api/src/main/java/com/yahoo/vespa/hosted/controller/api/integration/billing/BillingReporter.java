@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 public interface BillingReporter {
     BillingReference maintainTenant(CloudTenant tenant);
 
-    InvoiceUpdate maintainInvoice(Bill bill);
+    InvoiceUpdate maintainInvoice(CloudTenant teannt, Bill bill);
 
     /** Export a bill to a payment service. Returns the invoice ID in the external system. */
     default String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {

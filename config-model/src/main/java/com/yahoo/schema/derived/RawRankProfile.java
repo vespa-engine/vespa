@@ -301,28 +301,41 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private void replaceFunctionFeatures(Set<ReferenceNode> features, SerializationContext context) {
             if (features == null) return;
-            Map<String, ReferenceNode> functionFeatures = new LinkedHashMap<>();
+            Set<ReferenceNode> functionFeatures = new LinkedHashSet<>();
             for (Iterator<ReferenceNode> i = features.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
                 // Is the feature a function?
                 ExpressionFunction function = context.getFunction(referenceNode.getName());
                 if (function != null) {
-                    String propertyName = RankingExpression.propertyName(referenceNode.getName());
-                    String expressionString = function.getBody().getRoot().toString(context).toString();
+                    if (referenceNode.getOutput() != null) {
+                        throw new IllegalArgumentException("function " + referenceNode.getName() +
+                                                           " cannot provide output " + referenceNode.getOutput() +
+                                                           " demanded by feature " + referenceNode);
+                    }
+                    int needArgs = function.arguments().size();
+                    var useArgs = referenceNode.getArguments();
+                    if (needArgs != useArgs.size()) {
+                        throw new IllegalArgumentException("function " + referenceNode.getName() +
+                                                           " needs " + needArgs +
+                                                           " arguments but gets " + useArgs.size() +
+                                                           " from feature " + referenceNode);
+                    }
+                    var instance = function.expand(context, useArgs.expressions(), new java.util.ArrayDeque<>());
+                    String propertyName = RankingExpression.propertyName(instance.getName());
+                    String expressionString = instance.getExpressionString();
                     context.addFunctionSerialization(propertyName, expressionString);
-                    function.returnType().ifPresent(t -> context.addFunctionTypeSerialization(referenceNode.getName(), t));
-                    var backendReferenceNode = new ReferenceNode(wrapInRankingExpression(referenceNode.getName()),
-                                                                 referenceNode.getArguments().expressions(),
-                                                                 referenceNode.getOutput());
+                    function.returnType().ifPresent(t -> context.addFunctionTypeSerialization(instance.getName(), t));
+                    String backendReference = wrapInRankingExpression(instance.getName());
+                    var backendReferenceNode = new ReferenceNode(backendReference, List.of(), null);
                     // tell backend to map back to the name the user expects:
-                    featureRenames.put(backendReferenceNode.toString(), referenceNode.toString());
-                    functionFeatures.put(referenceNode.getName(), backendReferenceNode);
+                    featureRenames.put(backendReference, referenceNode.toString());
+                    functionFeatures.add(backendReferenceNode);
                     i.remove(); // Will add the expanded one in next block
                 }
             }
             // Then, replace the features that were functions
-            for (Map.Entry<String, ReferenceNode> e : functionFeatures.entrySet()) {
-                features.add(e.getValue());
+            for (ReferenceNode mappedFun : functionFeatures) {
+                features.add(mappedFun);
             }
         }
 

@@ -40,7 +40,6 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <unistd.h>
 #include <thread>
@@ -216,7 +215,8 @@ public:
     ~MyFeedHandler() override;
 
     bool isExecutorThread() const;
-    void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override;
+
+    MoveResult handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override;
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
     void heartBeat() override;
 
@@ -624,7 +624,7 @@ MyFeedHandler::isExecutorThread() const
 }
 
 
-void
+IDocumentMoveHandler::MoveResult
 MyFeedHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx)
 {
     assert(isExecutorThread());
@@ -640,6 +640,7 @@ MyFeedHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
     appendOperation(op, std::move(moveDoneCtx));
     _subDBs[op.getSubDbId()]->handleMove(op);
     _subDBs[op.getPrevSubDbId()]->handleMove(op);
+    return MoveResult::SUCCESS;
 }
 
 

@@ -215,6 +215,7 @@ public:
     void handleRemove(FeedToken token, const RemoveOperation &rmOp) override;
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
     void handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) override;
+    bool isMoveStillValid(const MoveOperation & moveOp) const override;
     void prepareMove(MoveOperation &putOp) override;
     void handleMove(const MoveOperation &putOp, DoneCallback doneCtx) override;
     void heartBeat(search::SerialNum serialNum, DoneCallback onDone) override;

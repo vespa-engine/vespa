@@ -5,6 +5,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     array_attribute_combiner_dfw.cpp
     attribute_combiner_dfw.cpp
     attribute_field_writer.cpp
+    attribute_tokens_dfw.cpp
     attributedfw.cpp
     check_undefined_value_visitor.cpp
     copy_dfw.cpp
@@ -17,6 +18,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     document_id_dfw.cpp
     dynamicteaserdfw.cpp
     empty_dfw.cpp
+    empty_docsum_field_writer_state.cpp
     geoposdfw.cpp
     getdocsumargs.cpp
     juniper_dfw_query_item.cpp

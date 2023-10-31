@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +63,9 @@ public interface FeedClientBuilder {
      * actual number of streams per connection is usually lower than the maximum.
      */
     FeedClientBuilder setMaxStreamPerConnection(int max);
+
+    /** Sets a duration after which this client will recycle active connections. This is off ({@code Duration.ZERO}) by default. */
+    FeedClientBuilder setConnectionTimeToLive(Duration ttl);
 
     /** Sets {@link SSLContext} instance. */
     FeedClientBuilder setSslContext(SSLContext context);

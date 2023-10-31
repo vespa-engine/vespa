@@ -283,6 +283,12 @@ StringAttribute::get_match_is_cased() const noexcept {
     return getConfig().get_match() == attribute::Config::Match::CASED;
 }
 
+bool
+StringAttribute::has_uncased_matching() const noexcept
+{
+    return !get_match_is_cased();
+}
+
 template bool AttributeVector::clearDoc(StringAttribute::ChangeVector& changes, DocId doc);
 template bool AttributeVector::update(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v);
 template bool AttributeVector::append(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v, int32_t w, bool doCount);

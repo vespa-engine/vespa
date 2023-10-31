@@ -193,6 +193,13 @@ CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCa
     }
 }
 
+bool
+CombiningFeedView::isMoveStillValid(const MoveOperation & moveOp) const {
+    uint32_t subDbId = moveOp.getPrevSubDbId();
+    assert(subDbId < _views.size());
+    return  _views[subDbId]->isMoveStillValid(moveOp);
+}
+
 void
 CombiningFeedView::prepareMove(MoveOperation &moveOp)
 {

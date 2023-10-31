@@ -96,6 +96,41 @@ class GlobalPhaseSetup {
         return defaultValues;
     }
 
+    static class InputResolver {
+        final List<String> usedNormalizers = new ArrayList<>();
+        final List<String> fromQuery = new ArrayList<>();
+        final List<MatchFeatureInput> fromMF = new ArrayList<>();
+        private final Set<String> availableMatchFeatures;
+        private final Map<String, String> renamedFeatures;
+        private final Set<String> availableNormalizers;
+
+        InputResolver(Set<String> availableMatchFeatures,
+                      Map<String, String> renamedFeatures,
+                      Set<String> availableNormalizers)
+        {
+            this.availableMatchFeatures = availableMatchFeatures;
+            this.renamedFeatures = renamedFeatures;
+            this.availableNormalizers = availableNormalizers;
+        }
+        void resolve(Collection<String> allInputs) {
+            for (var input : allInputs) {
+                String queryFeatureName = asQueryFeature(input);
+                if (queryFeatureName != null) {
+                    fromQuery.add(queryFeatureName);
+                } else if (availableNormalizers.contains(input)) {
+                    usedNormalizers.add(input);
+                } else if (availableMatchFeatures.contains(input)) {
+                    String mfName = renamedFeatures.getOrDefault(input, input);
+                    fromMF.add(new MatchFeatureInput(input, mfName));
+                } else if (renamedFeatures.values().contains(input)) {
+                    fromMF.add(new MatchFeatureInput(input, input));
+                } else {
+                    throw new IllegalArgumentException("Bad config, missing global-phase input: " + input);
+                }
+            }
+        }
+    }
+
     static GlobalPhaseSetup maybeMakeSetup(RankProfilesConfig.Rankprofile rp, RankProfilesEvaluator modelEvaluator) {
         var model = modelEvaluator.modelForRankProfile(rp.name());
         Map<String, RankProfilesConfig.Rankprofile.Normalizer> availableNormalizers = new HashMap<>();
@@ -130,47 +165,31 @@ class GlobalPhaseSetup {
                 }
             }
         }
-        for (var entry : renameFeatures.entrySet()) {
-            String old = entry.getKey();
-            if (matchFeatures.contains(old)) {
-                matchFeatures.remove(old);
-                matchFeatures.add(entry.getValue());
-            }
-        }
         if (rerankCount < 0) {
             rerankCount = 100;
         }
         if (functionEvaluatorSource != null) {
+            var mainResolver = new InputResolver(matchFeatures, renameFeatures, availableNormalizers.keySet());
             var evaluator = functionEvaluatorSource.get();
             var allInputs = List.copyOf(evaluator.function().arguments());
-            List<String> fromMF = new ArrayList<>();
-            List<String> fromQuery = new ArrayList<>();
+            mainResolver.resolve(allInputs);
             List<NormalizerSetup> normalizers = new ArrayList<>();
-            for (var input : allInputs) {
-                String queryFeatureName = asQueryFeature(input);
-                if (queryFeatureName != null) {
-                    fromQuery.add(queryFeatureName);
-                } else if (availableNormalizers.containsKey(input)) {
-                    var cfg = availableNormalizers.get(input);
-                    String normInput = cfg.input();
-                    if (matchFeatures.contains(normInput)) {
-                        Supplier<Evaluator> normSource = () -> new DummyEvaluator(normInput);
-                        normalizers.add(makeNormalizerSetup(cfg, matchFeatures, normSource, List.of(normInput), rerankCount));
-                    } else {
-                        Supplier<FunctionEvaluator> normSource = () -> model.evaluatorOf(normInput);
-                        var normInputs = List.copyOf(normSource.get().function().arguments());
-                        var normSupplier = SimpleEvaluator.wrap(normSource);
-                        normalizers.add(makeNormalizerSetup(cfg, matchFeatures, normSupplier, normInputs, rerankCount));
-                    }
-                } else if (matchFeatures.contains(input) || matchFeatures.contains(WrappedHit.alternate(input))) {
-                    fromMF.add(input);
+            for (var input : mainResolver.usedNormalizers) {
+                var cfg = availableNormalizers.get(input);
+                String normInput = cfg.input();
+                if (matchFeatures.contains(normInput) || renameFeatures.values().contains(normInput)) {
+                    Supplier<Evaluator> normSource = () -> new DummyEvaluator(normInput);
+                    normalizers.add(makeNormalizerSetup(cfg, matchFeatures, renameFeatures, normSource, List.of(normInput), rerankCount));
                 } else {
-                    throw new IllegalArgumentException("Bad config, missing global-phase input: " + input);
+                    Supplier<FunctionEvaluator> normSource = () -> model.evaluatorOf(normInput);
+                    var normInputs = List.copyOf(normSource.get().function().arguments());
+                    var normSupplier = SimpleEvaluator.wrap(normSource);
+                    normalizers.add(makeNormalizerSetup(cfg, matchFeatures, renameFeatures, normSupplier, normInputs, rerankCount));
                 }
             }
             Supplier<Evaluator> supplier = SimpleEvaluator.wrap(functionEvaluatorSource);
-            var gfun = new FunEvalSpec(supplier, fromQuery, fromMF);
-            var defaultValues = extraDefaultQueryFeatureValues(rp, fromQuery, normalizers);
+            var gfun = new FunEvalSpec(supplier, mainResolver.fromQuery, mainResolver.fromMF);
+            var defaultValues = extraDefaultQueryFeatureValues(rp, mainResolver.fromQuery, normalizers);
             return new GlobalPhaseSetup(gfun, rerankCount, namesToHide, normalizers, defaultValues);
         }
         return null;
@@ -178,23 +197,14 @@ class GlobalPhaseSetup {
 
     private static NormalizerSetup makeNormalizerSetup(RankProfilesConfig.Rankprofile.Normalizer cfg,
                                                        Set<String> matchFeatures,
+                                                       Map<String, String> renamedFeatures,
                                                        Supplier<Evaluator> evalSupplier,
                                                        List<String> normInputs,
                                                        int rerankCount)
     {
-        List<String> fromQuery = new ArrayList<>();
-        List<String> fromMF = new ArrayList<>();
-        for (var input : normInputs) {
-            String queryFeatureName = asQueryFeature(input);
-            if (queryFeatureName != null) {
-                fromQuery.add(queryFeatureName);
-            } else if (matchFeatures.contains(input) || matchFeatures.contains(WrappedHit.alternate(input))) {
-                fromMF.add(input);
-            } else {
-                throw new IllegalArgumentException("Bad config, missing normalizer input: " + input);
-            }
-        }
-        var fun = new FunEvalSpec(evalSupplier, fromQuery, fromMF);
+        var normResolver = new InputResolver(matchFeatures, renamedFeatures, Set.of());
+        normResolver.resolve(normInputs);
+        var fun = new FunEvalSpec(evalSupplier, normResolver.fromQuery, normResolver.fromMF);
         return new NormalizerSetup(cfg.name(), makeNormalizerSupplier(cfg, rerankCount), fun);
     }
 

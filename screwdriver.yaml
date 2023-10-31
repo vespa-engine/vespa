@@ -126,7 +126,6 @@ jobs:
       - checkout: |
           WORKDIR=$(pwd)/..
           cd $WORKDIR
-
           git clone -q https://github.com/vespa-engine/system-test
           git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
 

@@ -697,6 +697,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             contact.setBool("emailVerified", billingContact.contact().email().isVerified());
             contact.setString("phone", billingContact.contact().phone());
             var taxIdCursor = root.setObject("taxId");
+            taxIdCursor.setString("country", billingContact.getTaxId().country().value());
             taxIdCursor.setString("type", billingContact.getTaxId().type().value());
             taxIdCursor.setString("code", billingContact.getTaxId().code().value());
             root.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
@@ -719,10 +720,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedTaxId = updateAndValidateTaxId(inspector.field("taxId"), billing.getTaxId());
         var mergedPurchaseOrder = optional("purchaseOrder", inspector).map(PurchaseOrder::new).orElse(billing.getPurchaseOrder());
         var mergedInvoiceEmail = optional("invoiceEmail", inspector).map(mail -> new Email(mail, false)).orElse(billing.getInvoiceEmail());
-
-        if (!inspector.field("taxId").valid() && inspector.field("address").valid()) {
-            throw new IllegalArgumentException("Tax ID information is mandatory for setting up billing");
-        }
 
         var mergedBilling = info.billingContact()
                 .withContact(mergedContact)
@@ -809,6 +806,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         billingCursor.setBool("emailVerified", billingContact.contact().email().isVerified());
         billingCursor.setString("phone", billingContact.contact().phone());
         var taxIdCursor = billingCursor.setObject("taxId");
+        taxIdCursor.setString("country", billingContact.getTaxId().country().value());
         taxIdCursor.setString("type", billingContact.getTaxId().type().value());
         taxIdCursor.setString("code", billingContact.getTaxId().code().value());
         billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
@@ -924,8 +922,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private TaxId updateAndValidateTaxId(Inspector insp, TaxId old) {
         if (!insp.valid()) return old;
-        var taxId = new TaxId(getString(insp.field("type"), old.type().value()),
-                         getString(insp.field("code"), old.code().value()));
+        var taxId = new TaxId(
+                getString(insp.field("country"), old.country().value()),
+                getString(insp.field("type"), old.type().value()),
+                getString(insp.field("code"), old.code().value()));
         controller.serviceRegistry().billingController().validateTaxId(taxId);
         return taxId;
     }

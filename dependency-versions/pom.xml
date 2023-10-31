@@ -102,7 +102,7 @@
         <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <jaxb.runtime.vespa.version>4.0.4</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>11.0.17</jetty.vespa.version>
+        <jetty.vespa.version>11.0.18</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.13.0</jna.vespa.version>
@@ -110,7 +110,7 @@
         <junit.vespa.version>5.10.0</junit.vespa.version>
         <junit.platform.vespa.version>1.10.0</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
-        <luben.zstd.vespa.version>1.5.5-6</luben.zstd.vespa.version>
+        <luben.zstd.vespa.version>1.5.5-7</luben.zstd.vespa.version>
         <lucene.vespa.version>9.8.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
@@ -144,7 +144,7 @@
         <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
-        <clover-maven-plugin.vespa.version>4.5.0</clover-maven-plugin.vespa.version>
+        <clover-maven-plugin.vespa.version>4.5.1</clover-maven-plugin.vespa.version>
         <maven-antrun-plugin.vespa.version>3.1.0</maven-antrun-plugin.vespa.version>
         <maven-assembly-plugin.vespa.version>3.6.0</maven-assembly-plugin.vespa.version>
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>

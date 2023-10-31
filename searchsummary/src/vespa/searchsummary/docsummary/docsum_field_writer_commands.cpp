@@ -7,6 +7,7 @@ namespace search::docsummary::command {
 const vespalib::string abs_distance("absdist");
 const vespalib::string attribute("attribute");
 const vespalib::string attribute_combiner("attributecombiner");
+const vespalib::string attribute_tokens("attribute-tokens");
 const vespalib::string copy("copy");
 const vespalib::string documentid("documentid");
 const vespalib::string dynamic_teaser("dynamicteaser");

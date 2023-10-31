@@ -144,6 +144,7 @@
       "public static void setFeedClientBuilderSupplier(java.util.function.Supplier)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setConnectionsPerEndpoint(int)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setConnectionTimeToLive(java.time.Duration)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setHostnameVerifier(javax.net.ssl.HostnameVerifier)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setProxyHostnameVerifier(javax.net.ssl.HostnameVerifier)",

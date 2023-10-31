@@ -4,6 +4,7 @@
 #include "docsumwriter.h"
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
+#include "empty_docsum_field_writer_state.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
@@ -128,14 +129,6 @@ make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
     }
     return nullptr;
 }
-
-class EmptyWriterState : public DocsumFieldWriterState
-{
-public:
-    EmptyWriterState() = default;
-    ~EmptyWriterState() = default;
-    void insertField(uint32_t, Inserter&) override { }
-};
 
 template <typename MultiValueType>
 class MultiAttrDFWState : public DocsumFieldWriterState
@@ -302,7 +295,7 @@ make_field_writer_state(const vespalib::string& field_name, const IAttributeVect
     default:
         ;
     }
-    return &stash.create<EmptyWriterState>();
+    return &stash.create<EmptyDocsumFieldWriterState>();
 }
 
 void

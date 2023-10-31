@@ -110,40 +110,41 @@ public class CloudTrialExpirerTest {
                 .withBooleanFlag(Flags.CLOUD_TRIAL_NOTIFICATIONS.id(), true);
         registerTenant(tenant.value(), "trial", Duration.ZERO);
         assertEquals(0.0, expirer.maintain());
-        var expected = "Welcome to Vespa Cloud trial! [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
-        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
-        assertLastEmailEquals(mailer, "welcome.html");
+        var expectedConsoleNotification =
+                "Welcome to Vespa Cloud trial! [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
+        var notification = lastAccountLevelNotification(tenant);
+        assertEquals(expectedConsoleNotification, notification.title());
+        assertLastEmail(mailer, notification);
 
-        expected = "You're halfway through the **14 day** trial period. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
+        expectedConsoleNotification =
+                "You're halfway through the **14 day** trial period. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(7));
         assertEquals(0.0, expirer.maintain());
-        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
-        assertLastEmailEquals(mailer, "trial-reminder.html");
+        notification = lastAccountLevelNotification(tenant);
+        assertEquals(expectedConsoleNotification, notification.title());
+        assertLastEmail(mailer, notification);
 
-        expected = "Your Vespa Cloud trial expires in **2** days. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
-        clock.advance(Duration.ofDays(5));
+        expectedConsoleNotification = "Your Vespa Cloud trial expires **tomorrow**. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
+        clock.advance(Duration.ofDays(6));
         assertEquals(0.0, expirer.maintain());
-        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
-        assertLastEmailEquals(mailer, "trial-expiring-soon.html");
+        notification = lastAccountLevelNotification(tenant);
+        assertEquals(expectedConsoleNotification, notification.title());
+        assertLastEmail(mailer, notification);
 
-        expected = "Your Vespa Cloud trial expires **tomorrow**. [Manage plan](https://console.tld/tenant/trial-tenant/account/billing)";
-        clock.advance(Duration.ofDays(1));
-        assertEquals(0.0, expirer.maintain());
-        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
-        assertLastEmailEquals(mailer, "trial-expiring-immediately.html");
-
-        expected = "Your Vespa Cloud trial has expired. [Upgrade plan](https://console.tld/tenant/trial-tenant/account/billing)";
+        expectedConsoleNotification = "Your Vespa Cloud trial has expired. [Upgrade plan](https://console.tld/tenant/trial-tenant/account/billing)";
         clock.advance(Duration.ofDays(2));
         assertEquals(0.0, expirer.maintain());
-        assertEquals(expected, lastAccountLevelNotificationTitle(tenant));
-        assertLastEmailEquals(mailer, "trial-expired.html");
+        notification = lastAccountLevelNotification(tenant);
+        assertEquals(expectedConsoleNotification, notification.title());
+        assertLastEmail(mailer, notification);
     }
 
-    private void assertLastEmailEquals(MockMailer mailer, String expectedContentFile) throws IOException {
+    private void assertLastEmail(MockMailer mailer, Notification notification) throws IOException {
         var mails = mailer.inbox("dev-trial-tenant");
         assertFalse(mails.isEmpty());
         var content = mails.get(mails.size() - 1).htmlMessage().orElseThrow();
-        var path = Paths.get("src/test/resources/mail/" + expectedContentFile);
+        var templateName = notification.mailContent().orElseThrow().values().get("mailMessageTemplate");
+        var path = Paths.get("src/test/resources/mail/%s.html".formatted(templateName));
         if (OVERWRITE_TEST_FILES) {
             Files.write(path, content.getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
@@ -175,11 +176,10 @@ public class CloudTrialExpirerTest {
         assertEquals(planId, tester.serviceRegistry().billingController().getPlan(TenantName.from(tenant)).value());
     }
 
-    private String lastAccountLevelNotificationTitle(TenantName tenant) {
+    private Notification lastAccountLevelNotification(TenantName tenant) {
         return tester.controller().notificationsDb()
                 .listNotifications(NotificationSource.from(tenant), false).stream()
-                .filter(n -> n.type() == Notification.Type.account).map(Notification::title)
+                .filter(n -> n.type() == Notification.Type.account)
                 .findFirst().orElseThrow();
     }
-
 }

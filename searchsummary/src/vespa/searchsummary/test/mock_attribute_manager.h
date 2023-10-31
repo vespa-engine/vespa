@@ -2,6 +2,7 @@
 
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
+#include <optional>
 
 namespace search::docsummary::test {
 
@@ -15,7 +16,8 @@ private:
     template <typename AttributeType, typename ValueType>
     void build_attribute(const vespalib::string& name, search::attribute::BasicType type,
                          search::attribute::CollectionType col_type,
-                         const std::vector<std::vector<ValueType>>& values);
+                         const std::vector<std::vector<ValueType>>& values,
+                         std::optional<bool> uncased);
 
 public:
     MockAttributeManager();
@@ -24,7 +26,8 @@ public:
 
     void build_string_attribute(const vespalib::string& name,
                                 const std::vector<std::vector<vespalib::string>>& values,
-                                search::attribute::CollectionType col_type = search::attribute::CollectionType::ARRAY);
+                                search::attribute::CollectionType col_type = search::attribute::CollectionType::ARRAY,
+                                std::optional<bool> uncased = std::nullopt);
     void build_float_attribute(const vespalib::string& name,
                                const std::vector<std::vector<double>>& values,
                                search::attribute::CollectionType col_type = search::attribute::CollectionType::ARRAY);
