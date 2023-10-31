@@ -24,7 +24,8 @@ public enum SummaryTransform {
     MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter"),
     COPY("copy"),
     DOCUMENT_ID("documentid"),
-    TOKENS("tokens");
+    TOKENS("tokens"),
+    ATTRIBUTE_TOKENS("attribute-tokens");
 
     private final String name;
 
@@ -69,7 +70,7 @@ public enum SummaryTransform {
         return this==DYNAMICBOLDED || this==DYNAMICTEASER;
     }
 
-    public boolean isTokens() { return this == TOKENS; }
+    public boolean isTokens() { return this == TOKENS || this == ATTRIBUTE_TOKENS; }
 
     /** Returns whether this transform always gets its value by accessing memory only */
     public boolean isInMemory() {

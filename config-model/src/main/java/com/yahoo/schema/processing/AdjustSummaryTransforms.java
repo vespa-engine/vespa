@@ -36,6 +36,7 @@ public class AdjustSummaryTransforms extends Processor {
                 makeDocumentIdTransformIfAppropriate(summaryField);
                 makeAttributeTransformIfAppropriate(summaryField, schema);
                 makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
+                makeAttributeTokensTransformIfAppropriate(summaryField, summary.getName(), schema);
                 makeCopyTransformIfAppropriate(summaryField, schema);
             }
         }
@@ -63,6 +64,25 @@ public class AdjustSummaryTransforms extends Processor {
             ImmutableSDField source = schema.getField(sourceFieldName);
             if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
+            }
+        }
+    }
+
+    private void makeAttributeTokensTransformIfAppropriate(SummaryField summaryField, String docsumName, Schema schema) {
+        if (summaryField.getTransform() == SummaryTransform.TOKENS) {
+            String sourceFieldName = summaryField.getSingleSource();
+            Attribute attribute = schema.getAttribute(sourceFieldName);
+            ImmutableSDField source = schema.getField(sourceFieldName);
+            if (!source.doesIndexing()) {
+                if (attribute != null) {
+                    summaryField.setTransform(SummaryTransform.ATTRIBUTE_TOKENS);
+                } else {
+                    throw new IllegalArgumentException("For schema '" + schema.getName() +
+                            "', document-summary '" + docsumName +
+                            "', summary field '" + summaryField.getName() +
+                            "', source field '" + sourceFieldName +
+                            "': tokens summary field setting requires index or attribute for source field");
+                }
             }
         }
     }

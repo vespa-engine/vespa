@@ -156,7 +156,8 @@ public class SummaryClass extends Derived {
                 summaryField.getTransform() == SummaryTransform.POSITIONS ||
                 summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
                 summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER ||
-                summaryField.getTransform() == SummaryTransform.TOKENS)
+                summaryField.getTransform() == SummaryTransform.TOKENS ||
+                summaryField.getTransform() == SummaryTransform.ATTRIBUTE_TOKENS)
         {
             return summaryField.getSingleSource();
         } else if (summaryField.getTransform().isDynamic()) {

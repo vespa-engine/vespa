@@ -17,7 +17,7 @@ public class TokensTransformValidatorTest {
                 "search test {",
                 "  document test {",
                 "      field f type " + fieldType + " {",
-                "          indexing: summary",
+                "          indexing: index | summary",
                 "          summary: tokens",
                 "      }",
                 "  }",
