@@ -185,7 +185,7 @@ public class ImplicitSummaries extends Processor {
             Attribute attribute = sourceField.getAttributes().get(sourceField.getName());
             if (attribute != null) {
                 String destinations = "document summary 'default'";
-                if (summaryField.getDestinations().size()  >0) {
+                if (summaryField.getDestinations().size() > 0) {
                     destinations = "document summaries " + summaryField.getDestinations();
                 }
                 deployLogger.logApplicationPackage(Level.WARNING,

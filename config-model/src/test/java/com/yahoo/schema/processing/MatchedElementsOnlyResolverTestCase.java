@@ -148,7 +148,7 @@ public class MatchedElementsOnlyResolverTestCase {
                     "  summary: matched-elements-only",
                     "}"));
         });
-        assertTrue(exception.getMessage().contains("For schema 'test', document summary 'default', summary field 'my_field': " +
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'default', summary field 'my_field': " +
                 "'matched-elements-only' is not supported for this field type. " +
                 "Supported field types are: array of primitive, weighted set of primitive, " +
                 "array of simple struct, map of primitive type to simple struct, " +

@@ -56,7 +56,7 @@ public class SummaryDiskAccessValidator extends Processor {
                                                                       ": Fields " + implicitDiskFields + " references " +
                                                                       "non-attribute fields: Using this " +
                                                                       "summary will cause disk accesses. " +
-                                                                      "Set 'from-disk' on this summary class to silence this warning.");
+                                                                      "Set 'from-disk' on this document-summary to silence this warning.");
 
             }
         }
