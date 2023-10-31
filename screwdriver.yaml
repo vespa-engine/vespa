@@ -146,6 +146,7 @@ jobs:
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
           fi
+          echo "%_binary_payload w0.gzdio" >> $HOME/.rpmmacros
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
       - build: |
@@ -176,7 +177,6 @@ jobs:
           ulimit -c 0
           time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
                         --define "_debugsource_template %{nil}" \
-                        --define "_binary_payload w0.gzdio" \
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
           mkdir -p $WORKDIR/system-test/docker/rpms
           mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
