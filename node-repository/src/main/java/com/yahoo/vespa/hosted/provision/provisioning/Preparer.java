@@ -174,7 +174,7 @@ public class Preparer {
             // Carry out and return allocation
             if (parentLockOrNull != null) {
                 List<Node> exclusiveParents = allocation.parentsRequiredToBeExclusive();
-                nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, parentLockOrNull);
+                nodeRepository.nodes().setExclusiveToApplicationId(exclusiveParents, parentLockOrNull, application);
                 // TODO: also update tags
             }
             acceptedNodes = allocation.finalNodes();
