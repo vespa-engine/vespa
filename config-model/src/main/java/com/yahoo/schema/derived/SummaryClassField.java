@@ -94,6 +94,8 @@ public class SummaryClassField {
                 return Type.FEATUREDATA;
             } else if (transform != null && transform.equals(SummaryTransform.TOKENS)) {
                 return Type.JSONSTRING;
+            } else if (transform != null && transform.equals(SummaryTransform.ATTRIBUTE_TOKENS)) {
+                return Type.JSONSTRING;
             } else {
                 return Type.LONGSTRING;
             }

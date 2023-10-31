@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests summary extraction
@@ -226,9 +227,10 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assertOverride(schema, "documentid", SummaryTransform.DOCUMENT_ID.getName(), "", "bar");
     }
 
-    @Test
-    void tokens_override() throws ParseException {
-        var schema = buildSchema("field foo type string { indexing: summary }",
+    private void check_tokens_override(boolean index, boolean attribute, SummaryTransform exp) throws ParseException {
+        var schema = buildSchema("field foo type string { indexing: " +
+                (index ? "index | " : "") +
+                (attribute ? "attribute | " : "") + "summary }",
                 joinLines("document-summary bar {",
                         "    summary baz {",
                         "        source: foo ",
@@ -236,8 +238,23 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                         "     }",
                         "    from-disk",
                         "}"));
-        assertOverride(schema, "baz", SummaryTransform.TOKENS.getName(), "foo", "bar");
+        assertOverride(schema, "baz", exp.getName(), "foo", "bar");
         assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
+    }
+
+    @Test
+    void tokens_override() throws ParseException {
+        try {
+            check_tokens_override(false, false, SummaryTransform.TOKENS);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test', document-summary 'bar'" +
+                    ", summary field 'baz', source field 'foo'" +
+                    ": tokens summary field setting requires index or attribute for source field", e.getMessage());
+        }
+        check_tokens_override(false, true, SummaryTransform.ATTRIBUTE_TOKENS);
+        check_tokens_override(true, false, SummaryTransform.TOKENS);
+        check_tokens_override(true, true, SummaryTransform.TOKENS);
     }
 
     @Test
