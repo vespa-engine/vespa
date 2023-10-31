@@ -132,13 +132,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            try {
-                Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
-                waitForActivation(applicationId, timeoutBudget, activation);
-            } catch (Exception e) {
-                throw e;
-            }
-
+            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+            waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId, session.getMetaData().getGeneration());
 
