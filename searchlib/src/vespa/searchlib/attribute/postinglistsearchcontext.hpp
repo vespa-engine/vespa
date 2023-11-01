@@ -82,10 +82,38 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
+    // The following constant is derived after running parts of
+    // the range search performance test with 10M documents on an Apple M1 Pro with 32 GB memory.
+    // This code was compiled with two different strategies:
+    //   1) 'always array merging'
+    //   2) 'always bitvector merging'
+    // https://github.com/vespa-engine/system-test/tree/master/tests/performance/range_search
+    //
+    // The following 33 test cases were used:
+    // range_hits_ratio=[1, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50], values_in_range=[1, 100, 10000], fast_search=true, filter_hits_ratio=0.
+    //
+    // The baseline performance is given by values_in_range=1, as this uses a single posting list.
+    // The total cost of posting list merging is the difference in avg query latency (ms) between the baseline and the case in question.
+    // Based on perf analysis we observe that the cost of iterating the posting list entries and inserting them into
+    // either an array or bitvector is equal.
+    // The differences however are:
+    //  1) Merging sorted array segments (one per posting list) into one large sorted array.
+    //  2) Allocating the memory needed for the bitvector.
+    //
+    // The cost of the two strategies is modeled as:
+    //  1) estimated_hits_in_range * X
+    //  2) docIdLimit * Y
+    //
+    // Based on the performance results we calculate average values for X and Y:
+    //  1) X = Array merging cost per hit = 32 ns
+    //  2) Y = Memory allocation cost per document = 0.08 ns
+    //
+    // The threshold for when to use array merging is therefore 0.0025 (0.08 / 32).
+    constexpr float threshold_for_using_array = 0.0025;
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
         if (execInfo.isStrict() || use_posting_lists_when_non_strict(execInfo)) {
             size_t sum = estimated_hits_in_range();
-            if (sum < _docIdLimit / 64) {
+            if (sum < (_docIdLimit * threshold_for_using_array)) {
                 _merger.reserveArray(_uniqueValues, sum);
                 fillArray();
             } else {
