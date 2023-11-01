@@ -129,6 +129,7 @@ jobs:
           cd $WORKDIR
 
           if [[ -z "$SD_PULL_REQUEST" ]]; then
+            git clone -q https://github.com/vespa-engine/system-test
             git clone -q --depth 1 https://github.com/vespa-engine/sample-apps
             (cd vespa && git checkout $VESPA_REF)
             (cd system-test && git checkout $SYSTEM_TEST_REF)
