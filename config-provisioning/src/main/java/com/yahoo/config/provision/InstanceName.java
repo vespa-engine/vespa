@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 
 import ai.vespa.validation.PatternedStringWrapper;
 
+import java.util.regex.Pattern;
+
 /**
  * Represents an applications instance name, which may be any kind of string or default. This type is defined
  * in order to provide a type safe API for defining environments.
@@ -11,10 +13,11 @@ import ai.vespa.validation.PatternedStringWrapper;
  */
 public class InstanceName extends PatternedStringWrapper<InstanceName> {
 
+    private static final Pattern namePattern = Pattern.compile("[a-zA-Z0-9_-]{1,256}");
     private static final InstanceName defaultName = new InstanceName("default");
 
     private InstanceName(String name) {
-        super(name, ApplicationId.namePattern, "instance name");
+        super(name, namePattern, "instance name");
     }
 
     public static InstanceName from(String name) {
