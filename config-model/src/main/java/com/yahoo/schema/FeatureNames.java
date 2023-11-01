@@ -27,6 +27,7 @@ public class FeatureNames {
     /** Returns true if the given reference is an attribute, constant or query feature */
     public static boolean isSimpleFeature(Reference reference) {
         if ( ! reference.isSimple()) return false;
+        if (reference.output() != null) return false;
         String name = reference.name();
         return name.equals("attribute") || name.equals("constant") || name.equals("query");
     }
