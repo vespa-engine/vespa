@@ -19,14 +19,12 @@ import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.parser.ParseException;
-import com.yahoo.yolean.Exceptions;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TensorTransformTestCase extends AbstractSchemaTestCase {
@@ -37,6 +35,8 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "max(1.0,2.0)");
         assertTransformedExpression("min(attribute(double_field),x)",
                 "min(attribute(double_field),x)");
+        assertTransformedExpression("max(attribute(double_field),attribute(double_array_field))",
+                "max(attribute(double_field),attribute(double_array_field))");
         assertTransformedExpression("min(attribute(tensor_field_1),attribute(double_field))",
                 "min(attribute(tensor_field_1),attribute(double_field))");
         assertTransformedExpression("reduce(max(attribute(tensor_field_1),attribute(tensor_field_2)),sum)",
@@ -51,30 +51,6 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "max(query(q),1.0)");
         assertTransformedExpression("max(query(n),1.0)",
                 "max(query(n),1.0)");
-    }
-
-    @Test
-    void requireThatUsingArrayFails() throws ParseException {
-        Throwable e = assertThrows(IllegalArgumentException.class, () -> {
-                buildSearch("max(attribute(double_field),attribute(double_array_field))");
-            });
-        String msg = Exceptions.toMessageString(e);
-        assertEquals("In schema 'test', rank profile 'test':" +
-                     " The function 'testexpression' is invalid: attribute(double_array_field) is invalid:" +
-                     " Cannot use attribute(double_array_field) collectiontype: ARRAY as ranking expression input",
-                     msg);
-    }
-
-    @Test
-    void requireThatUsingWsetFails() throws ParseException {
-        Throwable e = assertThrows(IllegalArgumentException.class, () -> {
-                buildSearch("map(attribute(weightedset_field), f(x)(x+3))");
-            });
-        String msg = Exceptions.toMessageString(e);
-        assertEquals("In schema 'test', rank profile 'test':" +
-                     " The function 'testexpression' is invalid: attribute(weightedset_field) is invalid:" +
-                     " Cannot use attribute(weightedset_field) collectiontype: WEIGHTEDSET as ranking expression input",
-                     msg);
     }
 
     @Test
