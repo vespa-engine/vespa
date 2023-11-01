@@ -14,9 +14,11 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 
@@ -63,13 +65,15 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
         NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
                                        .state(Node.State.active)
                                        .shuffle(random); // Shuffle to avoid getting stuck trying to upgrade the same host
+        Set<String> exhaustedFlavors = new HashSet<>();
         for (var node : activeNodes) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isEmpty()) continue;
+            if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
             Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.owner(), allocation.membership().cluster());
             if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
-            if (parent.get().status().wantToUpgradeFlavor()) continue; // Already upgrading
+            if (parent.get().status().wantToUpgradeFlavor() && allocation.membership().retired()) continue; // Already upgrading
 
             boolean redeployed = false;
             boolean deploymentValid = false;
@@ -85,6 +89,7 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
                 return 1.0;
             } catch (NodeAllocationException e) {
                // Fine, no capacity for upgrade
+                exhaustedFlavors.add(parent.get().flavor().name());
             } finally {
                 if (deploymentValid && !redeployed) { // Cancel upgrade if redeploy failed
                     upgradeFlavor(parent.get(), false);
