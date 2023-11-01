@@ -191,10 +191,15 @@ jobs:
           git archive HEAD --format tar | tar x -C docker/vespa-systemtests
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            SKIP_M2_POPULATE=false
+          else
+            SKIP_M2_POPULATE=true
+          fi
           docker build --file Dockerfile.systemtest \
                        --progress=plain \
                        --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
-                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=false \
+                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=$SKIP_M2_POPULATE \
                        --target systemtest \
                        --tag vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION \
                        --tag vespaengine/vespa-systemtest-centos-stream8:latest .
