@@ -1265,34 +1265,14 @@ public class RankProfile implements Cloneable {
         return Optional.empty();  // if this context does not contain this input
     }
 
-    private static class AttributeErrorType extends TensorType {
-        private final String attr;
-        private final Attribute.CollectionType collType;
-        AttributeErrorType(String attr, Attribute.CollectionType collType) {
-            super(TensorType.Value.INT8, List.of());
-            this.attr = attr;
-            this.collType = collType;
-        }
-        private void doThrow() {
-            throw new IllegalArgumentException("Cannot use attribute(" + attr +") " + collType + " as ranking expression input");
-        }
-        @Override public TensorType.Value valueType() { doThrow(); return null; }
-        @Override public int rank() { doThrow(); return 0; }
-        @Override public List<TensorType.Dimension> dimensions() { doThrow(); return null; }
-    }
-
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {
         Attribute attribute = field.getAttribute();
         field.getAttributes().forEach((k, a) -> {
             String name = k;
             if (attribute == a)                              // this attribute should take the fields name
                 name = field.getName();                      // switch to that - it is separate for imported fields
-            if (a.getCollectionType().equals(Attribute.CollectionType.SINGLE)) {
-                featureTypes.put(FeatureNames.asAttributeFeature(name),
-                                 a.tensorType().orElse(TensorType.empty));
-            } else {
-                featureTypes.put(FeatureNames.asAttributeFeature(name), new AttributeErrorType(name, a.getCollectionType()));
-            }
+            featureTypes.put(FeatureNames.asAttributeFeature(name),
+                            a.tensorType().orElse(TensorType.empty));
         });
     }
 
