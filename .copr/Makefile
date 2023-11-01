@@ -7,7 +7,8 @@ SPECDIR := $(RPMTOPDIR)/SPECS
 SPECFILE := $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 
 deps:
-	dnf install -y git rpmdevtools
+	rpm -q git &>/dev/null || dnf install -y git
+	rpm -q rpmdevtools &>/dev/null || dnf install -y rpmdevtools
 	git config --global --add safe.directory $$(realpath $(TOP)/..)
 
 srpm: VESPA_VERSION = $$(git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1)
