@@ -81,6 +81,7 @@ public class BillingReportMaintainer extends ControllerMaintainer {
                 case UNMODIFIED -> log.finer(() ->invoiceMessage(bill.id(), exportedId) + " was not modified");
                 case MODIFIED -> log.fine(invoiceMessage(bill.id(), exportedId) + " was updated with " + update.itemsUpdate().get());
                 case UNMODIFIABLE -> {
+                    // This check is needed to avoid setting the status multiple times
                     if (bill.status() != BillStatus.FROZEN) {
                         log.fine(() -> invoiceMessage(bill.id(), exportedId) + " is now unmodifiable");
                         databaseClient.setStatus(bill.id(), "system", BillStatus.FROZEN);
