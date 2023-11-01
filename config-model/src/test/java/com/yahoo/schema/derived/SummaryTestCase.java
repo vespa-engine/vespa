@@ -80,7 +80,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assertSummaryField("description", SummaryClassField.Type.LONGSTRING, fields.next());
         assertSummaryField("dyndesc", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "description", fields.next());
         assertSummaryField("longdesc", SummaryClassField.Type.LONGSTRING, fields.next());
-        assertSummaryField("longstat", SummaryClassField.Type.LONGSTRING, fields.next());
+        assertSummaryField("longstat", SummaryClassField.Type.LONGSTRING, "copy", "longdesc", fields.next());
         assertSummaryField("dynlong", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "longdesc", fields.next());
         assertSummaryField("dyndesc2", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "longdesc", fields.next());
         assertSummaryField("measurement", SummaryClassField.Type.INTEGER, "attribute", "measurement", fields.next());
