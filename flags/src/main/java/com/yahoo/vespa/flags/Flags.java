@@ -383,7 +383,7 @@ public class Flags {
 
     public static final UnboundIntFlag MIN_EXCLUSIVE_ADVERTISED_MEMORY_GB = defineIntFlag(
             "min-exclusive-advertised-memory-gb", 8,
-            List.of("freva"), "2023-09-08", "2023-11-01",
+            List.of("freva"), "2023-09-08", "2024-01-15",
             "Minimum amount of advertised memory for exclusive nodes",
             "Takes effect immediately",
             INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
