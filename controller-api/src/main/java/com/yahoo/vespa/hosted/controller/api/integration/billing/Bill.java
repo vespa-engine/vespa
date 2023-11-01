@@ -351,12 +351,12 @@ public class Bill {
             return Optional.ofNullable(exportedId);
         }
 
-        public boolean isAdditional() {
+        public boolean isResource() {
             return cpuCost != null && diskCost != null && memoryCost != null && gpuCost != null;
         }
 
-        public boolean isResource() {
-            return ! isAdditional();
+        public boolean isAdditional() {
+            return ! isResource();
         }
 
         @Override

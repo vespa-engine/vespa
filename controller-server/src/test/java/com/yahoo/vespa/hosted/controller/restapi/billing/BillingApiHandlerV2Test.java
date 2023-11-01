@@ -2,7 +2,11 @@
 package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
@@ -105,11 +109,12 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     @Test
     void require_tenant_invoice() {
         var listRequest = request("/billing/v2/tenant/" + tenant + "/bill").roles(tenantReader);
-        tester.assertResponse(listRequest, "{\"invoices\":[{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-28\",\"total\":\"123.00\",\"status\":\"OPEN\"}]}");
+        tester.assertResponse(listRequest, """
+                        {"invoices":[{"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"3.00","status":"OPEN"}]}""");
 
         var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
         tester.assertResponse(singleRequest, """
-                {"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"123.00","status":"OPEN","statusHistory":[{"at":"2020-05-23T00:00:00Z","status":"OPEN"}],"items":[{"id":"some-id","description":"description","amount":"123.00","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"majorVersion":0,"cpu":{},"memory":{},"disk":{},"gpu":{}}]}""");
+                {"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"3.00","status":"OPEN","statusHistory":[{"at":"2020-05-23T00:00:00Z","status":"OPEN"}],"items":[{"id":"some-id","description":"description","amount":"3.00","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"architecture":"arm64","majorVersion":8,"application":"default","instance":"default","zone":"prod.default","cpu":{"hours":"1","cost":"1"},"memory":{"hours":"1","cost":"1"},"disk":{"hours":"1","cost":"1"},"gpu":{"hours":"1","cost":"1"}}]}""");
     }
 
     @Test
@@ -131,7 +136,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         billingController.uncommittedBills.put(tenant, createBill());
 
         tester.assertResponse(accountantRequest, """
-                        {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"2020-05-23","unbilled":"123.00"}]}""");
+                        {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"quota":{"budget":-1.0},"collection":"AUTO","lastBill":"2020-05-23","unbilled":"3.00"}]}""");
     }
 
     @Test
@@ -263,7 +268,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var req = request("/billing/v2/accountant/bill/id-1/summary?keys=plan,architecture")
                 .roles(Role.hostedAccountant());
         tester.assertResponse(req, """
-                {"id":"id-1","summary":[{"key":{"plan":"paid","architecture":null},"summary":{"cpu":{"cost":"0","hours":"0"},"memory":{"cost":"0","hours":"0"},"disk":{"cost":"0","hours":"0"},"gpu":{"cost":"0","hours":"0"}}}],"additional":[]}""");
+                {"id":"id-1","summary":[{"key":{"plan":"paid","architecture":"arm64"},"summary":{"cpu":{"cost":"1","hours":"1"},"memory":{"cost":"1","hours":"1"},"disk":{"cost":"1","hours":"1"},"gpu":{"cost":"1","hours":"1"}}}],"additional":[]}""");
     }
 
     private static Bill createBill() {
@@ -274,7 +279,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                 Bill.Id.of("id-1"),
                 TenantName.defaultName(),
                 statusHistory,
-                List.of(createLineItem(start)),
+                List.of(createCompleteLineItem(start)),
                 start,
                 end
         );
@@ -289,5 +294,31 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                 "Smith",
                 addedAt
         );
+    }
+
+    static Bill.LineItem createCompleteLineItem(ZonedDateTime addedAt) {
+        return new Bill.LineItem(
+                "some-id",
+                "description",
+                BigDecimal.valueOf(3),
+                "paid",
+                "Smith",
+                addedAt,
+                addedAt,
+                addedAt,
+                ApplicationId.defaultId(),
+                ZoneId.defaultId(),
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                NodeResources.Architecture.arm64,
+                8,
+                CloudAccount.empty,
+                null);
     }
 }
