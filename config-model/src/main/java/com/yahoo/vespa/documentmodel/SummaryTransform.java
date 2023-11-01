@@ -75,7 +75,8 @@ public enum SummaryTransform {
     /** Returns whether this transform always gets its value by accessing memory only */
     public boolean isInMemory() {
         return switch (this) {
-            case ATTRIBUTE, DISTANCE, POSITIONS, GEOPOS, RANKFEATURES, SUMMARYFEATURES, ATTRIBUTECOMBINER, MATCHED_ATTRIBUTE_ELEMENTS_FILTER ->
+            case ATTRIBUTE, DISTANCE, POSITIONS, GEOPOS, RANKFEATURES, SUMMARYFEATURES,
+                    ATTRIBUTECOMBINER, MATCHED_ATTRIBUTE_ELEMENTS_FILTER, ATTRIBUTE_TOKENS ->
                     true;
             default -> false;
         };
