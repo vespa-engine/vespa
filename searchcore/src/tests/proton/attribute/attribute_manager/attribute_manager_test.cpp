@@ -8,7 +8,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -36,6 +35,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/config-attributes.h>
@@ -71,6 +71,7 @@ using search::test::DirectoryHandler;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespalib::eval::ValueType;
+using vespalib::HwInfo;
 
 using AVConfig = search::attribute::Config;
 using AttrSpecList = proton::AttributeCollectionSpec::AttributeList;

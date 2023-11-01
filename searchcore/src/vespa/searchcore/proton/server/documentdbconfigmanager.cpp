@@ -16,11 +16,11 @@
 #include <vespa/config/helper/legacy.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/fef/ranking_assets_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/retriever/configsnapshot.hpp>
+#include <vespa/vespalib/util/hw_info.h>
 #include <thread>
 #include <cassert>
 #include <cinttypes>
@@ -165,7 +165,7 @@ derive(ProtonConfig::Summary::Cache::UpdateStrategy strategy) {
 }
 
 DocumentStore::Config
-getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo)
+getStoreConfig(const ProtonConfig::Summary::Cache & cache, const vespalib::HwInfo & hwInfo)
 {
     size_t maxBytes = (cache.maxbytes < 0)
                       ? (hwInfo.memory().sizeBytes()*std::min(INT64_C(50), -cache.maxbytes))/100l
@@ -175,7 +175,7 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo
 }
 
 LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary, const HwInfo & hwInfo) {
+deriveConfig(const ProtonConfig::Summary & summary, const vespalib::HwInfo & hwInfo) {
     DocumentStore::Config config(getStoreConfig(summary.cache, hwInfo));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
@@ -189,7 +189,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const HwInfo & hwInfo) {
     return {config, logConfig};
 }
 
-search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const HwInfo & hwInfo) {
+search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const vespalib::HwInfo & hwInfo) {
     return deriveConfig(proton.summary, hwInfo);
 }
 
@@ -223,7 +223,7 @@ find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs
 }
 
 AllocConfig
-build_alloc_config(const HwInfo & hwInfo, const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
+build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
 {
     // This is an approximate number based on observation of a node using 33G memory with 765M docs
     constexpr uint64_t MIN_MEMORY_COST_PER_DOCUMENT = 46;

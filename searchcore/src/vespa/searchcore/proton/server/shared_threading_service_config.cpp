@@ -26,7 +26,7 @@ SharedThreadingServiceConfig::SharedThreadingServiceConfig(uint32_t shared_threa
 namespace {
 
 uint32_t
-derive_shared_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
+derive_shared_threads(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpu_info)
 {
     uint32_t scaled_cores = uint32_t(std::ceil(cpu_info.cores() * cfg.feeding.concurrency));
 
@@ -35,12 +35,12 @@ derive_shared_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
 }
 
 uint32_t
-derive_warmup_threads(const HwInfo::Cpu& cpu_info) {
+derive_warmup_threads(const vespalib::HwInfo::Cpu& cpu_info) {
     return std::max(1u, std::min(4u, cpu_info.cores()/8));
 }
 
 uint32_t
-derive_field_writer_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
+derive_field_writer_threads(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpu_info)
 {
     uint32_t scaled_cores = size_t(std::ceil(cpu_info.cores() * cfg.feeding.concurrency));
     uint32_t field_writer_threads = std::max(scaled_cores, uint32_t(cfg.indexing.threads));
@@ -56,7 +56,7 @@ derive_field_writer_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info
 
 SharedThreadingServiceConfig
 SharedThreadingServiceConfig::make(const proton::SharedThreadingServiceConfig::ProtonConfig& cfg,
-                                   const proton::HwInfo::Cpu& cpu_info)
+                                   const vespalib::HwInfo::Cpu& cpu_info)
 {
     uint32_t shared_threads = derive_shared_threads(cfg, cpu_info);
     uint32_t field_writer_threads = derive_field_writer_threads(cfg, cpu_info);

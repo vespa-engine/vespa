@@ -6,6 +6,7 @@
 
 using namespace proton;
 using vespa::config::search::core::ProtonConfig;
+using vespalib::HwInfo;
 
 ProtonConfig::Flush::Memory
 getConfig(int64_t maxMemory, int64_t eachMaxMemory, int64_t maxTlsSize,

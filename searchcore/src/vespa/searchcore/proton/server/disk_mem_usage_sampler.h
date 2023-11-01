@@ -32,7 +32,7 @@ public:
     struct Config {
         DiskMemUsageFilter::Config filterConfig;
         vespalib::duration sampleInterval;
-        HwInfo hwInfo;
+        vespalib::HwInfo hwInfo;
 
         Config()
             : filterConfig(),
@@ -43,14 +43,14 @@ public:
         Config(double memoryLimit_in,
                double diskLimit_in,
                vespalib::duration sampleInterval_in,
-               const HwInfo &hwInfo_in)
+               const vespalib::HwInfo &hwInfo_in)
             : filterConfig(memoryLimit_in, diskLimit_in),
               sampleInterval(sampleInterval_in),
               hwInfo(hwInfo_in)
         { }
     };
 
-    DiskMemUsageSampler(const std::string &path_in, const HwInfo &config);
+    DiskMemUsageSampler(const std::string &path_in, const vespalib::HwInfo &config);
     ~DiskMemUsageSampler();
     void close();
 

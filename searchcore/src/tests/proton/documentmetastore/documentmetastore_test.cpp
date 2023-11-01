@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -23,6 +22,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <filesystem>
@@ -59,6 +59,7 @@ using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
+using vespalib::HwInfo;
 using namespace std::literals;
 
 namespace proton {

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace proton;
+using vespalib::HwInfo;
 using vespalib::ThreadStackExecutor;
 
 class InitializeThreadsCalculatorTest : public search::test::DirectoryHandler, public testing::Test {

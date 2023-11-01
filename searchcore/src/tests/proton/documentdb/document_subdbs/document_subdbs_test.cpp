@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -43,6 +42,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
@@ -74,6 +74,7 @@ using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::HwInfo;
 using proton::index::IndexConfig;
 
 using StoreOnlyConfig = StoreOnlyDocSubDB::Config;

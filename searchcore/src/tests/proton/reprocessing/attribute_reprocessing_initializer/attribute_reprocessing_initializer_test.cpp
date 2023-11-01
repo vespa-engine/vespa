@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
@@ -20,6 +19,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_reprocessing_initializer_test");
@@ -35,6 +35,7 @@ using search::index::schema::DataType;
 using search::test::DirectoryHandler;
 using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
+using vespalib::HwInfo;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;

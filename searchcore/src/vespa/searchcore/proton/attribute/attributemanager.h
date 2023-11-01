@@ -7,7 +7,7 @@
 #include <set>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace search::attribute { class Interlock; }
 
@@ -88,7 +88,7 @@ private:
     std::shared_ptr<search::attribute::Interlock> _interlock;
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     vespalib::Executor& _shared_executor;
-    HwInfo _hwInfo;
+    vespalib::HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
     AttributeVectorSP internalAddAttribute(AttributeSpec && spec, uint64_t serialNum, const IAttributeFactory &factory);
@@ -108,7 +108,7 @@ public:
                      std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
-                     const HwInfo &hwInfo);
+                     const vespalib::HwInfo &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
                      const vespalib::string &documentSubDbName,
@@ -118,7 +118,7 @@ public:
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
                      std::shared_ptr<IAttributeFactory> factory,
-                     const HwInfo &hwInfo);
+                     const vespalib::HwInfo &hwInfo);
 
     AttributeManager(const AttributeManager &currMgr, Spec && newSpec,
                      IAttributeInitializerRegistry &initializerRegistry);

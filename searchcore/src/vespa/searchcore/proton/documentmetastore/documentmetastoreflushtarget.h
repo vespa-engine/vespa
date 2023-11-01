@@ -4,7 +4,7 @@
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace search::common { class FileHeaderContext; }
 
@@ -36,7 +36,7 @@ private:
     FlushStats                               _lastStats;
     const search::TuneFileAttributes         _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    HwInfo                                   _hwInfo;
+    vespalib::HwInfo                         _hwInfo;
     std::shared_ptr<AttributeDiskLayout>     _diskLayout;
     std::shared_ptr<AttributeDirectory>      _dmsDir;
 
@@ -49,7 +49,7 @@ public:
      **/
     DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer &tlsSyncer,
                                  const vespalib::string &baseDir, const search::TuneFileAttributes &tuneFileAttributes,
-                                 const search::common::FileHeaderContext &fileHeaderContext, const HwInfo &hwInfo);
+                                 const search::common::FileHeaderContext &fileHeaderContext, const vespalib::HwInfo &hwInfo);
 
     ~DocumentMetaStoreFlushTarget() override;
 

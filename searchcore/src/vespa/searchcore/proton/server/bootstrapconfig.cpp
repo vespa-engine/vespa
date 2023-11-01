@@ -30,7 +30,7 @@ BootstrapConfig::BootstrapConfig(
                const FiledistributorrpcConfigSP &filedistRpcConfSP,
                const BucketspacesConfigSP &bucketspaces,
                const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
-               const HwInfo & hwInfo)
+               const vespalib::HwInfo & hwInfo)
     : _documenttypes(documenttypes),
       _repo(repo),
       _proton(protonConfig),

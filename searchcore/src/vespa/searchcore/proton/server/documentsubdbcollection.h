@@ -3,17 +3,18 @@
 
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <mutex>
 #include <optional>
 
 namespace vespalib {
     class Clock;
     class Executor;
+    class HwInfo;
     class ThreadStackExecutorBase;
 }
 
@@ -34,7 +35,6 @@ class DocTypeName;
 class DocumentDBConfig;
 class DocumentDBReconfig;
 class FeedHandler;
-class HwInfo;
 class IDocumentRetriever;
 class IDocumentSubDB;
 class IDocumentSubDBOwner;
@@ -76,7 +76,7 @@ private:
     ReprocessingRunner _reprocessingRunner;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     std::unique_ptr<bucketdb::BucketDBHandler> _bucketDBHandler;
-    HwInfo _hwInfo;
+    vespalib::HwInfo _hwInfo;
 
 public:
     DocumentSubDBCollection(
@@ -94,7 +94,7 @@ public:
             const vespalib::Clock &clock,
             std::mutex &configMutex,
             const vespalib::string &baseDir,
-            const HwInfo &hwInfo);
+            const vespalib::HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
     void setBucketStateCalculator(const IBucketStateCalculatorSP &calc, OnDone onDone);

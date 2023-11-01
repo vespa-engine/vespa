@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -13,6 +13,7 @@ LOG_SETUP("disk_mem_usage_sampler_test");
 
 using namespace proton;
 using namespace std::chrono_literals;
+using vespalib::HwInfo;
 
 constexpr uint64_t disk_size_bytes = 200000;
 constexpr uint64_t memory_size_bytes = 100000;

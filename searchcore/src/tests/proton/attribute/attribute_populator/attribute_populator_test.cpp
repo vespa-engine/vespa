@@ -3,7 +3,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -17,6 +16,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -72,7 +72,7 @@ struct Fixture
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
     ForegroundThreadExecutor _shared;
-    HwInfo                 _hwInfo;
+    vespalib::HwInfo         _hwInfo;
     AttributeManager::SP _mgr;
     std::unique_ptr<AttributePopulator> _pop;
     DocContext _ctx;

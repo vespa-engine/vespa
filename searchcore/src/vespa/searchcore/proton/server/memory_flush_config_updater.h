@@ -5,7 +5,7 @@
 #include "i_disk_mem_usage_listener.h"
 #include "memoryflush.h"
 #include <vespa/config-proton.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/util/hw_info.h>
 #include <mutex>
 
 namespace proton {
@@ -24,7 +24,7 @@ private:
     Mutex                       _mutex;
     MemoryFlush::SP             _flushStrategy;
     ProtonConfig::Flush::Memory _currConfig;
-    HwInfo::Memory              _memory;
+    vespalib::HwInfo::Memory    _memory;
     DiskMemUsageState           _currState;
     bool                        _useConservativeDiskMode;
     bool                        _useConservativeMemoryMode;
@@ -41,13 +41,13 @@ public:
 
     MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
                              const ProtonConfig::Flush::Memory &config,
-                             const HwInfo::Memory &memory);
+                             const vespalib::HwInfo::Memory &memory);
     void setConfig(const ProtonConfig::Flush::Memory &newConfig);
     void setNodeRetired(bool nodeRetired);
     void notifyDiskMemUsage(DiskMemUsageState newState) override;
 
     static MemoryFlush::Config convertConfig(const ProtonConfig::Flush::Memory &config,
-                                             const HwInfo::Memory &memory);
+                                             const vespalib::HwInfo::Memory &memory);
 };
 
 } // namespace proton

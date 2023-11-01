@@ -87,7 +87,6 @@ using proton::BootstrapConfig;
 using proton::DocTypeName;
 using proton::DocumentDB;
 using proton::DocumentDBConfig;
-using proton::HwInfo;
 using search::index::Schema;
 using search::transactionlog::TransLogServer;
 using storage::MergeThrottler;
@@ -120,6 +119,7 @@ using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::ProtonConfigBuilder;
 using vespa::config::search::summary::JuniperrcConfig;
 using vespalib::compression::CompressionConfig;
+using vespalib::HwInfo;
 
 namespace search::bmcluster {
 

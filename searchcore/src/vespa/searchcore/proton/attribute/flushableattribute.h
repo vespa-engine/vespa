@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace search { class AttributeVector; }
 
@@ -35,7 +35,7 @@ private:
     const search::TuneFileAttributes         _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
     vespalib::ISequencedTaskExecutor        &_attributeFieldWriter;
-    HwInfo                                   _hwInfo;
+    vespalib::HwInfo                         _hwInfo;
     std::shared_ptr<AttributeDirectory>      _attrDir;
     double                                   _replay_operation_cost;
 
@@ -56,7 +56,7 @@ public:
                        const search::common::FileHeaderContext &
                        fileHeaderContext,
                        vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                       const HwInfo &hwInfo);
+                       const vespalib::HwInfo &hwInfo);
 
     virtual ~FlushableAttribute();
 
