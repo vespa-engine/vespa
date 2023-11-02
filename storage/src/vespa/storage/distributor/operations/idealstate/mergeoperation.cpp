@@ -140,7 +140,7 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
         _mnodes.emplace_back(node._nodeIndex, node._sourceOnly);
     }
 
-    const auto estimated_memory_footprint = estimate_merge_memory_footprint_ubound(nodes);
+    const auto estimated_memory_footprint = estimate_merge_memory_footprint_upper_bound(nodes);
 
     if (_mnodes.size() > 1) {
         auto msg = std::make_shared<api::MergeBucketCommand>(getBucket(), _mnodes,
@@ -371,7 +371,7 @@ bool MergeOperation::all_involved_nodes_support_unordered_merge_chaining() const
     return true;
 }
 
-uint32_t MergeOperation::estimate_merge_memory_footprint_ubound(const std::vector<MergeMetaData>& nodes) const noexcept {
+uint32_t MergeOperation::estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetaData>& nodes) const noexcept {
     vespalib::hash_set<uint32_t> seen_checksums;
     uint32_t worst_case_footprint_across_nodes = 0;
     uint32_t largest_single_doc_contribution   = 0;
