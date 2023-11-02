@@ -176,7 +176,7 @@ public class TensorFunctionNode extends CompositeNode {
 
         @Override
         public Double apply(EvaluationContext<Reference> context) {
-            return expression.evaluate(new ContextWrapper(context)).asDouble();
+            return expression.evaluate(asContext(context)).asDouble();
         }
 
         @Override
@@ -265,7 +265,7 @@ public class TensorFunctionNode extends CompositeNode {
 
         @Override
         public Tensor evaluate(EvaluationContext<Reference> context) {
-            return expression.evaluate((Context)context).asTensor();
+            return expression.evaluate(asContext(context)).asTensor();
         }
 
         @Override
@@ -412,7 +412,12 @@ public class TensorFunctionNode extends CompositeNode {
         public TensorType getType(Reference name) {
             return delegate.getType(name);
         }
-
     }
 
+    private static Context asContext(EvaluationContext<Reference> generic) {
+        if (generic instanceof Context context) {
+            return context;
+        }
+        return new ContextWrapper(generic);
+    }
 }
