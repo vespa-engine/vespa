@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
+import java.util.Arrays;
+
 /**
  * @author gjoranv
  */
@@ -34,7 +36,11 @@ public enum BillStatus {
     public static BillStatus from(String status) {
         if (LEGACY_ISSUED.equals(status) || LEGACY_EXPORTED.equals(status)) return OPEN;
         if (LEGACY_CANCELED.equals(status)) return VOID;
-        return Enum.valueOf(BillStatus.class, status.toUpperCase());
+
+        return Arrays.stream(values())
+                .filter(s -> s.value.equals(status))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown bill status: " + status));
     }
 
 }
