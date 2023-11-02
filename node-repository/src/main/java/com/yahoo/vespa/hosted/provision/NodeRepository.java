@@ -201,6 +201,11 @@ public class NodeRepository extends AbstractComponent {
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
 
+    /** Returns whether nodes must be allocated to hosts that are exclusive to the cluster type. */
+    public boolean exclusiveClusterType(ClusterSpec cluster) {
+        return sharedHosts.value().hasClusterType(cluster.type().name());
+    }
+
     /**
      * Returns whether nodes are allocated exclusively in this instance given this cluster spec.
      * Exclusive allocation requires that the wanted node resources matches the advertised resources of the node
@@ -209,7 +214,7 @@ public class NodeRepository extends AbstractComponent {
     public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
                ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
-               ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
+               ( !zone().cloud().allowHostSharing() && !sharedHosts.value().supportsClusterType(clusterSpec.type().name()));
     }
 
     /** Whether the nodes of this cluster must be running on hosts that are specifically provisioned for the application. */

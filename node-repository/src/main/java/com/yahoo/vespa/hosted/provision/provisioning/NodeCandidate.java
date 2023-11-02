@@ -595,7 +595,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     }
 
     public ExclusivityViolation violatesExclusivity(ClusterSpec cluster, ApplicationId application,
-                                                    boolean exclusiveAllocation, boolean exclusiveProvisioning,
+                                                    boolean exclusiveClusterType, boolean exclusiveAllocation, boolean exclusiveProvisioning,
                                                     boolean hostSharing, NodeList allNodes, boolean makeExclusive) {
         if (parentHostname().isEmpty()) return ExclusivityViolation.NONE;
         if (type() != NodeType.tenant) return ExclusivityViolation.NONE;
@@ -612,6 +612,10 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         } else {
             // the parent is exclusive to another cluster type
             if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()))
+                return ExclusivityViolation.YES;
+
+            // this cluster requires a parent that was provisioned exclusively for this cluster type
+            if (exclusiveClusterType && parent.flatMap(Node::exclusiveToClusterType).isEmpty() && makeExclusive)
                 return ExclusivityViolation.YES;
 
             // the parent is provisioned for another application

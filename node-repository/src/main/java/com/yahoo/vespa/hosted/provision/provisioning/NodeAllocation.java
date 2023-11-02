@@ -198,6 +198,7 @@ class NodeAllocation {
 
     private NodeCandidate.ExclusivityViolation violatesExclusivity(NodeCandidate candidate) {
         return candidate.violatesExclusivity(cluster, application,
+                                             nodeRepository.exclusiveClusterType(cluster),
                                              nodeRepository.exclusiveAllocation(cluster),
                                              nodeRepository.exclusiveProvisioning(cluster),
                                              nodeRepository.zone().cloud().allowHostSharing(), allNodes, makeExclusive);
