@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -75,7 +76,24 @@ public class EvaluationTester {
             RankingExpression expression = new RankingExpression(expressionString);
             if ( ! explanation.isEmpty())
                 explanation = explanation + ": ";
-            assertEquals(explanation + expression, value, expression.evaluate(context));
+            var result = expression.evaluate(context);
+            assertEquals(explanation + expression, value, result);
+            assertEquals(value.type().valueType(), result.type().valueType());
+            var root = expression.getRoot();
+            String asString = root.toString();
+            try {
+                expression = new RankingExpression(asString);
+                result = expression.evaluate(context);
+                assertEquals(explanation + expressionString + " -> " + asString, value, result);
+                assertEquals(value.type().valueType(), result.type().valueType());
+            } catch (Exception e) {
+                System.err.println("toString() failure, " + expressionString + " -> " + asString);
+                System.err.println("root: " + root.getClass());
+                if (root instanceof TensorFunctionNode tfn) {
+                    System.err.println("root func: " + tfn.function().getClass());
+                }
+                throw new RuntimeException(e);
+            }
             return expression;
         }
         catch (ParseException e) {
