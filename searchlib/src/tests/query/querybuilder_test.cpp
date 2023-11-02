@@ -673,7 +673,7 @@ TEST("require that empty intermediate node can be added") {
 }
 
 TEST("control size of SimpleQueryStackDumpIterator") {
-    EXPECT_EQUAL(128u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQUAL(120u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST("test query parsing error") {
