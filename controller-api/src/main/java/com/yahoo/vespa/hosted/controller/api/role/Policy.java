@@ -191,6 +191,10 @@ enum Policy {
 
     dataplaneToken(Privilege.grant(Action.all())
                            .on(PathGroup.dataplaneToken)
+                           .in(SystemName.PublicCd, SystemName.Public)),
+
+    termsOfService(Privilege.grant(Action.create)
+                           .on(PathGroup.termsOfService)
                            .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;

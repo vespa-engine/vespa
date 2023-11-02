@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TermsOfServiceApproval;
 
 import java.net.URI;
 import java.security.Principal;
@@ -101,6 +102,9 @@ public class TenantSerializer {
     private static final String taxIdCodeField = "code";
     private static final String purchaseOrderField = "purchaseOrder";
     private static final String invoiceEmailField = "invoiceEmail";
+    private static final String tosApprovalField = "tosApproval";
+    private static final String tosApprovalAtField = "at";
+    private static final String tosApprovalByField = "by";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -292,6 +296,7 @@ public class TenantSerializer {
     private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
         var taxIdInspector = billingObject.field(taxIdField);
         var taxId = switch (taxIdInspector.type()) {
+            // TODO(bjorncs, 2023-11-02): Remove legacy tax id format
             case STRING -> TaxId.legacy(taxIdInspector.asString());
             case OBJECT -> {
                 var taxIdCountry = taxIdInspector.field(taxIdCountryField).asString();
@@ -304,6 +309,13 @@ public class TenantSerializer {
         };
         var purchaseOrder = new PurchaseOrder(billingObject.field(purchaseOrderField).asString());
         var invoiceEmail = new Email(billingObject.field(invoiceEmailField).asString(), false);
+        var tosApprovalInspector = billingObject.field(tosApprovalField);
+        var tosApproval = switch (tosApprovalInspector.type()) {
+            case OBJECT -> new TermsOfServiceApproval(tosApprovalInspector.field(tosApprovalAtField).asString(),
+                                                      tosApprovalInspector.field(tosApprovalByField).asString());
+            case NIX -> TermsOfServiceApproval.empty();
+            default -> throw new IllegalArgumentException(taxIdInspector.type().name());
+        };
 
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
@@ -313,7 +325,8 @@ public class TenantSerializer {
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")))
                 .withTaxId(taxId)
                 .withPurchaseOrder(purchaseOrder)
-                .withInvoiceEmail(invoiceEmail);
+                .withInvoiceEmail(invoiceEmail)
+                .withToSApproval(tosApproval);
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
@@ -382,6 +395,11 @@ public class TenantSerializer {
         billingCursor.setString(purchaseOrderField, billingContact.getPurchaseOrder().value());
         billingCursor.setString(invoiceEmailField, billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
+        if (!billingContact.getToSApproval().isEmpty()) {
+            var tosApprovalCursor = billingCursor.setObject(tosApprovalField);
+            tosApprovalCursor.setString(tosApprovalAtField, billingContact.getToSApproval().approvedAt().toString());
+            tosApprovalCursor.setString(tosApprovalByField, billingContact.getToSApproval().approvedBy().get().getName());
+        }
     }
 
     private void toSlime(List<TenantSecretStore> tenantSecretStores, Cursor parentCursor) {

@@ -87,6 +87,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -135,6 +136,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TermsOfServiceApproval;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -386,6 +388,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/terms-of-service")) return approveTermsOfService(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/token/{tokenid}")) return generateToken(path.get("tenant"), path.get("tokenid"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
@@ -702,6 +705,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             taxIdCursor.setString("code", billingContact.getTaxId().code().value());
             root.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
             root.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
+            var tosApprovalCursor = root.setObject("tosApproval");
+            var tosApproval = billingContact.getToSApproval();
+            tosApprovalCursor.setString("at", !tosApproval.isEmpty() ? tosApproval.approvedAt().toString() : "");
+            tosApprovalCursor.setString("by", !tosApproval.isEmpty() ? tosApproval.approvedBy().get().getName() : "");
 
             toSlime(billingContact.address(), root); // will create "address" on the parent
         }
@@ -812,6 +819,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         billingCursor.setString("purchaseOrder", billingContact.getPurchaseOrder().value());
         billingCursor.setString("invoiceEmail", billingContact.getInvoiceEmail().getEmailAddress());
         toSlime(billingContact.address(), billingCursor);
+        var tosApprovalCursor = billingCursor.setObject("tosApproval");
+        var tosApproval = billingContact.getToSApproval();
+        tosApprovalCursor.setString("at", !tosApproval.isEmpty() ? tosApproval.approvedAt().toString() : "");
+        tosApprovalCursor.setString("by", !tosApproval.isEmpty() ? tosApproval.approvedBy().get().getName() : "");
     }
 
     private void toSlime(TenantContacts contacts, Cursor parentCursor) {
@@ -1237,6 +1248,20 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         toSlime(slime.setObject(), getInstance(tenantName, applicationName, instanceName),
                 controller.jobController().deploymentStatus(getApplication(tenantName, applicationName)), request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse approveTermsOfService(String tenant, HttpRequest req) {
+        if (controller.tenants().require(TenantName.from(tenant)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenant + "' is not a cloud tenant");
+        var approvedBy = SimplePrincipal.of(req.getJDiscRequest().getUserPrincipal());
+        var approvedAt = controller.clock().instant();
+
+        controller.tenants().lockOrThrow(TenantName.from(tenant), LockedTenant.Cloud.class, t -> {
+                var updatedTenant = t.withInfo(t.get().info().withBilling(t.get().info().billingContact().withToSApproval(
+                new TermsOfServiceApproval(approvedAt, approvedBy))));
+            controller.tenants().store(updatedTenant);
+        });
+        return new MessageResponse("Terms of service approved by %s".formatted(approvedBy.getName()));
     }
 
     private HttpResponse addDeveloperKey(String tenantName, HttpRequest request) {

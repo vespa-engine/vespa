@@ -13,17 +13,21 @@ public class TenantBilling {
     private final TaxId taxId;
     private final PurchaseOrder purchaseOrder;
     private final Email invoiceEmail;
+    private final TermsOfServiceApproval tosApproval;
 
-    public TenantBilling(TenantContact contact, TenantAddress address, TaxId taxId, PurchaseOrder purchaseOrder, Email invoiceEmail) {
+    public TenantBilling(TenantContact contact, TenantAddress address, TaxId taxId, PurchaseOrder purchaseOrder,
+                         Email invoiceEmail, TermsOfServiceApproval tosApproval) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
         this.taxId = Objects.requireNonNull(taxId);
         this.purchaseOrder = Objects.requireNonNull(purchaseOrder);
         this.invoiceEmail = Objects.requireNonNull(invoiceEmail);
+        this.tosApproval = Objects.requireNonNull(tosApproval);
     }
 
     public static TenantBilling empty() {
-        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxId.empty(), PurchaseOrder.empty(), Email.empty());
+        return new TenantBilling(TenantContact.empty(), TenantAddress.empty(), TaxId.empty(), PurchaseOrder.empty(),
+                                 Email.empty(), TermsOfServiceApproval.empty());
     }
 
     public TenantContact contact() {
@@ -46,24 +50,30 @@ public class TenantBilling {
         return invoiceEmail;
     }
 
+    public TermsOfServiceApproval getToSApproval() { return tosApproval; }
+
     public TenantBilling withContact(TenantContact updatedContact) {
-        return new TenantBilling(updatedContact, this.address, this.taxId, this.purchaseOrder, this.invoiceEmail);
+        return new TenantBilling(updatedContact, this.address, this.taxId, this.purchaseOrder, this.invoiceEmail, tosApproval);
     }
 
     public TenantBilling withAddress(TenantAddress updatedAddress) {
-        return new TenantBilling(this.contact, updatedAddress, this.taxId, this.purchaseOrder, this.invoiceEmail);
+        return new TenantBilling(this.contact, updatedAddress, this.taxId, this.purchaseOrder, this.invoiceEmail, tosApproval);
     }
 
     public TenantBilling withTaxId(TaxId updatedTaxId) {
-        return new TenantBilling(this.contact, this.address, updatedTaxId, this.purchaseOrder, this.invoiceEmail);
+        return new TenantBilling(this.contact, this.address, updatedTaxId, this.purchaseOrder, this.invoiceEmail, tosApproval);
     }
 
     public TenantBilling withPurchaseOrder(PurchaseOrder updatedPurchaseOrder) {
-        return new TenantBilling(this.contact, this.address, this.taxId, updatedPurchaseOrder, this.invoiceEmail);
+        return new TenantBilling(this.contact, this.address, this.taxId, updatedPurchaseOrder, this.invoiceEmail, tosApproval);
     }
 
     public TenantBilling withInvoiceEmail(Email updatedInvoiceEmail) {
-        return new TenantBilling(this.contact, this.address, this.taxId, this.purchaseOrder, updatedInvoiceEmail);
+        return new TenantBilling(this.contact, this.address, this.taxId, this.purchaseOrder, updatedInvoiceEmail, tosApproval);
+    }
+
+    public TenantBilling withToSApproval(TermsOfServiceApproval approval) {
+        return new TenantBilling(contact, address, taxId, purchaseOrder, invoiceEmail, approval);
     }
 
     public boolean isEmpty() {
@@ -75,16 +85,14 @@ public class TenantBilling {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantBilling that = (TenantBilling) o;
-        return Objects.equals(contact, that.contact) &&
-                Objects.equals(address, that.address) &&
-                Objects.equals(taxId, that.taxId) &&
-                Objects.equals(purchaseOrder, that.purchaseOrder) &&
-                Objects.equals(invoiceEmail, that.invoiceEmail);
+        return Objects.equals(contact, that.contact) && Objects.equals(address, that.address)
+                && Objects.equals(taxId, that.taxId) && Objects.equals(purchaseOrder, that.purchaseOrder)
+                && Objects.equals(invoiceEmail, that.invoiceEmail) && Objects.equals(tosApproval, that.tosApproval);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(contact, address, taxId, purchaseOrder, invoiceEmail);
+        return Objects.hash(contact, address, taxId, purchaseOrder, invoiceEmail, tosApproval);
     }
 
     @Override
@@ -92,9 +100,10 @@ public class TenantBilling {
         return "TenantBilling{" +
                 "contact=" + contact +
                 ", address=" + address +
-                ", taxId='" + taxId + '\'' +
-                ", purchaseOrder='" + purchaseOrder + '\'' +
+                ", taxId=" + taxId +
+                ", purchaseOrder=" + purchaseOrder +
                 ", invoiceEmail=" + invoiceEmail +
+                ", tosApproval=" + tosApproval +
                 '}';
     }
 }

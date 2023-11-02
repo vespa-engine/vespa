@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TermsOfServiceApproval;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -240,6 +241,7 @@ public class TenantSerializerTest {
                         .withPurchaseOrder(new PurchaseOrder("PO42"))
                         .withTaxId(new TaxId("NO", "no_vat", "123456789MVA"))
                         .withInvoiceEmail(new Email("billing@mycomp.any", false))
+                        .withToSApproval(new TermsOfServiceApproval(Instant.ofEpochMilli(1234L), new SimplePrincipal("ceo@mycomp.any")))
                 );
 
         Slime slime = new Slime();
