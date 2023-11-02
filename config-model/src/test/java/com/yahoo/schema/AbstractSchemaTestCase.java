@@ -47,6 +47,7 @@ public abstract class AbstractSchemaTestCase {
         StringBuilder b = new StringBuilder();
         try (BufferedReader r = IOUtils.createReader(file)) {
             int character;
+            int lastChar = -1;
             boolean lastWasNewline = false;
             boolean inBrackets = false;
             while (-1 != (character = r.read())) {
@@ -72,8 +73,9 @@ public abstract class AbstractSchemaTestCase {
                     inBrackets = false;
                 if (! inBrackets)
                     b.appendCodePoint(character);
-                if (character == '[')
+                if (character == '[' && lastChar != '{')
                     inBrackets = true;
+                lastChar = character;
             }
         }
         return b.toString();
