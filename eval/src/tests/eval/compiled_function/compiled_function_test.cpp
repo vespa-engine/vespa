@@ -50,6 +50,7 @@ TEST("require that lazy parameter passing works") {
 
 std::vector<vespalib::string> unsupported = {
     "map(",
+    "map_subspaces(",
     "join(",
     "merge(",
     "reduce(",

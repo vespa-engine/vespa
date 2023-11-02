@@ -1127,4 +1127,12 @@ Function::unwrap(vespalib::stringref input,
 
 //-----------------------------------------------------------------------------
 
+void
+Function::Issues::add_nested_issues(const vespalib::string &context, const Issues &issues)
+{
+    for (const auto &issue: issues.list) {
+        list.push_back(context + ": " + issue);
+    }
+}
+
 }

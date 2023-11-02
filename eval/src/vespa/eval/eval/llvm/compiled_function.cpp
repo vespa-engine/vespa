@@ -128,6 +128,7 @@ CompiledFunction::detect_issues(const nodes::Node &node)
         bool open(const nodes::Node &) override { return true; }
         void close(const nodes::Node &node) override {
             if (nodes::check_type<nodes::TensorMap,
+                                  nodes::TensorMapSubspaces,
                                   nodes::TensorJoin,
                                   nodes::TensorMerge,
                                   nodes::TensorReduce,
@@ -139,7 +140,7 @@ CompiledFunction::detect_issues(const nodes::Node &node)
                                   nodes::TensorPeek>(node))
             {
                 issues.push_back(make_string("unsupported node type: %s",
-                                getClassName(node).c_str()));
+                                             getClassName(node).c_str()));
             }
         }
     } checker;
