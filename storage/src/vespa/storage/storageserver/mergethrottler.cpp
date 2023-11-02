@@ -29,7 +29,7 @@ namespace {
 
 struct NodeComparator {
     bool operator()(const api::MergeBucketCommand::Node& a,
-                    const api::MergeBucketCommand::Node& b) const
+                    const api::MergeBucketCommand::Node& b) const noexcept
     {
         return a.index < b.index;
     }
@@ -41,6 +41,7 @@ MergeThrottler::ChainedMergeState::ChainedMergeState()
     : _cmd(),
       _cmdString(),
       _clusterStateVersion(0),
+      _estimated_memory_usage(0),
       _inCycle(false),
       _executingLocally(false),
       _unwinding(false),
@@ -52,6 +53,7 @@ MergeThrottler::ChainedMergeState::ChainedMergeState(const api::StorageMessage::
     : _cmd(cmd),
       _cmdString(cmd->toString()),
       _clusterStateVersion(static_cast<const api::MergeBucketCommand&>(*cmd).getClusterStateVersion()),
+      _estimated_memory_usage(static_cast<const api::MergeBucketCommand&>(*cmd).estimated_memory_footprint()),
       _inCycle(false),
       _executingLocally(executing),
       _unwinding(false),
@@ -65,6 +67,9 @@ MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
       averageQueueWaitingTime("averagequeuewaitingtime", {}, "Average time a merge spends in the throttler queue", this),
       queueSize("queuesize", {}, "Length of merge queue", this),
       active_window_size("active_window_size", {}, "Number of merges active within the pending window size", this),
+      estimated_merge_memory_usage("estimated_merge_memory_usage", {}, "An estimated upper bound of the "
+                                   "memory usage of the merges currently in the active window", this),
+      merge_memory_limit("merge_memory_limit", {}, "The active soft limit for memory used by merge operations on this node", this),
       bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
@@ -180,9 +185,11 @@ MergeThrottler::MergeNodeSequence::chain_contains_this_node() const noexcept
 
 MergeThrottler::MergeThrottler(
         const StorServerConfig& bootstrap_config,
-        StorageComponentRegister& compReg)
+        StorageComponentRegister& comp_reg,
+        const vespalib::HwInfo& hw_info)
     : StorageLink("Merge Throttler"),
       framework::HtmlStatusReporter("merges", "Merge Throttler"),
+      _hw_info(hw_info),
       _merges(),
       _queue(),
       _maxQueueSize(1024),
@@ -191,11 +198,13 @@ MergeThrottler::MergeThrottler(
       _messageLock(),
       _stateLock(),
       _metrics(std::make_unique<Metrics>()),
-      _component(compReg, "mergethrottler"),
+      _component(comp_reg, "mergethrottler"),
       _thread(),
       _rendezvous(RendezvousState::NONE),
       _throttle_until_time(),
       _backpressure_duration(std::chrono::seconds(30)),
+      _active_merge_memory_used_bytes(0),
+      _max_merge_memory_usage_bytes(0), // 0 ==> unlimited
       _use_dynamic_throttling(false),
       _disable_queue_limits_for_chained_merges(false),
       _closing(false)
@@ -244,6 +253,14 @@ MergeThrottler::on_configure(const StorServerConfig& new_config)
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::duration<double>(new_config.resourceExhaustionMergeBackPressureDurationSecs));
     _disable_queue_limits_for_chained_merges = new_config.disableQueueLimitsForChainedMerges;
+    if (new_config.mergeThrottlingMemoryLimit.maxUsageBytes > 0) {
+        _max_merge_memory_usage_bytes = static_cast<size_t>(new_config.mergeThrottlingMemoryLimit.maxUsageBytes);
+    } else if ((new_config.mergeThrottlingMemoryLimit.maxUsageBytes == 0) && (_hw_info.memory().sizeBytes() > 0)) {
+        _max_merge_memory_usage_bytes = deduced_memory_limit(new_config);
+    } else {
+        _max_merge_memory_usage_bytes = 0; // Implies unlimited
+    }
+    _metrics->merge_memory_limit.set(static_cast<int64_t>(_max_merge_memory_usage_bytes));
 }
 
 MergeThrottler::~MergeThrottler()
@@ -373,16 +390,19 @@ MergeThrottler::forwardCommandToNode(
     fwdMerge->setPriority(mergeCmd.getPriority());
     fwdMerge->setTimeout(mergeCmd.getTimeout());
     fwdMerge->set_use_unordered_forwarding(mergeCmd.use_unordered_forwarding());
+    fwdMerge->set_estimated_memory_footprint(mergeCmd.estimated_memory_footprint());
     msgGuard.sendUp(fwdMerge);
 }
 
 void
 MergeThrottler::removeActiveMerge(ActiveMergeMap::iterator mergeIter)
 {
-    LOG(debug, "Removed merge for %s from internal state",
-        mergeIter->first.toString().c_str());
+    LOG(debug, "Removed merge for %s from internal state", mergeIter->first.toString().c_str());
+    assert(_active_merge_memory_used_bytes >= mergeIter->second._estimated_memory_usage);
+    _active_merge_memory_used_bytes -= mergeIter->second._estimated_memory_usage;
     _merges.erase(mergeIter);
     update_active_merge_window_size_metric();
+    update_active_merge_memory_usage_metric();
 }
 
 api::StorageMessage::SP
@@ -714,6 +734,21 @@ bool MergeThrottler::allow_merge_despite_full_window(const api::MergeBucketComma
     return !_use_dynamic_throttling;
 }
 
+bool MergeThrottler::accepting_merge_is_within_memory_limits(const api::MergeBucketCommand& cmd) const noexcept {
+    // Soft-limit on expected memory usage, but always let at least one merge into the active window.
+    if ((_max_merge_memory_usage_bytes > 0) && !_merges.empty()) {
+        size_t future_usage = _active_merge_memory_used_bytes + cmd.estimated_memory_footprint();
+        if (future_usage > _max_merge_memory_usage_bytes) {
+            LOG(spam, "Adding merge with memory footprint %u would exceed node soft limit of %zu. "
+                      "Current memory usage is %zu, future usage would have been %zu",
+                cmd.estimated_memory_footprint(), _max_merge_memory_usage_bytes,
+                _active_merge_memory_used_bytes, future_usage);
+            return false;
+        }
+    }
+    return true;
+}
+
 bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept {
     // We cannot let forwarded unordered merges fall into the queue, as that might lead to a deadlock.
     // Consider the following scenario, with two nodes C0 and C1, each with a low window size of 1 (low
@@ -761,7 +796,10 @@ MergeThrottler::handleMessageDown(
 
         if (isMergeAlreadyKnown(msg)) {
             processCycledMergeCommand(msg, msgGuard);
-        } else if (canProcessNewMerge() || allow_merge_despite_full_window(mergeCmd)) {
+        } else if (accepting_merge_is_within_memory_limits(mergeCmd)
+                   && (canProcessNewMerge()
+                       || allow_merge_despite_full_window(mergeCmd)))
+        {
             processNewMergeCommand(msg, msgGuard);
         } else if (may_allow_into_queue(mergeCmd)) {
             enqueue_merge_for_later_processing(msg, msgGuard);
@@ -864,9 +902,10 @@ MergeThrottler::processNewMergeCommand(
     assert(_merges.find(mergeCmd.getBucket()) == _merges.end());
     auto state = _merges.emplace(mergeCmd.getBucket(), ChainedMergeState(msg)).first;
     update_active_merge_window_size_metric();
+    _active_merge_memory_used_bytes += mergeCmd.estimated_memory_footprint();
+    update_active_merge_memory_usage_metric();
 
-    LOG(debug, "Added merge %s to internal state",
-        mergeCmd.toString().c_str());
+    LOG(debug, "Added merge %s to internal state", mergeCmd.toString().c_str());
 
     DummyMbusRequest dummyMsg;
     _throttlePolicy->processMessage(dummyMsg);
@@ -889,7 +928,7 @@ MergeThrottler::processNewMergeCommand(
     } else {
         if (!nodeSeq.isLastNode()) {
             // When we're not the last node and haven't seen the merge before,
-            // we cannot possible execute the merge yet. Forward to next.
+            // we cannot possibly execute the merge yet. Forward to next.
             uint16_t nextNodeInChain = nodeSeq.getNextNodeInChain();
             LOG(debug, "Forwarding merge %s to storage node %u",
                 mergeCmd.toString().c_str(), nextNodeInChain);
@@ -1291,14 +1330,49 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
 }
 
 void
-MergeThrottler::set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept {
+MergeThrottler::set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept {
     std::lock_guard lock(_stateLock);
     _disable_queue_limits_for_chained_merges = disable_limits;
 }
 
 void
+MergeThrottler::set_max_merge_memory_usage_bytes_locking(uint32_t max_memory_bytes) noexcept {
+    std::lock_guard lock(_stateLock);
+    _max_merge_memory_usage_bytes = max_memory_bytes;
+}
+
+uint32_t
+MergeThrottler::max_merge_memory_usage_bytes_locking() const noexcept {
+    std::lock_guard lock(_stateLock);
+    return _max_merge_memory_usage_bytes;
+}
+
+void
+MergeThrottler::set_hw_info_locking(const vespalib::HwInfo& hw_info) {
+    std::lock_guard lock(_stateLock);
+    _hw_info = hw_info;
+}
+
+size_t
+MergeThrottler::deduced_memory_limit(const StorServerConfig& cfg) const noexcept {
+    const auto min_limit = static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoLowerBoundBytes, 1L));
+    const auto max_limit = std::max(static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoUpperBoundBytes, 1L)), min_limit);
+    const auto mem_scale_factor = std::max(cfg.mergeThrottlingMemoryLimit.autoPhysMemScaleFactor, 0.0);
+
+    const auto node_mem   = static_cast<double>(_hw_info.memory().sizeBytes());
+    const auto scaled_mem = static_cast<size_t>(node_mem * mem_scale_factor);
+
+    return std::min(std::max(scaled_mem, min_limit), max_limit);
+}
+
+void
 MergeThrottler::update_active_merge_window_size_metric() noexcept {
     _metrics->active_window_size.set(static_cast<int64_t>(_merges.size()));
+}
+
+void
+MergeThrottler::update_active_merge_memory_usage_metric() noexcept {
+    _metrics->estimated_merge_memory_usage.set(static_cast<int64_t>(_active_merge_memory_used_bytes));
 }
 
 void

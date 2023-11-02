@@ -7,6 +7,7 @@
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/storageserver/servicelayernodecontext.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace config { class ConfigUri; }
 
@@ -29,14 +30,15 @@ private:
     std::unique_ptr<config::ConfigHandle<StorVisitorConfig>>  _visitor_cfg_handle;
     std::unique_ptr<config::ConfigHandle<StorFilestorConfig>> _filestor_cfg_handle;
 
-    std::unique_ptr<ServiceLayerNode> _node;
+    std::unique_ptr<ServiceLayerNode>     _node;
     std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;
 
 protected:
+    vespalib::HwInfo        _hw_info;
     ServiceLayerNodeContext _context;
 
 public:
-    explicit ServiceLayerProcess(const config::ConfigUri & configUri);
+    ServiceLayerProcess(const config::ConfigUri & configUri, const vespalib::HwInfo& hw_info);
     ~ServiceLayerProcess() override;
 
     void shutdown() override;

@@ -12,6 +12,7 @@
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 namespace storage {
 
@@ -39,6 +40,7 @@ private:
     ServiceLayerNodeContext&            _context;
     spi::PersistenceProvider&           _persistenceProvider;
     VisitorFactory::Map                 _externalVisitors;
+    vespalib::HwInfo                    _hw_info;
     std::unique_ptr<PersistenceConfig>  _persistence_bootstrap_config;
     std::unique_ptr<StorVisitorConfig>  _visitor_bootstrap_config;
     std::unique_ptr<StorFilestorConfig> _filestor_bootstrap_config;
@@ -66,8 +68,9 @@ public:
         ServiceLayerBootstrapConfigs& operator=(ServiceLayerBootstrapConfigs&&) noexcept;
     };
 
-    ServiceLayerNode(const config::ConfigUri & configUri,
+    ServiceLayerNode(const config::ConfigUri& configUri,
                      ServiceLayerNodeContext& context,
+                     const vespalib::HwInfo& hw_info,
                      ServiceLayerBootstrapConfigs bootstrap_configs,
                      ApplicationGenerationFetcher& generationFetcher,
                      spi::PersistenceProvider& persistenceProvider,

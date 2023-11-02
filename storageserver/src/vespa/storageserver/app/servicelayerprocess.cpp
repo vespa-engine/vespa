@@ -31,7 +31,7 @@ bucket_db_options_from_config(const config::ConfigUri& config_uri) {
 
 }
 
-ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
+ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri, const vespalib::HwInfo& hw_info)
     : Process(configUri),
       _externalVisitors(),
       _persistence_cfg_handle(),
@@ -39,6 +39,7 @@ ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
       _filestor_cfg_handle(),
       _node(),
       _storage_chain_builder(),
+      _hw_info(hw_info),
       _context(std::make_unique<framework::defaultimplementation::RealClock>(),
                bucket_db_options_from_config(configUri))
 {
@@ -106,7 +107,8 @@ ServiceLayerProcess::createNode()
     sbc.visitor_cfg     = _visitor_cfg_handle->getConfig();
     sbc.filestor_cfg    = _filestor_cfg_handle->getConfig();
 
-    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, std::move(sbc), *this, getProvider(), _externalVisitors);
+    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, _hw_info, std::move(sbc),
+                                               *this, getProvider(), _externalVisitors);
     if (_storage_chain_builder) {
         _node->set_storage_chain_builder(std::move(_storage_chain_builder));
     }

@@ -1,26 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::MergeThrottler
- * @ingroup storageserver
- *
- * @brief Throttler and forwarder of merge commands
+ * Throttler and forwarder of merge commands
  */
 #pragma once
 
-#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/document/bucket/bucket.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/metrictimer.h>
+#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/valuemetric.h>
 #include <vespa/storage/common/message_guard.h>
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/document/bucket/bucket.h>
-#include <vespa/metrics/metricset.h>
-#include <vespa/metrics/summetric.h>
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/metrictimer.h>
-#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 #include <chrono>
 
@@ -71,6 +69,8 @@ public:
         metrics::DoubleAverageMetric averageQueueWaitingTime;
         metrics::LongValueMetric queueSize;
         metrics::LongValueMetric active_window_size;
+        metrics::LongValueMetric estimated_merge_memory_usage;
+        metrics::LongValueMetric merge_memory_limit;
         metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
@@ -113,6 +113,7 @@ private:
         api::StorageMessage::SP _cmd;
         std::string _cmdString; // For being able to print message even when we don't own it
         uint64_t _clusterStateVersion;
+        uint32_t _estimated_memory_usage;
         bool _inCycle;
         bool _executingLocally;
         bool _unwinding;
@@ -154,9 +155,7 @@ private:
 
     // Use a set rather than a priority_queue, since we want to be
     // able to iterate over the collection during status rendering
-    using MergePriorityQueue = std::set<
-        StablePriorityOrderingWrapper<api::StorageMessage::SP>
-    >;
+    using MergePriorityQueue = std::set<StablePriorityOrderingWrapper<api::StorageMessage::SP>>;
 
     enum class RendezvousState {
         NONE,
@@ -165,32 +164,37 @@ private:
         RELEASED
     };
 
-    ActiveMergeMap _merges;
-    MergePriorityQueue _queue;
-    size_t _maxQueueSize;
-    std::unique_ptr<mbus::DynamicThrottlePolicy> _throttlePolicy;
-    uint64_t _queueSequence; // TODO: move into a stable priority queue class
-    mutable std::mutex _messageLock;
-    std::condition_variable _messageCond;
-    mutable std::mutex _stateLock;
+    vespalib::HwInfo                              _hw_info;
+    ActiveMergeMap                                _merges;
+    MergePriorityQueue                            _queue;
+    size_t                                        _maxQueueSize;
+    std::unique_ptr<mbus::DynamicThrottlePolicy>  _throttlePolicy;
+    uint64_t                                      _queueSequence; // TODO: move into a stable priority queue class
+    mutable std::mutex                            _messageLock;
+    std::condition_variable                       _messageCond;
+    mutable std::mutex                            _stateLock;
     // Messages pending to be processed by the worker thread
-    std::vector<api::StorageMessage::SP> _messagesDown;
-    std::vector<api::StorageMessage::SP> _messagesUp;
-    std::unique_ptr<Metrics> _metrics;
-    StorageComponent _component;
-    std::unique_ptr<framework::Thread> _thread;
-    RendezvousState _rendezvous;
+    std::vector<api::StorageMessage::SP>          _messagesDown;
+    std::vector<api::StorageMessage::SP>          _messagesUp;
+    std::unique_ptr<Metrics>                      _metrics;
+    StorageComponent                              _component;
+    std::unique_ptr<framework::Thread>            _thread;
+    RendezvousState                               _rendezvous;
     mutable std::chrono::steady_clock::time_point _throttle_until_time;
-    std::chrono::steady_clock::duration _backpressure_duration;
-    bool _use_dynamic_throttling;
-    bool _disable_queue_limits_for_chained_merges;
-    bool _closing;
+    std::chrono::steady_clock::duration           _backpressure_duration;
+    size_t                                        _active_merge_memory_used_bytes;
+    size_t                                        _max_merge_memory_usage_bytes;
+    bool                                          _use_dynamic_throttling;
+    bool                                          _disable_queue_limits_for_chained_merges;
+    bool                                          _closing;
 public:
     /**
      * windowSizeIncrement used for allowing unit tests to start out with more
      * than 1 as their window size.
      */
-    MergeThrottler(const StorServerConfig& bootstrap_config, StorageComponentRegister&);
+    MergeThrottler(const StorServerConfig& bootstrap_config,
+                   StorageComponentRegister& comp_reg,
+                   const vespalib::HwInfo& hw_info);
     ~MergeThrottler() override;
 
     /** Implements document::Runnable::run */
@@ -223,7 +227,10 @@ public:
     // For unit testing only
     const mbus::DynamicThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::DynamicThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
-    void set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept;
+    void set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept;
+    void set_max_merge_memory_usage_bytes_locking(uint32_t max_memory_bytes) noexcept;
+    [[nodiscard]] uint32_t max_merge_memory_usage_bytes_locking() const noexcept;
+    void set_hw_info_locking(const vespalib::HwInfo& hw_info);
     // For unit testing only
     std::mutex& getStateLock() { return _stateLock; }
 
@@ -363,6 +370,7 @@ private:
     [[nodiscard]] bool backpressure_mode_active_no_lock() const;
     void backpressure_bounce_all_queued_merges(MessageGuard& guard);
     [[nodiscard]] bool allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) const noexcept;
+    [[nodiscard]] bool accepting_merge_is_within_memory_limits(const api::MergeBucketCommand& cmd) const noexcept;
     [[nodiscard]] bool may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept;
 
     void sendReply(const api::MergeBucketCommand& cmd,
@@ -404,7 +412,10 @@ private:
     void rejectOperationsInThreadQueue(MessageGuard&, uint32_t minimumStateVersion);
     void markActiveMergesAsAborted(uint32_t minimumStateVersion);
 
+    [[nodiscard]] size_t deduced_memory_limit(const StorServerConfig& cfg) const noexcept;
+
     void update_active_merge_window_size_metric() noexcept;
+    void update_active_merge_memory_usage_metric() noexcept;
 
     // const function, but metrics are mutable
     void updateOperationMetrics(

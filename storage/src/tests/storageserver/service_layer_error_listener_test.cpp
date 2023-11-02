@@ -40,7 +40,8 @@ struct Fixture {
     vdstestlib::DirConfig config{getStandardConfig(true)};
     TestServiceLayerApp app;
     ServiceLayerComponent component{app.getComponentRegister(), "dummy"};
-    MergeThrottler merge_throttler{*config_from<StorServerConfig>(config::ConfigUri(config.getConfigId())), app.getComponentRegister()};
+    MergeThrottler merge_throttler{*config_from<StorServerConfig>(config::ConfigUri(config.getConfigId())),
+                                   app.getComponentRegister(), vespalib::HwInfo()};
     TestShutdownListener shutdown_listener;
     ServiceLayerErrorListener error_listener{component, merge_throttler};
 

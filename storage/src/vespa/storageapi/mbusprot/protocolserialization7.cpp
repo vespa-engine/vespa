@@ -801,6 +801,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketCommand&
         req.set_max_timestamp(msg.getMaxTimestamp());
         req.set_cluster_state_version(msg.getClusterStateVersion());
         req.set_unordered_forwarding(msg.use_unordered_forwarding());
+        req.set_estimated_memory_footprint(msg.estimated_memory_footprint());
         for (uint16_t chain_node : msg.getChain()) {
             req.add_node_chain(chain_node);
         }
@@ -823,6 +824,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeMergeBucketCommand(BBuf&
         }
         cmd->setChain(std::move(chain));
         cmd->set_use_unordered_forwarding(req.unordered_forwarding());
+        cmd->set_estimated_memory_footprint(req.estimated_memory_footprint());
         return cmd;
     });
 }

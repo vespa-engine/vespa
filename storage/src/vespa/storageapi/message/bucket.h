@@ -118,6 +118,7 @@ private:
     std::vector<Node> _nodes;
     Timestamp _maxTimestamp;
     uint32_t _clusterStateVersion;
+    uint32_t _estimated_memory_footprint;
     std::vector<uint16_t> _chain;
     bool _use_unordered_forwarding;
 
@@ -140,6 +141,12 @@ public:
     }
     [[nodiscard]] bool use_unordered_forwarding() const noexcept { return _use_unordered_forwarding; }
     [[nodiscard]] bool from_distributor() const noexcept { return _chain.empty(); }
+    void set_estimated_memory_footprint(uint32_t footprint_bytes) noexcept {
+        _estimated_memory_footprint = footprint_bytes;
+    }
+    [[nodiscard]] uint32_t estimated_memory_footprint() const noexcept {
+        return _estimated_memory_footprint;
+    }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };

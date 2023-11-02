@@ -107,6 +107,7 @@ MergeBucketCommand::MergeBucketCommand(
       _nodes(nodes),
       _maxTimestamp(maxTimestamp),
       _clusterStateVersion(clusterStateVersion),
+      _estimated_memory_footprint(0),
       _chain(chain),
       _use_unordered_forwarding(false)
 {}
@@ -131,6 +132,9 @@ MergeBucketCommand::print(std::ostream& out, bool verbose, const std::string& in
     out << "]";
     if (_use_unordered_forwarding) {
         out << " (unordered forwarding)";
+    }
+    if (_estimated_memory_footprint > 0) {
+        out << ", estimated memory footprint: " << _estimated_memory_footprint << " bytes";
     }
     out << ", reasons to start: " << _reason;
     out << ")";

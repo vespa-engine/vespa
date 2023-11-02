@@ -79,7 +79,7 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
           _protocol(_docMan.getTypeRepoSP())
     {
     }
-    ~StorageProtocolTest();
+    ~StorageProtocolTest() override;
 
     void set_dummy_bucket_info_reply_fields(BucketInfoReply& reply) {
         reply.setBucketInfo(_dummy_bucket_info);
@@ -456,18 +456,12 @@ TEST_P(StorageProtocolTest, delete_bucket) {
 
 TEST_P(StorageProtocolTest, merge_bucket) {
     using Node = api::MergeBucketCommand::Node;
-    std::vector<Node> nodes;
-    nodes.push_back(Node(4, false));
-    nodes.push_back(Node(13, true));
-    nodes.push_back(Node(26, true));
-
-    std::vector<uint16_t> chain;
-    // Not a valid chain wrt. the nodes, but just want to have unique values
-    chain.push_back(7);
-    chain.push_back(14);
+    std::vector<Node> nodes = {{4, false}, {13, true}, {26, true}};
+    std::vector<uint16_t> chain = {7, 14}; // Not a valid chain wrt. the nodes, but just want to have unique values
 
     auto cmd = std::make_shared<MergeBucketCommand>(_bucket, nodes, Timestamp(1234), 567, chain);
     cmd->set_use_unordered_forwarding(true);
+    cmd->set_estimated_memory_footprint(123'456'789);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
     EXPECT_EQ(nodes, cmd2->getNodes());
@@ -475,6 +469,7 @@ TEST_P(StorageProtocolTest, merge_bucket) {
     EXPECT_EQ(uint32_t(567), cmd2->getClusterStateVersion());
     EXPECT_EQ(chain, cmd2->getChain());
     EXPECT_EQ(cmd2->use_unordered_forwarding(), cmd->use_unordered_forwarding());
+    EXPECT_EQ(cmd2->estimated_memory_footprint(), 123'456'789);
 
     auto reply = std::make_shared<MergeBucketReply>(*cmd);
     auto reply2 = copyReply(reply);
@@ -483,6 +478,17 @@ TEST_P(StorageProtocolTest, merge_bucket) {
     EXPECT_EQ(Timestamp(1234), reply2->getMaxTimestamp());
     EXPECT_EQ(uint32_t(567), reply2->getClusterStateVersion());
     EXPECT_EQ(chain, reply2->getChain());
+}
+
+TEST_P(StorageProtocolTest, merge_bucket_estimated_memory_footprint_is_zero_by_default) {
+    using Node = api::MergeBucketCommand::Node;
+    std::vector<Node> nodes = {{4, false}, {13, true}, {26, true}};
+    std::vector<uint16_t> chain = {7, 14};
+
+    auto cmd = std::make_shared<MergeBucketCommand>(_bucket, nodes, Timestamp(1234), 567, chain);
+    cmd->set_use_unordered_forwarding(true);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd2->estimated_memory_footprint(), 0);
 }
 
 TEST_P(StorageProtocolTest, split_bucket) {
