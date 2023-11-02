@@ -107,7 +107,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         String contentToString(ToStringContext<NAMETYPE> context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
-                return "{" + cells.values().iterator().next().toString(context) + "}";
+                return "{{}:" + cells.values().iterator().next().toString(context) + "}";
             }
 
             StringBuilder b = new StringBuilder("{");
