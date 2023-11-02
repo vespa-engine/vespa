@@ -1,0 +1,2 @@
+# Exclude from build for linkcheck job
+exclude: ["airlift-zstd"]
