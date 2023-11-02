@@ -479,7 +479,7 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
         String message = logger.findMessage("collection");
         assertNotNull(message);
-        assertEquals("WARNING: Using attribute(foo) collectiontype: ARRAY as ranking expression input", message);
+        assertEquals("WARNING: Using attribute(foo) collectiontype: ARRAY in ranking expression will always evaluate to 0.0", message);
     }
 
     @Test
@@ -503,7 +503,7 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
         String message = logger.findMessage("collection");
         assertNotNull(message);
-        assertEquals("WARNING: Using attribute(foo) collectiontype: WEIGHTEDSET as ranking expression input", message);
+        assertEquals("WARNING: Using attribute(foo) collectiontype: WEIGHTEDSET in ranking expression will always evaluate to 0.0", message);
     }
 
     @Test

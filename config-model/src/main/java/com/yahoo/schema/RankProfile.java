@@ -1278,7 +1278,7 @@ public class RankProfile implements Cloneable {
         }
         private void warnOnce() {
             if (shouldWarn) {
-                deployLogger.log(Level.WARNING, "Using attribute(" + attr +") " + collType + " as ranking expression input");
+                deployLogger.log(Level.WARNING, "Using attribute(" + attr +") " + collType + " in ranking expression will always evaluate to 0.0");
                 shouldWarn = false;
             }
         }
