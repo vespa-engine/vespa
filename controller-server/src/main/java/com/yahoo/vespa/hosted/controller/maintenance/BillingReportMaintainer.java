@@ -10,9 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.BillStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.FailedInvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InvoiceUpdate;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.ModifiableInvoiceUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -73,18 +71,35 @@ public class BillingReportMaintainer extends ControllerMaintainer {
         var tenants = cloudTenants();
         var billsNeedingMaintenance = databaseClient.readBills().stream()
                 .filter(bill -> bill.getExportedId().isPresent())
-                .filter(exported -> exported.status() == BillStatus.OPEN)
+                .filter(exported -> ! exported.status().isFinal())
                 .toList();
 
         for (var bill : billsNeedingMaintenance) {
             var exportedId = bill.getExportedId().orElseThrow();
             var update = reporter.maintainInvoice(tenants.get(bill.tenant()), bill);
-            if (update instanceof ModifiableInvoiceUpdate modifiable && ! modifiable.isEmpty()) {
-                log.fine(invoiceMessage(bill.id(), exportedId) + " was updated with " + modifiable.itemsUpdate());
-            } else if (update instanceof FailedInvoiceUpdate failed && failed.reason == FailedInvoiceUpdate.Reason.REMOVED) {
-                log.fine(invoiceMessage(bill.id(), exportedId) +  " has been deleted in the external system");
-                // Reset the exportedId to null, so that we don't maintain it again
-                databaseClient.setExportedInvoiceId(bill.id(), null);
+            switch (update.type()) {
+                case UNMODIFIED -> log.finer(() ->invoiceMessage(bill.id(), exportedId) + " was not modified");
+                case MODIFIED -> log.fine(invoiceMessage(bill.id(), exportedId) + " was updated with " + update.itemsUpdate().get());
+                case UNMODIFIABLE -> {
+                    // This check is needed to avoid setting the status multiple times
+                    if (bill.status() != BillStatus.FROZEN) {
+                        log.fine(() -> invoiceMessage(bill.id(), exportedId) + " is now unmodifiable");
+                        databaseClient.setStatus(bill.id(), "system", BillStatus.FROZEN);
+                    }
+                }
+                case REMOVED -> {
+                    log.fine(() -> invoiceMessage(bill.id(), exportedId) + " has been deleted in the external system");
+                    // Reset the exportedId to null, so that we don't maintain it again
+                    databaseClient.setExportedInvoiceId(bill.id(), null);
+                }
+                case PAID -> {
+                    log.fine(() -> invoiceMessage(bill.id(), exportedId) + " has been paid in the external system");
+                    databaseClient.setStatus(bill.id(), "system", BillStatus.SUCCESSFUL);
+                }
+                case VOIDED -> {
+                    log.fine(() -> invoiceMessage(bill.id(), exportedId) + " has been voided in the external system");
+                    databaseClient.setStatus(bill.id(), "system", BillStatus.VOID);
+                }
             }
             updates.add(update);
         }

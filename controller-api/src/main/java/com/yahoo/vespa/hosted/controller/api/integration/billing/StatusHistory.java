@@ -53,7 +53,7 @@ public class StatusHistory {
         return switch(current) {
             case OPEN -> true;
             case FROZEN -> newStatus != BillStatus.OPEN; // This could be subject to change.
-            case CLOSED -> newStatus == BillStatus.CLOSED;
+            case SUCCESSFUL -> newStatus == BillStatus.SUCCESSFUL;
             case VOID -> newStatus == BillStatus.VOID;
         };
     }

@@ -16,7 +16,7 @@ public class BillingReporterMock implements BillingReporter {
     private final Clock clock;
     private final BillingDatabaseClient dbClient;
 
-    private final Map<Bill.Id, String> exportedBills = new HashMap<>();
+    private final Map<Bill.Id, InvoiceUpdate> exportedBills = new HashMap<>();
 
     public BillingReporterMock(Clock clock, BillingDatabaseClient dbClient) {
         this.clock = clock;
@@ -30,26 +30,56 @@ public class BillingReporterMock implements BillingReporter {
 
     @Override
     public InvoiceUpdate maintainInvoice(CloudTenant tenant, Bill bill) {
-        if (exportedBills.containsKey(bill.id())) {
-            dbClient.addLineItem(bill.tenant(), maintainedMarkerItem(), Optional.of(bill.id()));
-            return ModifiableInvoiceUpdate.of(bill.id(), 1, 0, 0);
-        } else {
-            return FailedInvoiceUpdate.removed(bill.id());
+        if (! exportedBills.containsKey(bill.id())) {
+            // Given that it has been exported earlier (caller's responsibility), we can assume it has been removed.
+            return InvoiceUpdate.removed(bill.id());
         }
+        if (exportedBills.get(bill.id()).type() == InvoiceUpdate.Type.MODIFIED) {
+            // modifyInvoice() has been called -> add a marker line item
+            if (bill.status() != BillStatus.OPEN) throw new IllegalArgumentException("Bill should be OPEN");
+            dbClient.addLineItem(bill.tenant(), maintainedMarkerItem(), Optional.of(bill.id()));
+        }
+        return exportedBills.get(bill.id());
     }
 
     @Override
     public String exportBill(Bill bill, String exportMethod, CloudTenant tenant) {
         // Replace bill with a copy with exportedId set
         var exportedId = "EXPORTED-" + bill.id().value();
-        exportedBills.put(bill.id(), exportedId);
+        exportedBills.put(bill.id(), InvoiceUpdate.modifiable(bill.id(), null));
         dbClient.setExportedInvoiceId(bill.id(), exportedId);
         return exportedId;
     }
 
+    public void modifyInvoice(Bill.Id billId) {
+        ensureExported(billId);
+        var itemsUpdate = new InvoiceUpdate.ItemsUpdate(1, 0, 0);
+        exportedBills.put(billId, InvoiceUpdate.modifiable(billId, itemsUpdate));
+    }
+
+    public void freezeInvoice(Bill.Id billId) {
+        ensureExported(billId);
+        exportedBills.put(billId, InvoiceUpdate.unmodifiable(billId));
+    }
+
+    public void payInvoice(Bill.Id billId) {
+        ensureExported(billId);
+        exportedBills.put(billId, InvoiceUpdate.paid(billId));
+    }
+
+    public void voidInvoice(Bill.Id billId) {
+        ensureExported(billId);
+        exportedBills.put(billId, InvoiceUpdate.voided(billId));
+    }
+
     // Emulates deleting a bill in the external system.
-    public void deleteExportedBill(Bill.Id billId) {
+    public void deleteInvoice(Bill.Id billId) {
+        ensureExported(billId);
         exportedBills.remove(billId);
+    }
+
+    private void ensureExported(Bill.Id billId) {
+        if (! exportedBills.containsKey(billId)) throw new IllegalArgumentException("Bill not exported");
     }
 
     private static Bill.LineItem maintainedMarkerItem() {

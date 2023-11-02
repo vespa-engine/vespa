@@ -21,7 +21,7 @@ public class StatusHistoryTest {
     void open_can_change_to_any_status() {
         var history = StatusHistory.open(clock);
         history.checkValidTransition(BillStatus.FROZEN);
-        history.checkValidTransition(BillStatus.CLOSED);
+        history.checkValidTransition(BillStatus.SUCCESSFUL);
         history.checkValidTransition(BillStatus.VOID);
     }
 
@@ -29,7 +29,7 @@ public class StatusHistoryTest {
     void frozen_cannot_change_to_open() {
         var history = new StatusHistory(historyWith(BillStatus.FROZEN));
 
-        history.checkValidTransition(BillStatus.CLOSED);
+        history.checkValidTransition(BillStatus.SUCCESSFUL);
         history.checkValidTransition(BillStatus.VOID);
 
         assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.OPEN));
@@ -37,7 +37,7 @@ public class StatusHistoryTest {
 
     @Test
     void closed_cannot_change() {
-        var history = new StatusHistory(historyWith(BillStatus.CLOSED));
+        var history = new StatusHistory(historyWith(BillStatus.SUCCESSFUL));
 
         assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.OPEN));
         assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.FROZEN));
@@ -50,7 +50,7 @@ public class StatusHistoryTest {
 
         assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.OPEN));
         assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.FROZEN));
-        assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.CLOSED));
+        assertThrows(IllegalArgumentException.class, () -> history.checkValidTransition(BillStatus.SUCCESSFUL));
     }
 
     @Test
@@ -61,8 +61,8 @@ public class StatusHistoryTest {
         history = new StatusHistory(historyWith(BillStatus.FROZEN));
         history.checkValidTransition(BillStatus.FROZEN);
 
-        history = new StatusHistory(historyWith(BillStatus.CLOSED));
-        history.checkValidTransition(BillStatus.CLOSED);
+        history = new StatusHistory(historyWith(BillStatus.SUCCESSFUL));
+        history.checkValidTransition(BillStatus.SUCCESSFUL);
 
         history = new StatusHistory(historyWith(BillStatus.VOID));
         history.checkValidTransition(BillStatus.VOID);
@@ -71,12 +71,12 @@ public class StatusHistoryTest {
     @Test
     void it_validates_status_history_in_constructor() {
         assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.FROZEN, BillStatus.OPEN)));
-        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.CLOSED, BillStatus.OPEN)));
-        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.CLOSED, BillStatus.FROZEN)));
-        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.CLOSED, BillStatus.VOID)));
+        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.SUCCESSFUL, BillStatus.OPEN)));
+        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.SUCCESSFUL, BillStatus.FROZEN)));
+        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.SUCCESSFUL, BillStatus.VOID)));
         assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.VOID, BillStatus.OPEN)));
         assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.VOID, BillStatus.FROZEN)));
-        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.VOID, BillStatus.CLOSED)));
+        assertThrows(IllegalArgumentException.class, () -> new StatusHistory(historyWith(BillStatus.VOID, BillStatus.SUCCESSFUL)));
     }
 
     private SortedMap<ZonedDateTime, BillStatus> historyWith(BillStatus... statuses) {
