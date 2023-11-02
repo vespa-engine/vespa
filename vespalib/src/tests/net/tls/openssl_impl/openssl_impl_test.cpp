@@ -455,8 +455,8 @@ struct CertFixture : Fixture {
     {}
     ~CertFixture();
 
-    CertKeyWrapper create_ca_issued_peer_cert(const std::vector<vespalib::string>& common_names,
-                                              const std::vector<vespalib::string>& sans) {
+    static X509Certificate::SubjectInfo make_subject_info(const std::vector<vespalib::string>& common_names,
+                                                          const std::vector<vespalib::string>& sans) {
         auto dn = X509Certificate::DistinguishedName()
                 .country("US").state("CA").locality("Sunnyvale")
                 .organization("Wile E. Coyote, Ltd.")
@@ -468,8 +468,23 @@ struct CertFixture : Fixture {
         for (auto& san : sans) {
             subject.add_subject_alt_name(san);
         }
+        return subject;
+    }
+
+    CertKeyWrapper create_ca_issued_peer_cert(const std::vector<vespalib::string>& common_names,
+                                              const std::vector<vespalib::string>& sans) const {
+        auto subject = make_subject_info(common_names, sans);
         auto key = PrivateKey::generate_p256_ec_key();
         auto params = X509Certificate::Params::issued_by(std::move(subject), key, root_ca.cert, root_ca.key);
+        auto cert = X509Certificate::generate_from(std::move(params));
+        return {std::move(cert), std::move(key)};
+    }
+
+    CertKeyWrapper create_self_signed_peer_cert(const std::vector<vespalib::string>& common_names,
+                                                const std::vector<vespalib::string>& sans) const {
+        auto subject = make_subject_info(common_names, sans);
+        auto key = PrivateKey::generate_p256_ec_key();
+        auto params = X509Certificate::Params::self_signed(std::move(subject), key);
         auto cert = X509Certificate::generate_from(std::move(params));
         return {std::move(cert), std::move(key)};
     }
@@ -661,6 +676,34 @@ TEST_F("Only DNS and URI SANs are enumerated", CertFixture) {
     ASSERT_TRUE(f.handshake());
     EXPECT_EQUAL(0u, server_cb->creds.dns_sans.size());
     EXPECT_EQUAL(0u, server_cb->creds.uri_sans.size());
+}
+
+// A server must only trust the actual verified peer certificate, not any other random
+// certificate that the client decides to include in its certificate chain. See CVE-2023-2422.
+// Note: this is a preemptive test; we are not--and have never been--vulnerable to this issue.
+TEST_F("Certificate credential extraction is not vulnerable to CVE-2023-2422", CertFixture) {
+    auto good_ck = f.create_ca_issued_peer_cert({}, {{"DNS:legit.example.com"}});
+    auto evil_ck = f.create_self_signed_peer_cert({"rudolf.example.com"}, {{"DNS:blodstrupmoen.example.com"}});
+
+    auto ts_params = TransportSecurityOptions::Params().
+            ca_certs_pem(f.root_ca.cert->to_pem()).
+            // Concatenate CA-signed good cert with self-signed cert with different credentials.
+            // We should only ever look at the good cert.
+            cert_chain_pem(good_ck.cert->to_pem() + evil_ck.cert->to_pem()).
+            private_key_pem(good_ck.key->private_to_pem() + evil_ck.key->private_to_pem()).
+            authorized_peers(AuthorizedPeers::allow_all_authenticated());
+
+    f.client = f.create_openssl_codec(TransportSecurityOptions(std::move(ts_params)),
+                                      std::make_shared<PrintingCertificateCallback>(),
+                                      CryptoCodec::Mode::Client);
+    auto server_cb = std::make_shared<MockCertificateCallback>();
+    f.reset_server_with_cert_opts(good_ck, server_cb);
+    ASSERT_TRUE(f.handshake());
+
+    auto& creds = server_cb->creds;
+    EXPECT_EQUAL("", creds.common_name);
+    ASSERT_EQUAL(1u, creds.dns_sans.size());
+    EXPECT_EQUAL("legit.example.com", creds.dns_sans[0]);
 }
 
 // We don't test too many combinations of peer policies here, only that
