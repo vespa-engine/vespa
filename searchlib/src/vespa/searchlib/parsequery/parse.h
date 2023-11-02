@@ -25,7 +25,7 @@ class ParseItem
 public:
     /** The type of the item is from this set of values.
         It is important that these defines match those in container-search/src/main/java/com/yahoo/prelude/query/Item.java */
-    enum ItemType {
+    enum ItemType : uint8_t {
         ITEM_OR                    =   0,
         ITEM_AND                   =   1,
         ITEM_NOT                   =   2,
