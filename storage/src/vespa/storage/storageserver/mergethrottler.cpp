@@ -68,8 +68,8 @@ MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
       queueSize("queuesize", {}, "Length of merge queue", this),
       active_window_size("active_window_size", {}, "Number of merges active within the pending window size", this),
       estimated_merge_memory_usage("estimated_merge_memory_usage", {}, "An estimated upper bound of the "
-                                   "memory usage of the merges currently in the active window", this),
-      merge_memory_limit("merge_memory_limit", {}, "The active soft limit for memory used by merge operations on this node", this),
+                                   "memory usage (in bytes) of the merges currently in the active window", this),
+      merge_memory_limit("merge_memory_limit", {}, "The active soft limit (in bytes) for memory used by merge operations on this node", this),
       bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
