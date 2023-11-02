@@ -112,7 +112,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                       "code": ""
                     },
                     "purchaseOrder":"",
-                    "invoiceEmail":""
+                    "invoiceEmail":"",
+                    "tosApproval": {
+                      "at": "",
+                      "by": ""
+                    }
                 }
                 """;
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
@@ -143,6 +147,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
 
+        var approveToSRequest = request("/application/v4/tenant/scoober/terms-of-service", POST)
+                .data("{}").roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(approveToSRequest, "{\"message\":\"Terms of service approved by user@test\"}", 200);
+
         expectedResponse = """
                 {
                     "contact": {
@@ -158,6 +166,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                     },
                     "purchaseOrder":"PO9001",
                     "invoiceEmail":"billing@mycomp.any",
+                    "tosApproval": {
+                        "at": "2020-09-13T12:26:40Z",
+                        "by": "user@test"
+                    },
                     "address": {
                         "addressLines":"addressLines",
                         "postalCodeOrZip":"postalCodeOrZip",
@@ -245,7 +257,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                           "code": ""
                         },
                         "purchaseOrder":"",
-                        "invoiceEmail":""
+                        "invoiceEmail":"",
+                        "tosApproval": {
+                          "at": "",
+                          "by": ""
+                        }
                     },
                     "contacts": [
                         {"audiences":["tenant"],"email":"contact1@example.com","emailVerified":false}
@@ -287,6 +303,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                             "city":"city",
                             "stateRegionProvince":"stateRegionProvince",
                             "country":"country"
+                        },
+                        "tosApproval": {
+                          "at": "",
+                          "by": ""
                         }
                     },
                     "contacts": [

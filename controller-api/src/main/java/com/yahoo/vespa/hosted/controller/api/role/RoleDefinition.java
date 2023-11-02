@@ -69,7 +69,8 @@ public enum RoleDefinition {
                   Policy.applicationManager,
                   Policy.keyRevokal,
                   Policy.billingInformationRead,
-                  Policy.accessRequests
+                  Policy.accessRequests,
+                  Policy.termsOfService
             ),
 
     /** Headless — the application specific role identified by deployment keys for production */
