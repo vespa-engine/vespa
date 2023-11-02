@@ -40,18 +40,18 @@ public:
     BitVector& operator = (const BitVector &) = delete;
     virtual ~BitVector() = default;
     bool operator == (const BitVector &right) const;
-    const void * getStart() const { return _words; }
-    void * getStart() { return _words; }
+    const void * getStart() const noexcept { return _words; }
+    void * getStart() noexcept { return _words; }
     Range range() const noexcept { return {getStartIndex(), size()}; }
-    Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
-    Index sizeBytes() const { return numBytes(getActiveSize()); }
+    Index size() const noexcept { return vespalib::atomic::load_ref_relaxed(_sz); }
+    Index sizeBytes() const noexcept { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const noexcept {
         return ((load(_words[wordNum(idx)]) & mask(idx)) != 0);
     }
     Index getSizeAcquire() const {
         return vespalib::atomic::load_ref_acquire(_sz);
     }
-    bool testBitAcquire(Index idx) const {
+    bool testBitAcquire(Index idx) const noexcept {
         auto my_word = vespalib::atomic::load_ref_acquire(_words[wordNum(idx)]);
         return (my_word & mask(idx)) != 0;
     }
@@ -144,31 +144,31 @@ public:
         }
         vespalib::atomic::store_ref_release(_sz, sz);
     }
-    void set_bit_no_range_check(Index idx) {
+    void set_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
-    void clear_bit_no_range_check(Index idx) {
+    void clear_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
     }
-    void flip_bit_no_range_check(Index idx) {
+    void flip_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
     }
-    void range_check(Index idx) const {
+    void range_check(Index idx) const noexcept {
 #if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
         assert(!_enable_range_check || (idx >= _startOffset && idx < _sz));
 #else
         (void) idx;
 #endif
     }
-    void setBit(Index idx) {
+    void setBit(Index idx) noexcept {
         range_check(idx);
         set_bit_no_range_check(idx);
     }
-    void clearBit(Index idx) {
+    void clearBit(Index idx) noexcept {
         range_check(idx);
         clear_bit_no_range_check(idx);
     }
-    void flipBit(Index idx) {
+    void flipBit(Index idx) noexcept {
         range_check(idx);
         flip_bit_no_range_check(idx);
     }
@@ -283,20 +283,20 @@ public:
     static void consider_enable_range_check();
 protected:
     using Alloc = vespalib::alloc::Alloc;
-    VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end);
-    BitVector(void * buf, Index sz) : BitVector(buf, 0, sz) { }
-    BitVector() : BitVector(nullptr, 0) { }
+    VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end) noexcept;
+    BitVector(void * buf, Index sz) noexcept : BitVector(buf, 0, sz) { }
+    BitVector() noexcept : BitVector(nullptr, 0) { }
     void init(void * buf,  Index start, Index end);
-    void updateCount() const { _numTrueBits.store(count(), std::memory_order_relaxed); }
-    void setTrueBits(Index numTrueBits) { _numTrueBits.store(numTrueBits, std::memory_order_relaxed); }
+    void updateCount() const noexcept { _numTrueBits.store(count(), std::memory_order_relaxed); }
+    void setTrueBits(Index numTrueBits) noexcept { _numTrueBits.store(numTrueBits, std::memory_order_relaxed); }
     VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Range range);
-    bool isValidCount() const { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
-    static bool isValidCount(Index v) { return v != invalidCount(); }
-    static Index numWords(Index bits) { return wordNum(bits + 1 + (WordLen - 1)); }
-    static Index numBytes(Index bits) { return numWords(bits) * sizeof(Word); }
-    size_t numWords() const { return numWords(size()); }
-    static size_t getAlignment() { return 0x40u; }
-    static size_t numActiveBytes(Index start, Index end) { return numActiveWords(start, end) * sizeof(Word); }
+    bool isValidCount() const noexcept { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
+    static bool isValidCount(Index v) noexcept { return v != invalidCount(); }
+    static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
+    static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
+    size_t numWords() const noexcept { return numWords(size()); }
+    static constexpr size_t getAlignment() noexcept { return 0x40u; }
+    static size_t numActiveBytes(Index start, Index end) noexcept { return numActiveWords(start, end) * sizeof(Word); }
     static Alloc allocatePaddedAndAligned(Index sz) {
         return allocatePaddedAndAligned(0, sz);
     }
@@ -308,29 +308,29 @@ protected:
 private:
     static Word load(const Word &word) noexcept { return vespalib::atomic::load_ref_relaxed(word); }
     VESPA_DLL_LOCAL void store(Word &word, Word value);
-    static void store_unchecked(Word &word, Word value) {
+    static void store_unchecked(Word &word, Word value) noexcept {
         return vespalib::atomic::store_ref_relaxed(word, value);
     }
     friend PartialBitVector;
-    const Word * getWordIndex(Index index) const { return static_cast<const Word *>(getStart()) + wordNum(index); }
-    Word * getWordIndex(Index index) { return static_cast<Word *>(getStart()) + wordNum(index); }
-    const Word * getActiveStart() const { return getWordIndex(getStartIndex()); }
-    Word * getActiveStart() { return getWordIndex(getStartIndex()); }
-    Index getStartWordNum() const { return wordNum(getStartIndex()); }
-    Index getActiveSize() const { return size() - getStartIndex(); }
-    size_t getActiveBytes() const { return numActiveBytes(getStartIndex(), size()); }
-    size_t numActiveWords() const { return numActiveWords(getStartIndex(), size()); }
-    static size_t numActiveWords(Index start, Index end) {
+    const Word * getWordIndex(Index index) const noexcept { return static_cast<const Word *>(getStart()) + wordNum(index); }
+    Word * getWordIndex(Index index) noexcept { return static_cast<Word *>(getStart()) + wordNum(index); }
+    const Word * getActiveStart() const noexcept { return getWordIndex(getStartIndex()); }
+    Word * getActiveStart() noexcept { return getWordIndex(getStartIndex()); }
+    Index getStartWordNum() const noexcept { return wordNum(getStartIndex()); }
+    Index getActiveSize() const noexcept { return size() - getStartIndex(); }
+    size_t getActiveBytes() const noexcept { return numActiveBytes(getStartIndex(), size()); }
+    size_t numActiveWords() const noexcept { return numActiveWords(getStartIndex(), size()); }
+    static size_t numActiveWords(Index start, Index end) noexcept {
         return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
     }
-    static Index invalidCount() { return std::numeric_limits<Index>::max(); }
-    void setGuardBit() { set_bit_no_range_check(size()); }
-    void incNumBits() {
+    static constexpr Index invalidCount() noexcept { return std::numeric_limits<Index>::max(); }
+    void setGuardBit() noexcept { set_bit_no_range_check(size()); }
+    void incNumBits() noexcept {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
         }
     }
-    void decNumBits() {
+    void decNumBits() noexcept {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) - 1, std::memory_order_relaxed);
 

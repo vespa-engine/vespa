@@ -49,7 +49,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
     return alloc;
 }
 
-BitVector::BitVector(void * buf, Index start, Index end) :
+BitVector::BitVector(void * buf, Index start, Index end) noexcept :
     _words(static_cast<Word *>(buf) - wordNum(start)),
     _startOffset(start),
     _sz(end),
