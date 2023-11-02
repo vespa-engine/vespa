@@ -529,6 +529,7 @@ jobs:
           dnf install -y vespa
 
   mirror-copr-rpms-to-artifactory:
+    image: quay.io/centos/centos:stream8
     annotations:
       screwdriver.cd/cpu: LOW
       screwdriver.cd/ram: LOW
@@ -538,6 +539,8 @@ jobs:
     secrets:
       - JFROG_API_TOKEN
     steps:
+      - install: |
+          dnf install -y dnf-plugins-core
       - mirror: |
           screwdriver/publish-unpublished-rpms-to-jfrog-cloud.sh
 
