@@ -25,6 +25,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
+import static java.math.BigDecimal.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -144,7 +145,7 @@ public class SessionZooKeeperClientTest {
 
     @Test
     public void require_quota_written_and_parsed() {
-        var quota = Optional.of(new Quota(Optional.of(23), Optional.of(32)));
+        var quota = Optional.of(new Quota(Optional.of(23), Optional.of(valueOf(32))));
         var zkc = createSessionZKClient(4);
         zkc.writeQuota(quota);
         assertEquals(quota, zkc.readQuota());

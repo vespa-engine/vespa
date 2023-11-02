@@ -25,12 +25,7 @@ public class Quota {
     /** The max budget in dollars per hour */
     private final Optional<BigDecimal> budget;
 
-    public Quota(Optional<Integer> maxClusterSize, Optional<Integer> budget) {
-        this(maxClusterSize, budget.map(BigDecimal::new), true);
-    }
-
-    // TODO: Remove unused argument
-    private Quota(Optional<Integer> maxClusterSize, Optional<BigDecimal> budget, boolean isDecimal) {
+    public Quota(Optional<Integer> maxClusterSize, Optional<BigDecimal> budget) {
         this.maxClusterSize = Objects.requireNonNull(maxClusterSize);
         this.budget = Objects.requireNonNull(budget);
     }
@@ -38,15 +33,15 @@ public class Quota {
     public static Quota fromSlime(Inspector inspector) {
         var clusterSize = SlimeUtils.optionalInteger(inspector.field("clusterSize"));
         var budget = budgetFromSlime(inspector.field("budget"));
-        return new Quota(clusterSize.stream().boxed().findFirst(), budget, true);
+        return new Quota(clusterSize.stream().boxed().findFirst(), budget);
     }
 
     public Quota withBudget(BigDecimal budget) {
-        return new Quota(this.maxClusterSize, Optional.of(budget), true);
+        return new Quota(this.maxClusterSize, Optional.of(budget));
     }
 
     public Quota withClusterSize(int clusterSize) {
-        return new Quota(Optional.of(clusterSize), this.budget, true);
+        return new Quota(Optional.of(clusterSize), this.budget);
     }
 
     public Slime toSlime() {

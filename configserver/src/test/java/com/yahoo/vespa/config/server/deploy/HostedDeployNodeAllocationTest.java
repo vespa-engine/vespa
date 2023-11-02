@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
+import static java.math.BigDecimal.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -79,7 +80,7 @@ public class HostedDeployNodeAllocationTest {
             tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                     .vespaVersion("7.3")
                     .containerEndpoints(endpoints)
-                    .quota(new Quota(Optional.of(4), Optional.of(0))));
+                    .quota(new Quota(Optional.of(4), Optional.of(valueOf(0)))));
             fail("Expected to get a QuotaExceededException");
         } catch (QuotaExceededException e) {
             assertEquals("main: The resources used cost $1.02 but your quota is $0.00: Contact support to upgrade your plan.", e.getMessage());
