@@ -79,7 +79,7 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
 
         if (target.get().nodes() == 1 && model.current().nodes() == 1)
-            return Autoscaling.dontScale(Status.unavailable, "Autoscaling is not enabled for single node clusters", model);
+            return Autoscaling.dontScale(Status.unavailable, "Autoscaling of resources is not enabled for single node clusters", model);
 
         if (! worthRescaling(model.current().realResources(), target.get().realResources())) {
             if (target.get().fulfilment() < 0.9999999)
