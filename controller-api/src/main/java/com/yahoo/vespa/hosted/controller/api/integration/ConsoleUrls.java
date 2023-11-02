@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
 import java.net.URI;
@@ -25,6 +26,8 @@ public class ConsoleUrls {
         this.root = root.toString().replaceFirst("/$", ""); // Remove trailing slash
     }
 
+    public ConsoleUrls(String hostname) { this(URI.create("https://" + hostname)); }
+
     public String root() {
         return root;
     }
@@ -39,6 +42,8 @@ public class ConsoleUrls {
     }
 
     public String tenantBilling(TenantName t) { return "%s/tenant/%s/account/billing".formatted(root, t.value()); }
+
+    public String tenantBilling(TenantName t, Bill.Id id) { return "%s/bill/%s".formatted(tenantBilling(t), id.value()); }
 
     public String prodApplicationOverview(TenantName tenantName, ApplicationName applicationName) {
         return "%s/tenant/%s/application/%s/prod/instance".formatted(root, tenantName.value(), applicationName.value());
