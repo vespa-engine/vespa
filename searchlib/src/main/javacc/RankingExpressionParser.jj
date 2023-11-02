@@ -127,6 +127,7 @@ TOKEN :
     <HAMMING: "hamming"> |
 
     <MAP: "map"> |
+    <MAP_SUBSPACES: "map_subspaces"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
     <MERGE: "merge"> |
@@ -369,6 +370,7 @@ TensorFunctionNode tensorFunction() :
 {
     (
         tensorExpression = tensorMap() |
+        tensorExpression = tensorMapSubspaces() |
         tensorExpression = tensorReduce() |
         tensorExpression = tensorReduceComposites() |
         tensorExpression = tensorJoin() |
@@ -403,6 +405,22 @@ TensorFunctionNode tensorMap() :
     <MAP> <LBRACE> tensor = expression() <COMMA> doubleMapper = lambdaFunction() <RBRACE>
     { return new TensorFunctionNode(new Map(TensorFunctionNode.wrap(tensor),
                                             doubleMapper.asDoubleUnaryOperator())); }
+}
+
+TensorFunctionNode tensorMapSubspaces() :
+{
+    ExpressionNode tensor;
+    LambdaFunctionNode denseMapper;
+}
+{
+    <MAP_SUBSPACES> <LBRACE> tensor = expression() <COMMA> denseMapper = lambdaFunction() <RBRACE>
+    {
+        return new TensorFunctionNode(
+               new MapSubspaces(
+                      TensorFunctionNode.wrap(tensor),
+                      denseMapper.singleArgumentName(),
+                      TensorFunctionNode.wrap(denseMapper.children().get(0))));
+     }
 }
 
 TensorFunctionNode tensorReduce() :
