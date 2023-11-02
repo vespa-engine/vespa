@@ -47,13 +47,7 @@ public class TextMatch extends Processor {
             }
             if (fieldType != DataType.STRING) continue;
 
-            Set<String> dynamicSummary = new TreeSet<>();
-            Set<String> staticSummary = new TreeSet<>();
-            new IndexingOutputs(schema, deployLogger, rankProfileRegistry, queryProfiles).findSummaryTo(schema,
-                                                                                                        field,
-                                                                                                        dynamicSummary,
-                                                                                                        staticSummary);
-            MyVisitor visitor = new MyVisitor(dynamicSummary);
+            MyVisitor visitor = new MyVisitor();
             visitor.visit(script);
             if ( ! visitor.requiresTokenize) continue;
 
@@ -78,21 +72,13 @@ public class TextMatch extends Processor {
 
     private static class MyVisitor extends ExpressionVisitor {
 
-        final Set<String> dynamicSummaryFields;
         boolean requiresTokenize = false;
 
-        MyVisitor(Set<String> dynamicSummaryFields) {
-            this.dynamicSummaryFields = dynamicSummaryFields;
-        }
+        MyVisitor() { }
 
         @Override
         protected void doVisit(Expression exp) {
             if (exp instanceof IndexExpression) {
-                requiresTokenize = true;
-            }
-            if (exp instanceof SummaryExpression &&
-                dynamicSummaryFields.contains(((SummaryExpression)exp).getFieldName()))
-            {
                 requiresTokenize = true;
             }
         }
