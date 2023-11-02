@@ -380,54 +380,17 @@ public:
     void cleanFrozen();
 
     template <typename NodeStoreType, typename FunctionType>
-    void foreach_key(NodeStoreType &store, FunctionType func) const {
-        const BTreeNode::ChildRef *it = this->_data;
-        const BTreeNode::ChildRef *ite = it + _validSlots;
-        if (this->getLevel() > 1u) {
-            for (; it != ite; ++it) {
-                store.mapInternalRef(it->load_acquire())->foreach_key(store, func);
-            }
-        } else {
-            for (; it != ite; ++it) {
-                store.mapLeafRef(it->load_acquire())->foreach_key(func);
-            }
-        }
-    }
+    void foreach_key(NodeStoreType &store, FunctionType func) const;
 
     /**
      * Call func with leaf entry key value as argument for all leaf entries in subtrees
      * for children [start_idx, end_idx).
      */
     template <typename NodeStoreType, typename FunctionType>
-    void foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
-        const BTreeNode::ChildRef *it = this->_data;
-        const BTreeNode::ChildRef *ite = it + end_idx;
-        it += start_idx;
-        if (this->getLevel() > 1u) {
-            for (; it != ite; ++it) {
-                store.mapInternalRef(it->load_acquire())->foreach_key(store, func);
-            }
-        } else {
-            for (; it != ite; ++it) {
-                store.mapLeafRef(it->load_acquire())->foreach_key(func);
-            }
-        }
-    }
+    void foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const;
 
     template <typename NodeStoreType, typename FunctionType>
-    void foreach(NodeStoreType &store, FunctionType func) const {
-        const BTreeNode::ChildRef *it = this->_data;
-        const BTreeNode::ChildRef *ite = it + _validSlots;
-        if (this->getLevel() > 1u) {
-            for (; it != ite; ++it) {
-                store.mapInternalRef(it->load_acquire())->foreach(store, func);
-            }
-        } else {
-            for (; it != ite; ++it) {
-                store.mapLeafRef(it->load_acquire())->foreach(func);
-            }
-        }
-    }
+    void foreach(NodeStoreType &store, FunctionType func) const;
 };
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots = 16>
