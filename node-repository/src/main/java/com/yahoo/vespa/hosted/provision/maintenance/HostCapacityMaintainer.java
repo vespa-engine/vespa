@@ -301,6 +301,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                         .stream()
                                                         .filter(node -> node.violatesExclusivity(cluster,
                                                                                                  application,
+                                                                                                 nodeRepository().exclusiveClusterType(cluster),
                                                                                                  nodeRepository().exclusiveAllocation(cluster),
                                                                                                  false,
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),

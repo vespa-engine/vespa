@@ -41,9 +41,16 @@ public class SharedHost {
         return resources.isEmpty() ? null : resources;
     }
 
+    /** Whether there are any shared hosts specifically for the given cluster type, or without a cluster type restriction. */
     @JsonIgnore
-    public boolean isEnabled(String clusterType) {
-        return resources.stream().anyMatch(hr -> hr.satisfiesClusterType(clusterType));
+    public boolean supportsClusterType(String clusterType) {
+        return resources.stream().anyMatch(resource -> resource.clusterType().map(clusterType::equalsIgnoreCase).orElse(true));
+    }
+
+    /** Whether there are any shared hosts specifically for the given cluster type. */
+    @JsonIgnore
+    public boolean hasClusterType(String clusterType) {
+        return resources.stream().anyMatch(resource -> resource.clusterType().map(clusterType::equalsIgnoreCase).orElse(false));
     }
 
     @JsonIgnore
