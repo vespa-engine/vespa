@@ -376,4 +376,40 @@ BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize) noexcept
     freeze();
 }
 
+
+template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
+template <typename FunctionType>
+void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key(FunctionType func) const {
+    const KeyT *it = _keys;
+    const KeyT *ite = it + _validSlots;
+    for (; it != ite; ++it) {
+        func(*it);
+    }
+}
+
+/**
+ * Call func with leaf entry key value as argument for leaf entries [start_idx, end_idx).
+ */
+template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
+template <typename FunctionType>
+void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+    const KeyT *it = _keys;
+    const KeyT *ite = it + end_idx;
+    it += start_idx;
+    for (; it != ite; ++it) {
+        func(*it);
+    }
+}
+
+template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
+template <typename FunctionType>
+void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach(FunctionType func) const {
+    const KeyT *it = _keys;
+    const KeyT *ite = it + _validSlots;
+    uint32_t idx = 0;
+    for (; it != ite; ++it) {
+        func(*it, this->getData(idx++));
+    }
+}
+
 }

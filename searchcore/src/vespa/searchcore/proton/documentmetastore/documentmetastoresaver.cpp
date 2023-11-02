@@ -4,6 +4,7 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "document_meta_store_versions.h"
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
+#include <vespa/vespalib/btree/btreenode.hpp>
 
 using vespalib::GenerationHandler;
 using search::IAttributeSaveTarget;

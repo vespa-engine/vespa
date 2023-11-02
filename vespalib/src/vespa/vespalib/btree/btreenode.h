@@ -39,7 +39,7 @@ public:
     static constexpr uint8_t LEAF_LEVEL = 0;
 protected:
     uint16_t _validSlots;
-    BTreeNode(uint8_t level) noexcept
+    explicit BTreeNode(uint8_t level) noexcept
         : _level(level),
           _isFrozen(false),
           _validSlots(0)
@@ -161,7 +161,7 @@ class BTreeNodeAggregatedWrap<NoAggregated>
 
     static NoAggregated _instance;
 public:
-    BTreeNodeAggregatedWrap() noexcept {}
+    BTreeNodeAggregatedWrap() noexcept = default;
 
     NoAggregated &getAggregated() { return _instance; }
     const NoAggregated &getAggregated() const { return _instance; }
@@ -174,7 +174,7 @@ template <typename KeyT, uint32_t NumSlots>
 class BTreeNodeT : public BTreeNode {
 protected:
     KeyT _keys[NumSlots];
-    BTreeNodeT(uint8_t level) noexcept
+    explicit BTreeNodeT(uint8_t level) noexcept
         : BTreeNode(level),
           _keys()
     {}
@@ -247,7 +247,7 @@ public:
     using DataWrapType::setData;
     using DataWrapType::copyData;
 protected:
-    BTreeNodeTT(uint8_t level) noexcept
+    explicit BTreeNodeTT(uint8_t level) noexcept
         : ParentType(level),
           DataWrapType()
     {}
@@ -490,44 +490,23 @@ public:
 
     const DataT &getLastData() const { return this->getData(validSlots() - 1); }
     void writeData(uint32_t idx, const DataT &data) { this->setData(idx, data); }
-    uint32_t validLeaves() const { return validSlots(); }
+    uint32_t validLeaves() const noexcept { return validSlots(); }
 
     template <typename FunctionType>
-    void foreach_key(FunctionType func) const {
-        const KeyT *it = _keys;
-        const KeyT *ite = it + _validSlots;
-        for (; it != ite; ++it) {
-            func(*it);
-        }
-    }
+    void foreach_key(FunctionType func) const;
 
     /**
      * Call func with leaf entry key value as argument for leaf entries [start_idx, end_idx).
      */
     template <typename FunctionType>
-    void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
-        const KeyT *it = _keys;
-        const KeyT *ite = it + end_idx;
-        it += start_idx;
-        for (; it != ite; ++it) {
-            func(*it);
-        }
-    }
+    void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const;
 
     template <typename FunctionType>
-    void foreach(FunctionType func) const {
-        const KeyT *it = _keys;
-        const KeyT *ite = it + _validSlots;
-        uint32_t idx = 0;
-        for (; it != ite; ++it) {
-            func(*it, this->getData(idx++));
-        }
-    }
+    void foreach(FunctionType func) const;
 };
 
 
-template <typename KeyT, typename DataT, typename AggrT,
-          uint32_t NumSlots = 16>
+template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots = 16>
 class BTreeLeafNodeTemp : public BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>
 {
 public:
