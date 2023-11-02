@@ -21,6 +21,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/vespalib/util/hw_info.h>
+#include <vespa/config.h>
 #include <thread>
 #include <cassert>
 #include <cinttypes>
@@ -222,6 +223,18 @@ find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs
     return default_document_db_config_entry;
 }
 
+[[nodiscard]] bool
+use_hw_memory_presized_target_num_docs([[maybe_unused]] ProtonConfig::Documentdb::Mode mode) noexcept {
+    // If sanitizers are enabled, mmap-allocations may be intercepted and allocated pages
+    // may be implicitly touched+committed. This tends to explode when testing locally, so
+    // fall back to configured initial num-docs if this is the case.
+#ifndef VESPA_USE_SANITIZER
+    return (mode != ProtonConfig::Documentdb::Mode::INDEX);
+#else
+    return false;
+#endif
+}
+
 AllocConfig
 build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
 {
@@ -230,7 +243,7 @@ build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_c
 
     auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
     auto& alloc_config = document_db_config_entry.allocation;
-    uint32_t target_numdocs = (document_db_config_entry.mode != ProtonConfig::Documentdb::Mode::INDEX)
+    uint32_t target_numdocs = use_hw_memory_presized_target_num_docs(document_db_config_entry.mode)
             ? (hwInfo.memory().sizeBytes() / (MIN_MEMORY_COST_PER_DOCUMENT * proton_config.distribution.searchablecopies))
             : alloc_config.initialnumdocs;
     auto& distribution_config = proton_config.distribution;
