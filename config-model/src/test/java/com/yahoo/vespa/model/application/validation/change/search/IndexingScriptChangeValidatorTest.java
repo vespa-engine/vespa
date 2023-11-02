@@ -116,12 +116,10 @@ public class IndexingScriptChangeValidatorTest {
     }
 
     @Test
-    void requireThatSettingDynamicSummaryRequireReindexing() throws Exception {
+    void requireThatSettingDynamicSummaryIsOk() throws Exception {
         new Fixture(FIELD + " { indexing: summary }",
                 FIELD + " { indexing: summary \n summary: dynamic }").
-                assertValidation(expectedReindexingAction("summary field 'f1' transform: 'none' -> 'dynamicteaser'",
-                "{ input f1 | summary f1; }",
-                "{ input f1 | tokenize normalize stem:\"BEST\" | summary f1; }"));
+                assertValidation();
     }
 
     @Test
