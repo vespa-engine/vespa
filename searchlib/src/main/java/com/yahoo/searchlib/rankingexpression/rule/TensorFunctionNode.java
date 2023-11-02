@@ -53,8 +53,8 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     private ExpressionNode toExpressionNode(TensorFunction<Reference> f) {
-        if (f instanceof ExpressionTensorFunction)
-            return ((ExpressionTensorFunction)f).expression;
+        if (f instanceof ExpressionTensorFunction etf)
+            return etf.expression;
         else
             return new TensorFunctionNode(f);
     }
@@ -233,10 +233,10 @@ public class TensorFunctionNode extends CompositeNode {
 
         @Override
         public List<TensorFunction<Reference>> arguments() {
-            if (expression instanceof CompositeNode)
-                return ((CompositeNode)expression).children().stream()
-                                                             .map(ExpressionTensorFunction::new)
-                                                             .collect(Collectors.toList());
+            if (expression instanceof CompositeNode cNode)
+                return cNode.children().stream()
+                        .map(ExpressionTensorFunction::new)
+                        .collect(Collectors.toList());
             else
                 return Collections.emptyList();
         }
