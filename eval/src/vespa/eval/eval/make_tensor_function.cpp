@@ -51,6 +51,12 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::map(a, function, stash);
     }
 
+    void make_map_subspaces(const TensorMapSubspaces &node) {
+        assert(stack.size() >= 1);
+        const auto &a = stack.back().get();
+        stack.back() = tensor_function::map_subspaces(a, node.lambda(), types.export_types(node.lambda().root()), stash);
+    }
+
     void make_join(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
         const auto &b = stack.back().get();
@@ -197,6 +203,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
             const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
             make_map(node, token.get()->get().get_function<1>());
         }
+    }
+    void visit(const TensorMapSubspaces &node) override {
+        make_map_subspaces(node);
     }
     void visit(const TensorJoin &node) override {
         if (auto op2 = operation::lookup_op2(node.lambda())) {

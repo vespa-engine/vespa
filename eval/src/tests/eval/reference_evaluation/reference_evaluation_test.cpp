@@ -130,6 +130,12 @@ TEST(ReferenceEvaluationTest, map_expression_works) {
     EXPECT_EQ(ref_eval("map(a,f(x)(x*2+3))", {a}), expect);
 }
 
+TEST(ReferenceEvaluationTest, map_subspaces_expression_works) {
+    auto a = make_val("tensor(x{},y[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    auto expect = make_val("tensor(x{},y[2]):{foo:[3,5],bar:[9,11]}");
+    EXPECT_EQ(ref_eval("map_subspaces(a,f(x)(tensor(y[2])(x{y:(y)}+x{y:(y+1)})))", {a}), expect);
+}
+
 TEST(ReferenceEvaluationTest, join_expression_works) {
     auto a = make_val("tensor(x[2]):[1,2]");
     auto b = make_val("tensor(y[2]):[3,4]");

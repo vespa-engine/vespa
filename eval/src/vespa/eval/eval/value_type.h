@@ -81,6 +81,9 @@ public:
     }
     bool operator!=(const ValueType &rhs) const noexcept { return !(*this == rhs); }
 
+    ValueType strip_mapped_dimensions() const;
+    ValueType strip_indexed_dimensions() const;
+    ValueType wrap(const ValueType &inner);
     ValueType map() const;
     ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;
     ValueType peek(const std::vector<vespalib::string> &dimensions_in) const;

@@ -150,18 +150,20 @@ TEST("require that basic addition works") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that functions with non-compilable lambdas cannot be interpreted") {
+TEST("require that functions with non-compilable simple lambdas cannot be interpreted") {
     auto good_map = Function::parse("map(a,f(x)(x+1))");
     auto good_join = Function::parse("join(a,b,f(x,y)(x+y))");
+    auto good_merge = Function::parse("merge(a,b,f(x,y)(x+y))");
     auto bad_map = Function::parse("map(a,f(x)(map(x,f(i)(i+1))))");
     auto bad_join = Function::parse("join(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
-    for (const Function *good: {good_map.get(), good_join.get()}) {
+    auto bad_merge = Function::parse("merge(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
+    for (const Function *good: {good_map.get(), good_join.get(), good_merge.get()}) {
         if (!EXPECT_TRUE(!good->has_error())) {
             fprintf(stderr, "parse error: %s\n", good->get_error().c_str());
         }
         EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
     }
-    for (const Function *bad: {bad_map.get(), bad_join.get()}) {
+    for (const Function *bad: {bad_map.get(), bad_join.get(), bad_merge.get()}) {
         if (!EXPECT_TRUE(!bad->has_error())) {
             fprintf(stderr, "parse error: %s\n", bad->get_error().c_str());
         }
@@ -169,6 +171,28 @@ TEST("require that functions with non-compilable lambdas cannot be interpreted")
     }
     std::cerr << "Example function issues:" << std::endl
               << InterpretedFunction::detect_issues(*bad_join).list
+              << std::endl;
+}
+
+TEST("require that functions with non-interpretable complex lambdas cannot be interpreted") {
+    auto good_tensor_lambda = Function::parse("tensor(x[5])(map(x,f(y)(y)))");
+    auto good_map_subspaces = Function::parse("map_subspaces(a,f(x)(concat(x,x,y)))");
+    auto bad_tensor_lambda = Function::parse("tensor(x[5])(map(x,f(y)(map(y,f(i)(i+1)))))");
+    auto bad_map_subspaces = Function::parse("map_subspaces(a,f(x)(map(x,f(y)(map(y,f(i)(i+1))))))");
+    for (const Function *good: {good_tensor_lambda.get(), good_map_subspaces.get()}) {
+        if (!EXPECT_TRUE(!good->has_error())) {
+            fprintf(stderr, "parse error: %s\n", good->get_error().c_str());
+        }
+        EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
+    }
+    for (const Function *bad: {bad_tensor_lambda.get(), bad_map_subspaces.get()}) {
+        if (!EXPECT_TRUE(!bad->has_error())) {
+            fprintf(stderr, "parse error: %s\n", bad->get_error().c_str());
+        }
+        EXPECT_TRUE(InterpretedFunction::detect_issues(*bad));
+    }
+    std::cerr << "Example function issues:" << std::endl
+              << InterpretedFunction::detect_issues(*bad_map_subspaces).list
               << std::endl;
 }
 

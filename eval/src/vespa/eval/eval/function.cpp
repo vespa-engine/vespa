@@ -573,6 +573,13 @@ void parse_tensor_map(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
 }
 
+void parse_tensor_map_subspaces(ParseContext &ctx) {
+    Node_UP child = get_expression(ctx);
+    ctx.eat(',');
+    auto lambda = parse_lambda(ctx, 1);
+    ctx.push_expression(std::make_unique<nodes::TensorMapSubspaces>(std::move(child), std::move(lambda)));
+}
+
 void parse_tensor_join(ParseContext &ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
@@ -856,6 +863,8 @@ bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_call(ctx, std::move(call));
             } else if (name == "map") {
                 parse_tensor_map(ctx);
+            } else if (name == "map_subspaces") {
+                parse_tensor_map_subspaces(ctx);
             } else if (name == "join") {
                 parse_tensor_join(ctx);
             } else if (name == "merge") {
@@ -1117,5 +1126,13 @@ Function::unwrap(vespalib::stringref input,
 }
 
 //-----------------------------------------------------------------------------
+
+void
+Function::Issues::add_nested_issues(const vespalib::string &context, const Issues &issues)
+{
+    for (const auto &issue: issues.list) {
+        list.push_back(context + ": " + issue);
+    }
+}
 
 }

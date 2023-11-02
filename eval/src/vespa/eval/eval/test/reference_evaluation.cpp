@@ -136,6 +136,13 @@ struct EvalNode : public NodeVisitor {
         result = ReferenceOperations::peek(spec, children);
     }
 
+    void eval_map_subspaces(const Node &node, const Node &lambda) {
+        auto fun = [&](const TensorSpec &subspace) {
+            return eval_node(lambda, {subspace});
+        };
+        result = ReferenceOperations::map_subspaces(eval_node(node, params), fun);
+    }
+
     //-------------------------------------------------------------------------
 
     void visit(const Number &node) override {
@@ -175,6 +182,9 @@ struct EvalNode : public NodeVisitor {
             return ReferenceEvaluation::eval(node.lambda(), {num(a)}).as_double();
         };
         eval_map(node.child(), my_op1);
+    }
+    void visit(const TensorMapSubspaces &node) override {
+        eval_map_subspaces(node.child(), node.lambda().root());
     }
     void visit(const TensorJoin &node) override {
         auto my_op2 = [&](double a, double b) {

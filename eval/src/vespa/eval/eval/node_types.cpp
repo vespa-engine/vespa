@@ -139,6 +139,29 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind(ValueType::error_type(), node, false);
     }
     void visit(const TensorMap &node) override { resolve_op1(node); }
+    void visit(const TensorMapSubspaces &node) override {
+        const ValueType &in_type = type(node.child());
+        auto outer_type = in_type.strip_indexed_dimensions();
+        auto inner_type = in_type.strip_mapped_dimensions();
+        std::vector<ValueType> arg_type({inner_type});
+        NodeTypes lambda_types(node.lambda(), arg_type);
+        const ValueType &lambda_res = lambda_types.get_type(node.lambda().root());
+        if (lambda_res.is_error()) {
+            import_errors(lambda_types);
+            return fail(node, "lambda function has type errors", false);
+        }
+        if (lambda_res.count_mapped_dimensions() > 0) {
+            return fail(node, fmt("lambda function result contains mapped dimensions: %s",
+                                  lambda_res.to_spec().c_str()), false);
+        }
+        auto res_type = outer_type.wrap(lambda_res);
+        if (res_type.is_error()) {
+            return fail(node, fmt("lambda result contains dimensions that conflict with input type: %s <-> %s",
+                                  lambda_res.to_spec().c_str(), in_type.to_spec().c_str()), false);
+        }
+        import_types(lambda_types);
+        bind(res_type, node);
+    }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
     void visit(const TensorMerge &node) override {
         bind(ValueType::merge(type(node.get_child(0)),
@@ -315,6 +338,9 @@ struct TypeExporter : public NodeTraverser {
     bool open(const Node &node) override {
         if (auto lambda = as<TensorLambda>(node)) {
             lambda->lambda().root().traverse(*this);
+        }
+        if (auto map_subspaces = as<TensorMapSubspaces>(node)) {
+            map_subspaces->lambda().root().traverse(*this);
         }
         return true;
     }

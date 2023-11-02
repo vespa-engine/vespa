@@ -74,8 +74,10 @@ public:
      **/
     struct Issues {
         std::vector<vespalib::string> list;
-        operator bool() const { return !list.empty(); }
-        Issues(std::vector<vespalib::string> &&list_in) : list(std::move(list_in)) {}
+        operator bool() const noexcept { return !list.empty(); }
+        Issues() noexcept : list() {}
+        Issues(std::vector<vespalib::string> &&list_in) noexcept : list(std::move(list_in)) {}
+        void add_nested_issues(const vespalib::string &context, const Issues &issues);
     };
 };
 

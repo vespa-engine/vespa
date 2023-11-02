@@ -354,6 +354,42 @@ TEST("require that tensor cell_cast resolves correct type") {
     TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),int8)", "tensor<int8>(x{},y[5])"));
 }
 
+TEST("require that tensor map_subspace resolves correct type") {
+    // double input
+    TEST_DO(verify("map_subspaces(double, f(a)(a))", "double"));
+    TEST_DO(verify("map_subspaces(double, f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(y[2])"));
+
+    // sparse input
+    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(a))", "tensor<float>(x{})"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(x{}), f(a)(a))", "tensor<float>(x{})")); // NB: decay
+    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(x{},y[2])"));
+
+    // dense input
+    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(a))", "tensor<float>(y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(y[10]), f(a)(a))", "tensor<int8>(y[10])")); // NB: no decay
+    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(reduce(a,sum)))", "double"));
+    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(cell_cast(a,int8)))", "tensor<int8>(y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(y[10]), f(a)(a*tensor<int8>(z[2]):[a{y:0},a{y:1}]))", "tensor<float>(y[10],z[2])"));
+
+    // mixed input
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(a)(a))", "tensor<float>(x{},y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(a))", "tensor<int8>(x{},y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map_subspaces(a, f(b)(b))))", "tensor<int8>(x{},y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map(a, f(b)(b))))", "tensor<float>(x{},y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(cell_cast(y,int8)))", "tensor<int8>(x{},y[10])"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})"));
+    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(concat(concat(y,y,y),y,y)))", "tensor<float>(x{},y[30])"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(z[5])(z+3)))", "tensor<float>(x{},y[10],z[5])"));
+
+    // error cases
+    TEST_DO(verify("map_subspaces(error, f(a)(a))", "error"));
+    TEST_DO(verify("map_subspaces(double, f(a)(tensor(x[5])(x)+tensor(x[7])(x)))", "error"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(tensor(y{}):{a:3}))", "error"));
+    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(a+tensor(y[7])(y)))", "error"));
+    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(x[5])(x+3)))", "error"));
+}
+
 TEST("require that double only expressions can be detected") {
     auto plain_fun = Function::parse("1+2");
     auto complex_fun = Function::parse("reduce(a,sum)");

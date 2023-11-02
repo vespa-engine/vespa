@@ -138,6 +138,25 @@ struct Renamer {
     bool matched_all() const { return (match_cnt == from.size()); }
 };
 
+auto filter(const std::vector<Dimension> &dims, auto keep) {
+    std::vector<Dimension> result;
+    result.reserve(dims.size());
+    for (const auto &dim: dims) {
+        if (keep(dim)) {
+            result.push_back(dim);
+        }
+    }
+    return result;
+}
+
+auto strip(CellType old_cell_type, const std::vector<Dimension> &old_dims, auto discard) {
+    auto new_dims = filter(old_dims, [discard](const auto  &dim){ return !discard(dim); });
+    if (new_dims.empty()) {
+        return ValueType::double_type();
+    }
+    return ValueType::make_type(old_cell_type, std::move(new_dims));
+}
+
 } // namespace vespalib::eval::<unnamed>
 
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
@@ -245,37 +264,19 @@ ValueType::dense_subspace_size() const
 std::vector<ValueType::Dimension>
 ValueType::nontrivial_indexed_dimensions() const
 {
-    std::vector<ValueType::Dimension> result;
-    for (const auto &dim: dimensions()) {
-        if (dim.is_indexed() && !dim.is_trivial()) {
-            result.push_back(dim);
-        }
-    }
-    return result;
+    return filter(_dimensions, [](const auto &dim){ return !dim.is_trivial() && dim.is_indexed(); });
 }
 
 std::vector<ValueType::Dimension>
 ValueType::indexed_dimensions() const
 {
-    std::vector<ValueType::Dimension> result;
-    for (const auto &dim: dimensions()) {
-        if (dim.is_indexed()) {
-            result.push_back(dim);
-        }
-    }
-    return result;
+    return filter(_dimensions, [](const auto &dim){ return dim.is_indexed(); });
 }
 
 std::vector<ValueType::Dimension>
 ValueType::mapped_dimensions() const
 {
-    std::vector<ValueType::Dimension> result;
-    for (const auto &dim: dimensions()) {
-        if (dim.is_mapped()) {
-            result.push_back(dim);
-        }
-    }
-    return result;
+    return filter(_dimensions, [](const auto &dim){ return dim.is_mapped(); });
 }
 
 size_t
@@ -309,6 +310,31 @@ ValueType::dimension_names() const
         result.push_back(dimension.name);
     }
     return result;
+}
+
+ValueType
+ValueType::strip_mapped_dimensions() const
+{
+    return error_if(_error, strip(_cell_type, _dimensions,
+                                  [](const auto &dim){ return dim.is_mapped(); }));
+}
+
+ValueType
+ValueType::strip_indexed_dimensions() const
+{
+    return error_if(_error, strip(_cell_type, _dimensions,
+                                  [](const auto &dim){ return dim.is_indexed(); }));
+}
+
+ValueType
+ValueType::wrap(const ValueType &inner)
+{
+    MyJoin result(_dimensions, inner._dimensions);
+    auto meta = cell_meta().wrap(inner.cell_meta());
+    return error_if(_error || inner._error || result.mismatch ||
+                    (count_indexed_dimensions() > 0) ||
+                    (inner.count_mapped_dimensions() > 0),
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType

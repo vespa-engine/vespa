@@ -18,7 +18,7 @@ namespace vespalib::eval {
 
 namespace {
 
-const Function *get_lambda(const nodes::Node &node) {
+const Function *get_simple_lambda(const nodes::Node &node) {
     if (auto ptr = nodes::as<nodes::TensorMap>(node)) {
         return &ptr->lambda();
     }
@@ -26,6 +26,16 @@ const Function *get_lambda(const nodes::Node &node) {
         return &ptr->lambda();
     }
     if (auto ptr = nodes::as<nodes::TensorMerge>(node)) {
+        return &ptr->lambda();
+    }
+    return nullptr;
+}
+
+const Function *get_complex_lambda(const nodes::Node &node) {
+    if (auto ptr = nodes::as<nodes::TensorLambda>(node)) {
+        return &ptr->lambda();
+    }
+    if (auto ptr = nodes::as<nodes::TensorMapSubspaces>(node)) {
         return &ptr->lambda();
     }
     return nullptr;
@@ -148,18 +158,29 @@ Function::Issues
 InterpretedFunction::detect_issues(const Function &function)
 {
     struct NotSupported : NodeTraverser {
-        std::vector<vespalib::string> issues;
+        Function::Issues issues;
         bool open(const nodes::Node &) override { return true; }
         void close(const nodes::Node &node) override {
-            auto lambda = get_lambda(node);
-            if (lambda && CompiledFunction::detect_issues(*lambda)) {
-                issues.push_back(make_string("lambda function that cannot be compiled within %s",
-                                getClassName(node).c_str()));
+            // map/join/merge: simple scalar lambdas must be compilable with llvm
+            if (auto lambda = get_simple_lambda(node)) {
+                auto inner_issues = CompiledFunction::detect_issues(*lambda);
+                if (inner_issues) {
+                    auto ctx = make_string("within %s simple lambda", getClassName(node).c_str());
+                    issues.add_nested_issues(ctx, inner_issues);
+                }
+            }
+            // tensor lambda/map_subspaces: complex lambdas that may be interpreted and use tensor math
+            if (auto lambda = get_complex_lambda(node)) {
+                auto inner_issues = InterpretedFunction::detect_issues(*lambda);
+                if (inner_issues) {
+                    auto ctx = make_string("within %s complex lambda", getClassName(node).c_str());
+                    issues.add_nested_issues(ctx, inner_issues);
+                }
             }
         }
     } checker;
     function.root().traverse(checker);
-    return Function::Issues(std::move(checker.issues));
+    return std::move(checker.issues);
 }
 
 InterpretedFunction::EvalSingle::EvalSingle(const ValueBuilderFactory &factory, Instruction op, const LazyParams &params)

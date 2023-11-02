@@ -129,6 +129,9 @@ struct CellMeta {
 
     // convenience functions to be used for specific operations
     constexpr CellMeta map() const { return decay(); }
+    constexpr CellMeta wrap(CellMeta inner) const {
+        return (inner.is_scalar) ? decay() : inner;
+    }
     constexpr CellMeta reduce(bool output_is_scalar) const {
         return normalize(cell_type, output_is_scalar).decay();
     }

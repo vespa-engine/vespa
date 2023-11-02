@@ -7,6 +7,7 @@
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -182,19 +183,19 @@ struct NormalizeTensorSpec {
             size_t dense_key = 0;
             auto binding = entry.first.begin();
             for (const auto &dim : type.dimensions()) {
-                assert(binding != entry.first.end());
-                assert(dim.name == binding->first);
-                assert(dim.is_mapped() == binding->second.is_mapped());
+                REQUIRE(binding != entry.first.end());
+                REQUIRE(dim.name == binding->first);
+                REQUIRE(dim.is_mapped() == binding->second.is_mapped());
                 if (dim.is_mapped()) {
                     sparse_key.push_back(binding->second.name);
                 } else {
-                    assert(binding->second.index < dim.size);
+                    REQUIRE(binding->second.index < dim.size);
                     dense_key = (dense_key * dim.size) + binding->second.index;
                 }
                 ++binding;
             }
-            assert(binding == entry.first.end());
-            assert(dense_key < map.values_per_entry());
+            REQUIRE(binding == entry.first.end());
+            REQUIRE(dense_key < map.values_per_entry());
             auto [tag, ignore] = map.lookup_or_add_entry(ConstArrayRef<vespalib::stringref>(sparse_key));
             map.get_values(tag)[dense_key] = entry.second;
         }
@@ -212,7 +213,7 @@ struct NormalizeTensorSpec {
                                    address.emplace(dim.name, *sparse_addr_iter++);
                                }
                            }
-                           assert(sparse_addr_iter == keys.end());
+                           REQUIRE(sparse_addr_iter == keys.end());
                            for (size_t i = 0; i < values.size(); ++i) {
                                size_t dense_key = i;
                                for (auto dim = type.dimensions().rbegin();
@@ -364,7 +365,12 @@ TensorSpec::normalize() const
     if (my_type.is_error()) {
         return TensorSpec(my_type.to_spec());
     }
-    return typify_invoke<1,TypifyCellType,NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
+    try {
+        return typify_invoke<1,TypifyCellType,NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
+    } catch (RequireFailedException &e) {
+        fprintf(stderr, "TensorSpec::normalize: invalid spec: %s\n", to_string().c_str());
+        assert(false); // preserve crashing behavior
+    }
 }
 
 vespalib::string
