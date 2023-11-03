@@ -51,7 +51,8 @@ private:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
-    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const std::function<ComparatorType(const DataStoreType&)>& comparator_factory = [](const auto& data_store) { return ComparatorType(data_store);});
+    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const std::function<ComparatorType(const DataStoreType&)>& comparator_factory);
+    explicit UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
     UniqueStoreAddResult add(EntryConstRefType value);
