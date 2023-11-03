@@ -437,6 +437,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return removeAwsArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return removeGcpArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/terms-of-service")) return unapproveTermsOfService(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/token/{tokenid}")) return deleteToken(path.get("tenant"), path.get("tokenid"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
@@ -1262,6 +1263,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             controller.tenants().store(updatedTenant);
         });
         return new MessageResponse("Terms of service approved by %s".formatted(approvedBy.getName()));
+    }
+
+    private HttpResponse unapproveTermsOfService(String tenant, HttpRequest req) {
+        if (controller.tenants().require(TenantName.from(tenant)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenant + "' is not a cloud tenant");
+        controller.tenants().lockOrThrow(TenantName.from(tenant), LockedTenant.Cloud.class, t -> {
+                var updatedTenant = t.withInfo(t.get().info().withBilling(t.get().info().billingContact().withToSApproval(
+                TermsOfServiceApproval.empty())));
+            controller.tenants().store(updatedTenant);
+        });
+        return new MessageResponse("Terms of service approval removed");
     }
 
     private HttpResponse addDeveloperKey(String tenantName, HttpRequest request) {

@@ -180,6 +180,40 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 }
                 """;
         tester.assertJsonResponse(request, expectedResponse, 200);
+
+        var unapproveToSRequest = request("/application/v4/tenant/scoober/terms-of-service", DELETE)
+                .data("{}").roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(unapproveToSRequest, "{\"message\":\"Terms of service approval removed\"}", 200);
+
+        expectedResponse = """
+                {
+                    "contact": {
+                        "name":"name",
+                        "email":"foo@example",
+                        "emailVerified": false,
+                        "phone":"phone"
+                    },
+                    "taxId": {
+                        "country": "NO",
+                        "type": "no_vat",
+                        "code": "123456789MVA"
+                    },
+                    "purchaseOrder":"PO9001",
+                    "invoiceEmail":"billing@mycomp.any",
+                    "tosApproval": {
+                      "at": "",
+                      "by": ""
+                    },
+                    "address": {
+                        "addressLines":"addressLines",
+                        "postalCodeOrZip":"postalCodeOrZip",
+                        "city":"city",
+                        "stateRegionProvince":"stateRegionProvince",
+                        "country":"country"
+                    }
+                }
+                """;
+        tester.assertJsonResponse(request, expectedResponse, 200);
     }
 
     @Test
