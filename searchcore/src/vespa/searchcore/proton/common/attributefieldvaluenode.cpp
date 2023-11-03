@@ -4,6 +4,7 @@
 #include "selectcontext.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
@@ -40,24 +41,23 @@ AttributeFieldValueNode(const vespalib::string& doctype,
 
 
 std::unique_ptr<document::select::Value>
-AttributeFieldValueNode::
-getValue(const Context &context) const
+AttributeFieldValueNode::getValue(const Context &context) const
 {
     const auto &sc(static_cast<const SelectContext &>(context));
     uint32_t docId(sc._docId); 
     assert(docId != 0u);
     const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);
-    if (v.isUndefined(docId)) {
-        return std::make_unique<NullValue>();
-    }
     switch (v.getBasicType()) {
         case BasicType::STRING:
             {
-                AttributeContent<const char *> content;
-                content.fill(v, docId);
-                assert(content.size() == 1u);
-                return std::make_unique<StringValue>(content[0]);
-            };
+                const auto & s = static_cast<const search::StringAttribute &>(v);
+                const char * value = s.get(docId);
+                if (search::attribute::isUndefined(value)) {
+                    return std::make_unique<NullValue>();
+                } else {
+                    return std::make_unique<StringValue>(value);
+                }
+            }
         case BasicType::BOOL:
         case BasicType::UINT2:
         case BasicType::UINT4:
@@ -66,6 +66,9 @@ getValue(const Context &context) const
         case BasicType::INT32:
         case BasicType::INT64:
             {
+                if (v.isUndefined(docId)) {
+                    return std::make_unique<NullValue>();
+                }
                 AttributeContent<IAttributeVector::largeint_t> content;
                 content.fill(v, docId);
                 assert(content.size() == 1u);
@@ -74,11 +77,14 @@ getValue(const Context &context) const
         case BasicType::FLOAT:
         case BasicType::DOUBLE:
             {
+                if (v.isUndefined(docId)) {
+                    return std::make_unique<NullValue>();
+                }
                 AttributeContent<double> content;
                 content.fill(v, docId);
                 assert(content.size() == 1u);
                 return std::make_unique<FloatValue>(content[0]);
-            };
+            }
         case BasicType::NONE:
         case BasicType::PREDICATE:
         case BasicType::TENSOR:
@@ -89,7 +95,7 @@ getValue(const Context &context) const
         case BasicType::MAX_TYPE:
             throw IllegalStateException(make_string("Attribute '%s' has illegal type '%d'", v.getName().c_str(), v.getBasicType()));
     }
-    return std::make_unique<NullValue>();;
+    return std::make_unique<NullValue>();
 
 }
 
