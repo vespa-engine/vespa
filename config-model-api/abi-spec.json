@@ -1286,7 +1286,8 @@
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
       "public java.lang.String unknownConfigDefinition()",
-      "public int searchHandlerThreadpool()"
+      "public int searchHandlerThreadpool()",
+      "public long mergingMaxMemoryUsagePerNode()"
     ],
     "fields" : [ ]
   },
