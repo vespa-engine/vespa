@@ -22,9 +22,6 @@
       "name": "BcpGroupUpdater"
     },
     {
-      "name": "BillingDatabaseMaintainer"
-    },
-    {
       "name": "BillingReportMaintainer"
     },
     {
@@ -50,6 +47,9 @@
     },
     {
       "name": "DataPlaneTokenRedeployer"
+    },
+    {
+      "name": "DatabaseMaintainer"
     },
     {
       "name": "DefaultOsUpgrader"
