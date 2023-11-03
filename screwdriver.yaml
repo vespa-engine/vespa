@@ -595,6 +595,6 @@ jobs:
           --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
           --hydra '{"max_concurrency": 1}' \
           --ignore-urls '/slack.vespa.ai/,/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/,/main.jsx/' \
-          --ignore-files '/fnet/index.html/,/client/js/app/node_modules/,/controller-server/src/test/resources/mail/' \
+          --ignore-files '/fnet/index.html/,/client/js/app/node_modules/' \
           --swap-urls '(.*).md:\1.html' \
           _site

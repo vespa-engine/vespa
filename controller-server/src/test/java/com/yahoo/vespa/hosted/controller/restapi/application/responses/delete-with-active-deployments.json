@@ -1,4 +1,0 @@
-{
-  "error-code": "BAD_REQUEST",
-  "message": "Could not delete 'application 'tenant1.application1'': It has active deployments in: dev.us-east-1, prod.us-central-1"
-}

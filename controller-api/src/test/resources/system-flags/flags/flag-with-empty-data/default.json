@@ -1,8 +1,0 @@
-{
-  "id" : "flag-with-empty-data",
-  "rules" : [
-    {
-      "value" : "default"
-    }
-  ]
-}
