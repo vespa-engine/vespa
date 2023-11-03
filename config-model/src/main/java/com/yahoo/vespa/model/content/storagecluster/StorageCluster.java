@@ -35,7 +35,7 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterId(clusterElem),
                                       new FileStorProducer.Builder().build(deployState.getProperties(), cluster, clusterElem),
-                                      new StorServerProducer.Builder().build(clusterElem),
+                                      new StorServerProducer.Builder().build(deployState.getProperties(), clusterElem),
                                       new StorVisitorProducer.Builder().build(clusterElem),
                                       new PersistenceProducer.Builder().build(clusterElem));
         }

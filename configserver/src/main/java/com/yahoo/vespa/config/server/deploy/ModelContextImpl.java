@@ -209,6 +209,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean dynamicHeapSize;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
+        private final long mergingMaxMemoryUsagePerNode;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -253,6 +254,7 @@ public class ModelContextImpl implements ModelContext {
             this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
             this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
             this.searchHandlerThreadpool = flagValue(source, appId, version, Flags.SEARCH_HANDLER_THREADPOOL);
+            this.mergingMaxMemoryUsagePerNode = flagValue(source, appId, version, Flags.MERGING_MAX_MEMORY_USAGE_PER_NODE);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -305,6 +307,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
+        @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

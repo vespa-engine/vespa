@@ -185,6 +185,36 @@ public class StorageClusterTest {
     }
 
     @Test
+    void merge_throttler_memory_limit_config_has_expected_defaults() {
+        var config = configFromProperties(new TestProperties());
+        var limit = config.merge_throttling_memory_limit();
+
+        assertEquals(-1L, limit.max_usage_bytes()); // TODO change default
+        assertMergeAutoScaleConfigHasExpectedValues(limit);
+    }
+
+    void assertMergeAutoScaleConfigHasExpectedValues(StorServerConfig.Merge_throttling_memory_limit limit) {
+        assertEquals(128L*1024*1024,    limit.auto_lower_bound_bytes());
+        assertEquals(2L*1024*1024*1024, limit.auto_upper_bound_bytes());
+        assertEquals(0.03,              limit.auto_phys_mem_scale_factor(), 0.000001);
+    }
+
+    @Test
+    void merge_throttler_memory_limit_is_controlled_by_feature_flag() {
+        var config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(-1));
+        assertEquals(-1L, config.merge_throttling_memory_limit().max_usage_bytes());
+
+        config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(0));
+        assertEquals(0L, config.merge_throttling_memory_limit().max_usage_bytes());
+
+        config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(1_234_456_789));
+        assertEquals(1_234_456_789L, config.merge_throttling_memory_limit().max_usage_bytes());
+
+        // Feature flag should not affect the other config values
+        assertMergeAutoScaleConfigHasExpectedValues(config.merge_throttling_memory_limit());
+    }
+
+    @Test
     void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(cluster("bees",

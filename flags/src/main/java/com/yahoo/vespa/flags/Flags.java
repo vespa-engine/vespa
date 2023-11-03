@@ -423,6 +423,15 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
+    public static final UnboundLongFlag MERGING_MAX_MEMORY_USAGE_PER_NODE = defineLongFlag(
+            "merging-max-memory-usage-per-node", -1,
+            List.of("vekterli"), "2023-11-03", "2024-03-01",
+            "Soft limit of the maximum amount of memory that can be used across merge operations on a content node. " +
+            "Value semantics: < 0: unlimited (legacy behavior), == 0: auto-deduced from node HW and config," +
+            " > 0: explicit memory usage limit in bytes.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
