@@ -1265,14 +1265,45 @@ public class RankProfile implements Cloneable {
         return Optional.empty();  // if this context does not contain this input
     }
 
+    private static class AttributeErrorType extends TensorType {
+        private final DeployLogger deployLogger;
+        private final String attr;
+        private final Attribute.CollectionType collType;
+        private boolean shouldWarn = true;
+        AttributeErrorType(DeployLogger deployLogger, String attr, Attribute.CollectionType collType) {
+            super(TensorType.Value.DOUBLE, List.of());
+            this.deployLogger = deployLogger;
+            this.attr = attr;
+            this.collType = collType;
+        }
+        private void warnOnce() {
+            if (shouldWarn) {
+                deployLogger.log(Level.WARNING, "Using attribute(" + attr +") " + collType + " in ranking expression will always evaluate to 0.0");
+                shouldWarn = false;
+            }
+        }
+        @Override public TensorType.Value valueType() { warnOnce(); return super.valueType(); }
+        @Override public int rank() { warnOnce(); return super.rank(); }
+        @Override public List<TensorType.Dimension> dimensions() { warnOnce(); return super.dimensions(); }
+        @Override public boolean equals(Object o) {
+            if (o instanceof TensorType other) {
+                return (other.rank() == 0);
+            }
+            return false;
+        }
+    }
+
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {
         Attribute attribute = field.getAttribute();
         field.getAttributes().forEach((k, a) -> {
             String name = k;
             if (attribute == a)                              // this attribute should take the fields name
                 name = field.getName();                      // switch to that - it is separate for imported fields
-            featureTypes.put(FeatureNames.asAttributeFeature(name),
-                            a.tensorType().orElse(TensorType.empty));
+            if (a.getCollectionType().equals(Attribute.CollectionType.SINGLE)) {
+                featureTypes.put(FeatureNames.asAttributeFeature(name), a.tensorType().orElse(TensorType.empty));
+            } else {
+                featureTypes.put(FeatureNames.asAttributeFeature(name), new AttributeErrorType(deployLogger, name, a.getCollectionType()));
+            }
         });
     }
 

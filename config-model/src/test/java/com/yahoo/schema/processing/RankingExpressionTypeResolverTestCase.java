@@ -459,6 +459,54 @@ public class RankingExpressionTypeResolverTestCase {
     }
 
     @Test
+    void requireThatUsingArrayWarns() throws Exception {
+        InspectableDeployLogger logger = new InspectableDeployLogger();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field foo type array<float> {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: map(attribute(foo), f(x)(42*x))",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.build(true);
+        String message = logger.findMessage("collection");
+        assertNotNull(message);
+        assertEquals("WARNING: Using attribute(foo) collectiontype: ARRAY in ranking expression will always evaluate to 0.0", message);
+    }
+
+    @Test
+    void requireThatUsingWsetWarns() throws Exception {
+        InspectableDeployLogger logger = new InspectableDeployLogger();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field foo type weightedset<int> {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: attribute(foo)",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.build(true);
+        String message = logger.findMessage("collection");
+        assertNotNull(message);
+        assertEquals("WARNING: Using attribute(foo) collectiontype: WEIGHTEDSET in ranking expression will always evaluate to 0.0", message);
+    }
+
+    @Test
     void noWarningWhenUsingTensorsWhenQueryFeaturesAreDeclared() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
         ApplicationBuilder builder = new ApplicationBuilder(logger);
