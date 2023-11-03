@@ -137,6 +137,10 @@ public class IndexingOutputs extends Processor {
                 for (String fieldName : summaryFields) {
                     ret.add(new SummaryExpression(fieldName));
                 }
+                // Write to summary field source
+                if (!summaryFields.contains(field.getName())) {
+                    ret.add(new SummaryExpression(field.getName()));
+                }
             } else {
                 throw new UnsupportedOperationException(exp.getClass().getName());
             }

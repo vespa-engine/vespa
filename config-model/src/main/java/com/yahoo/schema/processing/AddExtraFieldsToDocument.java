@@ -70,7 +70,7 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     private void addSdField(Schema schema, SDDocumentType document, SDField field, boolean validate) {
-        if (! field.hasIndex() && field.getAttributes().isEmpty()) {
+        if (! field.hasIndex() && field.getAttributes().isEmpty() && !field.doesSummarying()) {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {

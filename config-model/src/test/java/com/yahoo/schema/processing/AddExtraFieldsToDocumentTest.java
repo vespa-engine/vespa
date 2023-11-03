@@ -49,6 +49,29 @@ public class AddExtraFieldsToDocumentTest {
         assertNull(schema.getDocument().getField("my_c"));
     }
 
+    @Test
+    public void testExtraFieldIsAddedWhenBeingASummarySource() throws ParseException {
+        var sd = """
+                search renamed {
+                  document renamed {
+                    field foo type string { }
+                  }
+                  field bar type string {
+                    indexing: input foo | summary
+                    summary baz { }
+                  }
+                  field bar2 type string {
+                    indexing: input foo
+                    summary baz2 { }
+                  }
+                }
+                """;
+        var builder = ApplicationBuilder.createFromString(sd);
+        var schema = builder.getSchema();
+        assertNotNull(schema.getDocument().getDocumentType().getField("bar"));
+        assertNull(schema.getDocument().getDocumentType().getField("bar2"));
+    }
+
     private void assertSummary(Schema schema, String dsName, String name, SummaryTransform transform, String source) {
         var docsum = schema.getSummary(dsName);
         var field = docsum.getSummaryField(name);
