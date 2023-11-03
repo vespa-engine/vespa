@@ -201,7 +201,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Optimize query execution plan");
         _query.optimize();
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
-        _query.fetchPostings(_requestContext.getDoom());
+        _query.fetchPostings(is_search, _requestContext.getDoom());
         if (is_search) {
             _query.handle_global_filter(_requestContext.getDoom(), searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,

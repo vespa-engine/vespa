@@ -247,9 +247,9 @@ Query::optimize()
 }
 
 void
-Query::fetchPostings(const vespalib::Doom & doom)
+Query::fetchPostings(bool strict, const vespalib::Doom & doom)
 {
-    _blueprint->fetchPostings(search::queryeval::ExecuteInfo::create(true, &doom));
+    _blueprint->fetchPostings(search::queryeval::ExecuteInfo::create(strict, &doom));
 }
 
 void
