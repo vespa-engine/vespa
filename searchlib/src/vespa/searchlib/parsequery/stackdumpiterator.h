@@ -48,8 +48,6 @@ private:
     query::PredicateQueryTerm::UP _predicate_query_term;
 
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
-    VESPA_DLL_LOCAL uint64_t readUint64(const char *&p);
-    VESPA_DLL_LOCAL double read_double(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
     VESPA_DLL_LOCAL bool readPredicate(const char *&p);
     VESPA_DLL_LOCAL bool readNN(const char *&p);
@@ -60,12 +58,12 @@ public:
     /**
      * Make an iterator on a buffer. To get the first item, next must be called.
      */
-    SimpleQueryStackDumpIterator(vespalib::stringref buf);
+    explicit SimpleQueryStackDumpIterator(vespalib::stringref buf);
     SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &) = delete;
     SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
-    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufEnd - _buf); }
+    vespalib::stringref getStack() const noexcept { return vespalib::stringref(_buf, _bufEnd - _buf); }
     size_t getPosition() const { return _currPos; }
 
     /**
