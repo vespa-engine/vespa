@@ -137,6 +137,15 @@ public class IndexingOutputs extends Processor {
                 for (String fieldName : summaryFields) {
                     ret.add(new SummaryExpression(fieldName));
                 }
+                /*
+                 * Write to summary field source. AddExtraFieldsToDocument processor adds the "copy"
+                 * summary transform to summary fields without a corresponding explicitly declared
+                 * document field (2023-11-01). Future vespa versions will stop adding document
+                 * fields for those summary fields.
+                 */
+                if (!summaryFields.contains(field.getName())) {
+                    ret.add(new SummaryExpression(field.getName()));
+                }
             } else {
                 throw new UnsupportedOperationException(exp.getClass().getName());
             }

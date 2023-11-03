@@ -62,4 +62,23 @@ public class IndexingOutputsTestCase {
         }
     }
 
+    @Test
+    void requireThatSummaryFieldSourceIsPopulated() throws ParseException {
+        var sd = """
+                search renamed {
+                  document renamed {
+                    field foo type string { }
+                  }
+                  field bar type string {
+                    indexing: input foo | summary
+                    summary baz { }
+                    summary dyn_baz { dynamic }
+                  }
+                }
+                """;
+        var builder = ApplicationBuilder.createFromString(sd);
+        var schema = builder.getSchema();
+        assertEquals("{ input foo | summary baz | summary dyn_baz | summary bar; }",
+                schema.getConcreteField("bar").getIndexingScript().toString());
+    }
 }

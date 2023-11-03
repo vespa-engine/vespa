@@ -131,10 +131,18 @@ public class IndexingValidation extends Processor {
             } else if (exp instanceof SummaryExpression) {
                 SummaryField field = schema.getSummaryField(fieldName);
                 if (field == null) {
-                    throw new VerificationException(exp, "Summary field '" + fieldName + "' not found.");
+                    // Use document field if summary field is not found
+                    SDField sdField = schema.getConcreteField(fieldName);
+                    if (sdField != null && sdField.doesSummarying()) {
+                        fieldDesc = "document field";
+                        fieldType = sdField.getDataType();
+                    } else {
+                        throw new VerificationException(exp, "Summary field '" + fieldName + "' not found.");
+                    }
+                } else {
+                    fieldDesc = "summary field";
+                    fieldType = field.getDataType();
                 }
-                fieldDesc = "summary field";
-                fieldType = field.getDataType();
             } else {
                 throw new UnsupportedOperationException();
             }

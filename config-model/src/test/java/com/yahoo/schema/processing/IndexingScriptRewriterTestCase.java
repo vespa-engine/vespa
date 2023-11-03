@@ -48,7 +48,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     void testDynamicSummaryRewriting() {
         SDField field = createField("test", DataType.STRING, "{ summary }");
         field.addSummaryField(createDynamicSummaryField(field, "dyn"));
-        assertIndexingScript("{ input test | summary dyn; }", field);
+        assertIndexingScript("{ input test | summary dyn | summary test; }", field);
     }
 
     @Test

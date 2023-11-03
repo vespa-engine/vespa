@@ -39,9 +39,17 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
             }
             else if (exp instanceof SummaryExpression) {
                 Field field = schema.getSummaryField(fieldName);
-                if (field == null)
-                    throw new IllegalArgumentException("Summary field '" + fieldName + "' not found.");
-                fieldType = field.getDataType();
+                if (field == null) {
+                    // Use document field if summary field is not found
+                    var sdField = schema.getConcreteField(fieldName);
+                    if (sdField != null && sdField.doesSummarying()) {
+                        fieldType = sdField.getDataType();
+                    } else {
+                        throw new IllegalArgumentException("Summary field '" + fieldName + "' not found.");
+                    }
+                } else {
+                    fieldType = field.getDataType();
+                }
             }
             else {
                 throw new UnsupportedOperationException();
