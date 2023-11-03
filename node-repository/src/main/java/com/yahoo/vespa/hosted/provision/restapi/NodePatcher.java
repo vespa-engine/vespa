@@ -109,7 +109,6 @@ public class NodePatcher {
                                               "reports",
                                               "trustStore",
                                               "vespaVersion",
-                                              "wireguardPubkey", // TODO wg: remove when all nodes use new key+timestamp format
                                               "wireguard"));
             if (!disallowedFields.isEmpty()) {
                 throw new IllegalArgumentException("Patching fields not supported: " + disallowedFields);
@@ -279,9 +278,6 @@ public class NodePatcher {
                 // This is where we set the key timestamp.
                 var key = SlimeUtils.optionalString(value.field("key")).map(WireguardKey::new).orElse(null);
                 return node.withWireguardPubkey(new WireguardKeyWithTimestamp(key, clock.instant()));
-            case "wireguardPubkey":  // TODO wg: remove when all nodes use new key+timestamp format
-                var oldKey = SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null);
-                return node.withWireguardPubkey(new WireguardKeyWithTimestamp(oldKey, clock.instant()));
             default:
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

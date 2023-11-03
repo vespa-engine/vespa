@@ -44,11 +44,6 @@ public class WireguardResponse extends SlimeJsonResponse {
     private void addConfigserver(Cursor cfgEntry, String hostname, WireguardKeyWithTimestamp keyWithTimestamp,
                                  List<String> ipAddresses) {
         cfgEntry.setString("hostname", hostname);
-
-        // TODO wg: remove when all nodes are using new key+timestamp format
-        cfgEntry.setString("wireguardPubkey", keyWithTimestamp.key().value());
-        cfgEntry.setLong("wireguardKeyTimestamp", keyWithTimestamp.timestamp().toEpochMilli());
-
         NodesResponse.ipAddressesToSlime(ipAddresses, cfgEntry.setArray("ipAddresses"));
         toSlime(keyWithTimestamp, cfgEntry.setObject("wireguard"));
     }
