@@ -530,6 +530,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_AVERAGEQUEUEWAITINGTIME, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_ACTIVE_WINDOW_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_ESTIMATED_MERGE_MEMORY_USAGE, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_BOUNCED_DUE_TO_BACK_PRESSURE.rate());
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_LOCALLYEXECUTEDMERGES_OK.rate());
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_MERGECHAINS_OK.rate());

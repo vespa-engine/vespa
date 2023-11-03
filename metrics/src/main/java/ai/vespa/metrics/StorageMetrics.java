@@ -96,6 +96,7 @@ public enum StorageMetrics implements VespaMetrics {
     VDS_MERGETHROTTLER_AVERAGEQUEUEWAITINGTIME("vds.mergethrottler.averagequeuewaitingtime", Unit.MILLISECOND, "Time merges spent in the throttler queue"),
     VDS_MERGETHROTTLER_QUEUESIZE("vds.mergethrottler.queuesize", Unit.INSTANCE, "Length of merge queue"),
     VDS_MERGETHROTTLER_ACTIVE_WINDOW_SIZE("vds.mergethrottler.active_window_size", Unit.INSTANCE, "Number of merges active within the pending window size"),
+    VDS_MERGETHROTTLER_ESTIMATED_MERGE_MEMORY_USAGE("vds.mergethrottler.estimated_merge_memory_usage", Unit.BYTE, "An estimated upper bound of the  memory usage (in bytes) of the merges currently in the active window"),
     VDS_MERGETHROTTLER_BOUNCED_DUE_TO_BACK_PRESSURE("vds.mergethrottler.bounced_due_to_back_pressure", Unit.INSTANCE, "Number of merges bounced due to resource exhaustion back-pressure"),
     VDS_MERGETHROTTLER_LOCALLYEXECUTEDMERGES_OK("vds.mergethrottler.locallyexecutedmerges.ok", Unit.INSTANCE, "The number of successful merges for 'locallyexecutedmerges'"),
     VDS_MERGETHROTTLER_LOCALLYEXECUTEDMERGES_FAILURES_ABORTED("vds.mergethrottler.locallyexecutedmerges.failures.aborted", Unit.OPERATION, "The number of merges that failed because the storage node was (most likely) shutting down"),
