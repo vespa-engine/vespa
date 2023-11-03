@@ -3,7 +3,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
-#include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
@@ -28,7 +27,6 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -377,7 +375,8 @@ struct MyWorld {
     void verify_diversity_filter(const SearchRequest & req, bool expectDiverse) {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
+        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides,
+                                                       ttb(), nullptr, searchContext.getDocIdLimit(), true);
         auto diversity = mtf->createDiversifier(HeapSize::lookup(config));
         EXPECT_EQUAL(expectDiverse, static_cast<bool>(diversity));
     }
@@ -386,7 +385,8 @@ struct MyWorld {
         Matcher::SP matcher = createMatcher();
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
         search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
+        auto mtf = matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides,
+                                                       ttb(), nullptr, searchContext.getDocIdLimit(), true);
         MatchTools::UP match_tools = mtf->createMatchTools();
         match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();
@@ -1156,7 +1156,7 @@ struct AttributeBlueprintParamsFixture {
    }
    void set_query_properties(vespalib::stringref lower_limit, vespalib::stringref upper_limit,
                              vespalib::stringref target_hits_max_adjustment_factor,
-                             const vespalib::string fuzzy_matching_algorithm) {
+                             const vespalib::string & fuzzy_matching_algorithm) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
        rank_properties.add(TargetHitsMaxAdjustmentFactor::NAME, target_hits_max_adjustment_factor);

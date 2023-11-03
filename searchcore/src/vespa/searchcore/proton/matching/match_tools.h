@@ -155,6 +155,7 @@ public:
                       const Properties &featureOverrides,
                       vespalib::ThreadBundle &thread_bundle,
                       const search::IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
+                      uint32_t maxNumHits,
                       bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }

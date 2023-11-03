@@ -98,8 +98,7 @@ public:
      * test to verify the original query without optimization.
      **/
     void optimize();
-    void fetchPostings(const vespalib::Doom & doom) { fetchPostings(true, doom); }
-    void fetchPostings(bool strict, const vespalib::Doom & doom);
+    void fetchPostings(const search::queryeval::ExecuteInfo & executeInfo) ;
 
     void handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
