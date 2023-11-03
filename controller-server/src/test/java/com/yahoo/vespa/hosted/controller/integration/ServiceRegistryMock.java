@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockEnclaveAccessSe
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporterMock;
@@ -38,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClie
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
@@ -98,8 +96,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final AccessControlService accessControlService = new MockAccessControlService();
     private final HorizonClient horizonClient = new MockHorizonClient();
     private final PlanRegistry planRegistry = new PlanRegistryMock();
-    private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
-    private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
+    private final ResourceDatabaseClientMock resourceDb = new ResourceDatabaseClientMock(planRegistry);
+    private final BillingDatabaseClientMock billingDb = new BillingDatabaseClientMock(clock, planRegistry);
     private final BillingReporterMock billingReporter = new BillingReporterMock(clock, billingDb);
     private final MockBillingController billingController = new MockBillingController(clock, billingDb);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
@@ -292,12 +290,12 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ResourceDatabaseClient resourceDatabase() {
+    public ResourceDatabaseClientMock resourceDatabase() {
         return resourceDb;
     }
 
     @Override
-    public BillingDatabaseClient billingDatabase() {
+    public BillingDatabaseClientMock billingDatabase() {
         return billingDb;
     }
 

@@ -235,10 +235,6 @@ public class CuratorDb {
         return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
-    public Mutex lockMeteringRefreshTime() throws TimeoutException {
-        return tryLock(lockRoot.append("meteringRefreshTime"));
-    }
-
     public Mutex lockArchiveBuckets(ZoneId zoneId) {
         return curator.lock(lockRoot.append("archiveBuckets").append(zoneId.value()), defaultLockTimeout);
     }
@@ -678,18 +674,6 @@ public class CuratorDb {
         return certificates;
     }
 
-    // -------------- Metering view refresh times ----------------------------
-
-    public void writeMeteringRefreshTime(long timestamp) {
-        curator.set(meteringRefreshPath(), Long.toString(timestamp).getBytes());
-    }
-
-    public long readMeteringRefreshTime() {
-        return curator.getData(meteringRefreshPath())
-                      .map(String::new).map(Long::parseLong)
-                      .orElse(0L);
-    }
-
     // -------------- Archive buckets -----------------------------------------
 
     public ArchiveBuckets readArchiveBuckets(ZoneId zoneId) {
@@ -907,10 +891,6 @@ public class CuratorDb {
         String id = instance.map(name -> application.instance(name).serializedForm())
                             .orElseGet(application::serialized);
         return endpointCertificateRoot.append(id);
-    }
-
-    private static Path meteringRefreshPath() {
-        return root.append("meteringRefreshTime");
     }
 
     private static Path archiveBucketsPath(ZoneId zoneId) {

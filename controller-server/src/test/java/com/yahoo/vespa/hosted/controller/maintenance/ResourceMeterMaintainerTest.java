@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.HostName;
@@ -93,7 +92,6 @@ public class ResourceMeterMaintainerTest {
     void testMaintainer() {
         setUpZones();
         long lastRefreshTime = tester.clock().millis();
-        tester.curator().writeMeteringRefreshTime(lastRefreshTime);
         maintainer.maintain();
         Collection<ResourceSnapshot> consumedResources = resourceClient.resourceSnapshots();
 
@@ -114,16 +112,6 @@ public class ResourceMeterMaintainerTest {
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
         assertEquals(24d, (Double) metrics.getMetric(context -> "tenant1".equals(context.get("tenantName")), "metering.vcpu").get(), Double.MIN_VALUE);
         assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenantName")), "metering.vcpu").get(), Double.MIN_VALUE);
-
-        // Metering is not refreshed
-        assertFalse(resourceClient.hasRefreshedMaterializedView());
-        assertEquals(lastRefreshTime, tester.curator().readMeteringRefreshTime());
-
-        var millisAdvanced = 3600 * 1000;
-        tester.clock().advance(Duration.ofMillis(millisAdvanced));
-        maintainer.maintain();
-        assertTrue(resourceClient.hasRefreshedMaterializedView());
-        assertEquals(lastRefreshTime + millisAdvanced, tester.curator().readMeteringRefreshTime());
     }
 
     @Test

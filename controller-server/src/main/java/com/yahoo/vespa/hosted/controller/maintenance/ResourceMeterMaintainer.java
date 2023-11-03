@@ -26,19 +26,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDataba
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collector;
@@ -65,14 +62,12 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
     private final ResourceDatabaseClient resourceClient;
-    private final CuratorDb curator;
     private final SystemName systemName;
     private final Metric metric;
     private final Clock clock;
 
     private static final String METERING_LAST_REPORTED = ControllerMetrics.METERING_LAST_REPORTED.baseName();
     private static final String METERING_TOTAL_REPORTED = ControllerMetrics.METERING_TOTAL_REPORTED.baseName();
-    private static final int METERING_REFRESH_INTERVAL_SECONDS = 1800;
 
     @SuppressWarnings("WeakerAccess")
     public ResourceMeterMaintainer(Controller controller,
@@ -83,7 +78,6 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.resourceClient = resourceClient;
-        this.curator = controller.curator();
         this.systemName = controller.serviceRegistry().zoneRegistry().system();
         this.metric = metric;
         this.clock = controller.clock();
@@ -134,17 +128,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
         resourceClient.writeResourceSnapshots(resourceSnapshots);
-
         updateMeteringMetrics(resourceSnapshots);
-
-        try (var lock = curator.lockMeteringRefreshTime()) {
-            if (needsRefresh(curator.readMeteringRefreshTime())) {
-                resourceClient.refreshMaterializedView();
-                curator.writeMeteringRefreshTime(clock.millis());
-            }
-        } catch (TimeoutException ignored) {
-            // If it's locked, it means we're currently refreshing
-        }
     }
 
     private List<ResourceSnapshot> getAllResourceSnapshots() {
@@ -218,12 +202,6 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         return node.clusterType() != Node.ClusterType.admin; // log servers and shared cluster controllers
     }
 
-    private boolean needsRefresh(long lastRefreshTimestamp) {
-        return clock.instant()
-                .minusSeconds(METERING_REFRESH_INTERVAL_SECONDS)
-                .isAfter(Instant.ofEpochMilli(lastRefreshTimestamp));
-    }
-
     public static double cost(ClusterResources clusterResources, SystemName systemName) {
         var totalResources = clusterResources.nodeResources().multipliedBy(clusterResources.nodes());
         return cost(totalResources, systemName);
@@ -271,7 +249,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 "tenantName", snapshot.getApplicationId().tenant().value(),
                 "applicationId", snapshot.getApplicationId().toFullString(),
                 "zoneId", snapshot.getZoneId().value(),
-                "architecture", snapshot.resources().architecture()
+                "architecture", snapshot.resources().architecture(),
+                "cloudAccount", snapshot.getAccount().account()
         ));
     }
 
@@ -284,12 +263,10 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     private Function<Map<ResourceKey, List<Node>>, Map<ResourceKey, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
-        return nodesByMajor -> {
-            return nodesByMajor.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            entry -> entry.getKey(),
-                            entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId)));
-        };
+        return nodesByMajor -> nodesByMajor.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId)));
     }
 
     private record ResourceKey(

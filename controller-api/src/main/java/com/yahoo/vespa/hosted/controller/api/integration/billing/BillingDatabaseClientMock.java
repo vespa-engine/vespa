@@ -25,6 +25,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     private final Map<Bill.Id, TenantName> invoices = new HashMap<>();
     private final Map<Bill.Id, List<Bill.LineItem>> lineItems = new HashMap<>();
     private final Map<TenantName, List<Bill.LineItem>> uncommittedLineItems = new HashMap<>();
+    private boolean maintained = false;
 
     private final Map<Bill.Id, StatusHistory> statuses = new HashMap<>();
     private final Map<Bill.Id, ZonedDateTime> startTimes = new HashMap<>();
@@ -179,7 +180,9 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public void maintain() {}
+    public void maintain() {
+        this.maintained = true;
+    }
 
     @Override
     public void setExportedInvoiceId(Bill.Id billId, String invoiceId) {
@@ -191,5 +194,9 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
 
     private String exportedInvoiceId(Bill.Id billId) {
         return exportedInvoiceIds.getOrDefault(billId, null);
+    }
+
+    public boolean isMaintained() {
+        return maintained;
     }
 }

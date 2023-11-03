@@ -80,7 +80,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
         maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, controller.serviceRegistry().roleMaintainer()));
-        maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
+        maintainers.add(new DatabaseMaintainer(controller, intervals.databaseMaintainer));
         maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
         maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer));
@@ -145,7 +145,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration vcmrMaintainer;
         private final Duration retriggerMaintainer;
         private final Duration userManagementMaintainer;
-        private final Duration billingDatabaseMaintainer;
+        private final Duration databaseMaintainer;
         private final Duration meteringMonitorMaintainer;
         private final Duration certificatePoolMaintainer;
         private final Duration billingReportMaintainer;
@@ -184,7 +184,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.vcmrMaintainer = duration(1, HOURS);
             this.retriggerMaintainer = duration(1, MINUTES);
             this.userManagementMaintainer = duration(12, HOURS);
-            this.billingDatabaseMaintainer = duration(5, MINUTES);
+            this.databaseMaintainer = duration(30, MINUTES);
             this.meteringMonitorMaintainer = duration(30, MINUTES);
             this.certificatePoolMaintainer = duration(15, MINUTES);
             this.billingReportMaintainer = duration(60, MINUTES);
