@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +102,27 @@ public interface BillingDatabaseClient {
     Optional<Plan> getPlan(TenantName tenantName);
 
     /**
+     * Set the current plan for the given tenant
+     *
+     * @param tenantName The tenant to set the plan for
+     * @param plan The plan to use
+     */
+    void setPlan(TenantName tenantName, Plan plan);
+
+    /** Returns the effective deal for the given tenant at the given instant if present, Optional.empty() otherwise. */
+    Optional<Deal> getDealAt(TenantName tenantName, Instant instant);
+
+    /** List all deals for the given tenant, ordered by effective time, including deals that are not yet in effect */
+    List<Deal> listDeals(TenantName tenantName);
+
+    /**
+     * Modify deals not yet in effect. Takes in a modifier that runs as part of a transaction. The modifier
+     * will be given a list of all current deals for the tenant, and should return a list of deals that should
+     * be removed and a list of deals to be added.
+     */
+    void modifyDeals(TenantName tenantName, DealModifier modifier);
+
+    /**
      * Return the plan for the given tenants if present.
      * If the database does not know of the tenant, the tenant is not included in the result.
      */
@@ -112,14 +134,6 @@ public interface BillingDatabaseClient {
     default Map<Plan, Long> getPlanCount(List<TenantName> tenants, Plan defaultPlan) {
         return Map.of();
     }
-
-    /**
-     * Set the current plan for the given tenant
-     *
-     * @param tenantName The tenant to set the plan for
-     * @param plan The plan to use
-     */
-    void setPlan(TenantName tenantName, Plan plan);
 
     /**
      * Deactivates the default payment instrument for a tenant, if it exists.
@@ -155,4 +169,9 @@ public interface BillingDatabaseClient {
      */
     void setExportedInvoiceItemId(String lineItemId, String invoiceItemId);
 
+    @FunctionalInterface
+    interface DealModifier {
+        record Result(Optional<Deal> toRemove, Optional<Deal> toAdd) {}
+        Result modify(List<Deal> existingDeals);
+    }
 }

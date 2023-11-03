@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient.DealModifier.Result;
+
 /**
  * @author olaa
  */
@@ -36,6 +38,36 @@ public class MockBillingController implements BillingController {
     public MockBillingController(Clock clock, BillingDatabaseClient dbClient) {
         this.clock = clock;
         this.dbClient = dbClient;
+    }
+
+    @Override
+    public Optional<Deal> getCurrentDeal(TenantName tenantName) {
+        return dbClient.getDealAt(tenantName, clock.instant());
+    }
+
+    @Override
+    public List<Deal> listDeals(TenantName tenantName) {
+        return dbClient.listDeals(tenantName);
+    }
+
+    @Override
+    public void addDeal(Deal deal, boolean hasDeployments, boolean isAccountant) {
+        dbClient.modifyDeals(deal.tenantName(), currentDeals -> {
+            Optional<Deal> toRemove = currentDeals.stream()
+                    .filter(d -> d.effectiveAt().equals(deal.effectiveAt()))
+                    .findFirst();
+            return new Result(toRemove, Optional.of(deal));
+        });
+    }
+
+    @Override
+    public void deleteDeal(TenantName tenantName, Deal.Id dealId, boolean hasDeployments, boolean isAccountant) {
+        dbClient.modifyDeals(tenantName, currentDeals -> {
+            Optional<Deal> toRemove = currentDeals.stream()
+                    .filter(deal -> deal.id().equals(dealId))
+                    .findFirst();
+            return new Result(toRemove, Optional.empty());
+        });
     }
 
     @Override

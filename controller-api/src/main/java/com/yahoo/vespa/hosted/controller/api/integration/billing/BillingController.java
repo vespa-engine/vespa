@@ -20,6 +20,18 @@ import java.util.Optional;
  */
 public interface BillingController {
 
+    /** Returns the current deal for the given tenant if present, Optional.empty() otherwise. */
+    Optional<Deal> getCurrentDeal(TenantName tenantName);
+
+    /** List all deals for the given tenant, ordered by effective time, including deals that are not yet in effect */
+    List<Deal> listDeals(TenantName tenantName);
+
+    /** Add a new deal */
+    void addDeal(Deal deal, boolean hasDeployments, boolean isAccountant);
+
+    /** Delete a deal that is not yet in effect */
+    void deleteDeal(TenantName tenantName, Deal.Id dealId, boolean hasDeployments, boolean isAccountant);
+
     /**
      * Get the plan ID for the given tenant.
      * This method will not fail if the tenant does not exist, it will return the default plan for that tenant instead.

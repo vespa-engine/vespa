@@ -4,10 +4,12 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 import com.yahoo.config.provision.TenantName;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
 
     private final List<InstrumentOwner> paymentInstruments = new ArrayList<>();
     private final Map<TenantName, CollectionMethod> collectionMethods = new HashMap<>();
+    private final Map<Deal.Id, Deal> deals = new HashMap<>();
 
     public BillingDatabaseClientMock(Clock clock, PlanRegistry planRegistry) {
         this.clock = clock;
@@ -132,6 +135,28 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     @Override
     public void setPlan(TenantName tenantName, Plan plan) {
         tenantPlans.put(tenantName, plan);
+    }
+
+    @Override
+    public Optional<Deal> getDealAt(TenantName tenantName, Instant instant) {
+        return deals.values().stream()
+                .filter(deal -> deal.tenantName().equals(tenantName))
+                .filter(deal -> deal.effectiveAt().isBefore(instant))
+                .max(Comparator.comparing(Deal::effectiveAt));
+    }
+
+    @Override
+    public List<Deal> listDeals(TenantName tenantName) {
+        return deals.values().stream()
+                .filter(deal -> deal.tenantName().equals(tenantName))
+                .toList();
+    }
+
+    @Override
+    public void modifyDeals(TenantName tenantName, DealModifier modifier) {
+        DealModifier.Result result = modifier.modify(listDeals(tenantName));
+        result.toRemove().ifPresent(deal -> deals.remove(deal.id()));
+        result.toAdd().ifPresent(deal -> deals.put(deal.id(), deal));
     }
 
     @Override
