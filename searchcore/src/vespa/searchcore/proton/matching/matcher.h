@@ -112,7 +112,7 @@ public:
                                IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
                                const Properties &feature_overrides, vespalib::ThreadBundle &thread_bundle,
                                const IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
-                               bool is_search) const;
+                               uint32_t maxHits, bool is_search) const;
 
     /**
      * Perform a search against this matcher.

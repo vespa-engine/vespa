@@ -174,6 +174,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & featureOverrides,
                   vespalib::ThreadBundle     & thread_bundle,
                   const search::IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
+                  uint32_t                     maxNumHits,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
       _attribute_blueprint_params(extract_attribute_blueprint_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
@@ -201,7 +202,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Optimize query execution plan");
         _query.optimize();
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
-        _query.fetchPostings(_requestContext.getDoom());
+        float hitRate = std::min(1.0F, float(maxNumHits)/float(searchContext.getDocIdLimit()));
+        _query.fetchPostings(search::queryeval::ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom()));
         if (is_search) {
             _query.handle_global_filter(_requestContext.getDoom(), searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,
