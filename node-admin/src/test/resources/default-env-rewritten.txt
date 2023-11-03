@@ -1,4 +1,0 @@
-override VESPA_HOSTNAME my-new-hostname
-fallback VESPA_CONFIGSERVER new-fallback-configserver
-override VESPA_TLS_CONFIG_FILE /override/path/to/config.file
-unset VESPA_LEGACY_OPTION
