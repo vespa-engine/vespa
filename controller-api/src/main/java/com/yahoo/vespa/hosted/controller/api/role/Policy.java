@@ -193,7 +193,7 @@ enum Policy {
                            .on(PathGroup.dataplaneToken)
                            .in(SystemName.PublicCd, SystemName.Public)),
 
-    termsOfService(Privilege.grant(Action.create)
+    termsOfService(Privilege.grant(Action.create, Action.delete)
                            .on(PathGroup.termsOfService)
                            .in(SystemName.PublicCd, SystemName.Public));
 
