@@ -78,6 +78,9 @@ public class Autoscaler {
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
 
+        if (target.get().nodes() == 1)
+            return Autoscaling.dontScale(Status.unavailable, "Autoscaling is disabled in single node clusters", model);
+
         if (! worthRescaling(model.current().realResources(), target.get().realResources())) {
             if (target.get().fulfilment() < 0.9999999)
                 return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", model);
@@ -86,7 +89,6 @@ public class Autoscaler {
             else
                 return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within configured limits)", model);
         }
-
         return Autoscaling.scaleTo(target.get().advertisedResources(), model);
     }
 

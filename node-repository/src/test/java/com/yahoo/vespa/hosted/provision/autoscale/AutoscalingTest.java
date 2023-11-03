@@ -843,9 +843,7 @@ public class AutoscalingTest {
                                                .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
-        fixture.tester().assertResources("Scale only to a single node and group since this is dev",
-                                         1, 1, 0.1,  22.9, 105.2,
-                                         fixture.autoscale());
+        assertEquals("Don't autoscale: Autoscaling is disabled in single node clusters", fixture.autoscale().toString());
     }
 
     /** Same setup as test_autoscaling_in_dev(), just with required = true */
