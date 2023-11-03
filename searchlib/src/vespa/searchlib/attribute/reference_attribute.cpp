@@ -234,9 +234,8 @@ ReferenceAttribute::onLoad(vespalib::Executor *)
     setCreateSerialNum(attrReader.getCreateSerialNum());
     assert(attrReader.getEnumerated());
     assert(!attrReader.hasIdx());
-    size_t numDocs(0);
     uint64_t numValues = attrReader.getEnumCount();
-    numDocs = numValues;
+    size_t numDocs = numValues;
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     const GenericHeader &header = udatBuffer->getHeader();
     uint32_t uniqueValueCount = extractUniqueValueCount(header);

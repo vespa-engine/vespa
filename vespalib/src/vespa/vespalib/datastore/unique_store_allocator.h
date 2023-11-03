@@ -31,7 +31,7 @@ private:
     UniqueStoreBufferType<WrappedEntryType> _typeHandler;
 
 public:
-    UniqueStoreAllocator(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
+    explicit UniqueStoreAllocator(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStoreAllocator() override;
     EntryRef allocate(const EntryType& value);
     void hold(EntryRef ref);
