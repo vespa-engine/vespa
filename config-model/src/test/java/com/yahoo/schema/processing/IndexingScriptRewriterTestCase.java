@@ -48,7 +48,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     void testDynamicSummaryRewriting() {
         SDField field = createField("test", DataType.STRING, "{ summary }");
         field.addSummaryField(createDynamicSummaryField(field, "dyn"));
-        assertIndexingScript("{ input test | summary dyn | summary test; }", field);
+        assertIndexingScript("{ input test | summary test; }", field);
     }
 
     @Test
@@ -64,7 +64,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
         field.addSummaryField(createStaticSummaryField(field, "test"));
         field.addSummaryField(createStaticSummaryField(field, "other"));
         field.addSummaryField(createDynamicSummaryField(field, "dyn2"));
-        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary dyn | summary dyn2 | summary other | " +
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary other | " +
                 "summary test | index test; }", field);
     }
 
@@ -111,9 +111,9 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                         "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                         "clear_state | guard { input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
                         "clear_state | guard { input chatter | tokenize normalize stem:\"BEST\" | index chatter; }",
-                        "clear_state | guard { input description | tokenize normalize stem:\"BEST\" | summary description | summary dyndesc | index description; }",
+                        "clear_state | guard { input description | tokenize normalize stem:\"BEST\" | summary description | index description; }",
                         "clear_state | guard { input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
-                        "clear_state | guard { input longdesc | summary dyndesc2 | summary dynlong | summary longdesc | summary longstat; }",
+                        "clear_state | guard { input longdesc | summary longdesc | summary longstat; }",
                         "clear_state | guard { input measurement | attribute measurement | summary measurement; }",
                         "clear_state | guard { input measurement | to_array | attribute measurement_arr; }",
                         "clear_state | guard { input popularity | attribute popularity; }",
