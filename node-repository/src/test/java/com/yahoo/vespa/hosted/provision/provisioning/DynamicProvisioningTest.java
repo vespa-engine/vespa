@@ -40,9 +40,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.config.provision.ClusterSpec.Type.container;
+import static com.yahoo.config.provision.ClusterSpec.Type.content;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
+import static com.yahoo.vespa.hosted.provision.Node.State.active;
+import static com.yahoo.vespa.hosted.provision.Node.State.dirty;
+import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.applicationId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -60,35 +65,35 @@ public class DynamicProvisioningTest {
         var tester = tester(true);
         assertEquals(0, tester.nodeRepository().nodes().list().size());
 
-        ApplicationId application1 = ProvisioningTester.applicationId("application1");
+        ApplicationId application1 = applicationId("application1");
         NodeResources resources = new NodeResources(1, 4, 10, 1);
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().nodes().list().size());
-        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
+        assertEquals(4, tester.nodeRepository().nodes().list(active).nodeType(NodeType.host).size());
         assertEquals(Set.of("host100-1", "host101-1", "host102-1", "host103-1"),
-                     tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).hostnames());
+                     tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).hostnames());
 
         // Deploy new application
-        ApplicationId application2 = ProvisioningTester.applicationId("application2");
+        ApplicationId application2 = applicationId("application2");
         prepareAndActivate(application2, clusterSpec("mycluster"), 4, 1, resources, tester);
 
         // Total of 12 nodes should now be in node-repo, 4 active hosts and 8 active nodes
         assertEquals(12, tester.nodeRepository().nodes().list().size());
-        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
+        assertEquals(4, tester.nodeRepository().nodes().list(active).nodeType(NodeType.host).size());
         assertEquals(Set.of("host100-1", "host100-2", "host101-1", "host101-2", "host102-1", "host102-2", "host103-1", "host103-2"),
-                     tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).hostnames());
+                     tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).hostnames());
 
         // Deploy new exclusive application
-        ApplicationId application3 = ProvisioningTester.applicationId("application3");
+        ApplicationId application3 = applicationId("application3");
         NodeResources exclusiveResources = new NodeResources(2, 10, 20, 1);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, exclusiveResources, tester);
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().nodes().list().size());
-        assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
-        assertEquals(12, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(8, tester.nodeRepository().nodes().list(active).nodeType(NodeType.host).size());
+        assertEquals(12, tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).size());
     }
 
     @Test
@@ -98,15 +103,15 @@ public class DynamicProvisioningTest {
         NodeResources initialResources = new NodeResources(4, 80, 100, 1);
         NodeResources smallResources = new NodeResources(2, 20, 50, 1);
 
-        ApplicationId application1 = ProvisioningTester.applicationId();
+        ApplicationId application1 = applicationId();
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, initialResources, tester);
 
-        ApplicationId application2 = ProvisioningTester.applicationId();
+        ApplicationId application2 = applicationId();
         prepareAndActivate(application2, clusterSpec("mycluster", true), 4, 1, initialResources, tester);
 
         // Total of 16 nodes should now be in node-repo, 8 active hosts and 8 active nodes
         assertEquals(16, tester.nodeRepository().nodes().list().size());
-        assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(8, tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).size());
 
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallResources, tester);
         prepareAndActivate(application2, clusterSpec("mycluster", true), 4, 1, smallResources, tester);
@@ -114,8 +119,8 @@ public class DynamicProvisioningTest {
         // 24 nodes: 4 shared hosts with 4 app1 nodes + 8 exclusive hosts with 8 nodes of app2, 4 of which are retired
         NodeList nodes = tester.nodeRepository().nodes().list();
         assertEquals(24, nodes.size());
-        assertEquals(12, nodes.nodeType(NodeType.host).state(Node.State.active).size());
-        assertEquals(12, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(12, nodes.nodeType(NodeType.host).state(active).size());
+        assertEquals(12, nodes.nodeType(NodeType.tenant).state(active).size());
         assertEquals(4, nodes.retired().size());
     }
 
@@ -126,17 +131,17 @@ public class DynamicProvisioningTest {
         NodeResources highResources = new NodeResources(4, 80, 100, 1);
         NodeResources lowResources = new NodeResources(2, 20, 50, 1);
 
-        ApplicationId application = ProvisioningTester.applicationId();
+        ApplicationId application = applicationId();
         prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
 
         // Total of 4 nodes should now be in node-repo, 2 active hosts and 2 active nodes.
         assertEquals(4, tester.nodeRepository().nodes().list().size());
-        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).size());
 
         // Redeploying the application causes no changes at all.
         prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
         assertEquals(4, tester.nodeRepository().nodes().list().size());
-        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(active).nodeType(NodeType.tenant).size());
 
         // Deploying with a smaller node flavour causes new, smaller hosts to be provisioned.
         prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, lowResources, tester);
@@ -144,8 +149,8 @@ public class DynamicProvisioningTest {
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes, of which 2 are retired.
         NodeList nodes = tester.nodeRepository().nodes().list();
         assertEquals(8, nodes.size());
-        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
-        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(active).size());
         assertEquals(2, nodes.retired().size());
 
         // Remove the child nodes, and redeploy with the original flavour. This should reuse the existing hosts.
@@ -155,8 +160,8 @@ public class DynamicProvisioningTest {
         // Total of 6 nodes should now be in node-repo, 4 active hosts and 2 active nodes.
         nodes = tester.nodeRepository().nodes().list();
         assertEquals(6, nodes.size());
-        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
-        assertEquals(2, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(active).size());
+        assertEquals(2, nodes.nodeType(NodeType.tenant).state(active).size());
         assertEquals(0, nodes.retired().size());
 
         // Deploy again with high resources.
@@ -164,8 +169,8 @@ public class DynamicProvisioningTest {
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes.
         nodes = tester.nodeRepository().nodes().list();
         assertEquals(8, nodes.size());
-        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
-        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(active).size());
     }
 
     @Test
@@ -176,27 +181,27 @@ public class DynamicProvisioningTest {
 
         NodeResources resources = new NodeResources(2, 4, 10, 4);
 
-        ApplicationId application1 = ProvisioningTester.applicationId();
+        ApplicationId application1 = applicationId();
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
 
-        ApplicationId application2 = ProvisioningTester.applicationId();
+        ApplicationId application2 = applicationId();
         prepareAndActivate(application2, clusterSpec("mycluster"), 3, 1, resources, tester);
 
-        ApplicationId application3 = ProvisioningTester.applicationId();
+        ApplicationId application3 = applicationId();
         prepareAndActivate(application3, clusterSpec("mycluster"), 3, 1, resources, tester);
         assertEquals(4, tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
 
-        ApplicationId application4 = ProvisioningTester.applicationId();
+        ApplicationId application4 = applicationId();
         prepareAndActivate(application4, clusterSpec("mycluster"), 3, 1, resources, tester);
         assertEquals(5, tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
     }
 
     @Test
     public void does_not_allocate_container_nodes_to_shared_hosts() {
-        assertHostSharing(Environment.prod, ClusterSpec.Type.container, false);
-        assertHostSharing(Environment.prod, ClusterSpec.Type.content, true);
-        assertHostSharing(Environment.staging, ClusterSpec.Type.container, true);
-        assertHostSharing(Environment.staging, ClusterSpec.Type.content, true);
+        assertHostSharing(Environment.prod, container, false);
+        assertHostSharing(Environment.prod, content, true);
+        assertHostSharing(Environment.staging, container, true);
+        assertHostSharing(Environment.staging, content, true);
     }
 
     private void assertHostSharing(Environment environment, ClusterSpec.Type clusterType, boolean expectShared) {
@@ -206,7 +211,7 @@ public class DynamicProvisioningTest {
         tester.makeReadyHosts(2, new NodeResources(12, 12, 200, 12));
         tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(4.0, 16.0, 50.0, 0.3, "fast", "local", null, 10, "x86_64"))), SharedHost.class);
 
-        ApplicationId application = ProvisioningTester.applicationId();
+        ApplicationId application = applicationId();
         ClusterSpec cluster = ClusterSpec.request(clusterType, ClusterSpec.Id.from("default")).vespaVersion("6.42").build();
         tester.prepare(application, cluster, 2, 1, new NodeResources(2., 10., 20, 1));
         assertEquals(expectShared ? 2 : 4, tester.nodeRepository().nodes().list().nodeType(NodeType.host).size());
@@ -216,7 +221,7 @@ public class DynamicProvisioningTest {
     public void retires_on_exclusivity_violation() {
         var tester = tester(false);
         tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(1., 1., 1., 1., "fast", "local", null, 10, "x86_64"))), SharedHost.class);
-        ApplicationId application1 = ProvisioningTester.applicationId();
+        ApplicationId application1 = applicationId();
         NodeResources resources = new NodeResources(4, 80, 100, 1);
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
         NodeList initialNodes = tester.nodeRepository().nodes().list().owner(application1);
@@ -239,7 +244,7 @@ public class DynamicProvisioningTest {
         NodeList exclusiveViolators = nodes.owner(application1).not().retired().first(2);
         List<Node> parents = exclusiveViolators.mapToList(node -> nodes.parentOf(node).get());
         tester.patchNode(parents.get(0), node -> node.withProvisionedForApplicationId(ApplicationId.defaultId()));
-        tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(ClusterSpec.Type.container));
+        tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(container));
 
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
         assertEquals(10, tester.nodeRepository().nodes().list().owner(application1).size());
@@ -250,7 +255,7 @@ public class DynamicProvisioningTest {
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
         var tester = tester(true);
         NodeResources resources = new NodeResources(10, 10, 10, 10);
-        ApplicationId app = ProvisioningTester.applicationId();
+        ApplicationId app = applicationId();
 
         Function<Node, Node> retireNode = node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, Instant.now()));
         Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().list().owner(app).stream()
@@ -295,8 +300,8 @@ public class DynamicProvisioningTest {
 
         tester.activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ApplicationId app1 = applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Deploy using real memory amount (17)
         try {
@@ -333,32 +338,60 @@ public class DynamicProvisioningTest {
                 .flagSource(flagSource)
                 .build();
 
-        ApplicationId app = ProvisioningTester.applicationId("a1");
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
+        ApplicationId app = applicationId("a1");
+        ClusterSpec cluster = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
         Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 8, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
 
-        hostProvisioner.setHostFlavor("x86", ClusterSpec.Type.content);
+        hostProvisioner.setHostFlavor("x86", content);
         tester.activate(app, cluster, capacity);
         NodeList nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(4, nodes.owner(app).state(active).size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
 
-        hostProvisioner.setHostFlavor("arm", ClusterSpec.Type.content);
+        hostProvisioner.setHostFlavor("arm", content);
         flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
         tester.activate(app, cluster, capacity);
         nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(Node.State.active).retired().size());
-        assertEquals(4, nodes.owner(app).state(Node.State.active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(4, nodes.owner(app).state(active).retired().size());
+        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
 
         flagSource.removeFlag(PermanentFlags.HOST_FLAVOR.id()); // Resetting flag does not move the nodes back
         tester.activate(app, cluster, capacity);
         nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(Node.State.active).retired().size());
-        assertEquals(4, nodes.owner(app).state(Node.State.active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(4, nodes.owner(app).state(active).retired().size());
+        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+    }
+
+
+    @Test
+    public void reduces_container_node_count() {
+        List<Flavor> flavors = List.of(new Flavor("default", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.x86_64)));
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
+        ProvisioningTester tester = new ProvisioningTester.Builder()
+                .dynamicProvisioning(true, false)
+                .flavors(flavors)
+                .hostProvisioner(hostProvisioner)
+                .build();
+
+        ApplicationId app = applicationId("a1");
+        ClusterSpec cluster = ClusterSpec.request(container, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
+        Capacity capacity = Capacity.from(resources(4, 1, 2, 8, 50));
+
+        tester.activate(app, cluster, capacity);
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        assertEquals(4, nodes.owner(app).state(active).size());
+        assertEquals(0, nodes.owner(app).state(dirty).size());
+
+        // Go from 4 to 2 nodes, 2 nodes will go directly to dirty
+        capacity = Capacity.from(resources(2, 1, 2, 8, 50));
+        tester.activate(app, cluster, capacity);
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(2, nodes.owner(app).state(active).size());
+        assertEquals(2, nodes.owner(app).state(dirty).size());
     }
 
     @Test
@@ -377,8 +410,8 @@ public class DynamicProvisioningTest {
 
         tester.activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ApplicationId app1 = applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Limits where each number is within flavor limits but which don't contain any flavor leads to an error
         try {
@@ -452,8 +485,8 @@ public class DynamicProvisioningTest {
 
         tester.activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ApplicationId app1 = applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, local),
                                                       resources(6, 3, 3, 25, 400, fast, local)));
@@ -487,8 +520,8 @@ public class DynamicProvisioningTest {
 
         tester.activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ApplicationId app1 = applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, StorageType.any),
                                                       resources(6, 3, 3, 25, 400, fast, StorageType.any)));
@@ -515,7 +548,7 @@ public class DynamicProvisioningTest {
         NodeResources resources = new NodeResources(4, 16, 125, 0.3,
                                                   NodeResources.DiskSpeed.any, NodeResources.StorageType.any,
                                                   NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
-        tester.prepare(ProvisioningTester.applicationId(), ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"))
+        tester.prepare(applicationId(), ClusterSpec.request(container, ClusterSpec.Id.from("id1"))
                                                                       .vespaVersion("8.0").build(),
                        2, 1, resources);
     }
@@ -555,7 +588,7 @@ public class DynamicProvisioningTest {
     }
 
     private static ClusterSpec clusterSpec(String clusterId, boolean exclusive) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").exclusive(exclusive).build();
+        return ClusterSpec.request(content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").exclusive(exclusive).build();
     }
 
     private static ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk) {
