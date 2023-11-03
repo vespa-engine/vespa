@@ -843,7 +843,7 @@ public class AutoscalingTest {
                                                .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
-        assertEquals("Don't autoscale: Autoscaling of resources is not enabled for single node clusters", fixture.autoscale().toString());
+        assertEquals("Don't autoscale: Autoscaling is disabled in single node clusters", fixture.autoscale().toString());
     }
 
     /** Same setup as test_autoscaling_in_dev(), just with required = true */
