@@ -528,6 +528,24 @@ jobs:
           dnf install -y epel-release
           dnf install -y vespa
 
+  mirror-copr-rpms-to-archive:
+    image: quay.io/centos/centos:stream8
+    annotations:
+      screwdriver.cd/cpu: LOW
+      screwdriver.cd/ram: LOW
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 60
+      screwdriver.cd/buildPeriodically: H 6 * * *
+    secrets:
+      - CLOUDSMITH_API_CREDS
+    steps:
+      - install: |
+          dnf install -y dnf-plugins-core jq
+      - mirror-x86-64: |
+          screwdriver/publish-unpublished-rpms-to-archive.sh x86_64
+      - mirror-aarch64: |
+          screwdriver/publish-unpublished-rpms-to-archive.sh aarch64
+
   mirror-copr-rpms-to-artifactory:
     image: quay.io/centos/centos:stream8
     annotations:
