@@ -3,32 +3,12 @@
 #include "stackdumpiterator.h"
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
+#include <cassert>
+#include <charconv>
 
 using search::query::PredicateQueryTerm;
 
 namespace search {
-
-namespace {
-
-uint64_t
-readUint64(const char *&p)
-{
-    uint64_t value;
-    memcpy(&value, p, sizeof(value));
-    p += sizeof(value);
-    return vespalib::nbo::n2h(value);
-}
-
-double
-read_double(const char *&p)
-{
-    double value;
-    memcpy(&value, p, sizeof(value));
-    p += sizeof(value);
-    return vespalib::nbo::n2h(value);
-}
-
-}
 
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf)
     : _buf(buf.begin()),
@@ -63,6 +43,24 @@ SimpleQueryStackDumpIterator::read_stringref(const char *&p)
     vespalib::stringref result(p, len);
     p += len;
     return result;
+}
+
+uint64_t
+SimpleQueryStackDumpIterator::readUint64(const char *&p)
+{
+    uint64_t value;
+    memcpy(&value, p, sizeof(value));
+    p += sizeof(value);
+    return vespalib::nbo::n2h(value);
+}
+
+double
+SimpleQueryStackDumpIterator::read_double(const char *&p)
+{
+    double value;
+    memcpy(&value, p, sizeof(value));
+    p += sizeof(value);
+    return vespalib::nbo::n2h(value);
 }
 
 uint64_t

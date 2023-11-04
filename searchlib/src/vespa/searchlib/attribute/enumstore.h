@@ -35,7 +35,7 @@ namespace search {
  *                   It has special handling of type 'const char *' for strings.
  */
 template <class EntryT>
-class EnumStoreT final : public IEnumStore {
+class EnumStoreT : public IEnumStore {
 public:
     using EntryType = EntryT;
     static constexpr bool has_string_type = std::is_same_v<EntryType, const char *>;
@@ -61,6 +61,9 @@ private:
     EntryType              _default_value;
     AtomicIndex            _default_value_ref;
 
+    EnumStoreT(const EnumStoreT & rhs) = delete;
+    EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
+
     void free_value_if_unused(Index idx, IndexList &unused) override;
 
     const vespalib::datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
@@ -73,8 +76,6 @@ private:
     std::unique_ptr<EntryComparator> allocate_optionally_folded_comparator(bool folded) const;
     ComparatorType make_optionally_folded_comparator(bool folded) const;
 public:
-    EnumStoreT(const EnumStoreT & rhs) = delete;
-    EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
     EnumStoreT(bool has_postings, const search::DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator, EntryType default_value);
     EnumStoreT(bool has_postings, const search::DictionaryConfig & dict_cfg);
     ~EnumStoreT() override;
@@ -158,7 +159,7 @@ public:
         IndexList _possibly_unused;
 
     public:
-        explicit BatchUpdater(EnumStoreType& store)
+        BatchUpdater(EnumStoreType& store)
             : _store(store),
               _possibly_unused()
         {}

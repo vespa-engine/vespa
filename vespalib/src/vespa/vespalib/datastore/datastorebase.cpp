@@ -110,8 +110,8 @@ DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t entries_needed)
 {
     size_t buffer_id = getFirstFreeBufferId();
     if (buffer_id >= getMaxNumBuffers()) {
-        LOG_ABORT(make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
-                              typeId, entries_needed).c_str());
+        LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
+                                        typeId, entries_needed).c_str());
     }
     on_active(buffer_id, typeId, entries_needed);
     _primary_buffer_ids[typeId] = buffer_id;
@@ -402,7 +402,7 @@ DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries_need
     BufferAndMeta & bufferMeta = _buffers[bufferId];
     BufferState *state = bufferMeta.get_state_relaxed();
     if (state == nullptr) {
-        auto & newState = _stash.create<BufferState>();
+        BufferState & newState = _stash.create<BufferState>();
         if (_disable_entry_hold_list) {
             newState.disable_entry_hold_list();
         }

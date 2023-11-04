@@ -11,8 +11,7 @@ Memory::make_string() const
     return vespalib::string(data, size);
 }
 
-std::ostream &
-operator<<(std::ostream &os, const Memory &memory) {
+std::ostream &operator<<(std::ostream &os, const Memory &memory) {
     uint32_t written = 0;
     uint32_t hexCount = 25;
     os << "size: " << memory.size << "(bytes)" << std::endl;
@@ -21,7 +20,7 @@ operator<<(std::ostream &os, const Memory &memory) {
             os << std::endl;
             written = 0;
         }
-        os << make_string("0x%02x ", memory.data[i] & 0xff);
+        os << vespalib::make_string("0x%02x ", memory.data[i] & 0xff);
     }
     if (written > 0) {
         os << std::endl;
