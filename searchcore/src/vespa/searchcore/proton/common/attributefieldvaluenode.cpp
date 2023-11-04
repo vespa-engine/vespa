@@ -9,9 +9,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.common.attribute_field_value_node");
-
 namespace proton {
 
 using document::select::Context;
