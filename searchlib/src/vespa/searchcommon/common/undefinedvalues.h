@@ -31,43 +31,42 @@ inline constexpr const char* getUndefined<const char*>() {
 
 // for all signed integers
 template <typename T>
-bool isUndefined(const T & value) {
+bool isUndefined(T value) {
     return value == getUndefined<T>();
 }
 
 template <>
-inline bool isUndefined<uint8_t>(const uint8_t &) {
+inline bool isUndefined<uint8_t>(uint8_t) {
     return false;
 }
 
 template <>
-inline bool isUndefined<uint16_t>(const uint16_t &) {
+inline bool isUndefined<uint16_t>(uint16_t) {
     return false;
 }
 
 template <>
-inline bool isUndefined<uint32_t>(const uint32_t &) {
+inline bool isUndefined<uint32_t>(uint32_t) {
     return false;
 }
 
 template <>
-inline bool isUndefined<uint64_t>(const uint64_t &) {
+inline bool isUndefined<uint64_t>(uint64_t) {
     return false;
 }
 
 template <>
-inline bool isUndefined<float>(const float & value) {
+inline bool isUndefined<float>(float value) {
     return std::isnan(value);
 }
 
 template <>
-inline bool isUndefined<double>(const double & value) {
+inline bool isUndefined<double>(double value) {
     return std::isnan(value);
 }
 
-template <>
-inline bool isUndefined<vespalib::string>(const vespalib::string & value) {
-    return value.empty();
+inline bool isUndefined(const char * value) {
+    return (value == nullptr) || (value[0] == '\0');
 }
 
 }

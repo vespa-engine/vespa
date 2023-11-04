@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -76,6 +77,26 @@ TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header)
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::PrenormalizedAngular}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::Hamming}));
     verify_roundtrip_serialization(HnswIPO());
+}
+
+TEST(UndefinedValues, isUndefined) {
+    EXPECT_TRUE(isUndefined(""));
+    EXPECT_TRUE(isUndefined(nullptr));
+    EXPECT_FALSE(isUndefined(" "));
+
+    EXPECT_FALSE(isUndefined<int8_t>(0));
+    EXPECT_FALSE(isUndefined<int16_t>(0));
+    EXPECT_FALSE(isUndefined<int32_t>(0));
+    EXPECT_FALSE(isUndefined<int64_t>(0));
+    EXPECT_FALSE(isUndefined<float>(0));
+    EXPECT_FALSE(isUndefined<double>(0));
+
+    EXPECT_TRUE(isUndefined<int8_t>(std::numeric_limits<int8_t>::min()));
+    EXPECT_TRUE(isUndefined<int16_t>(std::numeric_limits<int16_t>::min()));
+    EXPECT_TRUE(isUndefined<int32_t>(std::numeric_limits<int32_t>::min()));
+    EXPECT_TRUE(isUndefined<int64_t>(std::numeric_limits<int64_t>::min()));
+    EXPECT_TRUE(isUndefined<float>(std::numeric_limits<float>::quiet_NaN()));
+    EXPECT_TRUE(isUndefined<double>(std::numeric_limits<double>::quiet_NaN()));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
