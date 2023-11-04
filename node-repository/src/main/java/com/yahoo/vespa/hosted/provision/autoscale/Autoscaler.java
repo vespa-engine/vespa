@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
 
 import java.time.Duration;
 
@@ -55,8 +55,8 @@ public class Autoscaler {
     }
 
     private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        ClusterAllocationFeatures features = ClusterAllocationFeatures.from(nodeRepository.flagSource(), application.id(), clusterNodes.clusterSpec().vespaVersion());
-        var model = new ClusterModel(features,
+        ClusterAllocationParams params = ClusterAllocationParams.from(nodeRepository.flagSource(), application.id(), clusterNodes.clusterSpec().vespaVersion());
+        var model = new ClusterModel(params,
                                      nodeRepository,
                                      application,
                                      clusterNodes.not().retired().clusterSpec(),
@@ -76,7 +76,7 @@ public class Autoscaler {
         var loadAdjustment = model.loadAdjustment();
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
-        var target = allocationOptimizer.findBestAllocation(features, loadAdjustment, model, limits);
+        var target = allocationOptimizer.findBestAllocation(params, loadAdjustment, model, limits);
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);

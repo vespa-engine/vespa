@@ -85,37 +85,37 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         log.log(Level.FINE, "Received deploy prepare request for " + requested +
                             " for application " + application + ", cluster " + cluster);
-        var features = ClusterAllocationFeatures.from(nodeRepository.flagSource(), application, cluster.vespaVersion());
-        validate(features, application, cluster, requested, logger);
+        var params = ClusterAllocationParams.from(nodeRepository.flagSource(), application, cluster.vespaVersion());
+        validate(params, application, cluster, requested, logger);
 
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
             cluster = capacityPolicies.decideExclusivity(requested, cluster);
             Capacity actual = capacityPolicies.applyOn(requested, application, cluster.isExclusive());
-            ClusterResources target = decideTargetResources(features, application, cluster, actual);
+            ClusterResources target = decideTargetResources(params, application, cluster, actual);
             validate(actual, target, cluster, application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
-            resources = getNodeResources(features, cluster, target.nodeResources(), application);
+            resources = getNodeResources(params, cluster, target.nodeResources(), application);
             nodeSpec = NodeSpec.from(target.nodes(), target.groups(), resources, cluster.isExclusive(), actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()),
                                      requested.clusterInfo().hostTTL());
         }
         else {
             cluster = cluster.withExclusivity(true);
-            resources = getNodeResources(features, cluster, requested.minResources().nodeResources(), application);
+            resources = getNodeResources(params, cluster, requested.minResources().nodeResources(), application);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
-        return asSortedHosts(preparer.prepare(features, application, cluster, nodeSpec),
+        return asSortedHosts(preparer.prepare(params, application, cluster, nodeSpec),
                              requireCompatibleResources(resources, cluster));
     }
 
-    private void validate(ClusterAllocationFeatures features, ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+    private void validate(ClusterAllocationParams params, ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
-        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits(features, "Min", requested.minResources().nodeResources(), application, cluster);
-        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits(features, "Max", requested.maxResources().nodeResources(), application, cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits(params, "Min", requested.minResources().nodeResources(), application, cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits(params, "Max", requested.maxResources().nodeResources(), application, cluster);
 
         if (!requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: GPU capacity cannot have ranges");
@@ -133,8 +133,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
     }
 
-    private NodeResources getNodeResources(ClusterAllocationFeatures features, ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
-        return capacityPolicies.specifyFully(features, nodeResources, cluster, applicationId);
+    private NodeResources getNodeResources(ClusterAllocationParams params, ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
+        return capacityPolicies.specifyFully(params, nodeResources, cluster, applicationId);
     }
 
     @Override
@@ -166,18 +166,18 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
      * and updates the application store with the received min and max.
      */
-    private ClusterResources decideTargetResources(ClusterAllocationFeatures features, ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
+    private ClusterResources decideTargetResources(ClusterAllocationParams params, ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
         try (Mutex lock = nodeRepository.applications().lock(applicationId)) {
             var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
                               .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
             var cluster = application.cluster(clusterSpec.id()).get();
-            return cluster.target().resources().orElseGet(() -> currentResources(features, application, clusterSpec, cluster, requested));
+            return cluster.target().resources().orElseGet(() -> currentResources(params, application, clusterSpec, cluster, requested));
         }
     }
 
     /** Returns the current resources of this cluster, or requested min if none */
-    private ClusterResources currentResources(ClusterAllocationFeatures features,
+    private ClusterResources currentResources(ClusterAllocationParams params,
                                               Application application,
                                               ClusterSpec clusterSpec,
                                               Cluster cluster,
@@ -189,19 +189,19 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableResources(features, initialResourcesFrom(features, requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
+                ? new AllocatableResources(params, initialResourcesFrom(params, requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
                 : new AllocatableResources(nodes, nodeRepository);
-        var model = new ClusterModel(features, nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
-        return within(features, Limits.of(requested), model, firstDeployment);
+        var model = new ClusterModel(params, nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
+        return within(params, Limits.of(requested), model, firstDeployment);
     }
 
-    private ClusterResources initialResourcesFrom(ClusterAllocationFeatures features, Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return capacityPolicies.specifyFully(features, requested.minResources(), clusterSpec, applicationId);
+    private ClusterResources initialResourcesFrom(ClusterAllocationParams params, Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
+        return capacityPolicies.specifyFully(params, requested.minResources(), clusterSpec, applicationId);
     }
 
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources within(ClusterAllocationFeatures features,
+    private ClusterResources within(ClusterAllocationParams params,
                                     Limits limits,
                                     ClusterModel model,
                                     boolean firstDeployment) {
@@ -212,11 +212,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
             return model.current().advertisedResources();
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(features,
+        return allocationOptimizer.findBestAllocation(params,
                                                       Load.one(),
                                                       model,
                                                       limits)
-                                  .orElseThrow(() -> newNoAllocationPossible(features, model.current().clusterSpec(), limits))
+                                  .orElseThrow(() -> newNoAllocationPossible(params, model.current().clusterSpec(), limits))
                                   .advertisedResources();
     }
 
@@ -281,10 +281,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
         return nodeResources;
     }
 
-    private IllegalArgumentException newNoAllocationPossible(ClusterAllocationFeatures features, ClusterSpec spec, Limits limits) {
+    private IllegalArgumentException newNoAllocationPossible(ClusterAllocationParams params, ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        if (nodeRepository.exclusiveAllocation(features, spec) && findNearestNodeResources(limits).isPresent())
+        if (nodeRepository.exclusiveAllocation(params, spec) && findNearestNodeResources(limits).isPresent())
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits).get());
 
         return new IllegalArgumentException(message.toString());

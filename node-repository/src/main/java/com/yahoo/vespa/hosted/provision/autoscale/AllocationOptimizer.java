@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
 
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableResources> findBestAllocation(ClusterAllocationFeatures features,
+    public Optional<AllocatableResources> findBestAllocation(ClusterAllocationParams params,
                                                              Load loadAdjustment,
                                                              ClusterModel model,
                                                              Limits limits) {
@@ -44,12 +44,12 @@ public class AllocationOptimizer {
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
-            limits = atLeast(minimumNodes, limits).fullySpecified(features, model.current().clusterSpec(), nodeRepository, model.application().id());
+            limits = atLeast(minimumNodes, limits).fullySpecified(params, model.current().clusterSpec(), nodeRepository, model.application().id());
         Optional<AllocatableResources> bestAllocation = Optional.empty();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
-                                                         .map(hostResources -> maxResourcesOf(features, hostResources, model))
+                                                         .map(hostResources -> maxResourcesOf(params, hostResources, model))
                                                          .toList();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
@@ -59,7 +59,7 @@ public class AllocationOptimizer {
                                                      groups,
                                                      nodeResourcesWith(nodes, groups,
                                                                        limits, loadAdjustment, model));
-                var allocatableResources = AllocatableResources.from(features,
+                var allocatableResources = AllocatableResources.from(params,
                                                                      resources,
                                                                      model.application().id(),
                                                                      model.current().clusterSpec(),
@@ -76,8 +76,8 @@ public class AllocationOptimizer {
     }
 
     /** Returns the max resources of a host one node may allocate. */
-    private NodeResources maxResourcesOf(ClusterAllocationFeatures features, NodeResources hostResources, ClusterModel model) {
-        if (nodeRepository.exclusiveAllocation(features, model.clusterSpec())) return hostResources;
+    private NodeResources maxResourcesOf(ClusterAllocationParams params, NodeResources hostResources, ClusterModel model) {
+        if (nodeRepository.exclusiveAllocation(params, model.clusterSpec())) return hostResources;
         // static, shared hosts: Allocate at most half of the host cpu to simplify management
         return hostResources.withVcpu(hostResources.vcpu() / 2);
     }

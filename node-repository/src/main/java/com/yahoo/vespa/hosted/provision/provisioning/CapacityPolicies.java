@@ -86,22 +86,22 @@ public class CapacityPolicies {
         return target;
     }
 
-    public ClusterResources specifyFully(ClusterAllocationFeatures features, ClusterResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.with(specifyFully(features, resources.nodeResources(), clusterSpec, applicationId));
+    public ClusterResources specifyFully(ClusterAllocationParams params, ClusterResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
+        return resources.with(specifyFully(params, resources.nodeResources(), clusterSpec, applicationId));
     }
 
-    public NodeResources specifyFully(ClusterAllocationFeatures features, NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(features, clusterSpec, applicationId).with(DiskSpeed.any));
+    public NodeResources specifyFully(ClusterAllocationParams params, NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
+        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(params, clusterSpec, applicationId).with(DiskSpeed.any));
         // TODO jonmv: remove this after all apps are 8.248.8 or above; architecture for admin nodes was not picked up before this.
         if (clusterSpec.vespaVersion().isBefore(Version.fromString("8.248.8"))) amended = amended.with(resources.architecture());
         return amended;
     }
 
-    private NodeResources defaultResources(ClusterAllocationFeatures features, ClusterSpec clusterSpec, ApplicationId applicationId) {
+    private NodeResources defaultResources(ClusterAllocationParams params, ClusterSpec clusterSpec, ApplicationId applicationId) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
-            if (nodeRepository.exclusiveAllocation(features, clusterSpec)) {
+            if (nodeRepository.exclusiveAllocation(params, clusterSpec)) {
                 return smallestExclusiveResources().with(architecture);
             }
 

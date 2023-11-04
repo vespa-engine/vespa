@@ -84,10 +84,10 @@ class NodeAllocation {
 
     private final NodeRepository nodeRepository;
     private final Optional<String> requiredHostFlavor;
-    private final ClusterAllocationFeatures features;
+    private final ClusterAllocationParams params;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, ClusterAllocationFeatures features) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, ClusterAllocationParams params) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
@@ -100,7 +100,7 @@ class NodeAllocation {
                                                                         .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                                                                         .value())
                                           .filter(s -> !s.isBlank());
-        this.features = features;
+        this.params = params;
     }
 
     /**
@@ -133,7 +133,7 @@ class NodeAllocation {
                 }
             }
             else if ( ! saturated() && hasCompatibleResources(candidate)) {
-                if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(features, candidate, application, cluster)) {
+                if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(params, candidate, application, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
@@ -169,7 +169,7 @@ class NodeAllocation {
             boolean alreadyRetired = candidate.allocation().map(a -> a.membership().retired()).orElse(false);
             return alreadyRetired ? Retirement.alreadyRetired : Retirement.none;
         }
-        if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(features, candidate, application, cluster)) return Retirement.outsideRealLimits;
+        if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(params, candidate, application, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
         if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;
@@ -198,10 +198,10 @@ class NodeAllocation {
 
     private NodeCandidate.ExclusivityViolation violatesExclusivity(NodeCandidate candidate) {
         return candidate.violatesExclusivity(cluster, application,
-                                             nodeRepository.exclusiveClusterType(features, cluster),
-                                             nodeRepository.exclusiveAllocation(features, cluster),
+                                             nodeRepository.exclusiveClusterType(params, cluster),
+                                             nodeRepository.exclusiveAllocation(params, cluster),
                                              nodeRepository.exclusiveProvisioning(cluster),
-                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes, features);
+                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes, params);
     }
 
     /**

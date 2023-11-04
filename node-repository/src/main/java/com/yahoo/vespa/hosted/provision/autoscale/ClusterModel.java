@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -47,7 +47,7 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final ClusterAllocationFeatures features;
+    private final ClusterAllocationParams params;
     private final NodeRepository nodeRepository;
     private final Application application;
     private final ClusterSpec clusterSpec;
@@ -76,7 +76,7 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(ClusterAllocationFeatures features,
+    public ClusterModel(ClusterAllocationParams params,
                         NodeRepository nodeRepository,
                         Application application,
                         ClusterSpec clusterSpec,
@@ -85,7 +85,7 @@ public class ClusterModel {
                         AllocatableResources current,
                         MetricsDb metricsDb,
                         Clock clock) {
-        this.features = features;
+        this.params = params;
         this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
@@ -100,7 +100,7 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
-    ClusterModel(ClusterAllocationFeatures features,
+    ClusterModel(ClusterAllocationParams params,
                  NodeRepository nodeRepository,
                  Application application,
                  ClusterSpec clusterSpec,
@@ -111,7 +111,7 @@ public class ClusterModel {
                  Duration allocationDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
-        this.features = features;
+        this.params = params;
         this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
@@ -175,7 +175,7 @@ public class ClusterModel {
     }
 
     public boolean isExclusive() {
-        return nodeRepository.exclusiveAllocation(features, clusterSpec);
+        return nodeRepository.exclusiveAllocation(params, clusterSpec);
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -438,12 +438,12 @@ public class ClusterModel {
 
         double averageReal() {
             if (nodes.isEmpty()) { // we're estimating
-                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(features,
+                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(params,
                                                                                          cluster.minResources().nodeResources(),
                                                                                          clusterSpec,
                                                                                          application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
-                                                                          nodeRepository.exclusiveAllocation(features, clusterSpec),
+                                                                          nodeRepository.exclusiveAllocation(params, clusterSpec),
                                                                           false).memoryGb();
             }
             else {

@@ -53,7 +53,7 @@ public interface HostProvisioner {
      * @return a runnable that waits for the provisioning request to finish. It can be run without holding any locks,
      * but may fail with an exception that should be propagated to the user initiating prepare()
      */
-    Runnable provisionHosts(ClusterAllocationFeatures features,
+    Runnable provisionHosts(ClusterAllocationParams params,
                             HostProvisionRequest request,
                             Predicate<NodeResources> realHostResourcesWithinLimits,
                             Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;

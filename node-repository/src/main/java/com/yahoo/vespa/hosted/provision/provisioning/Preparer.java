@@ -58,7 +58,7 @@ public class Preparer {
     /**
      * Ensure sufficient nodes are reserved or active for the given application, group and cluster
      *
-     * @param features             misc constants used in preparation
+     * @param params               misc constants used in preparation
      * @param application          the application we are allocating to
      * @param cluster              the cluster and group we are allocating to
      * @param requested            a specification of the requested nodes
@@ -67,7 +67,7 @@ public class Preparer {
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public List<Node> prepare(ClusterAllocationFeatures features, ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
+    public List<Node> prepare(ClusterAllocationParams params, ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requested.resources().orElse(NodeResources.unspecified()));
 
@@ -77,7 +77,7 @@ public class Preparer {
         // and we can return nodes previously allocated.
         LockedNodeList allNodes = nodeRepository.nodes().list(PROBE_LOCK);
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
-        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes, features);
+        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes, params);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             indices.commitProbe();
@@ -85,28 +85,28 @@ public class Preparer {
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            return prepareWithLocks(application, cluster, requested, indices, features);
+            return prepareWithLocks(application, cluster, requested, indices, params);
         }
     }
 
-    private ApplicationMutex parentLockOrNull(ClusterAllocationFeatures features, NodeType type) {
-        return NodeCandidate.canMakeHostExclusive(features.makeExclusive(), type, nodeRepository.zone().cloud().allowHostSharing()) ?
+    private ApplicationMutex parentLockOrNull(ClusterAllocationParams params, NodeType type) {
+        return NodeCandidate.canMakeHostExclusive(params.makeExclusive(), type, nodeRepository.zone().cloud().allowHostSharing()) ?
                nodeRepository.applications().lock(InfrastructureApplication.withNodeType(type.parentNodeType()).id()) :
                null;
     }
 
     /// Note that this will write to the node repo.
-    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, ClusterAllocationFeatures features) {
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, ClusterAllocationParams params) {
         Runnable waiter = null;
         List<Node> acceptedNodes;
         try (Mutex lock = nodeRepository.applications().lock(application);
-             ApplicationMutex parentLockOrNull = parentLockOrNull(features, requested.type());
+             ApplicationMutex parentLockOrNull = parentLockOrNull(params, requested.type());
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
-            NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, features);
+            NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, params);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
-                HostSharing sharing = hostSharing(features, cluster, hostType);
+                HostSharing sharing = hostSharing(params, cluster, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
                 Set<Node> hosts = new LinkedHashSet<>();
@@ -140,8 +140,8 @@ public class Preparer {
                                                                             requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
                     Predicate<NodeResources> realHostResourcesWithinLimits = resources ->
-                            nodeRepository.nodeResourceLimits().isWithinRealLimits(features, resources, application, cluster);
-                    waiter = hostProvisioner.get().provisionHosts(features, request, realHostResourcesWithinLimits, whenProvisioned);
+                            nodeRepository.nodeResourceLimits().isWithinRealLimits(params, resources, application, cluster);
+                    waiter = hostProvisioner.get().provisionHosts(params, request, realHostResourcesWithinLimits, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been
@@ -155,7 +155,7 @@ public class Preparer {
                 // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
                 // Try again, but without retiring
                 indices.resetProbe();
-                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), indices, features);
+                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), indices, params);
                 log.warning("Prepared " + application + " " + cluster.id() + " without retirement due to lack of capacity");
                 return accepted;
             }
@@ -187,9 +187,9 @@ public class Preparer {
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                                             Supplier<Integer> nextIndex, LockedNodeList allNodes, ClusterAllocationFeatures features) {
+                                             Supplier<Integer> nextIndex, LockedNodeList allNodes, ClusterAllocationParams params) {
         validateAccount(requested.cloudAccount(), application, allNodes);
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository, features);
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository, params);
         var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
                                                            requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                            nodeRepository.nameResolver());
@@ -203,8 +203,8 @@ public class Preparer {
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
                                                           nodeRepository.spareCount(),
-                                                          nodeRepository.exclusiveAllocation(features, cluster),
-                                                          features);
+                                                          nodeRepository.exclusiveAllocation(params, cluster),
+                                                          params);
         allocation.offer(prioritizer.collect());
         return allocation;
     }
@@ -231,10 +231,10 @@ public class Preparer {
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 
-    private HostSharing hostSharing(ClusterAllocationFeatures features, ClusterSpec cluster, NodeType hostType) {
+    private HostSharing hostSharing(ClusterAllocationParams params, ClusterSpec cluster, NodeType hostType) {
         if ( hostType.isSharable())
             return nodeRepository.exclusiveProvisioning(cluster) ? HostSharing.provision :
-                   nodeRepository.exclusiveAllocation(features, cluster) ? HostSharing.exclusive :
+                   nodeRepository.exclusiveAllocation(params, cluster) ? HostSharing.exclusive :
                    HostSharing.any;
         else
             return HostSharing.any;

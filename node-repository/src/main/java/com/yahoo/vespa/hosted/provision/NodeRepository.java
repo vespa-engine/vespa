@@ -26,7 +26,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -198,8 +198,8 @@ public class NodeRepository extends AbstractComponent {
     public int spareCount() { return spareCount; }
 
     /** Returns whether nodes must be allocated to hosts that are exclusive to the cluster type. */
-    public boolean exclusiveClusterType(ClusterAllocationFeatures features, ClusterSpec cluster) {
-        return features.sharedHost().hasClusterType(cluster.type().name());
+    public boolean exclusiveClusterType(ClusterAllocationParams params, ClusterSpec cluster) {
+        return params.sharedHost().hasClusterType(cluster.type().name());
     }
 
     /**
@@ -207,10 +207,10 @@ public class NodeRepository extends AbstractComponent {
      * Exclusive allocation requires that the wanted node resources matches the advertised resources of the node
      * perfectly.
      */
-    public boolean exclusiveAllocation(ClusterAllocationFeatures features, ClusterSpec clusterSpec) {
+    public boolean exclusiveAllocation(ClusterAllocationParams params, ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
                ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
-               ( !zone().cloud().allowHostSharing() && !features.sharedHost().supportsClusterType(clusterSpec.type().name()));
+               ( !zone().cloud().allowHostSharing() && !params.sharedHost().supportsClusterType(clusterSpec.type().name()));
     }
 
     /** Whether the nodes of this cluster must be running on hosts that are specifically provisioned for the application. */
