@@ -81,7 +81,7 @@ TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header)
 
 TEST(UndefinedValues, isUndefined) {
     EXPECT_TRUE(isUndefined(""));
-    EXPECT_TRUE(isUndefined(nullptr));
+    EXPECT_TRUE(isUndefined(static_cast<const char *>(nullptr)));
     EXPECT_FALSE(isUndefined(" "));
 
     EXPECT_FALSE(isUndefined<int8_t>(0));
