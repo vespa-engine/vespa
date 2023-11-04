@@ -1,6 +1,0 @@
-%{=varname}
-%{=varname}
-%{list l}
-inner %{=varname}
-%{=innerVarSetAtTop}
-%{end}

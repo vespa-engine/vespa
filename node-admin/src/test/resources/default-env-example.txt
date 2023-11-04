@@ -1,5 +1,0 @@
-override VESPA_HOSTNAME myhostname
-fallback VESPA_CONFIGSERVER fallback-configserver
-fallback VESPA_TLS_CONFIG_FILE /fallback/path/to/config.file
-unset VESPA_LEGACY_OPTION
-fallback VESPA_LEGACY_OPTION duplicated-variable
