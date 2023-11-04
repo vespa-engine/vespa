@@ -218,17 +218,6 @@ Summary: Vespa - The open big data serving engine - config models
 
 Vespa - The open big data serving engine - config models
 
-%package node-admin
-
-Summary: Vespa - The open big data serving engine - node-admin
-
-Requires: %{name}-base = %{version}-%{release}
-Requires: %{name}-jars = %{version}-%{release}
-
-%description node-admin
-
-Vespa - The open big data serving engine - node-admin
-
 %package jars
 
 Summary: Vespa - The open big data serving engine - shared java jar files
