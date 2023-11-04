@@ -48,7 +48,7 @@ RUsage::createSelf(vespalib::steady_time since)
     RUsage r;
     r._time = vespalib::steady_clock::now() - since;
     if (getrusage(RUSAGE_SELF, &r) != 0) {
-        throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
+        throw std::runtime_error(make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }
@@ -59,7 +59,7 @@ RUsage::createChildren(vespalib::steady_time since)
     RUsage r;
     r._time = vespalib::steady_clock::now() - since;
     if (getrusage(RUSAGE_CHILDREN, &r) != 0) {
-        throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
+        throw std::runtime_error(make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }

@@ -102,7 +102,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
 
 template <typename EntryT>
 EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg)
-    : EnumStoreT<EntryT>(has_postings, dict_cfg, {}, attribute::getUndefined<EntryType>())
+    : EnumStoreT(has_postings, dict_cfg, {}, attribute::getUndefined<EntryType>())
 {
 }
 
@@ -270,7 +270,7 @@ EnumStoreT<EntryT>::consider_compact_values(const CompactionStrategy& compaction
     if (!_store.get_data_store().has_held_buffers() && _compaction_spec.get_values().compact()) {
         return compact_worst_values(_compaction_spec.get_values(), compaction_strategy);
     }
-    return std::unique_ptr<IEnumStore::EnumIndexRemapper>();
+    return {};
 }
 
 template <typename EntryT>
