@@ -40,7 +40,7 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 }
 
 bool
-EnumStoreStringComparator::less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const {
+EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
     switch (_compare_strategy) {
     case CompareStrategy::UNCASED:
         return (use_prefix()

@@ -18,7 +18,7 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    explicit EnumStoreComparator(const DataStoreType& data_store)
+    EnumStoreComparator(const DataStoreType& data_store)
         : ParentType(data_store)
     {}
 
@@ -34,7 +34,7 @@ public:
         return *this;
     }
     EnumStoreComparator<EntryT> make_for_lookup(const EntryT& lookup_value) const {
-        return {this->_store, lookup_value};
+        return EnumStoreComparator<EntryT>(this->_store, lookup_value);
     }
 };
 
@@ -76,9 +76,6 @@ private:
     };
 
 public:
-    explicit EnumStoreStringComparator(const DataStoreType& data_store)
-        : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED)
-    {}
     EnumStoreStringComparator(const DataStoreType& data_store, bool cased)
         : EnumStoreStringComparator(data_store, cased ? CompareStrategy::CASED : CompareStrategy::UNCASED_THEN_CASED)
     {}
@@ -94,15 +91,15 @@ private:
     EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix);
 
 public:
-    bool less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const override;
+    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     EnumStoreStringComparator make_folded() const {
-        return {_store, _compare_strategy == CompareStrategy::UNCASED_THEN_CASED ? CompareStrategy::UNCASED : _compare_strategy};
+        return EnumStoreStringComparator(_store, _compare_strategy == CompareStrategy::UNCASED_THEN_CASED ? CompareStrategy::UNCASED : _compare_strategy);
     }
     EnumStoreStringComparator make_for_lookup(const char* lookup_value) const {
-        return {_store, _compare_strategy, lookup_value};
+        return EnumStoreStringComparator(_store, _compare_strategy, lookup_value);
     }
     EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const {
-        return {_store, _compare_strategy, lookup_value, true};
+        return EnumStoreStringComparator(_store, _compare_strategy, lookup_value, true);
     }
 private:
     inline bool use_prefix() const noexcept { return _prefix; }
