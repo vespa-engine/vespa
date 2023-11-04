@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -71,7 +72,8 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
             if (parent.isEmpty()) continue;
             if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
-            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.owner(), allocation.membership().cluster());
+            var features = ClusterAllocationFeatures.from(nodeRepository().flagSource(), allocation.owner(), allocation.membership().cluster().vespaVersion());
+            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(features, resources, allocation.owner(), allocation.membership().cluster());
             if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
             if (parent.get().status().wantToUpgradeFlavor() && allocation.membership().retired()) continue; // Already upgrading
 

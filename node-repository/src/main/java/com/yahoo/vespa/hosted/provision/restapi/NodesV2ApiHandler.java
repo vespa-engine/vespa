@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CloudAccount;
@@ -46,6 +47,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
@@ -463,7 +465,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Optional<Application> application = nodeRepository.applications().get(id);
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
-        Slime slime = ApplicationSerializer.toSlime(application.get(),
+        var features = ClusterAllocationFeatures.from(nodeRepository.flagSource(), id, Vtag.currentVersion);
+        Slime slime = ApplicationSerializer.toSlime(features,
+                                                    application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id),
                                                     nodeRepository,
                                                     withPath("/nodes/v2/applications/" + id, uri));

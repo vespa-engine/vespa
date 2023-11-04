@@ -41,7 +41,7 @@ public class NodePrioritizer {
     private final boolean dynamicProvisioning;
     private final boolean allowHostSharing;
     private final boolean exclusiveAllocation;
-    private final boolean makeExclusive;
+    private final ClusterAllocationFeatures features;
     private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
@@ -49,7 +49,7 @@ public class NodePrioritizer {
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            boolean dynamicProvisioning, boolean allowHostSharing, IP.Allocation.Context ipAllocationContext, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean exclusiveAllocation, boolean makeExclusive) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean exclusiveAllocation, ClusterAllocationFeatures features) {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
@@ -59,7 +59,7 @@ public class NodePrioritizer {
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
         this.exclusiveAllocation = exclusiveAllocation;
-        this.makeExclusive = makeExclusive;
+        this.features = features;
         this.spareHosts = dynamicProvisioning ?
                 capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodes.asList()) :
                 capacity.findSpareHosts(this.allNodes.asList(), spareCount);
@@ -127,7 +127,7 @@ public class NodePrioritizer {
             if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
-            if (makeExclusive) {
+            if (features.makeExclusive()) {
                 if ( ! allowHostSharing && exclusiveAllocation && ! fitsPerfectly(host)) continue;
             } else {
                 if (host.exclusiveToApplicationId().isPresent() && ! fitsPerfectly(host)) continue;

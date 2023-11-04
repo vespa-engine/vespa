@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 
 import java.net.URI;
 import java.util.List;
@@ -24,33 +25,37 @@ import java.util.List;
  */
 public class ApplicationSerializer {
 
-    public static Slime toSlime(Application application,
+    public static Slime toSlime(ClusterAllocationFeatures features,
+                                Application application,
                                 NodeList applicationNodes,
                                 NodeRepository nodeRepository,
                                 URI applicationUri) {
         Slime slime = new Slime();
-        toSlime(application, applicationNodes, nodeRepository, slime.setObject(), applicationUri);
+        toSlime(features, application, applicationNodes, nodeRepository, slime.setObject(), applicationUri);
         return slime;
     }
 
-    private static void toSlime(Application application,
+    private static void toSlime(ClusterAllocationFeatures features,
+                                Application application,
                                 NodeList applicationNodes,
                                 NodeRepository nodeRepository,
                                 Cursor object,
                                 URI applicationUri) {
         object.setString("url", applicationUri.toString());
         object.setString("id", application.id().toFullString());
-        clustersToSlime(application, applicationNodes, nodeRepository, object.setObject("clusters"));
+        clustersToSlime(features, application, applicationNodes, nodeRepository, object.setObject("clusters"));
     }
 
-    private static void clustersToSlime(Application application,
+    private static void clustersToSlime(ClusterAllocationFeatures features,
+                                        Application application,
                                         NodeList applicationNodes,
                                         NodeRepository nodeRepository,
                                         Cursor clustersObject) {
-        application.clusters().values().forEach(cluster -> toSlime(application, cluster, applicationNodes, nodeRepository, clustersObject));
+        application.clusters().values().forEach(cluster -> toSlime(features, application, cluster, applicationNodes, nodeRepository, clustersObject));
     }
 
-    private static void toSlime(Application application,
+    private static void toSlime(ClusterAllocationFeatures features,
+                                Application application,
                                 Cluster cluster,
                                 NodeList applicationNodes,
                                 NodeRepository nodeRepository,
@@ -60,7 +65,7 @@ public class ApplicationSerializer {
         ClusterResources currentResources = nodes.toResources();
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
-        Limits limits = Limits.of(cluster).fullySpecified(nodes.clusterSpec(), nodeRepository, application.id());
+        Limits limits = Limits.of(cluster).fullySpecified(features, nodes.clusterSpec(), nodeRepository, application.id());
         toSlime(limits.min(), clusterObject.setObject("min"));
         toSlime(limits.max(), clusterObject.setObject("max"));
         if ( ! cluster.groupSize().isEmpty())

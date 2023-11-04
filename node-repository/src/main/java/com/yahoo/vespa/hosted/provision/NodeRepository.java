@@ -12,9 +12,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.JacksonFlag;
-import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
@@ -29,6 +26,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -67,7 +65,6 @@ public class NodeRepository extends AbstractComponent {
     private final MetricsDb metricsDb;
     private final Orchestrator orchestrator;
     private final int spareCount;
-    private final JacksonFlag<SharedHost> sharedHosts;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -141,7 +138,6 @@ public class NodeRepository extends AbstractComponent {
         this.metricsDb = metricsDb;
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
-        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(flagSource());
         nodes.rewrite();
     }
 
@@ -202,8 +198,8 @@ public class NodeRepository extends AbstractComponent {
     public int spareCount() { return spareCount; }
 
     /** Returns whether nodes must be allocated to hosts that are exclusive to the cluster type. */
-    public boolean exclusiveClusterType(ClusterSpec cluster) {
-        return sharedHosts.value().hasClusterType(cluster.type().name());
+    public boolean exclusiveClusterType(ClusterAllocationFeatures features, ClusterSpec cluster) {
+        return features.sharedHost().hasClusterType(cluster.type().name());
     }
 
     /**
@@ -211,10 +207,10 @@ public class NodeRepository extends AbstractComponent {
      * Exclusive allocation requires that the wanted node resources matches the advertised resources of the node
      * perfectly.
      */
-    public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
+    public boolean exclusiveAllocation(ClusterAllocationFeatures features, ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
                ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
-               ( !zone().cloud().allowHostSharing() && !sharedHosts.value().supportsClusterType(clusterSpec.type().name()));
+               ( !zone().cloud().allowHostSharing() && !features.sharedHost().supportsClusterType(clusterSpec.type().name()));
     }
 
     /** Whether the nodes of this cluster must be running on hosts that are specifically provisioned for the application. */

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
@@ -73,7 +74,10 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public Runnable provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
+    public Runnable provisionHosts(ClusterAllocationFeatures features,
+                                   HostProvisionRequest request,
+                                   Predicate<NodeResources> realHostResourcesWithinLimits,
+                                   Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
         if (behaviour(Behaviour.failProvisionRequest)) throw new NodeAllocationException("No capacity for provision request", true);
         Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
@@ -264,7 +268,7 @@ public class MockHostProvisioner implements HostProvisioner {
         /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node)} */
         failProvisioning,
 
-        /** Fail call to {@link MockHostProvisioner#provisionHosts(HostProvisionRequest, Predicate, Consumer)} */
+        /** Fail call to {@link MockHostProvisioner#provisionHosts(ClusterAllocationFeatures, HostProvisionRequest, Predicate, Consumer)} */
         failProvisionRequest,
 
         /** Fail call to {@link MockHostProvisioner#deprovision(com.yahoo.vespa.hosted.provision.Node)} */

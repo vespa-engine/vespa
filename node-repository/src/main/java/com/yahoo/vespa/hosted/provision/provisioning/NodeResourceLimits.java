@@ -31,8 +31,8 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
-        boolean exclusive = nodeRepository.exclusiveAllocation(cluster);
+    public void ensureWithinAdvertisedLimits(ClusterAllocationFeatures features, String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
+        boolean exclusive = nodeRepository.exclusiveAllocation(features, cluster);
         if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
         if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(applicationId, cluster, exclusive))
@@ -48,17 +48,17 @@ public class NodeResourceLimits {
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(ClusterAllocationFeatures features, NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
+        return isWithinRealLimits(features, nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   applicationId, cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(ClusterAllocationFeatures features, NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(applicationId, cluster)) return false;
+        if (realResources.vcpu() < minRealVcpu(features, applicationId, cluster)) return false;
         if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
@@ -115,8 +115,8 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) {
-        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(cluster));
+    private double minRealVcpu(ClusterAllocationFeatures features, ApplicationId applicationId, ClusterSpec cluster) {
+        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(features, cluster));
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {

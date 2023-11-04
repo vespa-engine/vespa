@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -46,6 +47,7 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
+    private final ClusterAllocationFeatures features;
     private final NodeRepository nodeRepository;
     private final Application application;
     private final ClusterSpec clusterSpec;
@@ -74,7 +76,8 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(NodeRepository nodeRepository,
+    public ClusterModel(ClusterAllocationFeatures features,
+                        NodeRepository nodeRepository,
                         Application application,
                         ClusterSpec clusterSpec,
                         Cluster cluster,
@@ -82,6 +85,7 @@ public class ClusterModel {
                         AllocatableResources current,
                         MetricsDb metricsDb,
                         Clock clock) {
+        this.features = features;
         this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
@@ -96,7 +100,8 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
-    ClusterModel(NodeRepository nodeRepository,
+    ClusterModel(ClusterAllocationFeatures features,
+                 NodeRepository nodeRepository,
                  Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
@@ -106,6 +111,7 @@ public class ClusterModel {
                  Duration allocationDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
+        this.features = features;
         this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
@@ -169,7 +175,7 @@ public class ClusterModel {
     }
 
     public boolean isExclusive() {
-        return nodeRepository.exclusiveAllocation(clusterSpec);
+        return nodeRepository.exclusiveAllocation(features, clusterSpec);
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -432,11 +438,12 @@ public class ClusterModel {
 
         double averageReal() {
             if (nodes.isEmpty()) { // we're estimating
-                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
+                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(features,
+                                                                                         cluster.minResources().nodeResources(),
                                                                                          clusterSpec,
                                                                                          application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
-                                                                          nodeRepository.exclusiveAllocation(clusterSpec),
+                                                                          nodeRepository.exclusiveAllocation(features, clusterSpec),
                                                                           false).memoryGb();
             }
             else {

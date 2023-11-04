@@ -10,6 +10,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationFeatures;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
@@ -89,10 +90,12 @@ public class ClusterModelTest {
         Cluster cluster = cluster();
         application = application.with(cluster);
         var nodeRepository = new ProvisioningTester.Builder().build().nodeRepository();
-        return new ClusterModel(nodeRepository,
+        var features = ClusterAllocationFeatures.from(nodeRepository.flagSource(), application.id(), clusterSpec.vespaVersion());
+        return new ClusterModel(features,
+                                nodeRepository,
                                 application.with(status),
                                 clusterSpec, cluster,
-                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository),
+                                new AllocatableResources(features, clusterResources(), clusterSpec, nodeRepository),
                                 clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());
