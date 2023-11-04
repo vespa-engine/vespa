@@ -513,12 +513,14 @@ fi
 %exclude %{_prefix}/libexec/vespa/common-env.sh
 %exclude %{_prefix}/libexec/vespa/vespa-wrapper
 %exclude %{_prefix}/libexec/vespa/find-pid
+%exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/access
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/configserver
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/node-admin
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
@@ -631,6 +633,17 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/config-model-fat.jar
+
+%files node-admin
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%dir %{_prefix}/conf
+%{_prefix}/conf/node-admin-app
+%dir %{_prefix}/libexec
+%dir %{_prefix}/libexec/vespa
+%{_prefix}/libexec/vespa/node-admin.sh
 
 %files jars
 %if %{_defattr_is_vespa_vespa}

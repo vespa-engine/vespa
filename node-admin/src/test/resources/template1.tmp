@@ -1,0 +1,10 @@
+variable section '%{=varname}'
+%{list listname}
+same variable section '%{=varname}'
+different variable section '%{=varname2}'
+%{list innerlistname}
+inner form text
+%{end}
+between ends
+%{end}
+end of text
