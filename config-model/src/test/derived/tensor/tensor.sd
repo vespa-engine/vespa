@@ -20,6 +20,9 @@ schema tensor {
     field f6 type float {
       indexing: attribute
     }
+    field f7 type tensor<int8>(p{},x[5]) {
+      indexing: attribute
+    }
   }
   
   rank-profile profile1 {
@@ -117,6 +120,19 @@ schema tensor {
       expression: 3
     }
 
+  }
+
+  rank-profile with-unpack {
+    inputs {
+      query(para) tensor<float>(p{})
+      query(qvec) tensor<float>(x[40])
+    }
+    function myunpack() {
+      expression: unpack_bits_from_int8(attribute(f7))
+    }
+    first-phase {
+      expression: sum(query(para)*myunpack*query(qvec))
+    }
   }
 
 }
