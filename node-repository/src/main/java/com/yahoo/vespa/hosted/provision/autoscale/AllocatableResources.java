@@ -9,7 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Duration;
 import java.util.List;
@@ -34,7 +34,7 @@ public class AllocatableResources {
     private final double fulfilment;
 
     /** Fake allocatable resources from requested capacity */
-    public AllocatableResources(ClusterAllocationParams params,
+    public AllocatableResources(AllocationParams params,
                                 ClusterResources requested,
                                 ClusterSpec clusterSpec,
                                 NodeRepository nodeRepository) {
@@ -169,7 +169,7 @@ public class AllocatableResources {
                                        .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
     }
 
-    public static Optional<AllocatableResources> from(ClusterAllocationParams params,
+    public static Optional<AllocatableResources> from(AllocationParams params,
                                                       ClusterResources wantedResources,
                                                       ApplicationId applicationId,
                                                       ClusterSpec clusterSpec,
@@ -256,7 +256,7 @@ public class AllocatableResources {
         }
     }
 
-    private static AllocatableResources calculateAllocatableResources(ClusterAllocationParams params,
+    private static AllocatableResources calculateAllocatableResources(AllocationParams params,
                                                                       ClusterResources wantedResources,
                                                                       NodeRepository nodeRepository,
                                                                       ApplicationId applicationId,

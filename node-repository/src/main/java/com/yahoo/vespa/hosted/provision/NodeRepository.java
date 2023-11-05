@@ -26,7 +26,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -198,7 +198,7 @@ public class NodeRepository extends AbstractComponent {
     public int spareCount() { return spareCount; }
 
     /** Returns whether nodes must be allocated to hosts that are exclusive to the cluster type. */
-    public boolean exclusiveClusterType(ClusterAllocationParams params, ClusterSpec cluster) {
+    public boolean exclusiveClusterType(AllocationParams params, ClusterSpec cluster) {
         return params.sharedHost().hasClusterType(cluster.type().name());
     }
 
@@ -207,7 +207,7 @@ public class NodeRepository extends AbstractComponent {
      * Exclusive allocation requires that the wanted node resources matches the advertised resources of the node
      * perfectly.
      */
-    public boolean exclusiveAllocation(ClusterAllocationParams params, ClusterSpec clusterSpec) {
+    public boolean exclusiveAllocation(AllocationParams params, ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
                ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
                ( !zone().cloud().allowHostSharing() && !params.sharedHost().supportsClusterType(clusterSpec.type().name()));

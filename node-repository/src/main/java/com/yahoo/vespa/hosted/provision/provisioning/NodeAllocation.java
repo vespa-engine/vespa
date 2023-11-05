@@ -84,10 +84,10 @@ class NodeAllocation {
 
     private final NodeRepository nodeRepository;
     private final Optional<String> requiredHostFlavor;
-    private final ClusterAllocationParams params;
+    private final AllocationParams params;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, ClusterAllocationParams params) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, AllocationParams params) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;

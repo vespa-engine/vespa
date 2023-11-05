@@ -596,7 +596,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     public ExclusivityViolation violatesExclusivity(ClusterSpec cluster, ApplicationId application,
                                                     boolean exclusiveClusterType, boolean exclusiveAllocation, boolean exclusiveProvisioning,
-                                                    boolean hostSharing, NodeList allNodes, ClusterAllocationParams params) {
+                                                    boolean hostSharing, NodeList allNodes, AllocationParams params) {
         if (parentHostname().isEmpty()) return ExclusivityViolation.NONE;
         if (type() != NodeType.tenant) return ExclusivityViolation.NONE;
 

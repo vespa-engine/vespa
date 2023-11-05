@@ -31,7 +31,7 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(ClusterAllocationParams params, String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
+    public void ensureWithinAdvertisedLimits(AllocationParams params, String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
         boolean exclusive = nodeRepository.exclusiveAllocation(params, cluster);
         if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
@@ -48,14 +48,14 @@ public class NodeResourceLimits {
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(ClusterAllocationParams params, NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(AllocationParams params, NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
         return isWithinRealLimits(params, nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   applicationId, cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(ClusterAllocationParams params, NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(AllocationParams params, NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
         if (realResources.vcpu() < minRealVcpu(params, applicationId, cluster)) return false;
@@ -115,7 +115,7 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ClusterAllocationParams params, ApplicationId applicationId, ClusterSpec cluster) {
+    private double minRealVcpu(AllocationParams params, ApplicationId applicationId, ClusterSpec cluster) {
         return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(params, cluster));
     }
 

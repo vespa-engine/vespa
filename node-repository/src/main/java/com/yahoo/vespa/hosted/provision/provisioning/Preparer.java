@@ -67,7 +67,7 @@ public class Preparer {
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public List<Node> prepare(ClusterAllocationParams params, ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
+    public List<Node> prepare(AllocationParams params, ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requested.resources().orElse(NodeResources.unspecified()));
 
@@ -89,14 +89,14 @@ public class Preparer {
         }
     }
 
-    private ApplicationMutex parentLockOrNull(ClusterAllocationParams params, NodeType type) {
+    private ApplicationMutex parentLockOrNull(AllocationParams params, NodeType type) {
         return NodeCandidate.canMakeHostExclusive(params.makeExclusive(), type, nodeRepository.zone().cloud().allowHostSharing()) ?
                nodeRepository.applications().lock(InfrastructureApplication.withNodeType(type.parentNodeType()).id()) :
                null;
     }
 
     /// Note that this will write to the node repo.
-    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, ClusterAllocationParams params) {
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices, AllocationParams params) {
         Runnable waiter = null;
         List<Node> acceptedNodes;
         try (Mutex lock = nodeRepository.applications().lock(application);
@@ -187,7 +187,7 @@ public class Preparer {
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                                             Supplier<Integer> nextIndex, LockedNodeList allNodes, ClusterAllocationParams params) {
+                                             Supplier<Integer> nextIndex, LockedNodeList allNodes, AllocationParams params) {
         validateAccount(requested.cloudAccount(), application, allNodes);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository, params);
         var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
@@ -231,7 +231,7 @@ public class Preparer {
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 
-    private HostSharing hostSharing(ClusterAllocationParams params, ClusterSpec cluster, NodeType hostType) {
+    private HostSharing hostSharing(AllocationParams params, ClusterSpec cluster, NodeType hostType) {
         if ( hostType.isSharable())
             return nodeRepository.exclusiveProvisioning(cluster) ? HostSharing.provision :
                    nodeRepository.exclusiveAllocation(params, cluster) ? HostSharing.exclusive :

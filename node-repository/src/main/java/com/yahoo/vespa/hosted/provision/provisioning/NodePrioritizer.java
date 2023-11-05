@@ -41,7 +41,7 @@ public class NodePrioritizer {
     private final boolean dynamicProvisioning;
     private final boolean allowHostSharing;
     private final boolean exclusiveAllocation;
-    private final ClusterAllocationParams params;
+    private final AllocationParams params;
     private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
@@ -49,7 +49,7 @@ public class NodePrioritizer {
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            boolean dynamicProvisioning, boolean allowHostSharing, IP.Allocation.Context ipAllocationContext, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean exclusiveAllocation, ClusterAllocationParams params) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean exclusiveAllocation, AllocationParams params) {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);

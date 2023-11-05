@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableResources> findBestAllocation(ClusterAllocationParams params,
+    public Optional<AllocatableResources> findBestAllocation(AllocationParams params,
                                                              Load loadAdjustment,
                                                              ClusterModel model,
                                                              Limits limits) {
@@ -76,7 +76,7 @@ public class AllocationOptimizer {
     }
 
     /** Returns the max resources of a host one node may allocate. */
-    private NodeResources maxResourcesOf(ClusterAllocationParams params, NodeResources hostResources, ClusterModel model) {
+    private NodeResources maxResourcesOf(AllocationParams params, NodeResources hostResources, ClusterModel model) {
         if (nodeRepository.exclusiveAllocation(params, model.clusterSpec())) return hostResources;
         // static, shared hosts: Allocate at most half of the host cpu to simplify management
         return hostResources.withVcpu(hostResources.vcpu() / 2);

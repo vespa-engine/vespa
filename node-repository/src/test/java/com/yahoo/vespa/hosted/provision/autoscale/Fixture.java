@@ -26,7 +26,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalcu
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -40,7 +40,7 @@ import java.util.Optional;
  */
 public class Fixture {
 
-    final ClusterAllocationParams params;
+    final AllocationParams params;
     final DynamicProvisioningTester tester;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
@@ -50,7 +50,7 @@ public class Fixture {
     Autoscaling lastAutoscaling = Autoscaling.empty();
 
     public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
-        params = ClusterAllocationParams.from(builder.flagSource, builder.application, builder.cluster.vespaVersion());
+        params = AllocationParams.from(builder.flagSource, builder.application, builder.cluster.vespaVersion());
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;

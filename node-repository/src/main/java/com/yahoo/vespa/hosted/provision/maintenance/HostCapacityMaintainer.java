@@ -25,7 +25,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -158,7 +158,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private List<Node> provision(NodeList nodeList) {
         ApplicationId application = ApplicationId.defaultId();
-        var params = ClusterAllocationParams.from(flagSource, application, Vtag.currentVersion);
+        var params = AllocationParams.from(flagSource, application, Vtag.currentVersion);
 
         return provisionUntilNoDeficit(params, application, nodeList).stream()
                                                 .sorted(comparing(node -> node.history().events().stream()
@@ -191,7 +191,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
      * @throws IllegalStateException if there was an algorithmic problem, and in case message
      *         should be sufficient (avoid no stack trace).
      */
-    private List<Node> provisionUntilNoDeficit(ClusterAllocationParams params, ApplicationId application, NodeList nodeList) {
+    private List<Node> provisionUntilNoDeficit(AllocationParams params, ApplicationId application, NodeList nodeList) {
         List<ClusterCapacity> preprovisionCapacity = preprovisionCapacityFlag.value();
 
         // Worst-case each ClusterCapacity in preprovisionCapacity will require an allocation.
@@ -218,7 +218,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    private List<Node> provisionHosts(ClusterAllocationParams params, int count, NodeResources nodeResources, Optional<String> clusterType, NodeList allNodes) {
+    private List<Node> provisionHosts(AllocationParams params, int count, NodeResources nodeResources, Optional<String> clusterType, NodeList allNodes) {
         try {
             if (throttler.throttle(allNodes, Agent.HostCapacityMaintainer)) {
                 throw new NodeAllocationException("Host provisioning is being throttled", true);
@@ -264,7 +264,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     private Optional<ClusterCapacity> allocatePreprovisionCapacity(ApplicationId application,
                                                                    List<ClusterCapacity> preprovisionCapacity,
                                                                    ArrayList<Node> mutableNodes,
-                                                                   ClusterAllocationParams params) {
+                                                                   AllocationParams params) {
         for (int clusterIndex = 0; clusterIndex < preprovisionCapacity.size(); ++clusterIndex) {
             ClusterCapacity clusterCapacity = preprovisionCapacity.get(clusterIndex);
             LockedNodeList allNodes = new LockedNodeList(mutableNodes, () -> {});
@@ -282,7 +282,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private List<Node> findCandidates(ApplicationId application, ClusterCapacity clusterCapacity, int clusterIndex, 
-                                      LockedNodeList allNodes, ClusterAllocationParams params) {
+                                      LockedNodeList allNodes, AllocationParams params) {
         NodeResources nodeResources = toNodeResources(clusterCapacity);
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application

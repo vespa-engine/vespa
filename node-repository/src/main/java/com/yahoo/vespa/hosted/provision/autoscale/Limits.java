@@ -10,7 +10,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.util.Objects;
 
@@ -66,7 +66,7 @@ public class Limits {
         return resources;
     }
 
-    public Limits fullySpecified(ClusterAllocationParams params, ClusterSpec clusterSpec, NodeRepository nodeRepository, ApplicationId applicationId) {
+    public Limits fullySpecified(AllocationParams params, ClusterSpec clusterSpec, NodeRepository nodeRepository, ApplicationId applicationId) {
         if (this.isEmpty()) throw new IllegalStateException("Unspecified limits can not be made fully specified");
 
         var capacityPolicies = new CapacityPolicies(nodeRepository);

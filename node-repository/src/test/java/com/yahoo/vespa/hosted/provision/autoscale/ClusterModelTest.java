@@ -10,7 +10,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.Status;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
@@ -90,7 +90,7 @@ public class ClusterModelTest {
         Cluster cluster = cluster();
         application = application.with(cluster);
         var nodeRepository = new ProvisioningTester.Builder().build().nodeRepository();
-        var params = ClusterAllocationParams.from(nodeRepository.flagSource(), application.id(), clusterSpec.vespaVersion());
+        var params = AllocationParams.from(nodeRepository.flagSource(), application.id(), clusterSpec.vespaVersion());
         return new ClusterModel(params,
                                 nodeRepository,
                                 application.with(status),

@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.net.URI;
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class ApplicationSerializer {
 
-    public static Slime toSlime(ClusterAllocationParams params,
+    public static Slime toSlime(AllocationParams params,
                                 Application application,
                                 NodeList applicationNodes,
                                 NodeRepository nodeRepository,
@@ -35,7 +35,7 @@ public class ApplicationSerializer {
         return slime;
     }
 
-    private static void toSlime(ClusterAllocationParams params,
+    private static void toSlime(AllocationParams params,
                                 Application application,
                                 NodeList applicationNodes,
                                 NodeRepository nodeRepository,
@@ -46,7 +46,7 @@ public class ApplicationSerializer {
         clustersToSlime(params, application, applicationNodes, nodeRepository, object.setObject("clusters"));
     }
 
-    private static void clustersToSlime(ClusterAllocationParams params,
+    private static void clustersToSlime(AllocationParams params,
                                         Application application,
                                         NodeList applicationNodes,
                                         NodeRepository nodeRepository,
@@ -54,7 +54,7 @@ public class ApplicationSerializer {
         application.clusters().values().forEach(cluster -> toSlime(params, application, cluster, applicationNodes, nodeRepository, clustersObject));
     }
 
-    private static void toSlime(ClusterAllocationParams params,
+    private static void toSlime(AllocationParams params,
                                 Application application,
                                 Cluster cluster,
                                 NodeList applicationNodes,

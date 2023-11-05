@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -47,7 +47,7 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final ClusterAllocationParams params;
+    private final AllocationParams params;
     private final NodeRepository nodeRepository;
     private final Application application;
     private final ClusterSpec clusterSpec;
@@ -76,7 +76,7 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(ClusterAllocationParams params,
+    public ClusterModel(AllocationParams params,
                         NodeRepository nodeRepository,
                         Application application,
                         ClusterSpec clusterSpec,
@@ -100,7 +100,7 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
-    ClusterModel(ClusterAllocationParams params,
+    ClusterModel(AllocationParams params,
                  NodeRepository nodeRepository,
                  Application application,
                  ClusterSpec clusterSpec,

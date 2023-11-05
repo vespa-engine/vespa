@@ -12,7 +12,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.ClusterAllocationParams;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
@@ -74,7 +74,7 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public Runnable provisionHosts(ClusterAllocationParams params,
+    public Runnable provisionHosts(AllocationParams params,
                                    HostProvisionRequest request,
                                    Predicate<NodeResources> realHostResourcesWithinLimits,
                                    Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
@@ -268,7 +268,7 @@ public class MockHostProvisioner implements HostProvisioner {
         /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node)} */
         failProvisioning,
 
-        /** Fail call to {@link MockHostProvisioner#provisionHosts(ClusterAllocationParams, HostProvisionRequest, Predicate, Consumer)} */
+        /** Fail call to {@link MockHostProvisioner#provisionHosts(AllocationParams, HostProvisionRequest, Predicate, Consumer)} */
         failProvisionRequest,
 
         /** Fail call to {@link MockHostProvisioner#deprovision(com.yahoo.vespa.hosted.provision.Node)} */
