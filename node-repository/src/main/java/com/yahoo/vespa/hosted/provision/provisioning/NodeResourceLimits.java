@@ -58,7 +58,7 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(AllocationParams params, NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(params, applicationId, cluster)) return false;
+        if (realResources.vcpu() < minRealVcpu(params)) return false;
         if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
@@ -115,8 +115,8 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(AllocationParams params, ApplicationId applicationId, ClusterSpec cluster) {
-        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(params, cluster));
+    private double minRealVcpu(AllocationParams params) {
+        return minAdvertisedVcpu(params.application(), params.cluster(), params.exclusiveAllocation());
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {

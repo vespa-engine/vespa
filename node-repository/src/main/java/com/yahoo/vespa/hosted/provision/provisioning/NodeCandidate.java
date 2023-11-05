@@ -594,9 +594,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         PARENT_HOST_NOT_EXCLUSIVE
     }
 
-    public ExclusivityViolation violatesExclusivity(ClusterSpec cluster, ApplicationId application,
-                                                    boolean exclusiveClusterType, boolean exclusiveAllocation, boolean exclusiveProvisioning,
-                                                    boolean hostSharing, NodeList allNodes, AllocationParams params) {
+    public ExclusivityViolation violatesExclusivity(AllocationParams params, NodeList allNodes) {
+        boolean hostSharing = params.nodeRepository().zone().getCloud().allowHostSharing();
         if (parentHostname().isEmpty()) return ExclusivityViolation.NONE;
         if (type() != NodeType.tenant) return ExclusivityViolation.NONE;
 
@@ -605,33 +604,33 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             // then all the nodes on the host must have the same owner.
             for (Node nodeOnHost : allNodes.childrenOf(parentHostname().get())) {
                 if (nodeOnHost.allocation().isEmpty()) continue;
-                if (exclusiveAllocation || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
-                    if ( ! nodeOnHost.allocation().get().owner().equals(application)) return ExclusivityViolation.YES;
+                if (params.exclusiveAllocation() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                    if ( ! nodeOnHost.allocation().get().owner().equals(params.application())) return ExclusivityViolation.YES;
                 }
             }
         } else {
             // the parent is exclusive to another cluster type
-            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), cluster.type()))
+            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToClusterType), params.cluster().type()))
                 return ExclusivityViolation.YES;
 
             // this cluster requires a parent that was provisioned exclusively for this cluster type
-            if (exclusiveClusterType && parent.flatMap(Node::exclusiveToClusterType).isEmpty() && params.makeExclusive())
+            if (params.exclusiveClusterType() && parent.flatMap(Node::exclusiveToClusterType).isEmpty() && params.makeExclusive())
                 return ExclusivityViolation.YES;
 
             // the parent is provisioned for another application
-            if ( ! emptyOrEqual(parent.flatMap(Node::provisionedForApplicationId), application))
+            if ( ! emptyOrEqual(parent.flatMap(Node::provisionedForApplicationId), params.application()))
                 return ExclusivityViolation.YES;
 
             // this cluster requires a parent that was provisioned for this application
-            if (exclusiveProvisioning && parent.flatMap(Node::provisionedForApplicationId).isEmpty())
+            if (params.exclusiveProvisioning() && parent.flatMap(Node::provisionedForApplicationId).isEmpty())
                 return ExclusivityViolation.YES;
 
             // the parent is exclusive to another application
-            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), application))
+            if ( ! emptyOrEqual(parent.flatMap(Node::exclusiveToApplicationId), params.application()))
                 return ExclusivityViolation.YES;
 
             // this cluster requires exclusivity, but the parent is not exclusive
-            if (exclusiveAllocation && parent.flatMap(Node::exclusiveToApplicationId).isEmpty())
+            if (params.exclusiveAllocation() && parent.flatMap(Node::exclusiveToApplicationId).isEmpty())
                 return canMakeHostExclusive(params.makeExclusive(), type(), hostSharing) ?
                        ExclusivityViolation.PARENT_HOST_NOT_EXCLUSIVE :
                        ExclusivityViolation.YES;

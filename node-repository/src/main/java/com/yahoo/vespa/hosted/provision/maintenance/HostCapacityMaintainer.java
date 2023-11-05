@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate.ExclusivityViolation.YES;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -294,21 +295,11 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
                                                            nodeSpec.cloudAccount().isExclave(nodeRepository().zone()),
                                                            nodeRepository().nameResolver());
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, params.application(), params.cluster(), nodeSpec,
-                                                          true, false, allocationContext, nodeRepository().nodes(),
-                                                          nodeRepository().resourcesCalculator(), nodeRepository().spareCount(),
-                                                          params.exclusiveAllocation(), params);
+        NodePrioritizer prioritizer = new NodePrioritizer(params, allNodes, nodeSpec, true, false, allocationContext, nodeRepository().nodes(),
+                                                          nodeRepository().resourcesCalculator(), nodeRepository().spareCount());
         List<NodeCandidate> nodeCandidates = prioritizer.collect()
                                                         .stream()
-                                                        .filter(node -> node.violatesExclusivity(params.cluster(),
-                                                                                                 params.application(),
-                                                                                                 params.exclusiveClusterType(),
-                                                                                                 params.exclusiveAllocation(),
-                                                                                                 params.exclusiveProvisioning(),
-                                                                                                 nodeRepository().zone().cloud().allowHostSharing(),
-                                                                                                 allNodes,
-                                                                                                 params)
-                                                                        != NodeCandidate.ExclusivityViolation.YES)
+                                                        .filter(node -> node.violatesExclusivity(params, allNodes) != YES)
                                                         .toList();
         MutableInteger index = new MutableInteger(0);
         return nodeCandidates

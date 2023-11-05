@@ -34,31 +34,25 @@ public class NodePrioritizer {
     private final HostCapacity capacity;
     private final HostResourcesCalculator calculator;
     private final NodeSpec requested;
-    private final ApplicationId application;
-    private final ClusterSpec clusterSpec;
     private final IP.Allocation.Context ipAllocationContext;
     private final Nodes nodes;
     private final boolean dynamicProvisioning;
     private final boolean allowHostSharing;
-    private final boolean exclusiveAllocation;
     private final AllocationParams params;
     private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
-    public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+    public NodePrioritizer(AllocationParams params, LockedNodeList allNodes, NodeSpec nodeSpec,
                            boolean dynamicProvisioning, boolean allowHostSharing, IP.Allocation.Context ipAllocationContext, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean exclusiveAllocation, AllocationParams params) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
         this.requested = nodeSpec;
-        this.clusterSpec = clusterSpec;
-        this.application = application;
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
-        this.exclusiveAllocation = exclusiveAllocation;
         this.params = params;
         this.spareHosts = dynamicProvisioning ?
                 capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodes.asList()) :
@@ -66,7 +60,7 @@ public class NodePrioritizer {
         this.ipAllocationContext = ipAllocationContext;
         this.nodes = nodes;
 
-        NodeList nodesInCluster = this.allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
+        NodeList nodesInCluster = this.allNodes.owner(params.application()).type(params.cluster().type()).cluster(params.cluster().id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
         long currentGroups = nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .flatMap(node -> node.allocation()
@@ -81,7 +75,7 @@ public class NodePrioritizer {
         // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
         // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
-        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster, clusterSpec.group());
+        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster, params.cluster().group());
     }
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
@@ -125,19 +119,19 @@ public class NodePrioritizer {
         for (Node host : allNodes) {
             if ( ! nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
-            if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
-            if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
+            if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(params.application().tenant())) continue;
+            if (host.reservedTo().isPresent() && params.application().instance().isTester()) continue;
             if (params.makeExclusive()) {
-                if ( ! allowHostSharing && exclusiveAllocation && ! fitsPerfectly(host)) continue;
+                if ( ! allowHostSharing && params.exclusiveAllocation() && ! fitsPerfectly(host)) continue;
             } else {
                 if (host.exclusiveToApplicationId().isPresent() && ! fitsPerfectly(host)) continue;
             }
-            if ( ! host.provisionedForApplicationId().map(application::equals).orElse(true)) continue;
-            if ( ! host.exclusiveToApplicationId().map(application::equals).orElse(true)) continue;
-            if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
+            if ( ! host.provisionedForApplicationId().map(params.application()::equals).orElse(true)) continue;
+            if ( ! host.exclusiveToApplicationId().map(params.application()::equals).orElse(true)) continue;
+            if ( ! host.exclusiveToClusterType().map(params.cluster().type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requested.resources().get())) continue;
-            if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
+            if ( ! allNodes.childrenOf(host).owner(params.application()).cluster(params.cluster().id()).isEmpty()) continue;
             if ( ! requested.cloudAccount().isUnspecified() && ! requested.cloudAccount().equals(host.cloudAccount())) continue;
 
             candidates.add(NodeCandidate.createNewChild(requested.resources().get(),
@@ -160,8 +154,8 @@ public class NodePrioritizer {
                 .filter(node -> node.type() == requested.type())
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().owner().equals(application))
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
+                .filter(node -> node.allocation().get().owner().equals(params.application()))
+                .filter(node -> node.allocation().get().membership().cluster().id().equals(params.cluster().id()))
                 .filter(node -> node.state() == Node.State.active || canStillAllocate(node))
                 .map(node -> candidateFrom(node, false))
                 .forEach(candidates::add);
@@ -191,7 +185,7 @@ public class NodePrioritizer {
                                              parent.exclusiveToApplicationId().isEmpty()
                                              && requested.canResize(node.resources(),
                                                                     capacity.unusedCapacityOf(parent),
-                                                                    clusterSpec.type(),
+                                                                    params.cluster().type(),
                                                                     topologyChange,
                                                                     currentClusterSize));
         } else {

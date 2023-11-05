@@ -106,7 +106,7 @@ public class Preparer {
             NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes, params);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
-                HostSharing sharing = hostSharing(params, cluster, hostType);
+                HostSharing sharing = hostSharing(params, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
                 Set<Node> hosts = new LinkedHashSet<>();
@@ -193,18 +193,16 @@ public class Preparer {
         var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
                                                            requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                            nodeRepository.nameResolver());
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
-                                                          application,
-                                                          cluster,
+        NodePrioritizer prioritizer = new NodePrioritizer(params,
+                                                          allNodes,
                                                           requested,
                                                           nodeRepository.zone().cloud().dynamicProvisioning(),
                                                           nodeRepository.zone().cloud().allowHostSharing(),
                                                           allocationContext,
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount(),
-                                                          nodeRepository.exclusiveAllocation(params, cluster),
-                                                          params);
+                                                          nodeRepository.spareCount()
+        );
         allocation.offer(prioritizer.collect());
         return allocation;
     }
@@ -231,13 +229,12 @@ public class Preparer {
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 
-    private HostSharing hostSharing(AllocationParams params, ClusterSpec cluster, NodeType hostType) {
-        if ( hostType.isSharable())
-            return nodeRepository.exclusiveProvisioning(cluster) ? HostSharing.provision :
-                   nodeRepository.exclusiveAllocation(params, cluster) ? HostSharing.exclusive :
-                   HostSharing.any;
-        else
-            return HostSharing.any;
+    private HostSharing hostSharing(AllocationParams params, NodeType hostType) {
+        if (hostType.isSharable()) {
+            if (params.exclusiveProvisioning()) return HostSharing.provision;
+            if (params.exclusiveAllocation()) return HostSharing.exclusive;
+        }
+        return HostSharing.any;
     }
 
 }

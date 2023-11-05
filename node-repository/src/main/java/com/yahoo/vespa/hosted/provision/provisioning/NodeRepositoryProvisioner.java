@@ -280,7 +280,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(AllocationParams params, ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        if (nodeRepository.exclusiveAllocation(params, spec) && findNearestNodeResources(limits).isPresent())
+        if (params.exclusiveAllocation() && findNearestNodeResources(limits).isPresent())
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits).get());
 
         return new IllegalArgumentException(message.toString());
