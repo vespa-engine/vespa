@@ -177,6 +177,25 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testMapSubspaces() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3],bar:[7,10]}",
+                               "map_subspaces(tensor0, f(t)(t))",
+                               "tensor<float>(a{},x[2]):{foo:[2,3],bar:[7,10]}");
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3],bar:[7,10]}",
+                               "map_subspaces(tensor0, f(t)(t+2))",
+                               "tensor<float>(a{},x[2]):{foo:[0,1],bar:[5,8]}");
+
+        tester.assertEvaluates("tensor<float>(a{},y[2]):{foo:[3,5],bar:[9,11]}",
+                               "map_subspaces(tensor0, f(t)(tensor<float>(y[2])(t{x:(y)}+t{x:(y+1)})))",
+                               "tensor(a{},x[3]):{foo:[1,2,3],bar:[4,5,6]}");
+
+        tester.assertEvaluates("tensor<double>(a{},x[2]):{foo:[3,5],bar:[9,11]}",
+                               "map_subspaces(tensor0, f(t)(tensor(x[2])(t{x:(x)}+t{x:(x+1)})))",
+                               "tensor<float>(a{},x[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    }
+
+    @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
         tester.assertEvaluates("{}", "tensor0", "{}");
@@ -296,7 +315,7 @@ public class EvaluationTestCase {
                                "{{x:0}:1}", "{}", "{{y:0,z:0}:1}");
         tester.assertEvaluates("tensor(x{}):{}",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "tensor(x{}):{ {x:1}:5 }");
-        tester.assertEvaluates("tensor<float>(x{}):{}",
+        tester.assertEvaluates("tensor<double>(x{}):{}",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "tensor<float>(x{}):{ {x:1}:5 }");
         tester.assertEvaluates("{ {x:0}:15 }",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "{ {x:0}:5 }");

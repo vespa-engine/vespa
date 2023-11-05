@@ -40,6 +40,13 @@ public class LambdaFunctionNode extends CompositeNode {
         this.functionExpression = functionExpression;
     }
 
+    public String singleArgumentName() {
+        if (arguments.size() != 1) {
+            throw new IllegalArgumentException("Cannot apply " + this + " in map, must have a single argument");
+        }
+        return arguments.get(0);
+    }
+
     @Override
     public List<ExpressionNode> children() {
         return Collections.singletonList(functionExpression);

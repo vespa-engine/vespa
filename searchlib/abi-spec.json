@@ -930,6 +930,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.FunctionNode scalarOrTensorFunction()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorFunction()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorMap()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorMapSubspaces()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorReduce()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorReduceComposites()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorJoin()",
@@ -1084,6 +1085,7 @@
       "public static final int BIT",
       "public static final int HAMMING",
       "public static final int MAP",
+      "public static final int MAP_SUBSPACES",
       "public static final int REDUCE",
       "public static final int JOIN",
       "public static final int MERGE",
@@ -1469,6 +1471,7 @@
     ],
     "methods" : [
       "public void <init>(java.util.List, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public java.lang.String singleArgumentName()",
       "public java.util.List children()",
       "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
       "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",

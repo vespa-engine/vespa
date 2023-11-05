@@ -44,11 +44,11 @@ public class Range<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETY
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "range(" + dimensionNames().collect(Collectors.joining(",")) + ")" + rangeFunction;
+        return "range(" + type + ")";
     }
 
     private Stream<String> dimensionNames() {
-        return type.dimensions().stream().map(TensorType.Dimension::toString);
+        return type.dimensions().stream().map(TensorType.Dimension::name);
     }
 
     @Override

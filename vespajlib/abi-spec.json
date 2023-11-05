@@ -1886,6 +1886,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.functions.MapSubspaces" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String, com.yahoo.tensor.functions.TensorFunction)",
+      "public com.yahoo.tensor.functions.TensorFunction argument()",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.functions.Matmul" : {
     "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
     "interfaces" : [ ],

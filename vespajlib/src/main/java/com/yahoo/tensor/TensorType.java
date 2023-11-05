@@ -80,7 +80,7 @@ public class TensorType {
     };
 
     /** The empty tensor type - which is the same as a double */
-    public static final TensorType empty = new TensorType(Value.DOUBLE, Collections.emptyList());
+    public static final TensorType empty = new TensorType();
 
     private final Value valueType;
 
@@ -89,6 +89,13 @@ public class TensorType {
 
     private final TensorType mappedSubtype;
     private final TensorType indexedSubtype;
+
+    private TensorType() {
+        this.valueType = Value.DOUBLE;
+        this.dimensions = List.of();
+        this.mappedSubtype = this;
+        this.indexedSubtype = this;
+    }
 
     public TensorType(Value valueType, Collection<Dimension> dimensions) {
         this.valueType = valueType;

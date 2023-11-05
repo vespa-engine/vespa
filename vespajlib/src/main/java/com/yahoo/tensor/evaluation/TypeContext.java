@@ -26,5 +26,4 @@ public interface TypeContext<NAMETYPE extends Name> {
      */
     TensorType getType(String name);
 
-
 }
