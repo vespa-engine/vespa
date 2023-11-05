@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 /**
  * @author mpolden
  */
@@ -39,5 +41,33 @@ public class NodeMembership {
 
     public Boolean getRetired() {
         return retired;
+    }
+
+    @Override
+    public String toString() {
+        return "NodeMembership{" +
+               "clustertype='" + clustertype + '\'' +
+               ", clusterid='" + clusterid + '\'' +
+               ", group='" + group + '\'' +
+               ", index=" + index +
+               ", retired=" + retired +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NodeMembership that = (NodeMembership) o;
+        return Objects.equals(clustertype, that.clustertype) &&
+               Objects.equals(clusterid, that.clusterid) &&
+               Objects.equals(group, that.group) &&
+               Objects.equals(index, that.index) &&
+               Objects.equals(retired, that.retired);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clustertype, clusterid, group, index, retired);
     }
 }
