@@ -40,8 +40,8 @@ import java.util.Optional;
  */
 public class Fixture {
 
-    final AllocationParams params;
     final DynamicProvisioningTester tester;
+    final AllocationParams allocationParams;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
     final Capacity capacity;
@@ -50,11 +50,11 @@ public class Fixture {
     Autoscaling lastAutoscaling = Autoscaling.empty();
 
     public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
-        params = AllocationParams.from(builder.flagSource, builder.application, builder.cluster.vespaVersion());
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
         tester = new DynamicProvisioningTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, builder.flagSource, hostCount);
+        allocationParams = AllocationParams.from(tester.nodeRepository(), builder.application, builder.cluster, builder.cluster.vespaVersion());
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
@@ -83,10 +83,8 @@ public class Fixture {
     public Capacity capacity() { return capacity; }
 
     public ClusterModel clusterModel() {
-        return new ClusterModel(params,
-                                tester.nodeRepository(),
+        return new ClusterModel(allocationParams,
                                 application(),
-                                clusterSpec,
                                 cluster(),
                                 nodes(),
                                 new AllocatableResources(nodes(), tester.nodeRepository()),

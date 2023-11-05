@@ -5,6 +5,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Collection;
@@ -53,7 +54,7 @@ public interface HostProvisioner {
      * @return a runnable that waits for the provisioning request to finish. It can be run without holding any locks,
      * but may fail with an exception that should be propagated to the user initiating prepare()
      */
-    Runnable provisionHosts(AllocationParams params,
+    Runnable provisionHosts(SharedHost sharedHost,
                             HostProvisionRequest request,
                             Predicate<NodeResources> realHostResourcesWithinLimits,
                             Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;

@@ -141,7 +141,7 @@ public class Preparer {
                                                                             deficit.dueToFlavorUpgrade());
                     Predicate<NodeResources> realHostResourcesWithinLimits = resources ->
                             nodeRepository.nodeResourceLimits().isWithinRealLimits(params, resources, application, cluster);
-                    waiter = hostProvisioner.get().provisionHosts(params, request, realHostResourcesWithinLimits, whenProvisioned);
+                    waiter = hostProvisioner.get().provisionHosts(params.sharedHost(), request, realHostResourcesWithinLimits, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been

@@ -157,15 +157,13 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private List<Node> provision(NodeList nodeList) {
-        ApplicationId application = ApplicationId.defaultId();
-        var params = AllocationParams.from(flagSource, application, Vtag.currentVersion);
-
-        return provisionUntilNoDeficit(params, application, nodeList).stream()
-                                                .sorted(comparing(node -> node.history().events().stream()
-                                                                              .map(History.Event::at)
-                                                                              .min(naturalOrder())
-                                                                              .orElse(Instant.MIN)))
-                                                .toList();
+        return provisionUntilNoDeficit(nodeList)
+                .stream()
+                .sorted(comparing(node -> node.history().events().stream()
+                                              .map(History.Event::at)
+                                              .min(naturalOrder())
+                                              .orElse(Instant.MIN)))
+                .toList();
     }
 
     private static boolean canRemoveHost(Node host) {
@@ -191,7 +189,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
      * @throws IllegalStateException if there was an algorithmic problem, and in case message
      *         should be sufficient (avoid no stack trace).
      */
-    private List<Node> provisionUntilNoDeficit(AllocationParams params, ApplicationId application, NodeList nodeList) {
+    private List<Node> provisionUntilNoDeficit(NodeList nodeList) {
+        // Ensure flags for allocation params are evaluated before provision loop. Use a dummy cluster spec
+        var params = AllocationParams.from(nodeRepository(), ApplicationId.defaultId(), asClusterSpec(Optional.empty(), 0), Vtag.currentVersion);
         List<ClusterCapacity> preprovisionCapacity = preprovisionCapacityFlag.value();
 
         // Worst-case each ClusterCapacity in preprovisionCapacity will require an allocation.
@@ -200,7 +200,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         var nodesPlusProvisioned = new ArrayList<>(nodeList.asList());
         for (int numProvisions = 0;; ++numProvisions) {
             var nodesPlusProvisionedPlusAllocated = new ArrayList<>(nodesPlusProvisioned);
-            Optional<ClusterCapacity> deficit = allocatePreprovisionCapacity(application, preprovisionCapacity, nodesPlusProvisionedPlusAllocated, params);
+            Optional<ClusterCapacity> deficit = allocatePreprovisionCapacity(params, preprovisionCapacity, nodesPlusProvisionedPlusAllocated);
             if (deficit.isEmpty()) {
                 return nodesPlusProvisionedPlusAllocated;
             }
@@ -225,7 +225,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
-            HostSharing sharingMode = nodeRepository().exclusiveAllocation(params, asSpec(clusterType, 0)) ? HostSharing.exclusive : HostSharing.shared;
+            HostSharing sharingMode = params.exclusiveAllocation() ? HostSharing.exclusive : HostSharing.shared;
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
                                                                     ApplicationId.defaultId(), osVersion,
                                                                     sharingMode, clusterType.map(ClusterSpec.Type::valueOf), Optional.empty(),
@@ -233,7 +233,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             List<Node> hosts = new ArrayList<>();
             Runnable waiter;
             try (var lock = nodeRepository().nodes().lockUnallocated()) {
-                waiter = hostProvisioner.provisionHosts(params,
+                waiter = hostProvisioner.provisionHosts(params.sharedHost(),
                                                         request,
                                                         resources -> true,
                                                         provisionedHosts -> {
@@ -261,14 +261,18 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
      *                     they are added to {@code mutableNodes}
      * @return the part of a cluster capacity it was unable to allocate, if any
      */
-    private Optional<ClusterCapacity> allocatePreprovisionCapacity(ApplicationId application,
+    private Optional<ClusterCapacity> allocatePreprovisionCapacity(AllocationParams params,
                                                                    List<ClusterCapacity> preprovisionCapacity,
-                                                                   ArrayList<Node> mutableNodes,
-                                                                   AllocationParams params) {
+                                                                   ArrayList<Node> mutableNodes) {
         for (int clusterIndex = 0; clusterIndex < preprovisionCapacity.size(); ++clusterIndex) {
             ClusterCapacity clusterCapacity = preprovisionCapacity.get(clusterIndex);
+
+            params = params.with(asClusterSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex));
+            if (params.exclusiveProvisioning())
+                throw new IllegalStateException("Preprovision cluster requires exclusive provisioning: " + clusterCapacity);
+
             LockedNodeList allNodes = new LockedNodeList(mutableNodes, () -> {});
-            List<Node> candidates = findCandidates(application, clusterCapacity, clusterIndex, allNodes, params);
+            List<Node> candidates = findCandidates(params, clusterCapacity, allNodes);
             int deficit = Math.max(0, clusterCapacity.count() - candidates.size());
             if (deficit > 0) {
                 return Optional.of(clusterCapacity.withCount(deficit));
@@ -281,28 +285,26 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         return Optional.empty();
     }
 
-    private List<Node> findCandidates(ApplicationId application, ClusterCapacity clusterCapacity, int clusterIndex, 
-                                      LockedNodeList allNodes, AllocationParams params) {
+    private List<Node> findCandidates(AllocationParams params, ClusterCapacity clusterCapacity, LockedNodeList allNodes) {
         NodeResources nodeResources = toNodeResources(clusterCapacity);
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
-        ClusterSpec cluster = asSpec(Optional.ofNullable(clusterCapacity.clusterType()), clusterIndex);
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
         var allocationContext = IP.Allocation.Context.from(nodeRepository().zone().cloud().name(),
                                                            nodeSpec.cloudAccount().isExclave(nodeRepository().zone()),
                                                            nodeRepository().nameResolver());
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, application, cluster, nodeSpec,
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, params.application(), params.cluster(), nodeSpec,
                                                           true, false, allocationContext, nodeRepository().nodes(),
                                                           nodeRepository().resourcesCalculator(), nodeRepository().spareCount(),
-                                                          nodeRepository().exclusiveAllocation(params, cluster), params);
+                                                          params.exclusiveAllocation(), params);
         List<NodeCandidate> nodeCandidates = prioritizer.collect()
                                                         .stream()
-                                                        .filter(node -> node.violatesExclusivity(cluster,
-                                                                                                 application,
-                                                                                                 nodeRepository().exclusiveClusterType(params, cluster),
-                                                                                                 nodeRepository().exclusiveAllocation(params, cluster),
-                                                                                                 false,
+                                                        .filter(node -> node.violatesExclusivity(params.cluster(),
+                                                                                                 params.application(),
+                                                                                                 params.exclusiveClusterType(),
+                                                                                                 params.exclusiveAllocation(),
+                                                                                                 params.exclusiveProvisioning(),
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),
                                                                                                  allNodes,
                                                                                                  params)
@@ -313,14 +315,14 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 .stream()
                 .limit(clusterCapacity.count())
                 .map(candidate -> candidate.toNode()
-                        .allocate(application,
-                                  ClusterMembership.from(cluster, index.next()),
+                        .allocate(params.application(),
+                                  ClusterMembership.from(params.cluster(), index.next()),
                                   nodeResources,
                                   nodeRepository().clock().instant()))
                 .toList();
     }
 
-    private static ClusterSpec asSpec(Optional<String> clusterType, int index) {
+    private static ClusterSpec asClusterSpec(Optional<String> clusterType, int index) {
         return ClusterSpec.request(clusterType.map(ClusterSpec.Type::from).orElse(ClusterSpec.Type.content),
                                    ClusterSpec.Id.from(String.valueOf(index)))
                           .vespaVersion(Vtag.currentVersion) // Needed, but should not be used here.

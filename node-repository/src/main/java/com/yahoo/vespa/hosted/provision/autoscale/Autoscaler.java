@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -55,14 +56,14 @@ public class Autoscaler {
     }
 
     private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        AllocationParams params = AllocationParams.from(nodeRepository.flagSource(), application.id(), clusterNodes.clusterSpec().vespaVersion());
+        NodeList notRetired = clusterNodes.not().retired();
+        ClusterSpec clusterSpec = notRetired.clusterSpec();
+        AllocationParams params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterNodes.clusterSpec().vespaVersion());
         var model = new ClusterModel(params,
-                                     nodeRepository,
                                      application,
-                                     clusterNodes.not().retired().clusterSpec(),
                                      cluster,
                                      clusterNodes,
-                                     new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
+                                     new AllocatableResources(notRetired, nodeRepository),
                                      nodeRepository.metricsDb(),
                                      nodeRepository.clock());
         if (model.isEmpty()) return Autoscaling.empty();

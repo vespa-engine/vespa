@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
@@ -72,8 +73,9 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
             if (parent.isEmpty()) continue;
             if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
-            var params = AllocationParams.from(nodeRepository().flagSource(), allocation.owner(), allocation.membership().cluster().vespaVersion());
-            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(params, resources, allocation.owner(), allocation.membership().cluster());
+            ClusterSpec cluster = allocation.membership().cluster();
+            var params = AllocationParams.from(nodeRepository(), allocation.owner(), cluster, cluster.vespaVersion());
+            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(params, resources, allocation.owner(), cluster);
             if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
             if (parent.get().status().wantToUpgradeFlavor() && allocation.membership().retired()) continue; // Already upgrading
 

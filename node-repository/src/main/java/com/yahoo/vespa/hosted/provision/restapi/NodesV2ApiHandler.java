@@ -465,9 +465,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Optional<Application> application = nodeRepository.applications().get(id);
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
-        var params = AllocationParams.from(nodeRepository.flagSource(), id, Vtag.currentVersion);
-        Slime slime = ApplicationSerializer.toSlime(params,
-                                                    application.get(),
+        Slime slime = ApplicationSerializer.toSlime(application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id),
                                                     nodeRepository,
                                                     withPath("/nodes/v2/applications/" + id, uri));

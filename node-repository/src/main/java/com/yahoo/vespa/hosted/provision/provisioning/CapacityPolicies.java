@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -86,47 +87,47 @@ public class CapacityPolicies {
         return target;
     }
 
-    public ClusterResources specifyFully(AllocationParams params, ClusterResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.with(specifyFully(params, resources.nodeResources(), clusterSpec, applicationId));
+    public ClusterResources specifyFully(AllocationParams params, ClusterResources resources) {
+        return resources.with(specifyFully(params, resources.nodeResources()));
     }
 
-    public NodeResources specifyFully(AllocationParams params, NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(params, clusterSpec, applicationId).with(DiskSpeed.any));
+    public NodeResources specifyFully(AllocationParams params, NodeResources resources) {
+        NodeResources amended = resources.withUnspecifiedFieldsFrom(defaultResources(params).with(DiskSpeed.any));
         // TODO jonmv: remove this after all apps are 8.248.8 or above; architecture for admin nodes was not picked up before this.
-        if (clusterSpec.vespaVersion().isBefore(Version.fromString("8.248.8"))) amended = amended.with(resources.architecture());
+        if (params.cluster().vespaVersion().isBefore(Version.fromString("8.248.8"))) amended = amended.with(resources.architecture());
         return amended;
     }
 
-    private NodeResources defaultResources(AllocationParams params, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        if (clusterSpec.type() == ClusterSpec.Type.admin) {
-            Architecture architecture = adminClusterArchitecture(applicationId);
+    private NodeResources defaultResources(AllocationParams params) {
+        if (params.cluster().type() == ClusterSpec.Type.admin) {
+            Architecture architecture = adminClusterArchitecture(params.application());
 
-            if (nodeRepository.exclusiveAllocation(params, clusterSpec)) {
+            if (nodeRepository.exclusiveAllocation(params, params.cluster())) {
                 return smallestExclusiveResources().with(architecture);
             }
 
-            if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return clusterControllerResources(clusterSpec, architecture).with(architecture);
+            if (params.cluster().id().value().equals("cluster-controllers")) {
+                return clusterControllerResources(params.cluster(), architecture).with(architecture);
             }
 
-            if (clusterSpec.id().value().equals("logserver")) {
+            if (params.cluster().id().value().equals("logserver")) {
                 return logserverResources(architecture).with(architecture);
             }
 
-            return versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())).with(architecture);
+            return versioned(params.cluster(), Map.of(new Version(0), smallestSharedResources())).with(architecture);
         }
 
-        if (clusterSpec.type() == ClusterSpec.Type.content) {
+        if (params.cluster().type() == ClusterSpec.Type.content) {
             // When changing defaults here update cloud.vespa.ai/en/reference/services
             return zone.cloud().dynamicProvisioning()
-                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2, 16, 300, 0.3)))
-                   : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
+                   ? versioned(params.cluster(), Map.of(new Version(0), new NodeResources(2, 16, 300, 0.3)))
+                   : versioned(params.cluster(), Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
         else {
             // When changing defaults here update cloud.vespa.ai/en/reference/services
             return zone.cloud().dynamicProvisioning()
-                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3)))
-                   : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
+                   ? versioned(params.cluster(), Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3)))
+                   : versioned(params.cluster(), Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
     }
 
@@ -177,10 +178,11 @@ public class CapacityPolicies {
     }
 
     /** Returns whether the nodes requested can share physical host with other applications */
-    public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
-        if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
-        boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
-        return requestedCluster.withExclusivity(exclusive);
+    public boolean decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
+        if (capacity.type() != NodeType.tenant) return true;
+        if (capacity.cloudAccount().isPresent()) return true;
+        if (!requestedCluster.isExclusive()) return false;
+        return capacity.isRequired() || zone.environment() == Environment.prod;
     }
 
 }

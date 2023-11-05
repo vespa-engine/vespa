@@ -9,6 +9,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -74,7 +75,7 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public Runnable provisionHosts(AllocationParams params,
+    public Runnable provisionHosts(SharedHost sharedHost,
                                    HostProvisionRequest request,
                                    Predicate<NodeResources> realHostResourcesWithinLimits,
                                    Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
@@ -268,7 +269,7 @@ public class MockHostProvisioner implements HostProvisioner {
         /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node)} */
         failProvisioning,
 
-        /** Fail call to {@link MockHostProvisioner#provisionHosts(AllocationParams, HostProvisionRequest, Predicate, Consumer)} */
+        /** Fail call to {@link MockHostProvisioner#provisionHosts(SharedHost, HostProvisionRequest, Predicate, Consumer)} */
         failProvisionRequest,
 
         /** Fail call to {@link MockHostProvisioner#deprovision(com.yahoo.vespa.hosted.provision.Node)} */

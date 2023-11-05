@@ -66,12 +66,12 @@ public class Limits {
         return resources;
     }
 
-    public Limits fullySpecified(AllocationParams params, ClusterSpec clusterSpec, NodeRepository nodeRepository, ApplicationId applicationId) {
+    public Limits fullySpecified(AllocationParams params, NodeRepository nodeRepository) {
         if (this.isEmpty()) throw new IllegalStateException("Unspecified limits can not be made fully specified");
 
         var capacityPolicies = new CapacityPolicies(nodeRepository);
-        return new Limits(capacityPolicies.specifyFully(params, min, clusterSpec, applicationId),
-                          capacityPolicies.specifyFully(params, max, clusterSpec, applicationId),
+        return new Limits(capacityPolicies.specifyFully(params, min),
+                          capacityPolicies.specifyFully(params, max),
                           groupSize);
     }
 

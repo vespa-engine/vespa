@@ -31,14 +31,14 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(AllocationParams params, String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
-        boolean exclusive = nodeRepository.exclusiveAllocation(params, cluster);
-        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
-        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(applicationId, cluster, exclusive))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(applicationId, cluster, exclusive));
+    public void ensureWithinAdvertisedLimits(AllocationParams params, String type, NodeResources requested) {
+        boolean exclusive = params.exclusiveAllocation();
+        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(params.application(), params.cluster(), exclusive))
+            illegal(type, "vcpu", "", params.cluster(), requested.vcpu(), minAdvertisedVcpu(params.application(), params.cluster(), exclusive));
+        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(params.application(), params.cluster(), exclusive))
+            illegal(type, "memoryGb", "Gb", params.cluster(), requested.memoryGb(), minAdvertisedMemoryGb(params.application(), params.cluster(), exclusive));
         if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
-            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
+            illegal(type, "diskGb", "Gb", params.cluster(), requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
     }
 
     // TODO: Remove this when we are ready to fail, not just warn on this. */

@@ -34,15 +34,12 @@ public class AllocatableResources {
     private final double fulfilment;
 
     /** Fake allocatable resources from requested capacity */
-    public AllocatableResources(AllocationParams params,
-                                ClusterResources requested,
-                                ClusterSpec clusterSpec,
-                                NodeRepository nodeRepository) {
+    public AllocatableResources(AllocationParams params, ClusterResources requested) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(params, clusterSpec), false);
+        this.realResources = params.nodeRepository().resourcesCalculator().requestToReal(requested.nodeResources(), params.exclusiveAllocation(), false);
         this.advertisedResources = requested.nodeResources();
-        this.clusterSpec = clusterSpec;
+        this.clusterSpec = params.cluster();
         this.fulfilment = 1;
     }
 
@@ -178,7 +175,7 @@ public class AllocatableResources {
                                                       ClusterModel model,
                                                       NodeRepository nodeRepository) {
         var systemLimits = nodeRepository.nodeResourceLimits();
-        boolean exclusive = nodeRepository.exclusiveAllocation(params, clusterSpec);
+        boolean exclusive = params.exclusiveAllocation();
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var allocatableResources = calculateAllocatableResources(params,

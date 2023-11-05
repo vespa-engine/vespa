@@ -44,7 +44,7 @@ public class AllocationOptimizer {
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
-            limits = atLeast(minimumNodes, limits).fullySpecified(params, model.current().clusterSpec(), nodeRepository, model.application().id());
+            limits = atLeast(minimumNodes, limits).fullySpecified(params, nodeRepository);
         Optional<AllocatableResources> bestAllocation = Optional.empty();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
@@ -77,7 +77,7 @@ public class AllocationOptimizer {
 
     /** Returns the max resources of a host one node may allocate. */
     private NodeResources maxResourcesOf(AllocationParams params, NodeResources hostResources, ClusterModel model) {
-        if (nodeRepository.exclusiveAllocation(params, model.clusterSpec())) return hostResources;
+        if (params.exclusiveAllocation()) return hostResources;
         // static, shared hosts: Allocate at most half of the host cpu to simplify management
         return hostResources.withVcpu(hostResources.vcpu() / 2);
     }

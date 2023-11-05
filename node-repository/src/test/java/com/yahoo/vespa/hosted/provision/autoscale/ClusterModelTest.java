@@ -90,12 +90,11 @@ public class ClusterModelTest {
         Cluster cluster = cluster();
         application = application.with(cluster);
         var nodeRepository = new ProvisioningTester.Builder().build().nodeRepository();
-        var params = AllocationParams.from(nodeRepository.flagSource(), application.id(), clusterSpec.vespaVersion());
+        var params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterSpec.vespaVersion());
         return new ClusterModel(params,
-                                nodeRepository,
                                 application.with(status),
-                                clusterSpec, cluster,
-                                new AllocatableResources(params, clusterResources(), clusterSpec, nodeRepository),
+                                cluster,
+                                new AllocatableResources(params, clusterResources()),
                                 clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());
