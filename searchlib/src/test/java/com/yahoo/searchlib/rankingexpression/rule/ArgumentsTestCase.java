@@ -21,8 +21,8 @@ public class ArgumentsTestCase {
         args = new Arguments(Collections.<ExpressionNode>emptyList());
         assertTrue(args.expressions().isEmpty());
 
-        NameNode foo = new NameNode("foo");
-        NameNode bar = new NameNode("bar");
+        var foo = new ReferenceNode("foo");
+        var bar = new ReferenceNode("bar");
         args = new Arguments(Arrays.asList(foo, bar));
         assertEquals(2, args.expressions().size());
         assertSame(foo, args.expressions().get(0));
@@ -31,9 +31,9 @@ public class ArgumentsTestCase {
 
     @Test
     public void requireThatHashCodeAndEqualsWork() {
-        Arguments arg1 = new Arguments(Arrays.asList(new NameNode("foo"), new NameNode("bar")));
-        Arguments arg2 = new Arguments(Arrays.asList(new NameNode("foo"), new NameNode("bar")));
-        Arguments arg3 = new Arguments(Arrays.asList(new NameNode("foo")));
+        Arguments arg1 = new Arguments(Arrays.asList(new ReferenceNode("foo"), new ReferenceNode("bar")));
+        Arguments arg2 = new Arguments(Arrays.asList(new ReferenceNode("foo"), new ReferenceNode("bar")));
+        Arguments arg3 = new Arguments(Arrays.asList(new ReferenceNode("foo")));
 
         assertEquals(arg1.hashCode(), arg2.hashCode());
         assertTrue(arg1.equals(arg2));

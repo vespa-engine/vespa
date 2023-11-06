@@ -19,7 +19,6 @@ public class ReferenceTestCase {
     public void testSimple() {
         assertTrue(new Reference("foo", new Arguments(new ReferenceNode("arg")), null).isSimple());
         assertTrue(new Reference("foo", new Arguments(new ReferenceNode("arg")), "out").isSimple());
-        assertTrue(new Reference("foo", new Arguments(new NameNode("arg")), "out").isSimple());
         assertFalse(new Reference("foo", new Arguments(), null).isSimple());
     }
 
@@ -27,7 +26,6 @@ public class ReferenceTestCase {
     public void testToString() {
         assertEquals("foo(arg_1)", new Reference("foo", new Arguments(new ReferenceNode("arg_1")), null).toString());
         assertEquals("foo(arg_1).out", new Reference("foo", new Arguments(new ReferenceNode("arg_1")), "out").toString());
-        assertEquals("foo(arg_1).out", new Reference("foo", new Arguments(new NameNode("arg_1")), "out").toString());
         assertEquals("foo", new Reference("foo", new Arguments(), null).toString());
     }
 
