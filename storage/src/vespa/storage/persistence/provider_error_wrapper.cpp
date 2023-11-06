@@ -166,6 +166,14 @@ ProviderErrorWrapper::removeAsync(const spi::Bucket &bucket, std::vector<spi::Id
 }
 
 void
+ProviderErrorWrapper::removeByGidAsync(const spi::Bucket &bucket, std::vector<spi::DocTypeGidAndTimestamp> ids,
+                                       std::unique_ptr<spi::OperationComplete> onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.removeByGidAsync(bucket, std::move(ids), std::move(onComplete));
+}
+
+void
 ProviderErrorWrapper::removeIfFoundAsync(const spi::Bucket &bucket, spi::Timestamp ts, const document::DocumentId &docId,
                                          spi::OperationComplete::UP onComplete)
 {

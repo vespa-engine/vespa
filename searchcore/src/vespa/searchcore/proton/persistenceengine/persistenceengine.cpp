@@ -4,6 +4,7 @@
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
 #include <vespa/persistence/spi/bucketexecutor.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <vespa/persistence/spi/catchresult.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -431,6 +432,26 @@ PersistenceEngine::removeAsyncSingle(const Bucket& b, Timestamp t, const Documen
     handler->handleRemove(feedtoken::make(std::move(transportContext)), b, t, id);
 }
 
+void
+PersistenceEngine::removeByGidAsync(const Bucket& b, std::vector<storage::spi::DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete> onComplete)
+{
+    ReadGuard rguard(_rwMutex);
+    for (const auto & dt_gid_ts : ids) {
+        DocTypeName doc_type(dt_gid_ts.doc_type);
+        IPersistenceHandler *handler = getHandler(rguard, b.getBucketSpace(), doc_type);
+        if (!handler) {
+            return onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::PERMANENT_ERROR,
+                                                                         fmt("No handler for document type '%s'",
+                                                                             doc_type.toString().c_str())));
+        }
+    }
+    auto transportContext = std::make_shared<AsyncRemoveTransportContext>(ids.size(), std::move(onComplete));
+    for (const auto & dt_gid_ts : ids) {
+        DocTypeName doc_type(dt_gid_ts.doc_type);
+        IPersistenceHandler *handler = getHandler(rguard, b.getBucketSpace(), doc_type);
+        handler->handleRemoveByGid(feedtoken::make(transportContext), b, dt_gid_ts.timestamp, dt_gid_ts.doc_type, dt_gid_ts.gid);
+    }
+}
 
 void
 PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP upd, OperationComplete::UP onComplete)

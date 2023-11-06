@@ -9,6 +9,7 @@ vespa_add_library(persistence_spi OBJECT
     clusterstate.cpp
     context.cpp
     docentry.cpp
+    doctype_gid_and_timestamp.cpp
     exceptions.cpp
     id_and_timestamp.cpp
     persistenceprovider.cpp

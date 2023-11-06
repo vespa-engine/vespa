@@ -27,6 +27,7 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
+using document::GlobalId;
 using document::test::makeBucketSpace;
 using search::DocumentMetaData;
 using storage::spi::Bucket;
@@ -216,6 +217,14 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         bool wasFound = existingTimestamp > 0;
         token->setResult(std::make_unique<RemoveResult>(wasFound), wasFound);
         handle(token, bucket, timestamp, id);
+    }
+
+    void handleRemoveByGid(FeedToken token, const Bucket& bucket,
+                           Timestamp timestamp,
+                           vespalib::stringref, const GlobalId&) override {
+        bool wasFound = existingTimestamp > 0;
+        token->setResult(std::make_unique<RemoveResult>(wasFound), wasFound);
+        handle(token, bucket, timestamp, DocumentId());
     }
 
     void handleListBuckets(IBucketIdListResultHandler &resultHandler) override {
