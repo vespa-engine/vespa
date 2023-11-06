@@ -15,6 +15,26 @@ namespace search::engine {
 
 namespace {
 
+std::string escape_message(const vespalib::string &item) {
+    static const char hexdigits[] = "0123456789ABCDEF";
+    std::string r;
+    r.reserve(item.size());
+    for (char c : item) {
+        if (c == '\\') {
+            r.push_back(c);
+            r.push_back(c);
+        } else if (c < 32 || c > 127) {
+            r.push_back('\\');
+            r.push_back('x');
+            r.push_back(hexdigits[0xF & (c >> 4)]);
+            r.push_back(hexdigits[0xF & c]);
+        } else {
+            r.push_back(c);
+        }
+    }
+    return r;
+}
+
 template <typename T>
 vespalib::string make_sort_spec(const T &sorting) {
     vespalib::string spec;
@@ -166,7 +186,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
         reply.my_issues->for_each_message([&](const vespalib::string &err_msg)
                                           {
                                               auto *err_obj = proto.add_errors();
-                                              err_obj->set_message(err_msg);
+                                              err_obj->set_message(escape_message(err_msg));
                                           });
     }
 }
@@ -223,7 +243,7 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
         reply.issues().for_each_message([&](const vespalib::string &err_msg)
                                         {
                                             auto *err_obj = proto.add_errors();
-                                            err_obj->set_message(err_msg);
+                                            err_obj->set_message(escape_message(err_msg));
                                         });
     }
 }
