@@ -13,6 +13,7 @@
 #pragma once
 
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <mutex>
 
 namespace storage {
@@ -56,6 +57,7 @@ public:
 
     void putAsync(const spi::Bucket &, spi::Timestamp, spi::DocumentSP, spi::OperationComplete::UP) override;
     void removeAsync(const spi::Bucket&, std::vector<spi::IdAndTimestamp>, spi::OperationComplete::UP) override;
+    void removeByGidAsync(const spi::Bucket&, std::vector<spi::DocTypeGidAndTimestamp>, std::unique_ptr<spi::OperationComplete>) override;
     void removeIfFoundAsync(const spi::Bucket&, spi::Timestamp, const document::DocumentId&, spi::OperationComplete::UP) override;
     void updateAsync(const spi::Bucket &, spi::Timestamp, spi::DocumentUpdateSP, spi::OperationComplete::UP) override;
     void setActiveStateAsync(const spi::Bucket& b, spi::BucketInfo::ActiveState newState, spi::OperationComplete::UP onComplete) override;

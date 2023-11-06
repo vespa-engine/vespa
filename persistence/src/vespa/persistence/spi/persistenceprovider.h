@@ -18,6 +18,7 @@ namespace storage::spi {
 
 class IResourceUsageListener;
 struct BucketExecutor;
+struct DocTypeGidAndTimestamp;
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
@@ -172,6 +173,13 @@ struct PersistenceProvider
      * @param id The ID to remove
      */
     virtual void removeAsync(const Bucket&, std::vector<IdAndTimestamp> ids, OperationComplete::UP) = 0;
+
+    /*
+     * Remove documents based on document type and gid and forget about them
+     * (don't keep track of the removed document). This operation is typically
+     * used as part of removing documents in a bucket that will be deleted.
+     */
+    virtual void removeByGidAsync(const Bucket&, std::vector<DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete>) = 0;
 
     /**
      * @see remove()

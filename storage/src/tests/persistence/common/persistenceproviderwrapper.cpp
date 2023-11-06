@@ -3,6 +3,7 @@
 #include "persistenceproviderwrapper.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <sstream>
 
@@ -114,6 +115,17 @@ PersistenceProviderWrapper::removeAsync(const spi::Bucket& bucket,  std::vector<
     }
     CHECK_ERROR_ASYNC(spi::RemoveResult, FAIL_REMOVE, onComplete);
     _spi.removeAsync(bucket, std::move(ids), std::move(onComplete));
+}
+
+void
+PersistenceProviderWrapper::removeByGidAsync(const spi::Bucket& bucket,  std::vector<spi::DocTypeGidAndTimestamp> ids,
+                                             std::unique_ptr<spi::OperationComplete> onComplete)
+{
+    for (const auto & dt_gid_ts : ids) {
+        LOG_SPI("removeByGid(" << bucket << ", " << dt_gid_ts.timestamp << ", " << dt_gid_ts.doc_type << ", " << dt_gid_ts.gid << ")");
+    }
+    CHECK_ERROR_ASYNC(spi::RemoveResult, FAIL_REMOVE, onComplete);
+    _spi.removeByGidAsync(bucket, std::move(ids), std::move(onComplete));
 }
 
 void

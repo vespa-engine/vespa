@@ -74,6 +74,7 @@ struct BucketContent {
     bool hasTimestamp(Timestamp) const;
     void insert(DocEntry::SP);
     DocEntry::SP getEntry(const DocumentId&) const;
+    std::shared_ptr<DocEntry> getEntry(const GlobalId& gid) const;
     DocEntry::SP getEntry(Timestamp) const;
     void eraseEntry(Timestamp t);
     void setActive(bool active = true) {
@@ -161,6 +162,7 @@ public:
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
     void putAsync(const Bucket&, Timestamp, DocumentSP, OperationComplete::UP) override;
     void removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> ids, OperationComplete::UP) override;
+    void removeByGidAsync(const Bucket& b, std::vector<spi::DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete>) override;
     void updateAsync(const Bucket&, Timestamp, DocumentUpdateSP, OperationComplete::UP) override;
 
     CreateIteratorResult

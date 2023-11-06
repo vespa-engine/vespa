@@ -35,6 +35,9 @@ public:
     void handleRemove(FeedToken token, const storage::spi::Bucket &bucket,
                       storage::spi::Timestamp timestamp,
                       const document::DocumentId &id) override;
+    void handleRemoveByGid(FeedToken token, const storage::spi::Bucket &bucket,
+                           storage::spi::Timestamp timestamp,
+                           vespalib::stringref doc_type, const document::GlobalId& gid) override;
 
     void handleListBuckets(IBucketIdListResultHandler &resultHandler) override;
     void handleSetClusterState(const storage::spi::ClusterState &calc, IGenericResultHandler &resultHandler) override;

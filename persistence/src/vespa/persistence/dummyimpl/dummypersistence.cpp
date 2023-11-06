@@ -6,6 +6,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
@@ -250,6 +251,15 @@ BucketContent::getEntry(const DocumentId &did) const {
         return it->second;
     }
     return DocEntry::SP();
+}
+
+std::shared_ptr<DocEntry>
+BucketContent::getEntry(const document::GlobalId& gid) const {
+    auto it(_gidMap.find(gid));
+    if (it != _gidMap.end()) {
+        return it->second;
+    }
+    return {};
 }
 
 DocEntry::SP
@@ -523,6 +533,33 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> 
             LOG(debug, "Not adding tombstone for %s at %" PRIu64 " since it has already "
                        "been succeeded by a newer write at timestamp %" PRIu64,
                 id.toString().c_str(), t.getValue(), entry->getTimestamp().getValue());
+        }
+    }
+    bc.reset();
+    onComplete->onComplete(std::make_unique<RemoveResult>(numRemoves));
+}
+
+void
+DummyPersistence::removeByGidAsync(const Bucket& b, std::vector<spi::DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete> onComplete)
+{
+    verifyInitialized();
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
+    BucketContentGuard::UP bc(acquireBucketWithLock(b));
+
+    uint32_t numRemoves(0);
+    for (const auto& dt_gid_ts : ids) {
+        auto& gid = dt_gid_ts.gid;
+        auto t = dt_gid_ts.timestamp;
+        LOG(debug, "removeByGidAsync(%s, %" PRIu64 ", %s, %s)", b.toString().c_str(), uint64_t(t), dt_gid_ts.doc_type.c_str(), gid.toString().c_str());
+
+        while (!bc) {
+            internal_create_bucket(b);
+            bc = acquireBucketWithLock(b);
+        }
+        DocEntry::SP entry((*bc)->getEntry(gid));
+        if (entry && entry->getTimestamp() <= t) {
+            numRemoves += entry->isRemove() ? 0 : 1;
+            (*bc)->eraseEntry(entry->getTimestamp());
         }
     }
     bc.reset();

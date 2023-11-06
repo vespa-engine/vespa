@@ -4,6 +4,7 @@
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/catchresult.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -904,6 +905,35 @@ TEST_F(ConformanceTest, testRemoveMerge)
         EXPECT_EQ(removeId, *entries.back()->getDocumentId());
         EXPECT_EQ(Timestamp(11), entries.back()->getTimestamp());
         EXPECT_TRUE(entries.back()->isRemove());
+    }
+}
+
+TEST_F(ConformanceTest, testRemoveByGid)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    std::shared_ptr<Document> doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
+    spi->createBucket(bucket);
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(11), doc1)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(12), doc2)));
+    auto info = spi->getBucketInfo(bucket).getBucketInfo();
+    EXPECT_EQ(2, info.getDocumentCount());
+    std::vector<DocTypeGidAndTimestamp> ids;
+    ids.emplace_back(doc1->getId().getDocType(), doc1->getId().getGlobalId(), Timestamp(10));
+    assert_remove_by_gid(*spi, bucket, ids, 0, 2, "ignored removebygid");
+    ids.back().timestamp = Timestamp(11);
+    assert_remove_by_gid(*spi, bucket, ids, 1, 1, "removebygid");
+    if (_factory->hasPersistence()) {
+        spi.reset();
+        document::TestDocMan testDocMan2;
+        spi = getSpi(*_factory, testDocMan2);
+        info = spi->getBucketInfo(bucket).getBucketInfo();
+        EXPECT_EQ(1, info.getDocumentCount());
     }
 }
 
@@ -2225,6 +2255,25 @@ ConformanceTest::test_empty_bucket_info(bool bucket_exists, bool active)
     EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
     EXPECT_TRUE(info_result.getBucketInfo().isReady());
     EXPECT_EQ(active, info_result.getBucketInfo().isActive());
+}
+
+void
+ConformanceTest::assert_remove_by_gid(PersistenceProvider& spi,
+                                      const Bucket& bucket, std::vector<DocTypeGidAndTimestamp> ids,
+                                      size_t exp_removed, size_t exp_remaining,
+                                      const vespalib::string& label)
+{
+    SCOPED_TRACE(label);
+    auto onDone = std::make_unique<CatchResult>();
+    auto future = onDone->future_result();
+    spi.removeByGidAsync(bucket, std::move(ids), std::move(onDone));
+    auto result = future.get();
+    ASSERT_TRUE(result);
+    auto removeResult = dynamic_cast<spi::RemoveResult *>(result.get());
+    ASSERT_TRUE(removeResult != nullptr);
+    EXPECT_EQ(exp_removed, removeResult->num_removed());
+    auto info = spi.getBucketInfo(bucket).getBucketInfo();
+    EXPECT_EQ(exp_remaining, info.getDocumentCount());
 }
 
 TEST_F(ConformanceTest, test_empty_bucket_gives_empty_bucket_info)
