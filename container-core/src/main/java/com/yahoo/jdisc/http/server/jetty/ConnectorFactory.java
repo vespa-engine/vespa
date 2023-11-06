@@ -182,7 +182,7 @@ public class ConnectorFactory {
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
         var fac = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
         fac.setDirectBuffersForDecryption(false);
-        fac.setDirectBuffersForDecryption(false);
+        fac.setDirectBuffersForEncryption(false);
         fac.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return fac;
     }
