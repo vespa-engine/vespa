@@ -405,44 +405,44 @@ template <typename BaseSC, typename AttrT, typename DataT>
 bool
 NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const
 {
-    // The following initial constants are derived after running parts of
+    // The following constants are derived after running parts of
     // the range search performance test with 10M documents on an Apple M1 Pro with 32 GB memory.
     // This code was compiled with two different behaviors:
-    //   1) 'filter matching' (never use posting lists).
+    //   1) 'lookup matching' (never use posting lists).
     //   2) 'posting list matching' (always use posting lists).
     // https://github.com/vespa-engine/system-test/tree/master/tests/performance/range_search
     //
-    // The following test case was used to establish the baseline cost of producing different number of hits as cheap as possible:
-    // range_hits_ratio=[1, 10, 50, 100, 200, 500], values_in_range=1, fast_search=true, filter_hits_ratio=0.
-    // The 6 range queries end up using a single posting list that produces the following number of hits: [10k, 100k, 500k, 1M, 2M, 5M]
-    // Avg query latency (ms) results: [5.43, 8.56, 11.68, 14.68, 22.77, 42.88]
+    // The following test cases were used:
+    // range_hits_ratio=[100, 200], values_in_range=100, fast_search=true, filter_hits_ratio=[1, 2, 4, 6, 8, 10, 20, 40, 60, 80, 100, 120, 140, 160, 200].
     //
-    // Then the following test case was executed for both 1) 'filter matching' and 2) 'posting list matching':
-    // range_hits_ratio=[1, 10, 50, 100, 200, 500], values_in_range=100, fast_search=true, filter_hits_ratio=0.
-    // Avg query latency (ms) results:
-    //   1) 'filter matching':       [47.52, 51.06, 59.68, 79.3, 118.7, 145.26]
-    //   2) 'posting list matching': [4.79, 11.6, 13.54, 20.24, 32.65, 67.28]
+    // By comparing the avg query latency between 1) 'lookup matching' and 2) 'posting list matching'
+    // we find the crossover point between the two strategies.
     //
-    // For 1) 'filter matching' we use the result from range_hits_ratio=1 (10k hits) compared to the baseline
-    // to calculate the cost per document (in ns) to do filter matching: 1M*(47.52-5.43)/10M = 4.2
+    // Excerpt of results for range_hits_ratio=[100] and filter_hits_ratio=[10, 20, 40, 60]:
+    //   1) 'lookup matching':       [7.1, 8.4, 14.1, 17.6]
+    //   2) 'posting list matching': [7.3, 8.8, 7.4, 8.1]
+    // With filter_hits_ratio=20, lookup matching is best.
+    // With filter_hits_ratio=40, posting list matching is best.
     //
-    // For 2) 'posting list matching' we use the results from range_hits_ratio=[50, 100, 200, 500] compared to the baseline
-    // to calculate the average cost per hit (in ns) when merging the 100 posting lists:
-    //   1M*(13.54-11.68)/500k = 3.7
-    //   1M*(20.24-14.68)/1M = 5.6
-    //   1M*(32.65-22.77)/2M = 4.9
-    //   1M*(67.28-42.88)/5M = 4.9
+    // The extra cost and difference between the two strategies is modelled as follows:
+    //   1) lookup matching: exp_doc_hits * lookup_match_constant (LMC)
+    //   2) posting list matching: estimated_hits_in_range() * posting_list_merge_constant (PLMC)
     //
-    // The average is 4.8.
+    // At the crossover point (filter_hits_ratio=20) the following costs are calculated:
+    //   1) 10M*20/100 * LMC = 200k * LMC
+    //   2) 10M*100/1000 * PLMC = 1M * PLMC
+    //
+    // Based on this we see that LMC = 5 * PLMC.
+    // The same relationship is found with the test case range_hits_ratio=[200].
 
-    constexpr float filtering_match_constant = 4.2;
-    constexpr float posting_list_merge_constant = 4.8;
+    constexpr float lookup_match_constant = 5.0;
+    constexpr float posting_list_merge_constant = 1.0;
 
     uint32_t exp_doc_hits = this->_docIdLimit * info.hitRate();
     float avg_values_per_document = static_cast<float>(this->_numValues) / static_cast<float>(this->_docIdLimit);
-    float filtering_cost = exp_doc_hits * avg_values_per_document * filtering_match_constant;
+    float lookup_match_cost = exp_doc_hits * avg_values_per_document * lookup_match_constant;
     float posting_list_cost = this->estimated_hits_in_range() * posting_list_merge_constant;
-    return posting_list_cost < filtering_cost;
+    return posting_list_cost < lookup_match_cost;
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>
