@@ -122,7 +122,5 @@
   "wireguard": {
     "key": "lololololololololololololololololololololoo=",
     "timestamp": 456
-  },
-  "wireguardPubkey": "lololololololololololololololololololololoo=",
-  "wireguardKeyTimestamp": 456
+  }
 }
