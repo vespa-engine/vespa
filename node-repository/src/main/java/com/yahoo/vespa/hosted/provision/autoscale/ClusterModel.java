@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -46,9 +47,8 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final NodeRepository nodeRepository;
+    private final AllocationParams params;
     private final Application application;
-    private final ClusterSpec clusterSpec;
     private final Cluster cluster;
     private final AllocatableResources current;
 
@@ -74,31 +74,28 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(NodeRepository nodeRepository,
+    public ClusterModel(AllocationParams params,
                         Application application,
-                        ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
                         AllocatableResources current,
                         MetricsDb metricsDb,
                         Clock clock) {
-        this.nodeRepository = nodeRepository;
+        this.params = params;
         this.application = application;
-        this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = clusterNodes;
         this.current = current;
         this.clock = clock;
-        this.scalingDuration = cluster.scalingDuration(clusterSpec);
-        this.allocationDuration = cluster.allocationDuration(clusterSpec);
+        this.scalingDuration = cluster.scalingDuration(params.cluster());
+        this.allocationDuration = cluster.allocationDuration(params.cluster());
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
         this.at = clock.instant();
     }
 
-    ClusterModel(NodeRepository nodeRepository,
+    ClusterModel(AllocationParams params,
                  Application application,
-                 ClusterSpec clusterSpec,
                  Cluster cluster,
                  AllocatableResources current,
                  Clock clock,
@@ -106,9 +103,8 @@ public class ClusterModel {
                  Duration allocationDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
-        this.nodeRepository = nodeRepository;
+        this.params = params;
         this.application = application;
-        this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = NodeList.of();
         this.current = current;
@@ -122,7 +118,7 @@ public class ClusterModel {
     }
 
     public Application application() { return application; }
-    public ClusterSpec clusterSpec() { return clusterSpec; }
+    public ClusterSpec clusterSpec() { return params.cluster(); }
     public AllocatableResources current() { return current; }
     private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
@@ -144,7 +140,7 @@ public class ClusterModel {
     public Duration allocationDuration() { return allocationDuration; }
 
     public boolean isContent() {
-        return clusterSpec.type().isContent();
+        return params.cluster().type().isContent();
     }
 
     /** Returns the predicted duration of data redistribution in this cluster. */
@@ -169,7 +165,7 @@ public class ClusterModel {
     }
 
     public boolean isExclusive() {
-        return nodeRepository.exclusiveAllocation(clusterSpec);
+        return params.exclusiveAllocation();
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -277,7 +273,7 @@ public class ClusterModel {
                                          * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
         double neededTotalVcpuPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
                                         ( 1 - cpu.queryFraction()) * cpu.idealLoad() *
-                                        (clusterSpec.type().isContainer() ? 1 : groupSize());
+                                        (params.cluster().type().isContainer() ? 1 : groupSize());
         // Max 1: Only use bcp group info if it indicates that we need to scale *up*
         double cpuAdjustment = Math.max(1.0, neededTotalVcpuPerGroup / currentClusterTotalVcpuPerGroup);
         return ideal.withCpu(ideal.cpu() / cpuAdjustment);
@@ -341,7 +337,7 @@ public class ClusterModel {
 
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {
-        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
+        if ( ! params.nodeRepository().zone().environment().isProduction()) return 1;
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
@@ -355,7 +351,7 @@ public class ClusterModel {
      * as a multiple of current resources.
      */
     private double trafficShiftHeadroom() {
-        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
+        if ( ! params.nodeRepository().zone().environment().isProduction()) return 1;
         if (canRescaleWithinBcpDeadline()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
@@ -391,7 +387,7 @@ public class ClusterModel {
         OptionalDouble costPerQuery() {
             if (averageQueryRate().isEmpty() || averageQueryRate().getAsDouble() == 0.0) return OptionalDouble.empty();
             // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
-            int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
+            int fanOut = params.cluster().type().isContainer() ? 1 : groupSize();
             return OptionalDouble.of(peakLoad().cpu()  * cpu.queryFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
                                      / averageQueryRate().getAsDouble() / groupCount());
         }
@@ -414,8 +410,8 @@ public class ClusterModel {
     private class MemoryModel {
 
         double idealLoad() {
-            if (clusterSpec.type().isContainer()) return idealContainerMemoryLoad;
-            if (clusterSpec.type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
+            if (params.cluster().type().isContainer()) return idealContainerMemoryLoad;
+            if (params.cluster().type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
             return idealContentMemoryLoad;
         }
 
@@ -432,16 +428,12 @@ public class ClusterModel {
 
         double averageReal() {
             if (nodes.isEmpty()) { // we're estimating
-                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
-                                                                                         clusterSpec,
-                                                                                         application.id());
-                return nodeRepository.resourcesCalculator().requestToReal(initialResources,
-                                                                          nodeRepository.exclusiveAllocation(clusterSpec),
-                                                                          false).memoryGb();
+                var initialResources = new CapacityPolicies(params.nodeRepository()).specifyFully(params, cluster.minResources().nodeResources());
+                return params.nodeRepository().resourcesCalculator().requestToReal(initialResources, params.exclusiveAllocation(), false).memoryGb();
             }
             else {
                 return nodes.stream()
-                            .mapToDouble(node -> nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).memoryGb())
+                            .mapToDouble(node -> params.nodeRepository().resourcesCalculator().realResourcesOf(node, params.nodeRepository()).memoryGb())
                             .average()
                             .getAsDouble();
             }
@@ -454,7 +446,7 @@ public class ClusterModel {
         double idealLoad() {
             // Stateless clusters are not expected to consume more disk over time -
             // if they do it is due to logs which will be rotated away right before the disk is full
-            return clusterSpec.isStateful() ? idealContentDiskLoad : idealContainerDiskLoad;
+            return params.cluster().isStateful() ? idealContentDiskLoad : idealContainerDiskLoad;
         }
 
     }

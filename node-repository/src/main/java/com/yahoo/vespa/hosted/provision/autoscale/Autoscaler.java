@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Duration;
 
@@ -54,12 +56,14 @@ public class Autoscaler {
     }
 
     private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        var model = new ClusterModel(nodeRepository,
+        NodeList notRetired = clusterNodes.not().retired();
+        ClusterSpec clusterSpec = notRetired.clusterSpec();
+        AllocationParams params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterNodes.clusterSpec().vespaVersion());
+        var model = new ClusterModel(params,
                                      application,
-                                     clusterNodes.not().retired().clusterSpec(),
                                      cluster,
                                      clusterNodes,
-                                     new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
+                                     new AllocatableResources(notRetired, nodeRepository),
                                      nodeRepository.metricsDb(),
                                      nodeRepository.clock());
         if (model.isEmpty()) return Autoscaling.empty();
@@ -73,7 +77,7 @@ public class Autoscaler {
         var loadAdjustment = model.loadAdjustment();
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
-        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits);
+        var target = allocationOptimizer.findBestAllocation(params, loadAdjustment, model, limits);
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
