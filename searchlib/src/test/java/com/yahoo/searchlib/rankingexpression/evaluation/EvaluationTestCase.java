@@ -769,6 +769,10 @@ public class EvaluationTestCase {
     @Test
     public void testLambdaValidation() {
         EvaluationTester tester = new EvaluationTester();
+        // check that we are allowed to access dimension name "y" inside Generate
+        tester.assertEvaluates("{ {d1:0}:15, {d1:1}:150, {d1:2 }:1500 }",
+                               "map(tensor0, f(x) (sum(tensor(y[6])(x*y))))",
+                               "{ {d1:0}:1, {d1:1}:10, {d1:2}:100 }");
         try {
             tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }",
                                    "map(tensor0, f(x) (log10(x+sum(tensor0)))", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
@@ -779,7 +783,6 @@ public class EvaluationTestCase {
             assertEquals("Lambda log10(x + reduce(tensor0, sum)) accesses features outside its scope: tensor0",
                          e.getMessage());
         }
-
     }
 
     @Test
