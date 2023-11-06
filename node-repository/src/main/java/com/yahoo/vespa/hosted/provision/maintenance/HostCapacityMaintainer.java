@@ -61,7 +61,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
-    private final FlagSource flagSource;
     private final ProvisioningThrottler throttler;
 
     HostCapacityMaintainer(NodeRepository nodeRepository,
@@ -72,7 +71,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.flagSource = flagSource;
         this.throttler = new ProvisioningThrottler(nodeRepository, metric);
     }
 

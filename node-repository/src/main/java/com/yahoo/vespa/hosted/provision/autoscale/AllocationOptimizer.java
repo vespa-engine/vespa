@@ -44,7 +44,7 @@ public class AllocationOptimizer {
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
-            limits = atLeast(minimumNodes, limits).fullySpecified(params, nodeRepository);
+            limits = atLeast(minimumNodes, limits).fullySpecified(params);
         Optional<AllocatableResources> bestAllocation = Optional.empty();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()

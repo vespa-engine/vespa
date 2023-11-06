@@ -65,7 +65,7 @@ public class ApplicationSerializer {
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", clusterSpec.type().name());
         var params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterSpec.vespaVersion());
-        Limits limits = Limits.of(cluster).fullySpecified(params, nodeRepository);
+        Limits limits = Limits.of(cluster).fullySpecified(params);
         toSlime(limits.min(), clusterObject.setObject("min"));
         toSlime(limits.max(), clusterObject.setObject("max"));
         if ( ! cluster.groupSize().isEmpty())
