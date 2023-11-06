@@ -546,6 +546,18 @@ jobs:
       - mirror-aarch64: |
           screwdriver/publish-unpublished-rpms-to-archive.sh aarch64
 
+  delete-old-versions-in-archive:
+    annotations:
+      screwdriver.cd/cpu: LOW
+      screwdriver.cd/ram: LOW
+      screwdriver.cd/timeout: 10
+      screwdriver.cd/buildPeriodically: H 6 * * 1
+    secrets:
+      - CLOUDSMITH_API_CREDS
+    steps:
+      - cleanup: |
+          screwdriver/delete-old-cloudsmith-artifacts.sh
+
   mirror-copr-rpms-to-artifactory:
     image: quay.io/centos/centos:stream8
     annotations:
