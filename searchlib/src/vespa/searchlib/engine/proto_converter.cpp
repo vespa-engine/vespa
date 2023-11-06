@@ -23,7 +23,7 @@ std::string escape_message(const vespalib::string &item) {
         if (c == '\\') {
             r.push_back(c);
             r.push_back(c);
-        } else if (c < 32 || c > 127) {
+        } else if (c < 32 || c > 126) {
             r.push_back('\\');
             r.push_back('x');
             r.push_back(hexdigits[0xF & (c >> 4)]);
