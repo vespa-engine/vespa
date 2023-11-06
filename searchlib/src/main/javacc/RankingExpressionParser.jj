@@ -16,6 +16,7 @@ PARSER_BEGIN(RankingExpressionParser)
 
 package com.yahoo.searchlib.rankingexpression.parser;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.*;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
@@ -300,7 +301,7 @@ ReferenceNode legacyQueryFeature() :
 {
     ( <DOLLAR> name = identifier() )
     {
-        return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null);
+        return new ReferenceNode(Reference.simple("query", name));
     }
 }
 
