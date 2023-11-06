@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.functions.Generate;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -151,19 +152,41 @@ public class LambdaFunctionNode extends CompositeNode {
         });
     }
 
+    private static class FeatureFinder {
+        private final Set<String> target;
+        private final Set<String> localVariables = new HashSet<>();
+        FeatureFinder(Set<String> target) { this.target = target; }
+        void process(ExpressionNode node) {
+            if (node instanceof ReferenceNode refNode) {
+                String featureName = refNode.reference().toString();
+                if (! localVariables.contains(featureName)) {
+                    target.add(featureName);
+                }
+                return;
+            }
+            Optional<FeatureFinder> subProcessor = Optional.empty();
+            if (node instanceof TensorFunctionNode t) {
+                var fun = t.function();
+                if (fun instanceof Generate<?> g) {
+                    var ff = new FeatureFinder(target);
+                    var genType = g.type(null); // Generate knows its own type without any context
+                    for (var dim : genType.dimensions()) {
+                        ff.localVariables.add(dim.name());
+                    }
+                    subProcessor = Optional.of(ff);
+                }
+            }
+            if (node instanceof CompositeNode composite) {
+                final FeatureFinder processor = subProcessor.orElse(this);
+                composite.children().forEach(child -> processor.process(child));
+            }
+        }
+    }
+
     private static Set<String> featuresAccessedIn(ExpressionNode node) {
-        if (node instanceof ReferenceNode) {
-            return Set.of(((ReferenceNode) node).reference().toString());
-        }
-        else if (node instanceof NameNode) { // (This clause probably not necessary)
-            return Set.of(((NameNode) node).getValue());
-        }
-        else if (node instanceof CompositeNode) {
-            Set<String> features = new HashSet<>();
-            ((CompositeNode)node).children().forEach(child -> features.addAll(featuresAccessedIn(child)));
-            return features;
-        }
-        return Set.of();
+        Set<String> features = new HashSet<>();
+        new FeatureFinder(features).process(node);
+        return features;
     }
 
     @Override
