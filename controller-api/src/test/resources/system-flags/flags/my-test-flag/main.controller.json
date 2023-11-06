@@ -1,8 +1,0 @@
-{
-  "id" : "my-test-flag",
-  "rules" : [
-    {
-      "value" : "main.controller"
-    }
-  ]
-}

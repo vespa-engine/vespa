@@ -1,8 +1,0 @@
-{
-  "id" : "my-flag",
-  "rules" : [
-    {
-      "value" : "us-east-3"
-    }
-  ]
-}

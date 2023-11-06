@@ -62,8 +62,6 @@
         <module>container-search</module>
         <module>container-spifly</module>
         <module>container-test</module>
-        <module>controller-api</module>
-        <module>controller-server</module>
         <module>defaults</module>
         <module>dependency-versions</module>
         <module>docproc</module>

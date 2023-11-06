@@ -1,5 +1,0 @@
-{
-  "tenant": "my-tenant",
-  "application": "my-app",
-  "url": "http://localhost:8080/application/v4/tenant/my-tenant/application/my-app"
-}

@@ -1,7 +1,0 @@
-{
-  "resources": [
-    {
-      "url": "http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default/"
-    }
-  ]
-}

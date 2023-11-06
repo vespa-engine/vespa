@@ -1,8 +1,0 @@
-{
-  "routingMethod": "exclusive",
-  "environment": "prod",
-  "region": "us-west-1",
-  "status": "in",
-  "agent": "system",
-  "changedAt": 0
-}

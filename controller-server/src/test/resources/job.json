@@ -1,9 +1,0 @@
-{
-  "duration": 600000,
-  "causes": [
-    {
-      "upstreamBuild": 123,
-      "upstreamProject": "2-v3-job-parent"
-    }
-  ]
-}

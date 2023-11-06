@@ -1,6 +1,0 @@
-<p>
-    $esc.html($notificationHeader):
-</p>
-#foreach( $i in $notificationItems )
-<p>$i</p>
-#end

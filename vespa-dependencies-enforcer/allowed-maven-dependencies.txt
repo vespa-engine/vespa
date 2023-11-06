@@ -20,7 +20,6 @@ com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
-com.github.cliftonlabs:json-simple:${findbugs.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.github.spotbugs:spotbugs-annotations:3.1.9
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
@@ -44,11 +43,8 @@ com.yahoo.athenz:athenz-zms-core:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zpe-java-client:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zts-core:${athenz.vespa.version}
 com.yahoo.rdl:rdl-java:1.5.4
-commons-beanutils:commons-beanutils:${commons-beanutils.vespa.version}
 commons-cli:commons-cli:${commons-cli.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
-commons-collections:commons-collections:${commons-collections.vespa.version}
-commons-fileupload:commons-fileupload:1.5
 commons-io:commons-io:${commons-io.vespa.version}
 commons-logging:commons-logging:${commons-logging.vespa.version}
 io.airlift:aircompressor:${aircompressor.vespa.version}
@@ -90,8 +86,6 @@ org.antlr:antlr-runtime:${antlr.vespa.version}
 org.antlr:antlr4-runtime:${antlr4.vespa.version}
 org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:${spifly.vespa.version}
 org.apache.commons:commons-compress:${commons-compress.vespa.version}
-org.apache.commons:commons-csv:${commons-csv.vespa.version}
-org.apache.commons:commons-digester3:${commons-digester.vespa.version}
 org.apache.commons:commons-exec:${commons-exec.vespa.version}
 org.apache.commons:commons-lang3:${commons-lang3.vespa.version}
 org.apache.commons:commons-math3:${commons.math3.vespa.version}
@@ -124,7 +118,6 @@ org.apache.maven:maven-project:2.2.1
 org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
 org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
-org.apache.velocity.tools:velocity-tools-generic:${velocity.tools.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
 org.apache.zookeeper:zookeeper-jute:${zookeeper.client.vespa.version}
