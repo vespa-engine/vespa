@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config.h>
 #include <map>
 #include <thread>
 
@@ -393,6 +394,15 @@ TEST_FF("require that target numdocs is fixed 1k for indexed mode",
     }
 }
 
+constexpr bool target_numdocs_hw_adjustment_is_enabled() noexcept {
+    // Must mirror logic of `use_hw_memory_presized_target_num_docs()` in documentdbconfigmanager.cpp
+#ifndef VESPA_USE_SANITIZER
+    return true;
+#else
+    return false;
+#endif
+}
+
 TEST_FF("require that target numdocs follows memory for streaming mode",
         ConfigTestFixture("search"),
         DocumentDBConfigManager(f1.configId + "/test", "test"))
@@ -401,12 +411,14 @@ TEST_FF("require that target numdocs follows memory for streaming mode",
     {
         auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(1_Gi));
         AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        EXPECT_EQUAL(23342213u, strategy.get_grow_strategy().getMinimumCapacity());
+        const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 23342213u : 1024u;
+        EXPECT_EQUAL(expected, strategy.get_grow_strategy().getMinimumCapacity());
     }
     {
         auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(10_Gi));
         AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        EXPECT_EQUAL(233422135u, strategy.get_grow_strategy().getMinimumCapacity());
+        const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 233422135u : 1024u;
+        EXPECT_EQUAL(expected, strategy.get_grow_strategy().getMinimumCapacity());
     }
 }
 
