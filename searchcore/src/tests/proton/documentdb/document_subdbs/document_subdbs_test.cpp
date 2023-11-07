@@ -620,30 +620,35 @@ TEST_F("require that attribute manager can be reconfigured", SearchableFixture)
     requireThatAttributeManagerCanBeReconfigured(f);
 }
 
-TEST_F("require that subdb reflect retirement", FastAccessFixture)
+TEST_F("require that subdb reflect retirement or maintenance", FastAccessFixture)
 {
     CompactionStrategy cfg(0.1, 0.3);
 
-    EXPECT_FALSE(f._subDb.isNodeRetired());
+    EXPECT_FALSE(f._subDb.is_node_retired_or_maintenance());
     auto unretired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg == unretired_cfg);
 
     auto calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(true);
     f.setBucketStateCalculator(calc);
-    EXPECT_TRUE(f._subDb.isNodeRetired());
+    EXPECT_TRUE(f._subDb.is_node_retired_or_maintenance());
     auto retired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg != retired_cfg);
     EXPECT_TRUE(CompactionStrategy(0.5, 0.5) == retired_cfg);
 
     calc->setNodeRetired(false);
+    calc->setNodeMaintenance(true);
     f.setBucketStateCalculator(calc);
-    EXPECT_FALSE(f._subDb.isNodeRetired());
+    EXPECT_TRUE(f._subDb.is_node_retired_or_maintenance());
+
+    calc->setNodeMaintenance(false);
+    f.setBucketStateCalculator(calc);
+    EXPECT_FALSE(f._subDb.is_node_retired_or_maintenance());
     unretired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg == unretired_cfg);
 }
 
-TEST_F("require that attribute compaction config reflect retirement", FastAccessFixture) {
+TEST_F("require that attribute compaction config reflect retirement or maintenance", FastAccessFixture) {
     CompactionStrategy default_cfg(0.05, 0.2);
     CompactionStrategy retired_cfg(0.5, 0.5);
 

@@ -183,7 +183,7 @@ SearchableDocSubDB::applyFlushConfig(const DocumentDBFlushConfig &flushConfig)
 void
 SearchableDocSubDB::propagateFlushConfig()
 {
-    uint32_t maxFlushed = isNodeRetired() ? _flushConfig.getMaxFlushedRetired() : _flushConfig.getMaxFlushed();
+    uint32_t maxFlushed = is_node_retired_or_maintenance() ? _flushConfig.getMaxFlushedRetired() : _flushConfig.getMaxFlushed();
     _indexMgr->setMaxFlushed(maxFlushed);
 }
 

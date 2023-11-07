@@ -28,7 +28,7 @@ private:
     DiskMemUsageState           _currState;
     bool                        _useConservativeDiskMode;
     bool                        _useConservativeMemoryMode;
-    bool                        _nodeRetired;
+    bool                        _node_retired_or_maintenance;
 
 
     void considerUseConservativeDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig);
@@ -43,7 +43,7 @@ public:
                              const ProtonConfig::Flush::Memory &config,
                              const vespalib::HwInfo::Memory &memory);
     void setConfig(const ProtonConfig::Flush::Memory &newConfig);
-    void setNodeRetired(bool nodeRetired);
+    void set_node_retired_or_maintenance(bool value);
     void notifyDiskMemUsage(DiskMemUsageState newState) override;
 
     static MemoryFlush::Config convertConfig(const ProtonConfig::Flush::Memory &config,

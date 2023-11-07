@@ -47,6 +47,7 @@ public:
     bool nodeInitializing() const override { return _nodeInitializing; }
     bool nodeRetired() const override { return _nodeRetired; }
     bool nodeMaintenance() const noexcept override { return _nodeMaintenance; }
+    bool node_retired_or_maintenance() const noexcept override { return _nodeRetired || _nodeMaintenance; }
 };
 
 }
