@@ -36,9 +36,6 @@ public class SharedHost {
         this.resources = resourcesOrNull == null ? List.of() : List.copyOf(resourcesOrNull);
     }
 
-    @JsonIgnore
-    public SharedHost() { this(null); }
-
     @JsonGetter("resources")
     public List<HostResources> getResourcesOrNull() {
         return resources.isEmpty() ? null : resources;

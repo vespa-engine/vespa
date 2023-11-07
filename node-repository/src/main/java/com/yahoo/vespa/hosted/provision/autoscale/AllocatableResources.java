@@ -9,7 +9,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Duration;
 import java.util.List;
@@ -34,12 +33,14 @@ public class AllocatableResources {
     private final double fulfilment;
 
     /** Fake allocatable resources from requested capacity */
-    public AllocatableResources(AllocationParams params, ClusterResources requested) {
+    public AllocatableResources(ClusterResources requested,
+                                ClusterSpec clusterSpec,
+                                NodeRepository nodeRepository) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = params.nodeRepository().resourcesCalculator().requestToReal(requested.nodeResources(), params.exclusiveAllocation(), false);
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(clusterSpec), false);
         this.advertisedResources = requested.nodeResources();
-        this.clusterSpec = params.cluster();
+        this.clusterSpec = clusterSpec;
         this.fulfilment = 1;
     }
 
@@ -166,8 +167,7 @@ public class AllocatableResources {
                                        .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
     }
 
-    public static Optional<AllocatableResources> from(AllocationParams params,
-                                                      ClusterResources wantedResources,
+    public static Optional<AllocatableResources> from(ClusterResources wantedResources,
                                                       ApplicationId applicationId,
                                                       ClusterSpec clusterSpec,
                                                       Limits applicationLimits,
@@ -175,11 +175,10 @@ public class AllocatableResources {
                                                       ClusterModel model,
                                                       NodeRepository nodeRepository) {
         var systemLimits = nodeRepository.nodeResourceLimits();
-        boolean exclusive = params.exclusiveAllocation();
+        boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            var allocatableResources = calculateAllocatableResources(params,
-                                                                     wantedResources,
+            var allocatableResources = calculateAllocatableResources(wantedResources,
                                                                      nodeRepository,
                                                                      applicationId,
                                                                      clusterSpec,
@@ -190,9 +189,8 @@ public class AllocatableResources {
             var worstCaseRealResources = nodeRepository.resourcesCalculator().requestToReal(allocatableResources.advertisedResources,
                                                                                             exclusive,
                                                                                             false);
-            if ( ! systemLimits.isWithinRealLimits(params, worstCaseRealResources, applicationId, clusterSpec)) {
-                allocatableResources = calculateAllocatableResources(params,
-                                                                     wantedResources,
+            if ( ! systemLimits.isWithinRealLimits(worstCaseRealResources, applicationId, clusterSpec)) {
+                allocatableResources = calculateAllocatableResources(wantedResources,
                                                                      nodeRepository,
                                                                      applicationId,
                                                                      clusterSpec,
@@ -201,7 +199,7 @@ public class AllocatableResources {
                                                                      false);
             }
 
-            if ( ! systemLimits.isWithinRealLimits(params, allocatableResources.realResources, applicationId, clusterSpec))
+            if ( ! systemLimits.isWithinRealLimits(allocatableResources.realResources, applicationId, clusterSpec))
                 return Optional.empty();
             if ( ! anySatisfies(allocatableResources.realResources, availableRealHostResources))
                 return Optional.empty();
@@ -230,7 +228,7 @@ public class AllocatableResources {
                 }
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
-                if ( ! systemLimits.isWithinRealLimits(params, realResources, applicationId, clusterSpec)) continue;
+                if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec)) continue;
 
                 var candidate = new AllocatableResources(wantedResources.with(realResources),
                                                          advertisedResources,
@@ -253,8 +251,7 @@ public class AllocatableResources {
         }
     }
 
-    private static AllocatableResources calculateAllocatableResources(AllocationParams params,
-                                                                      ClusterResources wantedResources,
+    private static AllocatableResources calculateAllocatableResources(ClusterResources wantedResources,
                                                                       NodeRepository nodeRepository,
                                                                       ApplicationId applicationId,
                                                                       ClusterSpec clusterSpec,
@@ -266,7 +263,7 @@ public class AllocatableResources {
         advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive, true); // Ask for something legal
         advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
         var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase); // What we'll really get
-        if ( ! systemLimits.isWithinRealLimits(params, realResources, applicationId, clusterSpec)
+        if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec)
              && advertisedResources.storageType() == NodeResources.StorageType.any) {
             // Since local disk reserves some of the storage, try to constrain to remote disk
             advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
