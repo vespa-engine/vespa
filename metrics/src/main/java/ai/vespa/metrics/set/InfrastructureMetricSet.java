@@ -67,6 +67,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_REBOOT.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_RESTART.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_RETIRE.max());
