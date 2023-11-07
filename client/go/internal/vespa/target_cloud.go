@@ -42,9 +42,10 @@ type cloudTarget struct {
 }
 
 type deploymentEndpoint struct {
-	Cluster string `json:"cluster"`
-	URL     string `json:"url"`
-	Scope   string `json:"scope"`
+	Cluster    string `json:"cluster"`
+	URL        string `json:"url"`
+	Scope      string `json:"scope"`
+	AuthMethod string `json:"authMethod"`
 }
 
 type deploymentResponse struct {
@@ -368,6 +369,9 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 		}
 		for _, endpoint := range resp.Endpoints {
 			if endpoint.Scope != "zone" {
+				continue
+			}
+			if endpoint.AuthMethod == "token" {
 				continue
 			}
 			urlsByCluster[endpoint.Cluster] = endpoint.URL
