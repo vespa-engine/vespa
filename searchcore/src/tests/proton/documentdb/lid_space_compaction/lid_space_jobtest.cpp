@@ -44,7 +44,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
           double allowedLidBloatFactor,
           double resourceLimitFactor,
           vespalib::duration interval,
-          bool nodeRetired,
+          bool node_retired_or_maintenance,
           uint32_t maxOutstandingMoveOps)
 {
     _handler = std::make_shared<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, true);
@@ -57,7 +57,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
     _master = std::make_unique<proton::SyncableExecutorThreadService> (*_singleExecutor);
     _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
     _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
-                                           _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
+                                           _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, node_retired_or_maintenance,
                                            document::BucketSpace::placeHolder());
 }
 
@@ -180,10 +180,10 @@ JobTest::init(uint32_t allowedLidBloat,
               double allowedLidBloatFactor,
               double resourceLimitFactor,
               vespalib::duration interval,
-              bool nodeRetired,
+              bool node_retired_or_maintenance,
               uint32_t maxOutstandingMoveOps)
 {
-    JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, resourceLimitFactor, interval, nodeRetired, maxOutstandingMoveOps);
+    JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, resourceLimitFactor, interval, node_retired_or_maintenance, maxOutstandingMoveOps);
     _jobRunner = std::make_unique<MyDirectJobRunner>(*_job);
 }
 

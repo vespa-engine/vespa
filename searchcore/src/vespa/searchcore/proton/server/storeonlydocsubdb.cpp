@@ -113,7 +113,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _dmsFlushTarget(),
       _dmsShrinkTarget(),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
-      _nodeRetired(false),
+      _node_retired_or_maintenance(false),
       _lastConfiguredCompactionStrategy(),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
@@ -472,7 +472,7 @@ struct UpdateConfig : public search::attribute::IAttributeFunctor {
 
 CompactionStrategy
 StoreOnlyDocSubDB::computeCompactionStrategy(CompactionStrategy strategy) const {
-    return isNodeRetired()
+    return is_node_retired_or_maintenance()
            ? CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO)
            : strategy;
 }
@@ -493,9 +493,9 @@ StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, 
 
 void
 StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc, OnDone onDone) {
-    bool wasNodeRetired = isNodeRetired();
-    _nodeRetired = calc->nodeRetired();
-    if (wasNodeRetired != isNodeRetired()) {
+    bool was_node_retired_or_maintenance = is_node_retired_or_maintenance();
+    _node_retired_or_maintenance = calc->node_retired_or_maintenance();
+    if (was_node_retired_or_maintenance != is_node_retired_or_maintenance()) {
         CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
         auto cfg = _dms->getConfig();
         cfg.setCompactionStrategy(compactionStrategy);

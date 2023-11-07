@@ -37,7 +37,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
         auto job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
                                                    bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
-                                                   clusterStateChangedNotifier, calc && calc->nodeRetired(), bucketSpace);
+                                                   clusterStateChangedNotifier, calc && calc->node_retired_or_maintenance(), bucketSpace);
         controller.registerJob(trackJob(tracker, std::move(job)));
     }
 }

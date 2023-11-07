@@ -925,12 +925,13 @@ Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterStat
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
     bool nodeUpInBucketSpace(calc.nodeUp()); // TODO rename calculator function to imply bucket space affinity
-    bool nodeRetired(calc.nodeRetired());
+    bool nodeRetired = calc.nodeRetired();
+    bool nodeMaintenance = calc.nodeMaintenance();
     bool nodeUp = updateNodeUp(bucketSpace, nodeUpInBucketSpace);
     _matchEngine->setNodeUp(nodeUp);
-    _matchEngine->setNodeMaintenance(calc.nodeMaintenance()); // Note: _all_ bucket spaces in maintenance
+    _matchEngine->setNodeMaintenance(nodeMaintenance); // Note: _all_ bucket spaces in maintenance
     if (_memoryFlushConfigUpdater) {
-        _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);
+        _memoryFlushConfigUpdater->set_node_retired_or_maintenance(nodeRetired || nodeMaintenance);
     }
 }
 
