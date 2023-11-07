@@ -372,7 +372,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 				continue
 			}
 			if endpoint.AuthMethod == "token" {
-			    continue
+				continue
 			}
 			urlsByCluster[endpoint.Cluster] = endpoint.URL
 		}
