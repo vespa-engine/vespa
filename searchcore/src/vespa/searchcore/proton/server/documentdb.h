@@ -383,7 +383,7 @@ public:
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
-    const DocTypeName & getDocTypeName() const { return _docTypeName; }
+    const DocTypeName & getDocTypeName() const noexcept { return _docTypeName; }
     std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::optional<SerialNum> serial_num);
     void reconfigure(DocumentDBConfigSP snapshot) override;
     int64_t getActiveGeneration() const;
