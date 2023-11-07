@@ -783,9 +783,9 @@ public class Nodes {
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
         if (dynamicProvisioning)
-            return EnumSet.of(Node.State.active, Node.State.ready, Node.State.provisioned).contains(host.state());
+            return EnumSet.of(State.provisioned, State.ready, State.reserved, State.active).contains(host.state());
         else
-            return host.state() == Node.State.active;
+            return host.state() == State.active;
     }
 
     public boolean suspended(Node node) {
