@@ -43,6 +43,13 @@ using DocEntryList = std::vector<DocEntry::UP>;
 
 namespace {
 
+template <typename T>
+std::shared_ptr<T>
+as_sp(std::unique_ptr<T> value)
+{
+    return value;
+}
+
 std::unique_ptr<PersistenceProvider>
 getSpi(ConformanceTest::PersistenceFactory &factory, const document::TestDocMan &testDocMan) {
     PersistenceProviderUP result(factory.getPersistenceImplementation(
@@ -916,11 +923,15 @@ TEST_F(ConformanceTest, testRemoveByGid)
     Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
-    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-    std::shared_ptr<Document> doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
+    auto doc1 = as_sp(testDocMan.createRandomDocumentAtLocation(0x01, 1));
+    auto doc2 = as_sp(testDocMan.createRandomDocumentAtLocation(0x01, 2));
+    auto doc3 = as_sp(testDocMan.createRandomDocumentAtLocation(0x01, 3));
+    auto doc4 = as_sp(testDocMan.createRandomDocumentAtLocation(0x01, 4));
     spi->createBucket(bucket);
     EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(11), doc1)));
     EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(12), doc2)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(13), doc3)));
+    EXPECT_EQ(Result(), Result(spi->remove(bucket, Timestamp(14), doc3->getId())));
     auto info = spi->getBucketInfo(bucket).getBucketInfo();
     EXPECT_EQ(2, info.getDocumentCount());
     std::vector<DocTypeGidAndTimestamp> ids;
@@ -928,6 +939,11 @@ TEST_F(ConformanceTest, testRemoveByGid)
     assert_remove_by_gid(*spi, bucket, ids, 0, 2, "ignored removebygid");
     ids.back().timestamp = Timestamp(11);
     assert_remove_by_gid(*spi, bucket, ids, 1, 1, "removebygid");
+    ids.back().timestamp = Timestamp(15);
+    ids.back().gid = doc3->getId().getGlobalId();
+    assert_remove_by_gid(*spi, bucket, ids, 0, 1, "already removed removebygid");
+    ids.back().gid = doc4->getId().getGlobalId();
+    assert_remove_by_gid(*spi, bucket, ids, 0, 1, "not found removebygid");
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;

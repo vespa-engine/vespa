@@ -292,6 +292,17 @@ BucketContent::eraseEntry(Timestamp t) {
     }
 }
 
+void
+BucketContent::eraseEntries(const GlobalId& gid) {
+    auto gid_it = _gidMap.find(gid);
+    if (gid_it != _gidMap.end()) {
+        _gidMap.erase(gid_it);
+        auto it = std::remove_if(_entries.begin(), _entries.end(), [&gid](auto& e) { return e.gid == gid; });
+        _entries.erase(it, _entries.end());
+        _outdatedInfo = true;
+    }
+}
+
 DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
     : _initialized(false),
       _repo(repo),
@@ -559,7 +570,7 @@ DummyPersistence::removeByGidAsync(const Bucket& b, std::vector<spi::DocTypeGidA
         DocEntry::SP entry((*bc)->getEntry(gid));
         if (entry && entry->getTimestamp() <= t) {
             numRemoves += entry->isRemove() ? 0 : 1;
-            (*bc)->eraseEntry(entry->getTimestamp());
+            (*bc)->eraseEntries(gid);
         }
     }
     bc.reset();
