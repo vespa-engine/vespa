@@ -247,7 +247,7 @@ Query::optimize()
 }
 
 void
-Query::fetchPostings(const search::queryeval::ExecuteInfo & executeInfo)
+Query::fetchPostings(const ExecuteInfo & executeInfo)
 {
     _blueprint->fetchPostings(executeInfo);
 }
@@ -265,7 +265,7 @@ Query::handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
-    fetchPostings(search::queryeval::ExecuteInfo::create(true, &doom));
+    fetchPostings(ExecuteInfo::create(true, 1.0F, &doom));
 }
 
 bool

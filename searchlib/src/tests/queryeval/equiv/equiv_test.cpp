@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("equiv_test");
+
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("equiv_test");
 
 using namespace search::queryeval;
 using search::fef::MatchData;
@@ -17,7 +19,7 @@ using search::fef::FieldPositionsIterator;
 class EquivTest : public ::testing::Test {
 protected:
     EquivTest();
-    ~EquivTest();
+    ~EquivTest() override;
 
     void test_equiv(bool strict, bool unpack_normal_features, bool unpack_interleaved_features);
 };
@@ -57,7 +59,7 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
         data.setNeedNormalFeatures(unpack_normal_features);
         data.setNeedInterleavedFeatures(unpack_interleaved_features);
     }
-    bp->fetchPostings(ExecuteInfo::create(strict));
+    bp->fetchPostings(ExecuteInfo::createForTest(strict));
     SearchIterator::UP search = bp->createSearch(*md, strict);
     search->initFullRange();
 

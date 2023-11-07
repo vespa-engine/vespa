@@ -6,7 +6,6 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
-#include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
@@ -63,7 +62,7 @@ TEST_F(FakeSearchableTest, require_that_term_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -117,7 +116,7 @@ TEST_F(FakeSearchableTest, require_that_phrase_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -168,7 +167,7 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -239,7 +238,7 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -323,7 +322,7 @@ TEST_F(FakeSearchableTest, require_that_phrase_with_empty_child_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 

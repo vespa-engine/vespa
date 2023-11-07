@@ -68,7 +68,7 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
         auto bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         auto sb = bp->createSearch(*md, strict);
         return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != nullptr);
     }
@@ -83,7 +83,7 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
         auto bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(ExecuteInfo::createForTest(strict));
         auto sb = bp->createSearch(*md, strict);
         sb->initFullRange();
         FakeResult result;

@@ -122,7 +122,7 @@ TEST("test And propagates updated histestimate") {
     bp.addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
     bp.optimize_self();
     bp.setDocIdLimit(5000);
-    bp.fetchPostings(ExecuteInfo::create(true));
+    bp.fetchPostings(ExecuteInfo::TRUE);
     EXPECT_EQUAL(3u, bp.childCnt());
     for (uint32_t i = 0; i < bp.childCnt(); i++) {
         const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));

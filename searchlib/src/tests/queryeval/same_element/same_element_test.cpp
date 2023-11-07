@@ -6,7 +6,6 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -48,7 +47,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
     Blueprint::UP result = Blueprint::optimize(std::move(bp));
-    result->fetchPostings(ExecuteInfo::create(strict));
+    result->fetchPostings(ExecuteInfo::createForTest(strict));
     result->freeze();
     return result;
 }
@@ -87,7 +86,7 @@ TEST("require that matching elements can be identified") {
     auto md = make_match_data();
     auto search = bp->createSearch(*md, false);
     search->initRange(1, 1000);
-    SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
+    auto *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
     TEST_DO(verify_elements(*se, 5, {3, 7}));
     TEST_DO(verify_elements(*se, 10, {}));
@@ -148,7 +147,7 @@ TEST("require that attribute iterators are wrapped for element unpacking") {
     auto bp = finalize(make_blueprint({a,b}, true), true);
     auto md = make_match_data();
     auto search = bp->createSearch(*md, false);
-    SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
+    auto *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
     ASSERT_EQUAL(se->children().size(), 2u);
     EXPECT_TRUE(dynamic_cast<SearchContextElementIterator*>(se->children()[0].get()) != nullptr);
