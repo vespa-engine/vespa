@@ -99,7 +99,7 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double 
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
-        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, hit_rate, &_requestContext.getDoom()));
+        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, strictSearch ? 1.0F : hit_rate, &_requestContext.getDoom()));
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();
     }
