@@ -76,8 +76,8 @@ toString(AttributeLimiter::DiversityCutoffStrategy strategy)
     return (strategy == AttributeLimiter::DiversityCutoffStrategy::STRICT) ? STRICT_STR : LOOSE_STR;
 }
 
-SearchIterator::UP
-AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool strictSearch)
+std::unique_ptr<SearchIterator>
+AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch)
 {
     std::lock_guard<std::mutex> guard(_lock);
     const uint32_t my_field_id = 0;
@@ -99,7 +99,7 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool st
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
-        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, &_requestContext.getDoom()));
+        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, strictSearch ? 1.0F : hit_rate, &_requestContext.getDoom()));
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();
     }

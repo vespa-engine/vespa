@@ -181,6 +181,7 @@ TEST("require that max group size is calculated correctly") {
 TEST("require that the attribute limiter works correctly") {
     FakeRequestContext requestContext;
     MockRangeLocator rangeLocator;
+    constexpr double HIT_RATE = 0.1;
     for (int i = 0; i <= 7; ++i) {
         bool descending = (i & 1) != 0;
         bool strict     = (i & 2) != 0;
@@ -190,10 +191,10 @@ TEST("require that the attribute limiter works correctly") {
                                  "category", 10.0, AttributeLimiter::LOOSE);
         EXPECT_EQUAL(0u, searchable.create_cnt);
         EXPECT_FALSE(limiter.was_used());
-        SearchIterator::UP s1 = limiter.create_search(42, diverse ? 3 : 42, strict);
+        SearchIterator::UP s1 = limiter.create_search(42, diverse ? 3 : 42, HIT_RATE, strict);
         EXPECT_TRUE(limiter.was_used());
         EXPECT_EQUAL(1u, searchable.create_cnt);
-        SearchIterator::UP s2 = limiter.create_search(42, diverse ? 3 : 42, strict);
+        SearchIterator::UP s2 = limiter.create_search(42, diverse ? 3 : 42, HIT_RATE, strict);
         EXPECT_EQUAL(1u, searchable.create_cnt);
         auto *ms = dynamic_cast<MockSearch*>(s1.get());
         ASSERT_TRUE(ms != nullptr);

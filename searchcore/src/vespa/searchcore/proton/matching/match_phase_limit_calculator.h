@@ -25,21 +25,21 @@ public:
      * @param min_groups the minimum number of diversity groups you want
      * @param sample fraction of max_hits to be used as sample size before performing match phase limiting
      */
-    MatchPhaseLimitCalculator(size_t max_hits, size_t min_groups, double sample) :
-        _max_hits(max_hits),
-        _min_groups(std::max(size_t(1), min_groups)),
-        _sample_hits(max_hits * sample)
+    MatchPhaseLimitCalculator(size_t max_hits, size_t min_groups, double sample) noexcept
+        : _max_hits(max_hits),
+          _min_groups(std::max(size_t(1), min_groups)),
+          _sample_hits(max_hits * sample)
     {}
-    size_t sample_hits_per_thread(size_t num_threads) const {
+    size_t sample_hits_per_thread(size_t num_threads) const noexcept {
         return std::max(size_t(1), std::max(128 / num_threads, _sample_hits / num_threads));
     }
-    size_t wanted_num_docs(double hit_rate) const {
+    size_t wanted_num_docs(double hit_rate) const noexcept {
         return std::min((double)0x7fffFFFF, std::max(128.0, _max_hits / hit_rate));
     }
-    size_t estimated_hits(double hit_rate, size_t num_docs) const {
+    size_t estimated_hits(double hit_rate, size_t num_docs) const noexcept {
         return (size_t) (hit_rate * num_docs);
     }
-    size_t max_group_size(size_t wanted_num_docs_in) const {
+    size_t max_group_size(size_t wanted_num_docs_in) const noexcept {
         return (wanted_num_docs_in / _min_groups);
     }
 };
