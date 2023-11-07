@@ -92,7 +92,9 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search, double ma
          uint32_t current_id, uint32_t end_id)
 {
     SearchIterator::UP limiter = limiter_factory.create_search(wanted_num_docs, max_group_size, match_freq, PRE_FILTER);
-    limiter = search->andWith(std::move(limiter), wanted_num_docs);
+    if (PRE_FILTER) {
+        limiter = search->andWith(std::move(limiter), wanted_num_docs);
+    }
     if (limiter) {
         search = std::make_unique<LimitedSearchT<PRE_FILTER>>(std::move(limiter), std::move(search));
     }
