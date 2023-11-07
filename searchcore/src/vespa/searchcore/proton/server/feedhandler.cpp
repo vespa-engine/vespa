@@ -253,7 +253,7 @@ FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
             token->setResult(make_unique<RemoveResult>(documentWasFound), documentWasFound);
         }
         _activeFeedView->handleRemove(std::move(token), op);
-    } else if (op.hasDocType()) {
+    } else if (op.hasDocType() && op.getValidDbdId()) {
         assert(op.getDocType() == _docTypeName.getName());
         appendOperation(op, token);
         if (token) {

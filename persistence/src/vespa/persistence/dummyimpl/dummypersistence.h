@@ -77,6 +77,7 @@ struct BucketContent {
     std::shared_ptr<DocEntry> getEntry(const GlobalId& gid) const;
     DocEntry::SP getEntry(Timestamp) const;
     void eraseEntry(Timestamp t);
+    void eraseEntries(const GlobalId& git);
     void setActive(bool active = true) {
         _active = active;
         _info = BucketInfo(_info.getChecksum(),

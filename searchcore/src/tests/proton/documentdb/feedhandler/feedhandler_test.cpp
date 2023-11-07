@@ -237,6 +237,9 @@ struct MyFeedView : public test::DummyFeedView {
         ++update_count;
         update_serial = op.getSerialNum();
     }
+    void prepareRemove(RemoveOperation &op) override {
+        op.setDbDocumentId(1); // Set a "valid" lid for tombstone
+    }
     void handleRemove(FeedToken token, const RemoveOperation &) override {
         (void) token;
         ++remove_count;
