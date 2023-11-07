@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_iterator.h"
+#include "ipersistencehandler.h"
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/document/select/gid_filter.h>
 #include <vespa/document/select/node.h>
@@ -18,7 +20,9 @@ using storage::spi::DocEntry;
 using storage::spi::Timestamp;
 using document::Document;
 using document::DocumentId;
+using document::GlobalId;
 using storage::spi::DocumentMetaEnum;
+using vespalib::stringref;
 
 namespace proton {
 
@@ -27,6 +31,11 @@ namespace {
 std::unique_ptr<DocEntry>
 createDocEntry(Timestamp timestamp, bool removed) {
     return DocEntry::create(timestamp, removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE);
+}
+
+std::unique_ptr<DocEntry>
+createDocEntry(Timestamp timestamp, bool removed, stringref doc_type, const GlobalId &gid) {
+    return DocEntry::create(timestamp, (removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE), doc_type, gid);
 }
 
 std::unique_ptr<DocEntry>
@@ -92,17 +101,23 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 DocumentIterator::~DocumentIterator() = default;
 
 void
+DocumentIterator::add(const IPersistenceHandler *handler, IDocumentRetriever::SP retriever)
+{
+    _sources.emplace_back(handler, std::move(retriever));
+}
+
+void
 DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    _sources.push_back(std::move(retriever));
+    add(nullptr, std::move(retriever));
 }
 
 IterateResult
 DocumentIterator::iterate(size_t maxBytes)
 {
     if ( ! _fetchedData ) {
-        for (const IDocumentRetriever::SP & source : _sources) {
-            fetchCompleteSource(*source, _list);
+        for (const auto & source : _sources) {
+            fetchCompleteSource(source.first, *source.second, _list);
         }
         _fetchedData = true;
     }
@@ -235,7 +250,9 @@ private:
 }
 
 void
-DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, IterateResult::List & list)
+DocumentIterator::fetchCompleteSource(const IPersistenceHandler * handler,
+                                      const IDocumentRetriever & source,
+                                      IterateResult::List & list)
 {
     IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
     search::DocumentMetaData::Vector metaData;
@@ -266,10 +283,11 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
 
     list.reserve(lidsToFetch.size());
     if ( _metaOnly ) {
+        stringref doc_type = (handler ? stringref(handler->doc_type_name().getName()) : stringref());
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
             assert(lid == meta.lid);
-            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed));
+            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type, meta.gid));
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
