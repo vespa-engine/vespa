@@ -1355,8 +1355,8 @@ MergeThrottler::set_hw_info_locking(const vespalib::HwInfo& hw_info) {
 
 size_t
 MergeThrottler::deduced_memory_limit(const StorServerConfig& cfg) const noexcept {
-    const auto min_limit = static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoLowerBoundBytes, 1L));
-    const auto max_limit = std::max(static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoUpperBoundBytes, 1L)), min_limit);
+    const auto min_limit = static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoLowerBoundBytes, INT64_C(1)));
+    const auto max_limit = std::max(static_cast<size_t>(std::max(cfg.mergeThrottlingMemoryLimit.autoUpperBoundBytes, INT64_C(1))), min_limit);
     const auto mem_scale_factor = std::max(cfg.mergeThrottlingMemoryLimit.autoPhysMemScaleFactor, 0.0);
 
     const auto node_mem   = static_cast<double>(_hw_info.memory().sizeBytes());
