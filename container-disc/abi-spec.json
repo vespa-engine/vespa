@@ -16,6 +16,7 @@
       "public abstract java.lang.String getRoleToken(java.lang.String, java.lang.String)",
       "public abstract java.lang.String getAccessToken(java.lang.String)",
       "public abstract java.lang.String getAccessToken(java.lang.String, java.util.List)",
+      "public abstract java.lang.String getAccessToken(java.lang.String, java.util.List, java.util.List)",
       "public abstract java.util.List getIdentityCertificate()",
       "public abstract java.security.cert.X509Certificate getRoleCertificate(java.lang.String, java.lang.String)",
       "public abstract java.security.PrivateKey getPrivateKey()",
