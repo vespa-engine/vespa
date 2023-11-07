@@ -388,7 +388,8 @@ public final class LegacyAthenzIdentityProviderImpl extends AbstractComponent im
         try {
             Instant expirationTime = getExpirationTime(credentials);
             Duration remainingLifetime = Duration.between(clock.instant(), expirationTime);
-            metric.set(CERTIFICATE_EXPIRY_METRIC_NAME, remainingLifetime.getSeconds(), null);
+            Metric.Context dimensions = metric.createContext(Map.of("implementation", this.getClassName()));
+            metric.set(CERTIFICATE_EXPIRY_METRIC_NAME, remainingLifetime.getSeconds(), dimensions);
         } catch (Throwable t) {
             log.log(Level.WARNING, "Failed to update metrics: " + t.getMessage(), t);
         }
