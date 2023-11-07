@@ -145,4 +145,10 @@ PersistenceHandlerProxy::handlePopulateActiveBuckets(document::BucketId::List bu
     _bucketHandler.handlePopulateActiveBuckets(std::move(buckets), resultHandler);
 }
 
+const DocTypeName&
+PersistenceHandlerProxy::doc_type_name() const noexcept
+{
+    return _documentDB->getDocTypeName();
+}
+
 } // namespace proton

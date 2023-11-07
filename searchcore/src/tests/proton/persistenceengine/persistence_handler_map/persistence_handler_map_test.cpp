@@ -32,6 +32,7 @@ struct DummyPersistenceHandler : public IPersistenceHandler {
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { return RetrieversSP(); }
     void handleListActiveBuckets(IBucketIdListResultHandler &) override {}
     void handlePopulateActiveBuckets(document::BucketId::List, IGenericResultHandler &) override {}
+    const DocTypeName & doc_type_name() const noexcept override { abort(); }
 };
 
 BucketSpace space_1(1);

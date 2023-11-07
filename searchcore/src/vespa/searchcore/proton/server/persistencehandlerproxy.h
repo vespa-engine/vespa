@@ -61,6 +61,8 @@ public:
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override;
 
     void handlePopulateActiveBuckets(document::BucketId::List buckets, IGenericResultHandler &resultHandler) override;
+
+    const DocTypeName &doc_type_name() const noexcept override;
 };
 
 } // namespace proton
