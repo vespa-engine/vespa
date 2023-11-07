@@ -71,6 +71,11 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
         }
 
         @Override
+        public String getAccessToken(String domain, List<String> roles, List<String> proxyPrincipal) {
+            throw new UnsupportedOperationException(message);
+        }
+
+        @Override
         public List<X509Certificate> getIdentityCertificate() {
             throw new UnsupportedOperationException(message);
         }

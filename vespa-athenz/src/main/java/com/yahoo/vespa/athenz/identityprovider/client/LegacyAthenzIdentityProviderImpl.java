@@ -261,6 +261,11 @@ public final class LegacyAthenzIdentityProviderImpl extends AbstractComponent im
     }
 
     @Override
+    public String getAccessToken(String domain, List<String> roles, List<String> proxyPrincipal) {
+        throw new UnsupportedOperationException("Not implemented in legacy client");
+    }
+
+    @Override
     public PrivateKey getPrivateKey() {
         return credentials.getKeyPair().getPrivate();
     }

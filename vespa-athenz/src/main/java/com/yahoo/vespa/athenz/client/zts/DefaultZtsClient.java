@@ -141,16 +141,21 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public AthenzAccessToken getAccessToken(AthenzDomain domain,  List<AthenzIdentity> proxyPrincipals) {
+    public AthenzAccessToken getAccessToken(AthenzDomain domain, List<AthenzIdentity> proxyPrincipals) {
         return this.getAccessTokenImpl(List.of(new AthenzResourceName(domain, "domain")), proxyPrincipals);
     }
 
     @Override
     public AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole) {
+        return getAccessToken(athenzRole, List.of());
+    }
+
+    @Override
+    public AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole, List<AthenzIdentity> proxyPrincipals) {
         List<AthenzResourceName> athenzResourceNames = athenzRole.stream()
                 .map(AthenzRole::toResourceName)
                 .toList();
-        return this.getAccessTokenImpl(athenzResourceNames, List.of());
+        return this.getAccessTokenImpl(athenzResourceNames, proxyPrincipals);
     }
 
     private AthenzAccessToken getAccessTokenImpl(List<AthenzResourceName> resources, List<AthenzIdentity> proxyPrincipals) {

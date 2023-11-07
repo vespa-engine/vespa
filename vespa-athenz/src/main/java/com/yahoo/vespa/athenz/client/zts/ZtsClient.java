@@ -129,6 +129,15 @@ public interface ZtsClient extends AutoCloseable {
     AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole);
 
     /**
+     * Fetch an access token for the target roles
+     *
+     * @param athenzRole List of athenz roles to get access token for
+     * @param proxyPrincipals List of principals to allow proxying token
+     * @return An Athenz access token
+     */
+    AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole, List<AthenzIdentity> proxyPrincipals);
+
+    /**
      * Fetch role certificate for the target domain and role
      *
      * @param role Target role

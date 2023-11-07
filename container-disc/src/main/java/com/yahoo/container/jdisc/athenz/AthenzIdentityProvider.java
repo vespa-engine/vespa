@@ -20,6 +20,7 @@ public interface AthenzIdentityProvider {
     String getRoleToken(String domain, String role);
     String getAccessToken(String domain);
     String getAccessToken(String domain, List<String> roles);
+    String getAccessToken(String domain, List<String> roles, List<String> proxyPrincipal);
     List<X509Certificate> getIdentityCertificate();
     X509Certificate getRoleCertificate(String domain, String role);
     PrivateKey getPrivateKey();
