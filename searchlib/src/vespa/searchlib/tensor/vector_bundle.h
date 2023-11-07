@@ -20,7 +20,7 @@ class VectorBundle
     size_t                   _subspace_mem_size;
     size_t                   _subspace_size;
 public:
-    VectorBundle()
+    VectorBundle() noexcept
         : _data(nullptr),
           _cell_type(vespalib::eval::CellType::DOUBLE),
           _subspaces(0),
@@ -28,7 +28,7 @@ public:
           _subspace_size(0)
     {
     }
-    VectorBundle(const void *data, uint32_t subspaces, const SubspaceType& subspace_type)
+    VectorBundle(const void *data, uint32_t subspaces, const SubspaceType& subspace_type) noexcept
         : _data(data),
           _cell_type(subspace_type.cell_type()),
           _subspaces(subspaces),

@@ -105,22 +105,22 @@ public:
     void reclaim_all_memory();
 
     template <typename EntryType, typename RefType>
-    EntryType *getEntry(RefType ref) {
+    EntryType *getEntry(RefType ref) noexcept {
         return static_cast<EntryType *>(_buffers[ref.bufferId()].get_buffer_relaxed()) + ref.offset();
     }
 
     template <typename EntryType, typename RefType>
-    const EntryType *getEntry(RefType ref) const {
+    const EntryType *getEntry(RefType ref) const noexcept {
         return static_cast<const EntryType *>(_buffers[ref.bufferId()].get_buffer_acquire()) + ref.offset();
     }
 
     template <typename EntryType, typename RefType>
-    EntryType *getEntryArray(RefType ref, size_t arraySize) {
+    EntryType *getEntryArray(RefType ref, size_t arraySize) noexcept {
         return static_cast<EntryType *>(_buffers[ref.bufferId()].get_buffer_relaxed()) + (ref.offset() * arraySize);
     }
 
     template <typename EntryType, typename RefType>
-    const EntryType *getEntryArray(RefType ref, size_t arraySize) const {
+    const EntryType *getEntryArray(RefType ref, size_t arraySize) const noexcept {
         return static_cast<const EntryType *>(_buffers[ref.bufferId()].get_buffer_acquire()) + (ref.offset() * arraySize);
     }
 
