@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
-import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.slime.Cursor;
@@ -15,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
-import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.net.URI;
 import java.util.List;
@@ -59,13 +56,11 @@ public class ApplicationSerializer {
                                 NodeRepository nodeRepository,
                                 Cursor clustersObject) {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
-        ClusterSpec clusterSpec = nodes.clusterSpec();
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
-        clusterObject.setString("type", clusterSpec.type().name());
-        var params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterSpec.vespaVersion());
-        Limits limits = Limits.of(cluster).fullySpecified(params);
+        clusterObject.setString("type", nodes.clusterSpec().type().name());
+        Limits limits = Limits.of(cluster).fullySpecified(nodes.clusterSpec(), nodeRepository, application.id());
         toSlime(limits.min(), clusterObject.setObject("min"));
         toSlime(limits.max(), clusterObject.setObject("max"));
         if ( ! cluster.groupSize().isEmpty())
@@ -75,7 +70,7 @@ public class ApplicationSerializer {
             toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
         toSlime(cluster.target(), clusterObject.setObject("target"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-        clusterObject.setLong("scalingDuration", cluster.scalingDuration(clusterSpec).toMillis());
+        clusterObject.setLong("scalingDuration", cluster.scalingDuration(nodes.clusterSpec()).toMillis());
     }
 
     private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {

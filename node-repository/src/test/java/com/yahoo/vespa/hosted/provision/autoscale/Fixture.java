@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalcu
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.AllocationParams;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -41,7 +40,6 @@ import java.util.Optional;
 public class Fixture {
 
     final DynamicProvisioningTester tester;
-    final AllocationParams allocationParams;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
     final Capacity capacity;
@@ -54,7 +52,6 @@ public class Fixture {
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
         tester = new DynamicProvisioningTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, builder.flagSource, hostCount);
-        allocationParams = AllocationParams.from(tester.nodeRepository(), builder.application, builder.cluster, builder.cluster.vespaVersion());
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
@@ -83,8 +80,9 @@ public class Fixture {
     public Capacity capacity() { return capacity; }
 
     public ClusterModel clusterModel() {
-        return new ClusterModel(allocationParams,
+        return new ClusterModel(tester.nodeRepository(),
                                 application(),
+                                clusterSpec,
                                 cluster(),
                                 nodes(),
                                 new AllocatableResources(nodes(), tester.nodeRepository()),
