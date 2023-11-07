@@ -32,7 +32,7 @@ public:
         vespalib::eval::CellType _cell_type;
         size_t   _aligned_size;
 
-        TensorSizeCalc(const ValueType &type);
+        explicit TensorSizeCalc(const ValueType &type);
         size_t bufSize() const {
             return vespalib::eval::CellTypeUtils::mem_size(_cell_type, _numCells);
         }
@@ -60,10 +60,10 @@ public:
     DenseTensorStore(const ValueType &type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator);
     ~DenseTensorStore() override;
 
-    const ValueType &type() const { return _type; }
-    size_t getNumCells() const { return _tensorSizeCalc._numCells; }
+    const ValueType &type() const noexcept { return _type; }
+    size_t getNumCells() const noexcept { return _tensorSizeCalc._numCells; }
     size_t getBufSize() const { return _tensorSizeCalc.bufSize(); }
-    const void *getRawBuffer(RefType ref) const {
+    const void *getRawBuffer(RefType ref) const noexcept {
         return _store.getEntryArray<char>(ref, _bufferType.getArraySize());
     }
     vespalib::datastore::Handle<char> allocRawBuffer();
@@ -78,22 +78,21 @@ public:
     const DenseTensorStore* as_dense() const override;
     DenseTensorStore* as_dense() override;
 
-    vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const {
-        if (!ref.valid()) {
+    vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const noexcept {
+        if (!ref.valid()) [[unlikely]] {
             return _empty.cells();
         }
-        return vespalib::eval::TypedCells(getRawBuffer(ref),
-                                          _type.cell_type(), getNumCells());
+        return {getRawBuffer(ref), _type.cell_type(), getNumCells()};
     }
-    VectorBundle get_vectors(EntryRef ref) const {
-        if (!ref.valid()) {
-            return VectorBundle();
+    VectorBundle get_vectors(EntryRef ref) const noexcept {
+        if (!ref.valid()) [[unlikely]] {
+            return {};
         }
-        return VectorBundle(getRawBuffer(ref), 1, _subspace_type);
+        return {getRawBuffer(ref), 1, _subspace_type};
     }
     const SubspaceType& get_subspace_type() const noexcept { return _subspace_type; }
     // The following methods are meant to be used only for unit tests.
-    uint32_t getArraySize() const { return _bufferType.getArraySize(); }
+    uint32_t getArraySize() const noexcept { return _bufferType.getArraySize(); }
     uint32_t get_max_buffer_entries() const noexcept { return _bufferType.get_max_entries(); }
 };
 
