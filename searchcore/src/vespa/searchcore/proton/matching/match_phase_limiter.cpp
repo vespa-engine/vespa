@@ -87,11 +87,11 @@ namespace {
 
 template <bool PRE_FILTER>
 SearchIterator::UP
-do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search,
+do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search, double match_freq,
          size_t wanted_num_docs, size_t max_group_size,
          uint32_t current_id, uint32_t end_id)
 {
-    SearchIterator::UP limiter = limiter_factory.create_search(wanted_num_docs, max_group_size, PRE_FILTER);
+    SearchIterator::UP limiter = limiter_factory.create_search(wanted_num_docs, max_group_size, match_freq, PRE_FILTER);
     limiter = search->andWith(std::move(limiter), wanted_num_docs);
     if (limiter) {
         search = std::make_unique<LimitedSearchT<PRE_FILTER>>(std::move(limiter), std::move(search));
@@ -139,8 +139,8 @@ MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, siz
         use_pre_filter ? "pre" : "post", match_freq, num_docs, max_filter_docs, wanted_num_docs,
         max_group_size, current_id, end_id, total_query_hits);
     return (use_pre_filter)
-        ? do_limit<true>(_limiter_factory, std::move(search), wanted_num_docs, max_group_size, current_id, end_id)
-        : do_limit<false>(_limiter_factory, std::move(search), wanted_num_docs, max_group_size, current_id, end_id);
+        ? do_limit<true>(_limiter_factory, std::move(search), match_freq, wanted_num_docs, max_group_size, current_id, end_id)
+        : do_limit<false>(_limiter_factory, std::move(search), match_freq, wanted_num_docs, max_group_size, current_id, end_id);
 }
 
 void

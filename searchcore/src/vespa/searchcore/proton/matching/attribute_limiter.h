@@ -31,6 +31,7 @@ class RangeQueryLocator;
 class AttributeLimiter
 {
 public:
+    using SearchIterator = search::queryeval::SearchIterator;
     enum DiversityCutoffStrategy { LOOSE, STRICT};
     AttributeLimiter(const RangeQueryLocator & _rangeQueryLocator,
                      search::queryeval::Searchable &searchable_attributes,
@@ -40,7 +41,7 @@ public:
                      double diversityCutoffFactor,
                      DiversityCutoffStrategy diversityCutoffStrategy);
     ~AttributeLimiter();
-    std::unique_ptr<search::queryeval::SearchIterator> create_search(size_t want_hits, size_t max_group_size, bool strictSearch);
+    std::unique_ptr<SearchIterator> create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);
     bool was_used() const;
     ssize_t getEstimatedHits() const;
     static DiversityCutoffStrategy toDiversityCutoffStrategy(vespalib::stringref strategy);
