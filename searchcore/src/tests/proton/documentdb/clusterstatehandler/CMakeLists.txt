@@ -10,5 +10,6 @@ vespa_add_executable(searchcore_clusterstatehandler_test_app TEST
     searchcore_attribute
     searchcore_pcommon
     searchcore_grouping
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_clusterstatehandler_test_app COMMAND searchcore_clusterstatehandler_test_app)
