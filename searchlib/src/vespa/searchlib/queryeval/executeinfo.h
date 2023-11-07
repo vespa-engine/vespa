@@ -26,9 +26,9 @@ public:
         return {strict, hitRate, doom};
     }
     static ExecuteInfo createForTest(bool strict) noexcept {
-        return create(strict, 1.0F);
+        return createForTest(strict, 1.0F);
     }
-    static ExecuteInfo create(bool strict, float hitRate) noexcept {
+    static ExecuteInfo createForTest(bool strict, float hitRate) noexcept {
         return create(strict, hitRate, nullptr);
     }
 private:
