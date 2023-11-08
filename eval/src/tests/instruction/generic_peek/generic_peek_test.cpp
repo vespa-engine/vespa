@@ -115,7 +115,7 @@ TensorSpec tensor_function_peek(const TensorSpec &a, const ValueType &result_typ
     }
     const auto &func_param = tensor_function::inject(param->type(), 0, stash);
     const auto &peek_node = tensor_function::peek(func_param, func_spec, stash);
-    auto my_op = peek_node.compile_self(factory, stash);
+    auto my_op = peek_node.compile_self(CTFContext(factory, stash, nullptr));
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(my_stack));
 }

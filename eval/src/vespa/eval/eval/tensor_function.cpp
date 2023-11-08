@@ -109,7 +109,7 @@ Op2::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-ConstValue::compile_self(const ValueBuilderFactory &, Stash &) const
+ConstValue::compile_self(const CTFContext &) const
 {
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
@@ -128,7 +128,7 @@ ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Inject::compile_self(const ValueBuilderFactory &, Stash &) const
+Inject::compile_self(const CTFContext &) const
 {
     return Instruction::fetch_param(_param_idx);
 }
@@ -143,9 +143,9 @@ Inject::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Reduce::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Reduce::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(), factory, stash);
+    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(), ctx.factory, ctx.stash);
 }
 
 void
@@ -159,9 +159,9 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Map::compile_self(const ValueBuilderFactory &, Stash &stash) const
+Map::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function, stash);
+    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function, ctx.stash);
 }
 
 void
@@ -174,9 +174,9 @@ Map::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 InterpretedFunction::Instruction
-MapSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+MapSubspaces::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericMapSubspaces::make_instruction(*this, factory, stash);
+    return instruction::GenericMapSubspaces::make_instruction(*this, ctx.factory, ctx.stash, ctx.meta);
 }
 
 void
@@ -188,9 +188,9 @@ MapSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Join::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Join::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
+    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), ctx.factory, ctx.stash);
 }
 
 void
@@ -203,9 +203,9 @@ Join::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Merge::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Merge::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
+    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), ctx.factory, ctx.stash);
 }
 
 void
@@ -218,9 +218,9 @@ Merge::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Concat::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Concat::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), dimension(), factory, stash);
+    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), dimension(), ctx.factory, ctx.stash);
 }
 
 void
@@ -233,9 +233,9 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 InterpretedFunction::Instruction
-CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
+CellCast::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), cell_type(), stash);
+    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), cell_type(), ctx.stash);
 }
 
 void
@@ -267,9 +267,9 @@ Create::make_spec() const
 }
 
 Instruction
-Create::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Create::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericCreate::make_instruction(result_type(), make_spec(), factory, stash);
+    return instruction::GenericCreate::make_instruction(result_type(), make_spec(), ctx.factory, ctx.stash);
 }
 
 void
@@ -329,9 +329,9 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 }
 
 InterpretedFunction::Instruction
-Lambda::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Lambda::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericLambda::make_instruction(*this, factory, stash);
+    return instruction::GenericLambda::make_instruction(*this, ctx.factory, ctx.stash, ctx.meta);
 }
 
 void
@@ -379,9 +379,9 @@ Peek::make_spec() const
 }
 
 Instruction
-Peek::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Peek::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), factory, stash);
+    return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), ctx.factory, ctx.stash);
 }
 
 void
@@ -408,9 +408,9 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Rename::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+Rename::compile_self(const CTFContext &ctx) const
 {
-    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), factory, stash);
+    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), ctx.factory, ctx.stash);
 }
 
 void
@@ -431,7 +431,7 @@ If::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-If::compile_self(const ValueBuilderFactory &, Stash &) const
+If::compile_self(const CTFContext &) const
 {
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.

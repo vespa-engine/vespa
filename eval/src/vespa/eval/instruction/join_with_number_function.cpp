@@ -89,9 +89,9 @@ JoinWithNumberFunction::primary_is_mutable() const {
 using MyTypify = TypifyValue<TypifyCellMeta,vespalib::TypifyBool,operation::TypifyOp2>;
 
 InterpretedFunction::Instruction
-JoinWithNumberFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+JoinWithNumberFunction::compile_self(const CTFContext &ctx) const
 {
-    const auto &param = stash.create<JoinWithNumberParam>(result_type(), _function);
+    const auto &param = ctx.stash.create<JoinWithNumberParam>(result_type(), _function);
     auto input_type = (_primary == Primary::LHS) ? lhs().result_type() : rhs().result_type();
     assert(result_type() == ValueType::join(input_type, ValueType::double_type()));
     auto op = typify_invoke<4,MyTypify,SelectJoinWithNumberOp>(input_type.cell_meta(),

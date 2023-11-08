@@ -27,18 +27,38 @@ struct CTFMetaData {
     struct Step {
         vespalib::string class_name;
         vespalib::string symbol_name;
+        std::unique_ptr<CTFMetaData> nested;
         Step(vespalib::string &&class_name_in,
              vespalib::string &&symbol_name_in) noexcept
-            : class_name(std::move(class_name_in)),
-              symbol_name(std::move(symbol_name_in))
+          : class_name(std::move(class_name_in)),
+            symbol_name(std::move(symbol_name_in)),
+            nested()
         {
         }
     };
     std::vector<Step> steps;
+    CTFMetaData() noexcept = default;
+    CTFMetaData(const CTFMetaData &) = delete;
+    CTFMetaData(CTFMetaData &&) noexcept = default;
+    CTFMetaData &operator=(const CTFMetaData &) = delete;
+    CTFMetaData &operator=(CTFMetaData &&) noexcept = default;
+    std::unique_ptr<CTFMetaData> extract() {
+        return steps.empty()
+            ? std::unique_ptr<CTFMetaData>(nullptr)
+            : std::make_unique<CTFMetaData>(std::move(*this));
+    }
     ~CTFMetaData();
 };
 
-std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
-                                                                      CTFMetaData *meta);
+struct CTFContext {
+    const ValueBuilderFactory &factory;
+    Stash &stash;
+    CTFMetaData *meta;
+    constexpr CTFContext(const CTFContext &) noexcept = default;
+    constexpr CTFContext(const ValueBuilderFactory &factory_in, Stash &stash_in, CTFMetaData *meta_in) noexcept
+      : factory(factory_in), stash(stash_in), meta(meta_in) {}
+};
+
+std::vector<InterpretedFunction::Instruction> compile_tensor_function(const TensorFunction &function, const CTFContext &ctx);
 
 } // namespace vespalib::eval

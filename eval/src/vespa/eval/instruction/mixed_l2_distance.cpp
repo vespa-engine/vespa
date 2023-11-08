@@ -90,13 +90,13 @@ MixedL2Distance::MixedL2Distance(const ValueType &result_type, const TensorFunct
 }
 
 InterpretedFunction::Instruction
-MixedL2Distance::compile_self(const ValueBuilderFactory &, Stash &stash) const
+MixedL2Distance::compile_self(const CTFContext &ctx) const
 {
     auto mix_t = lhs().result_type();
     auto vec_t = rhs().result_type();
     REQUIRE_EQ(mix_t.cell_type(), vec_t.cell_type());
     REQUIRE_EQ(mix_t.dense_subspace_size(), vec_t.dense_subspace_size());
-    const auto &param = stash.create<MixedSqL2Param>(result_type(), mix_t.dense_subspace_size());
+    const auto &param = ctx.stash.create<MixedSqL2Param>(result_type(), mix_t.dense_subspace_size());
     auto mix_cm = mix_t.cell_meta().not_scalar();
     auto res_cm = mix_t.cell_meta().decay();
     REQUIRE_EQ(res_cm.cell_type, result_type().cell_type());

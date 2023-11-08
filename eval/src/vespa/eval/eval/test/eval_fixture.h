@@ -64,14 +64,13 @@ public:
     };
 
 private:
+    using optimize_fun_t = InterpretedFunction::Options::optimize_fun_t;
     const ValueBuilderFactory      &_factory;
-    Stash                           _stash;
     std::shared_ptr<Function const> _function;
     NodeTypes                       _node_types;
     std::set<size_t>                _mutable_set;
-    const TensorFunction           &_plain_tensor_function;
-    const TensorFunction           &_patched_tensor_function;
-    const TensorFunction           &_tensor_function;
+    const TensorFunction           *_optimized_root;
+    optimize_fun_t                  _my_optimize;
     InterpretedFunction             _ifun;
     InterpretedFunction::Context    _ictx;
     std::vector<Value::UP>          _param_values;
@@ -115,7 +114,8 @@ public:
     template <typename T>
     std::vector<const T *> find_all() const {
         std::vector<const T *> list;
-        find_all(_tensor_function, list);
+        REQUIRE(_optimized_root != nullptr);
+        find_all(*_optimized_root, list);
         return list;
     }
     const Value &result_value() const { return _result_value; }

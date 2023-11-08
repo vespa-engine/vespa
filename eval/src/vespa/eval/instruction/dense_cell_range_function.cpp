@@ -37,7 +37,7 @@ DenseCellRangeFunction::DenseCellRangeFunction(const ValueType &result_type,
 DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 
 InterpretedFunction::Instruction
-DenseCellRangeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+DenseCellRangeFunction::compile_self(const CTFContext &) const
 {
     assert(result_type().cell_type() == child().result_type().cell_type());
 

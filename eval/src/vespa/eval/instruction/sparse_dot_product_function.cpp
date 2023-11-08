@@ -92,7 +92,7 @@ SparseDotProductFunction::SparseDotProductFunction(const TensorFunction &lhs_in,
 }
 
 InterpretedFunction::Instruction
-SparseDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+SparseDotProductFunction::compile_self(const CTFContext &) const
 {
     size_t num_dims = lhs().result_type().count_mapped_dimensions();
     auto op = typify_invoke<2,MyTypify,MyGetFun>(lhs().result_type().cell_type(),

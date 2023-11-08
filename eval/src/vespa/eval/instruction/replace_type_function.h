@@ -15,7 +15,7 @@ public:
     ReplaceTypeFunction(const ValueType &result_type,
                         const TensorFunction &child);
     ~ReplaceTypeFunction();
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
     static const ReplaceTypeFunction &create_compact(const ValueType &result_type,
                                                      const TensorFunction &child,

@@ -26,7 +26,7 @@ public:
     ~DenseTensorCreateFunction();
     const ValueType &result_type() const override { return _self.result_type; }
     void push_children(std::vector<Child::CREF> &children) const override;
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

@@ -13,7 +13,7 @@ class SparseMergeFunction : public tensor_function::Merge
 {
 public:
     SparseMergeFunction(const tensor_function::Merge &original);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     static bool compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs);
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);

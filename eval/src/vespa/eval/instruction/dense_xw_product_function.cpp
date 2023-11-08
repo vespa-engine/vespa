@@ -141,9 +141,9 @@ DenseXWProductFunction::DenseXWProductFunction(const ValueType &result_type,
 }
 
 InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+DenseXWProductFunction::compile_self(const CTFContext &ctx) const
 {
-    Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
+    Self &self = ctx.stash.create<Self>(result_type(), _vector_size, _result_size);
     assert(self.result_type.cell_meta().is_scalar == false);
     using MyTypify = TypifyValue<TypifyCellMeta,vespalib::TypifyBool>;
     auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_meta().not_scalar(),

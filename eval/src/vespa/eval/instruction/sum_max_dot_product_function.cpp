@@ -91,7 +91,7 @@ SumMaxDotProductFunction::SumMaxDotProductFunction(const ValueType &res_type_in,
 }
 
 InterpretedFunction::Instruction
-SumMaxDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+SumMaxDotProductFunction::compile_self(const CTFContext &) const
 {
     return InterpretedFunction::Instruction(my_sum_max_dot_product_op, _dp_size);
 }

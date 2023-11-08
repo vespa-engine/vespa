@@ -163,10 +163,10 @@ DenseMatMulFunction::DenseMatMulFunction(const ValueType &result_type,
 DenseMatMulFunction::~DenseMatMulFunction() = default;
 
 InterpretedFunction::Instruction
-DenseMatMulFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+DenseMatMulFunction::compile_self(const CTFContext &ctx) const
 {
     using MyTypify = TypifyValue<TypifyCellMeta,TypifyBool>;
-    Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
+    Self &self = ctx.stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
     auto op = typify_invoke<4,MyTypify,SelectDenseMatmul>(
         lhs().result_type().cell_meta().not_scalar(),
         rhs().result_type().cell_meta().not_scalar(),

@@ -132,18 +132,15 @@ public:
             }
             return {};
         }
-        vespalib::Stash stash;
-        const TensorFunction &plain_fun = make_tensor_function(factory, fun->root(), types, stash);
-        const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, stash);
         Value::UP result;
         if (_verbose) {
-            InterpretedFunction ifun(factory, optimized, &_meta);
+            auto ifun = InterpretedFunction::opts(factory).meta(&_meta).make(fun->root(), types);
             REQUIRE_EQ(_meta.steps.size(), ifun.program_size());
             InterpretedFunction::ProfiledContext ctx(ifun);
             result = factory.copy(ifun.eval(ctx, params));
             _cost = ctx.cost;
         } else {
-            InterpretedFunction ifun(factory, optimized, nullptr);
+            InterpretedFunction ifun(factory, *fun, types);
             InterpretedFunction::Context ctx(ifun);
             result = factory.copy(ifun.eval(ctx, params));
         }
@@ -190,6 +187,17 @@ void print_error(const vespalib::string &error) {
     fprintf(stderr, "error: %s\n", error.c_str());
 }
 
+void print_nested(const CTFMetaData &meta, const vespalib::string &indent) {
+    const auto &steps = meta.steps;
+    for (size_t i = 0; i < steps.size(); ++i) {
+        fprintf(stderr, "%s  class: %s\n", indent.c_str(), steps[i].class_name.c_str());
+        fprintf(stderr, "%s    symbol: %s\n", indent.c_str(), steps[i].symbol_name.c_str());
+        if (steps[i].nested) {
+            print_nested(*steps[i].nested, indent + "    ");
+        }
+    }
+}
+
 void print_value(const Value &value, const vespalib::string &name, const CTFMetaData &meta, const CostProfile &cost) {
     bool with_name = !name.empty();
     bool with_meta = !meta.steps.empty();
@@ -206,6 +214,9 @@ void print_value(const Value &value, const vespalib::string &name, const CTFMeta
             fprintf(stderr, "    symbol: %s\n", steps[i].symbol_name.c_str());
             fprintf(stderr, "    count: %zu\n", cost[i].first);
             fprintf(stderr, "    time_us: %g\n", vespalib::count_ns(cost[i].second)/1000.0);
+            if (steps[i].nested) {
+                print_nested(*steps[i].nested, "    ");
+            }
         }
     }
     if (with_name) {

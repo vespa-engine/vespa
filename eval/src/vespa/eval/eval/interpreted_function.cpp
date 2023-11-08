@@ -95,22 +95,29 @@ InterpretedFunction::Instruction::nop()
     return Instruction(my_nop);
 }
 
-InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta)
-    : _program(),
-      _stash(),
-      _factory(factory)
+InterpretedFunction::Options::Options(const ValueBuilderFactory &factory_in)
+  : _factory(factory_in),
+    _optimize(optimize_tensor_function),
+    _meta(nullptr)
 {
-    _program = compile_tensor_function(factory, function, _stash, meta);
 }
 
-InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types)
+InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+  : _program(),
+    _stash(),
+    _factory(factory)
+{
+    _program = compile_tensor_function(function, CTFContext(factory, _stash, nullptr));
+}
+
+InterpretedFunction::InterpretedFunction(const Options &opts, const nodes::Node &root, const NodeTypes &types)
     : _program(),
       _stash(),
-      _factory(factory)
+      _factory(opts.factory())
 {
-    const TensorFunction &plain_fun = make_tensor_function(factory, root, types, _stash);
-    const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, _stash);
-    _program = compile_tensor_function(factory, optimized, _stash, nullptr);
+    const TensorFunction &plain_fun = make_tensor_function(opts.factory(), root, types, _stash);
+    const TensorFunction &optimized = opts.optimize()(opts.factory(), plain_fun, _stash);
+    _program = compile_tensor_function(optimized, CTFContext(opts.factory(), _stash, opts.meta()));
 }
 
 InterpretedFunction::~InterpretedFunction() = default;

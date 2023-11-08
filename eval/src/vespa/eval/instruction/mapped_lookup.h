@@ -41,7 +41,7 @@ public:
     MappedLookup(const ValueType &res_type, const TensorFunction &key_in, const TensorFunction &map_in);
     const TensorFunction &key() const { return lhs(); }
     const TensorFunction &map() const { return rhs(); }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return map().result_is_mutable(); }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

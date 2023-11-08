@@ -68,7 +68,7 @@ SimpleJoinCount::SimpleJoinCount(const TensorFunction &lhs_in,
 }
 
 InterpretedFunction::Instruction
-SimpleJoinCount::compile_self(const ValueBuilderFactory &, Stash &) const
+SimpleJoinCount::compile_self(const CTFContext &) const
 {
     return InterpretedFunction::Instruction(my_simple_join_count_op, _dense_factor);
 }

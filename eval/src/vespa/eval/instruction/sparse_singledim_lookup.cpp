@@ -60,7 +60,7 @@ SparseSingledimLookup::SparseSingledimLookup(const TensorFunction &tensor,
 }
 
 InterpretedFunction::Instruction
-SparseSingledimLookup::compile_self(const ValueBuilderFactory &, Stash &) const
+SparseSingledimLookup::compile_self(const CTFContext &) const
 {
     auto op = typify_invoke<1,TypifyCellType,MyGetFun>(lhs().result_type().cell_type());
     return InterpretedFunction::Instruction(op);

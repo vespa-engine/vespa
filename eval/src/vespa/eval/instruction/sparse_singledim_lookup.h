@@ -16,7 +16,7 @@ class SparseSingledimLookup : public tensor_function::Op2
 {
 public:
     SparseSingledimLookup(const TensorFunction &tensor, const TensorFunction &expr);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

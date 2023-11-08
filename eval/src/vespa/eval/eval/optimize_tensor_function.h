@@ -17,9 +17,10 @@ struct OptimizeTensorFunctionOptions {
 struct ValueBuilderFactory;
 struct TensorFunction;
 
-const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
-                                               const OptimizeTensorFunctionOptions &options);
+const TensorFunction &optimize_tensor_function_impl(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
+                                                    const OptimizeTensorFunctionOptions &options);
 const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);
+const TensorFunction &do_not_optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);
 
 using tensor_function_optimizer = std::function<const TensorFunction &(const TensorFunction &expr, Stash &stash)>;
 using tensor_function_listener = std::function<void(const TensorFunction &expr)>;

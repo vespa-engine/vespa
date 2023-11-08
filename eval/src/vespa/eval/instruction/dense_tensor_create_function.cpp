@@ -60,7 +60,7 @@ DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 InterpretedFunction::Instruction
-DenseTensorCreateFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+DenseTensorCreateFunction::compile_self(const CTFContext &) const
 {
     using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());

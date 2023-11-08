@@ -42,7 +42,7 @@ public:
     bool primary_is_mutable() const;
     bool inplace() const;
     size_t factor() const;
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

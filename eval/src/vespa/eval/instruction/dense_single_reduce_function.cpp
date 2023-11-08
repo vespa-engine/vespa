@@ -229,12 +229,12 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 
 InterpretedFunction::Instruction
-DenseSingleReduceFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+DenseSingleReduceFunction::compile_self(const CTFContext &ctx) const
 {
     auto op = typify_invoke<4,MyTypify,MyGetFun>(child().result_type().cell_meta().not_scalar(),
                                                  _aggr,
                                                  (_reduce_size >= 8), (_inner_size == 1));
-    auto &params = stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
+    auto &params = ctx.stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
 }
 

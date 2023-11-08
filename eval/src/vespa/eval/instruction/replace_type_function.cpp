@@ -29,7 +29,7 @@ ReplaceTypeFunction::~ReplaceTypeFunction()
 }
 
 InterpretedFunction::Instruction
-ReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+ReplaceTypeFunction::compile_self(const CTFContext &) const
 {
     return InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }

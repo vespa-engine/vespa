@@ -65,7 +65,7 @@ L2Distance::L2Distance(const TensorFunction &lhs_in, const TensorFunction &rhs_i
 }
 
 InterpretedFunction::Instruction
-L2Distance::compile_self(const ValueBuilderFactory &, Stash &) const
+L2Distance::compile_self(const CTFContext &) const
 {
     auto lhs_t = lhs().result_type();
     auto rhs_t = rhs().result_type();

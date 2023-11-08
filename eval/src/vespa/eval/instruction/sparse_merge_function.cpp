@@ -108,11 +108,11 @@ SparseMergeFunction::SparseMergeFunction(const tensor_function::Merge &original)
 }
 
 InterpretedFunction::Instruction
-SparseMergeFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+SparseMergeFunction::compile_self(const CTFContext &ctx) const
 {
-    const auto &param = stash.create<MergeParam>(result_type(),
-                                                 lhs().result_type(), rhs().result_type(),
-                                                 function(), factory);
+    const auto &param = ctx.stash.create<MergeParam>(result_type(),
+                                                     lhs().result_type(), rhs().result_type(),
+                                                     function(), ctx.factory);
     size_t num_dims = result_type().count_mapped_dimensions();
     auto op = typify_invoke<3,MyTypify,SelectSparseMergeOp>(result_type().cell_meta().limit(),
                                                             num_dims == 1,

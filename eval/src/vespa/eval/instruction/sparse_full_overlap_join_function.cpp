@@ -97,9 +97,9 @@ SparseFullOverlapJoinFunction::SparseFullOverlapJoinFunction(const tensor_functi
 }
 
 InterpretedFunction::Instruction
-SparseFullOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+SparseFullOverlapJoinFunction::compile_self(const CTFContext &ctx) const
 {
-    const auto &param = stash.create<JoinParam>(result_type(), lhs().result_type(), rhs().result_type(), function(), factory);
+    const auto &param = ctx.stash.create<JoinParam>(result_type(), lhs().result_type(), rhs().result_type(), function(), ctx.factory);
     assert(result_type() == ValueType::join(lhs().result_type(), rhs().result_type()));
     bool single_dim = (result_type().count_mapped_dimensions() == 1);
     auto op = typify_invoke<3,MyTypify,SelectSparseFullOverlapJoinOp>(result_type().cell_meta().limit(), function(), single_dim);

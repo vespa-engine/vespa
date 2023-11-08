@@ -32,7 +32,7 @@ public:
                               Inner inner_in);
     ~DenseSimpleExpandFunction() override;
     Inner inner() const { return _inner; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

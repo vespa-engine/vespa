@@ -30,7 +30,7 @@ public:
                            const TensorFunction &sec,
                            InterpretedFunction::op_function my_fun,
                            size_t inner_size);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

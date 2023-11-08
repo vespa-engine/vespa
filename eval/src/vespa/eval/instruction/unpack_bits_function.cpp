@@ -178,7 +178,7 @@ UnpackBitsFunction::UnpackBitsFunction(const ValueType &res_type_in,
 }
 
 InterpretedFunction::Instruction
-UnpackBitsFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+UnpackBitsFunction::compile_self(const CTFContext &) const
 {
     const ValueType &res_type = result_type();
     auto op = typify_invoke<2,MyTypify,MyGetFun>(res_type.cell_type(), _big_bitorder);

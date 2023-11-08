@@ -87,11 +87,11 @@ struct InterpretedParams {
     const std::vector<size_t> &bindings;
     size_t num_cells;
     InterpretedFunction fun;
-    InterpretedParams(const Lambda &lambda, const ValueBuilderFactory &factory)
+    InterpretedParams(const Lambda &lambda, const ValueBuilderFactory &factory, CTFMetaData *meta)
         : result_type(lambda.result_type()),
           bindings(lambda.bindings()),
           num_cells(result_type.dense_subspace_size()),
-          fun(factory, lambda.lambda().root(), lambda.types())
+          fun(InterpretedFunction::opts(factory).meta(meta), lambda.lambda().root(), lambda.types())
     {
         assert(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
     }
@@ -122,7 +122,8 @@ struct MyInterpretedLambdaOp {
 
 Instruction
 GenericLambda::make_instruction(const tensor_function::Lambda &lambda_in,
-                                const ValueBuilderFactory &factory, Stash &stash)
+                                const ValueBuilderFactory &factory, Stash &stash,
+                                CTFMetaData *meta)
 {
     const ValueType & result_type = lambda_in.result_type();
     assert(result_type.count_mapped_dimensions() == 0);
@@ -134,7 +135,7 @@ GenericLambda::make_instruction(const tensor_function::Lambda &lambda_in,
         auto op = typify_invoke<1,TypifyCellType,MyCompiledLambdaOp>(result_type.cell_type());
         return Instruction(op, wrap_param<CompiledParams>(params));
     } else {
-        InterpretedParams &params = stash.create<InterpretedParams>(lambda_in, factory);
+        InterpretedParams &params = stash.create<InterpretedParams>(lambda_in, factory, meta);
         auto op = typify_invoke<1,TypifyCellType,MyInterpretedLambdaOp>(result_type.cell_type());
         return Instruction(op, wrap_param<InterpretedParams>(params));
     }

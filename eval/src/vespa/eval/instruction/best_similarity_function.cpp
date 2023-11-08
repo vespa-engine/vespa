@@ -189,9 +189,9 @@ BestSimilarityFunction::BestSimilarityFunction(const ValueType &res_type_in,
 }
 
 InterpretedFunction::Instruction
-BestSimilarityFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+BestSimilarityFunction::compile_self(const CTFContext &ctx) const
 {
-    return InterpretedFunction::Instruction(_my_fun, make_param(stash));
+    return InterpretedFunction::Instruction(_my_fun, make_param(ctx.stash));
 }
 
 const TensorFunction &

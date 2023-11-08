@@ -21,7 +21,7 @@ public:
     Sparse112DotProduct(const TensorFunction &a_in,
                         const TensorFunction &b_in,
                         const TensorFunction &c_in);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;

@@ -194,7 +194,7 @@ Sparse112DotProduct::Sparse112DotProduct(const TensorFunction &a_in,
 }
 
 InterpretedFunction::Instruction
-Sparse112DotProduct::compile_self(const ValueBuilderFactory &, Stash &) const
+Sparse112DotProduct::compile_self(const CTFContext &) const
 {
     REQUIRE_EQ(_a.get().result_type().cell_type(), _b.get().result_type().cell_type());
     REQUIRE_EQ(_a.get().result_type().cell_type(), _c.get().result_type().cell_type());

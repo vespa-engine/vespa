@@ -65,11 +65,11 @@ MixedInnerProductFunction::MixedInnerProductFunction(const ValueType &res_type_i
 }
 
 InterpretedFunction::Instruction
-MixedInnerProductFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+MixedInnerProductFunction::compile_self(const CTFContext &ctx) const
 {
     const auto &mix_type = lhs().result_type();
     const auto &vec_type = rhs().result_type();
-    auto &param = stash.create<MixedInnerProductParam>(result_type(), mix_type, vec_type);
+    auto &param = ctx.stash.create<MixedInnerProductParam>(result_type(), mix_type, vec_type);
     using MyTypify = TypifyValue<TypifyCellType>;
     auto op = typify_invoke<3,MyTypify,SelectMixedInnerProduct>(mix_type.cell_type(),
                                                                 vec_type.cell_type(),

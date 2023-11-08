@@ -176,7 +176,7 @@ DenseMultiMatMulFunction::DenseMultiMatMulFunction(const ValueType &result_type,
 DenseMultiMatMulFunction::~DenseMultiMatMulFunction() = default;
 
 InterpretedFunction::Instruction
-DenseMultiMatMulFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+DenseMultiMatMulFunction::compile_self(const CTFContext &) const
 {
     auto op = my_select(lhs().result_type().cell_type());
     return InterpretedFunction::Instruction(op, wrap_param<DenseMultiMatMulFunction>(*this));

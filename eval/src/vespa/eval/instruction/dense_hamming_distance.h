@@ -14,7 +14,7 @@ class DenseHammingDistance : public tensor_function::Op2
 public:
     DenseHammingDistance(const TensorFunction &lhs_child,
                          const TensorFunction &rhs_child);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

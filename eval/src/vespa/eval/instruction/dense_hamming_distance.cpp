@@ -41,7 +41,7 @@ DenseHammingDistance::DenseHammingDistance(const TensorFunction &lhs_child,
 }
 
 InterpretedFunction::Instruction
-DenseHammingDistance::compile_self(const ValueBuilderFactory &, Stash &) const
+DenseHammingDistance::compile_self(const CTFContext &) const
 {
     auto op = int8_hamming_to_double_op;
     const auto &lhs_type = lhs().result_type();

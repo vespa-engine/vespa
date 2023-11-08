@@ -21,10 +21,10 @@ struct InterpretedParams {
     size_t out_size;
     bool direct_in;
     bool direct_out;
-    InterpretedParams(const MapSubspaces &map_subspaces, const ValueBuilderFactory &factory)
+    InterpretedParams(const MapSubspaces &map_subspaces, const ValueBuilderFactory &factory, CTFMetaData *meta)
       : result_type(map_subspaces.result_type()),
         inner_type(map_subspaces.inner_type()),
-        fun(factory, map_subspaces.lambda().root(), map_subspaces.types()),
+        fun(InterpretedFunction::opts(factory).meta(meta), map_subspaces.lambda().root(), map_subspaces.types()),
         in_size(inner_type.dense_subspace_size()),
         out_size(result_type.dense_subspace_size()),
         direct_in(map_subspaces.child().result_type().cell_type() == inner_type.cell_type()),
@@ -107,9 +107,10 @@ struct SelectGenericMapSubspacesOp {
 
 Instruction
 GenericMapSubspaces::make_instruction(const tensor_function::MapSubspaces &map_subspaces_in,
-                                      const ValueBuilderFactory &factory, Stash &stash)
+                                      const ValueBuilderFactory &factory, Stash &stash,
+                                      CTFMetaData *meta)
 {
-    InterpretedParams &params = stash.create<InterpretedParams>(map_subspaces_in, factory);
+    InterpretedParams &params = stash.create<InterpretedParams>(map_subspaces_in, factory, meta);
     auto op = typify_invoke<2,TypifyCellType,SelectGenericMapSubspacesOp>(map_subspaces_in.child().result_type().cell_type(),
                                                                           params.result_type.cell_type());
     return Instruction(op, wrap_param<InterpretedParams>(params));

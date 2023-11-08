@@ -97,7 +97,7 @@ void my_multi_instruction_op(InterpretedFunction::State &state, uint64_t param_i
 void collect_op1_chain(const TensorFunction &node, const ValueBuilderFactory &factory, Stash &stash, std::vector<Instruction> &list) {
     if (auto op1 = as<tensor_function::Op1>(node)) {
         collect_op1_chain(op1->child(), factory, stash, list);
-        list.push_back(node.compile_self(factory, stash));
+        list.push_back(node.compile_self(CTFContext(factory, stash, nullptr)));
     }
 }
 
@@ -125,7 +125,7 @@ struct Impl {
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &join_node = tensor_function::join(lhs_node, rhs_node, function, stash);
         const auto &node = optimize ? optimize_tensor_function(factory, join_node, stash) : join_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -142,7 +142,7 @@ struct Impl {
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
         const auto &node = optimize ? optimize_tensor_function(factory, rename_node, stash) : rename_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -150,23 +150,23 @@ struct Impl {
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &merge_node = tensor_function::merge(lhs_node, rhs_node, function, stash); 
         const auto &node = optimize ? optimize_tensor_function(factory, merge_node, stash) : merge_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &concat_node = tensor_function::concat(lhs_node, rhs_node, dimension, stash); 
-        return concat_node.compile_self(factory, stash);
+        return concat_node.compile_self(CTFContext(factory, stash, nullptr));
         const auto &node = optimize ? optimize_tensor_function(factory, concat_node, stash) : concat_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_map(const ValueType &lhs, operation::op1_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &map_node = tensor_function::map(lhs_node, function, stash); 
         const auto &node = optimize ? optimize_tensor_function(factory, map_node, stash) : map_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_tensor_create(const ValueType &proto_type, const TensorSpec &proto, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -177,7 +177,7 @@ struct Impl {
         }
         const auto &create_tensor_node = tensor_function::create(proto_type, spec, stash); 
         const auto &node = optimize ? optimize_tensor_function(factory, create_tensor_node, stash) : create_tensor_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_tensor_lambda(const ValueType &type, const Function &function, const ValueType &p0_type, Stash &stash) const {
         std::vector<ValueType> arg_types(type.dimensions().size(), ValueType::double_type());
@@ -186,7 +186,7 @@ struct Impl {
         EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
         const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
         const auto &node = optimize ? optimize_tensor_function(factory, tensor_lambda_node, stash) : tensor_lambda_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
     Instruction create_tensor_peek(const ValueType &type, const MyPeekSpec &my_spec, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -210,7 +210,7 @@ struct Impl {
         }
         const auto &peek_node = tensor_function::peek(my_param, spec, stash);
         const auto &node = optimize ? optimize_tensor_function(factory, peek_node, stash) : peek_node;
-        return node.compile_self(factory, stash);
+        return node.compile_self(CTFContext(factory, stash, nullptr));
     }
 };
 

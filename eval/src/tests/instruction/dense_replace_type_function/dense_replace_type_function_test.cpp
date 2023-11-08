@@ -22,7 +22,7 @@ struct ChildMock : Leaf {
     bool is_mutable;
     ChildMock(const ValueType &type) : Leaf(type), is_mutable(true) {}
     bool result_is_mutable() const override { return is_mutable; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &, Stash &) const override { abort(); }
+    InterpretedFunction::Instruction compile_self(const CTFContext &) const override { abort(); }
 };
 
 struct Fixture {
@@ -42,7 +42,7 @@ struct Fixture {
     {
         my_fun.push_children(children);
         state.stack.push_back(*my_value);
-        my_fun.compile_self(prod_factory, state.stash).perform(state);
+        my_fun.compile_self(CTFContext(prod_factory, state.stash, nullptr)).perform(state);
         ASSERT_EQUAL(children.size(), 1u);
         ASSERT_EQUAL(state.stack.size(), 1u);
         ASSERT_TRUE(!new_type.is_error());

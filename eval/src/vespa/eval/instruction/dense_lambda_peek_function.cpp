@@ -52,9 +52,9 @@ DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
 DenseLambdaPeekFunction::~DenseLambdaPeekFunction() = default;
 
 InterpretedFunction::Instruction
-DenseLambdaPeekFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+DenseLambdaPeekFunction::compile_self(const CTFContext &ctx) const
 {
-    const Self &self = stash.create<Self>(result_type(), *_idx_fun);
+    const Self &self = ctx.stash.create<Self>(result_type(), *_idx_fun);
     using MyTypify = TypifyCellType;
     auto op = typify_invoke<2,MyTypify,MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
     assert(child().result_type().is_dense());

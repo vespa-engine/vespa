@@ -17,7 +17,7 @@ private:
     uint64_t _dense_factor;
 public:
     SimpleJoinCount(const TensorFunction &lhs_in, const TensorFunction &rhs_in, uint64_t dense_factor_in);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     bool result_is_mutable() const override { return true; }
     uint64_t dense_factor() const { return _dense_factor; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);

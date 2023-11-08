@@ -208,9 +208,9 @@ MixedSimpleJoinFunction::factor() const
 }
 
 Instruction
-MixedSimpleJoinFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
+MixedSimpleJoinFunction::compile_self(const CTFContext &ctx) const
 {
-    const JoinParams &params = stash.create<JoinParams>(result_type(), factor(), function());
+    const JoinParams &params = ctx.stash.create<JoinParams>(result_type(), factor(), function());
     auto op = typify_invoke<6,MyTypify,SelectMixedSimpleJoin>(lhs().result_type().cell_meta().not_scalar(),
                                                               rhs().result_type().cell_meta().not_scalar(),
                                                               function(), (_primary == Primary::RHS),

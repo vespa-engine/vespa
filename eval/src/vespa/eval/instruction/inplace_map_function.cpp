@@ -52,7 +52,7 @@ InplaceMapFunction::InplaceMapFunction(const ValueType &result_type,
 InplaceMapFunction::~InplaceMapFunction() = default;
 
 Instruction
-InplaceMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+InplaceMapFunction::compile_self(const CTFContext &) const
 {
     auto input_cell_meta = child().result_type().cell_meta().limit().not_scalar();
     auto op = typify_invoke<2,MyTypify,MyGetFun>(input_cell_meta, function());

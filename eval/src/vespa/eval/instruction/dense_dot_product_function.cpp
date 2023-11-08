@@ -33,7 +33,7 @@ DenseDotProductFunction::DenseDotProductFunction(const TensorFunction &lhs_in,
 }
 
 InterpretedFunction::Instruction
-DenseDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+DenseDotProductFunction::compile_self(const CTFContext &) const
 {
     auto op = typify_invoke<2,TypifyCellType,MyDotProductOp>(lhs().result_type().cell_type(),
                                                              rhs().result_type().cell_type());

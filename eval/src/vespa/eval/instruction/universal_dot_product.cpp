@@ -200,9 +200,9 @@ UniversalDotProduct::UniversalDotProduct(const ValueType &res_type_in,
 }
 
 InterpretedFunction::Instruction
-UniversalDotProduct::compile_self(const ValueBuilderFactory &, Stash &stash) const
+UniversalDotProduct::compile_self(const CTFContext &ctx) const
 {
-    auto &param = stash.create<UniversalDotProductParam>(result_type(), lhs().result_type(), rhs().result_type());
+    auto &param = ctx.stash.create<UniversalDotProductParam>(result_type(), lhs().result_type(), rhs().result_type());
     using MyTypify = TypifyValue<TypifyCellMeta,TypifyBool>;
     auto op = typify_invoke<6,MyTypify,SelectUniversalDotProduct>(lhs().result_type().cell_meta(),
                                                                   rhs().result_type().cell_meta(),

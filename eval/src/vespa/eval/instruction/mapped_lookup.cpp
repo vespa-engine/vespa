@@ -117,7 +117,7 @@ MappedLookup::MappedLookup(const ValueType &res_type,
 }
 
 InterpretedFunction::Instruction
-MappedLookup::compile_self(const ValueBuilderFactory &, Stash &) const
+MappedLookup::compile_self(const CTFContext &) const
 {
     uint64_t param = wrap_param<ValueType>(result_type());
     if (result_type().cell_type() == CellType::FLOAT) {

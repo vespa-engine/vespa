@@ -127,8 +127,8 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
 
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
-                                               const OptimizeTensorFunctionOptions &options)
+const TensorFunction &optimize_tensor_function_impl(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
+                                                    const OptimizeTensorFunctionOptions &options)
 {
     LOG(debug, "tensor function before optimization:\n%s\n", function.as_string().c_str());
     const TensorFunction &optimized = optimize_for_factory(factory, function, stash, options);
@@ -137,7 +137,10 @@ const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factor
 }
 
 const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash) {
-    return optimize_tensor_function(factory, function, stash, OptimizeTensorFunctionOptions());
+    return optimize_tensor_function_impl(factory, function, stash, OptimizeTensorFunctionOptions());
+}
+const TensorFunction &do_not_optimize_tensor_function(const ValueBuilderFactory &, const TensorFunction &function, Stash &) {
+    return function;
 }
 
 const TensorFunction &apply_tensor_function_optimizer(const TensorFunction &function, tensor_function_optimizer optimizer, Stash &stash, tensor_function_listener listener) {

@@ -8,7 +8,7 @@
 #include "value_type.h"
 #include "value.h"
 #include "aggr.h"
-#include "interpreted_function.h"
+#include "compile_tensor_function.h"
 #include "wrap_param.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -104,11 +104,10 @@ struct TensorFunction
      * the value stack during execution.
      *
      * @return instruction representing the operation of this node
-     * @param factory the value builder factory used during evaluation
-     * @param stash heterogeneous object store
+     * @param ctx context needed for compilation (stash and stuff)
      **/
-    virtual InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const = 0;
-
+    virtual InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const = 0;
+    
     // for debug dumping
     vespalib::string as_string() const;
     virtual void visit_self(vespalib::ObjectVisitor &visitor) const;
@@ -188,7 +187,7 @@ public:
     ConstValue(const Value &value_in) : Super(value_in.type()), _value(value_in) {}
     const Value &value() const { return _value; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -204,7 +203,7 @@ public:
         : Super(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -225,7 +224,7 @@ public:
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -243,7 +242,7 @@ public:
         : Super(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -266,7 +265,7 @@ public:
     const Function &lambda() const { return *_lambda; }
     const NodeTypes &types() const { return _lambda_types; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -285,7 +284,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -304,7 +303,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -323,7 +322,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -339,7 +338,7 @@ public:
         : Super(result_type_in, child_in), _cell_type(cell_type) {}
     CellType cell_type() const { return _cell_type; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -363,7 +362,7 @@ public:
     using Spec = std::map<TensorSpec::Address, size_t>;
     Spec make_spec() const;
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -388,7 +387,7 @@ public:
         return create_spec_impl(result_type(), params, _bindings, fun);
     }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -428,7 +427,7 @@ public:
     const TensorFunction &param() const { return _param.get(); }
     const ValueType &param_type() const { return _param.get().result_type(); }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -450,7 +449,7 @@ public:
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -476,7 +475,7 @@ public:
         return (true_child().result_is_mutable() &&
                 false_child().result_is_mutable());
     }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 

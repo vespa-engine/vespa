@@ -50,7 +50,7 @@ public:
     size_t inner_size() const { return _inner_size; }
     Aggr aggr() const { return _aggr; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const CTFContext &ctx) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
