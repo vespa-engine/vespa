@@ -53,22 +53,22 @@ int
 GetConfig::usage(const char *self)
 {
     fprintf(stderr, "usage: %s -n name -i configId\n", self);
-    fprintf(stderr, "-n name           (config name, including namespace, on the form <namespace>.<name>)\n");
-    fprintf(stderr, "-i configId       (config id, optional)\n");
-    fprintf(stderr, "-j                (output config as json, optional)\n");
-    fprintf(stderr, "-l                (output config in legacy cfg format, optional)\n");
-    fprintf(stderr, "-g generation     (config generation, optional)\n");
-    fprintf(stderr, "-a schema         (config def schema file, optional)\n");
-    fprintf(stderr, "-v defVersion     (config definition version, optional, deprecated)\n");
-    fprintf(stderr, "-m defMd5         (definition md5sum, optional)\n");
-    fprintf(stderr, "-t serverTimeout  (server timeout in seconds, default 3)\n");
-    fprintf(stderr, "-w timeout        (timeout in seconds, default 10)\n");
-    fprintf(stderr, "-s server         (server hostname, default localhost)\n");
-    fprintf(stderr, "-p port           (proxy/server port number, default 19090)\n");
-    fprintf(stderr, "-r traceLevel     (tracelevel to use in request, default 0\n");
-    fprintf(stderr, "-V vespaVersion   (vespa version to use in request, optional\n");
-    fprintf(stderr, "-d                (debug mode)\n");
-    fprintf(stderr, "-h                (This help text)\n");
+    fprintf(stderr, "-n name           config name, on the form <namespace>.<name>\n");
+    fprintf(stderr, "-i configId       config id, optional\n");
+    fprintf(stderr, "-j                output config as json, optional\n");
+    fprintf(stderr, "-l                output config in legacy cfg format, optional\n");
+    fprintf(stderr, "-g generation     config generation, optional\n");
+    fprintf(stderr, "-a schema         config def schema file, optional\n");
+    fprintf(stderr, "-v defVersion     config definition version, optional, deprecated\n");
+    fprintf(stderr, "-m defMd5         definition md5sum, optional\n");
+    fprintf(stderr, "-t serverTimeout  server timeout in seconds, default 3\n");
+    fprintf(stderr, "-w timeout        timeout in seconds, default 10\n");
+    fprintf(stderr, "-s server         server hostname, default localhost\n");
+    fprintf(stderr, "-p port           proxy/server port number, default 19090\n");
+    fprintf(stderr, "-r traceLevel     tracelevel to use in request, default 0\n");
+    fprintf(stderr, "-V vespaVersion   vespa version to use in request, optional\n");
+    fprintf(stderr, "-d                debug mode\n");
+    fprintf(stderr, "-h                This help text\n");
     return 1;
 }
 
@@ -106,7 +106,7 @@ GetConfig::main(int argc, char **argv)
     std::string defNamespace("config");
     const char *serverHost = "localhost";
     const char *configId = getenv("VESPA_CONFIG_ID");
-    bool printAsJson = false;
+    bool printAsJson = false; // TODO: Change default value in Vespa 9
     int traceLevel = config::protocol::readTraceLevel();
     const char *vespaVersionString = nullptr;
     int64_t generation = 0;
@@ -128,6 +128,7 @@ GetConfig::main(int argc, char **argv)
         case 'n':
             defName = optarg;
             break;
+        // TODO: Remove in Vespa 9
         case 'v':
             break;
         case 'g':
