@@ -7,9 +7,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
@@ -23,11 +20,9 @@ import java.util.Locale;
 public class NodeResourceLimits {
 
     private final NodeRepository nodeRepository;
-    private final IntFlag minExclusiveAdvertisedMemoryGbFlag;
 
     public NodeResourceLimits(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
-        this.minExclusiveAdvertisedMemoryGbFlag = Flags.MIN_EXCLUSIVE_ADVERTISED_MEMORY_GB.bindTo(nodeRepository.flagSource());
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
@@ -87,11 +82,7 @@ public class NodeResourceLimits {
     private double minAdvertisedMemoryGb(ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
         if (cluster.type() == ClusterSpec.Type.admin) return 1;
         if (!exclusive) return 4;
-        return minExclusiveAdvertisedMemoryGbFlag
-                .with(FetchVector.Dimension.INSTANCE_ID, applicationId.serializedForm())
-                .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
-                .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
-                .value();
+        return 8;
     }
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
