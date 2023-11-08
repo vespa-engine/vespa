@@ -38,7 +38,7 @@ cd $DLDIR
 
 readonly DNF="dnf -y -q --forcearch $RPMARCH"
 
-$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed "s/\.$RPMARCH\ */-/" | awk '{print $1}' | grep -v '.src$' > $COPR_PACKAGES
+$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v '.src$' > $COPR_PACKAGES
 
 echo "Packages on Copr:"
 cat $COPR_PACKAGES
@@ -46,9 +46,12 @@ echo
 
 for pv in $(cat $COPR_PACKAGES); do
   if ! $DNF list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
-    echo "$pv not found on in archive. Downloading..."
-    $DNF download --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa $pv
-    echo "$pv downloaded."
+    # Need one extra check here for noarch packages
+    if ! dnf -y -q --forcearch noarch list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
+      echo "$pv not found on in archive. Downloading..."
+      $DNF download --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa $pv
+      echo "$pv downloaded."
+    fi
   fi
 done
 echo

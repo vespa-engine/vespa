@@ -10,7 +10,8 @@ curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.tx
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
-VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -$MAX_NUMBER_OF_RELEASES | grep -v "7.594.36")
+# Allow the last Vespa 7 release to remain in the repo
+VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | grep -v "7.594.36" | head -n -$MAX_NUMBER_OF_RELEASES)
 
 if [[ -z "$VERSIONS_TO_DELETE" ]]; then
   echo "No old RPM versions to delete found. Exiting."
