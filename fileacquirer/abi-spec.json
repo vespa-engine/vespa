@@ -21,7 +21,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer create(java.lang.String)"
+      "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer create()"
     ],
     "fields" : [ ]
   },
