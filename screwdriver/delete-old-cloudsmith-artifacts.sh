@@ -5,19 +5,19 @@ set -euo pipefail
 MAX_NUMBER_OF_RELEASES=50
 
 # Cloudsmith repo
-rpm --import 'https://dl.cloudsmith.io/public/vespa/vespa/gpg.0F3DA3C70D35DA7B.key'
-curl -1sLf 'https://dl.cloudsmith.io/public/vespa/vespa/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-vespa.repo
-dnf config-manager --add-repo '/tmp/vespa-vespa.repo'
-rm -f /tmp/vespa-vespa.repo
+rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
+curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-open-source-rpms.repo
+dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
+rm -f /tmp/vespa-open-source-rpms.repo
 
-VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-vespa vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -$MAX_NUMBER_OF_RELEASES | grep -v "7.594.36")
+VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -$MAX_NUMBER_OF_RELEASES | grep -v "7.594.36")
 
 RPMS_TO_DELETE=$(mktemp)
 trap "rm -f $RPMS_TO_DELETE" EXIT
 
 for VERSION in $VERSIONS_TO_DELETE; do
   curl -sLf --header 'accept: application/json' \
-    "https://api.cloudsmith.io/v1/packages/vespa/vespa/?query=version:${VERSION}" | jq -re '.[] | .slug' >> $RPMS_TO_DELETE
+    "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/?query=version:${VERSION}" | jq -re '.[] | .slug' >> $RPMS_TO_DELETE
 done
 
 echo "Deleting the following RPMs:"
@@ -27,7 +27,7 @@ if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
     for RPMID in $(cat $RPMS_TO_DELETE); do
       curl -sLf -u "$CLOUDSMITH_API_CREDS" -X DELETE \
         --header 'accept: application/json' \
-        "https://api.cloudsmith.io/v1/packages/vespa/vespa/$RPMID/"
+        "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/$RPMID/"
     done
 fi
 
