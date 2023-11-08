@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author mpolden
@@ -23,6 +25,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     private final Map<LoadBalancerId, LoadBalancerInstance> instances = new HashMap<>();
     private boolean throwOnCreate = false;
     private boolean supportsProvisioning = true;
+    private final AtomicBoolean uuid = new AtomicBoolean(true);
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
         return Collections.unmodifiableMap(instances);
@@ -53,8 +56,10 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     @Override
     public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
+        Optional<UUID> idSeed = uuid.getAndSet(false) ? Optional.of(UUID.fromString("c11272ab-d20e-4c86-b808-ffedaa00c480")) : Optional.empty();
         var id = new LoadBalancerId(spec.application(), spec.cluster());
         var instance = new LoadBalancerInstance(
+                idSeed,
                 Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
                 Optional.empty(),
                 Optional.empty(),
@@ -89,7 +94,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint) {
+    public Availability healthy(Endpoint endpoint, Optional<UUID> idSeed) {
         return Availability.ready;
     }
 
