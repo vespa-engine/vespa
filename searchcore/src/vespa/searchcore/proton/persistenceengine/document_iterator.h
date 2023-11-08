@@ -4,6 +4,7 @@
 
 #include "i_document_retriever.h"
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/result.h>
@@ -18,7 +19,7 @@ class DocumentIterator
 {
 private:
     using ReadConsistency = storage::spi::ReadConsistency;
-    using HandlerWithRetriever = std::pair<const IPersistenceHandler*, IDocumentRetriever::SP>;
+    using DocTypeNameAndRetriever = std::pair<DocTypeName, IDocumentRetriever::SP>;
 
     const storage::spi::Bucket            _bucket;;
     const storage::spi::Selection         _selection;
@@ -29,13 +30,13 @@ private:
     const bool                            _metaOnly;
     const bool                            _ignoreMaxBytes;
     bool                                  _fetchedData;
-    std::vector<HandlerWithRetriever>     _sources;
+    std::vector<DocTypeNameAndRetriever>  _sources;
     size_t                                _nextItem;
     storage::spi::IterateResult::List     _list;
 
 
     [[nodiscard]] bool checkMeta(const search::DocumentMetaData &meta) const;
-    void fetchCompleteSource(const IPersistenceHandler * handler,
+    void fetchCompleteSource(const DocTypeName & doc_type_name,
                              const IDocumentRetriever & source,
                              storage::spi::IterateResult::List & list);
     [[nodiscard]] bool isWeakRead() const { return _readConsistency == ReadConsistency::WEAK; }
@@ -46,7 +47,7 @@ public:
                      ssize_t defaultSerializedSize, bool ignoreMaxBytes,
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
     ~DocumentIterator();
-    void add(const IPersistenceHandler *handler, IDocumentRetriever::SP retriever);
+    void add(const DocTypeName & doc_type_name, IDocumentRetriever::SP retriever);
     void add(IDocumentRetriever::SP retriever);
     storage::spi::IterateResult iterate(size_t maxBytes);
 };

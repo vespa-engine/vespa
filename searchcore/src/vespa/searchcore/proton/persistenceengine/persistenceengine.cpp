@@ -547,8 +547,7 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
         auto *handler = snap.handlers().get();
         IPersistenceHandler::RetrieversSP retrievers = handler->getDocumentRetrievers(context.getReadConsistency());
         for (const auto & retriever : *retrievers) {
-            // Handler ptr validity and lifetime is maintained by handler snapshot owned by iterator
-            entry->it.add(handler, retriever);
+            entry->it.add(handler->doc_type_name(), retriever);
         }
     }
     entry->handler_sequence = HandlerSnapshot::release(std::move(snap));

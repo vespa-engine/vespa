@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
-#include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
@@ -176,41 +175,6 @@ UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Times
       docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
 UnitDR::~UnitDR() = default;
-
-struct MockPersistenceHandler : IPersistenceHandler {
-    DocTypeName _doc_type_name;
-
-    explicit MockPersistenceHandler(vespalib::stringref type_name)
-        : _doc_type_name(type_name)
-    {
-    }
-    ~MockPersistenceHandler() override = default;
-
-    void initialize() override { abort(); }
-    void handlePut(FeedToken, const storage::spi::Bucket&, storage::spi::Timestamp, DocumentSP ) override { abort(); }
-    void handleUpdate(FeedToken, const storage::spi::Bucket&,
-                      storage::spi::Timestamp, DocumentUpdateSP) override { abort(); }
-    void handleRemove(FeedToken, const storage::spi::Bucket&,
-                      storage::spi::Timestamp, const document::DocumentId&) override { abort(); }
-    void handleRemoveByGid(FeedToken, const storage::spi::Bucket&, storage::spi::Timestamp,
-                           vespalib::stringref, const document::GlobalId&) override { abort(); }
-    void handleListBuckets(IBucketIdListResultHandler&) override { abort(); }
-    void handleSetClusterState(const storage::spi::ClusterState&, IGenericResultHandler&) override { abort(); }
-    void handleSetActiveState(const storage::spi::Bucket&, storage::spi::BucketInfo::ActiveState,
-                              std::shared_ptr<IGenericResultHandler>) override { abort(); }
-    void handleGetBucketInfo(const storage::spi::Bucket&, IBucketInfoResultHandler&) override { abort(); }
-    void handleCreateBucket(FeedToken, const storage::spi::Bucket&) override { abort(); };
-    void handleDeleteBucket(FeedToken, const storage::spi::Bucket&) override { abort(); }
-    void handleGetModifiedBuckets(IBucketIdListResultHandler&) override { abort(); }
-    void handleSplit(FeedToken, const storage::spi::Bucket&,
-                     const storage::spi::Bucket&, const storage::spi::Bucket&) override { abort(); }
-    void handleJoin(FeedToken, const storage::spi::Bucket&, const storage::spi::Bucket&,
-                    const storage::spi::Bucket&) override { abort(); }
-    RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { abort(); }
-    void handleListActiveBuckets(IBucketIdListResultHandler&) override { abort(); }
-    void handlePopulateActiveBuckets(document::BucketId::List, IGenericResultHandler&) override { abort(); }
-    const DocTypeName &doc_type_name() const noexcept override { return _doc_type_name; }
-};
 
 struct VisitRecordingUnitDR : UnitDR {
     using VisitedLIDs = std::unordered_set<DocumentIdT>;
@@ -655,11 +619,9 @@ TEST("require that iterating all versions returns both documents and removes") {
 
 TEST("require that using an empty field set returns meta-data only") {
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
-    MockPersistenceHandler foo_handler("foo");
-    MockPersistenceHandler doc_handler("document");
-    itr.add(&foo_handler, doc_with_fields("id:ns:foo::1", Timestamp(2), bucket(5)));
-    itr.add(&doc_handler, cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
-                              rem("id:ns:document::3", Timestamp(4), bucket(5))));
+    itr.add(DocTypeName("foo"), doc_with_fields("id:ns:foo::1", Timestamp(2), bucket(5)));
+    itr.add(DocTypeName("document"), cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                                         rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
@@ -708,7 +670,7 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
     IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
-    // Note: empty doc types since we did not pass in a handler alongside the retrievers
+    // Note: empty doc types since we did not pass in an explicit doc type alongside the retrievers
     TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), ""));
     TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), ""));
 

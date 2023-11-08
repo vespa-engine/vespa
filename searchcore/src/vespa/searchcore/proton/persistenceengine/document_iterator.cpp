@@ -101,15 +101,15 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 DocumentIterator::~DocumentIterator() = default;
 
 void
-DocumentIterator::add(const IPersistenceHandler *handler, IDocumentRetriever::SP retriever)
+DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP retriever)
 {
-    _sources.emplace_back(handler, std::move(retriever));
+    _sources.emplace_back(doc_type_name, std::move(retriever));
 }
 
 void
 DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    add(nullptr, std::move(retriever));
+    add(DocTypeName(""), std::move(retriever));
 }
 
 IterateResult
@@ -250,7 +250,7 @@ private:
 }
 
 void
-DocumentIterator::fetchCompleteSource(const IPersistenceHandler * handler,
+DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
                                       const IDocumentRetriever & source,
                                       IterateResult::List & list)
 {
@@ -283,11 +283,10 @@ DocumentIterator::fetchCompleteSource(const IPersistenceHandler * handler,
 
     list.reserve(lidsToFetch.size());
     if ( _metaOnly ) {
-        stringref doc_type = (handler ? stringref(handler->doc_type_name().getName()) : stringref());
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
             assert(lid == meta.lid);
-            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type, meta.gid));
+            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
