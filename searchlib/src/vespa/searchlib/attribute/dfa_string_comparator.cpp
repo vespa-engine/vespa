@@ -5,9 +5,10 @@
 
 namespace search::attribute {
 
-DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate)
+DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased)
     : ParentType(data_store),
-      _candidate(std::cref(candidate))
+      _candidate(std::cref(candidate)),
+      _cased(cased)
 {
 }
 
@@ -16,13 +17,25 @@ DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespali
 {
     if (lhs.valid()) {
         if (rhs.valid()) {
-            return FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0;
+            if (_cased) {
+                return FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0;
+            } else {
+                return FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0;
+            }
         } else {
-            return FoldedStringCompare::compareFolded<true, false>(get(lhs), _candidate) < 0;
+            if (_cased) {
+                return FoldedStringCompare::compareFolded<false, false>(get(lhs), _candidate) < 0;
+            } else {
+                return FoldedStringCompare::compareFolded<true, false>(get(lhs), _candidate) < 0;
+            }
         }
     } else {
         if (rhs.valid()) {
-            return FoldedStringCompare::compareFolded<false, true>(_candidate, get(rhs)) < 0;
+            if (_cased) {
+                return FoldedStringCompare::compareFolded<false, false>(_candidate, get(rhs)) < 0;
+            } else {
+                return FoldedStringCompare::compareFolded<false, true>(_candidate, get(rhs)) < 0;
+            }
         } else {
             return false;
         }

@@ -26,9 +26,10 @@ public:
 private:
     using ParentType::get;
     std::reference_wrapper<const std::vector<uint32_t>> _candidate;
+    bool _cased;
 
 public:
-    DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate);
+    DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased);
 
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
 };

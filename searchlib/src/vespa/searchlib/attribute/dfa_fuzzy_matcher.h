@@ -62,7 +62,7 @@ public:
                 return true;
             }
         }
-        DfaStringComparator cmp(data_store, _successor);
+        DfaStringComparator cmp(data_store, _successor, _cased);
         itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
         return false;
     }
