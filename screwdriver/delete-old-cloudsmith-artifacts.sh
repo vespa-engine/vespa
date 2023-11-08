@@ -12,6 +12,11 @@ rm -f /tmp/vespa-open-source-rpms.repo
 
 VERSIONS_TO_DELETE=$(dnf list -y --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-open-source-rpms vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -$MAX_NUMBER_OF_RELEASES | grep -v "7.594.36")
 
+if [[ -z "$VERSIONS_TO_DELETE" ]]; then
+  echo "No old RPM versions to delete found. Exiting."
+  exit 0
+fi
+
 RPMS_TO_DELETE=$(mktemp)
 trap "rm -f $RPMS_TO_DELETE" EXIT
 
