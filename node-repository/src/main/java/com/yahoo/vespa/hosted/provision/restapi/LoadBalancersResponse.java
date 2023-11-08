@@ -90,7 +90,6 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
                 }
                 instance.serviceId().ifPresent(serviceId -> lbObject.setString("serviceId", serviceId.value()));
                 lbObject.setBool("public", instance.settings().isPublicEndpoint());
-                instance.idSeed().ifPresent(idSeed -> lbObject.setString("idSeed", idSeed.toString()));
             });
             lb.instance()
               .map(LoadBalancerInstance::cloudAccount)

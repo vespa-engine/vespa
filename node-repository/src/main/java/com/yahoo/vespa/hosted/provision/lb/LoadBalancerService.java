@@ -2,20 +2,15 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.EndpointsChecker.Availability;
-import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.NodeType;
-
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * A managed load balance service.
  *
  * @author mpolden
  */
-public interface LoadBalancerService {
+public interface LoadBalancerService extends HealthChecker {
 
     /**
      * Provisions load balancers from the given specification. Implementations are expected to be idempotent
@@ -44,9 +39,6 @@ public interface LoadBalancerService {
 
     /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
     boolean supports(NodeType nodeType, ClusterSpec.Type clusterType);
-
-    /** See {@link HealthChecker#healthy(Endpoint)}. */
-    Availability healthy(Endpoint endpoint, Optional<UUID> idSeed);
 
     /** Load balancer protocols */
     enum Protocol {

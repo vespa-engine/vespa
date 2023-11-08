@@ -1,13 +1,15 @@
 {
   "loadBalancers": [
     {
-      "application": "application1",
-      "changedAt": 123,
-      "cluster": "id1",
-      "dnsZone": "zone-id-1",
-      "hostname": "lb-tenant1.application1.instance1-id1",
       "id": "tenant1:application1:instance1:id1",
+      "state": "active",
+      "changedAt": 123,
+      "application": "application1",
+      "tenant": "tenant1",
       "instance": "instance1",
+      "cluster": "id1",
+      "hostname": "lb-tenant1.application1.instance1-id1",
+      "dnsZone": "zone-id-1",
       "networks": [
         "10.2.3.0/24",
         "10.4.5.0/24"
@@ -15,7 +17,6 @@
       "ports": [
         4443
       ],
-      "public": false,
       "reals": [
         {
           "hostname": "host1.yahoo.com",
@@ -28,7 +29,6 @@
           "port": 4443
         }
       ],
-      "serviceId": "service",
       "settings": {
         "allowedUrns": [
           {
@@ -37,18 +37,19 @@
           }
         ]
       },
-      "state": "active",
-      "tenant": "tenant1"
+      "serviceId": "service",
+      "public": false
     },
     {
-      "application": "zone-config-servers",
-      "changedAt": 123,
-      "cluster": "zone-config-servers",
-      "dnsZone": "zone-id-1",
-      "hostname": "lb-hosted-vespa.zone-config-servers-zone-config-servers",
       "id": "hosted-vespa:zone-config-servers:default:zone-config-servers",
-      "idSeed": "c11272ab-d20e-4c86-b808-ffedaa00c480",
+      "state": "active",
+      "changedAt": 123,
+      "application": "zone-config-servers",
+      "tenant": "hosted-vespa",
       "instance": "default",
+      "cluster": "zone-config-servers",
+      "hostname": "lb-hosted-vespa.zone-config-servers-zone-config-servers",
+      "dnsZone": "zone-id-1",
       "networks": [
         "10.2.3.0/24",
         "10.4.5.0/24"
@@ -56,7 +57,6 @@
       "ports": [
         4443
       ],
-      "public": true,
       "reals": [
         {
           "hostname": "cfg1.yahoo.com",
@@ -69,17 +69,18 @@
           "port": 4443
         }
       ],
-      "state": "active",
-      "tenant": "hosted-vespa"
+      "public": true
     },
     {
-      "application": "application4",
-      "changedAt": 123,
-      "cluster": "id4",
-      "dnsZone": "zone-id-1",
-      "hostname": "lb-tenant4.application4.instance4-id4",
       "id": "tenant4:application4:instance4:id4",
+      "state": "active",
+      "changedAt": 123,
+      "application": "application4",
+      "tenant": "tenant4",
       "instance": "instance4",
+      "cluster": "id4",
+      "hostname": "lb-tenant4.application4.instance4-id4",
+      "dnsZone": "zone-id-1",
       "networks": [
         "10.2.3.0/24",
         "10.4.5.0/24"
@@ -87,7 +88,6 @@
       "ports": [
         4443
       ],
-      "public": true,
       "reals": [
         {
           "hostname": "host13.yahoo.com",
@@ -100,8 +100,7 @@
           "port": 4443
         }
       ],
-      "state": "active",
-      "tenant": "tenant4"
+      "public": true
     }
   ]
 }
