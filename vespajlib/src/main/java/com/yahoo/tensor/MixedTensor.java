@@ -5,10 +5,12 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -28,12 +30,21 @@ public class MixedTensor implements Tensor {
     private final TensorType type;
     private final int blockSize; // aka dense subspace size
 
-    static class DenseBlock {
+    static final class DenseBlock {
         final TensorAddress sparseAddr;
         final double[] cells;
         DenseBlock(TensorAddress sparseAddr, double[] cells) {
             this.sparseAddr = sparseAddr;
             this.cells = cells;
+        }
+        @Override public int hashCode() {
+            return Objects.hash(sparseAddr, cells);
+        }
+        @Override public boolean equals(Object other) {
+            if (other instanceof DenseBlock o) {
+                return sparseAddr.equals(o.sparseAddr) && Arrays.equals(cells, o.cells);
+            }
+            return false;
         }
     }
 
@@ -189,7 +200,7 @@ public class MixedTensor implements Tensor {
     }
 
     @Override
-    public int hashCode() { return cellBlocks.hashCode(); }
+    public int hashCode() { return Objects.hash(type, cellBlocks); }
 
     @Override
     public String toString() {
