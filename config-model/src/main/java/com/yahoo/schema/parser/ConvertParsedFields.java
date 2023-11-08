@@ -154,8 +154,8 @@ public class ConvertParsedFields {
             var dataType = field.getDataType();
             var otherType = summaryField.getType();
             if (otherType != null && summaryField.getHasExplicitType()) {
-                schema.getDeployLogger().log(Level.FINE, () -> "For " + schema.getName() +
-                        ", field '" + field.getName() +
+                schema.getDeployLogger().log(Level.FINE, () -> "For schema '" + schema.getName() +
+                        "', field '" + field.getName() +
                         "', summary '" + summaryField.name() +
                         "': Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
                         " Remove the type specification to silence this warning.");
