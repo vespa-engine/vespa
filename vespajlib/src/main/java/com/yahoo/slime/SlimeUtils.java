@@ -131,7 +131,7 @@ public class SlimeUtils {
     }
 
     public static Optional<String> optionalString(Inspector inspector) {
-        return Optional.of(inspector).filter(SlimeUtils::isPresent).map(Inspector::asString);
+        return isPresent(inspector) ? Optional.of(inspector.asString()) : Optional.empty();
     }
 
     public static OptionalLong optionalLong(Inspector field) {
@@ -147,11 +147,11 @@ public class SlimeUtils {
     }
 
     public static Optional<Instant> optionalInstant(Inspector field) {
-        return optionalLong(field).stream().mapToObj(Instant::ofEpochMilli).findFirst();
+        return isPresent(field) ? Optional.of(Instant.ofEpochMilli(field.asLong())) : Optional.empty();
     }
 
     public static Optional<Duration> optionalDuration(Inspector field) {
-        return optionalLong(field).stream().mapToObj(Duration::ofMillis).findFirst();
+        return isPresent(field) ? Optional.of(Duration.ofMillis(field.asLong())) : Optional.empty();
     }
 
     public static Iterator<Inspector> entriesIterator(Inspector inspector) {
@@ -165,8 +165,9 @@ public class SlimeUtils {
     /** Returns stream of entries for given inspector. If the inspector is not an array, empty stream is returned */
     public static Stream<Inspector> entriesStream(Inspector inspector) {
         int characteristics = Spliterator.NONNULL | Spliterator.SIZED | Spliterator.ORDERED;
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(entriesIterator(inspector),
-                                                                        characteristics),
+        return StreamSupport.stream(Spliterators.spliterator(entriesIterator(inspector),
+                                                             inspector.entries(),
+                                                             characteristics),
                                     false);
     }
 
