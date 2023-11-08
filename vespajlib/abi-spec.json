@@ -1002,37 +1002,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor$Index$Builder" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.tensor.TensorType)",
-      "public void put(com.yahoo.tensor.TensorAddress, long)",
-      "public com.yahoo.tensor.MixedTensor$Index build()",
-      "public com.yahoo.tensor.MixedTensor$Index index()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.tensor.MixedTensor$UnboundBuilder" : {
-    "superClass" : "com.yahoo.tensor.MixedTensor$Builder",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
-      "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
-      "public com.yahoo.tensor.MixedTensor build()",
-      "public void trackBounds(com.yahoo.tensor.TensorAddress)",
-      "public com.yahoo.tensor.TensorType createBoundType()",
-      "public static com.yahoo.tensor.MixedTensor$UnboundBuilder of(com.yahoo.tensor.TensorType)",
-      "public bridge synthetic com.yahoo.tensor.Tensor build()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.tensor.MixedTensor" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
