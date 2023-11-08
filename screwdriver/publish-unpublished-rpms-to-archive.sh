@@ -24,10 +24,10 @@ dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/ve
 sed -i "s,\$basearch,$RPMARCH,g" /etc/yum.repos.d/group_vespa-vespa-epel-8.repo
 
 # Cloudsmith repo
-rpm --import 'https://dl.cloudsmith.io/public/vespa/vespa/gpg.0F3DA3C70D35DA7B.key'
-curl -1sLf 'https://dl.cloudsmith.io/public/vespa/vespa/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-vespa.repo
-dnf config-manager --add-repo '/tmp/vespa-vespa.repo'
-rm -f /tmp/vespa-vespa.repo
+rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
+curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-open-source-rpms.repo
+dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
+rm -f /tmp/vespa-open-source-rpms.repo
 
 readonly COPR_PACKAGES=$(mktemp)
 trap "rm -f $COPR_PACKAGES" EXIT
@@ -45,7 +45,7 @@ cat $COPR_PACKAGES
 echo 
 
 for pv in $(cat $COPR_PACKAGES); do
-  if ! $DNF list --disablerepo='*' --enablerepo=vespa-* $pv &> /dev/null; then
+  if ! $DNF list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
     echo "$pv not found on in archive. Downloading..."
     $DNF download --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa $pv
     echo "$pv downloaded."

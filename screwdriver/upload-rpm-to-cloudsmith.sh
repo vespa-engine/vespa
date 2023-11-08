@@ -23,13 +23,13 @@ main() {
     --upload-file $RPM \
     -u "$CLOUDSMITH_API_CREDS" \
     -H "Content-Sha256: $(sha256sum $RPM | cut -f1 -d' ')" \
-    https://upload.cloudsmith.io/vespa/vespa/$RPM | jq -re '.identifier')
+    https://upload.cloudsmith.io/vespa/open-source-rpms/$RPM | jq -re '.identifier')
 
   if [[ -n $FID ]]; then
     curl -sLf -X POST -H "Content-Type: application/json" \
       -u "$CLOUDSMITH_API_CREDS" \
       -d "{\"package_file\": \"$FID\", \"distribution\": \"$OS_DISTRO/$RELEASEVER\"}" \
-      https://api-prd.cloudsmith.io/v1/packages/vespa/vespa/upload/rpm/
+      https://api-prd.cloudsmith.io/v1/packages/vespa/open-source-rpms/upload/rpm/
   fi
 }
 
