@@ -233,8 +233,8 @@ public class ConvertParsedSchemas {
             var parsedType = parsedField.getType();
             if (parsedType != null) {
                 var log = schema.getDeployLogger();
-                log.log(Level.FINE, () -> "For " + schema.getName() +
-                        ", document-summary '" + parsed.name() +
+                log.log(Level.FINE, () -> "For schema '" + schema.getName() +
+                        "', document-summary '" + parsed.name() +
                         "', summary field '" + parsedField.name() +
                         "': Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
                         " Remove the type specification to silence this warning.");
