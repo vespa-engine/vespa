@@ -31,14 +31,14 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
-        boolean exclusive = nodeRepository.exclusiveAllocation(cluster);
-        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
-        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(applicationId, cluster, exclusive))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(applicationId, cluster, exclusive));
+    public void ensureWithinAdvertisedLimits(AllocationParams params, String type, NodeResources requested) {
+        boolean exclusive = params.exclusiveAllocation();
+        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(params.application(), params.cluster(), exclusive))
+            illegal(type, "vcpu", "", params.cluster(), requested.vcpu(), minAdvertisedVcpu(params.application(), params.cluster(), exclusive));
+        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(params.application(), params.cluster(), exclusive))
+            illegal(type, "memoryGb", "Gb", params.cluster(), requested.memoryGb(), minAdvertisedMemoryGb(params.application(), params.cluster(), exclusive));
         if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
-            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
+            illegal(type, "diskGb", "Gb", params.cluster(), requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
     }
 
     // TODO: Remove this when we are ready to fail, not just warn on this. */
@@ -48,17 +48,17 @@ public class NodeResourceLimits {
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(AllocationParams params, NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
+        return isWithinRealLimits(params, nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   applicationId, cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(AllocationParams params, NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(applicationId, cluster)) return false;
+        if (realResources.vcpu() < minRealVcpu(params)) return false;
         if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
@@ -115,8 +115,8 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) {
-        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(cluster));
+    private double minRealVcpu(AllocationParams params) {
+        return minAdvertisedVcpu(params.application(), params.cluster(), params.exclusiveAllocation());
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {
