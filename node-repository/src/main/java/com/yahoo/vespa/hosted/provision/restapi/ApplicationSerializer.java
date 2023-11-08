@@ -59,9 +59,9 @@ public class ApplicationSerializer {
                                 NodeRepository nodeRepository,
                                 Cursor clustersObject) {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
-        ClusterSpec clusterSpec = nodes.clusterSpec();
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
+        ClusterSpec clusterSpec = nodes.clusterSpec();
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", clusterSpec.type().name());
         var params = AllocationParams.from(nodeRepository, application.id(), clusterSpec, clusterSpec.vespaVersion());
