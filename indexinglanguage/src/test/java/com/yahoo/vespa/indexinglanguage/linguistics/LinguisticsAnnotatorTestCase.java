@@ -90,7 +90,7 @@ public class LinguisticsAnnotatorTestCase {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
                 }
-                assertAnnotations(expected, "foo", newToken("foo", "BAR", type, specialToken));
+                assertAnnotations(expected, "foo", newToken("foo", "bar", type, specialToken));
             }
         }
     }

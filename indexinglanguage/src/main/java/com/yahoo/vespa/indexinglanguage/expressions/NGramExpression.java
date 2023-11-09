@@ -15,6 +15,8 @@ import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
 import java.util.Iterator;
 
+import static com.yahoo.language.LinguisticsCase.toLowerCase;
+
 /**
  * A filter which splits incoming text into n-grams.
  *
@@ -68,8 +70,9 @@ public final class NGramExpression extends Expression {
 
             // annotate gram as a word term
             String gramString = gram.extractFrom(output.getString());
-            typedSpan(gram.getStart(), gram.getCodePointCount(), TokenType.ALPHABETIC, spanList).
-                    annotate(LinguisticsAnnotator.lowerCaseTermAnnotation(gramString, gramString));
+            typedSpan(gram.getStart(),
+                      gram.getCodePointCount(),
+                      TokenType.ALPHABETIC, spanList).annotate(LinguisticsAnnotator.termAnnotation(toLowerCase(gramString), gramString));
 
             lastPosition = gram.getStart() + gram.getCodePointCount();
         }
