@@ -168,7 +168,7 @@ public final class ConfiguredApplication implements Application {
     public void start() {
         qrConfig = getConfig(QrConfig.class);
         reconfigure(qrConfig.shutdown());
-        hackToInitializeServer(qrConfig);
+        hackToInitializeServer();
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
@@ -242,9 +242,9 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private static void hackToInitializeServer(QrConfig config) {
+    private static void hackToInitializeServer() {
         try {
-            Container.get().setupFileAcquirer(config.filedistributor());
+            Container.get().setupFileAcquirer();
             Container.get().setupUrlDownloader();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Caught exception when initializing server. Exiting.", e);

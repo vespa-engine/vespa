@@ -9,8 +9,8 @@ package com.yahoo.filedistribution.fileacquirer;
  */
 public class FileAcquirerFactory {
 
-    public static FileAcquirer create(String configId) {
-        return new FileAcquirerImpl(configId);
+    public static FileAcquirer create() {
+        return new FileAcquirerImpl();
     }
 
 }

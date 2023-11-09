@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.filedistribution.fileacquirer;
 
-import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -12,6 +10,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
+
 import java.io.File;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +18,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.net.HostName.getLocalhost;
 
 /**
  * Retrieves the path to a file or directory on the local file system
@@ -43,15 +44,15 @@ class FileAcquirerImpl implements FileAcquirer {
 
     private final Supervisor supervisor = new Supervisor(new Transport("fileaquirer"));
 
-    private final ConfigSubscriber configSubscriber;
+    private class Connection {
 
-    private class Connection implements ConfigSubscriber.SingleSubscriber<FiledistributorrpcConfig> {
+        private static final int configProxyRpcPort = 19090;
+
         private final Lock targetLock = new ReentrantLock();
-        private Target target;
-
-        private volatile Spec spec;
+        private final Spec spec = new Spec(getLocalhost(), configProxyRpcPort);
         private long pauseTime = 0; //milliseconds
 
+        private Target target;
         private long nextLogTime = 0;
         private long logCount = 0;
 
@@ -85,18 +86,13 @@ class FileAcquirerImpl implements FileAcquirer {
 
         private void logWarning() {
             if (logCount == 0 || System.currentTimeMillis() > nextLogTime ) {
-                log.warning("Could not connect to the config proxy '" + spec.toString() + "'" + " - " + this + "@" + System.identityHashCode(this));
+                log.warning("Could not connect to the config proxy '" + spec + "'" + " - " + this + "@" + System.identityHashCode(this));
 
                 nextLogTime = System.currentTimeMillis() +
                         Math.min(TimeUnit.DAYS.toMillis(1),
                                 TimeUnit.SECONDS.toMillis(30) * (++logCount));
                 log.info("Next log time = " + nextLogTime + ", current = " + System.currentTimeMillis());
             }
-        }
-
-        @Override
-        public void configure(FiledistributorrpcConfig filedistributorrpcConfig) {
-            spec = new Spec(filedistributorrpcConfig.connectionspec());
         }
 
         public Target getTarget(Timer timer) throws InterruptedException {
@@ -122,16 +118,9 @@ class FileAcquirerImpl implements FileAcquirer {
         };
     }
 
-    public FileAcquirerImpl(String configId) {
-        configSubscriber = new ConfigSubscriber();
-        configSubscriber.subscribe(connection, FiledistributorrpcConfig.class, configId);
-    }
-
     public void shutdown() {
-        configSubscriber.close();
         supervisor.transport().shutdown().join();
     }
-
 
     /**
      * Returns the path to a file or directory corresponding to the

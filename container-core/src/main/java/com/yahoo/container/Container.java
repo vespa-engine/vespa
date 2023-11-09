@@ -95,18 +95,11 @@ public class Container {
     }
 
     // Only intended for use by the Server instance.
-    public void setupFileAcquirer(QrConfig.Filedistributor filedistributorConfig) {
+    public void setupFileAcquirer() {
         if (usingCustomFileAcquirer)
             return;
 
-        if (filedistributorConfig.configid().isEmpty()) {
-            if (fileAcquirer != null)
-                logger.warning("Disabling file distribution");
-            fileAcquirer = null;
-        } else {
-            fileAcquirer = FileAcquirerFactory.create(filedistributorConfig.configid());
-        }
-
+        fileAcquirer = FileAcquirerFactory.create();
         setPathAcquirer(fileAcquirer);
     }
 

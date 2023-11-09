@@ -5,7 +5,8 @@ namespace=container
 ### connection to the config system
 
 ## filedistributor rpc configuration
-filedistributor.configid reference default="" restart
+## TODO: Unused, remove in Vespa 9
+filedistributor.configid reference default=""
 
 ## Is RPC server enabled?
 rpc.enabled bool default=false restart
