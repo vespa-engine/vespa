@@ -711,7 +711,7 @@ void Test::requireThatQueryGluesEverythingTogether() {
     EXPECT_EQUAL(1u, md->getNumTermFields());
 
     query.optimize();
-    query.fetchPostings(search::queryeval::ExecuteInfo::create(true, &requestContext.getDoom()));
+    query.fetchPostings(ExecuteInfo::create(true, 1.0F, &requestContext.getDoom()));
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search.get());
 }
@@ -744,7 +744,7 @@ void checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQUAL(2u, md->getNumTermFields());
 
-    query.fetchPostings(search::queryeval::ExecuteInfo::create(true, &requestContext.getDoom()));
+    query.fetchPostings(ExecuteInfo::create(true, 1.0F, &requestContext.getDoom()));
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search.get());
     if (!EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_out))) {
@@ -966,7 +966,7 @@ Test::requireThatWhiteListBlueprintCanBeUsed()
     MatchData::UP md = mdl.createMatchData();
 
     query.optimize();
-    query.fetchPostings(search::queryeval::ExecuteInfo::create(true, &requestContext.getDoom()));
+    query.fetchPostings(ExecuteInfo::create(true, 1.0F, &requestContext.getDoom()));
     SearchIterator::UP search = query.createSearch(*md);
     SimpleResult exp = SimpleResult().addHit(1).addHit(5).addHit(7).addHit(11);
     SimpleResult act;
@@ -1129,7 +1129,7 @@ public:
     {
         set_want_global_filter(want_global_filter);
     }
-    ~GlobalFilterBlueprint();
+    ~GlobalFilterBlueprint() override;
     void set_global_filter(const GlobalFilter& filter_, double estimated_hit_ratio_) override {
         filter = filter_.shared_from_this();
         estimated_hit_ratio = estimated_hit_ratio_;

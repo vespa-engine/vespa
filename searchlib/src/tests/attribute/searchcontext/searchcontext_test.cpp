@@ -216,7 +216,7 @@ private:
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
     void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
-        sc.fetchPostings(queryeval::ExecuteInfo::create(strict, 1.0));
+        sc.fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
         for (bool withElementId : {false, true}) {
             testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
         }
@@ -649,7 +649,7 @@ public:
     ~Verifier() override;
     SearchIterator::UP
     create(bool strict) const override {
-        _sc->fetchPostings(queryeval::ExecuteInfo::create(strict, 1.0));
+        _sc->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
         return _sc->createIterator(&_dummy, strict);
     }
 private:

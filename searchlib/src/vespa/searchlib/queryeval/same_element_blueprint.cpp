@@ -56,8 +56,13 @@ SameElementBlueprint::optimize_self()
 void
 SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(ExecuteInfo::create(execInfo.isStrict() && (i == 0), execInfo));
+    if (_terms.empty()) return;
+    _terms[0]->fetchPostings(execInfo);
+    double hit_rate = execInfo.hitRate() * _terms[0]->hit_ratio();
+    for (size_t i = 1; i < _terms.size(); ++i) {
+        Blueprint & term = *_terms[i];
+        term.fetchPostings(ExecuteInfo::create(false, hit_rate, execInfo.getDoom()));
+        hit_rate = hit_rate * term.hit_ratio();
     }
 }
 

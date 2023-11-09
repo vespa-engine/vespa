@@ -22,16 +22,13 @@ public:
     static ExecuteInfo create(bool strict, const ExecuteInfo & org) noexcept {
         return {strict, org._hitRate, org.getDoom()};
     }
-    static ExecuteInfo create(bool strict, const vespalib::Doom * doom) noexcept {
-        return create(strict, 1.0F, doom);
-    }
     static ExecuteInfo create(bool strict, float hitRate, const vespalib::Doom * doom) noexcept {
         return {strict, hitRate, doom};
     }
-    static ExecuteInfo create(bool strict) noexcept {
-        return create(strict, 1.0F);
+    static ExecuteInfo createForTest(bool strict) noexcept {
+        return createForTest(strict, 1.0F);
     }
-    static ExecuteInfo create(bool strict, float hitRate) noexcept {
+    static ExecuteInfo createForTest(bool strict, float hitRate) noexcept {
         return create(strict, hitRate, nullptr);
     }
 private:

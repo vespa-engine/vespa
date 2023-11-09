@@ -109,7 +109,7 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(queryeval::ExecuteInfo::create(strict));
+        bp->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
         return sb;
     }
@@ -125,7 +125,7 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(queryeval::ExecuteInfo::create(strict));
+        bp->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
         FakeResult result;
         sb->initRange(1, 10);
