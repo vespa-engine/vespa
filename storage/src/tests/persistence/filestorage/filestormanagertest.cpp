@@ -1409,6 +1409,11 @@ TEST_F(FileStorManagerTest, delete_bucket) {
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
+    // Bucket should be removed from DB
+    {
+        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
+        EXPECT_FALSE(entry.exists());
+    }
 }
 
 TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
@@ -1451,6 +1456,11 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(ReturnCode::REJECTED, reply->getResult().getResult());
         EXPECT_EQ(bucketInfo, reply->getBucketInfo());
+    }
+    // Bucket should still exist in DB
+    {
+        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
+        EXPECT_TRUE(entry.exists());
     }
 }
 
