@@ -26,7 +26,6 @@ public class LinguisticsCase {
     public static String toLowerCase(String in) {
         // def is picked from http://docs.oracle.com/javase/6/docs/api/java/lang/String.html#toLowerCase%28%29
         // Also, at the time of writing, English is the default language for queries
-        if (in == null) return null;
         return Lowercase.toLowerCase(in);
     }
 
