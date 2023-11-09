@@ -1002,6 +1002,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.MixedTensor$DenseSubspace" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
+    ],
+    "fields" : [
+      "public final com.yahoo.tensor.TensorAddress sparseAddress",
+      "public final double[] cells"
+    ]
+  },
   "com.yahoo.tensor.MixedTensor" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -1011,6 +1027,7 @@
       "public"
     ],
     "methods" : [
+      "public java.util.List getInternalDenseSubspaces()",
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
