@@ -262,6 +262,22 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>enforce-no-compile-scope</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <bannedDependencies>
+                                            <!-- Fail validation for provided container deps which will fail when embedded in application bundle -->
+                                            <excludes>
+                                                <exclude>org.slf4j:slf4j-api:*:jar:compile</exclude>
+                                            </excludes>
+                                        </bannedDependencies>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>enforce-just-our-jupiter</id>
                                 <goals>
                                     <goal>enforce</goal>
