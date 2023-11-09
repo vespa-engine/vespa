@@ -40,6 +40,11 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         return instance.with(spec.reals(), spec.settings(), Optional.empty());
     }
 
+    @Override
+    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
+        throw new UnsupportedOperationException("reallocate is not supported with " + getClass());
+    }
+
     private LoadBalancerInstance create(LoadBalancerSpec spec) {
         if ( ! spec.settings().isPublicEndpoint())
             throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());

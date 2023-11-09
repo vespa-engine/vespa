@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -17,18 +18,32 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
+
 /**
  * @author mpolden
  */
 public class LoadBalancerServiceMock implements LoadBalancerService {
 
-    private final Map<LoadBalancerId, LoadBalancerInstance> instances = new HashMap<>();
+    private record Key(ApplicationId application, ClusterSpec.Id cluster, UUID idSeed) {
+        @Override public int hashCode() { return idSeed == null ? Objects.hash(application, cluster) : Objects.hash(idSeed); }
+        @Override public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof Key key)) return false;
+            if (idSeed != null) return Objects.equals(idSeed, key.idSeed);
+            return Objects.equals(application, key.application) &&
+                   Objects.equals(cluster, key.cluster);
+        }
+    }
+    private final Map<Key, LoadBalancerInstance> instances = new HashMap<>();
     private boolean throwOnCreate = false;
     private boolean supportsProvisioning = true;
     private final AtomicBoolean uuid = new AtomicBoolean(true);
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
-        return Collections.unmodifiableMap(instances);
+        return instances.entrySet().stream().collect(toMap(e -> new LoadBalancerId(e.getKey().application, e.getKey().cluster),
+                                                           Map.Entry::getValue));
     }
 
     public LoadBalancerServiceMock throwOnCreate(boolean throwOnCreate) {
@@ -57,7 +72,6 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
         Optional<UUID> idSeed = uuid.getAndSet(false) ? Optional.of(UUID.fromString("c11272ab-d20e-4c86-b808-ffedaa00c480")) : Optional.empty();
-        var id = new LoadBalancerId(spec.application(), spec.cluster());
         var instance = new LoadBalancerInstance(
                 idSeed,
                 Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
@@ -70,14 +84,14 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 spec.settings(),
                 spec.settings().isPrivateEndpoint() ? List.of(PrivateServiceId.of("service")) : List.of(),
                 spec.cloudAccount());
-        instances.put(id, instance);
+        instances.put(new Key(spec.application(), spec.cluster(), idSeed.orElse(null)), instance);
         return instance;
     }
 
     @Override
     public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
-        var id = new LoadBalancerId(spec.application(), spec.cluster());
-        var oldInstance = Objects.requireNonNull(instances.get(id), "expected existing load balancer " + id);
+        var id = new Key(spec.application(), spec.cluster(), instance.idSeed().orElse(null));
+        var oldInstance = requireNonNull(instances.get(id), "expected existing load balancer " + id);
         if (!force && !oldInstance.reals().isEmpty() && spec.reals().isEmpty()) {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
         }
@@ -89,8 +103,17 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
+    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
+        instances.put(new Key(spec.application(), spec.cluster(), null),
+                      requireNonNull(instances.remove(new Key(null, null, provisioned.idSeed().get())))); // ᕙ༼◕_◕༽ᕤ
+    }
+
+    @Override
     public void remove(LoadBalancer loadBalancer) {
-        instances.remove(loadBalancer.id());
+        requireNonNull(instances.remove(new Key(loadBalancer.id().application(),
+                                                loadBalancer.id().cluster(),
+                                                loadBalancer.instance().get().idSeed().orElse(null))),
+                       "expected load balancer to exist: " + loadBalancer.id());
     }
 
     @Override

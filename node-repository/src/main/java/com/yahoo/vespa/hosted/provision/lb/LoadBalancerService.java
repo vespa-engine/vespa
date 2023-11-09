@@ -36,6 +36,8 @@ public interface LoadBalancerService {
      */
     LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force);
 
+    void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec);
+
     /** Permanently remove given load balancer */
     void remove(LoadBalancer loadBalancer);
 

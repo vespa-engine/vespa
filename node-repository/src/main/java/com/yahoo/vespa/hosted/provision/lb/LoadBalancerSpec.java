@@ -16,13 +16,17 @@ import java.util.Set;
  *
  * @author mpolden
  */
-public class LoadBalancerSpec {
+public record LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
+                               ZoneEndpoint settings, CloudAccount cloudAccount) {
 
-    private final ApplicationId application;
-    private final ClusterSpec.Id cluster;
-    private final Set<Real> reals;
-    private final ZoneEndpoint settings;
-    private final CloudAccount cloudAccount;
+    public static final ApplicationId preProvisionOwner = ApplicationId.from("hosted-vespa", "pre-provision", "default");
+    public static LoadBalancerSpec preProvisionSpec(int slot) {
+        return new LoadBalancerSpec(preProvisionOwner,
+                                    ClusterSpec.Id.from("slot-" + slot),
+                                    Set.of(),
+                                    ZoneEndpoint.defaultEndpoint,
+                                    CloudAccount.empty);
+    }
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
                             ZoneEndpoint settings, CloudAccount cloudAccount) {
@@ -31,31 +35,6 @@ public class LoadBalancerSpec {
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals));
         this.settings = Objects.requireNonNull(settings);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
-    }
-
-    /** Owner of the load balancer */
-    public ApplicationId application() {
-        return application;
-    }
-
-    /** The target cluster of this load balancer */
-    public ClusterSpec.Id cluster() {
-        return cluster;
-    }
-
-    /** Real servers to attach to this load balancer */
-    public Set<Real> reals() {
-        return reals;
-    }
-
-    /** Static user-configured settings for this load balancer. */
-    public ZoneEndpoint settings() {
-        return settings;
-    }
-
-    /** Cloud account to use when satisfying this */
-    public CloudAccount cloudAccount() {
-        return cloudAccount;
     }
 
 }
