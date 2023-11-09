@@ -78,8 +78,8 @@ class MixedBinaryFormat implements BinaryFormat {
             buffer.putInt1_4Bytes(denseSubspaces.size());
         }
         for (var subspace : denseSubspaces) {
-            for (int index = 0; index < subspace.sparseAddr.size(); index++) {
-                buffer.putUtf8String(subspace.sparseAddr.label(index));
+            for (int index = 0; index < subspace.sparseAddress.size(); index++) {
+                buffer.putUtf8String(subspace.sparseAddress.label(index));
             }
             for (double val : subspace.cells) {
                 consumer.accept(val);

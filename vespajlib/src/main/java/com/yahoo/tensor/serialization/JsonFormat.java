@@ -155,10 +155,10 @@ public class JsonFormat {
         for (var subspace : tensor.getInternalDenseSubspaces()) {
             IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
             if (mappedDimensions.size() == 1) {
-                encodeValues(denseSubspace, cursor.setArray(subspace.sparseAddr.label(0)), new long[denseSubspace.dimensionSizes().dimensions()], 0);
+                encodeValues(denseSubspace, cursor.setArray(subspace.sparseAddress.label(0)), new long[denseSubspace.dimensionSizes().dimensions()], 0);
             } else {
                 Cursor block = cursor.addObject();
-                encodeAddress(mappedSubType, subspace.sparseAddr, block.setObject("address"));
+                encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
                 encodeValues(denseSubspace, block.setArray("values"), new long[denseSubspace.dimensionSizes().dimensions()], 0);
             }
 

@@ -1014,7 +1014,7 @@
       "public boolean equals(java.lang.Object)"
     ],
     "fields" : [
-      "public final com.yahoo.tensor.TensorAddress sparseAddr",
+      "public final com.yahoo.tensor.TensorAddress sparseAddress",
       "public final double[] cells"
     ]
   },

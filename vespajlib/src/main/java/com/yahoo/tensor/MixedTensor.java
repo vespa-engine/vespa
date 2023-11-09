@@ -33,18 +33,18 @@ public class MixedTensor implements Tensor {
     // XXX consider using "record" instead
     /** only exposed for internal use; subject to change without notice */
     public static final class DenseSubspace {
-        public final TensorAddress sparseAddr;
+        public final TensorAddress sparseAddress;
         public final double[] cells;
-        DenseSubspace(TensorAddress sparseAddr, double[] cells) {
-            this.sparseAddr = sparseAddr;
+        DenseSubspace(TensorAddress sparseAddress, double[] cells) {
+            this.sparseAddress = sparseAddress;
             this.cells = cells;
         }
         @Override public int hashCode() {
-            return Objects.hash(sparseAddr, cells[0]);
+            return Objects.hash(sparseAddress, cells[0]);
         }
         @Override public boolean equals(Object other) {
             if (other instanceof DenseSubspace o) {
-                return sparseAddr.equals(o.sparseAddr) && Arrays.equals(cells, o.cells);
+                return sparseAddress.equals(o.sparseAddress) && Arrays.equals(cells, o.cells);
             }
             return false;
         }
@@ -69,11 +69,11 @@ public class MixedTensor implements Tensor {
         }
         long count = 0;
         for (var block : this.denseSubspaces) {
-            if (index.sparseMap.get(block.sparseAddr) != count) {
+            if (index.sparseMap.get(block.sparseAddress) != count) {
                 throw new IllegalStateException("map vs list mismatch: block #"
                                                 + count
                                                 + " address maps to #"
-                                                + index.sparseMap.get(block.sparseAddr));
+                                                + index.sparseMap.get(block.sparseAddress));
             }
             if (block.cells.length != denseSubspaceSize) {
                 throw new IllegalStateException("dense subspace size mismatch, expected "
@@ -148,7 +148,7 @@ public class MixedTensor implements Tensor {
                     currBlock = blockIterator.next();
                     currOffset = 0;
                 }
-                TensorAddress fullAddr = index.fullAddressOf(currBlock.sparseAddr, currOffset);
+                TensorAddress fullAddr = index.fullAddressOf(currBlock.sparseAddress, currOffset);
                 double value = currBlock.cells[currOffset++];
                 return new Cell(fullAddr, value);
             }
@@ -205,8 +205,8 @@ public class MixedTensor implements Tensor {
         var indexBuilder = new Index.Builder(type);
         List<DenseSubspace> list = new ArrayList<>();
         for (var block : denseSubspaces) {
-            if ( ! addresses.contains(block.sparseAddr)) {  // assumption: addresses only contain the sparse part
-                indexBuilder.addBlock(block.sparseAddr, list.size());
+            if ( ! addresses.contains(block.sparseAddress)) {  // assumption: addresses only contain the sparse part
+                indexBuilder.addBlock(block.sparseAddress, list.size());
                 list.add(block);
             }
         }
