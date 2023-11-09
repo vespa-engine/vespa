@@ -82,15 +82,15 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     @Test
-    public void requireThatTermAnnotationsAreLowerCased() {
+    public void requireThatTermAnnotationsPreserveCasing() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
-        expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("bar")));
+        expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("BaR")));
         for (boolean specialToken : Arrays.asList(true, false)) {
             for (TokenType type : TokenType.values()) {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
                 }
-                assertAnnotations(expected, "foo", newToken("foo", "BAR", type, specialToken));
+                assertAnnotations(expected, "foo", newToken("foo", "BaR", type, specialToken));
             }
         }
     }
