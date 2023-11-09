@@ -86,23 +86,24 @@ public class LinguisticsAnnotator {
     }
 
     /**
-     * Creates a TERM annotation which has the term as annotation (only) if it is different from the
+     * Creates a TERM annotation which has the lowercase value as annotation (only) if it is different from the
      * original.
      *
-     * @param term the term
-     * @param origTerm the original term
+     * @param termToLowerCase the term to lower case
+     * @param origTerm        the original term
      * @return the created TERM annotation
      */
-    public static Annotation termAnnotation(String term, String origTerm) {
-        if (term.equals(origTerm))
+    public static Annotation lowerCaseTermAnnotation(String termToLowerCase, String origTerm) {
+        String annotationValue = toLowerCase(termToLowerCase);
+        if (annotationValue.equals(origTerm)) {
             return new Annotation(AnnotationTypes.TERM);
-        else
-            return new Annotation(AnnotationTypes.TERM, new StringFieldValue(term));
+        }
+        return new Annotation(AnnotationTypes.TERM, new StringFieldValue(annotationValue));
     }
 
     private static void addAnnotation(Span here, String term, String orig, TermOccurrences termOccurrences) {
         if (termOccurrences.termCountBelowLimit(term)) {
-            here.annotate(termAnnotation(term, orig));
+            here.annotate(lowerCaseTermAnnotation(term, orig));
         }
     }
 
@@ -126,20 +127,21 @@ public class LinguisticsAnnotator {
         }
         if (mode == StemMode.ALL) {
             Span where = parent.span((int)token.getOffset(), token.getOrig().length());
+            String lowercasedOrig = toLowerCase(token.getOrig());
             addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
 
-            String lowercasedOrig = toLowerCase(token.getOrig());
-            String termOrIfNullOrig = lowercasedOrig;
+            String lowercasedTerm = lowercasedOrig;
             String term = token.getTokenString();
             if (term != null) {
-                termOrIfNullOrig = term;
+                lowercasedTerm = toLowerCase(term);
             }
-            if (! lowercasedOrig.equals(termOrIfNullOrig)) {
+            if (! lowercasedOrig.equals(lowercasedTerm)) {
                 addAnnotation(where, term, token.getOrig(), termOccurrences);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
-                if (! (lowercasedOrig.equals(stem) || termOrIfNullOrig.equals(stem))) {
+                String lowercasedStem = toLowerCase(stem);
+                if (! (lowercasedOrig.equals(lowercasedStem) || lowercasedTerm.equals(lowercasedStem))) {
                     addAnnotation(where, stem, token.getOrig(), termOccurrences);
                 }
             }
@@ -147,7 +149,7 @@ public class LinguisticsAnnotator {
             String term = token.getTokenString();
             if (term == null || term.trim().isEmpty()) return;
             if (termOccurrences.termCountBelowLimit(term))  {
-                parent.span((int)token.getOffset(), token.getOrig().length()).annotate(termAnnotation(term, token.getOrig()));
+                parent.span((int)token.getOffset(), token.getOrig().length()).annotate(lowerCaseTermAnnotation(term, token.getOrig()));
             }
         }
     }
