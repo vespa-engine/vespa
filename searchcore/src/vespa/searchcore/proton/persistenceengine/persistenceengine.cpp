@@ -544,9 +544,10 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
     auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, std::move(fields), selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
     for (; snap.handlers().valid(); snap.handlers().next()) {
-        IPersistenceHandler::RetrieversSP retrievers = snap.handlers().get()->getDocumentRetrievers(context.getReadConsistency());
+        auto *handler = snap.handlers().get();
+        IPersistenceHandler::RetrieversSP retrievers = handler->getDocumentRetrievers(context.getReadConsistency());
         for (const auto & retriever : *retrievers) {
-            entry->it.add(retriever);
+            entry->it.add(handler->doc_type_name(), retriever);
         }
     }
     entry->handler_sequence = HandlerSnapshot::release(std::move(snap));

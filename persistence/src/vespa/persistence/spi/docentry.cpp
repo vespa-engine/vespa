@@ -71,7 +71,7 @@ DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const Doc
 { }
 
 DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid)
-    : DocEntry(t, metaEnum, docType.size() + sizeof(gid)),
+    : DocEntry(t, metaEnum, sizeof(DocEntry) + docType.size() + sizeof(gid)),
       _type(docType),
       _gid(gid)
 { }

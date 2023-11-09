@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
@@ -30,6 +31,7 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DoubleFieldValue;
 using document::Field;
+using document::GlobalId;
 using document::IntFieldValue;
 using document::StringFieldValue;
 using search::AttributeContext;
@@ -173,7 +175,6 @@ UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Times
       docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
 UnitDR::~UnitDR() = default;
-
 
 struct VisitRecordingUnitDR : UnitDR {
     using VisitedLIDs = std::unordered_set<DocumentIdT>;
@@ -397,6 +398,15 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
     EXPECT_EQUAL(sizeof(DocEntry), res.getEntries()[idx]->getSize());
 }
 
+void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags,
+                const GlobalId &gid, vespalib::stringref doc_type_name)
+{
+    ASSERT_LESS(idx, res.getEntries().size());
+    auto expect = DocEntry::create(timestamp, flags, doc_type_name, gid);
+    EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
+    EXPECT_EQUAL(sizeof(DocEntry) + sizeof(GlobalId) + doc_type_name.size(), res.getEntries()[idx]->getSize());
+}
+
 void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, const Timestamp &timestamp)
 {
     ASSERT_LESS(idx, res.getEntries().size());
@@ -413,6 +423,10 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
     EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(doc), 0u);
+}
+
+GlobalId gid_of(vespalib::stringref id_str) {
+    return DocumentId(id_str).getGlobalId();
 }
 
 TEST("require that custom retrievers work as expected") {
@@ -605,15 +619,15 @@ TEST("require that iterating all versions returns both documents and removes") {
 
 TEST("require that using an empty field set returns meta-data only") {
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
-    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
-    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
-                rem("id:ns:document::3", Timestamp(4), bucket(5))));
+    itr.add(DocTypeName("foo"), doc_with_fields("id:ns:foo::1", Timestamp(2), bucket(5)));
+    itr.add(DocTypeName("document"), cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                                         rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Timestamp(2), DocumentMetaEnum::NONE));
-    TEST_DO(checkEntry(res, 1, Timestamp(3), DocumentMetaEnum::NONE));
-    TEST_DO(checkEntry(res, 2, Timestamp(4), DocumentMetaEnum::REMOVE_ENTRY));
+    TEST_DO(checkEntry(res, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:foo::1"), "foo"));
+    TEST_DO(checkEntry(res, 1, Timestamp(3), DocumentMetaEnum::NONE, gid_of("id:ns:document::2"), "document"));
+    TEST_DO(checkEntry(res, 2, Timestamp(4), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::3"), "document"));
 }
 
 TEST("require that entries in other buckets are skipped") {
@@ -656,12 +670,13 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
     IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
-    TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE));
-    TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY));
+    // Note: empty doc types since we did not pass in an explicit doc type alongside the retrievers
+    TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), ""));
+    TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), ""));
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    TEST_DO(checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE));
+    TEST_DO(checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE, gid_of("id:ns:document::3"), ""));
 
     IterateResult res3 = itr.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
