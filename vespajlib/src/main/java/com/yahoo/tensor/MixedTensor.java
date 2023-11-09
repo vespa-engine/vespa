@@ -60,20 +60,29 @@ public class MixedTensor implements Tensor {
         this.cellBlocks = List.copyOf(cellBlocks);
         this.index = index;
         if (this.blockSize < 1) {
-            throw new IllegalStateException("invalid dense subspace size " + blockSize);
+            throw new IllegalStateException("invalid dense subspace size: " + blockSize);
         }
         long count = 0;
         for (var block : this.cellBlocks) {
             if (index.sparseMap.get(block.sparseAddr) != count) {
-                throw new IllegalStateException("map vs list mismatch");
+                throw new IllegalStateException("map vs list mismatch: block #"
+                                                + count
+                                                + " address maps to #"
+                                                + index.sparseMap.get(block.sparseAddr));
             }
             if (block.cells.length != blockSize) {
-                throw new IllegalStateException("block length mismatch");
+                throw new IllegalStateException("dense subspace size mismatch, expected "
+                                                + blockSize
+                                                + " cells, but got: "
+                                                + block.cells.length);
             }
             ++count;
         }
         if (count != index.sparseMap.size()) {
-            throw new IllegalStateException("map vs list size mismatch");
+            throw new IllegalStateException("mismatch: list size is "
+                                            + count
+                                            + " but map size is "
+                                            + index.sparseMap.size());
         }
     }
 
