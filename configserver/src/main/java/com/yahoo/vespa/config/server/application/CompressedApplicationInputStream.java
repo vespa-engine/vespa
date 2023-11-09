@@ -61,22 +61,25 @@ public class CompressedApplicationInputStream implements AutoCloseable {
      * Close this stream.
      * @throws IOException if the stream could not be closed
      */
-    public void close() throws IOException {
-        reader.close();
-    }
+    public void close() throws IOException { reader.close(); }
 
     File decompress() throws IOException {
         return decompress(uncheck(() -> java.nio.file.Files.createTempDirectory("decompress")).toFile());
     }
 
     public File decompress(File dir) throws IOException {
-        decompressInto(dir.toPath());
-        return dir;
+        try {
+            return decompressInto(dir.toPath());
+        } catch (IOException e) {
+            throw new IOException("Unable to decompress stream into " + dir.getAbsolutePath(), e);
+        }
     }
 
-    private void decompressInto(Path dir) throws IOException {
+    private File decompressInto(Path dir) throws IOException {
         if (!Files.isDirectory(dir)) throw new IllegalArgumentException("Not a directory: " + dir.toAbsolutePath());
-        log.log(Level.FINE, () -> "Application is in " + dir.toAbsolutePath());
+
+        String absolutePath = dir.toFile().getAbsolutePath();
+        log.log(Level.FINE, () -> "Decompress application into " + absolutePath);
         int entries = 0;
         Path tmpFile = null;
         OutputStream tmpStream = null;
@@ -98,9 +101,10 @@ public class CompressedApplicationInputStream implements AutoCloseable {
             if (tmpStream != null) tmpStream.close();
             if (tmpFile != null) Files.deleteIfExists(tmpFile);
         }
-        if (entries == 0) {
-            log.log(Level.WARNING, "Not able to decompress any entries to " + dir);
-        }
+        if (entries == 0)
+            log.log(Level.WARNING, "Unable to decompress any entries into " + absolutePath);
+
+        return dir.toFile();
     }
 
     private static Path createTempFile(Path applicationDir) throws IOException {
