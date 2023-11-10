@@ -151,22 +151,14 @@ public class JsonFormat {
 
         // Create tensor type for mapped dimensions subtype
         TensorType mappedSubType = new TensorType.Builder(mappedDimensions).build();
-
-        // Find all unique indices for the mapped dimensions
-        Set<TensorAddress> denseSubSpaceAddresses = new HashSet<>();
-        tensor.cellIterator().forEachRemaining((cell) -> {
-            denseSubSpaceAddresses.add(subAddress(cell.getKey(), mappedSubType, tensor.type()));
-        });
-
-        // Slice out dense subspace of each and encode dense subspace as a list
-        for (TensorAddress denseSubSpaceAddress : denseSubSpaceAddresses) {
-            IndexedTensor denseSubspace = (IndexedTensor) sliceSubAddress(tensor, denseSubSpaceAddress, mappedSubType);
-
+        TensorType denseSubType = tensor.type().indexedSubtype();
+        for (var subspace : tensor.getInternalDenseSubspaces()) {
+            IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
             if (mappedDimensions.size() == 1) {
-                encodeValues(denseSubspace, cursor.setArray(denseSubSpaceAddress.label(0)), new long[denseSubspace.dimensionSizes().dimensions()], 0);
+                encodeValues(denseSubspace, cursor.setArray(subspace.sparseAddress.label(0)), new long[denseSubspace.dimensionSizes().dimensions()], 0);
             } else {
                 Cursor block = cursor.addObject();
-                encodeAddress(mappedSubType, denseSubSpaceAddress, block.setObject("address"));
+                encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
                 encodeValues(denseSubspace, block.setArray("values"), new long[denseSubspace.dimensionSizes().dimensions()], 0);
             }
 

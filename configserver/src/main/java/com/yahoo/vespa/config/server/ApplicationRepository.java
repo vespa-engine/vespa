@@ -1100,7 +1100,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try {
             return in.decompress(tempDir);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Unable to decompress stream", e);
+            throw new IllegalArgumentException("Unable to decompress application stream", e);
         }
     }
 

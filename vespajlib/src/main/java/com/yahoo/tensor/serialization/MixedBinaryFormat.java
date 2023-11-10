@@ -73,20 +73,16 @@ class MixedBinaryFormat implements BinaryFormat {
     private void encodeCells(GrowableByteBuffer buffer, MixedTensor tensor, Consumer<Double> consumer) {
         List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).toList();
         long denseSubspaceSize = tensor.denseSubspaceSize();
+        var denseSubspaces = tensor.getInternalDenseSubspaces();
         if (sparseDimensions.size() > 0) {
-            buffer.putInt1_4Bytes((int)(tensor.size() / denseSubspaceSize));  // XXX: Size truncation
+            buffer.putInt1_4Bytes(denseSubspaces.size());
         }
-        Iterator<Tensor.Cell> cellIterator = tensor.cellIterator();
-        while (cellIterator.hasNext()) {
-            Tensor.Cell cell = cellIterator.next();
-            for (TensorType.Dimension dimension : sparseDimensions) {
-                int index = tensor.type().indexOfDimension(dimension.name()).orElseThrow(() ->
-                    new IllegalStateException("Dimension not found in address."));
-                buffer.putUtf8String(cell.getKey().label(index));
+        for (var subspace : denseSubspaces) {
+            for (int index = 0; index < subspace.sparseAddress.size(); index++) {
+                buffer.putUtf8String(subspace.sparseAddress.label(index));
             }
-            consumer.accept(cell.getValue());
-            for (int i = 1; i < denseSubspaceSize; ++i ) {
-                consumer.accept(cellIterator.next().getValue());
+            for (double val : subspace.cells) {
+                consumer.accept(val);
             }
         }
     }

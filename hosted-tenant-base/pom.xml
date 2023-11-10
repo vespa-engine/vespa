@@ -262,6 +262,38 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>enforce-no-compile-scope</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <bannedDependencies>
+                                            <level>ERROR</level>
+                                            <excludes>
+                                                <exclude>javax.ws.rs:javax.ws.rs-api:*:jar:compile</exclude>
+                                                <exclude>org.slf4j:slf4j-api:*:jar:compile</exclude>
+                                            </excludes>
+                                            <!-- Single line as maven-enforcer-plugin renders multiline messages badly :( -->
+                                            <message>
+                                                Dependency graph contains 'compile' scoped artifacts that are provided by the container. These may cause the application to fail. Either exclude artifacts (if unused) or override to scope 'provided'.
+                                            </message>
+                                        </bannedDependencies>
+                                        <bannedDependencies>
+                                            <level>WARN</level>
+                                            <excludes>
+                                                <exclude>com.google.inject:guice:*:jar:compile</exclude>
+                                                <exclude>javax.inject:javax.inject:*:jar:compile</exclude>
+                                            </excludes>
+                                            <!-- Single line as maven-enforcer-plugin renders multiline messages badly :( -->
+                                            <message>
+                                                Dependency graph contains 'compile' scoped artifacts that are provided by the container. These may result in unexpected behaviour and will result in a larger application package than necessary. Either exclude artifacts (if unused) or override to scope 'provided'.
+                                            </message>
+                                        </bannedDependencies>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>enforce-just-our-jupiter</id>
                                 <goals>
                                     <goal>enforce</goal>

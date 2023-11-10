@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exist by default in the shared
@@ -42,7 +43,8 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     private LoadBalancerInstance create(LoadBalancerSpec spec) {
         if ( ! spec.settings().isPublicEndpoint())
             throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
-        return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
+        return new LoadBalancerInstance(Optional.empty(),
+                                        Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
                                         Optional.empty(),
@@ -72,7 +74,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint) {
+    public Availability healthy(Endpoint endpoint, Optional<UUID> idSeed) {
         return Availability.ready;
     }
 

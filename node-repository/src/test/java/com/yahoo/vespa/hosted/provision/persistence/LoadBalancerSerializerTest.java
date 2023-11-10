@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
@@ -38,6 +39,7 @@ public class LoadBalancerSerializerTest {
         {
             var loadBalancer = new LoadBalancer(loadBalancerId,
                                                 Optional.of(new LoadBalancerInstance(
+                                                        Optional.of(UUID.randomUUID()),
                                                         Optional.of(DomainName.of("lb-host")),
                                                         Optional.empty(),
                                                         Optional.empty(),
@@ -58,6 +60,7 @@ public class LoadBalancerSerializerTest {
 
             var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
             assertEquals(loadBalancer.id(), serialized.id());
+            assertEquals(loadBalancer.instance().get().idSeed(), serialized.instance().get().idSeed());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
             assertEquals(loadBalancer.instance().get().dnsZone(), serialized.instance().get().dnsZone());
             assertEquals(loadBalancer.instance().get().ports(), serialized.instance().get().ports());
@@ -73,6 +76,7 @@ public class LoadBalancerSerializerTest {
             var loadBalancer = new LoadBalancer(loadBalancerId,
                                                 Optional.of(new LoadBalancerInstance(
                                                         Optional.empty(),
+                                                        Optional.empty(),
                                                         Optional.of("1.2.3.4"),
                                                         Optional.of("fd00::1"),
                                                         Optional.of(new DnsZone("zone-id-1")),
@@ -87,6 +91,7 @@ public class LoadBalancerSerializerTest {
 
             var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
             assertEquals(loadBalancer.id(), serialized.id());
+            assertEquals(loadBalancer.instance().get().idSeed(), serialized.instance().get().idSeed());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
             assertEquals(loadBalancer.instance().get().ip4Address(), serialized.instance().get().ip4Address());
             assertEquals(loadBalancer.instance().get().ip6Address(), serialized.instance().get().ip6Address());

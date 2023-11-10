@@ -7,6 +7,8 @@ import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
+import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
@@ -16,6 +18,8 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -32,6 +36,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider.ProtoHealthChecker;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
@@ -43,7 +48,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class NodeRepository extends AbstractComponent {
+public class NodeRepository extends AbstractComponent implements HealthCheckerProvider {
 
     private final CuratorDb db;
     private final Clock clock;
@@ -65,6 +70,7 @@ public class NodeRepository extends AbstractComponent {
     private final MetricsDb metricsDb;
     private final Orchestrator orchestrator;
     private final int spareCount;
+    private final ProtoHealthChecker healthChecker;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -138,6 +144,7 @@ public class NodeRepository extends AbstractComponent {
         this.metricsDb = metricsDb;
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
+        this.healthChecker = provisionServiceProvider.getHealthChecker();
         nodes.rewrite();
     }
 
@@ -223,6 +230,16 @@ public class NodeRepository extends AbstractComponent {
 
     private static Optional<DockerImage> optionalImage(String image) {
         return Optional.of(image).filter(s -> !s.isEmpty()).map(DockerImage::fromString);
+    }
+
+    @Override
+    public HealthChecker getHealthChecker() {
+        return endpoint -> healthChecker.healthy(endpoint,
+                                                 loadBalancers.list(endpoint.applicationId())
+                                                              .cluster(endpoint.clusterName())
+                                                              .first()
+                                                              .flatMap(LoadBalancer::instance)
+                                                              .flatMap(LoadBalancerInstance::idSeed));
     }
 
 }

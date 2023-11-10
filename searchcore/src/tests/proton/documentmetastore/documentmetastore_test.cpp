@@ -23,7 +23,6 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/hw_info.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <filesystem>
 #include <thread>
@@ -188,7 +187,7 @@ assertWhiteList(const SimpleResult &exp, Blueprint::UP whiteListBlueprint, bool 
 {
     MatchDataLayout mdl;
     MatchData::UP md = mdl.createMatchData();
-    whiteListBlueprint->fetchPostings(search::queryeval::ExecuteInfo::create(strict));
+    whiteListBlueprint->fetchPostings(search::queryeval::ExecuteInfo::createForTest(strict));
     whiteListBlueprint->setDocIdLimit(docIdLimit);
 
     SearchIterator::UP sb = whiteListBlueprint->createSearch(*md, strict);

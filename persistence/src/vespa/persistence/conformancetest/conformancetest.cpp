@@ -26,6 +26,7 @@
 #include <vespa/config-stor-distribution.h>
 #include <limits>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using document::BucketId;
 using document::BucketSpace;
@@ -35,6 +36,8 @@ using document::AssignValueUpdate;
 using document::IntFieldValue;
 using storage::spi::test::makeSpiBucket;
 using storage::spi::test::cloneDocEntry;
+
+using namespace ::testing;
 
 namespace storage::spi {
 
@@ -58,8 +61,7 @@ getSpi(ConformanceTest::PersistenceFactory &factory, const document::TestDocMan 
     return result;
 }
 
-enum SELECTION_FIELDS
-{
+enum class SelectionFields {
     METADATA_ONLY = 0,
     ALL_FIELDS = 1
 };
@@ -68,18 +70,10 @@ CreateIteratorResult
 createIterator(PersistenceProvider& spi,
                const Bucket& b,
                const Selection& sel,
-               IncludedVersions versions = NEWEST_DOCUMENT_ONLY,
-               int fields = ALL_FIELDS)
+               IncludedVersions versions = NEWEST_DOCUMENT_ONLY)
 {
-    document::FieldSet::SP fieldSet;
-    if (fields & ALL_FIELDS) {
-        fieldSet = std::make_shared<document::AllFields>();
-    } else {
-        fieldSet = std::make_shared<document::DocIdOnly>();
-    }
-
     Context context(Priority(0), Trace::TraceLevel(0));
-    return spi.createIterator(b, std::move(fieldSet), sel, versions, context);
+    return spi.createIterator(b, std::make_shared<document::AllFields>(), sel, versions, context);
 }
 
 Selection
@@ -206,14 +200,21 @@ getEntriesFromChunks(const std::vector<Chunk>& chunks)
 DocEntryList
 iterateBucket(PersistenceProvider& spi,
               const Bucket& bucket,
-              IncludedVersions versions)
+              IncludedVersions versions,
+              SelectionFields fields = SelectionFields::ALL_FIELDS)
 {
     DocEntryList ret;
     DocumentSelection docSel("");
     Selection sel(docSel);
+    document::FieldSet::SP field_set;
+    if (fields == SelectionFields::ALL_FIELDS) {
+        field_set = std::make_shared<document::AllFields>();
+    } else {
+        field_set = std::make_shared<document::NoFields>();
+    }
 
     Context context(Priority(0), Trace::TraceLevel(0));
-    CreateIteratorResult iter = spi.createIterator(bucket, std::make_shared<document::AllFields>(), sel, versions, context);
+    CreateIteratorResult iter = spi.createIterator(bucket, std::move(field_set), sel, versions, context);
 
     EXPECT_EQ(Result::ErrorType::NONE, iter.getErrorCode());
 
@@ -1485,6 +1486,35 @@ TEST_F(ConformanceTest, test_iterate_empty_bucket)
 TEST_F(ConformanceTest, test_iterate_missing_bucket)
 {
     test_iterate_empty_or_missing_bucket(false);
+}
+
+TEST_F(ConformanceTest, metadata_iteration_includes_doctype_and_gid)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
+    spi->createBucket(bucket);
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(1), doc1)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(2), doc2)));
+    EXPECT_EQ(Result(), Result(spi->remove(bucket, Timestamp(3), doc1->getId())));
+
+    auto entries = iterateBucket(*spi, bucket, NEWEST_DOCUMENT_OR_REMOVE, SelectionFields::METADATA_ONLY);
+    ASSERT_THAT(entries, SizeIs(2));
+
+    EXPECT_EQ(entries[0]->getMetaEnum(), DocumentMetaEnum::NONE);
+    EXPECT_EQ(entries[0]->getGid(), doc2->getId().getGlobalId());
+    EXPECT_EQ(entries[0]->getTimestamp(), Timestamp(2));
+    EXPECT_EQ(entries[0]->getDocumentType(), "testdoctype1");
+
+    EXPECT_EQ(entries[1]->getMetaEnum(), DocumentMetaEnum::REMOVE_ENTRY);
+    EXPECT_EQ(entries[1]->getGid(), doc1->getId().getGlobalId());
+    EXPECT_EQ(entries[1]->getTimestamp(), Timestamp(3));
+    EXPECT_EQ(entries[1]->getDocumentType(), "testdoctype1");
 }
 
 TEST_F(ConformanceTest, testDeleteBucket)

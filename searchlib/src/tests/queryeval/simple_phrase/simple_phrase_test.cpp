@@ -36,7 +36,7 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
         setEstimate(HitEstimate(hits, (hits == 0)));
     }
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
-        return SearchIterator::UP();
+        return {};
     }
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
         return create_default_filter(strict, constraint);
@@ -143,13 +143,13 @@ public:
     void
     fetchPostings(bool useBlueprint)
     {
-        ExecuteInfo execInfo = ExecuteInfo::create(_strict);
+        ExecuteInfo execInfo = ExecuteInfo::createForTest(_strict);
         if (useBlueprint) {
             _phrase.fetchPostings(execInfo);
             return;
         }
-        for (size_t i = 0; i < _children.size(); ++i) {
-            _children[i]->fetchPostings(execInfo);
+        for (const auto & i : _children) {
+            i->fetchPostings(execInfo);
         }
     }
 
@@ -167,8 +167,8 @@ public:
                 childMatch.add(child_term_field_match_data);
             }
             SimplePhraseSearch::Children children;
-            for (size_t i = 0; i < _children.size(); ++i) {
-                children.push_back(_children[i]->createSearch(*_md, _strict));
+            for (const auto & i : _children) {
+                children.push_back(i->createSearch(*_md, _strict));
             }
             search = std::make_unique<SimplePhraseSearch>(std::move(children),
                                                           MatchData::UP(), childMatch, _order,

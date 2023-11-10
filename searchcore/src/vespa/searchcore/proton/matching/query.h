@@ -23,6 +23,7 @@ class Query
 private:
     using Blueprint = search::queryeval::Blueprint;
     using GlobalFilter = search::queryeval::GlobalFilter;
+    using ExecuteInfo = search::queryeval::ExecuteInfo;
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
     Blueprint::UP           _whiteListBlueprint;
@@ -98,7 +99,7 @@ public:
      * test to verify the original query without optimization.
      **/
     void optimize();
-    void fetchPostings(const search::queryeval::ExecuteInfo & executeInfo) ;
+    void fetchPostings(const ExecuteInfo & executeInfo) ;
 
     void handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,

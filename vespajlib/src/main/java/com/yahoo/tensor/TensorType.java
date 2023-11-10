@@ -90,6 +90,7 @@ public class TensorType {
     private final TensorType mappedSubtype;
     private final TensorType indexedSubtype;
 
+    // only used to initialize the "empty" instance
     private TensorType() {
         this.valueType = Value.DOUBLE;
         this.dimensions = List.of();

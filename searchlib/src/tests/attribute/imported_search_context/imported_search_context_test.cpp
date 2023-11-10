@@ -272,7 +272,7 @@ TEST_F("Strict iterator is marked as strict", Fixture) {
 
 TEST_F("Non-strict blueprint with high hit rate is strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
     auto ctx = f.create_context(word_term("5678"));
-    ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.02));
+    ctx->fetchPostings(queryeval::ExecuteInfo::createForTest(false, 0.02));
     TermFieldMatchData match;
     auto iter = f.create_iterator(*ctx, match, false);
 
@@ -281,7 +281,7 @@ TEST_F("Non-strict blueprint with high hit rate is strict", Fixture(false, FastS
 
 TEST_F("Non-strict blueprint with low hit rate is non-strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
     auto ctx = f.create_context(word_term("5678"));
-    ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.01));
+    ctx->fetchPostings(queryeval::ExecuteInfo::createForTest(false, 0.01));
     TermFieldMatchData match;
     auto iter = f.create_iterator(*ctx, match, false);
 
