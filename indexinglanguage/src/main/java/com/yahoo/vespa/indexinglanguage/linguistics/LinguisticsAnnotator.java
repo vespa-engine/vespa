@@ -128,19 +128,16 @@ public class LinguisticsAnnotator {
             Span where = parent.span((int)token.getOffset(), token.getOrig().length());
 
             String lowercasedOrig = toLowerCase(token.getOrig());
-            String termOrIfNullOrig = lowercasedOrig;
             String term = token.getTokenString();
             if (term != null) {
                 addAnnotation(where, term, token.getOrig(), termOccurrences);
-                termOrIfNullOrig = term;
                 if ( ! term.equals(lowercasedOrig))
                     addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
-                if (! (lowercasedOrig.equals(stem) || termOrIfNullOrig.equals(stem))) {
+                if (! (stem.equals(lowercasedOrig) || stem.equals(term)))
                     addAnnotation(where, stem, token.getOrig(), termOccurrences);
-                }
             }
         } else {
             String term = token.getTokenString();

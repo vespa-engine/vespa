@@ -272,7 +272,6 @@ public class LinguisticsAnnotatorTestCase {
 
         private Token replace(Token token, Map<String, String> replacementTerms) {
             var simpleToken = (SimpleToken)token;
-            System.out.println("Token: " + token + ", getTokenString: " + token.getTokenString());
             simpleToken.setTokenString(replacementTerms.getOrDefault(token.getTokenString(), token.getTokenString()));
             return simpleToken;
         }
