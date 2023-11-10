@@ -196,7 +196,7 @@ Requires: vespa-protobuf = 3.21.12
 Requires: protobuf
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.16.1
+Requires: vespa-onnxruntime = 1.16.2
 
 %description libs
 
