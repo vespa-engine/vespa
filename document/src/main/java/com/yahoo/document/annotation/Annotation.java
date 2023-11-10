@@ -221,9 +221,9 @@ public class Annotation implements Comparable<Annotation> {
 
     @Override
     public String toString() {
-        return type.getName() +  " annotation, " +
-               (value == null ? "no value" : "value '" + value + "'") + ", " +
-               (spanNode == null ? "no span" : "span " + spanNode);
+        return type + " annotation " +
+               ((value == null) ? " (no value)" : " (with value)") +
+               ((spanNode == null) ? " (no span)" : (" with span "+spanNode));
     }
 
 
