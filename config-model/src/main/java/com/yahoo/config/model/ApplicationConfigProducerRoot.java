@@ -34,7 +34,6 @@ import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.routing.Routing;
 
 import java.util.ArrayList;
@@ -283,11 +282,6 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
     @Override
     public HostSystem hostSystem() {
         return hostSystem;
-    }
-
-    public FileDistributionConfigProducer getFileDistributionConfigProducer() {
-        if (admin == null) return null; // no admin if standalone
-        return admin.getFileDistributionConfigProducer();
     }
 
     public Admin getAdmin() {

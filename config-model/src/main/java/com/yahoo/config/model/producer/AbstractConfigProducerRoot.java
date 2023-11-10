@@ -5,7 +5,6 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.ConfigProducerRoot;
 import com.yahoo.vespa.model.Service;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,8 +27,6 @@ public abstract class AbstractConfigProducerRoot extends TreeConfigProducer<AnyC
     public AbstractConfigProducerRoot getRoot() {
         return this;
     }
-
-    public abstract FileDistributionConfigProducer getFileDistributionConfigProducer();
 
     /**
      * Freezes the parent - child connections of the model
