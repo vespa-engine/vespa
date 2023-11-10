@@ -13,10 +13,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -62,7 +59,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
-    private final BooleanFlag makeExclusiveFlag;
     private final ProvisioningThrottler throttler;
 
     HostCapacityMaintainer(NodeRepository nodeRepository,
@@ -73,7 +69,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.makeExclusiveFlag = Flags.MAKE_EXCLUSIVE.bindTo(flagSource);
         this.throttler = new ProvisioningThrottler(nodeRepository, metric);
     }
 
@@ -193,10 +188,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     private List<Node> provisionUntilNoDeficit(NodeList nodeList) {
         List<ClusterCapacity> preprovisionCapacity = preprovisionCapacityFlag.value();
         ApplicationId application = ApplicationId.defaultId();
-        boolean makeExclusive = makeExclusiveFlag.with(FetchVector.Dimension.TENANT_ID, application.tenant().value())
-                                                 .with(FetchVector.Dimension.INSTANCE_ID, application.serializedForm())
-                                                 .with(FetchVector.Dimension.VESPA_VERSION, Vtag.currentVersion.toFullString())
-                                                 .value();
 
         // Worst-case each ClusterCapacity in preprovisionCapacity will require an allocation.
         int maxProvisions = preprovisionCapacity.size();
@@ -204,7 +195,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         var nodesPlusProvisioned = new ArrayList<>(nodeList.asList());
         for (int numProvisions = 0;; ++numProvisions) {
             var nodesPlusProvisionedPlusAllocated = new ArrayList<>(nodesPlusProvisioned);
-            Optional<ClusterCapacity> deficit = allocatePreprovisionCapacity(application, preprovisionCapacity, nodesPlusProvisionedPlusAllocated, makeExclusive);
+            Optional<ClusterCapacity> deficit = allocatePreprovisionCapacity(application, preprovisionCapacity, nodesPlusProvisionedPlusAllocated);
             if (deficit.isEmpty()) {
                 return nodesPlusProvisionedPlusAllocated;
             }
@@ -265,12 +256,11 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
      */
     private Optional<ClusterCapacity> allocatePreprovisionCapacity(ApplicationId application,
                                                                    List<ClusterCapacity> preprovisionCapacity,
-                                                                   ArrayList<Node> mutableNodes,
-                                                                   boolean makeExclusive) {
+                                                                   ArrayList<Node> mutableNodes) {
         for (int clusterIndex = 0; clusterIndex < preprovisionCapacity.size(); ++clusterIndex) {
             ClusterCapacity clusterCapacity = preprovisionCapacity.get(clusterIndex);
             LockedNodeList allNodes = new LockedNodeList(mutableNodes, () -> {});
-            List<Node> candidates = findCandidates(application, clusterCapacity, clusterIndex, allNodes, makeExclusive);
+            List<Node> candidates = findCandidates(application, clusterCapacity, clusterIndex, allNodes);
             int deficit = Math.max(0, clusterCapacity.count() - candidates.size());
             if (deficit > 0) {
                 return Optional.of(clusterCapacity.withCount(deficit));
@@ -283,7 +273,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         return Optional.empty();
     }
 
-    private List<Node> findCandidates(ApplicationId application, ClusterCapacity clusterCapacity, int clusterIndex, LockedNodeList allNodes, boolean makeExclusive) {
+    private List<Node> findCandidates(ApplicationId application, ClusterCapacity clusterCapacity, int clusterIndex, LockedNodeList allNodes) {
         NodeResources nodeResources = toNodeResources(clusterCapacity);
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
@@ -296,7 +286,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes, application, cluster, nodeSpec,
                                                           true, false, allocationContext, nodeRepository().nodes(),
                                                           nodeRepository().resourcesCalculator(), nodeRepository().spareCount(),
-                                                          nodeRepository().exclusiveAllocation(cluster), makeExclusive);
+                                                          nodeRepository().exclusiveAllocation(cluster));
         List<NodeCandidate> nodeCandidates = prioritizer.collect()
                                                         .stream()
                                                         .filter(node -> node.violatesExclusivity(cluster,
@@ -305,8 +295,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                                                  nodeRepository().exclusiveAllocation(cluster),
                                                                                                  false,
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),
-                                                                                                 allNodes,
-                                                                                                 makeExclusive)
+                                                                                                 allNodes)
                                                                         != NodeCandidate.ExclusivityViolation.YES)
                                                         .toList();
         MutableInteger index = new MutableInteger(0);
