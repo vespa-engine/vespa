@@ -124,7 +124,7 @@ class ServletRequestReader {
     private static long resolveMaxContentSize(ConnectorConfig cfg) {
         // Scale based on max heap size if 0
         long maxContentSize = cfg.maxContentSize() != 0
-                ? cfg.maxContentSize() : Math.min(Runtime.getRuntime().maxMemory() / 2, Integer.MAX_VALUE);
+                ? cfg.maxContentSize() : Math.min(Runtime.getRuntime().maxMemory() / 2, Integer.MAX_VALUE - 8);
         log.fine(() -> Text.format("maxContentSize=%d", maxContentSize));
         return maxContentSize;
     }
