@@ -24,9 +24,9 @@ import java.util.Objects;
  * @author arnej
  */
 @Beta
-public class UnpackBitsFromInt8 extends CompositeNode {
+public class UnpackBitsNode extends CompositeNode {
 
-    private static String operationName = "unpack_bits_from_int8";
+    private static String operationName = "unpack_bits";
     private enum EndianNess {
         BIG_ENDIAN("big"), LITTLE_ENDIAN("little");
 
@@ -47,7 +47,7 @@ public class UnpackBitsFromInt8 extends CompositeNode {
     final TensorType.Value targetCellType;
     final EndianNess endian;
 
-    public UnpackBitsFromInt8(ExpressionNode input, TensorType.Value targetCellType, String endianNess) {
+    public UnpackBitsNode(ExpressionNode input, TensorType.Value targetCellType, String endianNess) {
         this.input = input;
         this.targetCellType = targetCellType;
         this.endian = EndianNess.fromId(endianNess);
@@ -141,6 +141,9 @@ public class UnpackBitsFromInt8 extends CompositeNode {
     }
 
     private Meta analyze(TensorType inputType) {
+        if (inputType.valueType() != TensorType.Value.INT8) {
+            throw new IllegalArgumentException("bad " + operationName + "; input must have cell-type int8, but it was: " + inputType.valueType());
+        }
         TensorType inputDenseType = inputType.indexedSubtype();
         if (inputDenseType.rank() == 0) {
             throw new IllegalArgumentException("bad " + operationName + "; input must have indexed dimension, but type was: " + inputType);
@@ -174,7 +177,7 @@ public class UnpackBitsFromInt8 extends CompositeNode {
     public CompositeNode setChildren(List<ExpressionNode> newChildren) {
         if (newChildren.size() != 1)
             throw new IllegalArgumentException("Expected 1 child but got " + newChildren.size());
-        return new UnpackBitsFromInt8(newChildren.get(0), targetCellType, endian.toString());
+        return new UnpackBitsNode(newChildren.get(0), targetCellType, endian.toString());
     }
 
     @Override

@@ -954,7 +954,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorArgmin()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorCellCast()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorMacro()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorUnpackBitsFromInt8()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorUnpackBits()",
       "public final com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode lambdaFunction()",
       "public final com.yahoo.tensor.functions.Reduce$Aggregator tensorReduceAggregator()",
       "public final com.yahoo.tensor.TensorType tensorType(java.util.List)",
@@ -1088,7 +1088,7 @@
       "public static final int HAMMING",
       "public static final int MAP",
       "public static final int MAP_SUBSPACES",
-      "public static final int UNPACK_BITS_FROM_INT8",
+      "public static final int UNPACK_BITS",
       "public static final int REDUCE",
       "public static final int JOIN",
       "public static final int MERGE",
@@ -1711,7 +1711,7 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.searchlib.rankingexpression.rule.UnpackBitsFromInt8" : {
+  "com.yahoo.searchlib.rankingexpression.rule.UnpackBitsNode" : {
     "superClass" : "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
     "interfaces" : [ ],
     "attributes" : [

@@ -128,7 +128,7 @@ schema tensor {
       query(qvec) tensor<float>(x[40])
     }
     function myunpack() {
-      expression: unpack_bits_from_int8(attribute(f7))
+      expression: unpack_bits(attribute(f7))
     }
     first-phase {
       expression: sum(query(para)*myunpack*query(qvec))

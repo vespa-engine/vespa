@@ -13,7 +13,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.searchlib.rankingexpression.rule.UnpackBitsFromInt8;
+import com.yahoo.searchlib.rankingexpression.rule.UnpackBitsNode;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -284,7 +284,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
     }
 
     public static Tensor expandBitTensor(Tensor packed) {
-        var unpacker = new UnpackBitsFromInt8(new ReferenceNode("input"), TensorType.Value.FLOAT, "big");
+        var unpacker = new UnpackBitsNode(new ReferenceNode("input"), TensorType.Value.FLOAT, "big");
         var context = new MapContext();
         context.put("input", new TensorValue(packed));
         return unpacker.evaluate(context).asTensor();

@@ -185,7 +185,7 @@ public class EvaluationTestCase {
                                "],bar:[" +
                                "0,0,0,0, 0,0,0,1," +
                                "1,1,1,1, 1,0,0,0]}",
-                               "unpack_bits_from_int8(tensor0, float, big)",
+                               "unpack_bits(tensor0, float, big)",
                                "tensor<int8>(a{},x[2]):{foo:[0,-1],bar:[1,-8]}");
 
         tester.assertEvaluates("tensor<int8>(a{},x[16]):{foo:[" +
@@ -194,7 +194,7 @@ public class EvaluationTestCase {
                                "],bar:[" +
                                "1,0,0,0, 0,0,0,0," +
                                "0,0,0,1, 1,1,1,1]}",
-                               "unpack_bits_from_int8(tensor0, int8, little)",
+                               "unpack_bits(tensor0, int8, little)",
                                "tensor<int8>(a{},x[2]):{foo:[0,-1],bar:[1,-8]}");
     }
 

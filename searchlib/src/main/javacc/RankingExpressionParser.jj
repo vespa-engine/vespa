@@ -129,7 +129,7 @@ TOKEN :
 
     <MAP: "map"> |
     <MAP_SUBSPACES: "map_subspaces"> |
-    <UNPACK_BITS_FROM_INT8: "unpack_bits_from_int8"> |
+    <UNPACK_BITS: "unpack_bits"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
     <MERGE: "merge"> |
@@ -676,23 +676,23 @@ ExpressionNode tensorMacro() :
 }
 {
     (
-        tensorExpression = tensorUnpackBitsFromInt8()
+        tensorExpression = tensorUnpackBits()
     )
     { return tensorExpression; }
 }
 
-ExpressionNode tensorUnpackBitsFromInt8() :
+ExpressionNode tensorUnpackBits() :
 {
     ExpressionNode tensor;
     String targetCellType = "float";
     String endianNess = "big";
 }
 {
-    <UNPACK_BITS_FROM_INT8> <LBRACE> tensor = expression() (
+    <UNPACK_BITS> <LBRACE> tensor = expression() (
       <COMMA> targetCellType = identifier() (
         <COMMA> endianNess = identifier() )? )? <RBRACE>
     {
-        return new UnpackBitsFromInt8(tensor, TensorType.Value.fromId(targetCellType), endianNess);
+        return new UnpackBitsNode(tensor, TensorType.Value.fromId(targetCellType), endianNess);
     }
 }
 
