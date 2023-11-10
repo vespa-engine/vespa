@@ -84,10 +84,9 @@ class NodeAllocation {
 
     private final NodeRepository nodeRepository;
     private final Optional<String> requiredHostFlavor;
-    private final boolean makeExclusive;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                   Supplier<Integer> nextIndex, NodeRepository nodeRepository, boolean makeExclusive) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
@@ -100,7 +99,6 @@ class NodeAllocation {
                                                                         .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                                                                         .value())
                                           .filter(s -> !s.isBlank());
-        this.makeExclusive = makeExclusive;
     }
 
     /**
@@ -201,7 +199,7 @@ class NodeAllocation {
                                              nodeRepository.exclusiveClusterType(cluster),
                                              nodeRepository.exclusiveAllocation(cluster),
                                              nodeRepository.exclusiveProvisioning(cluster),
-                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes, makeExclusive);
+                                             nodeRepository.zone().cloud().allowHostSharing(), allNodes);
     }
 
     /**
