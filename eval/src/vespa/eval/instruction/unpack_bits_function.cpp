@@ -9,11 +9,13 @@
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/eval/eval/wrap_param.h>
+#include <cassert>
 
 namespace vespalib::eval {
 
 using namespace vespalib::eval::nodes;
 using tensor_function::Lambda;
+using tensor_function::MapSubspaces;
 using tensor_function::wrap_param;
 using tensor_function::unwrap_param;
 using tensor_function::inject;
@@ -39,7 +41,7 @@ void my_unpack_bits_op(InterpretedFunction::State &state, uint64_t param) {
             }
         }
     }
-    Value &result_ref = state.stash.create<DenseValueView>(res_type, TypedCells(unpacked_cells));
+    Value &result_ref = state.stash.create<ValueView>(res_type, state.peek(0).index(), TypedCells(unpacked_cells));
     state.pop_push(result_ref);
 }
 
@@ -55,69 +57,115 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
 
 //-----------------------------------------------------------------------------
 
-bool valid_lambda_params(const Lambda &lambda) {
-    return ((lambda.lambda().num_params() == 2) &&
-            (lambda.bindings().size() == 1));
-}
-
-bool valid_type(const ValueType &type, bool must_be_int8) {
-    return ((type.is_dense()) &&
-            (type.dimensions().size() == 1) &&
-            (!must_be_int8 || (type.cell_type() == CellType::INT8)));
-}
-
 bool compatible_types(const ValueType &packed, const ValueType &unpacked) {
-    return (valid_type(packed, true) && valid_type(unpacked, false) &&
-            (unpacked.dimensions()[0].size == (packed.dimensions()[0].size * 8)));
+    const auto &pdims = packed.dimensions();
+    const auto &udims = unpacked.dimensions();
+    if ((pdims.size() > 0) &&
+        (packed.cell_type() == CellType::INT8) &&
+        (packed.is_dense() && unpacked.is_dense()) &&
+        (pdims.size() == udims.size()))
+    {
+        for (size_t i = 0; i < pdims.size() - 1; ++i) {
+            if (udims[i].size != pdims[i].size) {
+                return false;
+            }
+        }
+        return udims.back().size == (pdims.back().size * 8);
+    }
+    return false;
 }
 
-bool is_little_bit_expr(const Node &node) {
+bool is_little_bit_expr(const Node &node, size_t wanted_param) {
     // 'x%8'
     if (auto mod = as<Mod>(node)) {
         if (auto param = as<Symbol>(mod->lhs())) {
             if (auto eight = as<Number>(mod->rhs())) {
-                return ((param->id() == 0) && (eight->value() == 8.0));
+                return ((param->id() == wanted_param) && (eight->value() == 8.0));
             }
         }
     }
     return false;
 }
 
-bool is_big_bit_expr(const Node &node) {
+bool is_big_bit_expr(const Node &node, size_t wanted_param) {
     // '7-(x%8)'
     if (auto sub = as<Sub>(node)) {
         if (auto seven = as<Number>(sub->lhs())) {
-            return ((seven->value() == 7.0) && is_little_bit_expr(sub->rhs()));
+            return ((seven->value() == 7.0) && is_little_bit_expr(sub->rhs(), wanted_param));
         }
     }
     return false;
 }
 
-bool is_byte_expr(const Node &node) {
+bool is_ident_expr(const Node &node, size_t wanted_param) {
+    // 'x'
+    if (auto param = as<Symbol>(node)) {
+        return (param->id() == wanted_param);
+    }
+    return false;
+}
+
+bool is_byte_expr(const Node &node, size_t wanted_param) {
     // 'x/8'
     if (auto div = as<Div>(node)) {
         if (auto param = as<Symbol>(div->lhs())) {
             if (auto eight = as<Number>(div->rhs())) {
-                return ((param->id() == 0) && (eight->value() == 8.0));
+                return ((param->id() == wanted_param) && (eight->value() == 8.0));
             }
         }
     }
     return false;
 }
 
-bool is_byte_peek(const TensorPeek &peek) {
+bool is_byte_peek(const TensorPeek &peek, size_t dim_cnt) {
     if (auto param = as<Symbol>(peek.param())) {
-        if ((param->id() == 1) &&
-            (peek.dim_list().size() == 1) &&
-            (peek.num_children() == 2))
+        if ((dim_cnt > 0) &&
+            (param->id() == dim_cnt) &&
+            (peek.dim_list().size() == dim_cnt) &&
+            (peek.num_children() == (dim_cnt + 1)))
         {
-            return is_byte_expr(peek.get_child(1));
+            for (size_t i = 0; i < dim_cnt - 1; ++i) {
+                if (!is_ident_expr(peek.get_child(i + 1), i)) {
+                    return false;
+                }
+            }
+            return is_byte_expr(peek.get_child(dim_cnt), dim_cnt - 1);
         }
     }
     return false;
 }
 
 //-----------------------------------------------------------------------------
+
+struct Result {
+    const bool is_unpack_bits;
+    const bool is_big_bitorder;
+    const ValueType &src_type;
+};
+
+Result detect_unpack_bits(const ValueType &dst_type,
+                          size_t num_bindings,
+                          const Function &lambda,
+                          const NodeTypes &types)
+{
+    size_t dim_cnt = dst_type.count_indexed_dimensions();
+    if ((num_bindings == 1) && (lambda.num_params() == (dim_cnt + 1))) {
+        if (auto bit = as<Bit>(lambda.root())) {
+            if (auto peek = as<TensorPeek>(bit->get_child(0))) {
+                const ValueType &src_type = types.get_type(peek->param());
+                if (compatible_types(src_type, dst_type) && is_byte_peek(*peek, dim_cnt)) {
+                    assert(dim_cnt > 0);
+                    if (is_big_bit_expr(bit->get_child(1), dim_cnt - 1)) {
+                        return {true, true, src_type};
+                    } else if (is_little_bit_expr(bit->get_child(1), dim_cnt - 1)) {
+                        return {true, false, src_type};
+                    }
+                }
+            }
+        }
+    }
+    return {false, false, dst_type};
+}
 
 } // namespace <unnamed>
 
@@ -141,21 +189,18 @@ const TensorFunction &
 UnpackBitsFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto lambda = as<Lambda>(expr)) {
-        const ValueType &dst_type = lambda->result_type();
-        if (auto bit = as<Bit>(lambda->lambda().root())) {
-            if (auto peek = as<TensorPeek>(bit->get_child(0))) {
-                const ValueType &src_type = lambda->types().get_type(peek->param());
-                if (compatible_types(src_type, dst_type) &&
-                    valid_lambda_params(*lambda) &&
-                    is_byte_peek(*peek))
-                {
-                    size_t param_idx = lambda->bindings()[0];
-                    if (is_big_bit_expr(bit->get_child(1))) {
-                        return stash.create<UnpackBitsFunction>(dst_type, inject(src_type, param_idx, stash), true);
-                    } else if (is_little_bit_expr(bit->get_child(1))) {
-                        return stash.create<UnpackBitsFunction>(dst_type, inject(src_type, param_idx, stash), false);
-                    }
-                }
+        auto result = detect_unpack_bits(lambda->result_type(), lambda->bindings().size(), lambda->lambda(), lambda->types());
+        if (result.is_unpack_bits) {
+            assert(lambda->bindings().size() == 1);
+            const TensorFunction &input = inject(result.src_type, lambda->bindings()[0], stash);
+            return stash.create<UnpackBitsFunction>(lambda->result_type(), input, result.is_big_bitorder);
+        }
+    }
+    if (auto map_subspaces = as<MapSubspaces>(expr)) {
+        if (auto lambda = as<TensorLambda>(map_subspaces->lambda().root())) {
+            auto result = detect_unpack_bits(lambda->type(), lambda->bindings().size(), lambda->lambda(), map_subspaces->types());
+            if (result.is_unpack_bits) {
+                return stash.create<UnpackBitsFunction>(map_subspaces->result_type(), map_subspaces->child(), result.is_big_bitorder);
             }
         }
     }
