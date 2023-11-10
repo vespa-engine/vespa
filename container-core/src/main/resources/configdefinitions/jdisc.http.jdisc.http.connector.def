@@ -22,8 +22,10 @@ responseHeaderSize                  int      default=65536
 # The accept queue size (also known as accept backlog).
 acceptQueueSize                     int      default=0
 
-# Max content size allowed for requests. Set to -1 to disable.
+# Max content size allowed for requests. Set to -1 to disable. Set to 0 for auto (50% of heap size, max 2GB).
 maxContentSize                      long     default=-1
+
+maxContentSizeErrorMessageTemplate  string   default="Request content length %1$d exceeds limit of %2$d bytes"
 
 # Whether the server socket reuses addresses.
 reuseAddress                        bool     default=true
