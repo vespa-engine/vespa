@@ -280,16 +280,16 @@ public class LoadBalancerProvisioner {
     private Optional<LoadBalancerInstance> provisionFromPool(LoadBalancerSpec spec, NodeType type) {
         if (type != NodeType.tenant) return Optional.empty();
         if ( ! spec.settings().isDefault()) return Optional.empty();
-        if ( ! spec.cloudAccount().isUnspecified()) return Optional.empty();
         if (preProvisionPoolSize.value() == 0) return Optional.empty();
 
         try (Lock lock = db.lock(preProvisionOwner)) {
             long tail = db.readLoadBalancerPoolTail();
             if (tail >= db.readLoadBalancerPoolHead()) return Optional.empty();
             ClusterSpec.Id slot = slotId(tail);
+            Optional<LoadBalancer> candidate = db.readLoadBalancer(new LoadBalancerId(preProvisionOwner, slot));
+            if (candidate.flatMap(LoadBalancer::instance).map(instance -> ! instance.cloudAccount().equals(spec.cloudAccount())).orElse(false)) return Optional.empty();
             db.incrementLoadBalancerPoolTail(); // Acquire now; if we fail below, no one else will use the possibly inconsistent instance.
-            LoadBalancer chosen = db.readLoadBalancer(new LoadBalancerId(preProvisionOwner, slotId(tail)))
-                    .orElseThrow(() -> new IllegalStateException("could not find load balancer " + slot + " in pre-provisioned pool"));
+            LoadBalancer chosen = candidate.orElseThrow(() -> new IllegalStateException("could not find load balancer " + slot + " in pre-provisioned pool"));
             if (chosen.state() != State.active || chosen.instance().isEmpty())
                 throw new IllegalStateException("expected active load balancer in pre-provisioned pool, but got " + chosen);
             service.reallocate(chosen.instance().get(), spec);
