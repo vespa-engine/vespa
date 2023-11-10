@@ -177,6 +177,28 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testUnpack() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates("tensor<float>(a{},x[16]):{foo:[" +
+                               "0,0,0,0, 0,0,0,0," +
+                               "1,1,1,1, 1,1,1,1" +
+                               "],bar:[" +
+                               "0,0,0,0, 0,0,0,1," +
+                               "1,1,1,1, 1,0,0,0]}",
+                               "unpack_bits(tensor0, float, big)",
+                               "tensor<int8>(a{},x[2]):{foo:[0,-1],bar:[1,-8]}");
+
+        tester.assertEvaluates("tensor<int8>(a{},x[16]):{foo:[" +
+                               "0,0,0,0, 0,0,0,0," +
+                               "1,1,1,1, 1,1,1,1" +
+                               "],bar:[" +
+                               "1,0,0,0, 0,0,0,0," +
+                               "0,0,0,1, 1,1,1,1]}",
+                               "unpack_bits(tensor0, int8, little)",
+                               "tensor<int8>(a{},x[2]):{foo:[0,-1],bar:[1,-8]}");
+    }
+
+    @Test
     public void testMapSubspaces() {
         EvaluationTester tester = new EvaluationTester();
         tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3],bar:[7,10]}",
