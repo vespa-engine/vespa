@@ -28,7 +28,6 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -316,7 +314,6 @@ public abstract class Container extends AbstractService implements
                             .enabled(rpcServerEnabled())
                             .port(getRpcPort())
                             .slobrokId(serviceSlobrokId()))
-                .filedistributor(filedistributorConfig())
                 .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
                 .clustername(clusterName != null ? clusterName : "")
                 .nodeIndex(index)
@@ -329,16 +326,6 @@ public abstract class Container extends AbstractService implements
     
     private String serviceSlobrokId() {
         return "vespa/service/" + getConfigId();
-    }
-
-    private Filedistributor.Builder filedistributorConfig() {
-        Filedistributor.Builder builder = new Filedistributor.Builder();
-
-        FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
-        if (fileDistribution != null) {
-            builder.configid(fileDistribution.getConfigProducer(getHost().getHost()).getConfigId());
-        }
-        return builder;
     }
 
     @Override

@@ -36,7 +36,6 @@ import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
-import com.yahoo.net.HostName;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.AbstractService;
@@ -648,14 +647,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void qrconfig_is_produced() throws IOException, SAXException {
         QrConfig qr = getQrConfig(new TestProperties());
-        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
         assertEquals("default.container.0", qr.discriminator());
         assertEquals(19102, qr.rpc().port());
         assertEquals("vespa/service/default/container.0", qr.rpc().slobrokId());
         assertTrue(qr.rpc().enabled());
         assertEquals("", qr.rpc().host());
         assertFalse(qr.restartOnDeploy());
-        assertEquals("filedistribution/" + hostname, qr.filedistributor().configid());
+        assertEquals("", qr.filedistributor().configid()); // Not used, will be removed in Vespa 9
         assertEquals(50.0, qr.shutdown().timeout(), 0.00000000000001);
         assertFalse(qr.shutdown().dumpHeapOnTimeout());
     }

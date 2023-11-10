@@ -24,8 +24,6 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +80,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
-    private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
     public Admin(TreeConfigProducer<AnyConfigProducer> parent,
@@ -96,7 +93,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.multitenant = multitenant;
-        this.fileDistribution = new FileDistributionConfigProducer(parent);
         this.applicationType = applicationType;
         this.logctlSpecs.addAll(defaultLogctlSpecs());
     }
@@ -221,10 +217,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         zooKeepersConfigProvider.getConfig(builder);
     }
 
-    public FileDistributionConfigProducer getFileDistributionConfigProducer() {
-        return fileDistribution;
-    }
-
     /**
      * Adds services to all hosts in the system.
      */
@@ -258,7 +250,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         addConfigSentinel(deployState, host);
         addLogd(deployState, host);
         addConfigProxy(deployState, host);
-        addFileDistribution(host);
         if (logForwarderConfig != null) {
             boolean actuallyAdd = true;
             var membership = host.spec().membership();
@@ -297,11 +288,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     public void addAndInitializeService(DeployState deployState, HostResource host, AbstractService service) {
         service.setHostResource(host);
         service.initService(deployState);
-    }
-
-    private void addFileDistribution(HostResource host) {
-        var configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
-        fileDistribution.addProvider(host.getHost(), configProvider);
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host
