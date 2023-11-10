@@ -340,6 +340,11 @@ public class PermanentFlags {
             "Takes effect on next redeployment",
             INSTANCE_ID);
 
+    public static final UnboundIntFlag PRE_PROVISIONED_LB_COUNT = defineIntFlag(
+            "pre-provisioned-lb-count", 0,
+            "Number of application load balancers to have pre-provisioned at any time",
+            "Takes immediate effect");
+
     public static final UnboundLongFlag CONFIG_SERVER_SESSION_EXPIRY_TIME = defineLongFlag(
             "config-server-session-expiry-time", 3600,
             "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +

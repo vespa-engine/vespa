@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
@@ -26,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public class LoadBalancerServiceMock implements LoadBalancerService {
 
-    private record Key(ApplicationId application, ClusterSpec.Id cluster, UUID idSeed) {
+    private record Key(ApplicationId application, ClusterSpec.Id cluster, String idSeed) {
         @Override public int hashCode() { return idSeed == null ? Objects.hash(application, cluster) : Objects.hash(idSeed); }
         @Override public boolean equals(Object o) {
             if (o == this) return true;
@@ -69,9 +68,8 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec, Optional<String> idSeed) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
-        Optional<UUID> idSeed = uuid.getAndSet(false) ? Optional.of(UUID.fromString("c11272ab-d20e-4c86-b808-ffedaa00c480")) : Optional.empty();
         var instance = new LoadBalancerInstance(
                 idSeed,
                 Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
@@ -104,7 +102,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
 
     @Override
     public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
-        instances.put(new Key(spec.application(), spec.cluster(), null),
+        instances.put(new Key(spec.application(), spec.cluster(), provisioned.idSeed().get()),
                       requireNonNull(instances.remove(new Key(null, null, provisioned.idSeed().get())))); // ᕙ༼◕_◕༽ᕤ
     }
 
@@ -117,7 +115,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint, Optional<UUID> idSeed) {
+    public Availability healthy(Endpoint endpoint, Optional<String> idSeed) {
         return Availability.ready;
     }
 

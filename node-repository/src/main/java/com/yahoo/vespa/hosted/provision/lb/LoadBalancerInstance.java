@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Represents a load balancer instance. This contains the fields that are owned by a {@link LoadBalancerService} and is
@@ -21,7 +20,7 @@ import java.util.UUID;
  */
 public class LoadBalancerInstance {
 
-    private final Optional<UUID> idSeed;
+    private final Optional<String> idSeed;
     private final Optional<DomainName> hostname;
     private final Optional<String> ip4Address;
     private final Optional<String> ip6Address;
@@ -33,7 +32,7 @@ public class LoadBalancerInstance {
     private final List<PrivateServiceId> serviceIds;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<UUID> idSeed, Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
+    public LoadBalancerInstance(Optional<String> idSeed, Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
                                 ZoneEndpoint settings, List<PrivateServiceId> serviceIds, CloudAccount cloudAccount) {
         this.idSeed = Objects.requireNonNull(idSeed, "idSeed must be non-null");
@@ -55,7 +54,7 @@ public class LoadBalancerInstance {
     }
 
     /** A unique seed to use when generating cloud-specific resource IDs for this load balancer instance. */
-    public Optional<UUID> idSeed() {
+    public Optional<String> idSeed() {
         return idSeed;
     }
 

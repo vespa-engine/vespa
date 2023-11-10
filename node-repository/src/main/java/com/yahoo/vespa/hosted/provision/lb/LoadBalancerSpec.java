@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,12 +19,8 @@ public record LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster
                                ZoneEndpoint settings, CloudAccount cloudAccount) {
 
     public static final ApplicationId preProvisionOwner = ApplicationId.from("hosted-vespa", "pre-provision", "default");
-    public static LoadBalancerSpec preProvisionSpec(int slot) {
-        return new LoadBalancerSpec(preProvisionOwner,
-                                    ClusterSpec.Id.from("slot-" + slot),
-                                    Set.of(),
-                                    ZoneEndpoint.defaultEndpoint,
-                                    CloudAccount.empty);
+    public static LoadBalancerSpec preProvisionSpec(ClusterSpec.Id slot) {
+        return new LoadBalancerSpec(preProvisionOwner, slot, Set.of(), ZoneEndpoint.defaultEndpoint, CloudAccount.empty);
     }
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
