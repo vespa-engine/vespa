@@ -100,7 +100,12 @@ convertChangeVectorToSlime(const AttributeVector &v, Cursor &object)
 void
 convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &object)
 {
-    convertMemoryUsageToSlime(postingBase.getMemoryUsage(), object.setObject("memoryUsage"));
+    auto& cursor = object.setObject("memory_usage");
+    auto memory_usage = postingBase.getMemoryUsage();
+    convertMemoryUsageToSlime(memory_usage.total, cursor.setObject("total"));
+    convertMemoryUsageToSlime(memory_usage.btrees, cursor.setObject("btrees"));
+    convertMemoryUsageToSlime(memory_usage.short_arrays, cursor.setObject("short_arrays"));
+    convertMemoryUsageToSlime(memory_usage.bitvectors, cursor.setObject("bitvectors"));
 }
 
 vespalib::string
@@ -173,7 +178,7 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
         }
         const IPostingListAttributeBase *postingBase = attr.getIPostingListAttributeBase();
         if (postingBase) {
-            convertPostingBaseToSlime(*postingBase, object.setObject("postingList"));
+            convertPostingBaseToSlime(*postingBase, object.setObject("posting_store"));
         }
         const auto* tensor_attr = attr.asTensorAttribute();
         if (tensor_attr) {

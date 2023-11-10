@@ -66,7 +66,7 @@ protected:
                        uint32_t toLid, const vespalib::datastore::EntryComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
-    vespalib::MemoryUsage getMemoryUsage() const override;
+    attribute::PostingStoreMemoryUsage getMemoryUsage() const override;
     bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) override;
     bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) override;
 
