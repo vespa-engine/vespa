@@ -34,8 +34,8 @@ public class LinguisticsAnnotator {
         final Map<String, Integer> termOccurrences = new HashMap<>();
         final int maxOccurrences;
 
-        public TermOccurrences(int maxOccurences) {
-            this.maxOccurrences = maxOccurences;
+        public TermOccurrences(int maxOccurrences) {
+            this.maxOccurrences = maxOccurrences;
         }
 
         boolean termCountBelowLimit(String term) {
@@ -126,16 +126,15 @@ public class LinguisticsAnnotator {
         }
         if (mode == StemMode.ALL) {
             Span where = parent.span((int)token.getOffset(), token.getOrig().length());
-            addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
 
             String lowercasedOrig = toLowerCase(token.getOrig());
             String termOrIfNullOrig = lowercasedOrig;
             String term = token.getTokenString();
             if (term != null) {
-                termOrIfNullOrig = term;
-            }
-            if (! lowercasedOrig.equals(termOrIfNullOrig)) {
                 addAnnotation(where, term, token.getOrig(), termOccurrences);
+                termOrIfNullOrig = term;
+                if ( ! term.equals(lowercasedOrig))
+                    addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
