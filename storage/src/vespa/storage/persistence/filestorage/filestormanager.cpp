@@ -230,7 +230,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
                                                                      numResponseThreads, 10000,
                                                                      true, selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
-        LOG(spam, "Setting up the disk");
+        LOG(spam, "Setting up %u persistence threads", numThreads);
         for (uint32_t i = 0; i < numThreads; i++) {
             _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(_component),
                                                                    *_filestorHandler, i % numStripes, _component));
@@ -241,13 +241,14 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(config, _threads.size());
         _filestorHandler->reconfigure_dynamic_throttler(updated_dyn_throttle_params);
     }
-    // TODO remove once desired dynamic throttling behavior is set in stone
+    // TODO remove once desired throttling behavior is set in stone
     {
         _filestorHandler->use_dynamic_operation_throttling(use_dynamic_throttling);
         _filestorHandler->set_throttle_apply_bucket_diff_ops(!throttle_merge_feed_ops);
         std::lock_guard guard(_lock);
         for (auto& ph : _persistenceHandlers) {
             ph->set_throttle_merge_feed_ops(throttle_merge_feed_ops);
+            ph->set_use_per_document_throttled_delete_bucket(config.usePerDocumentThrottledDeleteBucket);
         }
     }
 }
