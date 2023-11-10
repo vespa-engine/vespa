@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exist by default in the shared
@@ -31,13 +30,18 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec, Optional<String> idSeed) {
         return create(spec);
     }
 
     @Override
     public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
         return instance.with(spec.reals(), spec.settings(), Optional.empty());
+    }
+
+    @Override
+    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
+        throw new UnsupportedOperationException("reallocate is not supported with " + getClass());
     }
 
     private LoadBalancerInstance create(LoadBalancerSpec spec) {
@@ -74,7 +78,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint, Optional<UUID> idSeed) {
+    public Availability healthy(Endpoint endpoint, Optional<String> idSeed) {
         return Availability.ready;
     }
 

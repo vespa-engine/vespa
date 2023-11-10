@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
-import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Injectable component that provides provision service for load-balancers and hosts
@@ -27,7 +25,7 @@ public interface ProvisionServiceProvider {
     }
 
     interface ProtoHealthChecker {
-        Availability healthy(Endpoint endpoint, Optional<UUID> idSeed);
+        Availability healthy(Endpoint endpoint, Optional<String> idSeed);
     }
 
 }
