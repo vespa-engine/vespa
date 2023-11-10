@@ -4,6 +4,8 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.text.Text;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
@@ -105,12 +107,26 @@ class ServletRequestReader {
             Janitor janitor,
             RequestMetricReporter metricReporter) {
         this.req = Objects.requireNonNull(req);
-        long maxContentSize = RequestUtils.getConnector(req).connectorConfig().maxContentSize();
+        var cfg = RequestUtils.getConnector(req).connectorConfig();
+        long maxContentSize = resolveMaxContentSize(cfg);
+        var msgTemplate = resolveMaxContentSizeErrorMessage(cfg);
         this.requestContentChannel = maxContentSize >= 0
-                ? new ByteLimitedContentChannel(Objects.requireNonNull(requestContentChannel), maxContentSize)
+                ? new ByteLimitedContentChannel(Objects.requireNonNull(requestContentChannel), maxContentSize, msgTemplate)
                 : Objects.requireNonNull(requestContentChannel);
         this.janitor = Objects.requireNonNull(janitor);
         this.metricReporter = Objects.requireNonNull(metricReporter);
+    }
+
+    private static String resolveMaxContentSizeErrorMessage(ConnectorConfig cfg) {
+        return cfg.maxContentSizeErrorMessageTemplate().strip();
+    }
+
+    private static long resolveMaxContentSize(ConnectorConfig cfg) {
+        // Scale based on max heap size if 0
+        long maxContentSize = cfg.maxContentSize() != 0
+                ? cfg.maxContentSize() : Math.min(Runtime.getRuntime().maxMemory() / 2, Integer.MAX_VALUE);
+        log.fine(() -> Text.format("maxContentSize=%d", maxContentSize));
+        return maxContentSize;
     }
 
     /** Register read listener to start reading request data */
@@ -268,12 +284,14 @@ class ServletRequestReader {
 
     private static class ByteLimitedContentChannel implements ContentChannel {
         private final long maxContentSize;
+        private final String messageTemplate;
         private final AtomicLong bytesWritten = new AtomicLong();
         private final ContentChannel delegate;
 
-        ByteLimitedContentChannel(ContentChannel delegate, long maxContentSize) {
+        ByteLimitedContentChannel(ContentChannel delegate, long maxContentSize, String messageTemplate) {
             this.delegate = delegate;
             this.maxContentSize = maxContentSize;
+            this.messageTemplate = messageTemplate;
         }
 
         @Override
@@ -281,8 +299,7 @@ class ServletRequestReader {
             long written = bytesWritten.addAndGet(buf.remaining());
             if (written > maxContentSize) {
                 handler.failed(new RequestException(
-                        Response.Status.REQUEST_TOO_LONG,
-                        "Request content length %d exceeds limit of %d bytes".formatted(written, maxContentSize)));
+                        Response.Status.REQUEST_TOO_LONG, messageTemplate.formatted(written, maxContentSize)));
                 return;
             }
             delegate.write(buf, handler);
