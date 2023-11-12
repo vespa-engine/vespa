@@ -19,8 +19,8 @@ public record LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster
                                ZoneEndpoint settings, CloudAccount cloudAccount) {
 
     public static final ApplicationId preProvisionOwner = ApplicationId.from("hosted-vespa", "pre-provision", "default");
-    public static LoadBalancerSpec preProvisionSpec(ClusterSpec.Id slot) {
-        return new LoadBalancerSpec(preProvisionOwner, slot, Set.of(), ZoneEndpoint.defaultEndpoint, CloudAccount.empty);
+    public static LoadBalancerSpec preProvisionSpec(ClusterSpec.Id slot, CloudAccount account) {
+        return new LoadBalancerSpec(preProvisionOwner, slot, Set.of(), ZoneEndpoint.defaultEndpoint, account);
     }
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,

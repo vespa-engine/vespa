@@ -292,6 +292,7 @@ public class LoadBalancerProvisioner {
             LoadBalancer chosen = candidate.orElseThrow(() -> new IllegalStateException("could not find load balancer " + slot + " in pre-provisioned pool"));
             if (chosen.state() != State.active || chosen.instance().isEmpty())
                 throw new IllegalStateException("expected active load balancer in pre-provisioned pool, but got " + chosen);
+            log.log(Level.INFO, "Using " + chosen + " from pre-provisioned pool");
             service.reallocate(chosen.instance().get(), spec);
             db.removeLoadBalancer(chosen.id()); // Using a transaction to remove this, and write the instance, would be better, but much hassle.
             return chosen.instance(); // Should be immediately written again outside of this!
@@ -326,8 +327,9 @@ public class LoadBalancerProvisioner {
         // No need for lock while we provision, since we'll write atomically only after we're done, and the job lock ensures single writer.
         while (head - tail < size) {
             ClusterSpec.Id slot = slotId(head);
+            LoadBalancerSpec spec = preProvisionSpec(slot, nodeRepository.zone().cloud().account());
             db.writeLoadBalancer(new LoadBalancer(new LoadBalancerId(preProvisionOwner, slot),
-                                                  Optional.of(service.provision(preProvisionSpec(slot), Optional.of(slot.value()))),
+                                                  Optional.of(service.provision(spec, Optional.of(slot.value()))),
                                                   State.active, // Keep the expirer away.
                                                   nodeRepository.clock().instant()),
                                  null);
