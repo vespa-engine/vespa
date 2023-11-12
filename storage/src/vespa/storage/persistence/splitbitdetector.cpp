@@ -56,17 +56,17 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     };
     std::vector<DocInfo> _firstDocs;
 
-    BucketVisitor(const document::BucketIdFactory& factory);
-    ~BucketVisitor();
+    explicit BucketVisitor(const document::BucketIdFactory& factory);
+    ~BucketVisitor() override;
 
-    void process(spi::DocEntry& entry) override {
-        assert(entry.getDocumentId());
+    void process(std::unique_ptr<spi::DocEntry> entry) override {
+        assert(entry->getDocumentId());
         ++_docCount;
 
-        const document::DocumentId& id(*entry.getDocumentId());
+        const document::DocumentId& id(*entry->getDocumentId());
         document::BucketId bucket = _factory.getBucketId(id);
         if (_firstDocs.size() < keepFirstCount) {
-            _firstDocs.push_back(DocInfo(entry.getTimestamp(), id, bucket));
+            _firstDocs.emplace_back(entry->getTimestamp(), id, bucket);
         }
 
         if (_refBucket.getRawId() == 0) {
@@ -83,8 +83,6 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
             _conflictId = id;
             _conflictBucket = bucket;
         }
-
-        return;
     }
 
     void printEntrySummary(std::ostream& out) {

@@ -23,8 +23,8 @@ class BucketProcessor
 public:
     class EntryProcessor {
     public:
-        virtual ~EntryProcessor() {};
-        virtual void process(spi::DocEntry&) = 0;
+        virtual ~EntryProcessor() = default;
+        virtual void process(std::unique_ptr<spi::DocEntry>) = 0;
     };
 
     static void iterateAll(spi::PersistenceProvider&,

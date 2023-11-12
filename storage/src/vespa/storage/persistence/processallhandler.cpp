@@ -29,7 +29,8 @@ public:
     explicit StatEntryProcessor(std::ostream& o)
         : ost(o) {};
 
-    void process(spi::DocEntry& e) override {
+    void process(std::unique_ptr<spi::DocEntry> entry) override {
+        const auto& e = *entry;
         ost << "  Timestamp: " << e.getTimestamp() << ", ";
         if (e.getDocument() != nullptr) {
             ost << "Doc(" << e.getDocument()->getId() << ")"

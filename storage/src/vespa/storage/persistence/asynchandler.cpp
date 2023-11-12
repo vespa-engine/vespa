@@ -7,6 +7,7 @@
 #include "bucketprocessor.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/docentry.h>
+#include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
 #include <vespa/persistence/spi/catchresult.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/update/documentupdate.h>
@@ -71,7 +72,7 @@ private:
 
 template<class FunctionType>
 std::unique_ptr<ResultTask>
-makeResultTask(FunctionType &&function) {
+makeResultTask(FunctionType&& function) {
     return std::make_unique<LambdaResultTask<std::decay_t<FunctionType>>>
             (std::forward<FunctionType>(function));
 }
@@ -119,8 +120,8 @@ public:
         : _to_remove(to_remove)
     {}
 
-    void process(spi::DocEntry& entry) override {
-        _to_remove.emplace_back(*entry.getDocumentId(), entry.getTimestamp());
+    void process(std::unique_ptr<spi::DocEntry> entry) override {
+        _to_remove.emplace_back(*entry->getDocumentId(), entry->getTimestamp());
     }
 private:
     DocumentIdsAndTimeStamps & _to_remove;
@@ -202,6 +203,28 @@ AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::
     return tracker;
 }
 
+void
+AsyncHandler::on_delete_bucket_complete(const document::Bucket& bucket) const {
+    StorBucketDatabase& db(_env.getBucketDatabase(bucket.getBucketSpace()));
+    StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "onDeleteBucket");
+    if (entry.exists() && entry->getMetaCount() > 0) {
+        LOG(debug, "onDeleteBucket(%s): Bucket DB entry existed. Likely "
+                   "active operation when delete bucket was queued. "
+                   "Updating bucket database to keep it in sync with file. "
+                   "Cannot delete bucket from bucket database at this "
+                   "point, as it can have been intentionally recreated "
+                   "after delete bucket had been sent",
+            bucket.getBucketId().toString().c_str());
+        api::BucketInfo info(0, 0, 0);
+        // Only set document counts/size; retain ready/active state.
+        info.setReady(entry->getBucketInfo().isReady());
+        info.setActive(entry->getBucketInfo().isActive());
+
+        entry->setBucketInfo(info);
+        entry.write();
+    }
+}
+
 MessageTracker::UP
 AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
 {
@@ -216,30 +239,81 @@ AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::
         return tracker;
     }
 
-    auto task = makeResultTask([this, tracker = std::move(tracker), bucket=cmd.getBucket()](spi::Result::UP ignored) {
+    auto task = makeResultTask([this, tracker = std::move(tracker), bucket = cmd.getBucket()]([[maybe_unused]] spi::Result::UP ignored) {
         // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
-        (void) ignored;
-        StorBucketDatabase &db(_env.getBucketDatabase(bucket.getBucketSpace()));
-        StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "onDeleteBucket");
-        if (entry.exists() && entry->getMetaCount() > 0) {
-            LOG(debug, "onDeleteBucket(%s): Bucket DB entry existed. Likely "
-                       "active operation when delete bucket was queued. "
-                       "Updating bucket database to keep it in sync with file. "
-                       "Cannot delete bucket from bucket database at this "
-                       "point, as it can have been intentionally recreated "
-                       "after delete bucket had been sent",
-                bucket.getBucketId().toString().c_str());
-            api::BucketInfo info(0, 0, 0);
-            // Only set document counts/size; retain ready/active state.
-            info.setReady(entry->getBucketInfo().isReady());
-            info.setActive(entry->getBucketInfo().isActive());
-
-            entry->setBucketInfo(info);
-            entry.write();
-        }
+        on_delete_bucket_complete(bucket);
         tracker->sendReply();
     });
     _spi.deleteBucketAsync(bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+    return tracker;
+}
+
+namespace {
+
+class GatherBucketMetadata : public BucketProcessor::EntryProcessor {
+    std::vector<std::unique_ptr<spi::DocEntry>>& _entries;
+public:
+    explicit GatherBucketMetadata(std::vector<std::unique_ptr<spi::DocEntry>>& entries) noexcept
+        : _entries(entries)
+    {
+    }
+    ~GatherBucketMetadata() override = default;
+
+    void process(std::unique_ptr<spi::DocEntry> entry) override {
+        _entries.emplace_back(std::move(entry));
+    }
+};
+
+}
+
+MessageTracker::UP
+AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
+{
+    tracker->setMetric(_env._metrics.deleteBuckets);
+    LOG(debug, "DeleteBucket(%s) (with throttling)", cmd.getBucketId().toString().c_str());
+    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
+        _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
+                                               api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
+    }
+    spi::Bucket spi_bucket(cmd.getBucket());
+    if (!checkProviderBucketInfoMatches(spi_bucket, cmd.getBucketInfo())) {
+        return tracker;
+    }
+
+    std::vector<std::unique_ptr<spi::DocEntry>> meta_entries;
+    {
+        GatherBucketMetadata meta_proc(meta_entries);
+        auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
+        // Note: we only explicitly remove Put entries; tombstones are expected to be
+        // cheap and will be purged as part of the subsequent DeleteBucket operation.
+        // (Additionally, the SPI does not expose a way to remove a remove...)
+        BucketProcessor::iterateAll(_spi, spi_bucket, "true",
+                                    std::make_shared<document::NoFields>(),
+                                    meta_proc, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+    }
+    auto invoke_delete_on_zero_refs = vespalib::makeSharedLambdaCallback([this, spi_bucket, bucket = cmd.getBucket(), tracker = std::move(tracker)]() mutable {
+        LOG(debug, "%s: about to invoke deleteBucketAsync", bucket.toString().c_str());
+        auto task = makeResultTask([this, tracker = std::move(tracker), bucket]([[maybe_unused]] spi::Result::UP ignored) {
+            LOG(debug, "%s: deleteBucket callback invoked; sending reply", bucket.toString().c_str());
+            on_delete_bucket_complete(bucket);
+            tracker->sendReply();
+        });
+        _spi.deleteBucketAsync(spi_bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket.getBucketId(), std::move(task)));
+    });
+    auto& throttler = _env._fileStorHandler.operation_throttler();
+    for (auto& meta : meta_entries) {
+        auto token = throttler.blocking_acquire_one();
+        std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{meta->getDocumentType(), meta->getGid(), meta->getTimestamp()}};
+        auto task = makeResultTask([bucket = cmd.getBucket(), token = std::move(token), invoke_delete_on_zero_refs]([[maybe_unused]] spi::Result::UP ignored) {
+            LOG(spam, "%s: completed removeByGidAsync operation", bucket.toString().c_str());
+            // Nothing else clever to do here. Throttle token and deleteBucket dispatch refs dropped implicitly.
+        });
+        LOG(spam, "%s: about to invoke removeByGidAsync(%s, %s, %zu)", cmd.getBucket().toString().c_str(),
+            vespalib::string(meta->getDocumentType()).c_str(), meta->getGid().toString().c_str(), meta->getTimestamp().getValue());
+        _spi.removeByGidAsync(spi_bucket, std::move(to_remove), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+    }
+    // Actual bucket deletion happens when all remove ops have ACKed and dropped their refs to the destructor-invoked
+    // deleteBucket dispatcher. Note: this works transparently when the bucket is empty (no refs; happens immediately).
     return tracker;
 }
 

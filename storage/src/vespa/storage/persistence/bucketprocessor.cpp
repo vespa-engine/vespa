@@ -2,6 +2,7 @@
 
 #include "bucketprocessor.h"
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
@@ -68,8 +69,8 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
             throw std::runtime_error(ss.str());
         }
 
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            processor.process(*result.getEntries()[i]);
+        for (auto& entry : result.steal_entries()) {
+            processor.process(std::move(entry));
         }
 
         if (result.isCompleted()) {
