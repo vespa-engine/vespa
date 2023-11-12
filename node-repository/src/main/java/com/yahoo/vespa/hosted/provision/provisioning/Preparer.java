@@ -90,7 +90,7 @@ public class Preparer {
     }
 
     private ApplicationMutex parentLockOrNull(AllocationParams params, NodeType type) {
-        return NodeCandidate.canMakeHostExclusive(params.makeExclusive(), type, nodeRepository.zone().cloud().allowHostSharing()) ?
+        return NodeCandidate.canMakeHostExclusive(type, nodeRepository.zone().cloud().allowHostSharing()) ?
                nodeRepository.applications().lock(InfrastructureApplication.withNodeType(type.parentNodeType()).id()) :
                null;
     }
