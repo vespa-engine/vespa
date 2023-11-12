@@ -63,8 +63,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new DeprovisionedExpirer(nodeRepository, defaults.deprovisionedExpiry, metric));
 
         provisionServiceProvider.getLoadBalancerService()
-                                .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
-                                .ifPresent(maintainers::add);
+                .ifPresent(lbService -> {
+                    maintainers.add(new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric));
+                    maintainers.add(new LoadBalancerPreProvisioner(nodeRepository, defaults.loadBalancerPreProvisionerInterval, lbService, metric));
+                });
         provisionServiceProvider.getHostProvisioner()
                                 .map(hostProvisioner -> List.of(
                                         new HostCapacityMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric),
@@ -110,6 +112,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
+        private final Duration loadBalancerPreProvisionerInterval;
         private final Duration dynamicProvisionerInterval;
         private final Duration hostDeprovisionerInterval;
         private final Duration hostResumeProvisionerInterval;
@@ -140,6 +143,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             failGrace = Duration.ofMinutes(10);
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
+            loadBalancerPreProvisionerInterval = Duration.ofMinutes(1);
             metricsInterval = Duration.ofMinutes(1);
             nodeFailerInterval = Duration.ofMinutes(4);
             nodeFailureStatusUpdateInterval = Duration.ofMinutes(2);

@@ -26,7 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -72,7 +71,7 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        loadBalancer.instance().flatMap(LoadBalancerInstance::idSeed).ifPresent(idSeed -> root.setString(idSeedField, idSeed.toString()));
+        loadBalancer.instance().flatMap(LoadBalancerInstance::idSeed).ifPresent(idSeed -> root.setString(idSeedField, idSeed));
         loadBalancer.instance().flatMap(LoadBalancerInstance::hostname).ifPresent(hostname -> root.setString(hostnameField, hostname.value()));
         loadBalancer.instance().flatMap(LoadBalancerInstance::ip4Address).ifPresent(ip -> root.setString(lbIpAddressField, ip));
         loadBalancer.instance().flatMap(LoadBalancerInstance::ip6Address).ifPresent(ip -> root.setString(lbIp6AddressField, ip));
@@ -128,7 +127,7 @@ public class LoadBalancerSerializer {
         Set<String> networks = new LinkedHashSet<>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
-        Optional<UUID> idSeed = SlimeUtils.optionalString(object.field(idSeedField)).map(UUID::fromString);
+        Optional<String> idSeed = SlimeUtils.optionalString(object.field(idSeedField));
         Optional<DomainName> hostname = SlimeUtils.optionalString(object.field(hostnameField)).map(DomainName::of);
         Optional<String> ip4Address = SlimeUtils.optionalString(object.field(lbIpAddressField));
         Optional<String> ip6Address = SlimeUtils.optionalString(object.field(lbIp6AddressField));

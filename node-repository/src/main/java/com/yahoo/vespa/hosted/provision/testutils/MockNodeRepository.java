@@ -31,6 +31,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -39,10 +40,12 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
+import com.yahoo.vespa.hosted.provision.provisioning.LoadBalancerProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.InfraApplication;
@@ -92,7 +95,7 @@ public class MockNodeRepository extends NodeRepository {
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               Optional.empty(),
               Optional.empty(),
-              new InMemoryFlagSource(),
+              new InMemoryFlagSource().withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 1),
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
               new OrchestratorMock(),
               true,
@@ -105,7 +108,9 @@ public class MockNodeRepository extends NodeRepository {
     }
 
     private void populate() {
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider(), new MockMetric());
+        MockProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider();
+        provisionServiceProvider.getLoadBalancerService().ifPresent(service -> new LoadBalancerProvisioner(this, service).refreshPool());
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), provisionServiceProvider, new MockMetric());
         List<Node> nodes = new ArrayList<>();
 
         // Regular nodes

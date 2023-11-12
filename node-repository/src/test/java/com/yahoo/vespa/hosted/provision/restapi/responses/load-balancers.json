@@ -47,7 +47,6 @@
       "dnsZone": "zone-id-1",
       "hostname": "lb-hosted-vespa.zone-config-servers-zone-config-servers",
       "id": "hosted-vespa:zone-config-servers:default:zone-config-servers",
-      "idSeed": "c11272ab-d20e-4c86-b808-ffedaa00c480",
       "instance": "default",
       "networks": [
         "10.2.3.0/24",
@@ -77,8 +76,9 @@
       "changedAt": 123,
       "cluster": "id4",
       "dnsZone": "zone-id-1",
-      "hostname": "lb-tenant4.application4.instance4-id4",
+      "hostname": "lb-hosted-vespa.pre-provision-1",
       "id": "tenant4:application4:instance4:id4",
+      "idSeed": "1",
       "instance": "instance4",
       "networks": [
         "10.2.3.0/24",

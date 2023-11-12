@@ -594,16 +594,16 @@ PostingStore<DataT>::clear(const EntryRef ref)
 
 
 template <typename DataT>
-vespalib::MemoryUsage
+PostingStoreMemoryUsage
 PostingStore<DataT>::getMemoryUsage() const
 {
-    vespalib::MemoryUsage usage;
-    usage.merge(_allocator.getMemoryUsage());
-    usage.merge(_store.getMemoryUsage());
+    auto btrees = _allocator.getMemoryUsage();
+    auto short_arrays = _store.getMemoryUsage();
+    vespalib::MemoryUsage bitvectors;
     uint64_t bvExtraBytes = _bvExtraBytes;
-    usage.incUsedBytes(bvExtraBytes);
-    usage.incAllocatedBytes(bvExtraBytes);
-    return usage;
+    bitvectors.incUsedBytes(bvExtraBytes);
+    bitvectors.incAllocatedBytes(bvExtraBytes);
+    return {btrees, short_arrays, bitvectors};
 }
 
 template <typename DataT>

@@ -293,7 +293,6 @@ public class HostCapacityMaintainerTest {
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
-        tester.flagSource.withBooleanFlag(Flags.MAKE_EXCLUSIVE.id(), true);
         tester.maintain();
 
         // Hosts are provisioned

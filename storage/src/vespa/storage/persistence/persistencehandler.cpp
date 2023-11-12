@@ -24,7 +24,8 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
                     cfg.commonMergeChainOptimalizationMinimumSize),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
-      _simpleHandler(_env, provider, component.getBucketIdFactory())
+      _simpleHandler(_env, provider, component.getBucketIdFactory()),
+      _use_per_op_throttled_delete_bucket(false)
 {
 }
 
@@ -68,7 +69,11 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::CREATEBUCKET_ID:
         return _asyncHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::DELETEBUCKET_ID:
-        return _asyncHandler.handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
+        if (use_per_op_throttled_delete_bucket()) {
+            return _asyncHandler.handle_delete_bucket_throttling(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
+        } else {
+            return _asyncHandler.handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
+        }
     case api::MessageType::JOINBUCKETS_ID:
         return _splitJoinHandler.handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), std::move(tracker));
     case api::MessageType::SPLITBUCKET_ID:
@@ -179,6 +184,16 @@ void
 PersistenceHandler::set_throttle_merge_feed_ops(bool throttle) noexcept
 {
     _mergeHandler.set_throttle_merge_feed_ops(throttle);
+}
+
+bool
+PersistenceHandler::use_per_op_throttled_delete_bucket() const noexcept {
+    return _use_per_op_throttled_delete_bucket.load(std::memory_order_relaxed);
+}
+
+void
+PersistenceHandler::set_use_per_document_throttled_delete_bucket(bool throttle) noexcept {
+    _use_per_op_throttled_delete_bucket.store(throttle, std::memory_order_relaxed);
 }
 
 }

@@ -12,9 +12,11 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -42,6 +44,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.applicationmodel.TenantId.HOSTED_VESPA;
+import static com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec.preProvisionOwner;
+import static com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec.preProvisionSpec;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.reducing;
 
@@ -65,6 +70,7 @@ public class LoadBalancerProvisioner {
     private final LoadBalancerService service;
     private final BooleanFlag deactivateRouting;
     private final BooleanFlag ipv6AwsTargetGroups;
+    private final IntFlag preProvisionPoolSize;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
         this.nodeRepository = nodeRepository;
@@ -72,8 +78,9 @@ public class LoadBalancerProvisioner {
         this.service = service;
         this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
         this.ipv6AwsTargetGroups = Flags.IPV6_AWS_TARGET_GROUPS.bindTo(nodeRepository.flagSource());
-        // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
+        this.preProvisionPoolSize = PermanentFlags.PRE_PROVISIONED_LB_COUNT.bindTo(nodeRepository.flagSource());
 
+        // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
@@ -97,7 +104,7 @@ public class LoadBalancerProvisioner {
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
-            prepare(loadBalancerId, cluster.zoneEndpoint(), requested.cloudAccount());
+            prepare(loadBalancerId, cluster.zoneEndpoint(), requested);
         }
     }
 
@@ -192,8 +199,9 @@ public class LoadBalancerProvisioner {
         return loadBalancerId;
     }
 
-    private void prepare(LoadBalancerId id, ZoneEndpoint zoneEndpoint, CloudAccount cloudAccount) {
+    private void prepare(LoadBalancerId id, ZoneEndpoint zoneEndpoint, NodeSpec requested) {
         Instant now = nodeRepository.clock().instant();
+        CloudAccount cloudAccount = requested.cloudAccount();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         LoadBalancer newLoadBalancer = loadBalancer.orElse(new LoadBalancer(id, Optional.empty(), LoadBalancer.State.reserved, now));
         LoadBalancer.State fromState = loadBalancer.map(LoadBalancer::state).orElse(null);
@@ -206,7 +214,7 @@ public class LoadBalancerProvisioner {
                 newLoadBalancer = newLoadBalancer.with(State.removable, now);
                 throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in load balancer visibility. The operation will be retried on next deployment");
             }
-            LoadBalancerInstance instance = provisionInstance(id, loadBalancer, zoneEndpoint, cloudAccount);
+            LoadBalancerInstance instance = provisionInstance(id, loadBalancer, zoneEndpoint, requested);
             newLoadBalancer = newLoadBalancer.with(instance);
         } catch (LoadBalancerServiceException e) {
             log.log(Level.WARNING, "Failed to provision load balancer", e);
@@ -242,7 +250,7 @@ public class LoadBalancerProvisioner {
     private LoadBalancerInstance provisionInstance(LoadBalancerId id,
                                                    Optional<LoadBalancer> currentLoadBalancer,
                                                    ZoneEndpoint zoneEndpoint,
-                                                   CloudAccount cloudAccount) {
+                                                   NodeSpec requested) {
         Set<Real> reals = currentLoadBalancer.flatMap(LoadBalancer::instance)
                                              .map(LoadBalancerInstance::reals)
                                              .orElse(Set.of()); // Targeted reals are changed on activation.
@@ -259,20 +267,81 @@ public class LoadBalancerProvisioner {
 
         log.log(Level.INFO, () -> "Provisioning instance for " + id);
         try {
-            return service.provision(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount))
-                          // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
-                          .withServiceIds(currentLoadBalancer.flatMap(LoadBalancer::instance).map(LoadBalancerInstance::serviceIds).orElse(List.of()));
+            LoadBalancerSpec spec = new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, requested.cloudAccount());
+            return provisionFromPool(spec, requested.type()).orElseGet(() -> service.provision(spec))
+                                          // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
+                                          .withServiceIds(currentLoadBalancer.flatMap(LoadBalancer::instance).map(LoadBalancerInstance::serviceIds).orElse(List.of()));
         }
         catch (Exception e) {
             throw new LoadBalancerServiceException("Could not provision " + id + ". The operation will be retried on next deployment.", e);
         }
     }
 
+    private Optional<LoadBalancerInstance> provisionFromPool(LoadBalancerSpec spec, NodeType type) {
+        if (type != NodeType.tenant) return Optional.empty();
+        if ( ! spec.settings().isDefault()) return Optional.empty();
+        if (preProvisionPoolSize.value() == 0) return Optional.empty();
+
+        try (Lock lock = db.lock(preProvisionOwner)) {
+            long tail = db.readLoadBalancerPoolTail();
+            if (tail >= db.readLoadBalancerPoolHead()) return Optional.empty();
+            ClusterSpec.Id slot = slotId(tail);
+            Optional<LoadBalancer> candidate = db.readLoadBalancer(new LoadBalancerId(preProvisionOwner, slot));
+            if (candidate.flatMap(LoadBalancer::instance).map(instance -> ! instance.cloudAccount().equals(spec.cloudAccount())).orElse(false)) return Optional.empty();
+            db.incrementLoadBalancerPoolTail(); // Acquire now; if we fail below, no one else will use the possibly inconsistent instance.
+            LoadBalancer chosen = candidate.orElseThrow(() -> new IllegalStateException("could not find load balancer " + slot + " in pre-provisioned pool"));
+            if (chosen.state() != State.active || chosen.instance().isEmpty())
+                throw new IllegalStateException("expected active load balancer in pre-provisioned pool, but got " + chosen);
+            log.log(Level.INFO, "Using " + chosen + " from pre-provisioned pool");
+            service.reallocate(chosen.instance().get(), spec);
+            db.removeLoadBalancer(chosen.id()); // Using a transaction to remove this, and write the instance, would be better, but much hassle.
+            return chosen.instance(); // Should be immediately written again outside of this!
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Failed to provision load balancer from pool", e);
+        }
+        return Optional.empty();
+    }
+
+    static ClusterSpec.Id slotId(long counter) {
+        return ClusterSpec.Id.from(String.valueOf(counter));
+    }
+
+    static long slotOf(ClusterSpec.Id id) {
+        return Long.parseLong(id.value());
+    }
+
+    /** Evict surplus and failed load balancers, and pre-provision deficit ones. Should only be run by a maintenance job. */
+    public void refreshPool() {
+        int size = preProvisionPoolSize.value();
+        long head = db.readLoadBalancerPoolHead();
+        long tail = db.readLoadBalancerPoolTail();
+        try (Lock lock = db.lock(preProvisionOwner)) {
+            while (head - tail > size) tail = db.incrementLoadBalancerPoolTail();
+            // Mark surplus load balancers, and ones we failed to move to an application, for removal.
+            for (LoadBalancer lb : db.readLoadBalancers(l -> l.application().equals(preProvisionOwner)).values()) {
+                long slot = slotOf(lb.id().cluster());
+                if (slot < tail) db.writeLoadBalancer(lb.with(State.removable, nodeRepository.clock().instant()), lb.state());
+            }
+        }
+        // No need for lock while we provision, since we'll write atomically only after we're done, and the job lock ensures single writer.
+        while (head - tail < size) {
+            ClusterSpec.Id slot = slotId(head);
+            LoadBalancerSpec spec = preProvisionSpec(slot, nodeRepository.zone().cloud().account());
+            db.writeLoadBalancer(new LoadBalancer(new LoadBalancerId(preProvisionOwner, slot),
+                                                  Optional.of(service.provision(spec, Optional.of(slot.value()))),
+                                                  State.active, // Keep the expirer away.
+                                                  nodeRepository.clock().instant()),
+                                 null);
+            head = db.incrementLoadBalancerPoolHead();
+        }
+    }
+
     /** Reconfigure a load balancer instance, if necessary */
     private LoadBalancerInstance configureInstance(LoadBalancerId id, NodeList nodes,
-                                                             LoadBalancer currentLoadBalancer,
-                                                             ZoneEndpoint zoneEndpoint,
-                                                             CloudAccount cloudAccount) {
+                                                   LoadBalancer currentLoadBalancer,
+                                                   ZoneEndpoint zoneEndpoint,
+                                                   CloudAccount cloudAccount) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.INSTANCE_ID,
                                                                  id.application().serializedForm())
                                                            .value();

@@ -83,6 +83,8 @@ public class CuratorDb {
     private final CachingCurator db;
     private final Clock clock;
     private final CuratorCounter provisionIndexCounter;
+    private final CuratorCounter loadBalancerPoolHead;
+    private final CuratorCounter loadBalancerPoolTail;
 
     /** Simple cache for deserialized node objects, based on their ZK node version. */
     private final Cache<Path, Pair<Integer, Node>> cachedNodes = CacheBuilder.newBuilder().recordStats().build();
@@ -92,6 +94,8 @@ public class CuratorDb {
         this.db = new CachingCurator(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
+        this.loadBalancerPoolHead = new CuratorCounter(curator, root.append("loadBalancerPoolHead"));
+        this.loadBalancerPoolTail = new CuratorCounter(curator, root.append("loadBalancerPoolTail"));
         initZK();
     }
 
@@ -110,6 +114,8 @@ public class CuratorDb {
         db.create(archiveUrisPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
+        loadBalancerPoolHead.initialize(1);
+        loadBalancerPoolTail.initialize(1);
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
@@ -502,6 +508,22 @@ public class CuratorDb {
         return IntStream.range(0, count)
                         .mapToObj(i -> firstIndex + i)
                         .toList();
+    }
+
+    public long readLoadBalancerPoolHead() {
+        return loadBalancerPoolHead.get();
+    }
+
+    public long incrementLoadBalancerPoolHead() {
+        return loadBalancerPoolHead.add(1);
+    }
+
+    public long readLoadBalancerPoolTail() {
+        return loadBalancerPoolTail.get();
+    }
+
+    public long incrementLoadBalancerPoolTail() {
+        return loadBalancerPoolTail.add(1);
     }
 
     public CacheStats cacheStats() {

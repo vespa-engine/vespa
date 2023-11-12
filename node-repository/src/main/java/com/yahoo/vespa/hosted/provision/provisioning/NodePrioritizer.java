@@ -121,11 +121,7 @@ public class NodePrioritizer {
             if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(params.application().tenant())) continue;
             if (host.reservedTo().isPresent() && params.application().instance().isTester()) continue;
-            if (params.makeExclusive()) {
-                if ( ! allowHostSharing && params.exclusiveAllocation() && ! fitsPerfectly(host)) continue;
-            } else {
-                if (host.exclusiveToApplicationId().isPresent() && ! fitsPerfectly(host)) continue;
-            }
+            if ( ! allowHostSharing && params.exclusiveAllocation() && ! fitsPerfectly(host)) continue;
             if ( ! host.provisionedForApplicationId().map(params.application()::equals).orElse(true)) continue;
             if ( ! host.exclusiveToApplicationId().map(params.application()::equals).orElse(true)) continue;
             if ( ! host.exclusiveToClusterType().map(params.cluster().type()::equals).orElse(true)) continue;

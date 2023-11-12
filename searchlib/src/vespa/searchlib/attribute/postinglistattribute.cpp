@@ -173,7 +173,7 @@ PostingListAttributeBase<P>::forwardedShrinkLidSpace(uint32_t newSize)
 }
 
 template <typename P>
-vespalib::MemoryUsage
+attribute::PostingStoreMemoryUsage
 PostingListAttributeBase<P>::getMemoryUsage() const
 {
     return _postingList.getMemoryUsage();

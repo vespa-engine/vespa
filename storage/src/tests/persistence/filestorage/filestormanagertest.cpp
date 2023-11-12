@@ -45,6 +45,8 @@ using namespace storage::api;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 using vespalib::IDestructorCallback;
+using vespa::config::content::StorFilestorConfig;
+using vespa::config::content::StorFilestorConfigBuilder;
 using namespace ::testing;
 
 #define ASSERT_SINGLE_REPLY(replytype, reply, link, time) \
@@ -224,7 +226,6 @@ struct TestFileStorComponents {
     explicit TestFileStorComponents(FileStorTestBase& test, bool use_small_config = false)
         : manager(nullptr)
     {
-        using vespa::config::content::StorFilestorConfig;
         auto config_uri = config::ConfigUri((use_small_config ? test.smallConfig : test.config)->getConfigId());
         auto config = config_from<StorFilestorConfig>(config_uri);
         auto fsm = std::make_unique<FileStorManager>(*config, test._node->getPersistenceProvider(),
@@ -275,7 +276,7 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
           bucketOwnershipNotifier(component, messageSender),
           persistenceHandler()
     {
-        vespa::config::content::StorFilestorConfig cfg;
+        StorFilestorConfig cfg;
         persistenceHandler =
                 std::make_unique<PersistenceHandler>(executor, component, cfg,
                                                      test._node->getPersistenceProvider(),
@@ -310,7 +311,7 @@ FileStorTestBase::TearDown()
 }
 
 struct FileStorManagerTest : public FileStorTestBase {
-
+    void do_test_delete_bucket(bool use_throttled_delete);
 };
 
 TEST_F(FileStorManagerTest, header_only_put) {
@@ -743,7 +744,7 @@ TEST_F(FileStorManagerTest, priority) {
 
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    vespa::config::content::StorFilestorConfig cfg;
+    StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
                                           filestorHandler, bucketOwnershipNotifier, *metrics.threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
@@ -1370,8 +1371,14 @@ TEST_F(FileStorManagerTest, remove_location) {
     }
 }
 
-TEST_F(FileStorManagerTest, delete_bucket) {
+void FileStorManagerTest::do_test_delete_bucket(bool use_throttled_delete) {
     TestFileStorComponents c(*this);
+
+    auto config_uri = config::ConfigUri(config->getConfigId());
+    StorFilestorConfigBuilder my_config(*config_from<StorFilestorConfig>(config_uri));
+    my_config.usePerDocumentThrottledDeleteBucket = use_throttled_delete;
+    c.manager->on_configure(my_config);
+
     auto& top = c.top;
     // Creating a document to test with
     document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
@@ -1409,6 +1416,20 @@ TEST_F(FileStorManagerTest, delete_bucket) {
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
+    // Bucket should be removed from DB
+    {
+        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
+        EXPECT_FALSE(entry.exists());
+    }
+}
+
+// TODO remove once throttled behavior is the default
+TEST_F(FileStorManagerTest, delete_bucket_legacy) {
+    do_test_delete_bucket(false);
+}
+
+TEST_F(FileStorManagerTest, delete_bucket_throttled) {
+    do_test_delete_bucket(true);
 }
 
 TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
@@ -1451,6 +1472,11 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(ReturnCode::REJECTED, reply->getResult().getResult());
         EXPECT_EQ(bucketInfo, reply->getBucketInfo());
+    }
+    // Bucket should still exist in DB
+    {
+        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
+        EXPECT_TRUE(entry.exists());
     }
 }
 

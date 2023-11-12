@@ -114,3 +114,11 @@ async_operation_throttler_type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
 ## Only applies if async_operation_throttler_type == DYNAMIC.
 ## DEPRECATED! use the async_operation_throttler struct instead
 async_operation_dynamic_throttling_window_increment int default=20 restart
+
+## If set, DeleteBucket operations are internally expanded to an individually persistence-
+## throttled remove per document stored in the bucket. This makes the cost model of
+## executing a DeleteBucket symmetrical with feeding the documents to the bucket in the
+## first place.
+##
+## This is a live config.
+use_per_document_throttled_delete_bucket bool default=false

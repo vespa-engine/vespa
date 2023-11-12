@@ -3,8 +3,9 @@
 #pragma once
 
 #include "enum_store_dictionary.h"
-#include "postinglisttraits.h"
 #include "posting_store_compaction_spec.h"
+#include "posting_store_memory_usage.h"
+#include "postinglisttraits.h"
 #include <set>
 
 namespace search {
@@ -190,7 +191,7 @@ public:
     std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(RefType ref, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const;
 
     static inline DataT bitVectorWeight();
-    vespalib::MemoryUsage getMemoryUsage() const;
+    PostingStoreMemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
 
     void move_btree_nodes(const std::vector<EntryRef> &refs);

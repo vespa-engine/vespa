@@ -614,7 +614,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                 return ExclusivityViolation.YES;
 
             // this cluster requires a parent that was provisioned exclusively for this cluster type
-            if (params.exclusiveClusterType() && parent.flatMap(Node::exclusiveToClusterType).isEmpty() && params.makeExclusive())
+            if (params.exclusiveClusterType() && parent.flatMap(Node::exclusiveToClusterType).isEmpty())
                 return ExclusivityViolation.YES;
 
             // the parent is provisioned for another application
@@ -631,7 +631,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
             // this cluster requires exclusivity, but the parent is not exclusive
             if (params.exclusiveAllocation() && parent.flatMap(Node::exclusiveToApplicationId).isEmpty())
-                return canMakeHostExclusive(params.makeExclusive(), type(), hostSharing) ?
+                return canMakeHostExclusive(type(), hostSharing) ?
                        ExclusivityViolation.PARENT_HOST_NOT_EXCLUSIVE :
                        ExclusivityViolation.YES;
         }
@@ -643,8 +643,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
      * Whether it is allowed to take a host not exclusive to anyone, and make it exclusive to an application.
      * Returns false if {@code makeExclusive} is false, which can be used to guard this feature.
      */
-    public static boolean canMakeHostExclusive(boolean makeExclusive, NodeType type, boolean allowHostSharing) {
-        return makeExclusive && type == NodeType.tenant && !allowHostSharing;
+    public static boolean canMakeHostExclusive(NodeType type, boolean allowHostSharing) {
+        return type == NodeType.tenant && !allowHostSharing;
     }
 
 }

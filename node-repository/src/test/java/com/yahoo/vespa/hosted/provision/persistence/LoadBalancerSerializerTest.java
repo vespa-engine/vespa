@@ -39,7 +39,7 @@ public class LoadBalancerSerializerTest {
         {
             var loadBalancer = new LoadBalancer(loadBalancerId,
                                                 Optional.of(new LoadBalancerInstance(
-                                                        Optional.of(UUID.randomUUID()),
+                                                        Optional.of("1"),
                                                         Optional.of(DomainName.of("lb-host")),
                                                         Optional.empty(),
                                                         Optional.empty(),

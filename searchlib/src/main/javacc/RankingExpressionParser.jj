@@ -129,6 +129,7 @@ TOKEN :
 
     <MAP: "map"> |
     <MAP_SUBSPACES: "map_subspaces"> |
+    <UNPACK_BITS: "unpack_bits"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
     <MERGE: "merge"> |
@@ -344,7 +345,7 @@ ExpressionNode function() :
     ExpressionNode function;
 }
 {
-    ( LOOKAHEAD(2) function = scalarOrTensorFunction() | function = tensorFunction() )
+    ( LOOKAHEAD(2) function = scalarOrTensorFunction() | function = tensorFunction() | function = tensorMacro() )
     { return function; }
 }
 
@@ -667,6 +668,32 @@ TensorFunctionNode tensorCellCast() :
 {
     <CELL_CAST> <LBRACE> tensor = expression() <COMMA> valueType = identifier() <RBRACE>
     { return new TensorFunctionNode(new CellCast(TensorFunctionNode.wrap(tensor), TensorType.Value.fromId(valueType)));}
+}
+
+ExpressionNode tensorMacro() :
+{
+    ExpressionNode tensorExpression;
+}
+{
+    (
+        tensorExpression = tensorUnpackBits()
+    )
+    { return tensorExpression; }
+}
+
+ExpressionNode tensorUnpackBits() :
+{
+    ExpressionNode tensor;
+    String targetCellType = "float";
+    String endianNess = "big";
+}
+{
+    <UNPACK_BITS> <LBRACE> tensor = expression() (
+      <COMMA> targetCellType = identifier() (
+        <COMMA> endianNess = identifier() )? )? <RBRACE>
+    {
+        return new UnpackBitsNode(tensor, TensorType.Value.fromId(targetCellType), endianNess);
+    }
 }
 
 LambdaFunctionNode lambdaFunction() :

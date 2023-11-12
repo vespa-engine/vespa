@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.transaction.Mutex;
@@ -201,8 +201,7 @@ public class Preparer {
                                                           allocationContext,
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount()
-        );
+                                                          nodeRepository.spareCount());
         allocation.offer(prioritizer.collect());
         return allocation;
     }

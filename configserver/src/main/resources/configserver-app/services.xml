@@ -145,7 +145,8 @@
       <server port="19071" id="configserver">
         <config name="jdisc.http.connector">
           <!-- Limit max request content size accepted -->
-          <maxContentSize>2000000000</maxContentSize> <!-- ~2GB -->
+          <maxContentSize>0</maxContentSize> <!-- 0 => scale based on max heap size -->
+          <maxContentSizeErrorMessageTemplate>Application package is too large (%1$d > %2$d bytes). Try increasing heap as described in https://docs.vespa.ai/en/performance/container-tuning.html#config-server-and-config-proxy.</maxContentSizeErrorMessageTemplate>
         </config>
       </server>
       <preprocess:include file='http-server.xml' required='false' />

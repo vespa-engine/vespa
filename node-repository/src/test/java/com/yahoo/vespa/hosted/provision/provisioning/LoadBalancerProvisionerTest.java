@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
@@ -179,6 +180,43 @@ public class LoadBalancerProvisionerTest {
                                                        .filter(lb -> lb.state() == LoadBalancer.State.active).toList();
         assertEquals(1, activeLoadBalancers.size());
         assertEquals(Set.of(), activeLoadBalancers.get(0).instance().get().reals());
+    }
+
+    @Test
+    public void pre_provision_load_balancers() {
+        flagSource.withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 2);
+        LoadBalancerProvisioner provisioner = new LoadBalancerProvisioner(tester.nodeRepository(), tester.loadBalancerService());
+        LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(), Duration.ofDays(1), tester.loadBalancerService(), new NullMetric());
+        provisioner.refreshPool();
+        expirer.run();
+        assertEquals(2, tester.nodeRepository().loadBalancers().list().size());
+        assertEquals(2, tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner).size());
+
+        // Provision a load balancer when the pool has two entries.
+        ClusterSpec.Id containerCluster = ClusterSpec.Id.from("qrs");
+        prepare(app1, clusterRequest(ClusterSpec.Type.container, containerCluster));
+        List<LoadBalancer> loadBalancers = tester.nodeRepository().loadBalancers().list(app1).asList();
+        assertEquals(1, loadBalancers.size());
+        assertEquals(1, tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner).asList().size());
+        assertEquals(Optional.of("1"), loadBalancers.get(0).instance().get().idSeed());
+
+        // Shrink pool to 0 entries.
+        flagSource.withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 0);
+        provisioner.refreshPool();
+        expirer.run();
+        assertEquals(loadBalancers.stream().map(LoadBalancer::id).toList(),
+                     tester.nodeRepository().loadBalancers().list().mapToList(LoadBalancer::id));
+
+        // Increase pool to 1 entry again. Creating an LB fails; the slot and idSeed are reused on retry.
+        tester.loadBalancerService().throwOnCreate(true);
+        flagSource.withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 1);
+        assertEquals("Did not expect a new load balancer to be created",
+                     assertThrows(IllegalStateException.class, provisioner::refreshPool).getMessage());
+        tester.loadBalancerService().throwOnCreate(false);
+        provisioner.refreshPool();
+        assertEquals(List.of(Optional.of("3")),
+                     tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner)
+                           .mapToList(lb -> lb.instance().get().idSeed()));
     }
 
     @Test

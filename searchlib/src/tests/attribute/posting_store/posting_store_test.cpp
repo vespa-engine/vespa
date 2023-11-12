@@ -177,7 +177,7 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
     EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(ref1));
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
-    EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
+    EXPECT_GT(usage_before.total.deadBytes(), usage_after.total.deadBytes());
 }
 
 void
@@ -211,9 +211,9 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
     if ((sequence_length < huge_sequence_length) || !_config.getIsFilter()) {
-        EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
+        EXPECT_GT(usage_before.total.deadBytes(), usage_after.total.deadBytes());
     } else {
-        EXPECT_EQ(usage_before.deadBytes(), usage_after.deadBytes());
+        EXPECT_EQ(usage_before.total.deadBytes(), usage_after.total.deadBytes());
     }
 }
 
