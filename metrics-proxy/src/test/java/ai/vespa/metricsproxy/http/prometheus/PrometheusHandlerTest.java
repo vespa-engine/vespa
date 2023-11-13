@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.http.prometheus;
 
 import ai.vespa.metricsproxy.http.HttpHandlerTestBase;
-import ai.vespa.metricsproxy.node.NodeMetricGatherer;
 import ai.vespa.metricsproxy.service.DummyService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +36,8 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
                                                           getMetricsManager(),
                                                           vespaServices,
                                                           getMetricsConsumers(),
-                                                          getNodeMetricGatherer());
+                                                          getApplicationDimensions(),
+                                                          getNodeDimensions());
         testDriver = new RequestHandlerTestDriver(handler);
         valuesResponse = testDriver.sendRequest(VALUES_URI).readAll();
     }
@@ -93,9 +93,5 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
                 return s;
         }
         throw new IllegalArgumentException("No line containing string: " + searchString);
-    }
-
-    private static NodeMetricGatherer getNodeMetricGatherer() {
-        return new NodeMetricGatherer(getMetricsManager(), getApplicationDimensions(), getNodeDimensions());
     }
 }

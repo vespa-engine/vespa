@@ -5,6 +5,8 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
+import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
+import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.node.NodeMetricGatherer;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -40,10 +42,11 @@ public class PrometheusHandler extends HttpHandlerBase {
                              MetricsManager metricsManager,
                              VespaServices vespaServices,
                              MetricsConsumers metricsConsumers,
-                             NodeMetricGatherer nodeMetricGatherer) {
+                             ApplicationDimensions applicationDimensions,
+                             NodeDimensions nodeDimensions) {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
-        this.nodeMetricGatherer = nodeMetricGatherer;
+        this.nodeMetricGatherer = new NodeMetricGatherer(metricsManager, applicationDimensions, nodeDimensions);
     }
 
     @Override
