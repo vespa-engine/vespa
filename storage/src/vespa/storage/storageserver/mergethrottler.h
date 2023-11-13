@@ -372,6 +372,7 @@ private:
     [[nodiscard]] bool allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) const noexcept;
     [[nodiscard]] bool accepting_merge_is_within_memory_limits(const api::MergeBucketCommand& cmd) const noexcept;
     [[nodiscard]] bool may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept;
+    [[nodiscard]] const api::MergeBucketCommand& peek_merge_queue() const noexcept;
 
     void sendReply(const api::MergeBucketCommand& cmd,
                    const api::ReturnCode& result,
