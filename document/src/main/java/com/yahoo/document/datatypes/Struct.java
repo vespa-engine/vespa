@@ -218,7 +218,8 @@ public class Struct extends StructuredFieldValue {
         StringBuilder retVal = new StringBuilder();
         retVal.append("Struct (").append(getDataType()).append("): ");
         int [] increasing = getInOrder();
-        for (int id : increasing) {
+        for (int i = 0; i < increasing.length; i++) {
+            int id = increasing[i];
             retVal.append(getDataType().getField(id)).append("=").append(values.get(id)).append(", ");
         }
         return retVal.toString();

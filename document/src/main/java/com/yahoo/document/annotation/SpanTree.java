@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A SpanTree holds a root node of a tree of SpanNodes, and a List of Annotations pointing to these nodes
@@ -432,7 +431,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /**
-     * Adds an Annotation to the internal list of annotations for this SpanTree. Use this when
+     * Adds an Annotation to the internal list of annotations for this SpanTree.&nbsp;Use this when
      * adding an Annotation that shall annotate a SpanNode. Upon return, Annotation.getSpanNode()
      * returns the given node.
      *
@@ -447,7 +446,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /**
-     * Adds an Annotation to the internal list of annotations for this SpanTree. Use this when
+     * Adds an Annotation to the internal list of annotations for this SpanTree.&nbsp;Use this when
      * adding an Annotation that shall annotate a SpanNode. Upon return, Annotation.getSpanNode()
      * returns the given node. This one is unchecked and assumes that the SpanNode is valid and has
      * already been attached to the Annotation.
@@ -539,7 +538,10 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         }
     }
 
-    /** Returns an Iterator over all annotations in this tree. Note that the iteration order is non-deterministic. */
+    /**
+     * Returns an Iterator over all annotations in this tree.&nbsp;Note that the iteration order is non-deterministic.
+     * @return an Iterator over all annotations in this tree.
+     */
     public Iterator<Annotation> iterator() {
         return annotations.annotations().iterator();
     }
@@ -639,9 +641,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
 
     @Override
     public String toString() {
-        return "SpanTree '" + name + "' with root: " + root +
-               ( annotations.annotations().size() > 5 ? "" :
-                 ", annotations: " + annotations.annotations().stream().map(Annotation::toString).collect(Collectors.joining(", ")));
+        return "SpanTree '" + name + "'";
     }
 
     @Override

@@ -57,8 +57,8 @@ public class NGramTestCase {
         new NGramExpression(new SimpleLinguistics(), 3).execute(context);
 
         StringFieldValue value = (StringFieldValue)context.getValue();
-        assertEquals("Grams are pure annotations - field value is unchanged",
-                     "en gul Bille sang... ", value.getString());
+        assertEquals("Grams are pure annotations - field value is unchanged", "en gul Bille sang... ",
+                     value.getString());
         SpanTree gramTree = value.getSpanTree(SpanTrees.LINGUISTICS);
         assertNotNull(gramTree);
         SpanList grams = (SpanList)gramTree.getRoot();

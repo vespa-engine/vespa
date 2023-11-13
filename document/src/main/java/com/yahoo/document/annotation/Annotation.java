@@ -129,7 +129,7 @@ public class Annotation implements Comparable<Annotation> {
     }
 
     /**
-     * WARNING! Should only be used by deserializers! Sets the span node that this annotation points to.
+     * WARNING! Should only be used by deserializers!&nbsp;Sets the span node that this annotation points to.
      *
      * @param spanNode the span node that this annotation shall point to.
      */
@@ -221,9 +221,10 @@ public class Annotation implements Comparable<Annotation> {
 
     @Override
     public String toString() {
-        return type + " annotation " +
-               ((value == null) ? " (no value)" : " (with value)") +
-               ((spanNode == null) ? " (no span)" : (" with span "+spanNode));
+        String retval = "annotation of type " + type;
+        retval += ((value == null) ? " (no value)" : " (with value)");
+        retval += ((spanNode == null) ? " (no span)" : (" with span "+spanNode));
+        return retval;
     }
 
 

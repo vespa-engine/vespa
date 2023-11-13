@@ -23,7 +23,11 @@ abstract class AnnotationContainer {
      */
     abstract void annotate(Annotation annotation);
 
-    /** Returns a mutable collection of the annotations in this. */
+    /**
+     * Returns a mutable collection of annotations.
+     *
+     * @return a mutable collection of annotations.
+     */
     abstract Collection<Annotation> annotations();
 
     /**

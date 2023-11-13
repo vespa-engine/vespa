@@ -16,7 +16,6 @@ import java.util.NoSuchElementException;
  */
 // TODO: Should this be removed?
 public class AnnotationType2AnnotationContainer extends IteratingAnnotationContainer {
-
     private final Multimap<AnnotationType, Annotation> annotationType2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);
 
     @Override
@@ -32,6 +31,7 @@ public class AnnotationType2AnnotationContainer extends IteratingAnnotationConta
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     Collection<Annotation> annotations() {
         return annotationType2Annotation.values();
     }
@@ -56,12 +56,12 @@ public class AnnotationType2AnnotationContainer extends IteratingAnnotationConta
     }
 
     private class NonRecursiveIterator implements Iterator<Annotation> {
-
         private final IdentityHashMap<SpanNode, SpanNode> nodes;
         private final Iterator<Annotation> annotationIt;
         private Annotation next = null;
         private boolean nextCalled;
 
+        @SuppressWarnings("unchecked")
         public NonRecursiveIterator(IdentityHashMap<SpanNode, SpanNode> nodes) {
             this.nodes = nodes;
             this.annotationIt = annotationType2Annotation.values().iterator();
@@ -106,5 +106,4 @@ public class AnnotationType2AnnotationContainer extends IteratingAnnotationConta
             nextCalled = false;
         }
     }
-
 }
