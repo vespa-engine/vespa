@@ -11,14 +11,13 @@ import java.util.ListIterator;
 /**
  * A node in a Span tree that can have child nodes.
  *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class SpanList extends SpanNode {
-
     public static final byte ID = 2;
     private final List<SpanNode> children;
-    private int cachedFrom = Integer.MIN_VALUE; // triggers calculateFrom()
-    private int cachedTo = Integer.MIN_VALUE;  // triggers calculateTo()
+    private int cachedFrom = Integer.MIN_VALUE; //triggers calculateFrom()
+    private int cachedTo = Integer.MIN_VALUE;  //triggers calculateTo()
 
     /** Creates a new SpanList. */
     public SpanList() {
@@ -40,7 +39,7 @@ public class SpanList extends SpanNode {
      * @param other the SpanList to copy.
      */
     public SpanList(SpanList other) {
-        this.children = new LinkedList<>();
+        this.children = new LinkedList<SpanNode>();
         for (SpanNode otherNode : other.children) {
             if (otherNode instanceof Span) {
                 children.add(new Span((Span) otherNode));
@@ -87,15 +86,15 @@ public class SpanList extends SpanNode {
 
     /** Create a span, add it to this list and return it */
     public Span span(int from, int length) {
-        Span span = new Span(from, length);
+        Span span=new Span(from,length);
         add(span);
         return span;
     }
 
     void setInvalid() {
-        // invalidate ourselves:
+        //invalidate ourselves:
         super.setInvalid();
-        // invalidate all our children:
+        //invalidate all our children:
         for (SpanNode node : children()) {
             node.setInvalid();
         }
@@ -214,12 +213,20 @@ public class SpanList extends SpanNode {
         return this;
     }
 
-    /** Returns a modifiable list of the immediate children of this SpanList. */
+    /**
+     * Returns a <strong>modifiable</strong> list of the immediate children of this SpanList.
+     *
+     * @return a <strong>modifiable</strong> list of the immediate children of this SpanList.
+     */
     protected List<SpanNode> children() {
         return children;
     }
 
-    /** Returns the number of children this SpanList holds. */
+    /**
+     * Returns the number of children this SpanList holds.
+     *
+     * @return the number of children this SpanList holds.
+     */
     public int numChildren() {
         return children().size();
     }
@@ -387,8 +394,10 @@ public class SpanList extends SpanNode {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SpanList spanList)) return false;
+        if (!(o instanceof SpanList)) return false;
         if (!super.equals(o)) return false;
+
+        SpanList spanList = (SpanList) o;
 
         if (children() != null ? !children().equals(spanList.children()) : spanList.children() != null) return false;
 
@@ -406,5 +415,4 @@ public class SpanList extends SpanNode {
     public String toString() {
         return "SpanList with " + children().size() + " children";
     }
-
 }

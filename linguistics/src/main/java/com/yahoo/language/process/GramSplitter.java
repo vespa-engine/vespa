@@ -189,8 +189,9 @@ public class GramSplitter {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if ( ! (o instanceof Gram gram)) return false;
+            if ( ! (o instanceof Gram)) return false;
 
+            Gram gram = (Gram)o;
             if (codePointCount != gram.codePointCount) return false;
             if (start != gram.start) return false;
             return true;

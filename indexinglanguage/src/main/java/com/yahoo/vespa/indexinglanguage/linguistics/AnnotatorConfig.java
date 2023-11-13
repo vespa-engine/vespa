@@ -13,7 +13,7 @@ public class AnnotatorConfig implements Cloneable {
     private Language language;
     private StemMode stemMode;
     private boolean removeAccents;
-    private int maxTermOccurrences;
+    private int maxTermOccurences;
     private int maxTokenizeLength;
 
     public static final int DEFAULT_MAX_TERM_OCCURRENCES;
@@ -29,7 +29,7 @@ public class AnnotatorConfig implements Cloneable {
         language = Language.ENGLISH;
         stemMode = StemMode.NONE;
         removeAccents = false;
-        maxTermOccurrences = DEFAULT_MAX_TERM_OCCURRENCES;
+        maxTermOccurences = DEFAULT_MAX_TERM_OCCURRENCES;
         maxTokenizeLength = DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
@@ -37,7 +37,7 @@ public class AnnotatorConfig implements Cloneable {
         language = rhs.language;
         stemMode = rhs.stemMode;
         removeAccents = rhs.removeAccents;
-        maxTermOccurrences = rhs.maxTermOccurrences;
+        maxTermOccurences = rhs.maxTermOccurences;
         maxTokenizeLength = rhs.maxTokenizeLength;
     }
 
@@ -74,11 +74,11 @@ public class AnnotatorConfig implements Cloneable {
     }
 
     public int getMaxTermOccurrences() {
-        return maxTermOccurrences;
+        return maxTermOccurences;
     }
 
     public AnnotatorConfig setMaxTermOccurrences(int maxTermCount) {
-        this.maxTermOccurrences = maxTermCount;
+        this.maxTermOccurences = maxTermCount;
         return this;
     }
 
@@ -109,7 +109,7 @@ public class AnnotatorConfig implements Cloneable {
         if (removeAccents != rhs.removeAccents) {
             return false;
         }
-        if (maxTermOccurrences != rhs.maxTermOccurrences) {
+        if (maxTermOccurences != rhs.maxTermOccurences) {
             return false;
         }
         if (maxTokenizeLength != rhs.maxTokenizeLength) {
@@ -121,7 +121,6 @@ public class AnnotatorConfig implements Cloneable {
     @Override
     public int hashCode() {
         return getClass().hashCode() + language.hashCode() + stemMode.hashCode() +
-               Boolean.valueOf(removeAccents).hashCode() + maxTermOccurrences + maxTokenizeLength;
+               Boolean.valueOf(removeAccents).hashCode() + maxTermOccurences + maxTokenizeLength;
     }
-
 }
