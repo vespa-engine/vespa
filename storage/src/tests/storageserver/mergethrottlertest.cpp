@@ -1603,6 +1603,39 @@ TEST_F(MergeThrottlerTest, queued_merges_are_not_counted_towards_memory_usage) {
     EXPECT_EQ(throttler(0).getMetrics().estimated_merge_memory_usage.getLast(), 0_Mi);
 }
 
+TEST_F(MergeThrottlerTest, enqueued_merge_not_started_if_insufficient_memory_available) {
+    // See `queued_merges_are_not_counted_towards_memory_usage` test for magic number rationale
+    const auto max_pending = throttler_max_merges_pending(0);
+    ASSERT_LT(max_pending, 1000);
+    ASSERT_GT(max_pending, 1);
+    throttler(0).set_max_merge_memory_usage_bytes_locking(10_Mi);
+
+    // Fill up entire active window and enqueue a single merge
+    fill_throttler_queue_with_n_commands(0, 0);
+    _topLinks[0]->sendDown(MergeBuilder(document::BucketId(16, 1000)).nodes(0, 1, 2).unordered(true).memory_usage(11_Mi).create());
+    waitUntilMergeQueueIs(throttler(0), 1, _messageWaitTime); // Should end up in queue
+
+    // Drain all active merges. As long as we have other active merges, the enqueued merge should not
+    // be allowed through since it's too large. Eventually it will hit the "at least one merge must
+    // be allowed at any time regardless of size" exception and is dequeued.
+    for (uint32_t i = 0; i < max_pending; ++i) {
+        auto fwd_cmd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+        auto fwd_reply = dynamic_cast<api::MergeBucketCommand&>(*fwd_cmd).makeReply();
+
+        ASSERT_NO_FATAL_FAILURE(send_and_expect_reply(
+                std::shared_ptr<api::StorageReply>(std::move(fwd_reply)),
+                MessageType::MERGEBUCKET_REPLY, ReturnCode::OK)); // Unwind reply for completed merge
+
+        if (i < max_pending - 1) {
+            // Merge should still be in the queue, as it requires 11 MiB, and we only have 10 MiB.
+            // It will eventually be executed when the window is empty (see below).
+            waitUntilMergeQueueIs(throttler(0), 1, _messageWaitTime);
+        }
+    }
+    // We've freed up the entire send window, so the over-sized merge can finally squeeze through.
+    waitUntilMergeQueueIs(throttler(0), 0, _messageWaitTime);
+}
+
 namespace {
 
 vespalib::HwInfo make_mem_info(uint64_t mem_size) {

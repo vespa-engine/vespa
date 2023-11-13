@@ -419,6 +419,13 @@ MergeThrottler::getNextQueuedMerge()
     return entry._msg;
 }
 
+const api::MergeBucketCommand&
+MergeThrottler::peek_merge_queue() const noexcept
+{
+    assert(!_queue.empty());
+    return dynamic_cast<const api::MergeBucketCommand&>(*_queue.begin()->_msg);
+}
+
 void
 MergeThrottler::enqueue_merge_for_later_processing(
         const api::StorageMessage::SP& msg,
@@ -549,45 +556,40 @@ MergeThrottler::rejectOutdatedQueuedMerges(
 // If there's a merge queued and the throttling policy allows for
 // the merge to be processed, do so.
 bool
-MergeThrottler::attemptProcessNextQueuedMerge(
-        MessageGuard& msgGuard)
+MergeThrottler::attemptProcessNextQueuedMerge(MessageGuard& msgGuard)
 {
-    if (!canProcessNewMerge()) {
+    if (_queue.empty()) {
+        return false;
+    }
+    if ( ! (canProcessNewMerge() && accepting_merge_is_within_memory_limits(peek_merge_queue()))) {
         // Should never reach a non-sending state when there are
         // no to-be-replied merges that can trigger a new processing
         assert(!_merges.empty());
         return false;
     }
 
+    // If we get here, there must be something to dequeue.
     api::StorageMessage::SP msg = getNextQueuedMerge();
-    if (msg) {
-        // In case of resends and whatnot, it's possible for a merge
-        // command to be in the queue while another higher priority
-        // command for the same bucket sneaks in front of it and gets
-        // a slot. Send BUSY in this case to make the distributor retry
-        // later, at which point the existing merge has hopefully gone
-        // through and the new one will be effectively a no-op to perform
-        if (!isMergeAlreadyKnown(msg)) {
-            LOG(spam, "Processing queued merge %s", msg->toString().c_str());
-            processNewMergeCommand(msg, msgGuard);
-        } else {
-            vespalib::asciistream oss;
-            oss << "Queued merge " << msg->toString() << " is out of date; it has already "
-                   "been started by someone else since it was queued";
-            LOG(debug, "%s", oss.c_str());
-            sendReply(dynamic_cast<const api::MergeBucketCommand&>(*msg),
-                      api::ReturnCode(api::ReturnCode::BUSY, oss.str()),
-                      msgGuard, _metrics->chaining);
-        }
-        return true;
+    assert(msg);
+    // In case of resends and whatnot, it's possible for a merge
+    // command to be in the queue while another higher priority
+    // command for the same bucket sneaks in front of it and gets
+    // a slot. Send BUSY in this case to make the distributor retry
+    // later, at which point the existing merge has hopefully gone
+    // through and the new one will be effectively a no-op to perform
+    if (!isMergeAlreadyKnown(msg)) {
+        LOG(spam, "Processing queued merge %s", msg->toString().c_str());
+        processNewMergeCommand(msg, msgGuard);
     } else {
-        if (_queue.empty()) {
-            LOG(spam, "Queue empty - no merges to process");
-        } else {
-            LOG(spam, "Merges queued, but throttle policy disallows further merges at this time");
-        }
+        vespalib::asciistream oss;
+        oss << "Queued merge " << msg->toString() << " is out of date; it has already "
+               "been started by someone else since it was queued";
+        LOG(debug, "%s", oss.c_str());
+        sendReply(dynamic_cast<const api::MergeBucketCommand&>(*msg),
+                  api::ReturnCode(api::ReturnCode::BUSY, oss.str()),
+                  msgGuard, _metrics->chaining);
     }
-    return false;
+    return true;
 }
 
 bool
