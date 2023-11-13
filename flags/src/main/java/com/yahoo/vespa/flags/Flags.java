@@ -421,6 +421,16 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_PER_DOCUMENT_THROTTLED_DELETE_BUCKET = defineFeatureFlag(
+            "use-per-document-throttled-delete-bucket", false,
+            List.of("vekterli"), "2023-11-13", "2024-03-01",
+            "If set, DeleteBucket operations are internally expanded to an individually persistence-" +
+            "throttled remove per document stored in the bucket. This makes the cost model of " +
+            "executing a DeleteBucket symmetrical with feeding the documents to the bucket in the " +
+            "first place.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
