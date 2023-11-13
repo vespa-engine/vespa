@@ -236,6 +236,28 @@ void generate_map(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_map_subspaces(TestBuilder &dst) {
+    auto my_seq = Seq({-128, -43, 85, 127});
+    auto scalar = GenSpec(7.0);
+    auto sparse = GenSpec().from_desc("x8_1").seq(my_seq);
+    auto mixed = GenSpec().from_desc("x4_1y4").seq(my_seq);
+    auto dense = GenSpec().from_desc("y4").seq(my_seq);
+    vespalib::string map_a("map_subspaces(a,f(a)(a*3+2))");
+    vespalib::string unpack_a("map_subspaces(a,f(a)(tensor<int8>(y[8])(bit(a,7-y%8))))");
+    vespalib::string unpack_y4("map_subspaces(a,f(a)(tensor<int8>(y[32])(bit(a{y:(y/8)},7-y%8))))");
+    vespalib::string pack_y4("map_subspaces(a,f(a)(a{y:0}+a{y:1}-a{y:2}+a{y:3}))");
+    generate(map_a, scalar, dst);
+    generate(map_a, sparse, dst);
+    generate(unpack_a, scalar, dst);
+    generate(unpack_a, sparse, dst);
+    generate(unpack_y4, mixed, dst);
+    generate(unpack_y4, dense, dst);
+    generate(pack_y4, mixed, dst);
+    generate(pack_y4, dense, dst);
+}
+
+//-----------------------------------------------------------------------------
+
 void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layouts: join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
@@ -560,6 +582,7 @@ Generator::generate(TestBuilder &dst)
     generate_inject(dst);
     generate_reduce(dst);
     generate_map(dst);
+    generate_map_subspaces(dst);
     generate_join(dst);
     generate_merge(dst);
     generate_concat(dst);
