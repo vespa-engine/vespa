@@ -33,6 +33,9 @@ reuseAddress                        bool     default=true
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
 idleTimeout                         double   default=180.0
 
+# The idle timeout that takes effect during graceful shutdown of Jetty
+shutdownIdleTimeout                 double   default=5.0
+
 # TODO Vespa 9 Remove
 # Has no effect since Jetty 11 upgrade
 tcpKeepAliveEnabled                 bool     default=false

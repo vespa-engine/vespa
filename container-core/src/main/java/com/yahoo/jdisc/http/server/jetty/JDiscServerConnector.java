@@ -51,7 +51,11 @@ class JDiscServerConnector extends ServerConnector {
         setName(config.name());
         setAcceptQueueSize(config.acceptQueueSize());
         setReuseAddress(config.reuseAddress());
-        setIdleTimeout((long) (config.idleTimeout() * 1000));
+        long idleTimeout = (long)(config.idleTimeout() * 1000);
+        setIdleTimeout(idleTimeout);
+        long shutdownIdleTimeout = (long) (config.shutdownIdleTimeout() * 1000);
+        // Ensure shutdown idle timeout is less than idle timeout and stop timeout
+        setShutdownIdleTimeout(Math.min(shutdownIdleTimeout, Math.min(idleTimeout, server.getStopTimeout())));
     }
 
     public ConnectionStatistics getStatistics() {
