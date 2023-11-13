@@ -35,7 +35,9 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
         PrometheusHandler handler = new PrometheusHandler(Executors.newSingleThreadExecutor(),
                                                           getMetricsManager(),
                                                           vespaServices,
-                                                          getMetricsConsumers());
+                                                          getMetricsConsumers(),
+                                                          getApplicationDimensions(),
+                                                          getNodeDimensions());
         testDriver = new RequestHandlerTestDriver(handler);
         valuesResponse = testDriver.sendRequest(VALUES_URI).readAll();
     }
