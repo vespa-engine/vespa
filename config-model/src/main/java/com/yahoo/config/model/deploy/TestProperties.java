@@ -88,6 +88,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentLayerMetadataFeatureLevel = 0;
     private boolean dynamicHeapSize = false;
     private long mergingMaxMemoryUsagePerNode = -1;
+    private boolean usePerDocumentThrottledDeleteBucket = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -148,6 +149,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
     @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
+    @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -387,6 +389,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMergingMaxMemoryUsagePerNode(long maxUsage) {
         this.mergingMaxMemoryUsagePerNode = maxUsage;
+        return this;
+    }
+
+    public TestProperties setUsePerDocumentThrottledDeleteBucket(boolean enableThrottling) {
+        this.usePerDocumentThrottledDeleteBucket = enableThrottling;
         return this;
     }
 

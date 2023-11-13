@@ -355,6 +355,24 @@ public class StorageClusterTest {
         assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
     }
 
+    private void verifyUsePerDocumentThrottledDeleteBucket(boolean expected, Boolean enabled) {
+        var props = new TestProperties();
+        if (enabled != null) {
+            props.setUsePerDocumentThrottledDeleteBucket(enabled);
+        }
+        var config = filestorConfigFromProducer(simpleCluster(props));
+        assertEquals(expected, config.use_per_document_throttled_delete_bucket());
+    }
+
+    @Test
+    void delete_bucket_throttling_is_controlled_by_feature_flag() {
+        // TODO update default once rolled out and tested
+        verifyUsePerDocumentThrottledDeleteBucket(false, null);
+
+        verifyUsePerDocumentThrottledDeleteBucket(false, false);
+        verifyUsePerDocumentThrottledDeleteBucket(true, true);
+    }
+
     @Test
     void testCapacity() {
         String xml = joinLines(

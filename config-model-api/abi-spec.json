@@ -1287,7 +1287,8 @@
       "public boolean dynamicHeapSize()",
       "public java.lang.String unknownConfigDefinition()",
       "public int searchHandlerThreadpool()",
-      "public long mergingMaxMemoryUsagePerNode()"
+      "public long mergingMaxMemoryUsagePerNode()",
+      "public boolean usePerDocumentThrottledDeleteBucket()"
     ],
     "fields" : [ ]
   },
