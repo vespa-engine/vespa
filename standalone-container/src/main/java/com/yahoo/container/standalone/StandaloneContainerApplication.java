@@ -49,7 +49,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.collections.CollectionUtil.first;
 
@@ -296,21 +295,21 @@ public class StandaloneContainerApplication implements Application {
         container.initService(deployState);
     }
 
-    private static Element getJDiscInServices(Element element) {
-        List<Element> jDiscElements = new ArrayList<>();
+    private static Element getContainerElementInServices(Element element) {
+        List<Element> containerElements = new ArrayList<>();
         for (ConfigModelId cid : ContainerModelBuilder.configModelIds) {
             List<Element> children = XML.getChildren(element, cid.getName());
-            jDiscElements.addAll(children);
+            containerElements.addAll(children);
         }
         
-        if (jDiscElements.size() == 1) {
-            return jDiscElements.get(0);
-        } else if (jDiscElements.isEmpty()) {
-            throw new RuntimeException("No jdisc element found under services.");
+        if (containerElements.size() == 1) {
+            return containerElements.get(0);
+        } else if (containerElements.isEmpty()) {
+            throw new RuntimeException("No container element found under services.");
         } else {
-            List<String> nameAndId = jDiscElements.stream().map(e -> e.getNodeName() + " id='" + e.getAttribute("id") + "'")
+            List<String> nameAndId = containerElements.stream().map(e -> e.getNodeName() + " id='" + e.getAttribute("id") + "'")
                     .toList();
-            throw new RuntimeException("Found multiple JDisc elements: " + String.join(", ", nameAndId));
+            throw new RuntimeException("Found multiple container elements: " + String.join(", ", nameAndId));
         }
     }
 
@@ -321,7 +320,7 @@ public class StandaloneContainerApplication implements Application {
         if (ContainerModelBuilder.configModelIds.stream().anyMatch(id -> id.getName().equals(nodeName))) {
             return element;
         } else {
-            return getJDiscInServices(element);
+            return getContainerElementInServices(element);
         }
     }
 
