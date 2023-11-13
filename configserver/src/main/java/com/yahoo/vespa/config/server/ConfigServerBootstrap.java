@@ -103,7 +103,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     @Override
     public void deconstruct() {
-        log.log(Level.INFO, "Stopping config server");
+        log.log(Level.FINE, "Stopping config server");
         down();
         server.stop();
         log.log(Level.FINE, "RPC server stopped");
@@ -220,13 +220,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
         if (applicationIds.size() > 0) {
-            log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
+            log.log(Level.FINE, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
                     configserverConfig.numRedeploymentThreads() + " threads");
             applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
-                log.log(Level.INFO, () -> "Starting redeployment of " + appId);
+                log.log(Level.FINE, () -> "Starting redeployment of " + appId);
                 applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
                                      .ifPresent(Deployment::activate);
-                log.log(Level.INFO, () -> appId + " redeployed");
+                log.log(Level.FINE, () -> appId + " redeployed");
             })));
         }
 
