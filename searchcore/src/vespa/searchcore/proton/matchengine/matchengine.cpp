@@ -75,7 +75,7 @@ MatchEngine::close()
     LOG(debug, "Closing search interface.");
     {
         std::lock_guard<std::mutex> guard(_lock);
-        _closed = true;
+        _closed.store(true, std::memory_order_relaxed);
     }
 
     LOG(debug, "Handshaking with task manager.");
@@ -108,7 +108,7 @@ SearchReply::UP
 MatchEngine::search(SearchRequest::Source request, SearchClient &client)
 {
     // We continue to allow searches if the node is in Maintenance mode
-    if (_closed || (!_nodeUp && !_nodeMaintenance.load(std::memory_order_relaxed))) {
+    if (_closed.load(std::memory_order_relaxed) || (!_nodeUp && !_nodeMaintenance.load(std::memory_order_relaxed))) {
         auto ret = std::make_unique<SearchReply>();
         ret->setDistributionKey(_distributionKey);
 

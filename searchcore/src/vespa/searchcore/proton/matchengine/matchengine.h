@@ -20,7 +20,7 @@ private:
     std::mutex                         _lock;
     const uint32_t                     _distributionKey;
     bool                               _async;
-    bool                               _closed;
+    std::atomic<bool>                  _closed;
     std::atomic<bool>                  _forward_issues;
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
