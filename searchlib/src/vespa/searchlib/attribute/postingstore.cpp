@@ -613,9 +613,13 @@ PostingStore<DataT>::update_stat(const CompactionStrategy& compaction_strategy)
     vespalib::MemoryUsage usage;
     auto btree_nodes_memory_usage = _allocator.getMemoryUsage();
     auto store_memory_usage = _store.getMemoryUsage();
-    _compaction_spec = PostingStoreCompactionSpec(compaction_strategy.should_compact_memory(btree_nodes_memory_usage), compaction_strategy.should_compact_memory(store_memory_usage));
     usage.merge(btree_nodes_memory_usage);
     usage.merge(store_memory_usage);
+    if (compaction_strategy.should_compact_memory(usage)) {
+        _compaction_spec = PostingStoreCompactionSpec(compaction_strategy.should_compact_memory(btree_nodes_memory_usage), compaction_strategy.should_compact_memory(store_memory_usage));
+    } else {
+        _compaction_spec = PostingStoreCompactionSpec();
+    }
     uint64_t bvExtraBytes = _bvExtraBytes;
     usage.incUsedBytes(bvExtraBytes);
     usage.incAllocatedBytes(bvExtraBytes);
