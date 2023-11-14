@@ -19,7 +19,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,8 +27,6 @@ import static org.junit.Assert.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class LinguisticsAnnotatorTestCase {
-
-    private static final AnnotatorConfig CONFIG = new AnnotatorConfig();
 
     @Test
     public void requireThatAnnotateFailsWithZeroTokens() {
@@ -42,7 +39,7 @@ public class LinguisticsAnnotatorTestCase {
             if (type.isIndexable()) {
                 continue;
             }
-            assertAnnotations(null, "foo", newToken("foo", "bar", type));
+            assertAnnotations(null, "foo", token("foo", "bar", type));
         }
     }
 
@@ -54,7 +51,27 @@ public class LinguisticsAnnotatorTestCase {
             if (!type.isIndexable()) {
                 continue;
             }
-            assertAnnotations(expected, "foo", newToken("foo", "bar", type));
+            assertAnnotations(expected, "foo", token("foo", "bar", type));
+        }
+    }
+
+    @Test
+    public void requireThatIndexableTokenStringsAreAnnotatedWithModeALL() {
+        SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
+        expected.spanList().span(0, 5).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("tesla")));
+        var span2 = expected.spanList().span(0, 4);
+        span2.annotate(new Annotation(AnnotationTypes.TERM));
+        span2.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("car")));
+        var span3 = expected.spanList().span(0, 8);
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("modelxes")));
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("modelx")));
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("mex")));
+        for (TokenType type : TokenType.values()) {
+            if (!type.isIndexable()) continue;
+            assertAnnotations(expected, "Tesla cars", new AnnotatorConfig().setStemMode("ALL"),
+                              token("Tesla", "tesla", type),
+                              token("cars", "car", type),
+                              SimpleToken.fromStems("ModelXes", List.of("modelxes", "modelx", "mex")));
         }
     }
 
@@ -63,7 +80,7 @@ public class LinguisticsAnnotatorTestCase {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("bar")));
         for (TokenType type : TokenType.values()) {
-            assertAnnotations(expected, "foo", newToken("foo", "bar", type, true));
+            assertAnnotations(expected, "foo", token("foo", "bar", type, true));
         }
     }
 
@@ -76,21 +93,21 @@ public class LinguisticsAnnotatorTestCase {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
                 }
-                assertAnnotations(expected, "foo", newToken("foo", "foo", type, specialToken));
+                assertAnnotations(expected, "foo", token("foo", "foo", type, specialToken));
             }
         }
     }
 
     @Test
-    public void requireThatTermAnnotationsAreLowerCased() {
+    public void requireThatTermAnnotationsPreserveCasing() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
-        expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("bar")));
+        expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("BaR")));
         for (boolean specialToken : Arrays.asList(true, false)) {
             for (TokenType type : TokenType.values()) {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
                 }
-                assertAnnotations(expected, "foo", newToken("foo", "BAR", type, specialToken));
+                assertAnnotations(expected, "foo", token("foo", "BaR", type, specialToken));
             }
         }
     }
@@ -102,11 +119,11 @@ public class LinguisticsAnnotatorTestCase {
         expected.spanList().span(3, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("bar")));
         expected.spanList().span(6, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("baz")));
 
-        SimpleToken token = newToken("FOOBARBAZ", "foobarbaz", TokenType.ALPHABETIC)
-                .addComponent(newToken("FOO", "foo", TokenType.ALPHABETIC).setOffset(0))
-                .addComponent(newToken("BARBAZ", "barbaz", TokenType.ALPHABETIC).setOffset(3)
-                                      .addComponent(newToken("BAR", "bar", TokenType.ALPHABETIC).setOffset(3))
-                                      .addComponent(newToken("BAZ", "baz", TokenType.ALPHABETIC).setOffset(6)));
+        SimpleToken token = token("FOOBARBAZ", "foobarbaz", TokenType.ALPHABETIC)
+                .addComponent(token("FOO", "foo", TokenType.ALPHABETIC).setOffset(0))
+                .addComponent(token("BARBAZ", "barbaz", TokenType.ALPHABETIC).setOffset(3)
+                                                                             .addComponent(token("BAR", "bar", TokenType.ALPHABETIC).setOffset(3))
+                                                                             .addComponent(token("BAZ", "baz", TokenType.ALPHABETIC).setOffset(6)));
         assertAnnotations(expected, "foobarbaz", token);
     }
 
@@ -116,11 +133,11 @@ public class LinguisticsAnnotatorTestCase {
         expected.spanList().span(0, 9).annotate(new Annotation(AnnotationTypes.TERM,
                                                                new StringFieldValue("foobarbaz")));
 
-        SimpleToken token = newToken("FOOBARBAZ", "foobarbaz", TokenType.ALPHABETIC).setSpecialToken(true)
-                .addComponent(newToken("FOO", "foo", TokenType.ALPHABETIC).setOffset(0))
-                .addComponent(newToken("BARBAZ", "barbaz", TokenType.ALPHABETIC).setOffset(3)
-                                      .addComponent(newToken("BAR", "bar", TokenType.ALPHABETIC).setOffset(3))
-                                      .addComponent(newToken("BAZ", "baz", TokenType.ALPHABETIC).setOffset(6)));
+        SimpleToken token = token("FOOBARBAZ", "foobarbaz", TokenType.ALPHABETIC).setSpecialToken(true)
+                                                                                 .addComponent(token("FOO", "foo", TokenType.ALPHABETIC).setOffset(0))
+                                                                                 .addComponent(token("BARBAZ", "barbaz", TokenType.ALPHABETIC).setOffset(3)
+                                                                                                                                              .addComponent(token("BAR", "bar", TokenType.ALPHABETIC).setOffset(3))
+                                                                                                                                              .addComponent(token("BAZ", "baz", TokenType.ALPHABETIC).setOffset(6)));
         assertAnnotations(expected, "foobarbaz", token);
     }
 
@@ -140,7 +157,8 @@ public class LinguisticsAnnotatorTestCase {
                     continue;
                 }
                 assertAnnotations(expected, "foo",
-                                  newLinguistics(List.of(newToken("foo", "foo", type, specialToken)),
+                                  new AnnotatorConfig(),
+                                  newLinguistics(List.of(token("foo", "foo", type, specialToken)),
                                                  Collections.singletonMap("foo", "bar")));
             }
         }
@@ -154,11 +172,9 @@ public class LinguisticsAnnotatorTestCase {
         StringFieldValue val = new StringFieldValue("foo");
         val.setSpanTree(spanTree);
 
-        Linguistics linguistics = newLinguistics(List.of(newToken("foo", "bar", TokenType.ALPHABETIC, false)),
+        Linguistics linguistics = newLinguistics(List.of(token("foo", "bar", TokenType.ALPHABETIC, false)),
                                                  Collections.<String, String>emptyMap());
-        new LinguisticsAnnotator(linguistics, CONFIG).annotate(val);
-
-        assertTrue(new LinguisticsAnnotator(linguistics, CONFIG).annotate(val));
+        assertTrue(new LinguisticsAnnotator(linguistics, new AnnotatorConfig()).annotate(val));
         assertEquals(spanTree, val.getSpanTree(SpanTrees.LINGUISTICS));
     }
 
@@ -186,7 +202,7 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     @Test
-    public void requireThatMaxTermOccurencesIsHonored() {
+    public void requireThatMaxTermOccurrencesIsHonored() {
         final String inputTerm = "foo";
         final String stemmedInputTerm = "bar"; // completely different from
                                                // inputTerm for safer test
@@ -204,7 +220,7 @@ public class LinguisticsAnnotatorTestCase {
             StringBuilder input = new StringBuilder();
             Token[] tokens = new Token[inputTermOccurence];
             for (int i = 0; i < inputTermOccurence; ++i) {
-                SimpleToken t = newToken(inputTerm, stemmedInputTerm, type);
+                SimpleToken t = token(inputTerm, stemmedInputTerm, type);
                 t.setOffset(i * paddedInputTerm.length());
                 tokens[i] = t;
                 input.append(paddedInputTerm);
@@ -214,28 +230,29 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     // --------------------------------------------------------------------------------
-    //
     // Utilities
-    //
-    // --------------------------------------------------------------------------------
 
-    private static SimpleToken newToken(String orig, String stem, TokenType type) {
-        return newToken(orig, stem, type, false);
+    private static SimpleToken token(String orig, String stem, TokenType type) {
+        return token(orig, stem, type, false);
     }
 
-    private static SimpleToken newToken(String orig, String stem, TokenType type, boolean specialToken) {
+    private static SimpleToken token(String orig, String stem, TokenType type, boolean specialToken) {
         return new SimpleToken(orig).setTokenString(stem)
                                     .setType(type)
                                     .setSpecialToken(specialToken);
     }
 
     private static void assertAnnotations(SpanTree expected, String value, Token... tokens) {
-        assertAnnotations(expected, value, newLinguistics(Arrays.asList(tokens), Collections.<String, String>emptyMap()));
+        assertAnnotations(expected, value, new AnnotatorConfig(), newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
     }
 
-    private static void assertAnnotations(SpanTree expected, String str, Linguistics linguistics) {
+    private static void assertAnnotations(SpanTree expected, String value, AnnotatorConfig config, Token... tokens) {
+        assertAnnotations(expected, value, config, newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
+    }
+
+    private static void assertAnnotations(SpanTree expected, String str, AnnotatorConfig config, Linguistics linguistics) {
         StringFieldValue val = new StringFieldValue(str);
-        assertEquals(expected != null, new LinguisticsAnnotator(linguistics, CONFIG).annotate(val));
+        assertEquals(expected != null, new LinguisticsAnnotator(linguistics, config).annotate(val));
         assertEquals(expected, val.getSpanTree(SpanTrees.LINGUISTICS));
     }
 

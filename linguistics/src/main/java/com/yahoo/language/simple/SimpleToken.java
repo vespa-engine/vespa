@@ -15,35 +15,48 @@ import java.util.Objects;
 public class SimpleToken implements Token {
 
     private final List<Token> components = new ArrayList<>();
-    private final String orig;
+    private final String original;
     private TokenType type = TokenType.UNKNOWN;
     private TokenScript script = TokenScript.UNKNOWN;
     private String tokenString;
+    private List<String> stems = null; // Any additional stems after tokenString
     private boolean specialToken = false;
     private long offset = 0;
 
-    public SimpleToken(String orig) {
-        this(orig, null);
+    public SimpleToken(String original) {
+        this(original, (String)null);
     }
 
-    public SimpleToken(String orig, String tokenString) {
-        this.orig = orig;
+    public SimpleToken(String original, String tokenString) {
+        this.original = original;
         this.tokenString = tokenString;
+    }
+
+    /** Exposed as fromStems */
+    private SimpleToken(String original, List<String> stems) {
+        this.type = TokenType.ALPHABETIC; // Only type which may have stems
+        this.original = original;
+        this.tokenString = stems.get(0);
+        this.stems = List.copyOf(stems.subList(1, stems.size()));
     }
 
     @Override
     public String getOrig() {
-        return orig;
+        return original;
     }
 
     @Override
     public int getNumStems() {
-        return tokenString != null ? 1 : 0;
+        return (tokenString != null ? 1 : 0) + (stems != null ? stems.size() : 0);
     }
 
     @Override
     public String getStem(int i) {
-        return tokenString;
+        if (i == 0)
+            return tokenString;
+        if (stems != null && i-1 < stems.size())
+            return stems.get(i-1);
+        return tokenString; // TODO Vespa 9: throw new IllegalArgumentException() instead
     }
 
     @Override
@@ -131,12 +144,12 @@ public class SimpleToken implements Token {
 
     @Override
     public int hashCode() {
-        return orig.hashCode();
+        return original.hashCode();
     }
 
     @Override
     public String toString() {
-        return "token '" + orig + "'";
+        return "token '" + original + "'";
     }
 
     public String toDetailString() {
@@ -169,6 +182,10 @@ public class SimpleToken implements Token {
     @Override
     public boolean isIndexable() {
         return getType().isIndexable() && (getOrig().length() > 0);
+    }
+
+    public static SimpleToken fromStems(String original, List<String> stems) {
+        return new SimpleToken(original, stems);
     }
 
 }
