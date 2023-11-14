@@ -96,7 +96,7 @@ protected:
         return sequence;
     }
 
-    void populate(uint32_t sequence_length);
+    void populate(std::vector<uint32_t> sequence_lengths, std::optional<std::function<void()>> clear_callback = std::nullopt);
     EntryRef get_posting_ref(int key);
     void test_compact_btree_nodes(uint32_t sequence_length);
     void test_compact_sequence(uint32_t sequence_length);
@@ -120,21 +120,28 @@ PostingStoreTest::~PostingStoreTest()
 }
 
 void
-PostingStoreTest::populate(uint32_t sequence_length)
+PostingStoreTest::populate(std::vector<uint32_t> sequence_lengths, std::optional<std::function<void()>> clear_callback)
 {
     auto& store = _store;
     auto& dictionary = _value_store.get_dictionary();
     std::vector<EntryRef> refs;
-    for (int i = 0; i < 9000; ++i) {
-        refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+    for (auto sequence_length : sequence_lengths) {
+        for (int i = 0; i < 9000; ++i) {
+            refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+        }
     }
-    dictionary.update_posting_list(_value_store.insert(1), _value_store.get_comparator(), [this, sequence_length](EntryRef) { return add_sequence(4, 4 + sequence_length); });
-    dictionary.update_posting_list(_value_store.insert(2), _value_store.get_comparator(), [this, sequence_length](EntryRef) { return add_sequence(5, 5 + sequence_length); });
-    for (int i = 9000; i < 11000; ++i) {
-        refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+    dictionary.update_posting_list(_value_store.insert(1), _value_store.get_comparator(), [this, sequence_length = sequence_lengths.front()](EntryRef) { return add_sequence(4, 4 + sequence_length); });
+    dictionary.update_posting_list(_value_store.insert(2), _value_store.get_comparator(), [this, sequence_length = sequence_lengths.front()](EntryRef) { return add_sequence(5, 5 + sequence_length); });
+    for (auto sequence_length : sequence_lengths) {
+        for (int i = 9000; i < 11000; ++i) {
+            refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+        }
     }
     for (auto& ref : refs) {
         store.clear(ref);
+        if (clear_callback.has_value()) {
+            clear_callback.value()();
+        }
     }
     inc_generation();
 }
@@ -150,7 +157,7 @@ PostingStoreTest::get_posting_ref(int key)
 void
 PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
 {
-    populate(sequence_length);
+    populate({sequence_length});
     auto &store = _store;
     EntryRef old_ref1 = get_posting_ref(1);
     EntryRef old_ref2 = get_posting_ref(2);
@@ -183,7 +190,7 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
 void
 PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
 {
-    populate(sequence_length);
+    populate({sequence_length});
     auto &store = _store;
     EntryRef old_ref1 = get_posting_ref(1);
     EntryRef old_ref2 = get_posting_ref(2);
@@ -244,6 +251,40 @@ TEST_P(PostingStoreTest, require_that_btree_roots_are_compacted)
 TEST_P(PostingStoreTest, require_that_bitvectors_are_compacted)
 {
     test_compact_sequence(huge_sequence_length);
+}
+
+namespace {
+
+/*
+ * Check if compaction of btree nodes or short arrays is suppressed due to
+ * dead ratio being too low for the sum of both data stores.
+ */
+bool compaction_is_suppressed(MyPostingStore& store, CompactionStrategy& compaction_strategy)
+{
+    store.update_stat(compaction_strategy);
+    auto& compaction_spec = store.get_compaction_spec();
+    auto memory_usage = store.getMemoryUsage();
+    return ((compaction_strategy.should_compact_memory(memory_usage.btrees) &&
+             !compaction_spec.btree_nodes()) ||
+            (compaction_strategy.should_compact_memory(memory_usage.short_arrays) &&
+             !compaction_spec.store()));
+}
+
+}
+
+TEST_P(PostingStoreTest, require_that_compaction_is_suppressed)
+{
+    CompactionStrategy compaction_strategy(0.05, 0.2);
+    bool suppressed_compaction = false;
+    auto clear_callback = [this, &compaction_strategy, &suppressed_compaction]() mutable
+                          {
+                              inc_generation();
+                              if (compaction_is_suppressed(_store, compaction_strategy)) {
+                                  suppressed_compaction = true;
+                              }
+                          };
+    populate({ 4, 10}, clear_callback);
+    EXPECT_TRUE(suppressed_compaction);
 }
 
 }
