@@ -44,8 +44,8 @@ PostingStoreBase2::resizeBitVectors(uint32_t newSize, uint32_t newCapacity)
         newSize = newCapacity;
     if (newSize == _bvSize && newCapacity == _bvCapacity)
         return false;
-    _minBvDocFreq = std::max(newSize >> 6, 64u);
-    _maxBvDocFreq = std::max(newSize >> 5, 128u);
+    _minBvDocFreq = std::max(newSize >> 7, 64u);
+    _maxBvDocFreq = std::max(newSize >> 6, 128u);
     if (_bvs.empty()) {
         _bvSize = newSize;
         _bvCapacity = newCapacity;
