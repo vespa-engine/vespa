@@ -106,7 +106,7 @@ public class SimpleTokenizer implements Tokenizer {
             String oldToken = token;
             token = stemmer.stem(token);
             String newToken = token;
-            log.log(Level.FINEST, () -> "stem '" + oldToken+"' to '" + newToken+"'");
+            log.log(Level.FINEST, () -> "stem '" + oldToken + "' to '" + newToken + "'");
         }
         String result = token;
         log.log(Level.FINEST, () -> "processed token is: " + result);

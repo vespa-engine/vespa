@@ -18,6 +18,7 @@ import java.util.List;
  * @author Einar M R Rosenvinge
  */
 class SpanNode2AnnotationContainer extends AnnotationContainer {
+
     private final Multimap<SpanNode, Annotation> spanNode2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);
 
     @Override
