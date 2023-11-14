@@ -199,13 +199,13 @@ jobs:
           fi
           docker build --file Dockerfile.systemtest \
                        --progress=plain \
-                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base:latest \
+                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-el8:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=$SKIP_M2_POPULATE \
                        --target systemtest \
-                       --tag vespaengine/vespa-systemtest:$VESPA_VERSION \
-                       --tag vespaengine/vespa-systemtest:latest .
+                       --tag vespaengine/vespa-systemtest-el8:$VESPA_VERSION \
+                       --tag vespaengine/vespa-systemtest-el8:latest .
       - verify-test-image: |
-          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest:$VESPA_VERSION -lc \
+          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-el8:$VESPA_VERSION -lc \
           "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
       - publish-test-image: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
@@ -213,8 +213,8 @@ jobs:
             set +x
             docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
             eval "$OPT_STATE"
-            docker push docker.io/vespaengine/vespa-systemtest:$VESPA_VERSION
-            docker push docker.io/vespaengine/vespa-systemtest:latest
+            docker push docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION
+            docker push docker.io/vespaengine/vespa-systemtest-el8:latest
           fi
       - *save-cache
       - update-build-status: |
