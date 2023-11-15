@@ -278,7 +278,7 @@ jobs:
           meta set vespa.version $VESPA_VERSION
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io
+          dnf install -y docker-ce docker-ce-cli containerd.io python3 python3-pip
           docker system info
       - release-java-artifacts: |
           screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
