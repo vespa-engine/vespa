@@ -596,7 +596,7 @@ RankBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 
 //-----------------------------------------------------------------------------
 
-SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector)
+SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector) noexcept
     : _selector(selector)
 {
 }
@@ -624,27 +624,6 @@ bool
 SourceBlenderBlueprint::inheritStrict(size_t) const
 {
     return true;
-}
-
-class FindSource : public Blueprint::IPredicate
-{
-public:
-    explicit FindSource(uint32_t sourceId) noexcept : _sourceId(sourceId) { }
-    bool check(const Blueprint & bp) const override { return bp.getSourceId() == _sourceId; }
-private:
-    uint32_t _sourceId;
-};
-
-ssize_t
-SourceBlenderBlueprint::findSource(uint32_t sourceId) const
-{
-    ssize_t index(-1);
-    FindSource fs(sourceId);
-    IndexList list = find(fs);
-    if ( ! list.empty()) {
-        index = list.front();
-    }
-    return index;
 }
 
 SearchIterator::UP

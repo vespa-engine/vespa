@@ -79,8 +79,8 @@ public:
         static constexpr uint8_t COST_TIER_MAX = 255;
 
         State() noexcept;
-        State(FieldSpecBase field) noexcept;
-        State(FieldSpecBaseList fields_in) noexcept;
+        explicit State(FieldSpecBase field) noexcept;
+        explicit State(FieldSpecBaseList fields_in) noexcept;
         State(const State &rhs) = delete;
         State(State &&rhs) noexcept = default;
         State &operator=(const State &rhs) = delete;
@@ -105,7 +105,7 @@ public:
             _estimateHits = est.estHits;
             _estimateEmpty = est.empty;
         }
-        HitEstimate estimate() const noexcept { return HitEstimate(_estimateHits, _estimateEmpty); }
+        HitEstimate estimate() const noexcept { return {_estimateHits, _estimateEmpty}; }
         double hit_ratio(uint32_t docid_limit) const noexcept {
             uint32_t total_hits = _estimateHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
@@ -374,7 +374,7 @@ protected:
     void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(bool allow_termwise_eval) noexcept
+    explicit LeafBlueprint(bool allow_termwise_eval) noexcept
         : _state()
     {
         _state.allow_termwise_eval(allow_termwise_eval);
