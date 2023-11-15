@@ -103,6 +103,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     Visitor visit;
     Op createBuckets;
     Op deleteBuckets;
+    Op remove_by_gid;
     Op repairs;
     metrics::LongCountMetric repairFixed;
     Op recheckBucketInfo;

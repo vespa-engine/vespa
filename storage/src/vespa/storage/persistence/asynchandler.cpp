@@ -300,14 +300,25 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
         });
         _spi.deleteBucketAsync(spi_bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket.getBucketId(), std::move(task)));
     });
+
     auto& throttler = _env._fileStorHandler.operation_throttler();
+    auto* remove_by_gid_metric = &_env._metrics.remove_by_gid;
+
     for (auto& meta : meta_entries) {
         auto token = throttler.blocking_acquire_one();
+        remove_by_gid_metric->count.inc();
         std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{meta->getDocumentType(), meta->getGid(), meta->getTimestamp()}};
-        auto task = makeResultTask([bucket = cmd.getBucket(), token = std::move(token), invoke_delete_on_zero_refs]([[maybe_unused]] spi::Result::UP ignored) {
-            LOG(spam, "%s: completed removeByGidAsync operation", bucket.toString().c_str());
-            // Nothing else clever to do here. Throttle token and deleteBucket dispatch refs dropped implicitly.
-        });
+        auto task = makeResultTask([bucket = cmd.getBucket(), token = std::move(token),
+                                    invoke_delete_on_zero_refs, remove_by_gid_metric,
+                                    op_timer = framework::MilliSecTimer(_env._component.getClock())]
+            (spi::Result::UP result) {
+                if (result->hasError()) {
+                    remove_by_gid_metric->failed.inc();
+                }
+                remove_by_gid_metric->latency.addValue(op_timer.getElapsedTimeAsDouble());
+                LOG(spam, "%s: completed removeByGidAsync operation", bucket.toString().c_str());
+                // Nothing else clever to do here. Throttle token and deleteBucket dispatch refs dropped implicitly.
+            });
         LOG(spam, "%s: about to invoke removeByGidAsync(%s, %s, %zu)", cmd.getBucket().toString().c_str(),
             vespalib::string(meta->getDocumentType()).c_str(), meta->getGid().toString().c_str(), meta->getTimestamp().getValue());
         _spi.removeByGidAsync(spi_bucket, std::move(to_remove), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));

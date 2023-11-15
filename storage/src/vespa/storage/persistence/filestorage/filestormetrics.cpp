@@ -159,6 +159,7 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       visit(this),
       createBuckets("createbuckets", "Number of buckets that has been created.", this),
       deleteBuckets("deletebuckets", "Number of buckets that has been deleted.", this),
+      remove_by_gid("remove_by_gid", "Internal single-document remove operations used by DeleteBucket", this),
       repairs("bucketverified", "Number of times buckets have been checked.", this),
       repairFixed("bucketfixed", {}, "Number of times bucket has been fixed because of corruption", this),
       recheckBucketInfo("recheckbucketinfo",
