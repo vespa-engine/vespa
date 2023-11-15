@@ -1485,7 +1485,6 @@
       "abstract"
     ],
     "methods" : [
-      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.application.api.DeployLogger)",
       "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
       "public static com.yahoo.config.model.api.OnnxModelCost disabled()"
     ],
