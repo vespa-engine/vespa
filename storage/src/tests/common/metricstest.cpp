@@ -122,9 +122,6 @@ void MetricsTest::createFakeLoad()
         metrics.docs.inc(10 * n);
         metrics.bytes.inc(10240 * n);
     }
-    _filestorMetrics->directoryEvents.inc(5);
-    _filestorMetrics->partitionEvents.inc(4);
-    _filestorMetrics->diskEvents.inc(3);
     {
         FileStorMetrics& disk(*_filestorMetrics);
         disk.queueSize.addValue(4 * n);
@@ -147,18 +144,10 @@ void MetricsTest::createFakeLoad()
             thread.update.notFound.inc(1 * n);
             thread.update.latencyRead.addValue(2 * n);
             thread.update.latency.addValue(7 * n);
-            thread.revert.count.inc(2 * n);
-            thread.revert.notFound.inc(n / 2);
-            thread.revert.latency.addValue(2 * n);
             thread.visit.count.inc(6 * n);
 
             thread.deleteBuckets.count.inc(1 * n);
-            thread.repairs.count.inc(3 * n);
-            thread.repairFixed.inc(1 * n);
             thread.splitBuckets.count.inc(20 * n);
-            thread.movedBuckets.count.inc(1 * n);
-            thread.readBucketInfo.count.inc(2 * n);
-            thread.internalJoin.count.inc(3 * n);
 
             thread.mergeBuckets.count.inc(2 * n);
             thread.getBucketDiff.count.inc(4 * n);

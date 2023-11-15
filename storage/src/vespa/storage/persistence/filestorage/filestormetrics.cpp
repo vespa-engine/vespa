@@ -154,14 +154,11 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       removeLocation("remove_location", "Remove location", this),
       statBucket("stat_bucket", "Stat bucket", this),
       update(this),
-      revert("revert", "Revert", this),
       createIterator("createiterator", {}, this),
       visit(this),
       createBuckets("createbuckets", "Number of buckets that has been created.", this),
       deleteBuckets("deletebuckets", "Number of buckets that has been deleted.", this),
       remove_by_gid("remove_by_gid", "Internal single-document remove operations used by DeleteBucket", this),
-      repairs("bucketverified", "Number of times buckets have been checked.", this),
-      repairFixed("bucketfixed", {}, "Number of times bucket has been fixed because of corruption", this),
       recheckBucketInfo("recheckbucketinfo",
                         "Number of times bucket info has been explicitly "
                         "rechecked due to buckets being marked modified by "
@@ -170,11 +167,6 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       splitBuckets("splitbuckets", "Number of times buckets have been split.", this),
       joinBuckets("joinbuckets", "Number of times buckets have been joined.", this),
       setBucketStates("setbucketstates", "Number of times buckets have been activated or deactivated.", this),
-      movedBuckets("movedbuckets", "Number of buckets moved between disks", this),
-      readBucketList("readbucketlist", "Number of read bucket list requests", this),
-      readBucketInfo("readbucketinfo", "Number of read bucket info requests", this),
-      internalJoin("internaljoin", "Number of joins to join buckets on multiple disks during "
-                                   "storage initialization.", this),
       mergeBuckets("mergebuckets", "Number of times buckets have been merged.", this),
       getBucketDiff("getbucketdiff", "Number of getbucketdiff commands that have been processed.", this),
       applyBucketDiff("applybucketdiff", "Number of applybucketdiff commands that have been processed.", this),
@@ -212,18 +204,11 @@ FileStorMetrics::FileStorMetrics()
       throttle_window_size("throttle_window_size", {}, "Current size of async operation throttler window size", this),
       throttle_waiting_threads("throttle_waiting_threads", {}, "Number of threads waiting to acquire a throttle token", this),
       throttle_active_tokens("throttle_active_tokens", {}, "Current number of active throttle tokens", this),
-      waitingForLockHitRate("waitingforlockrate", {},
-                            "Amount of times a filestor thread has needed to wait for "
-                            "lock to take next message in queue.", this),
       active_operations(this),
-      directoryEvents("directoryevents", {}, "Number of directory events received.", this),
-      partitionEvents("partitionevents", {}, "Number of partition events received.", this),
-      diskEvents("diskevents", {}, "Number of disk events received.", this),
       bucket_db_init_latency("bucket_db_init_latency", {}, "Time taken (in ms) to initialize bucket databases with "
                                                            "information from the persistence provider", this)
 {
     pendingMerges.unsetOnZeroValue();
-    waitingForLockHitRate.unsetOnZeroValue();
 }
 
 FileStorMetrics::~FileStorMetrics() = default;
