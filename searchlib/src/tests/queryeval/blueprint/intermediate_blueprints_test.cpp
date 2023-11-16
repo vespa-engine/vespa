@@ -133,6 +133,27 @@ TEST("test And propagates updated histestimate") {
     EXPECT_EQUAL(1.0f/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
 }
 
+TEST("test Or propagates updated histestimate") {
+    OrBlueprint bp;
+    bp.setSourceId(2);
+    bp.addChild(ap(MyLeafSpec(5000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.optimize_self();
+    bp.setDocIdLimit(5000);
+    bp.fetchPostings(ExecuteInfo::TRUE);
+    EXPECT_EQUAL(4u, bp.childCnt());
+    for (uint32_t i = 0; i < bp.childCnt(); i++) {
+        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
+        EXPECT_TRUE(child.executeInfo.isStrict());
+    }
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(3)).executeInfo.hitRate());
+}
+
 TEST("test And Blueprint") {
     AndBlueprint b;
     { // combine
