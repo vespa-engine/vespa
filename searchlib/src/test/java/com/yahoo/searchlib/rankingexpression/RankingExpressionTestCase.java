@@ -364,7 +364,7 @@ public class RankingExpressionTestCase {
     private void assertSerialization(String expectedSerialization, String expressionString) {
         String serializedExpression;
         try {
-            RankingExpression expression = new RankingExpression(expressionString);
+            RankingExpression expression = new RankingExpression("secondphase", expressionString);
             // No functions -> expect one rank property
             serializedExpression = expression.getRankProperties(new SerializationContext()).values().iterator().next();
             assertEquals(expectedSerialization, serializedExpression);
@@ -376,7 +376,7 @@ public class RankingExpressionTestCase {
         try {
             // No functions -> output should be parseable to a ranking expression
             // (but not the same one due to primitivization)
-            RankingExpression reparsedExpression = new RankingExpression(serializedExpression);
+            RankingExpression reparsedExpression = new RankingExpression("secondphase", serializedExpression);
             // Serializing the primitivized expression should yield the same expression again
             String reserializedExpression =
                     reparsedExpression.getRankProperties(new SerializationContext()).values().iterator().next();
@@ -399,7 +399,7 @@ public class RankingExpressionTestCase {
             if (print)
                 System.out.println("Parsing expression '" + expressionString + "':");
 
-            RankingExpression expression = new RankingExpression(expressionString);
+            RankingExpression expression = new RankingExpression("secondphase", expressionString);
             Map<String, String> rankProperties = expression.getRankProperties(new SerializationContext(functions,
                                                                                                        Optional.empty()));
             if (print) {

@@ -186,6 +186,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private RankingExpression secondPhaseRanking;
         private RankingExpression globalPhaseRanking;
         private final int globalPhaseRerankCount;
+        private final SerializationContext functionSerializationContext;
 
         /**
          * Creates a raw rank profile from the given rank profile
@@ -225,7 +226,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).toList();
             Map<String, String> functionProperties = new LinkedHashMap<>();
             var typeContext = compiled.typeContext(queryProfiles);
-            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions, Map.of(), typeContext);
+            this.functionSerializationContext = new SerializationContext(functionExpressions, Map.of(), typeContext);
             if (firstPhaseRanking != null) {
                 functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
             }
@@ -265,8 +266,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
                                                               Map<String, String> functionProperties,
                                                               SerializationContext functionContext) {
-            if (functions.isEmpty()) return;
-
             replaceFunctionFeatures(summaryFeatures, functionContext);
             replaceFunctionFeatures(matchFeatures, functionContext);
 
@@ -556,11 +555,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if ("".equals(name))
                 name = phase;
 
+            String expressionAsString = expression.getRoot().toString(functionSerializationContext).toString();
             if (expression.getRoot() instanceof ReferenceNode) {
-                properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
+                properties.add(new Pair<>("vespa.rank." + phase, expressionAsString));
             } else {
                 properties.add(new Pair<>("vespa.rank." + phase, wrapInRankingExpression(name)));
-                properties.add(new Pair<>(RankingExpression.propertyName(name), expression.getRoot().toString()));
+                properties.add(new Pair<>(RankingExpression.propertyName(name), expressionAsString));
             }
             return properties;
         }
