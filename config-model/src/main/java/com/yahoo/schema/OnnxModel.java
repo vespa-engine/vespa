@@ -143,7 +143,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
 
     public void setStatelessInterOpThreads(int interOpThreads) {
         if (interOpThreads >= 0) {
-            onnxModelOptions = onnxModelOptions.withInteropThreads(interOpThreads);
+            onnxModelOptions = onnxModelOptions.withInterOpThreads(interOpThreads);
         }
     }
 
@@ -153,7 +153,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
 
     public void setStatelessIntraOpThreads(int intraOpThreads) {
         if (intraOpThreads >= 0) {
-            onnxModelOptions = onnxModelOptions.withIntraopThreads(intraOpThreads);
+            onnxModelOptions = onnxModelOptions.withIntraOpThreads(intraOpThreads);
         }
     }
 

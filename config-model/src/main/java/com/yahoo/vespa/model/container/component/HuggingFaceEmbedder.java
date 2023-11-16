@@ -7,8 +7,6 @@ import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import java.util.Optional;
-
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy;
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
@@ -21,27 +19,35 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
 public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEmbedderConfig.Producer {
 
     private final OnnxModelOptions onnxModelOptions;
+    private final ModelReference modelRef;
+    private final ModelReference vocabRef;
+    private final Integer maxTokens;
+    private final String transformerInputIds;
+    private final String transformerAttentionMask;
+    private final String transformerTokenTypeIds;
+    private final String transformerOutput;
+    private final Boolean normalize;
+    private final String poolingStrategy;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
-        var modelRef = model.modelReference();
         this.onnxModelOptions = new OnnxModelOptions(
-                Optional.of(modelRef),
-                Optional.of(Model.fromXml(state, xml, "tokenizer-model")
-                        .map(Model::modelReference)
-                        .orElseGet(() -> resolveDefaultVocab(model, state))),
-                getChildValue(xml, "max-tokens").map(Integer::parseInt),
-                getChildValue(xml, "transformer-input-ids"),
-                getChildValue(xml, "transformer-attention-mask"),
-                getChildValue(xml, "transformer-token-type-ids"),
-                getChildValue(xml, "transformer-output"),
-                getChildValue(xml, "normalize").map(Boolean::parseBoolean),
                 getChildValue(xml, "onnx-execution-mode"),
                 getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
                 getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new),
-                getChildValue(xml, "pooling-strategy"));
+                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
+        modelRef = model.modelReference();
+        vocabRef = Model.fromXml(state, xml, "tokenizer-model")
+                .map(Model::modelReference)
+                .orElseGet(() -> resolveDefaultVocab(model, state));
+        maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
+        transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
+        transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
+        transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
+        transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
+        normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
+        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
         model.registerOnnxModelCost(cluster);
     }
 
@@ -55,18 +61,18 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
 
     @Override
     public void getConfig(HuggingFaceEmbedderConfig.Builder b) {
-        b.transformerModel(onnxModelOptions.modelRef().get()).tokenizerPath(onnxModelOptions.vocabRef().get());
-        onnxModelOptions.maxTokens().ifPresent(b::transformerMaxTokens);
-        onnxModelOptions.transformerInputIds().ifPresent(b::transformerInputIds);
-        onnxModelOptions.transformerAttentionMask().ifPresent(b::transformerAttentionMask);
-        onnxModelOptions.transformerTokenTypeIds().ifPresent(b::transformerTokenTypeIds);
-        onnxModelOptions.transformerOutput().ifPresent(b::transformerOutput);
-        onnxModelOptions.normalize().ifPresent(b::normalize);
+        b.transformerModel(modelRef).tokenizerPath(vocabRef);
+        if (maxTokens != null) b.transformerMaxTokens(maxTokens);
+        if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
+        if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);
+        if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
+        if (transformerOutput != null) b.transformerOutput(transformerOutput);
+        if (normalize != null) b.normalize(normalize);
+        if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
         onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
-        onnxModelOptions.poolingStrategy().ifPresent(value -> b.poolingStrategy(PoolingStrategy.Enum.valueOf(value)));
     }
 
 }

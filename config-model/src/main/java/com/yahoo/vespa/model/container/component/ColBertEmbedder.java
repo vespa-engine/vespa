@@ -7,8 +7,6 @@ import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import java.util.Optional;
-
 import static com.yahoo.embedding.ColBertEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
@@ -20,31 +18,43 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
 public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderConfig.Producer {
 
     private final OnnxModelOptions onnxModelOptions;
+    private final ModelReference modelRef;
+    private final ModelReference vocabRef;
+
+    private final Integer maxQueryTokens;
+
+    private final Integer maxDocumentTokens;
+
+    private final Integer transformerStartSequenceToken;
+    private final Integer transformerEndSequenceToken;
+    private final Integer transformerMaskToken;
+    private final Integer maxTokens;
+    private final String transformerInputIds;
+    private final String transformerAttentionMask;
+
+    private final String transformerOutput;
 
     public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
         this.onnxModelOptions = new OnnxModelOptions(
-                Optional.of(model.modelReference()),
-                Optional.of(Model.fromXml(state, xml, "tokenizer-model")
-                        .map(Model::modelReference)
-                        .orElseGet(() -> resolveDefaultVocab(model, state))),
-                getChildValue(xml, "max-tokens").map(Integer::parseInt),
-                getChildValue(xml, "transformer-input-ids"),
-                getChildValue(xml, "transformer-attention-mask"),
-                getChildValue(xml, "transformer-token-type-ids"),
-                getChildValue(xml, "transformer-output"),
-                getChildValue(xml, "normalize").map(Boolean::parseBoolean),
                 getChildValue(xml, "onnx-execution-mode"),
                 getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
                 getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new),
-                getChildValue(xml, "pooling-strategy"),
-                getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt),
-                getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt),
-                getChildValue(xml, "max-query-tokens").map(Integer::parseInt),
-                getChildValue(xml, "max-document-tokens").map(Integer::parseInt),
-                getChildValue(xml, "transformer-mask-token").map(Integer::parseInt));
+                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
+        modelRef = model.modelReference();
+        vocabRef = Model.fromXml(state, xml, "tokenizer-model")
+                .map(Model::modelReference)
+                .orElseGet(() -> resolveDefaultVocab(model, state));
+        maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
+        maxQueryTokens = getChildValue(xml, "max-query-tokens").map(Integer::parseInt).orElse(null);
+        maxDocumentTokens = getChildValue(xml, "max-document-tokens").map(Integer::parseInt).orElse(null);
+        transformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
+        transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
+        transformerMaskToken = getChildValue(xml, "transformer-mask-token").map(Integer::parseInt).orElse(null);
+        transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
+        transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
+        transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         model.registerOnnxModelCost(cluster);
     }
 
@@ -58,16 +68,16 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
 
     @Override
     public void getConfig(ColBertEmbedderConfig.Builder b) {
-        b.transformerModel(onnxModelOptions.modelRef().get()).tokenizerPath(onnxModelOptions.vocabRef().get());
-       onnxModelOptions.maxTokens().ifPresent(b::transformerMaxTokens);
-       onnxModelOptions.transformerInputIds().ifPresent(b::transformerInputIds);
-       onnxModelOptions.transformerAttentionMask().ifPresent(b::transformerAttentionMask);
-       onnxModelOptions.transformerOutput().ifPresent(b::transformerOutput);
-       onnxModelOptions.maxQueryTokens().ifPresent(b::maxQueryTokens);
-       onnxModelOptions.maxDocumentTokens().ifPresent(b::maxDocumentTokens);
-       onnxModelOptions.transformerStartSequenceToken().ifPresent(b::transformerStartSequenceToken);
-       onnxModelOptions.transformerEndSequenceToken().ifPresent(b::transformerEndSequenceToken);
-       onnxModelOptions.transformerMaskToken().ifPresent(b::transformerMaskToken);
+        b.transformerModel(modelRef).tokenizerPath(vocabRef);
+        if (maxTokens != null) b.transformerMaxTokens(maxTokens);
+        if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
+        if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);
+        if (transformerOutput != null) b.transformerOutput(transformerOutput);
+        if (maxQueryTokens != null) b.maxQueryTokens(maxQueryTokens);
+        if (maxDocumentTokens != null) b.maxDocumentTokens(maxDocumentTokens);
+        if (transformerStartSequenceToken != null) b.transformerStartSequenceToken(transformerStartSequenceToken);
+        if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
+        if (transformerMaskToken != null) b.transformerMaskToken(transformerMaskToken);
        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
        onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
        onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
