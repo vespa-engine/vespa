@@ -74,6 +74,8 @@ public:
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
+private:
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
 };
 
 //-----------------------------------------------------------------------------
