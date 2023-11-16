@@ -90,7 +90,8 @@ public class Pkcs10CsrBuilder {
                                 .toArray(GeneralName[]::new));
                 extGen.addExtension(Extension.subjectAlternativeName, false, generalNames);
             }
-            requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
+            if (!extGen.isEmpty())
+                requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
             ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm.getAlgorithmName())
                     .setProvider(BouncyCastleProviderHolder.getInstance())
                     .build(keyPair.getPrivate());
