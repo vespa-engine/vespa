@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.model.container.component;
 
-import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import static com.yahoo.embedding.BertBaseEmbedderConfig.OnnxExecutionMode;
+import static com.yahoo.embedding.BertBaseEmbedderConfig.PoolingStrategy;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -16,56 +16,45 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  */
 public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConfig.Producer {
 
-    private final ModelReference modelRef;
-    private final ModelReference vocabRef;
-    private final Integer maxTokens;
-    private final String transformerInputIds;
-    private final String transformerAttentionMask;
-    private final String transformerTokenTypeIds;
-    private final String transformerOutput;
-    private final Integer tranformerStartSequenceToken;
-    private final Integer transformerEndSequenceToken;
-    private final String poolingStrategy;
-    private final String onnxExecutionMode;
-    private final Integer onnxInteropThreads;
-    private final Integer onnxIntraopThreads;
-    private final Integer onnxGpuDevice;
-
+    private final OnnxModelOptions onnxModelOptions;
 
     public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
-        modelRef = model.modelReference();
-        vocabRef = Model.fromXml(state, xml, "tokenizer-vocab").orElseThrow().modelReference();
-        maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
-        transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
-        transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
-        transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
-        transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
-        tranformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
-        transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
-        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
-        onnxExecutionMode = getChildValue(xml, "onnx-execution-mode").orElse(null);
-        onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
-        onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
-        onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
+        this.onnxModelOptions = new OnnxModelOptions(
+                model.modelReference(),
+                Model.fromXml(state, xml, "tokenizer-vocab").orElseThrow().modelReference(),
+                getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null),
+                getChildValue(xml, "transformer-input-ids").orElse(null),
+                getChildValue(xml, "transformer-attention-mask").orElse(null),
+                getChildValue(xml, "transformer-token-type-ids").orElse(null),
+                getChildValue(xml, "transformer-output").orElse(null),
+                getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null),
+                getChildValue(xml, "onnx-execution-mode").orElse(null),
+                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null),
+                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null),
+                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new).orElse(null),
+                getChildValue(xml, "pooling-strategy").orElse(null),
+                getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null),
+                getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null));
         model.registerOnnxModelCost(cluster);
     }
 
     @Override
     public void getConfig(BertBaseEmbedderConfig.Builder b) {
-        b.transformerModel(modelRef).tokenizerVocab(vocabRef);
-        if (maxTokens != null) b.transformerMaxTokens(maxTokens);
-        if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
-        if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);
-        if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
-        if (transformerOutput != null) b.transformerOutput(transformerOutput);
-        if (tranformerStartSequenceToken != null) b.transformerStartSequenceToken(tranformerStartSequenceToken);
-        if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
-        if (poolingStrategy != null) b.poolingStrategy(BertBaseEmbedderConfig.PoolingStrategy.Enum.valueOf(poolingStrategy));
-        if (onnxExecutionMode != null) b.onnxExecutionMode(BertBaseEmbedderConfig.OnnxExecutionMode.Enum.valueOf(onnxExecutionMode));
-        if (onnxInteropThreads != null) b.onnxInterOpThreads(onnxInteropThreads);
-        if (onnxIntraopThreads != null) b.onnxIntraOpThreads(onnxIntraopThreads);
-        if (onnxGpuDevice != null) b.onnxGpuDevice(onnxGpuDevice);
+        b.transformerModel(onnxModelOptions.modelRef()).tokenizerVocab(onnxModelOptions.vocabRef());
+        if (onnxModelOptions.maxTokens() != null) b.transformerMaxTokens(onnxModelOptions.maxTokens());
+        if (onnxModelOptions.transformerInputIds() != null) b.transformerInputIds(onnxModelOptions.transformerInputIds());
+        if (onnxModelOptions.transformerAttentionMask() != null) b.transformerAttentionMask(onnxModelOptions.transformerAttentionMask());
+        if (onnxModelOptions.transformerTokenTypeIds() != null) b.transformerTokenTypeIds(onnxModelOptions.transformerTokenTypeIds());
+        if (onnxModelOptions.transformerOutput() != null) b.transformerOutput(onnxModelOptions.transformerOutput());
+        if (onnxModelOptions.transformerStartSequenceToken() != null) b.transformerStartSequenceToken(onnxModelOptions.transformerStartSequenceToken());
+        if (onnxModelOptions.transformerEndSequenceToken() != null) b.transformerEndSequenceToken(onnxModelOptions.transformerEndSequenceToken());
+        if (onnxModelOptions.poolingStrategy() != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(onnxModelOptions.poolingStrategy()));
+        if (onnxModelOptions.executionMode() != null) b.onnxExecutionMode(OnnxExecutionMode.Enum.valueOf(onnxModelOptions.executionMode()));
+        if (onnxModelOptions.interOpThreads() != null) b.onnxInterOpThreads(onnxModelOptions.interOpThreads());
+        if (onnxModelOptions.intraOpThreads() != null) b.onnxIntraOpThreads(onnxModelOptions.intraOpThreads());
+        if (onnxModelOptions.gpuDevice() != null) b.onnxGpuDevice(onnxModelOptions.gpuDevice().deviceNumber());
     }
+
 }
