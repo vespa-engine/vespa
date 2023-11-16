@@ -204,7 +204,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         }
     }
     // returning nullptr will trigger fallback to filter iterator
-    return SearchIterator::UP();
+    return {};
 }
 
 
