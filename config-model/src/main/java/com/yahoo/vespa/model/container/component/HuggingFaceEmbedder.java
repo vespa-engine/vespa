@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
@@ -8,6 +7,8 @@ import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy;
+import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -16,6 +17,8 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  * @author bjorncs
  */
 public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEmbedderConfig.Producer {
+
+    private final OnnxModelOptions onnxModelOptions;
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
     private final Integer maxTokens;
@@ -24,15 +27,16 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final String transformerTokenTypeIds;
     private final String transformerOutput;
     private final Boolean normalize;
-    private final String onnxExecutionMode;
-    private final Integer onnxInteropThreads;
-    private final Integer onnxIntraopThreads;
-    private final Integer onnxGpuDevice;
     private final String poolingStrategy;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
+        this.onnxModelOptions = new OnnxModelOptions(
+                getChildValue(xml, "onnx-execution-mode"),
+                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
+                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
+                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXml(state, xml, "tokenizer-model")
                 .map(Model::modelReference)
@@ -43,10 +47,6 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
-        onnxExecutionMode = getChildValue(xml, "onnx-execution-mode").orElse(null);
-        onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
-        onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
-        onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
         model.registerOnnxModelCost(cluster);
     }
@@ -68,11 +68,11 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (normalize != null) b.normalize(normalize);
-        if (onnxExecutionMode != null) b.transformerExecutionMode(
-                HuggingFaceEmbedderConfig.TransformerExecutionMode.Enum.valueOf(onnxExecutionMode));
-        if (onnxInteropThreads != null) b.transformerInterOpThreads(onnxInteropThreads);
-        if (onnxIntraopThreads != null) b.transformerIntraOpThreads(onnxIntraopThreads);
-        if (onnxGpuDevice != null) b.transformerGpuDevice(onnxGpuDevice);
-        if (poolingStrategy != null) b.poolingStrategy(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.valueOf(poolingStrategy));
+        if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
+        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+        onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
+        onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
+        onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
     }
+
 }
