@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Objects;
-import java.util.OptionalLong;
 import java.util.function.Predicate;
 import java.util.zip.GZIPInputStream;
 
@@ -26,13 +25,13 @@ import java.util.zip.GZIPInputStream;
  */
 public class ArchiveStreamReader implements AutoCloseable {
 
-    private final ArchiveInputStream archiveInputStream;
+    private final ArchiveInputStream<? extends ArchiveEntry> archiveInputStream;
     private final Options options;
 
     private long totalRead = 0;
     private long entriesRead = 0;
 
-    private ArchiveStreamReader(ArchiveInputStream archiveInputStream, Options options) {
+    private <T extends ArchiveEntry> ArchiveStreamReader(ArchiveInputStream<T> archiveInputStream, Options options) {
         this.archiveInputStream = Objects.requireNonNull(archiveInputStream);
         this.options = Objects.requireNonNull(options);
     }
