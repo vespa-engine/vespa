@@ -135,4 +135,14 @@ schema tensor {
     }
   }
 
+  rank-profile with-just-unpack {
+    inputs {
+      query(para) tensor<double>(p{})
+      query(qvec) tensor<double>(x[40])
+    }
+    first-phase {
+      expression: sum(query(para)*unpack_bits(attribute(f7), double, little)*query(qvec))
+    }
+  }
+
 }
