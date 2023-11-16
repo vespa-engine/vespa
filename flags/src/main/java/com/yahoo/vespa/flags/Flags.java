@@ -320,18 +320,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag EXCLUSIVE_PROVISIONING = defineFeatureFlag(
-            "exclusive-provisioning", true,
-            List.of("hakonhall"), "2023-10-12", "2023-12-20",
-            "Unused, remove once Vespa >=8.257 has rolled out everywhere",
-            "no-op");
-
-    public static final UnboundBooleanFlag MAKE_EXCLUSIVE = defineFeatureFlag(
-            "make-exclusive", true,
-            List.of("hakonhall"), "2023-10-20", "2023-12-20",
-            "Unused, remove once Vespa >=8.257 has rolled out everywhere",
-            "no-op");
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2024-01-01",
