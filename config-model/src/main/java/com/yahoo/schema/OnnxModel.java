@@ -138,7 +138,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public Optional<String> getStatelessExecutionMode() {
-        return Optional.ofNullable(onnxModelOptions.executionMode());
+        return onnxModelOptions.executionMode();
     }
 
     public void setStatelessInterOpThreads(int interOpThreads) {
@@ -148,7 +148,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public Optional<Integer> getStatelessInterOpThreads() {
-        return Optional.ofNullable(onnxModelOptions.interOpThreads());
+        return onnxModelOptions.interOpThreads();
     }
 
     public void setStatelessIntraOpThreads(int intraOpThreads) {
@@ -158,7 +158,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public Optional<Integer> getStatelessIntraOpThreads() {
-        return Optional.ofNullable(onnxModelOptions.intraOpThreads());
+        return onnxModelOptions.intraOpThreads();
     }
 
     public void setGpuDevice(int deviceNumber, boolean required) {
@@ -168,7 +168,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public Optional<OnnxModelOptions.GpuDevice> getGpuDevice() {
-        return Optional.ofNullable(onnxModelOptions.gpuDevice());
+        return onnxModelOptions.gpuDevice();
     }
 
 }

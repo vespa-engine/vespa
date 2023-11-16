@@ -3,44 +3,56 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
 
+import java.util.Optional;
+
 /**
  * @author hmusum
  */
-public record OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef, Integer maxTokens,
-                               String transformerInputIds, String transformerAttentionMask, String transformerTokenTypeIds,
-                               String transformerOutput, Boolean normalize, String executionMode, Integer interOpThreads,
-                               Integer intraOpThreads, GpuDevice gpuDevice, String poolingStrategy,
-                               Integer transformerStartSequenceToken, Integer transformerEndSequenceToken,
-                               Integer maxQueryTokens, Integer maxDocumentTokens, Integer transformerMaskToken) {
+public record OnnxModelOptions(Optional<ModelReference> modelRef, Optional<ModelReference> vocabRef,
+                               Optional<Integer> maxTokens, Optional<String> transformerInputIds,
+                               Optional<String> transformerAttentionMask, Optional<String> transformerTokenTypeIds,
+                               Optional<String> transformerOutput, Optional<Boolean> normalize,
+                               Optional<String> executionMode, Optional<Integer> interOpThreads,
+                               Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
+                               Optional<String> poolingStrategy, Optional<Integer> transformerStartSequenceToken,
+                               Optional<Integer> transformerEndSequenceToken, Optional<Integer> maxQueryTokens,
+                               Optional<Integer> maxDocumentTokens, Optional<Integer> transformerMaskToken) {
 
 
-    public OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef, Integer maxTokens,
-                     String transformerInputIds, String transformerAttentionMask, String transformerTokenTypeIds,
-                     String transformerOutput, Boolean normalize, String executionMode, Integer interOpThreads,
-                     Integer intraOpThreads, GpuDevice gpuDevice, String poolingStrategy) {
+    public OnnxModelOptions(Optional<ModelReference> modelRef, Optional<ModelReference> vocabRef,
+                            Optional<Integer> maxTokens, Optional<String> transformerInputIds,
+                            Optional<String> transformerAttentionMask, Optional<String> transformerTokenTypeIds,
+                            Optional<String> transformerOutput, Optional<Boolean> normalize,
+                            Optional<String> executionMode, Optional<Integer> interOpThreads,
+                            Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
+                            Optional<String> poolingStrategy) {
         this(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask, transformerTokenTypeIds,
              transformerOutput, normalize, executionMode, interOpThreads, intraOpThreads, gpuDevice, poolingStrategy,
-             null, null, null, null, null);
+             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef, Integer maxTokens,
-                            String transformerInputIds, String transformerAttentionMask, String transformerTokenTypeIds,
-                            String transformerOutput, Boolean normalize, String executionMode, Integer interOpThreads,
-                            Integer intraOpThreads, GpuDevice gpuDevice, String poolingStrategy,
-                            Integer transformerStartSequenceToken, Integer transformerEndSequenceToken) {
+    public OnnxModelOptions(Optional<ModelReference> modelRef, Optional<ModelReference> vocabRef,
+                            Optional<Integer> maxTokens, Optional<String> transformerInputIds,
+                            Optional<String> transformerAttentionMask, Optional<String> transformerTokenTypeIds,
+                            Optional<String> transformerOutput, Optional<Boolean> normalize,
+                            Optional<String> executionMode, Optional<Integer> interOpThreads,
+                            Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
+                            Optional<String> poolingStrategy, Optional<Integer> transformerStartSequenceToken,
+                            Optional<Integer> transformerEndSequenceToken) {
         this(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask, transformerTokenTypeIds,
              transformerOutput, normalize, executionMode, interOpThreads, intraOpThreads, gpuDevice, poolingStrategy,
-             transformerStartSequenceToken, transformerEndSequenceToken, null, null, null);
+             transformerStartSequenceToken, transformerEndSequenceToken, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public static OnnxModelOptions empty() {
-        return new OnnxModelOptions(null, null, null, null, null, null, null, null, null, null, null, null, null,
-                                    null, null, null, null, null);
+        return new OnnxModelOptions(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public OnnxModelOptions withExecutionMode(String executionMode) {
         return new OnnxModelOptions(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask,
-                                    transformerTokenTypeIds, transformerOutput, normalize, executionMode,
+                                    transformerTokenTypeIds, transformerOutput, normalize, Optional.ofNullable(executionMode),
                                     interOpThreads, intraOpThreads, gpuDevice, poolingStrategy,
                                     transformerStartSequenceToken, transformerEndSequenceToken,
                                     maxQueryTokens, maxDocumentTokens, transformerMaskToken);
@@ -49,7 +61,7 @@ public record OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef,
     public OnnxModelOptions withInteropThreads(Integer interopThreads) {
         return new OnnxModelOptions(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask,
                                     transformerTokenTypeIds, transformerOutput, normalize, executionMode,
-                                    interopThreads, intraOpThreads, gpuDevice, poolingStrategy,
+                                    Optional.ofNullable(interopThreads), intraOpThreads, gpuDevice, poolingStrategy,
                                     transformerStartSequenceToken, transformerEndSequenceToken,
                                     maxQueryTokens, maxDocumentTokens, transformerMaskToken);
     }
@@ -57,7 +69,7 @@ public record OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef,
     public OnnxModelOptions withIntraopThreads(Integer intraopThreads) {
         return new OnnxModelOptions(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask,
                                     transformerTokenTypeIds, transformerOutput, normalize, executionMode,
-                                    interOpThreads, intraopThreads, gpuDevice, poolingStrategy,
+                                    interOpThreads, Optional.ofNullable(intraopThreads), gpuDevice, poolingStrategy,
                                     transformerStartSequenceToken, transformerEndSequenceToken,
                                     maxQueryTokens, maxDocumentTokens, transformerMaskToken);
     }
@@ -66,7 +78,7 @@ public record OnnxModelOptions(ModelReference modelRef, ModelReference vocabRef,
     public OnnxModelOptions withGpuDevice(GpuDevice gpuDevice) {
         return new OnnxModelOptions(modelRef, vocabRef, maxTokens, transformerInputIds, transformerAttentionMask,
                                     transformerTokenTypeIds, transformerOutput, normalize, executionMode,
-                                    interOpThreads, intraOpThreads, gpuDevice, poolingStrategy,
+                                    interOpThreads, intraOpThreads, Optional.ofNullable(gpuDevice), poolingStrategy,
                                     transformerStartSequenceToken, transformerEndSequenceToken,
                                     maxQueryTokens, maxDocumentTokens, transformerMaskToken);
     }
