@@ -46,6 +46,7 @@ public:
     ssize_t getEstimatedHits() const;
     static DiversityCutoffStrategy toDiversityCutoffStrategy(vespalib::stringref strategy);
 private:
+    search::fef::MatchData & create_match_data(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);
     search::queryeval::Searchable                      & _searchable_attributes;
     const search::queryeval::IRequestContext           & _requestContext;
     const RangeQueryLocator                            & _rangeQueryLocator;
