@@ -263,6 +263,17 @@ AndBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const 
     return hitRate * child.hit_ratio();
 }
 
+double
+OrBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const {
+    // Avoid dropping hitRate to zero when meeting a conservatively high hitrate in a child.
+    // Happens at least when using non fast-search attributes, and with AND nodes.
+    constexpr double MIN_INVERSE_HIT_RATIO = 0.10;
+    double inverse_child_hit_ratio = 1.0 - child.hit_ratio();
+    return (inverse_child_hit_ratio > MIN_INVERSE_HIT_RATIO)
+        ? hitRate * inverse_child_hit_ratio
+        : hitRate;
+}
+
 //-----------------------------------------------------------------------------
 
 OrBlueprint::~OrBlueprint() = default;
