@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import com.google.common.io.ByteStreams;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.yolean.Exceptions;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertEquals;
@@ -33,13 +35,13 @@ public class CompressedApplicationInputStreamTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static void writeFileToTar(ArchiveOutputStream taos, File file) throws IOException {
+    private static <T extends ArchiveEntry> void writeFileToTar(ArchiveOutputStream<T> taos, File file) throws IOException {
         taos.putArchiveEntry(taos.createArchiveEntry(file, file.getName()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();
     }
 
-    private static File createArchiveFile(ArchiveOutputStream taos, File outFile) throws IOException {
+    private static <T extends ArchiveEntry> File createArchiveFile(ArchiveOutputStream<T> taos, File outFile) throws IOException {
         File app = new File("src/test/resources/deploy/validapp");
         writeFileToTar(taos, new File(app, "services.xml"));
         writeFileToTar(taos, new File(app, "hosts.xml"));
@@ -50,13 +52,13 @@ public class CompressedApplicationInputStreamTest {
 
     public static File createTarFile(Path dir) throws IOException {
         File outFile = Files.createTempFile(dir, "testapp", ".tar.gz").toFile();
-        ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
+        var archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
         return createArchiveFile(archiveOutputStream, outFile);
     }
 
     private File createZipFile(Path dir) throws IOException {
         File outFile = Files.createTempFile(dir, "testapp", ".tar.gz").toFile();
-        ArchiveOutputStream archiveOutputStream = new ZipArchiveOutputStream(new FileOutputStream(outFile));
+        var archiveOutputStream = new ZipArchiveOutputStream(new FileOutputStream(outFile));
         return createArchiveFile(archiveOutputStream, outFile);
     }
 
@@ -102,7 +104,7 @@ public class CompressedApplicationInputStreamTest {
         try (CompressedApplicationInputStream unpacked = streamFromTarGz(gzFile)) {
             outApp = unpacked.decompress();
         }
-        List<File> files = Arrays.asList(outApp.listFiles());
+        List<File> files = Arrays.asList(Objects.requireNonNull(outApp.listFiles()));
         assertEquals(5, files.size());
         assertTrue(files.contains(new File(outApp, "services.xml")));
         assertTrue(files.contains(new File(outApp, "hosts.xml")));

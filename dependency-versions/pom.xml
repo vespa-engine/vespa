@@ -88,7 +88,7 @@
         <commons-io.vespa.version>2.15.0</commons-io.vespa.version>
         <commons-lang3.vespa.version>3.13.0</commons-lang3.vespa.version>
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
-        <commons-compress.vespa.version>1.24.0</commons-compress.vespa.version>
+        <commons-compress.vespa.version>1.25.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.6.0</commons-cli.vespa.version>
         <curator.vespa.version>5.5.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.22</dropwizard.metrics.vespa.version>
