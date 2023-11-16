@@ -161,7 +161,7 @@ private:
     /*
      * Find the next leaf node, called by operator++() as needed.
      */
-    void findNextLeafNode();
+    VESPA_DLL_LOCAL void findNextLeafNode();
 
     /*
      * Find the previous leaf node, called by operator--() as needed.
@@ -219,7 +219,18 @@ protected:
      * Step iterator backwards.  If at end then place it at last valid
      * position in tree (cf. rbegin())
      */
-    BTreeIteratorBase & operator--();
+    BTreeIteratorBase & operator--() {
+        if (_leaf.getNode() == nullptr) {
+            rbegin();
+            return *this;
+        }
+        if (_leaf.getIdx() > 0u) {
+            _leaf.decIdx();
+            return *this;
+        }
+        findPrevLeafNode();
+        return *this;
+    }
 
     ~BTreeIteratorBase();
     BTreeIteratorBase(const BTreeIteratorBase &other);
