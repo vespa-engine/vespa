@@ -161,12 +161,12 @@ private:
     /*
      * Find the next leaf node, called by operator++() as needed.
      */
-    VESPA_DLL_LOCAL void findNextLeafNode();
+    void findNextLeafNode();
 
     /*
      * Find the previous leaf node, called by operator--() as needed.
      */
-    VESPA_DLL_LOCAL void findPrevLeafNode();
+    void findPrevLeafNode();
 
 protected:
     /*

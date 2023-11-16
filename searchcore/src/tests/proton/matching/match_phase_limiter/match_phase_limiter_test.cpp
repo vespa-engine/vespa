@@ -352,6 +352,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
         "            hit_rate: 0.1,"
         "            num_docs: 100000,"
         "            max_filter_docs: 100000,"
+        "            upper_limited_corpus_size: 100000,"
         "            wanted_docs: 5000,"
         "            action: 'Will limit with prefix filter',"
         "            max_group_size: 5000,"

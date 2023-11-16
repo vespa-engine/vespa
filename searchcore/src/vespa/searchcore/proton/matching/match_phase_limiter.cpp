@@ -102,6 +102,10 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search, double ma
     return search;
 }
 
+// When hitrate is below 1% limiting the query is often far more expensive than not.
+// TODO This limit should probably be a lot higher.
+constexpr double MIN_HIT_RATE_LIMIT = 0.01;
+
 } // namespace proton::matching::<unnamed>
 
 SearchIterator::UP
@@ -114,11 +118,16 @@ MatchPhaseLimiter::maybe_limit(SearchIterator::UP search, double match_freq, siz
         trace->setDouble("hit_rate", match_freq); 
         trace->setLong("num_docs", num_docs);
         trace->setLong("max_filter_docs", max_filter_docs);
+        trace->setLong("upper_limited_corpus_size", upper_limited_corpus_size);
         trace->setLong("wanted_docs", wanted_num_docs);
     }
-    if (upper_limited_corpus_size <= wanted_num_docs) {
+    if ((upper_limited_corpus_size <= wanted_num_docs) || (match_freq < MIN_HIT_RATE_LIMIT)) {
         if (trace) {
-            trace->setString("action", "Will not limit !");
+            if (upper_limited_corpus_size <= wanted_num_docs) {
+                trace->setString("action", "Will not limit due to upper_limited_corpus_size <= wanted_num_docs");
+            } else if (match_freq < MIN_HIT_RATE_LIMIT) {
+                trace->setString("action", "Will not limit due to match_freq < MIN_HIT_RATE_LIMIT(1%)");
+            }
         }
         LOG(debug, "Will not limit ! maybe_limit(hit_rate=%g, num_docs=%ld, max_filter_docs=%ld) = wanted_num_docs=%ld",
             match_freq, num_docs, max_filter_docs, wanted_num_docs);
