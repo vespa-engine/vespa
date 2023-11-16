@@ -8,7 +8,6 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/multisearch.h>
-#include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
@@ -74,13 +73,13 @@ TEST("test AndNot Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
     }
@@ -125,7 +124,7 @@ TEST("test And propagates updated histestimate") {
     bp.fetchPostings(ExecuteInfo::TRUE);
     EXPECT_EQUAL(3u, bp.childCnt());
     for (uint32_t i = 0; i < bp.childCnt(); i++) {
-        const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
+        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
         EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
     }
     EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
@@ -139,16 +138,16 @@ TEST("test And Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(5u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
     }
@@ -187,16 +186,16 @@ TEST("test Or Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
     }
@@ -259,16 +258,16 @@ TEST("test Near Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(5u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
     }
@@ -300,16 +299,16 @@ TEST("test ONear Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(5u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
     }
@@ -341,16 +340,16 @@ TEST("test Rank Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
     }
@@ -391,16 +390,16 @@ TEST("test SourceBlender Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
     }
@@ -453,60 +452,60 @@ TEST("test SourceBlender below AND optimization") {
     auto selector_1 = std::make_unique<InvalidSelector>(); // the one
     auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
-    AndBlueprint *top = new AndBlueprint();
+    auto *top = new AndBlueprint();
     Blueprint::UP top_bp(top);
     top->addChild(ap(MyLeafSpec(2).create()));
     top->addChild(ap(MyLeafSpec(1).create()));
     top->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
     //-------------------------------------------------------------------------
-    AndBlueprint *expect = new AndBlueprint();
+    auto *expect = new AndBlueprint();
     Blueprint::UP expect_bp(expect);
     expect->addChild(ap(MyLeafSpec(1).create()));
     expect->addChild(ap(MyLeafSpec(2).create()));
     expect->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         expect->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender(new SourceBlenderBlueprint(*selector_1));
+        auto *blender(new SourceBlenderBlueprint(*selector_1));
         {
-            AndBlueprint *sub_and = new AndBlueprint();
+            auto *sub_and = new AndBlueprint();
             sub_and->setSourceId(3);
             sub_and->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
             sub_and->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
             blender->addChild(ap(sub_and));
         }
         {
-            AndBlueprint *sub_and = new AndBlueprint();
+            auto *sub_and = new AndBlueprint();
             sub_and->setSourceId(2);
             sub_and->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
             sub_and->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
@@ -514,7 +513,7 @@ TEST("test SourceBlender below AND optimization") {
             blender->addChild(ap(sub_and));
         }
         {
-            AndBlueprint *sub_and = new AndBlueprint();
+            auto *sub_and = new AndBlueprint();
             sub_and->setSourceId(1);
             sub_and->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
             sub_and->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
@@ -535,51 +534,51 @@ TEST("test SourceBlender below OR optimization") {
     auto selector_1 = std::make_unique<InvalidSelector>(); // the one
     auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
-    OrBlueprint *top = new OrBlueprint();
+    auto *top = new OrBlueprint();
     Blueprint::UP top_up(top);
     top->addChild(ap(MyLeafSpec(2).create()));
     top->addChild(ap(MyLeafSpec(1).create()));
     top->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
     //-------------------------------------------------------------------------
-    OrBlueprint *expect = new OrBlueprint();
+    auto *expect = new OrBlueprint();
     Blueprint::UP expect_up(expect);
     {
-        SourceBlenderBlueprint *blender(new SourceBlenderBlueprint(*selector_1));
+        auto *blender(new SourceBlenderBlueprint(*selector_1));
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(3);
             sub_and->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
             sub_and->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(2);
             sub_and->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
             sub_and->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
@@ -587,7 +586,7 @@ TEST("test SourceBlender below OR optimization") {
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(1);
             sub_and->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
             sub_and->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
@@ -597,7 +596,7 @@ TEST("test SourceBlender below OR optimization") {
         expect->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         expect->addChild(ap(blender));
@@ -617,10 +616,10 @@ TEST("test SourceBlender below AND_NOT optimization") {
     auto selector_1 = std::make_unique<InvalidSelector>(); // the one
     auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
-    AndNotBlueprint *top = new AndNotBlueprint();
+    auto *top = new AndNotBlueprint();
     Blueprint::UP top_up(top);
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(42).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
@@ -628,50 +627,50 @@ TEST("test SourceBlender below AND_NOT optimization") {
     top->addChild(ap(MyLeafSpec(1).create()));
     top->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
     //-------------------------------------------------------------------------
-    AndNotBlueprint *expect = new AndNotBlueprint();
+    auto *expect = new AndNotBlueprint();
     Blueprint::UP expect_up(expect);
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(42).create()->setSourceId(1)));
         expect->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender(new SourceBlenderBlueprint(*selector_1));
+        auto *blender(new SourceBlenderBlueprint(*selector_1));
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(3);
             sub_and->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
             sub_and->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(2);
             sub_and->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
             sub_and->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
@@ -679,7 +678,7 @@ TEST("test SourceBlender below AND_NOT optimization") {
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(1);
             sub_and->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
             sub_and->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
@@ -689,7 +688,7 @@ TEST("test SourceBlender below AND_NOT optimization") {
         expect->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         expect->addChild(ap(blender));
@@ -709,10 +708,10 @@ TEST("test SourceBlender below RANK optimization") {
     auto selector_1 = std::make_unique<InvalidSelector>(); // the one
     auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
-    RankBlueprint *top = new RankBlueprint();
+    auto *top = new RankBlueprint();
     Blueprint::UP top_up(top);
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(42).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
@@ -720,36 +719,36 @@ TEST("test SourceBlender below RANK optimization") {
     top->addChild(ap(MyLeafSpec(1).create()));
     top->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         top->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
         blender->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
         top->addChild(ap(blender));
     }
     //-------------------------------------------------------------------------
-    RankBlueprint *expect = new RankBlueprint();
+    auto *expect = new RankBlueprint();
     Blueprint::UP expect_up(expect);
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_1);
+        auto *blender = new SourceBlenderBlueprint(*selector_1);
         blender->addChild(ap(MyLeafSpec(42).create()->setSourceId(1)));
         expect->addChild(ap(blender));
     }
@@ -757,22 +756,22 @@ TEST("test SourceBlender below RANK optimization") {
     expect->addChild(ap(MyLeafSpec(1).create()));
     expect->addChild(ap(MyLeafSpec(3).create()));
     {
-        SourceBlenderBlueprint *blender = new SourceBlenderBlueprint(*selector_2);
+        auto *blender = new SourceBlenderBlueprint(*selector_2);
         blender->addChild(ap(MyLeafSpec(10).create()->setSourceId(1)));
         blender->addChild(ap(MyLeafSpec(20).create()->setSourceId(2)));
         expect->addChild(ap(blender));
     }
     {
-        SourceBlenderBlueprint *blender(new SourceBlenderBlueprint(*selector_1));
+        auto *blender(new SourceBlenderBlueprint(*selector_1));
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(3);
             sub_and->addChild(ap(MyLeafSpec(300).create()->setSourceId(3)));
             sub_and->addChild(ap(MyLeafSpec(30).create()->setSourceId(3)));        
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(2);
             sub_and->addChild(ap(MyLeafSpec(2000).create()->setSourceId(2)));
             sub_and->addChild(ap(MyLeafSpec(200).create()->setSourceId(2)));
@@ -780,7 +779,7 @@ TEST("test SourceBlender below RANK optimization") {
             blender->addChild(ap(sub_and));
         }
         {
-            OrBlueprint *sub_and = new OrBlueprint();
+            auto *sub_and = new OrBlueprint();
             sub_and->setSourceId(1);
             sub_and->addChild(ap(MyLeafSpec(1000).create()->setSourceId(1)));
             sub_and->addChild(ap(MyLeafSpec(100).create()->setSourceId(1)));
@@ -968,7 +967,7 @@ TEST("require that replaced blueprints retain source id") {
     expect1_up->setSourceId(13);
     //-------------------------------------------------------------------------
     // replace self with single child
-    Blueprint::UP top2_up(ap(static_cast<AndBlueprint&>((new AndBlueprint())->setSourceId(42)).
+    Blueprint::UP top2_up(ap(dynamic_cast<AndBlueprint&>((new AndBlueprint())->setSourceId(42)).
                              addChild(ap(MyLeafSpec(30).create()->setSourceId(55)))));
     Blueprint::UP expect2_up(ap(MyLeafSpec(30).create()->setSourceId(42)));
     //-------------------------------------------------------------------------
@@ -1017,16 +1016,16 @@ TEST("test WeakAnd Blueprint") {
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQUAL(true, b.combine(est).empty);
         EXPECT_EQUAL(0u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(10, false));
+        est.emplace_back(10, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(10u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(20, false));
+        est.emplace_back(20, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(5, false));
+        est.emplace_back(5, false);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
-        est.push_back(Blueprint::HitEstimate(0, true));
+        est.emplace_back(0, true);
         EXPECT_EQUAL(false, b.combine(est).empty);
         EXPECT_EQUAL(20u, b.combine(est).estHits);
     }
@@ -1063,8 +1062,8 @@ TEST("test WeakAnd Blueprint") {
             {
                 wa.fetchPostings(ExecuteInfo::TRUE);
                 SearchIterator::UP search = wa.createSearch(*md, true);
-                EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != 0);
-                WeakAndSearch &s = dynamic_cast<WeakAndSearch&>(*search);
+                EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != nullptr);
+                auto &s = dynamic_cast<WeakAndSearch&>(*search);
                 EXPECT_EQUAL(456u, s.getN());
                 ASSERT_EQUAL(3u, s.getTerms().size());
                 EXPECT_GREATER(s.get_max_score(0), 0.0);
@@ -1085,7 +1084,7 @@ TEST("test WeakAnd Blueprint") {
             {
                 wa.fetchPostings(ExecuteInfo::FALSE);
                 SearchIterator::UP search = wa.createSearch(*md, false);
-                EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != 0);
+                EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != nullptr);
                 EXPECT_TRUE(search->seek(1));
                 EXPECT_TRUE(search->seek(2));
                 EXPECT_FALSE(search->seek(3));
@@ -1195,7 +1194,7 @@ namespace {
 SimpleStringTerm
 makeTerm(const std::string & term)
 {
-    return SimpleStringTerm(term, "field", 0, search::query::Weight(0));
+    return {term, "field", 0, search::query::Weight(0)};
 }
 
 }
@@ -1231,7 +1230,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
-        const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
+        const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
@@ -1241,7 +1240,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
-        const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
+        const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
@@ -1269,7 +1268,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
-        const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
+        const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
                      e.getChildren()[0]->getClassName());
     }
@@ -1278,7 +1277,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
-        const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
+        const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
                      e.getChildren()[0]->getClassName());
     }
@@ -1288,7 +1287,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
-        const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
+        const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::NoUnpack>",
                      e.getChildren()[0]->getClassName());
     }
