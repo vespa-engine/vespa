@@ -66,7 +66,7 @@ public class VespaAwsCredentialsProvider implements AWSCredentialsProvider {
             Cursor cursor = slime.get();
             String accessKey = cursor.field("awsAccessKey").asString();
             String secretKey = cursor.field("awsSecretKey").asString();
-            String sessionToken = cursor.field("sessionTToken").asString();
+            String sessionToken = cursor.field("sessionToken").asString();
             Instant defaultExpiry = Instant.now().plus(Duration.ofHours(1));
             Instant expiry;
             try {
