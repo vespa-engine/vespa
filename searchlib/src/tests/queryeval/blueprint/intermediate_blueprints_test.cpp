@@ -825,7 +825,7 @@ TEST("test empty root node optimization and safeness") {
                              addChild(ap(MyLeafSpec(0, true).create())).
                              addChild(ap(MyLeafSpec(0, true).create()))));
     //-------------------------------------------------------------------------
-    Blueprint::UP expect_up(new EmptyBlueprint());
+    auto expect_up = std::make_unique<EmptyBlueprint>();
     //-------------------------------------------------------------------------
     top1_up = Blueprint::optimize(std::move(top1_up));
     top2_up = Blueprint::optimize(std::move(top2_up));
@@ -850,7 +850,7 @@ TEST("and with one empty child is optimized away") {
     top = Blueprint::optimize(std::move(top));
     Blueprint::UP expect_up(ap((new SourceBlenderBlueprint(*selector))->
                           addChild(ap(MyLeafSpec(10).create())).
-                          addChild(ap(new EmptyBlueprint()))));
+                          addChild(std::make_unique<EmptyBlueprint>())));
     EXPECT_EQUAL(expect_up->asString(), top->asString());
 }
 
@@ -963,7 +963,7 @@ TEST("require that replaced blueprints retain source id") {
     //-------------------------------------------------------------------------
     // replace empty root with empty search
     Blueprint::UP top1_up(ap(MyLeafSpec(0, true).create()->setSourceId(13)));
-    Blueprint::UP expect1_up(new EmptyBlueprint());
+    auto expect1_up = std::make_unique<EmptyBlueprint>();
     expect1_up->setSourceId(13);
     //-------------------------------------------------------------------------
     // replace self with single child
@@ -1056,9 +1056,9 @@ TEST("test WeakAnd Blueprint") {
         {
             WeakAndBlueprint wa(456);
             MatchData::UP md = MatchData::makeTestInstance(100, 10);
-            wa.addTerm(Blueprint::UP(new FakeBlueprint(field, x)), 120);
-            wa.addTerm(Blueprint::UP(new FakeBlueprint(field, z)), 140);
-            wa.addTerm(Blueprint::UP(new FakeBlueprint(field, y)), 130);
+            wa.addTerm(std::make_unique<FakeBlueprint>(field, x), 120);
+            wa.addTerm(std::make_unique<FakeBlueprint>(field, z), 140);
+            wa.addTerm(std::make_unique<FakeBlueprint>(field, y), 130);
             {
                 wa.fetchPostings(ExecuteInfo::TRUE);
                 SearchIterator::UP search = wa.createSearch(*md, true);
@@ -1343,7 +1343,7 @@ TEST("require that children of onear are not optimized") {
 
 TEST("require that ANDNOT without children is optimized to empty search") {
     Blueprint::UP top_up(new AndNotBlueprint());
-    Blueprint::UP expect_up(new EmptyBlueprint());
+    auto expect_up = std::make_unique<EmptyBlueprint>();
     top_up = Blueprint::optimize(std::move(top_up));
     EXPECT_EQUAL(expect_up->asString(), top_up->asString());
 }
