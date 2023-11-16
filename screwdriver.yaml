@@ -6,7 +6,7 @@ cache:
     component-build: [/main_job_cache]
 
 shared:
-  image: vespaengine/vespa-build-centos-stream8:latest
+  image: docker.io/vespaengine/vespa-build-almalinux-8
   environment:
     USER_SHELL_BIN: bash
   annotations:
@@ -199,13 +199,13 @@ jobs:
           fi
           docker build --file Dockerfile.systemtest \
                        --progress=plain \
-                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
+                       --build-arg VESPA_BASE_IMAGE=docker.io/vespaengine/vespa-systemtest-base-el8:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=$SKIP_M2_POPULATE \
                        --target systemtest \
-                       --tag vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION \
-                       --tag vespaengine/vespa-systemtest-centos-stream8:latest .
+                       --tag docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION \
+                       --tag docker.io/vespaengine/vespa-systemtest-el8:latest .
       - verify-test-image: |
-          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION -lc \
+          docker run --rm -ti --entrypoint bash docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION -lc \
           "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
       - publish-test-image: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
@@ -213,8 +213,8 @@ jobs:
             set +x
             docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
             eval "$OPT_STATE"
-            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION
-            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
+            docker push docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION
+            docker push docker.io/vespaengine/vespa-systemtest-el8:latest
           fi
       - *save-cache
       - update-build-status: |
@@ -233,8 +233,6 @@ jobs:
           fi
 
   publish-release:
-    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
-
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -294,8 +292,6 @@ jobs:
           screwdriver/factory-command.sh update-released-time $VESPA_VERSION
 
   publish-legacy-release:
-    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
-
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -307,7 +303,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
-      IMAGE_NAME: "vespaengine/vespa-generic-intel-x86_64"
+      IMAGE_NAME: "docker.io/vespaengine/vespa-generic-intel-x86_64"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
@@ -374,7 +370,6 @@ jobs:
           fi
 
   publish-el9-preview:
-    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -422,8 +417,8 @@ jobs:
                 --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag vespaengine/vespa:latest \
-                --tag vespaengine/$IMAGE_NAME:latest \
+                --tag docker.io/vespaengine/vespa:latest \
+                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
           # Run quick start guide
@@ -452,7 +447,6 @@ jobs:
           fi
 
   publish-el8-preview:
-    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -517,7 +511,7 @@ jobs:
           fi
 
   verify-opensource-rpm-installable:
-    image: quay.io/centos/centos:stream8
+    image: docker.io/almalinux:8
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
@@ -529,7 +523,7 @@ jobs:
           dnf install -y vespa
 
   mirror-copr-rpms-to-archive:
-    image: quay.io/centos/centos:stream8
+    image: docker.io/almalinux:8
     annotations:
       screwdriver.cd/cpu: LOW
       screwdriver.cd/ram: LOW
@@ -559,7 +553,7 @@ jobs:
           screwdriver/delete-old-cloudsmith-artifacts.sh
 
   mirror-copr-rpms-to-artifactory:
-    image: quay.io/centos/centos:stream8
+    image: docker.io/almalinux:8
     annotations:
       screwdriver.cd/cpu: LOW
       screwdriver.cd/ram: LOW
