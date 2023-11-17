@@ -67,7 +67,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.vespa.version>1.11.46</athenz.vespa.version>
-        <aws-sdk.vespa.version>1.12.580</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.590</aws-sdk.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -76,7 +76,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
-        <bouncycastle.vespa.version>1.76</bouncycastle.vespa.version>
+        <bouncycastle.vespa.version>1.77</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.14.9</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
@@ -88,7 +88,7 @@
         <commons-io.vespa.version>2.15.0</commons-io.vespa.version>
         <commons-lang3.vespa.version>3.13.0</commons-lang3.vespa.version>
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
-        <commons-compress.vespa.version>1.24.0</commons-compress.vespa.version>
+        <commons-compress.vespa.version>1.25.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.6.0</commons-cli.vespa.version>
         <curator.vespa.version>5.5.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.22</dropwizard.metrics.vespa.version>
@@ -126,7 +126,7 @@
         <org.json.vespa.version>20231013</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
-        <protobuf.vespa.version>3.25.0</protobuf.vespa.version>
+        <protobuf.vespa.version>3.25.1</protobuf.vespa.version>
         <questdb.vespa.version>7.3.4</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
@@ -167,7 +167,7 @@
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
         <maven-source-plugin.vespa.version>3.3.0</maven-source-plugin.vespa.version>
         <properties-maven-plugin.vespa.version>1.2.1</properties-maven-plugin.vespa.version>
-        <versions-maven-plugin.vespa.version>2.16.1</versions-maven-plugin.vespa.version>
+        <versions-maven-plugin.vespa.version>2.16.2</versions-maven-plugin.vespa.version>
     </properties>
 
     <profiles>

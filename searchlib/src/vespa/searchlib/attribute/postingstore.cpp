@@ -44,8 +44,8 @@ PostingStoreBase2::resizeBitVectors(uint32_t newSize, uint32_t newCapacity)
         newSize = newCapacity;
     if (newSize == _bvSize && newCapacity == _bvCapacity)
         return false;
-    _minBvDocFreq = std::max(newSize >> 6, 64u);
-    _maxBvDocFreq = std::max(newSize >> 5, 128u);
+    _minBvDocFreq = std::max(newSize >> 7, 64u);
+    _maxBvDocFreq = std::max(newSize >> 6, 128u);
     if (_bvs.empty()) {
         _bvSize = newSize;
         _bvCapacity = newCapacity;
@@ -613,9 +613,13 @@ PostingStore<DataT>::update_stat(const CompactionStrategy& compaction_strategy)
     vespalib::MemoryUsage usage;
     auto btree_nodes_memory_usage = _allocator.getMemoryUsage();
     auto store_memory_usage = _store.getMemoryUsage();
-    _compaction_spec = PostingStoreCompactionSpec(compaction_strategy.should_compact_memory(btree_nodes_memory_usage), compaction_strategy.should_compact_memory(store_memory_usage));
     usage.merge(btree_nodes_memory_usage);
     usage.merge(store_memory_usage);
+    if (compaction_strategy.should_compact_memory(usage)) {
+        _compaction_spec = PostingStoreCompactionSpec(compaction_strategy.should_compact_memory(btree_nodes_memory_usage), compaction_strategy.should_compact_memory(store_memory_usage));
+    } else {
+        _compaction_spec = PostingStoreCompactionSpec();
+    }
     uint64_t bvExtraBytes = _bvExtraBytes;
     usage.incUsedBytes(bvExtraBytes);
     usage.incAllocatedBytes(bvExtraBytes);

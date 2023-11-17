@@ -302,11 +302,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-11-14",
-            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-12-01",
             "Whether to enable the one program that should not be named",
@@ -325,18 +320,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag EXCLUSIVE_PROVISIONING = defineFeatureFlag(
-            "exclusive-provisioning", true,
-            List.of("hakonhall"), "2023-10-12", "2023-12-20",
-            "Unused, remove once Vespa >=8.257 has rolled out everywhere",
-            "no-op");
-
-    public static final UnboundBooleanFlag MAKE_EXCLUSIVE = defineFeatureFlag(
-            "make-exclusive", true,
-            List.of("hakonhall"), "2023-10-20", "2023-12-20",
-            "Unused, remove once Vespa >=8.257 has rolled out everywhere",
-            "no-op");
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2024-01-01",
@@ -351,21 +334,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2023-11-14",
+            List.of("andreer"), "2023-08-21", "2023-12-14",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2023-11-14",
+            List.of("andreer"), "2023-08-28", "2023-12-14",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2023-11-14",
+            List.of("andreer"), "2023-08-28", "2023-12-14",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);

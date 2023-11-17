@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
@@ -8,6 +7,7 @@ import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import static com.yahoo.embedding.ColBertEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -16,6 +16,8 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  * @author bergum
  */
 public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderConfig.Producer {
+
+    private final OnnxModelOptions onnxModelOptions;
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
 
@@ -31,14 +33,15 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     private final String transformerAttentionMask;
 
     private final String transformerOutput;
-    private final String onnxExecutionMode;
-    private final Integer onnxInteropThreads;
-    private final Integer onnxIntraopThreads;
-    private final Integer onnxGpuDevice;
 
     public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model").orElseThrow();
+        this.onnxModelOptions = new OnnxModelOptions(
+                getChildValue(xml, "onnx-execution-mode"),
+                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
+                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
+                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXml(state, xml, "tokenizer-model")
                 .map(Model::modelReference)
@@ -52,10 +55,6 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
-        onnxExecutionMode = getChildValue(xml, "onnx-execution-mode").orElse(null);
-        onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
-        onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
-        onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
         model.registerOnnxModelCost(cluster);
     }
 
@@ -79,10 +78,10 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         if (transformerStartSequenceToken != null) b.transformerStartSequenceToken(transformerStartSequenceToken);
         if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
         if (transformerMaskToken != null) b.transformerMaskToken(transformerMaskToken);
-        if (onnxExecutionMode != null) b.transformerExecutionMode(
-                ColBertEmbedderConfig.TransformerExecutionMode.Enum.valueOf(onnxExecutionMode));
-        if (onnxInteropThreads != null) b.transformerInterOpThreads(onnxInteropThreads);
-        if (onnxIntraopThreads != null) b.transformerIntraOpThreads(onnxIntraopThreads);
-        if (onnxGpuDevice != null) b.transformerGpuDevice(onnxGpuDevice);
+       onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+       onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
+       onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
+       onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
     }
+
 }

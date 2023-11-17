@@ -57,6 +57,9 @@ public:
     virtual ~PostingStoreBase2();
     bool resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
     virtual bool removeSparseBitVectors() = 0;
+
+    // Only used by unit test.
+    const PostingStoreCompactionSpec& get_compaction_spec() const noexcept { return _compaction_spec; }
 };
 
 template <typename DataT>

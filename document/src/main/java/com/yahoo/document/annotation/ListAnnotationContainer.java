@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
  * @author Einar M R Rosenvinge
  */
 public class ListAnnotationContainer extends IteratingAnnotationContainer {
+
     private final List<Annotation> annotations = new LinkedList<>();
 
     @Override
@@ -38,9 +39,8 @@ public class ListAnnotationContainer extends IteratingAnnotationContainer {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ListAnnotationContainer)) return false;
-        ListAnnotationContainer that = (ListAnnotationContainer) o;
-        if (!annotations.equals(that.annotations)) return false;
+        if (!(o instanceof ListAnnotationContainer other)) return false;
+        if (!annotations.equals(other.annotations)) return false;
         return true;
     }
 
@@ -50,8 +50,9 @@ public class ListAnnotationContainer extends IteratingAnnotationContainer {
     }
 
     private class AnnotationIterator implements Iterator<Annotation> {
-        private IdentityHashMap<SpanNode, SpanNode> nodes;
-        private PeekableListIterator<Annotation> base;
+
+        private final IdentityHashMap<SpanNode, SpanNode> nodes;
+        private final PeekableListIterator<Annotation> base;
         private boolean nextCalled = false;
 
         AnnotationIterator(ListIterator<Annotation> baseIt, IdentityHashMap<SpanNode, SpanNode> nodes) {
@@ -91,4 +92,5 @@ public class ListAnnotationContainer extends IteratingAnnotationContainer {
             nextCalled = false;
         }
     }
+
 }

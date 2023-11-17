@@ -257,6 +257,9 @@ public class RankingExpression implements Serializable {
      * @return a list of named rank properties required to implement this expression
      */
     public Map<String, String> getRankProperties(SerializationContext context) {
+        if ("".equals(name)) {
+            return Map.of();
+        }
         Deque<String> path = new LinkedList<>();
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();

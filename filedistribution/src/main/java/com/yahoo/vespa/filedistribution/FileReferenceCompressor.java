@@ -6,7 +6,6 @@ import com.yahoo.compress.ZstdOutputStream;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -18,7 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -52,24 +50,23 @@ public class FileReferenceCompressor {
     }
 
     public File compress(File directory, File outputFile) throws IOException {
-        return compress(directory,
-                        Files.find(Paths.get(directory.getAbsolutePath()),
-                                   recurseDepth,
-                                   (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                             .map(Path::toFile).toList(),
-                        outputFile);
+        try (var paths = Files.find(Path.of(directory.getAbsolutePath()), recurseDepth,
+                                    (p, basicFileAttributes) -> basicFileAttributes.isRegularFile()))
+        {
+            return compress(directory, paths.map(Path::toFile).toList(), outputFile);
+        }
     }
 
     public void decompress(File inputFile, File outputDir) throws IOException {
         log.log(Level.FINEST, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
-        try (ArchiveInputStream ais = new TarArchiveInputStream(decompressedInputStream(inputFile))) {
+        try (TarArchiveInputStream ais = new TarArchiveInputStream(decompressedInputStream(inputFile))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to decompress '" + inputFile.getAbsolutePath() + "': " + e.getMessage());
         }
     }
 
-    private static void decompress(ArchiveInputStream archiveInputStream, File outputFile) throws IOException {
+    private static void decompress(TarArchiveInputStream archiveInputStream, File outputFile) throws IOException {
         int entries = 0;
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
@@ -99,7 +96,7 @@ public class FileReferenceCompressor {
         }
     }
 
-    private static void createArchiveFile(ArchiveOutputStream archiveOutputStream, File baseDir, List<File> inputFiles) throws IOException {
+    private static <T extends ArchiveEntry> void createArchiveFile(ArchiveOutputStream<T> archiveOutputStream, File baseDir, List<File> inputFiles) throws IOException {
         inputFiles.forEach(file -> {
             try {
                 writeFileToTar(archiveOutputStream, baseDir, file);
@@ -110,7 +107,7 @@ public class FileReferenceCompressor {
         archiveOutputStream.close();
     }
 
-    private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
+    private static <T extends ArchiveEntry> void writeFileToTar(ArchiveOutputStream<T> taos, File baseDir, File file) throws IOException {
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         try (FileInputStream inputStream = new FileInputStream(file)) {
             inputStream.transferTo(taos);
@@ -119,35 +116,33 @@ public class FileReferenceCompressor {
     }
 
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
-        switch (type) {
-            case compressed:
+        return switch (type) {
+            case compressed -> {
                 log.log(Level.FINEST, () -> "Compressing with compression type " + compressionType);
-                return switch (compressionType) {
+                yield switch (compressionType) {
                     case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
                     case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
                     case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
                 };
-            case file:
-                return new FileOutputStream(outputFile);
-            default:
-                throw new RuntimeException("Unknown file reference type " + type);
-        }
+            }
+            case file -> new FileOutputStream(outputFile);
+            default -> throw new RuntimeException("Unknown file reference type " + type);
+        };
     }
 
     private InputStream decompressedInputStream(File inputFile) throws IOException {
-        switch (type) {
-            case compressed:
+        return switch (type) {
+            case compressed -> {
                 log.log(Level.FINEST, () -> "Decompressing with compression type " + compressionType);
-                return switch (compressionType) {
+                yield switch (compressionType) {
                     case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
                     case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
                     case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
                 };
-            case file:
-                return new FileInputStream(inputFile);
-            default:
-                throw new RuntimeException("Unknown file reference type " + type);
-        }
+            }
+            case file -> new FileInputStream(inputFile);
+            default -> throw new RuntimeException("Unknown file reference type " + type);
+        };
     }
 
 }

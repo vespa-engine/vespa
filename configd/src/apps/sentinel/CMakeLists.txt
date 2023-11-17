@@ -14,6 +14,7 @@ vespa_add_executable(configd_config-sentinel_app
     output-connection.cpp
     outward-check.cpp
     peer-check.cpp
+    platform-specific.cpp
     report-connectivity.cpp
     rpchooks.cpp
     rpcserver.cpp

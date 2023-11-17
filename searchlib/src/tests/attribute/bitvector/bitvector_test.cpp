@@ -43,9 +43,8 @@ struct BitVectorTest
 {
     using AttributePtr = AttributeVector::SP;
 
-    BitVectorTest() { }
-
-    ~BitVectorTest() { }
+    BitVectorTest();
+    ~BitVectorTest();
 
     template <typename VectorType>
     VectorType & as(AttributePtr &v);
@@ -101,6 +100,9 @@ struct BitVectorTest
     void
     test(BasicType bt, CollectionType ct, const vespalib::string &pref);
 };
+
+BitVectorTest::BitVectorTest() = default;
+BitVectorTest::~BitVectorTest() = default;
 
 
 template <typename VectorType>
@@ -427,16 +429,14 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
 
     SearchContextPtr sc = getSearch<VectorType>(tv, true);
     checkSearch(v, std::move(sc), 2, 1022, 205, !fastSearch && !filter, true);
-    sc = getSearch<VectorType>(tv, false);
+    sc = getSearch<VectorType>(tv, filter);
     checkSearch(v, std::move(sc), 2, 1022, 205, !filter, true);
     const search::IDocumentWeightAttribute *dwa = v->asDocumentWeightAttribute();
     if (dwa != nullptr) {
-        search::IDocumentWeightAttribute::LookupResult lres = 
-            dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
+        auto lres = dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
         using DWSI = search::queryeval::DocumentWeightSearchIterator;
-        using SI = search::queryeval::SearchIterator;
         TermFieldMatchData md;
-        SI::UP dwsi(new DWSI(md, *dwa, lres));
+        auto dwsi = std::make_unique<DWSI>(md, *dwa, lres);
         if (!filter) {
             TEST_DO(checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true));
         } else {
@@ -445,13 +445,13 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
         }
     }
     populate(tv, 2, 973, false);
-    sc = getSearch<VectorType>(tv, true);
+    sc = getSearch<VectorType>(tv, filter);
     checkSearch(v, std::move(sc), 977, 1022, 10, !filter, true);
     populate(tv, 2, 973, true);
     sc = getSearch<VectorType>(tv, true);
     checkSearch(v, std::move(sc), 2, 1022, 205, !fastSearch && !filter, true);
     addDocs(v, 15000);
-    sc = getSearch<VectorType>(tv, true);
+    sc = getSearch<VectorType>(tv, filter);
     checkSearch(v, std::move(sc), 2, 1022, 205, !filter, true);
     populateAll(tv, 10, 15000, true);
     sc = getSearch<VectorType>(tv, true);

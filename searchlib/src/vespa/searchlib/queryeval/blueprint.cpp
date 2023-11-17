@@ -117,7 +117,7 @@ Blueprint::State::State(FieldSpecBaseList fields_in) noexcept
 Blueprint::State::~State() = default;
 
 Blueprint::Blueprint() noexcept
-    : _parent(0),
+    : _parent(nullptr),
       _sourceId(0xffffffff),
       _docid_limit(0),
       _frozen(false)
@@ -141,7 +141,7 @@ Blueprint::optimize_self()
 Blueprint::UP
 Blueprint::get_replacement()
 {
-    return Blueprint::UP();
+    return {};
 }
 
 void
@@ -163,8 +163,8 @@ std::unique_ptr<MatchingElementsSearch>
 Blueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
     (void) fields;
-    return std::unique_ptr<MatchingElementsSearch>();
-};
+    return {};
+}
 
 namespace {
 
@@ -196,7 +196,7 @@ template <typename Op>
 std::unique_ptr<SearchIterator>
 create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    REQUIRE(children.size() > 0);
+    REQUIRE( ! children.empty());
     MultiSearch::Children list;
     std::unique_ptr<SearchIterator> spare;
     list.reserve(children.size());
@@ -261,7 +261,7 @@ Blueprint::create_atmost_or_filter(const Children &children, bool strict, Bluepr
 std::unique_ptr<SearchIterator>
 Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    REQUIRE(children.size() > 0);
+    REQUIRE( ! children.empty() );
     MultiSearch::Children list;
     list.reserve(children.size());
     {
@@ -291,7 +291,7 @@ Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint
 std::unique_ptr<SearchIterator>
 Blueprint::create_first_child_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    REQUIRE(children.size() > 0);
+    REQUIRE(!children.empty());
     return children[0]->createFilterSearch(strict, constraint);
 }
 
@@ -434,7 +434,7 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
         }
     }
     return true;
-};
+}
 
 bool
 IntermediateBlueprint::infer_want_global_filter() const
@@ -640,11 +640,7 @@ namespace {
 bool
 areAnyParentsEquiv(const Blueprint * node)
 {
-    return (node == nullptr)
-           ? false
-           : node->isEquiv()
-             ? true
-             : areAnyParentsEquiv(node->getParent());
+    return (node != nullptr) && (node->isEquiv() || areAnyParentsEquiv(node->getParent()));
 }
 
 bool
@@ -767,7 +763,7 @@ LeafBlueprint::set_tree_size(uint32_t value)
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::Blueprint *obj)
 {
-    if (obj != 0) {
+    if (obj != nullptr) {
         self.openStruct(name, obj->getClassName());
         obj->visitMembers(self);
         self.closeStruct();

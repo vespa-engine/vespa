@@ -1,11 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::FileStorMetrics
- * @ingroup filestorage
- *
- * @brief Metrics for the file store threads.
- *
- * @version $Id$
+ * Metrics for the peristence threads.
  */
 
 #pragma once
@@ -98,21 +93,15 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     Op removeLocation;
     Op statBucket;
     Update update;
-    OpWithNotFound revert;
     Op createIterator;
     Visitor visit;
     Op createBuckets;
     Op deleteBuckets;
-    Op repairs;
-    metrics::LongCountMetric repairFixed;
+    Op remove_by_gid;
     Op recheckBucketInfo;
     Op splitBuckets;
     Op joinBuckets;
     Op setBucketStates;
-    Op movedBuckets;
-    Op readBucketList;
-    Op readBucketInfo;
-    Op internalJoin;
     Op mergeBuckets;
     Op getBucketDiff;
     Op applyBucketDiff;
@@ -148,11 +137,7 @@ struct FileStorMetrics : public metrics::MetricSet
     metrics::LongAverageMetric    throttle_window_size;
     metrics::LongAverageMetric    throttle_waiting_threads;
     metrics::LongAverageMetric    throttle_active_tokens;
-    metrics::DoubleAverageMetric  waitingForLockHitRate;
     ActiveOperationsMetrics       active_operations;
-    metrics::LongCountMetric      directoryEvents;
-    metrics::LongCountMetric      partitionEvents;
-    metrics::LongCountMetric      diskEvents;
     metrics::LongAverageMetric    bucket_db_init_latency;
 
     FileStorMetrics();

@@ -1421,6 +1421,14 @@ void FileStorManagerTest::do_test_delete_bucket(bool use_throttled_delete) {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
         EXPECT_FALSE(entry.exists());
     }
+    if (use_throttled_delete) {
+        auto& metrics = thread_metrics_of(*c.manager)->remove_by_gid;
+        EXPECT_EQ(metrics.failed.getValue(), 0);
+        EXPECT_EQ(metrics.count.getValue(), 1);
+        // We can't reliably test the actual latency here without wiring mock clock bumping into
+        // the async remove by GID execution, but we can at least test that we updated the metric.
+        EXPECT_EQ(metrics.latency.getCount(), 1);
+    }
 }
 
 // TODO remove once throttled behavior is the default
