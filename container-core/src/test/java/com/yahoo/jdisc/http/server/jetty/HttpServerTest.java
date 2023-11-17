@@ -160,6 +160,20 @@ public class HttpServerTest {
     }
 
     @Test
+    void requireThatTooLargePayloadFailsWith413() throws Exception {
+        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder()
+                        .maxContentSize(100));
+        driver.client().newPost("/status.html")
+                .setBinaryContent(new byte[200])
+                .execute()
+                .expectStatusCode(is(REQUEST_TOO_LONG));
+        assertTrue(driver.close());
+    }
+
+    @Test
     void requireThatMultipleHostHeadersReturns400() throws Exception {
         var metricConsumer = new MetricConsumerMock();
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
