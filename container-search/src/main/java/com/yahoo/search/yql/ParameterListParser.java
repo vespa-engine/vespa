@@ -69,19 +69,19 @@ class ParameterListParser {
         }
         var s = new ParsableString(string);
         while (!s.atEnd()) {
-            String key;
+            String token;
             if (s.passOptional('\'')) {
-                key = s.stringTo(s.position('\''));
+                token = s.stringTo(s.position('\''));
                 s.pass('\'');
             }
             else if (s.passOptional('"')) {
-                key = s.stringTo(s.position('"'));
+                token = s.stringTo(s.position('"'));
                 s.pass('"');
             }
             else {
-                key = s.stringTo(s.positionOrEnd(',')).trim();
+                token = s.stringTo(s.positionOrEnd(',')).trim();
             }
-            out.addToken(key);
+            out.addToken(token);
             s.passOptional(',');
         }
     }
@@ -92,8 +92,8 @@ class ParameterListParser {
         }
         var s = new ParsableString(string);
         while (!s.atEnd()) {
-            long key = s.longTo(s.positionOrEnd(','));
-            out.addToken(key);
+            long token = s.longTo(s.positionOrEnd(','));
+            out.addToken(token);
             s.passOptional(',');
         }
     }
