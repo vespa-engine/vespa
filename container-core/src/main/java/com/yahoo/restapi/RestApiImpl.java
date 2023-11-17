@@ -559,6 +559,7 @@ class RestApiImpl implements RestApi {
 
         @Override public RestApi.RequestContext requestContext() { return requestContext; }
         @Override public String route() { return route.name != null ? route.name : route.pathPattern; }
+        @Override public void setPrincipal(Principal p) { requestContext.request.getJDiscRequest().setUserPrincipal(p); }
 
         HttpResponse executeFirst() { return filter.filterRequest(this); }
 

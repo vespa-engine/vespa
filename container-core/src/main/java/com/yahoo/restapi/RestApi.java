@@ -16,7 +16,6 @@ import com.yahoo.security.tls.ConnectionAuthContext;
 import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -196,6 +195,7 @@ public interface RestApi {
     interface FilterContext {
         RequestContext requestContext();
         String route();
+        void setPrincipal(Principal principal);
         HttpResponse executeNext();
     }
 }
