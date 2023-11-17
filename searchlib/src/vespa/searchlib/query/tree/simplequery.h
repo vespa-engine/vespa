@@ -38,8 +38,8 @@ struct SimpleOr : Or
     ~SimpleOr() override;
 };
 struct SimpleWeakAnd : WeakAnd {
-    SimpleWeakAnd(uint32_t minHits, vespalib::stringref view) :
-        WeakAnd(minHits, view)
+    SimpleWeakAnd(uint32_t targetNumHits, vespalib::stringref view) :
+        WeakAnd(targetNumHits, view)
     {}
 };
 struct SimpleEquiv : Equiv {
