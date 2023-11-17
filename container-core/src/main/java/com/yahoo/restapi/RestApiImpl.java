@@ -500,7 +500,7 @@ class RestApiImpl implements RestApi {
             }
             @Override public String getStringOrThrow(String name) {
                 return getString(name)
-                        .orElseThrow(() -> new RestApiException.BadRequest("Path parameter '" + name + "' is missing"));
+                        .orElseThrow(() -> new RestApiException.NotFound("Path parameter '" + name + "' is missing"));
             }
             @Override public HttpURL.Path getFullPath() {
                 return pathMatcher.getPath();
