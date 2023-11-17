@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
 import java.util.Objects;
@@ -6,6 +7,8 @@ import static java.util.Objects.requireNonNullElse;
 
 /*
  * Abstract class representing an IN operator.
+ *
+ * @author toregge
  */
 public abstract class InItem extends Item {
     private String indexName;
