@@ -56,7 +56,9 @@ public abstract class Item implements Cloneable {
         GEO_LOCATION_TERM(27),
         TRUE(28),
         FALSE(29),
-        FUZZY(30);
+        FUZZY(30),
+        STRING_IN(31),
+        NUMERIC_IN(32);
 
         public final int code;
 
@@ -241,8 +243,9 @@ public abstract class Item implements Cloneable {
         byte FEAT_UNIQUEID = 0b01000000;
         byte FEAT_FLAGS =   -0b10000000;
 
-        byte type = (byte) (getCode() & CODE_MASK);
-        if (type != getCode())
+        int code = getCode();
+        byte type = code >= CODE_MASK ? CODE_MASK : (byte) code;
+        if (code >= 0x80 + CODE_MASK)
             throw new IllegalStateException("must increase number of bytes in serialization format for queries");
 
         if (weight != DEFAULT_WEIGHT) {
@@ -257,6 +260,10 @@ public abstract class Item implements Cloneable {
         }
 
         buffer.put(type);
+        if (code >= CODE_MASK) {
+            // This is an extension to the serialization to work around original 5 bits limit for code
+            buffer.put((byte) (code - CODE_MASK));
+        }
         if ((type & FEAT_WEIGHT) != 0) {
             IntegerCompressor.putCompressedNumber(weight, buffer);
         }

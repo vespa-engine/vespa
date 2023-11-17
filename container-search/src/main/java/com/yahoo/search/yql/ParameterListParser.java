@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.yahoo.prelude.query.NumericInItem;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 
 import java.util.Arrays;
@@ -59,6 +61,41 @@ class ParameterListParser {
             if (s.atEnd()) throw new IllegalArgumentException("Expected a map ending by '}'");
         }
         s.pass('}');
+    }
+
+    public static void addStringTokensFromString(String string, StringInItem out) {
+        if (string == null) {
+            return;
+        }
+        var s = new ParsableString(string);
+        while (!s.atEnd()) {
+            String token;
+            if (s.passOptional('\'')) {
+                token = s.stringTo(s.position('\''));
+                s.pass('\'');
+            }
+            else if (s.passOptional('"')) {
+                token = s.stringTo(s.position('"'));
+                s.pass('"');
+            }
+            else {
+                token = s.stringTo(s.positionOrEnd(',')).trim();
+            }
+            out.addToken(token);
+            s.passOptional(',');
+        }
+    }
+
+    public static void addNumericTokensFromString(String string, NumericInItem out) {
+        if (string == null) {
+            return;
+        }
+        var s = new ParsableString(string);
+        while (!s.atEnd()) {
+            long token = s.longTo(s.positionOrEnd(','));
+            out.addToken(token);
+            s.passOptional(',');
+        }
     }
 
     private static class ParsableString {
@@ -140,6 +177,17 @@ class ParameterListParser {
                 localPosition++;
             }
             throw new IllegalArgumentException("Expected one of " + Arrays.toString(characters) + " after " + position);
+        }
+
+        int positionOrEnd(char ... characters) {
+            int localPosition = position;
+            while (localPosition < s.length()) {
+                char nextChar = s.charAt(localPosition);
+                for (char character : characters)
+                    if (nextChar == character) return localPosition;
+                localPosition++;
+            }
+            return localPosition;
         }
 
         boolean atEnd() {
