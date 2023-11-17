@@ -193,7 +193,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
-    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv, true);
+    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv);
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());

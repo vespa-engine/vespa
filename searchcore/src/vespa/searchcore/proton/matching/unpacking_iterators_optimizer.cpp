@@ -73,37 +73,27 @@ struct TermExpander : QueryVisitor {
 
 struct NodeTraverser : TemplateTermVisitor<NodeTraverser, ProtonNodeTypes>
 {
-    bool split_unpacking_iterators;
-
-    NodeTraverser(bool split_unpacking_iterators_in)
-        : split_unpacking_iterators(split_unpacking_iterators_in) {}
     template <class TermNode> void visitTerm(TermNode &) {}
     void visit(ProtonNodeTypes::And &n) override {
         for (Node *child: n.getChildren()) {
             child->accept(*this);
         }
-        if (split_unpacking_iterators) {
-            TermExpander expander;
-            for (Node *child: n.getChildren()) {
-                child->accept(expander);
-            }
-            expander.flush(n);
+        TermExpander expander;
+        for (Node *child: n.getChildren()) {
+            child->accept(expander);
         }
+        expander.flush(n);
     }
 };
 
 } // namespace proton::matching::<unnamed>
 
 search::query::Node::UP
-UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root,
-                                      bool has_white_list,
-                                      bool split_unpacking_iterators)
+UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root, bool has_white_list)
 {
-    if (split_unpacking_iterators) {
-        NodeTraverser traverser(split_unpacking_iterators);
-        root->accept(traverser);
-    }
-    if (has_white_list && split_unpacking_iterators) {
+    NodeTraverser traverser;
+    root->accept(traverser);
+    if (has_white_list) {
         TermExpander expander;
         root->accept(expander);
         if (!expander.terms.empty()) {
