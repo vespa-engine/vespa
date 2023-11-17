@@ -461,25 +461,6 @@ BTreeIteratorBase() noexcept
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE> &
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-operator--()
-{
-    if (_leaf.getNode() == nullptr) {
-        rbegin();
-        return *this;
-    }
-    if (_leaf.getIdx() > 0u) {
-        _leaf.decIdx();
-        return *this;
-    }
-    findPrevLeafNode();
-    return *this;
-}
-
-
-template <typename KeyT, typename DataT, typename AggrT,
-          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 size_t
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 size() const noexcept
