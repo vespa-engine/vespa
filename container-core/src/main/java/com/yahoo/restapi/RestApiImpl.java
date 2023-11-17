@@ -21,6 +21,7 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 
 import javax.net.ssl.SSLSession;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -491,7 +492,7 @@ class RestApiImpl implements RestApi {
         @Override public Optional<ConnectionAuthContext> connectionAuthContext() {
             return sslSession().flatMap(TransportSecurityUtils::getConnectionAuthContext);
         }
-
+        @Override public InetSocketAddress remoteAddress() { return (InetSocketAddress) request.getJDiscRequest().getRemoteAddress(); }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override
