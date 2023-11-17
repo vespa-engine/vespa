@@ -517,11 +517,13 @@ jobs:
           fi
 
   verify-opensource-rpm-installable:
+    requires: [~pr]
     image: quay.io/centos/centos:stream8
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
       - install: |
+          dnf list llvm-libs --showduplicates
           dnf install -y dnf-plugins-core
           dnf config-manager --add-repo https://raw.githubusercontent.com/vespa-engine/vespa/master/dist/vespa-engine.repo
           dnf config-manager --enable powertools
@@ -529,6 +531,7 @@ jobs:
           dnf install -y vespa
 
   mirror-copr-rpms-to-archive:
+    requires: [publish-release]
     image: quay.io/centos/centos:stream8
     annotations:
       screwdriver.cd/cpu: LOW

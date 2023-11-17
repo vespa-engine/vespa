@@ -1,3 +1,15 @@
+[vespa-open-source-rpms]
+name=vespa-open-source-rpms
+baseurl=https://dl.cloudsmith.io/public/vespa/open-source-rpms/rpm/el/8/$basearch
+type=rpm-md
+gpgkey=https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key
+gpgcheck=1
+repo_gpgcheck=1
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+pkg_gpgcheck=1
+enabled=1
+
 [copr:copr.fedorainfracloud.org:group_vespa:vespa]
 name=Copr repo for vespa owned by @vespa
 baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/centos-stream-8-$basearch/
@@ -6,5 +18,5 @@ skip_if_unavailable=True
 gpgcheck=1
 gpgkey=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/pubkey.gpg
 repo_gpgcheck=0
-enabled=1
 enabled_metadata=1
+enabled=0
