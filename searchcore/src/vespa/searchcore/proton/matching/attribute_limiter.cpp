@@ -76,7 +76,7 @@ toString(AttributeLimiter::DiversityCutoffStrategy strategy)
     return (strategy == AttributeLimiter::DiversityCutoffStrategy::STRICT) ? STRICT_STR : LOOSE_STR;
 }
 
-search::fef::MatchData &
+AttributeLimiter::BlueprintAndMatchData
 AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
     std::lock_guard<std::mutex> guard(_lock);
     const uint32_t my_field_id = 0;
@@ -105,13 +105,13 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         _blueprint->freeze();
     }
     _match_datas.push_back(layout.createMatchData());
-    return *_match_datas.back();
+    return {*_blueprint, *_match_datas.back()};
 }
 
 std::unique_ptr<SearchIterator>
 AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
-    search::fef::MatchData & matchData = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
-    return _blueprint->createSearch(matchData, strictSearch);
+    auto bp_and_md = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
+    return bp_and_md.first.createSearch(bp_and_md.second, strictSearch);
 }
 
 }
