@@ -324,6 +324,7 @@
       "public com.yahoo.application.container.Processing processing()",
       "public com.yahoo.application.container.DocumentProcessing documentProcessing()",
       "public com.yahoo.component.provider.ComponentRegistry components()",
+      "public com.yahoo.component.provider.ComponentRegistry handlers()",
       "public com.yahoo.application.container.handler.Response handleRequest(com.yahoo.application.container.handler.Request)",
       "public void close()"
     ],
