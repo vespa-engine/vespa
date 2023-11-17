@@ -30,14 +30,14 @@ public:
 //-----------------------------------------------------------------------------
 
 class WeakAnd : public QueryNodeMixin<WeakAnd, Intermediate> {
-    uint32_t _minHits;
+    uint32_t _targetNumHits;
     vespalib::string _view;
 public:
     virtual ~WeakAnd() = 0;
 
-    WeakAnd(uint32_t minHits, const vespalib::string & view) : _minHits(minHits), _view(view) {}
+    WeakAnd(uint32_t targetNumHits, const vespalib::string & view) : _targetNumHits(targetNumHits), _view(view) {}
 
-    uint32_t getMinHits() const { return _minHits; }
+    uint32_t getTargetNumHits() const { return _targetNumHits; }
     const vespalib::string & getView() const { return _view; }
 };
 

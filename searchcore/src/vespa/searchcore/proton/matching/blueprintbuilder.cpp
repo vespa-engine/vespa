@@ -76,7 +76,7 @@ private:
     }
 
     void buildWeakAnd(ProtonWeakAnd &n) {
-        WeakAndBlueprint *wand = new WeakAndBlueprint(n.getMinHits());
+        WeakAndBlueprint *wand = new WeakAndBlueprint(n.getTargetNumHits());
         Blueprint::UP result(wand);
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             search::query::Node &node = *n.getChildren()[i];

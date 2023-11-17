@@ -117,8 +117,8 @@ template <class NodeTypes>
 typename NodeTypes::Or *createOr() { return new typename NodeTypes::Or; }
 
 template <class NodeTypes>
-typename NodeTypes::WeakAnd *createWeakAnd(uint32_t minHits, vespalib::stringref view) {
-    return new typename NodeTypes::WeakAnd(minHits, view);
+typename NodeTypes::WeakAnd *createWeakAnd(uint32_t targetNumHits, vespalib::stringref view) {
+    return new typename NodeTypes::WeakAnd(targetNumHits, view);
 }
 template <class NodeTypes>
 typename NodeTypes::Equiv *createEquiv(int32_t id, Weight weight) {
@@ -259,8 +259,8 @@ public:
     typename NodeTypes::Or &addOr(int child_count) {
         return addIntermediate(createOr<NodeTypes>(), child_count);
     }
-    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t minHits, stringref view) {
-        return addIntermediate(createWeakAnd<NodeTypes>(minHits, view), child_count);
+    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t targetNumHits, stringref view) {
+        return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits, view), child_count);
     }
     typename NodeTypes::Equiv &addEquiv(int child_count, int32_t id, Weight weight) {
         return addIntermediate(createEquiv<NodeTypes>(id, weight), child_count);

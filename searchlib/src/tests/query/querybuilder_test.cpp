@@ -257,7 +257,7 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(loc_term, location, view[10], id[10], weight[10]));
 
     auto* wand = as_node<WeakAnd>(and_node->getChildren()[4]);
-    EXPECT_EQUAL(123u, wand->getMinHits());
+    EXPECT_EQUAL(123u, wand->getTargetNumHits());
     EXPECT_EQUAL(2u, wand->getChildren().size());
     string_term = as_node<StringTerm>(wand->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[4]));
