@@ -261,6 +261,7 @@ public abstract class Item implements Cloneable {
 
         buffer.put(type);
         if (code >= CODE_MASK) {
+            // This is an extension to the serialization to work around original 5 bits limit for code
             buffer.put((byte) (code - CODE_MASK));
         }
         if ((type & FEAT_WEIGHT) != 0) {
