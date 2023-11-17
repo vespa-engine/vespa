@@ -346,7 +346,7 @@ public class ItemEncodingTestCase {
         int count = a.encode(buffer);
         buffer.flip();
         // 2 bytes type, 1 byte item count, 1 byte string len, 7 bytes string content
-        // 1 byte string len, 4 bytes string content
+        // 1 byte string len, 3 bytes string content
         assertEquals(15, buffer.remaining(), "Serialization size");
         assertType(buffer, 31, 0);
         assertEquals(1, buffer.get()); // 1 item
