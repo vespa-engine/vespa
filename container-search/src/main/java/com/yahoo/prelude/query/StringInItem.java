@@ -64,7 +64,7 @@ public class StringInItem extends InItem {
     }
 
     public void addToken(String token) {
-        if (token == null) throw new IllegalArgumentException("token must be a string");
+        Objects.requireNonNull(token, "Token string must not be null");
         tokens.add(token);
     }
 
