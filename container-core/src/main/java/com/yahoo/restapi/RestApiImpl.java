@@ -76,7 +76,11 @@ class RestApiImpl implements RestApi {
                         resolvedRoute, requestContext, filters,
                         createFilterContextRecursive(resolvedRoute, requestContext, resolvedRoute.filters, null));
         if (filterContext != null) {
-            return filterContext.executeFirst();
+            try {
+                return filterContext.executeFirst();
+            } catch (RuntimeException e) {
+                return mapException(requestContext, e);
+            }
         } else {
             return dispatchToRoute(resolvedRoute, requestContext);
         }
