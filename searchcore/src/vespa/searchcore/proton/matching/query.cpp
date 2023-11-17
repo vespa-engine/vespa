@@ -167,21 +167,13 @@ bool
 Query::buildTree(vespalib::stringref stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
-    return buildTree(stack, location, resolver, indexEnv, true);
-}
-bool
-Query::buildTree(vespalib::stringref stack, const string &location,
-                 const ViewResolver &resolver, const IIndexEnvironment &indexEnv,
-                 bool split_unpacking_iterators)
-{
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
         exchange_location_nodes(location, _query_tree, _locations);
-        _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
-                bool(_whiteListBlueprint), split_unpacking_iterators);
+        _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree), bool(_whiteListBlueprint));
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
         return true;

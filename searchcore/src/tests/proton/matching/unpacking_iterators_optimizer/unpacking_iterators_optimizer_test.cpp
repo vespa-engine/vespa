@@ -80,7 +80,7 @@ std::string dump_query(Node &root) {
         root.accept(dumper);
     }
     auto mem = buffer.obtain();
-    return std::string(mem.data, mem.size);
+    return {mem.data, mem.size};
 }
 
 namespace {
@@ -258,22 +258,18 @@ std::string split_query_tree_dump =
 
 //-----------------------------------------------------------------------------
 
-Node::UP optimize(Node::UP root, bool white_list, bool split) {
-    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list, split);
+Node::UP optimize(Node::UP root, bool white_list) {
+    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list);
 }
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_phrase(), false, false));
-    std::string actual2 = dump_query(*optimize(make_phrase(), false, true));
-    std::string actual3 = dump_query(*optimize(make_phrase(), true, false));
+    std::string actual1 = dump_query(*optimize(make_phrase(), false));
     std::string expect = plain_phrase_dump;
     EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-    EXPECT_EQ(actual3, expect);
 }
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_split) {
-    std::string actual1 = dump_query(*optimize(make_phrase(), true, true));
+    std::string actual1 = dump_query(*optimize(make_phrase(), true));
     std::string expect = split_phrase_dump;
     EXPECT_EQ(actual1, expect);
 }
@@ -281,13 +277,9 @@ TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_split
 //-----------------------------------------------------------------------------
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_same_element(), false, false));
-    std::string actual2 = dump_query(*optimize(make_same_element(), false, true));
-    std::string actual3 = dump_query(*optimize(make_same_element(), true, false));
+    std::string actual1 = dump_query(*optimize(make_same_element(), false));
     std::string expect = plain_same_element_dump;
     EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-    EXPECT_EQ(actual3, expect);
 }
 
 #if ENABLE_SAME_ELEMENT_SPLIT
@@ -301,17 +293,9 @@ TEST(UnpackingIteratorsOptimizerTest, require_that_root_same_element_node_can_be
 
 //-----------------------------------------------------------------------------
 
-TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_left_alone) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, false));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, false));
-    std::string expect = plain_query_tree_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-}
-
 TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_split) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, true));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, true));
+    std::string actual1 = dump_query(*optimize(make_query_tree(), false));
+    std::string actual2 = dump_query(*optimize(make_query_tree(), true));
     std::string expect = split_query_tree_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
