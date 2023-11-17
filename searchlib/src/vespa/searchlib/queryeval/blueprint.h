@@ -298,7 +298,7 @@ class IntermediateBlueprint : public blueprint::StateCache
 private:
     Children _children;
     HitEstimate calculateEstimate() const;
-    uint8_t calculate_cost_tier() const;
+    virtual uint8_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
     bool infer_want_global_filter() const;
