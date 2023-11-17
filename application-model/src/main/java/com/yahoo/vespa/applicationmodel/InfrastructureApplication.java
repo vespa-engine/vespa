@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -35,6 +36,16 @@ public enum InfrastructureApplication {
                      .filter(application -> nodeType == application.nodeType)
                      .findAny()
                      .orElseThrow(() -> new IllegalArgumentException("No application associated with " + nodeType));
+    }
+
+    public static Optional<InfrastructureApplication> of(ApplicationId applicationId) {
+        for (var application : values()) {
+            if (application.id.equals(applicationId)) {
+                return Optional.of(application);
+            }
+        }
+
+        return Optional.empty();
     }
 
     InfrastructureApplication(String name, NodeType nodeType) {
