@@ -110,8 +110,8 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
 
 std::unique_ptr<SearchIterator>
 AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
-    auto bp_and_md = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
-    return bp_and_md.first.createSearch(bp_and_md.second, strictSearch);
+    auto [blueprint, match_data] = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
+    return blueprint.createSearch(match_data, strictSearch);
 }
 
 }
