@@ -84,6 +84,7 @@ import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -95,6 +96,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -1077,6 +1079,51 @@ public class VespaSerializer {
 
     }
 
+    private static class StringInSerializer extends Serializer<StringInItem> {
+        @Override
+        void onExit(StringBuilder destination, StringInItem item) {
+
+        }
+
+        @Override
+        boolean serialize(StringBuilder destination, StringInItem item) {
+            destination.append(item.getIndexName()).append(" in (");
+            int initLen = destination.length();
+            List<String> tokens = new ArrayList<>(item.getTokens());
+            Collections.sort(tokens);
+            for (var token : tokens) {
+                comma(destination, initLen);
+                destination.append('"');
+                escape(token, destination);
+                destination.append("\"");
+            }
+            destination.append(")");
+            return false;
+        }
+    }
+
+    private static class NumericInSerializer extends Serializer<NumericInItem> {
+        @Override
+        void onExit(StringBuilder destination, NumericInItem item) {
+        }
+
+        @Override
+        boolean serialize(StringBuilder destination, NumericInItem item) {
+            destination.append(item.getIndexName()).append(" in (");
+            int initLen = destination.length();
+            List<Long> tokens = new ArrayList<>(item.getTokens());
+            Collections.sort(tokens);
+            for (var token : tokens) {
+                comma(destination, initLen);
+                destination.append(token.toString());
+                if (token < Integer.MIN_VALUE || token > Integer.MAX_VALUE)
+                    destination.append("L");
+            }
+            destination.append(")");
+            return false;
+        }
+    }
+
     private static class WordSerializer extends Serializer<WordItem> {
 
         @Override
@@ -1284,6 +1331,8 @@ public class VespaSerializer {
         dispatchBuilder.put(RegExpItem.class, new RegExpSerializer());
         dispatchBuilder.put(UriItem.class, new UriSerializer());
         dispatchBuilder.put(FuzzyItem.class, new FuzzySerializer());
+        dispatchBuilder.put(StringInItem.class, new StringInSerializer());
+        dispatchBuilder.put(NumericInItem.class, new NumericInSerializer());
         dispatch = ImmutableMap.copyOf(dispatchBuilder);
     }
 

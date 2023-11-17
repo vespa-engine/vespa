@@ -44,6 +44,7 @@ import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -56,6 +57,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -353,10 +355,12 @@ public class YqlParser implements Parser {
                 case CALL -> buildFunctionCall(ast);
                 case LITERAL -> buildLiteral(ast);
                 case NOT -> buildNot(ast);
+                case IN -> buildIn(ast);
                 default -> throw newUnexpectedArgumentException(ast.getOperator(),
                                                                 ExpressionOperator.AND, ExpressionOperator.CALL,
                                                                 ExpressionOperator.CONTAINS, ExpressionOperator.EQ,
                                                                 ExpressionOperator.GT, ExpressionOperator.GTEQ,
+                                                                ExpressionOperator.IN,
                                                                 ExpressionOperator.LT, ExpressionOperator.LTEQ,
                                                                 ExpressionOperator.OR);
             };
@@ -407,6 +411,18 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
+    }
+
+    private Item buildIn(OperatorNode<ExpressionOperator> ast) {
+        String field = getIndex(ast.getArgument(0));
+        boolean stringField = indexFactsSession.getIndex(field).isString();
+        Item item = null;
+        if (stringField) {
+            item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
+        } else {
+            item = fillNumericIn(ast, ast.getArgument(1), new NumericInItem(field));
+        }
+        return item;
     }
 
     private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
@@ -589,6 +605,52 @@ public class YqlParser implements Parser {
                                             WeightedSetItem out) {
         addItems(arg, out);
         return leafStyleSettings(ast, out);
+    }
+
+    private StringInItem fillStringIn(OperatorNode<ExpressionOperator> ast,
+                                      OperatorNode<ExpressionOperator> arg,
+                                      StringInItem out) {
+        assertHasOperator(arg, ExpressionOperator.ARRAY);
+        List<OperatorNode<ExpressionOperator>> values = arg.getArgument(0);
+        for (var value : values) {
+            switch (value.getOperator()) {
+                case LITERAL -> {
+                    String tokenValue = value.getArgument(0, String.class);
+                    out.addToken(tokenValue);
+                }
+                case VARREF -> {
+                    Preconditions.checkState(userQuery != null, "Query properties are not available");
+                    String varRef = value.getArgument(0, String.class);
+                    ParameterListParser.addStringTokensFromString(userQuery.properties().getString(varRef), out);
+                }
+                default -> throw newUnexpectedArgumentException(value.getOperator(),
+                        ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+            }
+        }
+        return out;
+    }
+
+    private NumericInItem fillNumericIn(OperatorNode<ExpressionOperator> ast,
+                                        OperatorNode<ExpressionOperator> arg,
+                                        NumericInItem out) {
+        assertHasOperator(arg, ExpressionOperator.ARRAY);
+        List<OperatorNode<ExpressionOperator>> values = arg.getArgument(0);
+        for (var value : values) {
+            switch (value.getOperator()) {
+                case LITERAL -> {
+                    Long tokenValue = value.getArgument(0, Number.class).longValue();
+                    out.addToken(tokenValue);
+                }
+                case VARREF -> {
+                    Preconditions.checkState(userQuery != null, "Query properties are not available");
+                    String varRef = value.getArgument(0, String.class);
+                    ParameterListParser.addNumericTokensFromString(userQuery.properties().getString(varRef), out);
+                }
+                default -> throw newUnexpectedArgumentException(value.getOperator(),
+                        ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+            }
+        }
+        return out;
     }
 
     private static class PrefixExpander extends IndexNameExpander {

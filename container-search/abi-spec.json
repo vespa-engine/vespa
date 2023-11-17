@@ -643,6 +643,23 @@
       "public static final java.lang.String HIGHLIGHTTERMS"
     ]
   },
+  "com.yahoo.prelude.query.InItem" : {
+    "superClass" : "com.yahoo.prelude.query.Item",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void setIndexName(java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public java.lang.String getName()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.IndexedItem" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -781,6 +798,8 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType TRUE",
       "public static final enum com.yahoo.prelude.query.Item$ItemType FALSE",
       "public static final enum com.yahoo.prelude.query.Item$ItemType FUZZY",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_IN",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
       "public final int code"
     ]
   },
@@ -1065,6 +1084,26 @@
       "public void appendHeadingString(java.lang.StringBuilder)",
       "public java.lang.String getName()",
       "public int getTermCount()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.NumericInItem" : {
+    "superClass" : "com.yahoo.prelude.query.InItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public int encode(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int getTermCount()",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void addToken(long)",
+      "public java.util.Collection getTokens()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1526,6 +1565,26 @@
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
       "public boolean hasUniqueID()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.StringInItem" : {
+    "superClass" : "com.yahoo.prelude.query.InItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public int encode(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int getTermCount()",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void addToken(java.lang.String)",
+      "public java.util.Collection getTokens()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },

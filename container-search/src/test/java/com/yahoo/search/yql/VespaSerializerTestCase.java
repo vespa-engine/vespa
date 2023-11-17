@@ -1,6 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
@@ -41,6 +45,15 @@ public class VespaSerializerTestCase {
     @AfterEach
     public void tearDown() throws Exception {
         parser = null;
+    }
+
+    static private IndexFacts createIndexFactsForInTest() {
+        SearchDefinition sd = new SearchDefinition("sourceA");
+        sd.addIndex(new Index("field"));
+        Index stringIndex = new Index("string");
+        stringIndex.setString(true);
+        sd.addIndex(stringIndex);
+        return new IndexFacts(new IndexModel(sd));
     }
 
     @Test
@@ -451,4 +464,11 @@ public class VespaSerializerTestCase {
         parseAndConfirm("foo contains ({maxEditDistance:3,prefixLength:5}fuzzy(\"a\"))");
     }
 
+    @Test
+    void testIn() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        parseAndConfirm("field in (2, 3)");
+        parseAndConfirm("field in (9000000000L, 12000000000L)");
+        parseAndConfirm("string in (\"a\", \"b\")");
+    }
 }

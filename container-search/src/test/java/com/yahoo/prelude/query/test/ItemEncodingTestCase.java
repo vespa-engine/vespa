@@ -5,16 +5,21 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.PureWeightedInteger;
 import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Item encoding tests
@@ -23,10 +28,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ItemEncodingTestCase {
 
-    private void assertType(ByteBuffer buffer, int etype, int features) {
-        byte type = buffer.get();
-        assertEquals(etype, type & 0x1f, "Code");
-        assertEquals(features, (type & 0xe0) >> 5, "Features");
+    private void assertType(ByteBuffer buffer, int etype, int efeatures) {
+        byte CODE_MASK = 0b00011111;
+        byte features_and_type = buffer.get();
+        int features = (features_and_type & 0xe0) >> 5;
+        int type = features_and_type & CODE_MASK;
+        if (type == CODE_MASK) {
+            byte type_extension = buffer.get();
+            assertTrue(type_extension >= 0);
+            type += type_extension;
+        }
+        assertEquals(etype, type, "Code");
+        assertEquals(efeatures, features, "Features");
     }
 
     private void assertWeight(ByteBuffer buffer, int weight) {
@@ -323,6 +336,44 @@ public class ItemEncodingTestCase {
         assertWeight(buffer, 7);
         assertEquals(a.getValue(), buffer.getLong(), "Value");
         ;
+    }
+
+    @Test
+    void testStringInItem() {
+        var a = new StringInItem("default");
+        a.addToken("foo");
+        ByteBuffer buffer = ByteBuffer.allocate(128);
+        int count = a.encode(buffer);
+        buffer.flip();
+        // 2 bytes type, 1 byte item count, 1 byte string len, 7 bytes string content
+        // 1 byte string len, 4 bytes string content
+        assertEquals(15, buffer.remaining(), "Serialization size");
+        assertType(buffer, 31, 0);
+        assertEquals(1, buffer.get()); // 1 item
+        assertString(buffer, "default");
+        assertString(buffer, "foo");
+    }
+
+    @Test
+    void testNumericInItem() {
+        var a = new NumericInItem("default");
+        a.addToken(42);
+        a.addToken(97000000000L);
+        ByteBuffer buffer = ByteBuffer.allocate(128);
+        int count = a.encode(buffer);
+        buffer.flip();
+        // 2 bytes type, 1 byte item count, 1 byte string len, 7 bytes string content
+        // 16 bytes (2 64-bit integer value)
+        assertEquals(27, buffer.remaining(), "Serialization size");
+        assertType(buffer, 32, 0);
+        assertEquals(2, buffer.get()); // 2 items
+        assertString(buffer, "default");
+        var array = new ArrayList<Long>();
+        array.add(buffer.getLong());
+        array.add(buffer.getLong());
+        Collections.sort(array);
+        assertEquals(42, array.get(0));
+        assertEquals(97000000000L, array.get(1));
     }
 
     private void assertString(ByteBuffer buffer, String word) {
