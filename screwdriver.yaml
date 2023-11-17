@@ -511,7 +511,7 @@ jobs:
           fi
 
   verify-opensource-rpm-installable:
-    image: docker.io/almalinux:8
+    image: quay.io/centos/centos:stream8
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
