@@ -76,7 +76,11 @@ class RestApiImpl implements RestApi {
                         resolvedRoute, requestContext, filters,
                         createFilterContextRecursive(resolvedRoute, requestContext, resolvedRoute.filters, null));
         if (filterContext != null) {
-            return filterContext.executeFirst();
+            try {
+                return filterContext.executeFirst();
+            } catch (RuntimeException e) {
+                return mapException(requestContext, e);
+            }
         } else {
             return dispatchToRoute(resolvedRoute, requestContext);
         }
@@ -496,7 +500,7 @@ class RestApiImpl implements RestApi {
             }
             @Override public String getStringOrThrow(String name) {
                 return getString(name)
-                        .orElseThrow(() -> new RestApiException.BadRequest("Path parameter '" + name + "' is missing"));
+                        .orElseThrow(() -> new RestApiException.NotFound("Path parameter '" + name + "' is missing"));
             }
             @Override public HttpURL.Path getFullPath() {
                 return pathMatcher.getPath();

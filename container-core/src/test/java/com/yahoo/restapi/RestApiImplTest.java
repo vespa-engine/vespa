@@ -158,6 +158,30 @@ class RestApiImplTest {
         assertRequiredCapability(restApi, Method.POST, "/api2", Capability.CONTENT__DOCUMENT_API);
     }
 
+    @Test
+    void maps_exception_for_filter_throwing() {
+        RestApi.Filter throwingFilter = (ctx) -> {
+            throw new RestApiException.Forbidden("forbidden");
+        };
+        var restApi = RestApi.builder()
+                .setDefaultRoute(route("{*}").defaultHandler(ctx -> "hello world"))
+                .addFilter(throwingFilter)
+                .build();
+        verifyJsonResponse(restApi, Method.GET, "/", null, 403, "{\"error-code\":\"FORBIDDEN\",\"message\":\"forbidden\"}");
+    }
+
+    @Test
+    void missing_parameters_are_mapped_to_4xx_response() {
+        var restApi = RestApi.builder()
+                .addRoute(route("/missing-path-param").get(ctx -> ctx.pathParameters().getStringOrThrow("missing")))
+                .addRoute(route("/missing-query-param").get(ctx -> ctx.queryParameters().getStringOrThrow("missing")))
+                .build();
+        verifyJsonResponse(restApi, Method.GET, "/missing-path-param", null, 404,
+                           "{\"error-code\":\"NOT_FOUND\",\"message\":\"Path parameter 'missing' is missing\"}");
+        verifyJsonResponse(restApi, Method.GET, "/missing-query-param", null, 400,
+                            "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Query parameter 'missing' is missing\"}");
+    }
+
     private static void verifyJsonResponse(
             RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode,
             String expectedJson) {
