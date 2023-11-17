@@ -76,19 +76,19 @@ toString(AttributeLimiter::DiversityCutoffStrategy strategy)
     return (strategy == AttributeLimiter::DiversityCutoffStrategy::STRICT) ? STRICT_STR : LOOSE_STR;
 }
 
-std::unique_ptr<SearchIterator>
-AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch)
-{
+AttributeLimiter::BlueprintAndMatchData
+AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
     std::lock_guard<std::mutex> guard(_lock);
     const uint32_t my_field_id = 0;
     search::fef::MatchDataLayout layout;
     auto my_handle = layout.allocTermField(my_field_id);
-    if ( ! _blueprint ) {
+    if (!_blueprint) {
         RangeLimitMetaInfo rangeInfo = _rangeQueryLocator.locate();
         const uint32_t no_unique_id = 0;
-        string range_spec = fmt("[%s;%s;%s%zu", rangeInfo.low().c_str(), rangeInfo.high().c_str(), _descending? "-" : "", want_hits);
+        string range_spec = fmt("[%s;%s;%s%zu", rangeInfo.low().c_str(), rangeInfo.high().c_str(),
+                                _descending ? "-" : "", want_hits);
         if (max_group_size < want_hits) {
-            size_t cutoffGroups = (_diversityCutoffFactor*want_hits)/max_group_size;
+            size_t cutoffGroups = (_diversityCutoffFactor * want_hits) / max_group_size;
             range_spec.append(fmt(";%s;%zu;%zu;%s]", _diversity_attribute.c_str(), max_group_size,
                                   cutoffGroups, toString(_diversityCutoffStrategy).c_str()));
         } else {
@@ -99,12 +99,19 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double 
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
-        _blueprint->fetchPostings(ExecuteInfo::create(strictSearch, strictSearch ? 1.0F : hit_rate, &_requestContext.getDoom()));
+        auto execInfo = ExecuteInfo::create(strictSearch, strictSearch ? 1.0F : hit_rate, &_requestContext.getDoom());
+        _blueprint->fetchPostings(execInfo);
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();
     }
     _match_datas.push_back(layout.createMatchData());
-    return _blueprint->createSearch(*_match_datas.back(), strictSearch);
+    return {*_blueprint, *_match_datas.back()};
+}
+
+std::unique_ptr<SearchIterator>
+AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
+    auto [blueprint, match_data] = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
+    return blueprint.createSearch(match_data, strictSearch);
 }
 
 }
