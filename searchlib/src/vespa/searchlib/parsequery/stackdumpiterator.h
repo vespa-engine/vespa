@@ -3,8 +3,10 @@
 #pragma once
 
 #include "parse.h"
-#include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
+
+namespace search::query { class PredicateQueryTerm; }
 
 namespace search {
 /**
@@ -45,7 +47,7 @@ private:
     double   _extraDoubleArg4;
     double   _extraDoubleArg5;
     /** The predicate query specification */
-    query::PredicateQueryTerm::UP _predicate_query_term;
+    std::unique_ptr<query::PredicateQueryTerm> _predicate_query_term;
 
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
@@ -118,7 +120,7 @@ public:
     uint32_t getFuzzyMaxEditDistance() const { return _extraIntArg1; }
     uint32_t getFuzzyPrefixLength() const { return _extraIntArg2; }
 
-    query::PredicateQueryTerm::UP getPredicateQueryTerm() { return std::move(_predicate_query_term); }
+    std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
 
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }

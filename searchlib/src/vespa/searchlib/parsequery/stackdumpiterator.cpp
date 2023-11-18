@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stackdumpiterator.h"
+#include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
 
@@ -272,6 +273,12 @@ SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
     _extraIntArg2 = readCompressedPositiveInt(p); // prefixLength
     _currArity = 0;
     return true;
+}
+
+std::unique_ptr<query::PredicateQueryTerm>
+SimpleQueryStackDumpIterator::getPredicateQueryTerm()
+{
+    return std::move(_predicate_query_term);
 }
 
 }
