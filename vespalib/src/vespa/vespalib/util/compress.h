@@ -105,6 +105,32 @@ public:
         }
         return numbytes;
     }
+
+    static bool check_decompress_space(const void* srcv, size_t len) {
+        if (len == 0u) {
+            return false;
+        }
+        const uint8_t * src = static_cast<const uint8_t *>(srcv);
+        const uint8_t c = src[0];
+        if ((c & 0x40) != 0) {
+            return (((c & 0x20) != 0) ? (len >= 4u) : (len >= 2u));
+        } else {
+            return true;
+        }
+    }
+
+    static bool check_decompress_positive_space(const void* srcv, size_t len) {
+        if (len == 0u) {
+            return false;
+        }
+        const uint8_t * src = static_cast<const uint8_t *>(srcv);
+        const uint8_t c = src[0];
+        if ((c & 0x80) != 0) {
+            return (((c & 0x40) != 0) ? (len >= 4u) : (len >= 2u));
+        } else {
+            return true;
+        }
+    }
 private:
     [[ noreturn ]] static void throw_too_big(int64_t n);
     [[ noreturn ]] static void throw_too_big(uint64_t n);

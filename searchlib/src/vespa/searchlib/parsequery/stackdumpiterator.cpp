@@ -3,6 +3,7 @@
 #include "stackdumpiterator.h"
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
+#include <cassert>
 
 using search::query::PredicateQueryTerm;
 
@@ -57,8 +58,7 @@ SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 vespalib::stringref
 SimpleQueryStackDumpIterator::read_stringref(const char *&p)
 {
-    uint64_t len;
-    p += vespalib::compress::Integer::decompressPositive(len, p);
+    uint64_t len = readCompressedPositiveInt(p);
     if ((p + len) > _bufEnd) throw false;
     vespalib::stringref result(p, len);
     p += len;
@@ -68,9 +68,24 @@ SimpleQueryStackDumpIterator::read_stringref(const char *&p)
 uint64_t
 SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char *&p)
 {
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
+        throw false;
+    }
     uint64_t tmp;
     p += vespalib::compress::Integer::decompressPositive(tmp, p);
-    if (p > _bufEnd) throw false;
+    assert(p <= _bufEnd);
+    return tmp;
+}
+
+int64_t
+SimpleQueryStackDumpIterator::readCompressedInt(const char *&p)
+{
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
+        throw false;
+    }
+    int64_t tmp;
+    p += vespalib::compress::Integer::decompress(tmp, p);
+    assert(p <= _bufEnd);
     return tmp;
 }
 
@@ -97,11 +112,8 @@ bool SimpleQueryStackDumpIterator::readNext() {
     _currType = ParseItem::GetType(typefield);
 
     if (ParseItem::GetFeature_Weight(typefield)) {
-        int64_t tmpLong;
-        if (p >= _bufEnd) return false;
-        p += vespalib::compress::Integer::decompress(tmpLong, p);
+        int64_t tmpLong = readCompressedInt(p);
         _currWeight.setPercent(tmpLong);
-        if (p > _bufEnd) return false;
     } else {
         _currWeight.setPercent(100);
     }

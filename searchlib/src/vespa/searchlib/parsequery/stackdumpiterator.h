@@ -49,6 +49,7 @@ private:
 
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
+    VESPA_DLL_LOCAL int64_t readCompressedInt(const char *&p);
     VESPA_DLL_LOCAL bool readPredicate(const char *&p);
     VESPA_DLL_LOCAL bool readNN(const char *&p);
     VESPA_DLL_LOCAL bool readComplexTerm(const char *& p);
