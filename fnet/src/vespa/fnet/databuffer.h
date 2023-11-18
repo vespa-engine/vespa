@@ -319,56 +319,6 @@ public:
     }
 
     /**
-     * Will write a positive number in compressed form.
-     * @param number to write
-     **/
-    void writeCompressedPositive(uint64_t n) {
-        _freept += vespalib::compress::Integer::compressPositive(n, _freept);
-    }
-
-    /**
-     * Will write a number in compressed form.
-     * @param number to write
-     **/
-    void writeCompressed(int64_t n) {
-        _freept += vespalib::compress::Integer::compress(n, _freept);
-    }
-
-    /**
-     * Will read a compressed positive integer.
-     * @return uncompressed number
-     **/
-    uint64_t readCompressedPositiveInteger() {
-        uint64_t n;
-        _datapt += vespalib::compress::Integer::decompressPositive(n, _datapt);
-        return n;
-    }
-
-    /**
-     * Will read a compressed integer.
-     * @return uncompressed number
-     **/
-    int64_t readCompressedInteger() {
-        int64_t n;
-        _datapt += vespalib::compress::Integer::decompress(n, _datapt);
-        return n;
-    }
-
-    /**
-     * @return Number of bytes the compressed positiv number will occupy.
-     **/
-    static size_t getCompressedPositiveLength(uint64_t n) {
-        return vespalib::compress::Integer::compressedPositiveLength(n);
-    }
-
-    /**
-     * @return Number of bytes the compressed positiv number will occupy.
-     **/
-    static size_t getCompressedLength(int64_t n) {
-        return vespalib::compress::Integer::compressedLength(n);
-    }
-
-    /**
      * Read an 8-bit unsigned integer from this buffer.
      *
      * @return the integer that has been read.
