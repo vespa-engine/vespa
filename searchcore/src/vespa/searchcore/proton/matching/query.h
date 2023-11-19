@@ -55,7 +55,15 @@ public:
     bool buildTree(vespalib::stringref stack,
                    const vespalib::string &location,
                    const ViewResolver &resolver,
-                   const search::fef::IIndexEnvironment &idxEnv);
+                   const search::fef::IIndexEnvironment &idxEnv)
+    {
+        return buildTree(stack, location, resolver, idxEnv, false);
+    }
+    bool buildTree(vespalib::stringref stack,
+                   const vespalib::string &location,
+                   const ViewResolver &resolver,
+                   const search::fef::IIndexEnvironment &idxEnv,
+                   bool always_mark_phrase_expensive);
 
     /**
      * Extract query terms from the query tree; to be used to build

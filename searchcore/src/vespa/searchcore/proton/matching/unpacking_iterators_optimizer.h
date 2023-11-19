@@ -12,7 +12,7 @@ namespace proton::matching {
  * expensive.
  **/
 struct UnpackingIteratorsOptimizer {
-    static search::query::Node::UP optimize(search::query::Node::UP root, bool has_white_list);
+    static search::query::Node::UP optimize(search::query::Node::UP root, bool has_white_list, bool always_mark_phrase_expensive);
 };
 
 }
