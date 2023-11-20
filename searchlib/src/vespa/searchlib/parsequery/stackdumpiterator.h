@@ -52,10 +52,12 @@ private:
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
     VESPA_DLL_LOCAL int64_t readCompressedInt(const char *&p);
-    VESPA_DLL_LOCAL bool readPredicate(const char *&p);
-    VESPA_DLL_LOCAL bool readNN(const char *&p);
-    VESPA_DLL_LOCAL bool readComplexTerm(const char *& p);
-    VESPA_DLL_LOCAL bool readFuzzy(const char *&p);
+    template <typename T>
+    VESPA_DLL_LOCAL T read_value(const char*& p);
+    VESPA_DLL_LOCAL void readPredicate(const char *&p);
+    VESPA_DLL_LOCAL void readNN(const char *&p);
+    VESPA_DLL_LOCAL void readComplexTerm(const char *& p);
+    VESPA_DLL_LOCAL void readFuzzy(const char *&p);
     VESPA_DLL_LOCAL bool readNext();
 public:
     /**
