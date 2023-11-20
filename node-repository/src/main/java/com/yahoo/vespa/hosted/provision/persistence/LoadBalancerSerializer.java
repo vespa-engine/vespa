@@ -111,7 +111,7 @@ public class LoadBalancerSerializer {
         }
     }
 
-    public static LoadBalancer fromJson(LoadBalancerId id, byte[] data) {
+    public static LoadBalancer fromJson(byte[] data) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
         Set<Real> reals = new LinkedHashSet<>();

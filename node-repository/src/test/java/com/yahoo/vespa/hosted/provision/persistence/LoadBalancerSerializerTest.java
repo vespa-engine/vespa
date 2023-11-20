@@ -58,7 +58,7 @@ public class LoadBalancerSerializerTest {
                                                 LoadBalancer.State.active,
                                                 now);
 
-            var serialized = LoadBalancerSerializer.fromJson(loadBalancer.id(), LoadBalancerSerializer.toJson(loadBalancer));
+            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
             assertEquals(loadBalancer.id(), serialized.id());
             assertEquals(loadBalancer.idSeed(), serialized.idSeed());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
@@ -89,7 +89,7 @@ public class LoadBalancerSerializerTest {
                                                 LoadBalancer.State.active,
                                                 now);
 
-            var serialized = LoadBalancerSerializer.fromJson(loadBalancer.id(), LoadBalancerSerializer.toJson(loadBalancer));
+            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
             assertEquals(loadBalancer.id(), serialized.id());
             assertEquals(loadBalancer.idSeed(), serialized.idSeed());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
@@ -112,7 +112,7 @@ public class LoadBalancerSerializerTest {
         var now = Instant.now();
         var loadBalancer = new LoadBalancer(loadBalancerId, "seed", Optional.empty(), LoadBalancer.State.reserved, now);
 
-        var serialized = LoadBalancerSerializer.fromJson(loadBalancerId, LoadBalancerSerializer.toJson(loadBalancer));
+        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.idSeed(), serialized.idSeed());
         assertEquals(loadBalancer.instance(), serialized.instance());
