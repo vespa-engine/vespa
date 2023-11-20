@@ -97,7 +97,7 @@ SessionId createSessionId(const std::string & s) {
     for (char c : s) {
         vec.push_back(c);
     }
-    return {&vec[0], vec.size()};
+    return {vec.data(), vec.size()};
 }
 
 class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
