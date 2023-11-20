@@ -52,8 +52,11 @@ lookupUint32(const Properties &props, const vespalib::string &name, uint32_t def
     Property p = props.lookup(name);
     uint32_t value(defaultValue);
     if (p.found()) {
-        const auto & s = p.get();
-        std::from_chars(s.c_str(), s.c_str() + s.size(), value);
+        const auto & valS = p.get();
+        const char * start = valS.c_str();
+        const char * end = start + valS.size();
+        while (isspace(start[0]) && start != end) { start++; }
+        std::from_chars(start, end, value);
     }
     return value;
 }
