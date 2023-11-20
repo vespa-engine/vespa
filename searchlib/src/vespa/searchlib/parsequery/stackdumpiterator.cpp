@@ -10,28 +10,6 @@ using search::query::PredicateQueryTerm;
 
 namespace search {
 
-namespace {
-
-uint64_t
-readUint64(const char *&p)
-{
-    uint64_t value;
-    memcpy(&value, p, sizeof(value));
-    p += sizeof(value);
-    return vespalib::nbo::n2h(value);
-}
-
-double
-read_double(const char *&p)
-{
-    double value;
-    memcpy(&value, p, sizeof(value));
-    p += sizeof(value);
-    return vespalib::nbo::n2h(value);
-}
-
-}
-
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf)
     : _buf(buf.begin()),
       _bufEnd(buf.end()),
@@ -88,6 +66,19 @@ SimpleQueryStackDumpIterator::readCompressedInt(const char *&p)
     p += vespalib::compress::Integer::decompress(tmp, p);
     assert(p <= _bufEnd);
     return tmp;
+}
+
+template <typename T>
+T
+SimpleQueryStackDumpIterator::read_value(const char *&p)
+{
+    T value;
+    if (p + sizeof(value) > _bufEnd) {
+        throw false;
+    }
+    memcpy(&value, p, sizeof(value));
+    p += sizeof(value);
+    return vespalib::nbo::n2h(value);
 }
 
 bool
@@ -167,13 +158,8 @@ bool SimpleQueryStackDumpIterator::readNext() {
         _currArity = 0;
         break;
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-        {
-            if (p + sizeof(int64_t) > _bufEnd) {
-                return false;
-            }
-            _curr_integer_term = readUint64(p);
-            _currArity = 0;
-        }
+        _curr_integer_term = read_value<int64_t>(p);
+        _currArity = 0;
         break;
     case ParseItem::ITEM_WORD_ALTERNATIVES:
         _curr_index_name = read_stringref(p);
@@ -193,20 +179,20 @@ bool SimpleQueryStackDumpIterator::readNext() {
         _currArity = 0;
         break;
     case ParseItem::ITEM_PREDICATE_QUERY:
-        if ( ! readPredicate(p)) return false;
+        readPredicate(p);
         break;
 
     case ParseItem::ITEM_WEIGHTED_SET:
     case ParseItem::ITEM_DOT_PRODUCT:
     case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_PHRASE:
-        if (!readComplexTerm(p)) return false;
+        readComplexTerm(p);
         break;
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
-        if ( ! readNN(p)) return false;
+        readNN(p);
         break;
     case ParseItem::ITEM_FUZZY:
-        if (!readFuzzy(p)) return false;
+        readFuzzy(p);
         break;
     case ParseItem::ITEM_TRUE:
     case ParseItem::ITEM_FALSE:
@@ -223,7 +209,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     return (p <= _bufEnd);
 }
 
-bool
+void
 SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
     _curr_index_name = read_stringref(p);
     _predicate_query_term = std::make_unique<PredicateQueryTerm>();
@@ -232,22 +218,19 @@ SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
     for (size_t i = 0; i < count; ++i) {
         vespalib::stringref key = read_stringref(p);
         vespalib::stringref value = read_stringref(p);
-        if (p + sizeof(uint64_t) > _bufEnd) return false;
-        uint64_t sub_queries = readUint64(p);
+        uint64_t sub_queries = read_value<uint64_t>(p);
         _predicate_query_term->addFeature(key, value, sub_queries);
     }
     count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
         vespalib::stringref key = read_stringref(p);
-        if (p + 2*sizeof(uint64_t) > _bufEnd) return false;
-        uint64_t value = readUint64(p);
-        uint64_t sub_queries = readUint64(p);
+        uint64_t value = read_value<uint64_t>(p);
+        uint64_t sub_queries = read_value<uint64_t>(p);
         _predicate_query_term->addRangeFeature(key, value, sub_queries);
     }
-    return true;
 }
 
-bool
+void
 SimpleQueryStackDumpIterator::readNN(const char *& p) {
     _curr_index_name = read_stringref(p);
     _curr_term = read_stringref(p); // query_tensor_name
@@ -257,34 +240,29 @@ SimpleQueryStackDumpIterator::readNN(const char *& p) {
     // XXX: remove later when QRS doesn't send this extra flag
     _extraIntArg2 &= ~0x40;
     // QRS always sends this now:
-    if ((p + sizeof(double))> _bufEnd) return false;
-    _extraDoubleArg4 = read_double(p); // distance threshold
+    _extraDoubleArg4 = read_value<double>(p); // distance threshold
     _currArity = 0;
-    return true;
 }
 
-bool
+void
 SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
     _currArity = readCompressedPositiveInt(p);
     _curr_index_name = read_stringref(p);
     if (_currType == ParseItem::ITEM_WAND) {
         _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
-        if ((p + 2*sizeof(double))> _bufEnd) return false;
-        _extraDoubleArg4 = read_double(p); // scoreThreshold
-        _extraDoubleArg5 = read_double(p); // thresholdBoostFactor
+        _extraDoubleArg4 = read_value<double>(p); // scoreThreshold
+        _extraDoubleArg5 = read_value<double>(p); // thresholdBoostFactor
     }
     _curr_term = vespalib::stringref();
-    return true;
 }
 
-bool
+void
 SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
     _curr_index_name = read_stringref(p);
     _curr_term = read_stringref(p); // fuzzy term
     _extraIntArg1 = readCompressedPositiveInt(p); // maxEditDistance
     _extraIntArg2 = readCompressedPositiveInt(p); // prefixLength
     _currArity = 0;
-    return true;
 }
 
 std::unique_ptr<query::PredicateQueryTerm>
