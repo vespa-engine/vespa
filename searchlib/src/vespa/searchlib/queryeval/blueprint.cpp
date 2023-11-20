@@ -129,12 +129,14 @@ Blueprint::~Blueprint() = default;
 Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
     Blueprint *root = bp.release();
-    root->optimize(root);
+    root->optimize(root, OptimizePass::FIRST);
+    root->optimize(root, OptimizePass::SECOND);
+    root->optimize(root, OptimizePass::LAST);
     return Blueprint::UP(root);
 }
 
 void
-Blueprint::optimize_self()
+Blueprint::optimize_self(OptimizePass)
 {
 }
 
@@ -539,19 +541,23 @@ IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double 
 }
 
 void
-IntermediateBlueprint::optimize(Blueprint* &self)
+IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 {
     assert(self == this);
     if (should_optimize_children()) {
         for (auto &child : _children) {
             auto *child_ptr = child.release();
-            child_ptr->optimize(child_ptr);
+            child_ptr->optimize(child_ptr, pass);
             child.reset(child_ptr);
         }
     }
-    optimize_self();
-    sort(_children);
-    maybe_eliminate_self(self, get_replacement());
+    optimize_self(pass);
+    if (pass == OptimizePass::LAST) {
+        sort(_children);
+    }
+    if (pass == OptimizePass::FIRST) {
+        maybe_eliminate_self(self, get_replacement());
+    }
 }
 
 void
@@ -725,11 +731,13 @@ LeafBlueprint::getRange(vespalib::string &, vespalib::string &) const {
 }
 
 void
-LeafBlueprint::optimize(Blueprint* &self)
+LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 {
     assert(self == this);
-    optimize_self();
-    maybe_eliminate_self(self, get_replacement());
+    optimize_self(pass);
+    if (pass == OptimizePass::FIRST) {
+        maybe_eliminate_self(self, get_replacement());
+    }
 }
 
 void

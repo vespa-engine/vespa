@@ -34,7 +34,7 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
-    void optimize_self() override;
+    void optimize_self(OptimizePass pass) override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
 
     std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::TermFieldMatchData& tfmd, bool strict) const;

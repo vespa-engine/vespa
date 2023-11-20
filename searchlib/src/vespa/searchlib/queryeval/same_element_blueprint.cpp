@@ -45,12 +45,14 @@ SameElementBlueprint::addTerm(Blueprint::UP term)
 }
 
 void
-SameElementBlueprint::optimize_self()
+SameElementBlueprint::optimize_self(OptimizePass pass)
 {
-    std::sort(_terms.begin(), _terms.end(),
-              [](const auto &a, const auto &b) {
-                  return (a->getState().estimate() < b->getState().estimate());
-              });
+    if (pass == OptimizePass::LAST) {
+        std::sort(_terms.begin(), _terms.end(),
+                  [](const auto &a, const auto &b) {
+                      return (a->getState().estimate() < b->getState().estimate());
+                  });
+    }
 }
 
 void

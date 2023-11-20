@@ -17,7 +17,7 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self() override;
+    void optimize_self(OptimizePass pass) override;
     bool isAndNot() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
@@ -40,7 +40,7 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self() override;
+    void optimize_self(OptimizePass pass) override;
     bool isAnd() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
@@ -64,7 +64,7 @@ public:
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self() override;
+    void optimize_self(OptimizePass pass) override;
     bool isOr() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
@@ -158,7 +158,7 @@ class RankBlueprint final : public IntermediateBlueprint
 public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self() override;
+    void optimize_self(OptimizePass pass) override;
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
