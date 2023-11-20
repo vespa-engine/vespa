@@ -30,24 +30,11 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec, Optional<String> idSeed) {
-        return create(spec);
-    }
-
-    @Override
-    public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
-        return instance.with(spec.reals(), spec.settings(), Optional.empty());
-    }
-
-    @Override
-    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
-        throw new UnsupportedOperationException("reallocate is not supported with " + getClass());
-    }
-
-    private LoadBalancerInstance create(LoadBalancerSpec spec) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec, String idSeed) {
         if ( ! spec.settings().isPublicEndpoint())
             throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
-        return new LoadBalancerInstance(Optional.empty(),
+
+        return new LoadBalancerInstance(idSeed,
                                         Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
@@ -58,6 +45,16 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                                         spec.settings(),
                                         List.of(),
                                         spec.cloudAccount());
+    }
+
+    @Override
+    public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
+        return instance.with(spec.reals(), spec.settings(), Optional.empty());
+    }
+
+    @Override
+    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
+        throw new UnsupportedOperationException("reallocate is not supported with " + getClass());
     }
 
     @Override
@@ -78,7 +75,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint, Optional<String> idSeed) {
+    public Availability healthy(Endpoint endpoint, String idSeed) {
         return Availability.ready;
     }
 

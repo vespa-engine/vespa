@@ -268,7 +268,7 @@ public class LoadBalancerProvisioner {
         log.log(Level.INFO, () -> "Provisioning instance for " + id);
         try {
             LoadBalancerSpec spec = new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, requested.cloudAccount());
-            return provisionFromPool(spec, requested.type()).orElseGet(() -> service.provision(spec))
+            return provisionFromPool(spec, requested.type()).orElseGet(() -> service.provision(spec, toSeed(id, requested.type())))
                                           // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
                                           .withServiceIds(currentLoadBalancer.flatMap(LoadBalancer::instance).map(LoadBalancerInstance::serviceIds).orElse(List.of()));
         }
@@ -328,13 +328,29 @@ public class LoadBalancerProvisioner {
         while (head - tail < size) {
             ClusterSpec.Id slot = slotId(head);
             LoadBalancerSpec spec = preProvisionSpec(slot, nodeRepository.zone().cloud().account());
-            db.writeLoadBalancer(new LoadBalancer(new LoadBalancerId(preProvisionOwner, slot),
-                                                  Optional.of(service.provision(spec, Optional.of(slot.value()))),
+            LoadBalancerId id = new LoadBalancerId(preProvisionOwner, slot);
+            db.writeLoadBalancer(new LoadBalancer(id,
+                                                  Optional.of(service.provision(spec, toSeed(id, NodeType.tenant))),
                                                   State.active, // Keep the expirer away.
                                                   nodeRepository.clock().instant()),
                                  null);
             head = db.incrementLoadBalancerPoolHead();
         }
+    }
+
+    public static String toSeed(LoadBalancerId id, NodeType type) {
+        return type == NodeType.tenant ? toSeed(id) : toLegacySeed(id.application(), id.cluster());
+    }
+
+    public static String toSeed(LoadBalancerId id) {
+        return id.serializedForm();
+    }
+
+    public static String toLegacySeed(ApplicationId application, ClusterSpec.Id cluster) {
+        return application.tenant().value() +
+               application.application().value() +
+               application.instance().value() +
+               cluster.value(); // ಠ_ಠ
     }
 
     /** Reconfigure a load balancer instance, if necessary */

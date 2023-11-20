@@ -50,6 +50,7 @@ import java.util.SortedSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec.preProvisionOwner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
@@ -190,15 +191,15 @@ public class LoadBalancerProvisionerTest {
         provisioner.refreshPool();
         expirer.run();
         assertEquals(2, tester.nodeRepository().loadBalancers().list().size());
-        assertEquals(2, tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner).size());
+        assertEquals(2, tester.nodeRepository().loadBalancers().list(preProvisionOwner).size());
 
         // Provision a load balancer when the pool has two entries.
         ClusterSpec.Id containerCluster = ClusterSpec.Id.from("qrs");
         prepare(app1, clusterRequest(ClusterSpec.Type.container, containerCluster));
         List<LoadBalancer> loadBalancers = tester.nodeRepository().loadBalancers().list(app1).asList();
         assertEquals(1, loadBalancers.size());
-        assertEquals(1, tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner).asList().size());
-        assertEquals(Optional.of("1"), loadBalancers.get(0).instance().get().idSeed());
+        assertEquals(1, tester.nodeRepository().loadBalancers().list(preProvisionOwner).asList().size());
+        assertEquals(preProvisionOwner.serializedForm() + ":1", loadBalancers.get(0).instance().get().idSeed());
 
         // Shrink pool to 0 entries.
         flagSource.withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 0);
@@ -214,8 +215,8 @@ public class LoadBalancerProvisionerTest {
                      assertThrows(IllegalStateException.class, provisioner::refreshPool).getMessage());
         tester.loadBalancerService().throwOnCreate(false);
         provisioner.refreshPool();
-        assertEquals(List.of(Optional.of("3")),
-                     tester.nodeRepository().loadBalancers().list(LoadBalancerSpec.preProvisionOwner)
+        assertEquals(List.of(preProvisionOwner.serializedForm() + ":3"),
+                     tester.nodeRepository().loadBalancers().list(preProvisionOwner)
                            .mapToList(lb -> lb.instance().get().idSeed()));
     }
 

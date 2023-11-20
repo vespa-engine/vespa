@@ -20,7 +20,7 @@ import java.util.Set;
  */
 public class LoadBalancerInstance {
 
-    private final Optional<String> idSeed;
+    private final String idSeed;
     private final Optional<DomainName> hostname;
     private final Optional<String> ip4Address;
     private final Optional<String> ip6Address;
@@ -32,7 +32,7 @@ public class LoadBalancerInstance {
     private final List<PrivateServiceId> serviceIds;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<String> idSeed, Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
+    public LoadBalancerInstance(String idSeed, Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
                                 ZoneEndpoint settings, List<PrivateServiceId> serviceIds, CloudAccount cloudAccount) {
         this.idSeed = Objects.requireNonNull(idSeed, "idSeed must be non-null");
@@ -54,7 +54,7 @@ public class LoadBalancerInstance {
     }
 
     /** A unique seed to use when generating cloud-specific resource IDs for this load balancer instance. */
-    public Optional<String> idSeed() {
+    public String idSeed() {
         return idSeed;
     }
 

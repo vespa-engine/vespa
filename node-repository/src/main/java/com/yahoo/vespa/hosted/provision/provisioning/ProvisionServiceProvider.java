@@ -25,7 +25,7 @@ public interface ProvisionServiceProvider {
     }
 
     interface ProtoHealthChecker {
-        Availability healthy(Endpoint endpoint, Optional<String> idSeed);
+        Availability healthy(Endpoint endpoint, String idSeed);
     }
 
 }

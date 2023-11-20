@@ -31,7 +31,7 @@ public class SharedLoadBalancerServiceTest {
         LoadBalancerSpec spec = new LoadBalancerSpec(applicationId, clusterId, reals,
                                                      ZoneEndpoint.defaultEndpoint, CloudAccount.empty);
 
-        var lb = loadBalancerService.configure(loadBalancerService.provision(spec), spec, false);
+        var lb = loadBalancerService.configure(loadBalancerService.provision(spec, "seed"), spec, false);
 
         assertEquals(Optional.of(HostName.of("vip.example.com")), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
