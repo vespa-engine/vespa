@@ -1415,22 +1415,57 @@ TEST("require that highest cost tier sorts last for AND") {
     EXPECT_EQUAL(expect_up->asString(), top_up->asString());
 }
 
-TEST("require that intermediate cost tier is minimum cost tier of children") {
-    Blueprint::UP bp1(
-            ap((new AndBlueprint())->
-               addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
-               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
-               addChild(ap(MyLeafSpec(30).cost_tier(3).create()))));
-    Blueprint::UP bp2(
-            ap((new AndBlueprint())->
-               addChild(ap(MyLeafSpec(10).cost_tier(3).create())).
-               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
-               addChild(ap(MyLeafSpec(30).cost_tier(2).create()))));
-    EXPECT_EQUAL(bp1->getState().cost_tier(), 1u);
-    EXPECT_EQUAL(bp2->getState().cost_tier(), 2u);
+template<typename BP>
+void
+verifyCostTierInheritance(uint8_t expected, uint8_t expected_reverse) {
+    auto bp1 = std::make_unique<BP>();
+    bp1->addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
+         addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+         addChild(ap(MyLeafSpec(30).cost_tier(3).create()));
+    auto bp2 = std::make_unique<BP>();
+    bp2->addChild(ap(MyLeafSpec(10).cost_tier(3).create())).
+         addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+         addChild(ap(MyLeafSpec(30).cost_tier(1).create()));
+    EXPECT_EQUAL(bp1->getState().cost_tier(), expected);
+    EXPECT_EQUAL(bp2->getState().cost_tier(), expected_reverse);
 }
 
-void verify_or_est(const std::vector<Blueprint::HitEstimate> &child_estimates, Blueprint::HitEstimate expect) {
+TEST("require that AND cost tier is minimum cost tier of children") {
+    verifyCostTierInheritance<AndBlueprint>(1, 1);
+}
+
+TEST("require that OR cost tier is maximum cost tier of children") {
+    verifyCostTierInheritance<OrBlueprint>(3, 3);
+}
+
+TEST("require that Rank cost tier is first childs cost tier") {
+    verifyCostTierInheritance<RankBlueprint>(1, 3);
+}
+
+TEST("require that AndNot cost tier is first childs cost tier") {
+    verifyCostTierInheritance<AndNotBlueprint>(1, 3);
+}
+
+struct MySourceBlender {
+    InvalidSelector selector;
+    SourceBlenderBlueprint sb;
+    MySourceBlender() : selector(), sb(selector) {}
+    IntermediateBlueprint &
+    addChild(Blueprint::UP child) {
+        return sb.addChild(std::move(child));
+    }
+    const Blueprint::State &getState() const {
+        return sb.getState();
+    }
+
+};
+
+TEST("require that SourceBlender cost tier is maximum cost tier of children") {
+    verifyCostTierInheritance<MySourceBlender>(3, 3);
+}
+
+void
+verify_or_est(const std::vector<Blueprint::HitEstimate> &child_estimates, Blueprint::HitEstimate expect) {
     OrBlueprint my_or;
     my_or.setDocIdLimit(32);
     auto my_est = my_or.combine(child_estimates);

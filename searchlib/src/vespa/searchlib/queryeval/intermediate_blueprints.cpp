@@ -355,6 +355,16 @@ OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
     return create_or_filter(get_children(), strict, constraint);
 }
 
+uint8_t
+OrBlueprint::calculate_cost_tier() const
+{
+    uint8_t cost_tier = State::COST_TIER_NORMAL;
+    for (const Blueprint::UP &child : get_children()) {
+        cost_tier = std::max(cost_tier, child->getState().cost_tier());
+    }
+    return cost_tier;
+}
+
 //-----------------------------------------------------------------------------
 WeakAndBlueprint::~WeakAndBlueprint() = default;
 
@@ -661,6 +671,16 @@ bool
 SourceBlenderBlueprint::isCompatibleWith(const SourceBlenderBlueprint &other) const
 {
     return (&_selector == &other._selector);
+}
+
+uint8_t
+SourceBlenderBlueprint::calculate_cost_tier() const
+{
+    uint8_t cost_tier = State::COST_TIER_NORMAL;
+    for (const Blueprint::UP &child : get_children()) {
+        cost_tier = std::max(cost_tier, child->getState().cost_tier());
+    }
+    return cost_tier;
 }
 
 //-----------------------------------------------------------------------------

@@ -28,6 +28,9 @@ public:
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
+    uint8_t calculate_cost_tier() const override {
+        return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
+    }
     bool isPositive(size_t index) const override { return index == 0; }
 };
 
@@ -76,6 +79,7 @@ public:
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
     double computeNextHitRate(const Blueprint & child, double hitRate) const override;
+    uint8_t calculate_cost_tier() const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -168,6 +172,9 @@ public:
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    uint8_t calculate_cost_tier() const override {
+        return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -193,6 +200,7 @@ public:
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
     bool isSourceBlender() const override { return true; }
+    uint8_t calculate_cost_tier() const override;
 };
 
 }
