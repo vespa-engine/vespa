@@ -4,6 +4,7 @@
 #include "properties.h"
 #include <vespa/vespalib/locale/c.h>
 #include <limits>
+#include <charconv>
 
 namespace search::fef::indexproperties {
 
@@ -49,10 +50,15 @@ uint32_t
 lookupUint32(const Properties &props, const vespalib::string &name, uint32_t defaultValue)
 {
     Property p = props.lookup(name);
+    uint32_t value(defaultValue);
     if (p.found()) {
-        return atoi(p.get().c_str());
+        const auto & valS = p.get();
+        const char * start = valS.c_str();
+        const char * end = start + valS.size();
+        while ((start != end) && isspace(start[0])) { start++; }
+        std::from_chars(start, end, value);
     }
-    return defaultValue;
+    return value;
 }
 
 bool

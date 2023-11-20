@@ -25,7 +25,7 @@ uint32_t
 Properties::rawHash(const void *buf, uint32_t len) noexcept
 {
     uint32_t res = 0;
-    unsigned const char *pt = (unsigned const char *) buf;
+    auto *pt = (unsigned const char *) buf;
     unsigned const char *end = pt + len;
     while (pt < end) {
         res = (res << 7) + (res >> 25) + *pt++;
@@ -52,7 +52,7 @@ Properties::add(vespalib::stringref key, vespalib::stringref value)
 {
     if (!key.empty()) {
         Value & v = _data[key];
-        v.push_back(value);
+        v.emplace_back(value);
         ++_numValues;
     }
     return *this;
@@ -162,20 +162,20 @@ Property
 Properties::lookup(vespalib::stringref key) const noexcept
 {
     if (key.empty()) {
-        return Property();
+        return {};
     }
     auto node = _data.find(key);
     if (node == _data.end()) {
-        return Property();
+        return {};
     }
-    return Property(node->second);
+    return {node->second};
 }
 
 Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref key) const noexcept
 {
     if (namespace1.empty() || key.empty()) {
-        return Property();
+        return {};
     }
     vespalib::string fullKey(namespace1);
     fullKey.append('.').append(key);
@@ -187,7 +187,7 @@ Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref key) const noexcept
 {
     if (namespace1.empty() || namespace2.empty() || key.empty()) {
-        return Property();
+        return {};
     }
     vespalib::string fullKey(namespace1);
     fullKey.append('.').append(namespace2).append('.').append(key);
@@ -200,7 +200,7 @@ Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref key) const noexcept
 {
     if (namespace1.empty() || namespace2.empty() || namespace3.empty() || key.empty()) {
-        return Property();
+        return {};
     }
     vespalib::string fullKey(namespace1);
     fullKey.append('.').append(namespace2).append('.').append(namespace3).append('.').append(key);

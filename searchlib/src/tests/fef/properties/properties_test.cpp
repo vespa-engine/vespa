@@ -10,9 +10,8 @@ using namespace search::fef::indexproperties;
 struct CopyVisitor : public IPropertiesVisitor
 {
     Properties &dst;
-    CopyVisitor(Properties &p) : dst(p) {}
-    virtual void visitProperty(const Property::Value &key,
-                               const Property &values) override
+    explicit CopyVisitor(Properties &p) noexcept : dst(p) {}
+    void visitProperty(const Property::Value &key, const Property &values) override
     {
         for (uint32_t i = 0; i < values.size(); ++i) {
             dst.add(key, values.getAt(i));
@@ -588,6 +587,42 @@ TEST("test query feature type properties")
     p.add("vespa.type.query.foo", "tensor(x[10])");
     EXPECT_EQUAL("tensor(x[10])", type::QueryFeature::lookup(p, "foo"));
     EXPECT_EQUAL("", type::QueryFeature::lookup(p, "bar"));
+}
+
+TEST("test integer lookup")
+{
+    EXPECT_EQUAL(matching::NumThreadsPerSearch::NAME, vespalib::string("vespa.matching.numthreadspersearch"));
+    EXPECT_EQUAL(matching::NumThreadsPerSearch::DEFAULT_VALUE, std::numeric_limits<uint32_t>::max());
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", "50");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), 50u);
+    }
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", "50 ");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), 50u);
+    }
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", " 50");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), 50u);
+    }
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", " ");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), matching::NumThreadsPerSearch::DEFAULT_VALUE);
+    }
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", "50x");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), 50u);
+    }
+    {
+        Properties p;
+        p.add("vespa.matching.numthreadspersearch", "x");
+        EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), matching::NumThreadsPerSearch::DEFAULT_VALUE);
+    }
 }
 
 
