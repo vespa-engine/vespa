@@ -55,7 +55,7 @@ lookupUint32(const Properties &props, const vespalib::string &name, uint32_t def
         const auto & valS = p.get();
         const char * start = valS.c_str();
         const char * end = start + valS.size();
-        while (isspace(start[0]) && start != end) { start++; }
+        while ((start != end) && isspace(start[0])) { start++; }
         std::from_chars(start, end, value);
     }
     return value;
