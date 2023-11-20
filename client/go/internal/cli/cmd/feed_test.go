@@ -48,6 +48,7 @@ func TestFeed(t *testing.T) {
 
 	assert.Equal(t, "", stderr.String())
 	want := `{
+  "feeder.operation.count": 2,
   "feeder.seconds": 5.000,
   "feeder.ok.count": 2,
   "feeder.ok.rate": 0.400,
@@ -122,6 +123,7 @@ func TestFeedInvalid(t *testing.T) {
 	require.NotNil(t, cli.Run("feed", "-t", "http://127.0.0.1:8080", jsonFile))
 
 	want := `{
+  "feeder.operation.count": 1,
   "feeder.seconds": 3.000,
   "feeder.ok.count": 1,
   "feeder.ok.rate": 0.333,

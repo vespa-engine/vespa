@@ -40,6 +40,8 @@ func (r Result) Success() bool {
 
 // Stats represents feeding operation statistics.
 type Stats struct {
+	// Number of operations passed to the feeder by the user, not counting retries.
+	Operations int64
 	// Number of responses received, grouped by the HTTP status code. Requests that do not receive a response (i.e. no
 	// status code) are not counted.
 	ResponsesByCode map[int]int64
@@ -93,14 +95,16 @@ func (s Stats) Clone() Stats {
 }
 
 // Add statistics from result to this.
-func (s *Stats) Add(result Result) {
+func (s *Stats) Add(result Result, retry bool) {
+	if !retry {
+		s.Operations++
+	}
 	s.Requests++
 	if s.ResponsesByCode == nil {
 		s.ResponsesByCode = make(map[int]int64)
 	}
 	if result.Err == nil {
-		responsesByCode := s.ResponsesByCode[result.HTTPStatus]
-		s.ResponsesByCode[result.HTTPStatus] = responsesByCode + 1
+		s.ResponsesByCode[result.HTTPStatus]++
 		s.Responses++
 	} else {
 		s.Errors++

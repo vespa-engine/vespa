@@ -120,7 +120,7 @@ func TestClientSend(t *testing.T) {
 		if !reflect.DeepEqual(res, wantRes) {
 			t.Fatalf("#%d: got result %+v, want %+v", i, res, wantRes)
 		}
-		stats.Add(res)
+		stats.Add(res, false)
 		r := httpClient.LastRequest
 		if r.Method != tt.method {
 			t.Errorf("#%d: got r.Method = %q, want %q", i, r.Method, tt.method)
@@ -139,8 +139,9 @@ func TestClientSend(t *testing.T) {
 		}
 	}
 	want := Stats{
-		Requests:  5,
-		Responses: 4,
+		Operations: 5,
+		Requests:   5,
+		Responses:  4,
 		ResponsesByCode: map[int]int64{
 			200: 3,
 			502: 1,
