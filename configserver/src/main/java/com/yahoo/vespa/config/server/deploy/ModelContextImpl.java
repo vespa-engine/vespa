@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 
-import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 
@@ -190,7 +189,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
@@ -235,7 +233,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
             this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
             this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
@@ -287,7 +284,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
         @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }

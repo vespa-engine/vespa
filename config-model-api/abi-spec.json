@@ -1276,7 +1276,6 @@
       "public boolean useV8GeoPositions()",
       "public int maxCompactBuffers()",
       "public java.util.List ignoredHttpUserAgents()",
-      "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public boolean enableProxyProtocolMixedMode()",
       "public java.lang.String logFileCompressionAlgorithm(java.lang.String)",
       "public boolean enableGlobalPhase()",
