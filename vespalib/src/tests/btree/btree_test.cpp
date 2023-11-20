@@ -231,6 +231,7 @@ protected:
     template <typename TreeType>
     void requireThatUpperBoundWorksT();
     void requireThatIteratorDistanceWorks(int numEntries);
+    void test_step_forward(int num_entries);
 };
 
 template <typename LeafNodeType>
@@ -1519,6 +1520,33 @@ BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
     }
 }
 
+void
+BTreeTest::test_step_forward(int num_entries)
+{
+    GenerationHandler g;
+    MyTree tree;
+    for (int i = 0; i < num_entries; ++i) {
+        tree.insert(i, toStr(i));
+    }
+    auto it = tree.begin();
+    auto ite = it;
+    ite.end();
+    for (int i = 0; i <= num_entries; ++i) {
+        auto iit = tree.lowerBound(i);
+        auto iit2 = iit;
+        iit2 += (num_entries - i);
+        EXPECT_TRUE(iit2.identical(ite));
+        iit2 = iit;
+        iit2 += (1000000 + num_entries);
+        EXPECT_TRUE(iit2.identical(ite));
+        for (int j = i; j <= num_entries; ++j) {
+            auto jit = tree.lowerBound(j);
+            auto iit3 = iit;
+            iit3 += (j - i);
+            EXPECT_TRUE(iit3.identical(jit));
+        }
+    }
+}
 
 TEST_F(BTreeTest, require_that_iterator_distance_works)
 {
@@ -1528,6 +1556,16 @@ TEST_F(BTreeTest, require_that_iterator_distance_works)
     requireThatIteratorDistanceWorks(20);
     requireThatIteratorDistanceWorks(100);
     requireThatIteratorDistanceWorks(400);
+}
+
+TEST_F(BTreeTest, require_that_step_forward_works)
+{
+    test_step_forward(1);
+    test_step_forward(3);
+    test_step_forward(8);
+    test_step_forward(20);
+    test_step_forward(100);
+    test_step_forward(400);
 }
 
 TEST_F(BTreeTest, require_that_foreach_key_works)
