@@ -103,25 +103,27 @@ AndNotBlueprint::exposeFields() const
 }
 
 void
-AndNotBlueprint::optimize_self()
+AndNotBlueprint::optimize_self(OptimizePass pass)
 {
     if (childCnt() == 0) {
         return;
     }
-    if (getChild(0).isAndNot()) {
-        auto *child = static_cast<AndNotBlueprint *>(&getChild(0));
-        while (child->childCnt() > 1) {
-            addChild(child->removeChild(1));
+    if (pass == OptimizePass::FIRST) {
+        if (getChild(0).isAndNot()) {
+            auto *child = static_cast<AndNotBlueprint *>(&getChild(0));
+            while (child->childCnt() > 1) {
+                addChild(child->removeChild(1));
+            }
+            insertChild(1, child->removeChild(0));
+            removeChild(0);
         }
-        insertChild(1, child->removeChild(0));
-        removeChild(0);
-    }
-    for (size_t i = 1; i < childCnt(); ++i) {
-        if (getChild(i).getState().estimate().empty) {
-            removeChild(i--);
+        for (size_t i = 1; i < childCnt(); ++i) {
+            if (getChild(i).getState().estimate().empty) {
+                removeChild(i--);
+            }
         }
     }
-    if ( !(getParent() && getParent()->isAndNot()) ) {
+    if (pass == OptimizePass::LAST) {
         optimize_source_blenders<OrBlueprint>(*this, 1);
     }
 }
@@ -191,18 +193,20 @@ AndBlueprint::exposeFields() const
 }
 
 void
-AndBlueprint::optimize_self()
+AndBlueprint::optimize_self(OptimizePass pass)
 {
-    for (size_t i = 0; i < childCnt(); ++i) {
-        if (getChild(i).isAnd()) {
-            auto *child = static_cast<AndBlueprint *>(&getChild(i));
-            while (child->childCnt() > 0) {
-                addChild(child->removeChild(0));
+    if (pass == OptimizePass::FIRST) {
+        for (size_t i = 0; i < childCnt(); ++i) {
+            if (getChild(i).isAnd()) {
+                auto *child = static_cast<AndBlueprint *>(&getChild(i));
+                while (child->childCnt() > 0) {
+                    addChild(child->removeChild(0));
+                }
+                removeChild(i--);
             }
-            removeChild(i--);
         }
     }
-    if ( !(getParent() && getParent()->isAnd()) ) {
+    if (pass == OptimizePass::LAST) {
         optimize_source_blenders<AndBlueprint>(*this, 0);
     }
 }
@@ -291,20 +295,22 @@ OrBlueprint::exposeFields() const
 }
 
 void
-OrBlueprint::optimize_self()
+OrBlueprint::optimize_self(OptimizePass pass)
 {
-    for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
-        if (getChild(i).isOr()) {
-            auto *child = static_cast<OrBlueprint *>(&getChild(i));
-            while (child->childCnt() > 0) {
-                addChild(child->removeChild(0));
+    if (pass == OptimizePass::FIRST) {
+        for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
+            if (getChild(i).isOr()) {
+                auto *child = static_cast<OrBlueprint *>(&getChild(i));
+                while (child->childCnt() > 0) {
+                    addChild(child->removeChild(0));
+                }
+                removeChild(i--);
+            } else if (getChild(i).getState().estimate().empty) {
+                removeChild(i--);
             }
-            removeChild(i--);
-        } else if (getChild(i).getState().estimate().empty) {
-            removeChild(i--);
         }
     }
-    if ( !(getParent() && getParent()->isOr()) ) {
+    if (pass == OptimizePass::LAST) {
         optimize_source_blenders<OrBlueprint>(*this, 0);
     }
 }
@@ -552,14 +558,18 @@ RankBlueprint::exposeFields() const
 }
 
 void
-RankBlueprint::optimize_self()
+RankBlueprint::optimize_self(OptimizePass pass)
 {
-    for (size_t i = 1; i < childCnt(); ++i) {
-        if (getChild(i).getState().estimate().empty) {
-            removeChild(i--);
+    if (pass == OptimizePass::FIRST) {
+        for (size_t i = 1; i < childCnt(); ++i) {
+            if (getChild(i).getState().estimate().empty) {
+                removeChild(i--);
+            }
         }
     }
-    optimize_source_blenders<OrBlueprint>(*this, 1);
+    if (pass == OptimizePass::LAST) {
+        optimize_source_blenders<OrBlueprint>(*this, 1);
+    }
 }
 
 Blueprint::UP

@@ -45,6 +45,8 @@ public:
     using Children = std::vector<Blueprint::UP>;
     using SearchIteratorUP = std::unique_ptr<SearchIterator>;
 
+    enum class OptimizePass { FIRST, SECOND, LAST };
+    
     struct HitEstimate {
         uint32_t estHits;
         bool     empty;
@@ -206,8 +208,8 @@ public:
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
     static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual void optimize(Blueprint* &self) = 0;
-    virtual void optimize_self();
+    virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
+    virtual void optimize_self(OptimizePass pass);
     virtual Blueprint::UP get_replacement();
     virtual bool should_optimize_children() const { return true; }
 
@@ -326,7 +328,7 @@ public:
 
     void setDocIdLimit(uint32_t limit) noexcept final;
 
-    void optimize(Blueprint* &self) final;
+    void optimize(Blueprint* &self, OptimizePass pass) final;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -361,7 +363,7 @@ class LeafBlueprint : public Blueprint
 private:
     State _state;
 protected:
-    void optimize(Blueprint* &self) final;
+    void optimize(Blueprint* &self, OptimizePass pass) final;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
         notifyChange();
