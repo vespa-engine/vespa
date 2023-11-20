@@ -204,7 +204,6 @@ public class ModelContextImpl implements ModelContext {
         private final int heapPercentage;
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
-        private final boolean enableNestedMultivalueGrouping;
         private final boolean alwaysMarkPhraseExpensive;
         private final int contentLayerMetadataFeatureLevel;
         private final boolean dynamicHeapSize;
@@ -251,7 +250,6 @@ public class ModelContextImpl implements ModelContext {
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
-            this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
             this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
             this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
@@ -306,7 +304,6 @@ public class ModelContextImpl implements ModelContext {
             return defVal;
         }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
-        @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
         @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
