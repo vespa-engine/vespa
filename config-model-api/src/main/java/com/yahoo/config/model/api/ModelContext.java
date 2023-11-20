@@ -112,7 +112,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej, bjorncs"}) default boolean enableGlobalPhase() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.261") default boolean enableNestedMultivalueGrouping() { return true; }
-        @ModelFeatureFlag(owners = {"jonmv"}, removeAfter = "8.250") default boolean useReconfigurableDispatcher() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
