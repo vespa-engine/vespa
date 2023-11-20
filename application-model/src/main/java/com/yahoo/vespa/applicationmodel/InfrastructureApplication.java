@@ -38,6 +38,16 @@ public enum InfrastructureApplication {
                      .orElseThrow(() -> new IllegalArgumentException("No application associated with " + nodeType));
     }
 
+    public static Optional<InfrastructureApplication> ofOptional(ApplicationId applicationId) {
+        for (var application : values()) {
+            if (application.id.equals(applicationId)) {
+                return Optional.of(application);
+            }
+        }
+
+        return Optional.empty();
+    }
+
     InfrastructureApplication(String name, NodeType nodeType) {
         this.id = ApplicationId.from(TenantId.HOSTED_VESPA.value(), name, "default");
         this.nodeType = nodeType;
