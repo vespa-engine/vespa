@@ -40,16 +40,27 @@ func (r Result) Success() bool {
 
 // Stats represents feeding operation statistics.
 type Stats struct {
+	// Number of responses received, grouped by the HTTP status code. Requests that do not receive a response (i.e. no
+	// status code) are not counted.
 	ResponsesByCode map[int]int64
-	Requests        int64
-	Responses       int64
-	Errors          int64
-	Inflight        int64
-	TotalLatency    time.Duration
-	MinLatency      time.Duration
-	MaxLatency      time.Duration
-	BytesSent       int64
-	BytesRecv       int64
+	// Number of requests made, including retries.
+	Requests int64
+	// Number of responses received.
+	Responses int64
+	// Number of transport layer errors.
+	Errors int64
+	// Number of requests currently in-flight.
+	Inflight int64
+	// Sum of response latency
+	TotalLatency time.Duration
+	// Lowest recorded response latency
+	MinLatency time.Duration
+	// Highest recorded response latency
+	MaxLatency time.Duration
+	// Total bytes sent
+	BytesSent int64
+	// Total bytes received
+	BytesRecv int64
 }
 
 // AvgLatency returns the average latency for a request.
