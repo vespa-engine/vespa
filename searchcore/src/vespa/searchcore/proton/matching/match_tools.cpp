@@ -193,7 +193,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
-    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv);
+    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
+                              AlwaysMarkPhraseExpensive::check(_queryEnv.getProperties(), rankSetup.always_mark_phrase_expensive()));
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());

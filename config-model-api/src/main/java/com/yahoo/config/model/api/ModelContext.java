@@ -119,6 +119,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
         @ModelFeatureFlag(owners = {"vekterli"}) default long mergingMaxMemoryUsagePerNode() { return -1; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean usePerDocumentThrottledDeleteBucket() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

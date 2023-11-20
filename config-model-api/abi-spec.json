@@ -1288,7 +1288,8 @@
       "public java.lang.String unknownConfigDefinition()",
       "public int searchHandlerThreadpool()",
       "public long mergingMaxMemoryUsagePerNode()",
-      "public boolean usePerDocumentThrottledDeleteBucket()"
+      "public boolean usePerDocumentThrottledDeleteBucket()",
+      "public boolean alwaysMarkPhraseExpensive()"
     ],
     "fields" : [ ]
   },
