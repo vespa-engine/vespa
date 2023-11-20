@@ -132,7 +132,7 @@ public class LinguisticsAnnotator {
             if (term != null) {
                 addAnnotation(where, term, token.getOrig(), termOccurrences);
                 if ( ! term.equals(lowercasedOrig))
-                    addAnnotation(where, token.getOrig(), token.getOrig(), termOccurrences);
+                    addAnnotation(where, lowercasedOrig, token.getOrig(), termOccurrences);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
