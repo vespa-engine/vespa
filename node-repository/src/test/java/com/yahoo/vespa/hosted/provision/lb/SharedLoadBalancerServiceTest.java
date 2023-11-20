@@ -29,7 +29,7 @@ public class SharedLoadBalancerServiceTest {
     @Test
     public void test_create_lb() {
         LoadBalancerSpec spec = new LoadBalancerSpec(applicationId, clusterId, reals,
-                                                     ZoneEndpoint.defaultEndpoint, CloudAccount.empty);
+                                                     ZoneEndpoint.defaultEndpoint, CloudAccount.empty, "seed");
 
         var lb = loadBalancerService.configure(loadBalancerService.provision(spec), spec, false);
 

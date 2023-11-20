@@ -7,7 +7,7 @@
       "dnsZone": "zone-id-1",
       "hostname": "lb-hosted-vespa.pre-provision-1",
       "id": "tenant4:application4:instance4:id4",
-      "idSeed": "1",
+      "idSeed": ":hosted-vespa:pre-provision:default:1:",
       "instance": "instance4",
       "networks": [
         "10.2.3.0/24",

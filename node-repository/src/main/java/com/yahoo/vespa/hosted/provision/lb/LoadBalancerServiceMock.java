@@ -26,19 +26,16 @@ import static java.util.stream.Collectors.toMap;
 public class LoadBalancerServiceMock implements LoadBalancerService {
 
     private record Key(ApplicationId application, ClusterSpec.Id cluster, String idSeed) {
-        @Override public int hashCode() { return idSeed == null ? Objects.hash(application, cluster) : Objects.hash(idSeed); }
+        @Override public int hashCode() { return idSeed.hashCode(); }
         @Override public boolean equals(Object o) {
             if (o == this) return true;
             if ( ! (o instanceof Key key)) return false;
-            if (idSeed != null) return Objects.equals(idSeed, key.idSeed);
-            return Objects.equals(application, key.application) &&
-                   Objects.equals(cluster, key.cluster);
+            return Objects.equals(idSeed, key.idSeed);
         }
     }
     private final Map<Key, LoadBalancerInstance> instances = new HashMap<>();
     private boolean throwOnCreate = false;
     private boolean supportsProvisioning = true;
-    private final AtomicBoolean uuid = new AtomicBoolean(true);
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
         return instances.entrySet().stream().collect(toMap(e -> new LoadBalancerId(e.getKey().application, e.getKey().cluster),
@@ -68,10 +65,9 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec, Optional<String> idSeed) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
         var instance = new LoadBalancerInstance(
-                idSeed,
                 Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
                 Optional.empty(),
                 Optional.empty(),
@@ -82,13 +78,13 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 spec.settings(),
                 spec.settings().isPrivateEndpoint() ? List.of(PrivateServiceId.of("service")) : List.of(),
                 spec.cloudAccount());
-        instances.put(new Key(spec.application(), spec.cluster(), idSeed.orElse(null)), instance);
+        instances.put(new Key(spec.application(), spec.cluster(), spec.idSeed()), instance);
         return instance;
     }
 
     @Override
     public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
-        var id = new Key(spec.application(), spec.cluster(), instance.idSeed().orElse(null));
+        var id = new Key(spec.application(), spec.cluster(), spec.idSeed());
         var oldInstance = requireNonNull(instances.get(id), "expected existing load balancer " + id);
         if (!force && !oldInstance.reals().isEmpty() && spec.reals().isEmpty()) {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
@@ -101,21 +97,21 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
-        instances.put(new Key(spec.application(), spec.cluster(), provisioned.idSeed().get()),
-                      requireNonNull(instances.remove(new Key(null, null, provisioned.idSeed().get())))); // ᕙ༼◕_◕༽ᕤ
+    public void reallocate(LoadBalancerSpec spec) {
+        instances.put(new Key(spec.application(), spec.cluster(), spec.idSeed()),
+                      requireNonNull(instances.remove(new Key(null, null, spec.idSeed())))); // ᕙ༼◕_◕༽ᕤ
     }
 
     @Override
     public void remove(LoadBalancer loadBalancer) {
         requireNonNull(instances.remove(new Key(loadBalancer.id().application(),
                                                 loadBalancer.id().cluster(),
-                                                loadBalancer.instance().get().idSeed().orElse(null))),
+                                                loadBalancer.idSeed())),
                        "expected load balancer to exist: " + loadBalancer.id());
     }
 
     @Override
-    public Availability healthy(Endpoint endpoint, Optional<String> idSeed) {
+    public Availability healthy(Endpoint endpoint, String idSeed) {
         return Availability.ready;
     }
 

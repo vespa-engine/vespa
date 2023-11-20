@@ -114,7 +114,8 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                 LOG.log(Level.INFO, () -> "Removing reals from inactive load balancer " + lb.id() + ": " + Sets.difference(lb.instance().get().reals(), reals));
                 LoadBalancerInstance instance = service.configure(lb.instance().get(),
                                                                   new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals,
-                                                                                       lb.instance().get().settings(), lb.instance().get().cloudAccount()),
+                                                                                       lb.instance().get().settings(),
+                                                                                       lb.instance().get().cloudAccount(), lb.idSeed()),
                                                                   true);
                 db.writeLoadBalancer(lb.with(instance), lb.state());
             } catch (Exception e) {

@@ -7,12 +7,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.service.RemoteMetricsFetcher.METRICS_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Unknown
@@ -27,13 +30,9 @@ public class ContainerServiceTest {
     }
 
     @Before
-    public void setupHTTPServer() {
-        try {
-            String response = getFileContents("metrics-container-state-multi-chain.json");
-            httpServer = new MockHttpServer(response, METRICS_PATH);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void setupHTTPServer() throws IOException {
+        String response = getFileContents("metrics-container-state-multi-chain.json");
+        httpServer = new MockHttpServer(response, METRICS_PATH);
     }
 
     @Test
@@ -49,7 +48,7 @@ public class ContainerServiceTest {
                 } else if (m.getDimensions().get(toDimensionId("chain")).equals("blendingResult")) {
                     assertEquals(0.36666666666666664, m.getValue());
                 } else {
-                    assertTrue("Unknown unknown chain", false);
+                    fail("Unknown unknown chain");
                 }
             }
         }

@@ -20,7 +20,6 @@ import java.util.Set;
  */
 public class LoadBalancerInstance {
 
-    private final Optional<String> idSeed;
     private final Optional<DomainName> hostname;
     private final Optional<String> ip4Address;
     private final Optional<String> ip6Address;
@@ -32,10 +31,9 @@ public class LoadBalancerInstance {
     private final List<PrivateServiceId> serviceIds;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<String> idSeed, Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
+    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ip4Address, Optional<String> ip6Address,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
                                 ZoneEndpoint settings, List<PrivateServiceId> serviceIds, CloudAccount cloudAccount) {
-        this.idSeed = Objects.requireNonNull(idSeed, "idSeed must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ip4Address = Objects.requireNonNull(ip4Address, "ip4Address must be non-null");
         this.ip6Address = Objects.requireNonNull(ip6Address, "ip6Address must be non-null");
@@ -51,11 +49,6 @@ public class LoadBalancerInstance {
             throw new IllegalArgumentException("Exactly 1 of hostname=%s and ip4Address=%s must be set".formatted(
                     hostname.map(DomainName::value).orElse("<empty>"), ip4Address.orElse("<empty>")));
         }
-    }
-
-    /** A unique seed to use when generating cloud-specific resource IDs for this load balancer instance. */
-    public Optional<String> idSeed() {
-        return idSeed;
     }
 
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
@@ -128,7 +121,7 @@ public class LoadBalancerInstance {
     public LoadBalancerInstance with(Set<Real> reals, ZoneEndpoint settings, Optional<PrivateServiceId> serviceId) {
         List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
         serviceId.filter(id -> ! ids.contains(id)).ifPresent(ids::add);
-        return new LoadBalancerInstance(idSeed, hostname, ip4Address, ip6Address, dnsZone, ports, networks,
+        return new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks,
                                         reals, settings, ids,
                                         cloudAccount);
     }
@@ -137,7 +130,7 @@ public class LoadBalancerInstance {
     public LoadBalancerInstance withServiceIds(List<PrivateServiceId> serviceIds) {
         List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
         for (PrivateServiceId id : this.serviceIds) if ( ! ids.contains(id)) ids.add(id);
-        return new LoadBalancerInstance(idSeed, hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
+        return new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
     }
 
 }

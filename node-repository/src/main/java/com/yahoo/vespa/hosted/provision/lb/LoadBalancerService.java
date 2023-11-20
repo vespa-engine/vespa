@@ -7,8 +7,6 @@ import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.NodeType;
 
-import java.util.Optional;
-
 /**
  * A managed load balance service.
  *
@@ -22,16 +20,7 @@ public interface LoadBalancerService {
      * @param spec        Load balancer specification
      * @return The provisioned load balancer instance
      */
-    default LoadBalancerInstance provision(LoadBalancerSpec spec) { return provision(spec, Optional.empty()); }
-
-    /**
-     * Provisions load balancers from the given specification. Implementations are expected to be idempotent
-     *
-     * @param spec        Load balancer specification
-     * @param idSeed      Seed for generating a unique ID for the load balancer instance
-     * @return The provisioned load balancer instance
-     */
-    LoadBalancerInstance provision(LoadBalancerSpec spec, Optional<String> idSeed);
+    LoadBalancerInstance provision(LoadBalancerSpec spec);
 
     /**
      * Configures load balancers for the given specification. Implementations are expected to be idempotent
@@ -44,7 +33,7 @@ public interface LoadBalancerService {
      */
     LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force);
 
-    void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec);
+    void reallocate(LoadBalancerSpec spec);
 
     /** Permanently remove given load balancer */
     void remove(LoadBalancer loadBalancer);
@@ -56,7 +45,7 @@ public interface LoadBalancerService {
     boolean supports(NodeType nodeType, ClusterSpec.Type clusterType);
 
     /** See {@link HealthChecker#healthy(Endpoint)}. */
-    Availability healthy(Endpoint endpoint, Optional<String> idSeed);
+    Availability healthy(Endpoint endpoint, String idSeed);
 
     /** Load balancer protocols */
     enum Protocol {

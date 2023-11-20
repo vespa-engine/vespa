@@ -16,20 +16,21 @@ import java.util.Set;
  * @author mpolden
  */
 public record LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
-                               ZoneEndpoint settings, CloudAccount cloudAccount) {
+                               ZoneEndpoint settings, CloudAccount cloudAccount, String idSeed) {
 
     public static final ApplicationId preProvisionOwner = ApplicationId.from("hosted-vespa", "pre-provision", "default");
-    public static LoadBalancerSpec preProvisionSpec(ClusterSpec.Id slot, CloudAccount account) {
-        return new LoadBalancerSpec(preProvisionOwner, slot, Set.of(), ZoneEndpoint.defaultEndpoint, account);
+    public static LoadBalancerSpec preProvisionSpec(ClusterSpec.Id slot, CloudAccount account, String idSeed) {
+        return new LoadBalancerSpec(preProvisionOwner, slot, Set.of(), ZoneEndpoint.defaultEndpoint, account, idSeed);
     }
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
-                            ZoneEndpoint settings, CloudAccount cloudAccount) {
+                            ZoneEndpoint settings, CloudAccount cloudAccount, String idSeed) {
         this.application = Objects.requireNonNull(application);
         this.cluster = Objects.requireNonNull(cluster);
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals));
         this.settings = Objects.requireNonNull(settings);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.idSeed = Objects.requireNonNull(idSeed);
     }
 
 }
