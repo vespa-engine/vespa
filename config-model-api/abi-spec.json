@@ -1282,7 +1282,6 @@
       "public boolean enableGlobalPhase()",
       "public java.lang.String summaryDecodePolicy()",
       "public boolean enableNestedMultivalueGrouping()",
-      "public boolean useReconfigurableDispatcher()",
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
       "public java.lang.String unknownConfigDefinition()",
