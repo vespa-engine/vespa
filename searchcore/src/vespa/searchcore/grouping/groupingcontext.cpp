@@ -2,7 +2,6 @@
 
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/predicates.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/common/bitvector.h>
 
@@ -53,13 +52,12 @@ GroupingContext::setDistributionKey(uint32_t distributionKey)
 }
 
 GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
-                                 const char *groupSpec, uint32_t groupSpecLen, bool enableNested)
+                                 const char *groupSpec, uint32_t groupSpecLen)
     : _validLids(validLids),
       _clock(clock),
       _timeOfDoom(timeOfDoom),
       _os(),
-      _groupingList(),
-      _enableNestedMultivalueGrouping(enableNested)
+      _groupingList()
 {
     deserialize(groupSpec, groupSpecLen);
 }
@@ -69,8 +67,7 @@ GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Cl
       _clock(clock),
       _timeOfDoom(timeOfDoom),
       _os(),
-      _groupingList(),
-      _enableNestedMultivalueGrouping(true)
+      _groupingList()
 { }
 
 GroupingContext::GroupingContext(const GroupingContext & rhs)
@@ -78,8 +75,7 @@ GroupingContext::GroupingContext(const GroupingContext & rhs)
       _clock(rhs._clock),
       _timeOfDoom(rhs._timeOfDoom),
       _os(),
-      _groupingList(),
-      _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
+      _groupingList()
 { }
 
 void
@@ -100,7 +96,7 @@ GroupingContext::serialize()
 }
 
 bool
-GroupingContext::needRanking() const
+GroupingContext::needRanking() const noexcept
 {
     if (_groupingList.empty()) {
         return false;

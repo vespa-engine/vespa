@@ -85,7 +85,6 @@ private:
     MutateOperation          _mutateOnSecondPhase;
     MutateOperation          _mutateOnSummary;
     bool                     _mutateAllowQueryOverride;
-    bool                     _enableNestedMultivalueGrouping;
 
     void compileAndCheckForErrors(BlueprintResolver &bp);
 public:
@@ -460,7 +459,6 @@ public:
     const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
 
     bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
-    bool enableNestedMultivalueGrouping() const { return _enableNestedMultivalueGrouping; }
 };
 
 }

@@ -45,7 +45,7 @@ struct MyWorld {
         bv.setInterval(0, NUM_DOCS);
         // attribute context
         {
-            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("attr0");
+            auto *attr = new SingleInt32ExtAttribute("attr0");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -55,7 +55,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("attr1");
+            auto *attr = new SingleInt32ExtAttribute("attr1");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -65,7 +65,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("attr2");
+            auto *attr = new SingleInt32ExtAttribute("attr2");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -75,7 +75,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("attr3");
+            auto *attr = new SingleInt32ExtAttribute("attr3");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -94,16 +94,17 @@ using GroupingList = GroupingContext::GroupingList;
 
 SessionId createSessionId(const std::string & s) {
     std::vector<char> vec;
-    for (size_t i = 0; i < s.size(); i++) {
-        vec.push_back(s[i]);
+    for (char c : s) {
+        vec.push_back(c);
     }
-    return SessionId(&vec[0], vec.size());
+    return {&vec[0], vec.size()};
 }
 
 class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
 public:
-    CheckAttributeReferences(bool log=false) : _log(log), _numrefs(0) { }
+    CheckAttributeReferences() : CheckAttributeReferences(false) {}
+    explicit CheckAttributeReferences(bool log) : _log(log), _numrefs(0) { }
     bool     _log;
     uint32_t _numrefs;
 private:
@@ -177,7 +178,7 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
     baseRequest.serialize(nos);
 
     AllocatedBitVector bv(1);
-    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom, os.data(), os.size(), true);
+    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom, os.data(), os.size());
     ASSERT_TRUE(!context.empty());
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
@@ -303,8 +304,8 @@ TEST_F("testGroupingSession", DoomFixture()) {
     manager.groupInRelevanceOrder(&hit, 1);
     CheckAttributeReferences attrCheck_after;
     GroupingList &gl3(initContext.getGroupingList());
-    for (unsigned int i = 0; i < gl3.size(); i++) {
-        gl3[i]->select(attrCheck_after, attrCheck_after);
+    for (auto & grouping : gl3) {
+        grouping->select(attrCheck_after, attrCheck_after);
     }
     EXPECT_EQUAL(attrCheck_after._numrefs, 0u);
     {
@@ -423,9 +424,9 @@ void doGrouping(GroupingContext &ctx,
 {
     GroupingManager man(ctx);
     std::vector<RankedHit> hits;
-    hits.push_back(RankedHit(doc1, rank1));
-    hits.push_back(RankedHit(doc2, rank2));
-    hits.push_back(RankedHit(doc3, rank3));
+    hits.emplace_back(doc1, rank1);
+    hits.emplace_back(doc2, rank2);
+    hits.emplace_back(doc3, rank3);
     man.groupInRelevanceOrder(&hits[0], 3);
 }
 

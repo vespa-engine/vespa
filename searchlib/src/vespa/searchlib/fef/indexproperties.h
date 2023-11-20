@@ -176,11 +176,8 @@ namespace mutate {
     };
 }
 
+// Add temporary flags used for safe rollout of new features here
 namespace temporary {
-    struct EnableNestedMultivalueGrouping {
-        static const vespalib::string NAME;
-        static bool check(const Properties &props);
-    };
 }
 
 namespace mutate::on_match {
