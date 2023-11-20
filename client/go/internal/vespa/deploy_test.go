@@ -146,9 +146,9 @@ func TestFindApplicationPackage(t *testing.T) {
 		existingFiles:    []string{filepath.Join(dir, "pom.xml"), filepath.Join(dir, "src/test/application/tests/foo.json")},
 	})
 	assertFindApplicationPackage(t, dir, pkgFixture{
-		existingFile:     filepath.Join(dir, "pom.xml"),
-		requirePackaging: true,
-		fail:             true,
+		existingFile: filepath.Join(dir, "pom.xml"),
+		compiled:     true,
+		fail:         true,
 	})
 	assertFindApplicationPackage(t, dir, pkgFixture{
 		expectedPath:  filepath.Join(dir, "target", "application"),
@@ -158,6 +158,12 @@ func TestFindApplicationPackage(t *testing.T) {
 		expectedPath:     filepath.Join(dir, "target", "application"),
 		expectedTestPath: filepath.Join(dir, "target", "application-test"),
 		existingFiles:    []string{filepath.Join(dir, "target", "application"), filepath.Join(dir, "target", "application-test")},
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath:     filepath.Join(dir, "src", "main", "application"),
+		expectedTestPath: filepath.Join(dir, "src", "test", "application"),
+		existingFiles:    []string{filepath.Join(dir, "target", "application"), filepath.Join(dir, "target", "application-test")},
+		sourceOnly:       true,
 	})
 	zip := filepath.Join(dir, "myapp.zip")
 	assertFindApplicationPackage(t, zip, pkgFixture{
@@ -195,7 +201,8 @@ type pkgFixture struct {
 	expectedTestPath string
 	existingFile     string
 	existingFiles    []string
-	requirePackaging bool
+	compiled         bool
+	sourceOnly       bool
 	fail             bool
 }
 
@@ -207,7 +214,7 @@ func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixt
 	for _, f := range fixture.existingFiles {
 		writeFile(t, f)
 	}
-	pkg, err := FindApplicationPackage(zipOrDir, fixture.requirePackaging)
+	pkg, err := FindApplicationPackage(zipOrDir, PackageOptions{Compiled: fixture.compiled, SourceOnly: fixture.sourceOnly})
 	assert.Equal(t, err != nil, fixture.fail, "Expected error for "+zipOrDir)
 	assert.Equal(t, fixture.expectedPath, pkg.Path)
 	assert.Equal(t, fixture.expectedTestPath, pkg.TestPath)

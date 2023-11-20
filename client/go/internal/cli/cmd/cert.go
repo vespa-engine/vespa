@@ -153,7 +153,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	pkg, err := cli.applicationPackageFrom(args, false)
+	pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{})
 	if err != nil {
 		return err
 	}

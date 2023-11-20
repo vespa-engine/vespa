@@ -57,7 +57,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 			if err != nil {
 				return err
 			}
-			pkg, err := cli.applicationPackageFrom(args, false)
+			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{SourceOnly: true})
 			if err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ $ vespa prod deploy`,
 				// TODO: Add support for hosted
 				return fmt.Errorf("prod deploy does not support %s target", target.Type())
 			}
-			pkg, err := cli.applicationPackageFrom(args, true)
+			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{Compiled: true})
 			if err != nil {
 				return err
 			}

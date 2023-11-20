@@ -586,7 +586,7 @@ func isTerminal(w io.Writer) bool {
 // applicationPackageFrom returns an application loaded from args. If args is empty, the application package is loaded
 // from the working directory. If requirePackaging is true, the application package is required to be packaged with mvn
 // package.
-func (c *CLI) applicationPackageFrom(args []string, requirePackaging bool) (vespa.ApplicationPackage, error) {
+func (c *CLI) applicationPackageFrom(args []string, options vespa.PackageOptions) (vespa.ApplicationPackage, error) {
 	path := "."
 	if len(args) == 1 {
 		path = args[0]
@@ -603,5 +603,5 @@ func (c *CLI) applicationPackageFrom(args []string, requirePackaging bool) (vesp
 	} else if len(args) > 1 {
 		return vespa.ApplicationPackage{}, fmt.Errorf("expected 0 or 1 arguments, got %d", len(args))
 	}
-	return vespa.FindApplicationPackage(path, requirePackaging)
+	return vespa.FindApplicationPackage(path, options)
 }

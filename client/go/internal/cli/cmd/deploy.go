@@ -51,7 +51,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := cli.applicationPackageFrom(args, true)
+			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{Compiled: true})
 			if err != nil {
 				return err
 			}
@@ -113,7 +113,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := cli.applicationPackageFrom(args, true)
+			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{Compiled: true})
 			if err != nil {
 				return fmt.Errorf("could not find application package: %w", err)
 			}
