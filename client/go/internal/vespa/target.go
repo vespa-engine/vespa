@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/util"
@@ -51,9 +50,9 @@ type Service struct {
 	TLSOptions TLSOptions
 
 	deployAPI     bool
-	once          sync.Once
 	auth          Authenticator
 	httpClient    util.HTTPClient
+	customClient  bool
 	retryInterval time.Duration
 }
 
@@ -109,7 +108,10 @@ type LogOptions struct {
 
 // Do sends request to this service. Authentication of the request happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
+	if !s.customClient {
+		// Do not override TLS config if a custom client has been configured
+		util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
+	}
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
 			return nil, fmt.Errorf("%w: %s", errAuth, err)
@@ -118,8 +120,11 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	return s.httpClient.Do(request, timeout)
 }
 
-// SetClient sets the HTTP client that this service should use.
-func (s *Service) SetClient(client util.HTTPClient) { s.httpClient = client }
+// SetClient sets a custom HTTP client that this service should use.
+func (s *Service) SetClient(client util.HTTPClient) {
+	s.httpClient = client
+	s.customClient = true
+}
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) error {
