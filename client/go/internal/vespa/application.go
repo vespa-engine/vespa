@@ -234,6 +234,14 @@ func copyFile(src *zip.File, dst string) error {
 	return err
 }
 
+type PackageOptions struct {
+	// If true, a Maven-based Vespa application package is required to be compiled
+	Compiled bool
+
+	// If true, only consider the source directores of the application package
+	SourceOnly bool
+}
+
 // FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir. If
 // requirePackaging is true, the application package is required to be packaged with mvn package.
 //
@@ -242,8 +250,8 @@ func copyFile(src *zip.File, dst string) error {
 // 2. target/application
 // 3. src/main/application
 // 4. Given path, if it contains services.xml
-func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
-	pkg, err := findApplicationPackage(zipOrDir, requirePackaging)
+func FindApplicationPackage(zipOrDir string, options PackageOptions) (ApplicationPackage, error) {
+	pkg, err := findApplicationPackage(zipOrDir, options)
 	if err != nil {
 		return ApplicationPackage{}, err
 	}
@@ -253,20 +261,20 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 	return pkg, nil
 }
 
-func findApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
+func findApplicationPackage(zipOrDir string, options PackageOptions) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
 		return ApplicationPackage{Path: zipOrDir}, nil
 	}
 	// Pre-packaged application. We prefer the uncompressed application because this allows us to add
 	// security/clients.pem to the package on-demand
 	hasPOM := util.PathExists(filepath.Join(zipOrDir, "pom.xml"))
-	if hasPOM {
+	if hasPOM && !options.SourceOnly {
 		path := filepath.Join(zipOrDir, "target", "application")
 		if util.PathExists(path) {
 			testPath := existingPath(filepath.Join(zipOrDir, "target", "application-test"))
 			return ApplicationPackage{Path: path, TestPath: testPath}, nil
 		}
-		if requirePackaging {
+		if options.Compiled {
 			return ApplicationPackage{}, fmt.Errorf("found pom.xml, but %s does not exist: run 'mvn package' first", path)
 		}
 	}

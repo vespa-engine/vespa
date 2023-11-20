@@ -152,7 +152,7 @@ $ vespa config set --local wait 600
 			config := cli.config
 			if localArg {
 				// Need an application package in working directory to allow local configuration
-				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
+				if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
 					return fmt.Errorf("failed to write local configuration: %w", err)
 				}
 				config = cli.config.local
@@ -188,7 +188,7 @@ $ vespa config unset --local application
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := cli.config
 			if localArg {
-				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
+				if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
 					return fmt.Errorf("failed to write local configuration: %w", err)
 				}
 				config = cli.config.local
