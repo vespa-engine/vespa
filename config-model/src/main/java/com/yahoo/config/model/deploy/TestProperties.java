@@ -129,7 +129,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
-    @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
