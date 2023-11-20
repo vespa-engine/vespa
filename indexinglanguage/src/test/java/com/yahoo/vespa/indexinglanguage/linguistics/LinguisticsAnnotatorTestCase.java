@@ -58,7 +58,9 @@ public class LinguisticsAnnotatorTestCase {
     @Test
     public void requireThatIndexableTokenStringsAreAnnotatedWithModeALL() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
-        expected.spanList().span(0, 5).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("tesla")));
+        var span1 = expected.spanList().span(0, 6);
+        span1.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("tesla")));
+        span1.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("teslas")));
         var span2 = expected.spanList().span(0, 4);
         span2.annotate(new Annotation(AnnotationTypes.TERM));
         span2.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("car")));
@@ -69,7 +71,7 @@ public class LinguisticsAnnotatorTestCase {
         for (TokenType type : TokenType.values()) {
             if (!type.isIndexable()) continue;
             assertAnnotations(expected, "Tesla cars", new AnnotatorConfig().setStemMode("ALL"),
-                              token("Tesla", "tesla", type),
+                              token("Teslas", "tesla", type),
                               token("cars", "car", type),
                               SimpleToken.fromStems("ModelXes", List.of("modelxes", "modelx", "mex")));
         }
@@ -204,8 +206,7 @@ public class LinguisticsAnnotatorTestCase {
     @Test
     public void requireThatMaxTermOccurrencesIsHonored() {
         final String inputTerm = "foo";
-        final String stemmedInputTerm = "bar"; // completely different from
-                                               // inputTerm for safer test
+        final String stemmedInputTerm = "bar"; // completely different from inputTerm for safer test
         final String paddedInputTerm = inputTerm + " ";
         final SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         final int inputTermOccurence = AnnotatorConfig.DEFAULT_MAX_TERM_OCCURRENCES * 2;
