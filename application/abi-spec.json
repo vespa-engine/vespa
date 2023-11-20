@@ -324,6 +324,7 @@
       "public com.yahoo.application.container.Processing processing()",
       "public com.yahoo.application.container.DocumentProcessing documentProcessing()",
       "public com.yahoo.component.provider.ComponentRegistry components()",
+      "public com.yahoo.component.provider.ComponentRegistry handlers()",
       "public com.yahoo.application.container.handler.Response handleRequest(com.yahoo.application.container.handler.Request)",
       "public void close()"
     ],
@@ -450,11 +451,13 @@
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, byte[], com.yahoo.application.container.handler.Request$Method)",
       "public void <init>(java.lang.String, byte[], com.yahoo.application.container.handler.Request$Method, java.security.Principal)",
+      "public void <init>(java.lang.String, byte[], com.yahoo.application.container.handler.Request$Method, java.security.Principal, java.net.SocketAddress)",
       "public void <init>(java.lang.String, java.lang.String, com.yahoo.application.container.handler.Request$Method)",
       "public com.yahoo.application.container.handler.Headers getHeaders()",
       "public byte[] getBody()",
       "public java.lang.String getUri()",
       "public java.util.Map getAttributes()",
+      "public java.util.Optional remoteAddress()",
       "public java.lang.String toString()",
       "public com.yahoo.application.container.handler.Request$Method getMethod()",
       "public java.util.Optional getUserPrincipal()"

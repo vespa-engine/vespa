@@ -660,6 +660,10 @@
       "public com.yahoo.container.jdisc.HttpRequestBuilder withRequestContent(java.io.InputStream)",
       "public com.yahoo.container.jdisc.HttpRequestBuilder withScheme(java.lang.String)",
       "public com.yahoo.container.jdisc.HttpRequestBuilder withHostname(java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withPrincipal(java.security.Principal)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withRemoteAddress(java.net.SocketAddress)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withAttribute(java.lang.String, java.lang.Object)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withPort(int)",
       "public com.yahoo.container.jdisc.HttpRequest build()"
     ],
     "fields" : [ ]

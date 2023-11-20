@@ -90,6 +90,7 @@ final class SynchronousRequestResponseHandler {
                                                                             URI.create(request.getUri()),
                                                                             com.yahoo.jdisc.http.HttpRequest.Method.valueOf(request.getMethod().name()));
             request.getUserPrincipal().ifPresent(httpRequest::setUserPrincipal);
+            request.remoteAddress().ifPresent(httpRequest::setRemoteAddress);
             discRequest = httpRequest;
         } else {
             discRequest = new com.yahoo.jdisc.Request(currentContainer, URI.create(request.getUri()));

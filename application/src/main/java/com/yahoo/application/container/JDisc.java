@@ -169,6 +169,9 @@ public final class JDisc implements AutoCloseable {
         return container.getComponentRegistry();
     }
 
+    /** @return registry of all request handlers configured */
+    public ComponentRegistry<RequestHandler> handlers() { return container.getRequestHandlerRegistry(); }
+
     /**
      * Handles the given {@link com.yahoo.application.container.handler.Request} by passing it to the {@link RequestHandler}
      * that is bound to the request's URI.

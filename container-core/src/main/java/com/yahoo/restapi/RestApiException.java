@@ -57,6 +57,7 @@ public class RestApiException extends RuntimeException {
     }
 
     public static class BadRequest extends RestApiException {
+        public BadRequest() { this("Bad request"); }
         public BadRequest(String message) { this(message, null); }
         public BadRequest(Throwable cause) { this(cause.getMessage(), cause); }
         public BadRequest(String message, Throwable cause) { super(ErrorResponse::badRequest, message, cause); }
@@ -69,6 +70,7 @@ public class RestApiException extends RuntimeException {
     }
 
     public static class Forbidden extends RestApiException {
+        public Forbidden() { this("Forbidden"); }
         public Forbidden(String message) { super(ErrorResponse::forbidden, message, null); }
         public Forbidden(String message, Throwable cause) { super(ErrorResponse::forbidden, message, cause); }
     }

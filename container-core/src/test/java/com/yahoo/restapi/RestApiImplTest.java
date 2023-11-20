@@ -182,6 +182,18 @@ class RestApiImplTest {
                             "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Query parameter 'missing' is missing\"}");
     }
 
+    @Test
+    void principal_from_filter_is_visible_to_handler() {
+        var restApi = RestApi.builder()
+                .addRoute(route("/api1").get(ctx -> ctx.userPrincipalOrThrow().getName()))
+                .addFilter(ctx -> {
+                    ctx.setPrincipal(() -> "my-principal-name");
+                    return ctx.executeNext();
+                })
+                .build();
+        verifyJsonResponse(restApi, Method.GET, "/api1", null, 200, "{\"message\":\"my-principal-name\"}");
+    }
+
     private static void verifyJsonResponse(
             RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode,
             String expectedJson) {

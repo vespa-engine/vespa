@@ -3,6 +3,7 @@ package com.yahoo.application.container.handler;
 
 import com.yahoo.api.annotations.Beta;
 
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Map;
@@ -24,6 +25,7 @@ public class Request {
     private final Method method;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Principal userPrincipal;
+    private final SocketAddress remoteAddress;
 
     /**
      * Creates a Request with an empty body.
@@ -73,10 +75,24 @@ public class Request {
      * @param principal the user principal of the request
      */
     public Request(String uri, byte[] body, Method method, Principal principal) {
+        this(uri, body, method, principal, null);
+    }
+
+    /**
+     * Creates a Request with a message body, method and user principal.
+     *
+     * @param uri the URI of the request
+     * @param body the body of the request
+     * @param method the method of the request
+     * @param principal the user principal of the request
+     * @param remoteAddress the remote address of the request
+     */
+    public Request(String uri, byte[] body, Method method, Principal principal, SocketAddress remoteAddress) {
         this.uri = uri;
         this.body = body;
         this.method = method;
         this.userPrincipal = principal;
+        this.remoteAddress = remoteAddress;
     }
 
     /**
@@ -121,6 +137,8 @@ public class Request {
     public Map<String, Object> getAttributes() {
         return attributes;
     }
+
+    public Optional<SocketAddress> remoteAddress() { return Optional.ofNullable(remoteAddress); }
 
     @Override
     public String toString() {
