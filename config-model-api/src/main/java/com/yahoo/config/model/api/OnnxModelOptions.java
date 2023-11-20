@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.container.component;
+package com.yahoo.config.model.api;
 
 import java.util.Optional;
 
@@ -12,7 +12,11 @@ import java.util.Optional;
 public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer> interOpThreads,
                                Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice) {
 
-     public static OnnxModelOptions empty() {
+    public OnnxModelOptions(String executionMode, int interOpThreads, int intraOpThreads, GpuDevice gpuDevice) {
+        this(Optional.of(executionMode), Optional.of(interOpThreads), Optional.of(intraOpThreads), Optional.of(gpuDevice));
+    }
+
+    public static OnnxModelOptions empty() {
         return new OnnxModelOptions(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 

@@ -800,7 +800,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                         !container.getHostResource().realResources().gpuResources().isZero());
                 onnxModel.setGpuDevice(gpuDevice, hasGpu);
             }
-            cluster.onnxModelCost().registerModel(context.getApplicationPackage().getFile(onnxModel.getFilePath()));
+            cluster.onnxModelCost().registerModel(context.getApplicationPackage().getFile(onnxModel.getFilePath()), onnxModel.onnxModelOptions());
         }
 
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles, models));

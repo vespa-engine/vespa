@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
@@ -54,10 +55,10 @@ class Model {
         return new Model(ds, model.getTagName(), modelId, url, path);
     }
 
-    void registerOnnxModelCost(ApplicationContainerCluster c) {
+    void registerOnnxModelCost(ApplicationContainerCluster c, OnnxModelOptions onnxModelOptions) {
         var resolvedUrl = resolvedUrl().orElse(null);
-        if (file != null) c.onnxModelCost().registerModel(file);
-        else if (resolvedUrl != null) c.onnxModelCost().registerModel(resolvedUrl);
+        if (file != null) c.onnxModelCost().registerModel(file, onnxModelOptions);
+        else if (resolvedUrl != null) c.onnxModelCost().registerModel(resolvedUrl, onnxModelOptions);
     }
 
     String name() { return paramName; }

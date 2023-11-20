@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.OnnxModelCost;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -123,12 +122,20 @@ class JvmHeapSizeValidatorTest {
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
+        @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
 
         @Override
         public void registerModel(URI uri) {
             assertEquals("https://my/url/model.onnx", uri.toString());
             totalCost.addAndGet(modelCost);
         }
+
+        @Override
+        public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {
+            assertEquals("https://my/url/model.onnx", uri.toString());
+            totalCost.addAndGet(modelCost);
+        }
+
     }
 
 }

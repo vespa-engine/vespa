@@ -52,11 +52,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Collection<String> schemasWithGlobalPhase;
     private final boolean globalPhase;
+    private final ApplicationPackage app;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
-    private ApplicationPackage app;
 
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
@@ -102,7 +102,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                     if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                         var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();
                         onnxModels.asMap().forEach(
-                                (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath())));
+                                (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath()), model.onnxModelOptions()));
                         owningCluster.addComponent(factory);
                     }
                 }
