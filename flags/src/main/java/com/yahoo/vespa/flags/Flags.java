@@ -313,13 +313,6 @@ public class Flags {
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
-    public static final UnboundBooleanFlag ENABLE_NESTED_MULTIVALUE_GROUPING = defineFeatureFlag(
-            "enable-nested-multivalue-grouping", true,
-            List.of("baldersheim"), "2023-06-29", "2023-12-31",
-            "Should we enable proper nested multivalue grouping",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
             List.of("baldersheim"), "2023-11-20", "2023-12-31",

@@ -34,7 +34,7 @@ public:
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
     GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
-                    const char *groupSpec, uint32_t groupSpecLen, bool enableNestedMultivalueGrouping);
+                    const char *groupSpec, uint32_t groupSpecLen);
 
     /**
      * Create a new grouping context from a byte buffer.
@@ -105,9 +105,7 @@ public:
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.
      */
-    bool needRanking() const;
-    bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
-    const search::BitVector & getValidLids() const { return _validLids; }
+    bool needRanking() const noexcept;
 
     void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow);
     void groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize);
@@ -123,7 +121,6 @@ private:
     vespalib::steady_time   _timeOfDoom;
     vespalib::nbostream     _os;
     GroupingList            _groupingList;
-    bool                    _enableNestedMultivalueGrouping;
 };
 
 }

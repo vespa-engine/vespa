@@ -171,7 +171,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final double rankScoreDropLimit;
-        private final boolean enableNestedMultivalueGrouping;
         private final boolean alwaysMarkPhraseExpensive;
 
         /**
@@ -214,7 +213,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             minHitsPerThread = compiled.getMinHitsPerThread();
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
-            enableNestedMultivalueGrouping = deployProperties.featureFlags().enableNestedMultivalueGrouping();
             alwaysMarkPhraseExpensive = deployProperties.featureFlags().alwaysMarkPhraseExpensive();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
@@ -465,9 +463,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (termwiseLimit < 1.0) {
                 properties.add(new Pair<>("vespa.matching.termwise_limit", termwiseLimit + ""));
-            }
-            if (enableNestedMultivalueGrouping) {
-                properties.add(new Pair<>("vespa.temporary.enable_nested_multivalue_grouping", String.valueOf(enableNestedMultivalueGrouping)));
             }
             if (alwaysMarkPhraseExpensive) {
                 properties.add(new Pair<>("vespa.matching.always_mark_phrase_expensive", String.valueOf(alwaysMarkPhraseExpensive)));

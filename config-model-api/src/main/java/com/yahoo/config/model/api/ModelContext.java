@@ -111,7 +111,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"arnej, bjorncs"}) default boolean enableGlobalPhase() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableNestedMultivalueGrouping() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.261") default boolean enableNestedMultivalueGrouping() { return true; }
         @ModelFeatureFlag(owners = {"jonmv"}, removeAfter = "8.250") default boolean useReconfigurableDispatcher() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
