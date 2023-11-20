@@ -526,6 +526,85 @@ identical(const BTreeIteratorBase &rhs) const
 }
 
 
+template <typename KeyT, typename DataT, typename AggrT,
+          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
+void
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
+step_forward(size_t steps)
+{
+    auto lnode = _leaf.getNode();
+    if (lnode == nullptr) {
+        return;
+    }
+    auto idx = _leaf.getIdx();
+    if (idx + steps < lnode->validSlots()) {
+        _leaf.setIdx(idx + steps);
+        return;
+    }
+    if (_pathSize == 0) {
+        _leaf.invalidate();
+        return;
+    }
+    size_t remaining_steps = steps - (lnode->validSlots() - idx);
+    uint32_t level = 0;
+    uint32_t levels = _pathSize;
+    const InternalNodeType* node;
+    /*
+     * Find intermediate node representing subtree containing old and new
+     * position.
+     */
+    for (;;) {
+        node = _path[level].getNode();
+        idx = _path[level].getIdx() + 1;
+        while (idx < node->validSlots()) {
+            auto ref = node->getChild(idx);
+            auto valid_leaves = (level != 0) ?
+                                _allocator->mapInternalRef(ref)->validLeaves() :
+                                _allocator->mapLeafRef(ref)->validLeaves();
+            if (remaining_steps < valid_leaves) {
+                break;
+            }
+            remaining_steps -= valid_leaves;
+            ++idx;
+        }
+        if (idx < node->validSlots()) {
+            break;
+        } else {
+            ++level;
+            if (level == levels) {
+                end();
+                return;
+            }
+        }
+    }
+    /*
+     * Walk down subtree adjusting iterator for new position.
+     */
+    _path[level].setIdx(idx);
+    while (level > 0) {
+        --level;
+        node = _allocator->mapInternalRef(node->getChild(idx));
+        assert(remaining_steps < node->validLeaves());
+        idx = 0;
+        while (idx < node->validSlots()) {
+            auto ref = node->getChild(idx);
+            auto valid_leaves = (level != 0) ?
+                                _allocator->mapInternalRef(ref)->validLeaves() :
+                                _allocator->mapLeafRef(ref)->validLeaves();
+            if (remaining_steps < valid_leaves) {
+                break;
+            }
+            remaining_steps -= valid_leaves;
+            ++idx;
+        }
+        assert(idx < node->validSlots());
+        _path[level].setNodeAndIdx(node, idx);
+    }
+    lnode = _allocator->mapLeafRef(node->getChild(idx));
+    assert(remaining_steps < lnode->validSlots());
+    _leaf.setNodeAndIdx(lnode, remaining_steps);
+}
+
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
 void

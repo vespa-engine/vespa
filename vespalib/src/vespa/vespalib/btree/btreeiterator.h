@@ -232,6 +232,11 @@ protected:
         return *this;
     }
 
+    /*
+     * Step iterator forwards the given number of steps.
+     */
+    void step_forward(size_t steps);
+
     ~BTreeIteratorBase();
     BTreeIteratorBase(const BTreeIteratorBase &other);
     BTreeIteratorBase &operator=(const BTreeIteratorBase &other);
@@ -502,6 +507,7 @@ protected:
     using ParentType::_compatLeafNode;
     using ParentType::clearPath;
     using ParentType::setupEmpty;
+    using ParentType::step_forward;
 public:
     using ParentType::end;
 
@@ -557,6 +563,13 @@ public:
         return *this;
     }
 
+    /*
+     * Step iterator forwards the given number of steps.
+     */
+    BTreeConstIterator & operator+=(size_t steps) {
+        step_forward(steps);
+        return *this;
+    }
     /**
      * Position iterator at first position with a key that is greater
      * than or equal to the key argument.  The iterator must be set up
@@ -699,6 +712,7 @@ public:
     using ParentType::_leafRoot;
     using ParentType::_compatLeafNode;
     using ParentType::end;
+    using ParentType::step_forward;
     using EntryRef = datastore::EntryRef;
 
     BTreeIterator(BTreeNode::Ref root, const NodeAllocatorType &allocator)
@@ -724,6 +738,11 @@ public:
 
     BTreeIterator & operator--() {
         ParentType::operator--();
+        return *this;
+    }
+
+    BTreeIterator & operator+=(size_t steps) {
+        step_forward(steps);
         return *this;
     }
 
