@@ -30,12 +30,11 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec, String idSeed) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if ( ! spec.settings().isPublicEndpoint())
             throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
 
-        return new LoadBalancerInstance(idSeed,
-                                        Optional.of(DomainName.of(vipHostname)),
+        return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
                                         Optional.empty(),
@@ -53,7 +52,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
+    public void reallocate(LoadBalancerSpec spec) {
         throw new UnsupportedOperationException("reallocate is not supported with " + getClass());
     }
 

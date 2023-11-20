@@ -50,6 +50,7 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
         loadBalancers.forEach(lb -> {
             Cursor lbObject = loadBalancerArray.addObject();
             lbObject.setString("id", lb.id().serializedForm());
+            lbObject.setString("idSeed", lb.idSeed());
             lbObject.setString("state", lb.state().name());
             lbObject.setLong("changedAt", lb.changedAt().toEpochMilli());
             lbObject.setString("application", lb.id().application().application().value());
@@ -90,7 +91,6 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
                 }
                 instance.serviceId().ifPresent(serviceId -> lbObject.setString("serviceId", serviceId.value()));
                 lbObject.setBool("public", instance.settings().isPublicEndpoint());
-                lbObject.setString("idSeed", instance.idSeed());
             });
             lb.instance()
               .map(LoadBalancerInstance::cloudAccount)

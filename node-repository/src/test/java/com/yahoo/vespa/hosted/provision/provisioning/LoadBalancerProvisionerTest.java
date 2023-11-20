@@ -199,7 +199,7 @@ public class LoadBalancerProvisionerTest {
         List<LoadBalancer> loadBalancers = tester.nodeRepository().loadBalancers().list(app1).asList();
         assertEquals(1, loadBalancers.size());
         assertEquals(1, tester.nodeRepository().loadBalancers().list(preProvisionOwner).asList().size());
-        assertEquals(preProvisionOwner.serializedForm() + ":1", loadBalancers.get(0).instance().get().idSeed());
+        assertEquals(":" + preProvisionOwner.serializedForm() + ":1:", loadBalancers.get(0).idSeed());
 
         // Shrink pool to 0 entries.
         flagSource.withIntFlag(PermanentFlags.PRE_PROVISIONED_LB_COUNT.id(), 0);
@@ -215,9 +215,9 @@ public class LoadBalancerProvisionerTest {
                      assertThrows(IllegalStateException.class, provisioner::refreshPool).getMessage());
         tester.loadBalancerService().throwOnCreate(false);
         provisioner.refreshPool();
-        assertEquals(List.of(preProvisionOwner.serializedForm() + ":3"),
+        assertEquals(List.of(":" + preProvisionOwner.serializedForm() + ":3:"),
                      tester.nodeRepository().loadBalancers().list(preProvisionOwner)
-                           .mapToList(lb -> lb.instance().get().idSeed()));
+                           .mapToList(LoadBalancer::idSeed));
     }
 
     @Test

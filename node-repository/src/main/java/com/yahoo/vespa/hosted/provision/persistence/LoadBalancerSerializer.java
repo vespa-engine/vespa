@@ -72,7 +72,7 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        loadBalancer.instance().map(LoadBalancerInstance::idSeed).ifPresent(idSeed -> root.setString(idSeedField, idSeed));
+        root.setString(idSeedField, loadBalancer.idSeed());
         loadBalancer.instance().flatMap(LoadBalancerInstance::hostname).ifPresent(hostname -> root.setString(hostnameField, hostname.value()));
         loadBalancer.instance().flatMap(LoadBalancerInstance::ip4Address).ifPresent(ip -> root.setString(lbIpAddressField, ip));
         loadBalancer.instance().flatMap(LoadBalancerInstance::ip6Address).ifPresent(ip -> root.setString(lbIp6AddressField, ip));
@@ -142,9 +142,10 @@ public class LoadBalancerSerializer {
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ip4Address.isEmpty() && ip6Address.isEmpty()
                                                   ? Optional.empty()
-                                                  : Optional.of(new LoadBalancerInstance(idSeed, hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount));
+                                                  : Optional.of(new LoadBalancerInstance(hostname, ip4Address, ip6Address, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
+                                idSeed,
                                 instance,
                                 stateFromString(object.field(stateField).asString()),
                                 Instant.ofEpochMilli(object.field(changedAtField).asLong()));

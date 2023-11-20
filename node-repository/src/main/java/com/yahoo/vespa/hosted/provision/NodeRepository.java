@@ -263,9 +263,8 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                                                  loadBalancers.list(endpoint.applicationId())
                                                               .cluster(endpoint.clusterName())
                                                               .first()
-                                                              .flatMap(LoadBalancer::instance)
-                                                              .map(LoadBalancerInstance::idSeed)
-                                                              .orElseThrow(() -> new IllegalArgumentException("no load balancer instance for '" + endpoint + "'")));
+                                                              .map(LoadBalancer::idSeed)
+                                                              .orElseThrow(() -> new IllegalArgumentException("no load balancer for '" + endpoint + "'")));
     }
 
 }

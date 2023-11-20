@@ -36,7 +36,6 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     private final Map<Key, LoadBalancerInstance> instances = new HashMap<>();
     private boolean throwOnCreate = false;
     private boolean supportsProvisioning = true;
-    private final AtomicBoolean uuid = new AtomicBoolean(true);
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
         return instances.entrySet().stream().collect(toMap(e -> new LoadBalancerId(e.getKey().application, e.getKey().cluster),
@@ -66,10 +65,9 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance provision(LoadBalancerSpec spec, String idSeed) {
+    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
         var instance = new LoadBalancerInstance(
-                idSeed,
                 Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
                 Optional.empty(),
                 Optional.empty(),
@@ -80,13 +78,13 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 spec.settings(),
                 spec.settings().isPrivateEndpoint() ? List.of(PrivateServiceId.of("service")) : List.of(),
                 spec.cloudAccount());
-        instances.put(new Key(spec.application(), spec.cluster(), idSeed), instance);
+        instances.put(new Key(spec.application(), spec.cluster(), spec.idSeed()), instance);
         return instance;
     }
 
     @Override
     public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
-        var id = new Key(spec.application(), spec.cluster(), instance.idSeed());
+        var id = new Key(spec.application(), spec.cluster(), spec.idSeed());
         var oldInstance = requireNonNull(instances.get(id), "expected existing load balancer " + id);
         if (!force && !oldInstance.reals().isEmpty() && spec.reals().isEmpty()) {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
@@ -99,16 +97,16 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec) {
-        instances.put(new Key(spec.application(), spec.cluster(), provisioned.idSeed()),
-                      requireNonNull(instances.remove(new Key(null, null, provisioned.idSeed())))); // ᕙ༼◕_◕༽ᕤ
+    public void reallocate(LoadBalancerSpec spec) {
+        instances.put(new Key(spec.application(), spec.cluster(), spec.idSeed()),
+                      requireNonNull(instances.remove(new Key(null, null, spec.idSeed())))); // ᕙ༼◕_◕༽ᕤ
     }
 
     @Override
     public void remove(LoadBalancer loadBalancer) {
         requireNonNull(instances.remove(new Key(loadBalancer.id().application(),
                                                 loadBalancer.id().cluster(),
-                                                loadBalancer.instance().get().idSeed())),
+                                                loadBalancer.idSeed())),
                        "expected load balancer to exist: " + loadBalancer.id());
     }
 

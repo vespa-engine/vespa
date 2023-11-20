@@ -18,10 +18,9 @@ public interface LoadBalancerService {
      * Provisions load balancers from the given specification. Implementations are expected to be idempotent
      *
      * @param spec        Load balancer specification
-     * @param idSeed      Seed for generating a unique ID for the load balancer instance
      * @return The provisioned load balancer instance
      */
-    LoadBalancerInstance provision(LoadBalancerSpec spec, String idSeed);
+    LoadBalancerInstance provision(LoadBalancerSpec spec);
 
     /**
      * Configures load balancers for the given specification. Implementations are expected to be idempotent
@@ -34,7 +33,7 @@ public interface LoadBalancerService {
      */
     LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force);
 
-    void reallocate(LoadBalancerInstance provisioned, LoadBalancerSpec spec);
+    void reallocate(LoadBalancerSpec spec);
 
     /** Permanently remove given load balancer */
     void remove(LoadBalancer loadBalancer);
