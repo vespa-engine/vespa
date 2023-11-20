@@ -7,6 +7,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <cassert>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.distributor_bucket_space_repo");
@@ -36,7 +37,7 @@ DistributorBucketSpaceRepo::get(BucketSpace bucketSpace)
 {
     auto itr = _map.find(bucketSpace);
     if (itr == _map.end()) [[unlikely]] {
-        LOG(error, "Bucket space %zu does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
+        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
         abort();
     }
     return *itr->second;
@@ -47,7 +48,7 @@ DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
 {
     auto itr = _map.find(bucketSpace);
     if (itr == _map.end()) [[unlikely]] {
-        LOG(error, "Bucket space %zu does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
+        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
         abort();
     }
     return *itr->second;
