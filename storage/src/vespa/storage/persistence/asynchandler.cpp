@@ -319,7 +319,7 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
                 LOG(spam, "%s: completed removeByGidAsync operation", bucket.toString().c_str());
                 // Nothing else clever to do here. Throttle token and deleteBucket dispatch refs dropped implicitly.
             });
-        LOG(spam, "%s: about to invoke removeByGidAsync(%s, %s, %zu)", cmd.getBucket().toString().c_str(),
+        LOG(spam, "%s: about to invoke removeByGidAsync(%s, %s, %" PRIu64 ")", cmd.getBucket().toString().c_str(),
             vespalib::string(meta->getDocumentType()).c_str(), meta->getGid().toString().c_str(), meta->getTimestamp().getValue());
         _spi.removeByGidAsync(spi_bucket, std::move(to_remove), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     }
