@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -55,7 +56,7 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
-        model.registerOnnxModelCost(cluster);
+        model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
     private static ModelReference resolveDefaultVocab(Model model, DeployState state) {

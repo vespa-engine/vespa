@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -47,7 +48,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         transformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
         transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
-        model.registerOnnxModelCost(cluster);
+        model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
     @Override

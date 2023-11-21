@@ -1453,7 +1453,9 @@
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
-      "public abstract void registerModel(java.net.URI)"
+      "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
+      "public abstract void registerModel(java.net.URI)",
+      "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)"
     ],
     "fields" : [ ]
   },
@@ -1471,7 +1473,9 @@
       "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
       "public long aggregatedModelCostInBytes()",
       "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
-      "public void registerModel(java.net.URI)"
+      "public void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
+      "public void registerModel(java.net.URI)",
+      "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)"
     ],
     "fields" : [ ]
   },
@@ -1486,6 +1490,51 @@
     "methods" : [
       "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
       "public static com.yahoo.config.model.api.OnnxModelCost disabled()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.OnnxModelOptions$GpuDevice" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(int, boolean)",
+      "public void <init>(int)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public int deviceNumber()",
+      "public boolean required()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.OnnxModelOptions" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
+      "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.util.Optional executionMode()",
+      "public java.util.Optional interOpThreads()",
+      "public java.util.Optional intraOpThreads()",
+      "public java.util.Optional gpuDevice()"
     ],
     "fields" : [ ]
   },

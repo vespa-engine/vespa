@@ -10,6 +10,7 @@ import java.net.URI;
 /**
  * @author bjorncs
  */
+// TODO: Rename
 public interface OnnxModelCost {
 
     Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
@@ -17,7 +18,9 @@ public interface OnnxModelCost {
     interface Calculator {
         long aggregatedModelCostInBytes();
         void registerModel(ApplicationFile path);
+        void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
         void registerModel(URI uri);
+        void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
     }
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
@@ -26,7 +29,9 @@ public interface OnnxModelCost {
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
         @Override public void registerModel(ApplicationFile path) {}
+        @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
         @Override public void registerModel(URI uri) {}
+        @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
     }
 
 }

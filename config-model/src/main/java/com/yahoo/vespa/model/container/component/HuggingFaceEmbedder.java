@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -48,7 +49,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
-        model.registerOnnxModelCost(cluster);
+        model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
     private static ModelReference resolveDefaultVocab(Model model, DeployState state) {

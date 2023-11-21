@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.model.container.component.OnnxModelOptions;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
 
 import java.util.Collections;
@@ -170,5 +170,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     public Optional<OnnxModelOptions.GpuDevice> getGpuDevice() {
         return onnxModelOptions.gpuDevice();
     }
+
+    public OnnxModelOptions onnxModelOptions() { return onnxModelOptions; }
 
 }
