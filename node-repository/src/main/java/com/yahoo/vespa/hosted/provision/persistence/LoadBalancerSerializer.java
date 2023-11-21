@@ -111,7 +111,7 @@ public class LoadBalancerSerializer {
         }
     }
 
-    public static LoadBalancer fromJson(LoadBalancerId id, byte[] data) {
+    public static LoadBalancer fromJson(byte[] data) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
         Set<Real> reals = new LinkedHashSet<>();
@@ -128,8 +128,7 @@ public class LoadBalancerSerializer {
         Set<String> networks = new LinkedHashSet<>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
-        // TODO jonmv: remove fallback after data is re-written.
-        String idSeed = SlimeUtils.optionalString(object.field(idSeedField)).orElse(id.application().tenant().value() + id.application().application().value() + id.application().instance().value() + id.cluster().value());
+        String idSeed = object.field(idSeedField).asString();
         Optional<DomainName> hostname = SlimeUtils.optionalString(object.field(hostnameField)).map(DomainName::of);
         Optional<String> ip4Address = SlimeUtils.optionalString(object.field(lbIpAddressField));
         Optional<String> ip6Address = SlimeUtils.optionalString(object.field(lbIp6AddressField));

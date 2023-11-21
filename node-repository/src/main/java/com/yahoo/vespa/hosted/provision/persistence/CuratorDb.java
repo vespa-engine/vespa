@@ -445,7 +445,7 @@ public class CuratorDb {
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
-        return read(loadBalancerPath(id), bytes -> LoadBalancerSerializer.fromJson(id, bytes));
+        return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
     public void writeLoadBalancer(LoadBalancer loadBalancer, LoadBalancer.State fromState) {
