@@ -43,7 +43,7 @@ public class VespaAwsCredentialsProvider implements AWSCredentialsProvider {
     @Override
     public AWSCredentials getCredentials() {
         Credentials sessionCredentials = credentials.get();
-        if (Duration.between(clock.instant(), sessionCredentials.expiry).abs().compareTo(REFRESH_INTERVAL)<0) {
+        if (Duration.between(clock.instant(), sessionCredentials.expiry).compareTo(REFRESH_INTERVAL)<0) {
             refresh();
             sessionCredentials = credentials.get();
         }
