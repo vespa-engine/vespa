@@ -83,7 +83,7 @@ public class ClusterSearcher extends Searcher {
         int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
-        this.globalPhaseRanker = searchClusterConfig.globalphase() ? globalPhaseRanker : null;
+        this.globalPhaseRanker = globalPhaseRanker;
         schemas = new LinkedHashSet<>();
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);

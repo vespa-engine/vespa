@@ -51,7 +51,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Collection<String> schemasWithGlobalPhase;
-    private final boolean globalPhase;
     private final ApplicationPackage app;
 
     private QueryProfiles queryProfiles;
@@ -60,7 +59,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
-        this.globalPhase = deployState.featureFlags().enableGlobalPhase();
         this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
         this.app = deployState.getApplicationPackage();
         this.owningCluster = cluster;
@@ -95,16 +93,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                 var dispatcher = new DispatcherComponent(indexed, dispatcherClass);
                 owningCluster.addComponent(dispatcher);
             }
-            if (globalPhase) {
-                for (var documentDb : searchCluster.getDocumentDbs()) {
-                    if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
-                    var factory = new RankProfilesEvaluatorComponent(documentDb);
-                    if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
-                        var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();
-                        onnxModels.asMap().forEach(
-                                (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath()), model.onnxModelOptions()));
-                        owningCluster.addComponent(factory);
-                    }
+            for (var documentDb : searchCluster.getDocumentDbs()) {
+                if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
+                var factory = new RankProfilesEvaluatorComponent(documentDb);
+                if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                    var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();
+                    onnxModels.asMap().forEach(
+                            (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath()), model.onnxModelOptions()));
+                    owningCluster.addComponent(factory);
                 }
             }
         }
@@ -176,7 +172,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             }
             scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
             scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
-            scB.globalphase(globalPhase);
             if ( ! (sys instanceof IndexedSearchCluster)) {
                 scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
                                            routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));

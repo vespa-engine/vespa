@@ -200,7 +200,6 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
         private final int heapPercentage;
-        private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
         private final boolean alwaysMarkPhraseExpensive;
         private final int contentLayerMetadataFeatureLevel;
@@ -245,7 +244,6 @@ public class ModelContextImpl implements ModelContext {
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
             this.queryDispatchWarmup = flagValue(source, appId, version, PermanentFlags.QUERY_DISPATCH_WARMUP);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
-            this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
             this.dynamicHeapSize = flagValue(source, appId, version, Flags.DYNAMIC_HEAP_SIZE);
@@ -299,7 +297,6 @@ public class ModelContextImpl implements ModelContext {
             }
             return defVal;
         }
-        @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
         @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }

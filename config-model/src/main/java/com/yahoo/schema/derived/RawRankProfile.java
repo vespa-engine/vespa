@@ -36,7 +36,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A rank profile derived from a search definition, containing exactly the features available natively in the server
