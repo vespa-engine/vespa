@@ -18,7 +18,7 @@ template <typename HEAP, typename IteratorPack>
 class WeightedSetTermSearchImpl : public WeightedSetTermSearch
 {
 private:
-    using ref_t = uint32_t;
+    using ref_t = IteratorPack::ref_t;
 
     struct CmpDocId {
         const uint32_t *termPos;
