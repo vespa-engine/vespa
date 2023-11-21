@@ -61,13 +61,13 @@ private:
     using DocIndices = typename MultiValueNumericEnumAttribute<B, M>::DocIndices;
     using FrozenDictionary = typename Dictionary::FrozenView;
     using Posting = typename PostingParent::Posting;
-    using PostingList = typename PostingParent::PostingList;
+    using PostingStore = typename PostingParent::PostingStore;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using WeightedIndex = typename MultiValueNumericEnumAttribute<B, M>::WeightedIndex;
     using generation_t = typename MultiValueNumericEnumAttribute<B, M>::generation_t;
 
-    using PostingParent::_postingList;
+    using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;

@@ -37,7 +37,7 @@ void
 SingleValueNumericPostingAttribute<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
-    total.merge(this->_postingList.update_stat(compaction_strategy));
+    total.merge(this->_posting_store.update_stat(compaction_strategy));
 }
 
 template <typename B>
@@ -124,16 +124,16 @@ void
 SingleValueNumericPostingAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
     SingleValueNumericEnumAttribute<B>::reclaim_memory(oldest_used_gen);
-    _postingList.reclaim_memory(oldest_used_gen);
+    _posting_store.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::before_inc_generation(generation_t current_gen)
 {
-    _postingList.freeze();
+    _posting_store.freeze();
     SingleValueNumericEnumAttribute<B>::before_inc_generation(current_gen);
-    _postingList.assign_generation(current_gen);
+    _posting_store.assign_generation(current_gen);
 }
 
 template <typename B>

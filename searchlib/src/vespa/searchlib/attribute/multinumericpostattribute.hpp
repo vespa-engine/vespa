@@ -21,7 +21,7 @@ void
 MultiValueNumericPostingAttribute<B, M>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
-    total.merge(this->getPostingList().update_stat(compaction_strategy));
+    total.merge(this->get_posting_store().update_stat(compaction_strategy));
 }
 
 template <typename B, typename M>
@@ -60,16 +60,16 @@ void
 MultiValueNumericPostingAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
     MultiValueNumericEnumAttribute<B, M>::reclaim_memory(oldest_used_gen);
-    _postingList.reclaim_memory(oldest_used_gen);
+    _posting_store.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B, typename M>
 void
 MultiValueNumericPostingAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
-    _postingList.freeze();
+    _posting_store.freeze();
     MultiValueNumericEnumAttribute<B, M>::before_inc_generation(current_gen);
-    _postingList.assign_generation(current_gen);
+    _posting_store.assign_generation(current_gen);
 }
 
 template <typename B, typename M>
@@ -106,9 +106,9 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
     if (find_result.first.valid()) {
         auto pidx = find_result.second;
         if (pidx.valid()) {
-            const PostingList &plist = self.getPostingList();
-            auto minmax = plist.getAggregated(pidx);
-            return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
+            const auto& store = self.get_posting_store();
+            auto minmax = store.getAggregated(pidx);
+            return LookupResult(pidx, store.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
         }
     }
     return LookupResult();
@@ -127,7 +127,7 @@ void
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
 {
     assert(idx.valid());
-    self.getPostingList().beginFrozen(idx, dst);
+    self.get_posting_store().beginFrozen(idx, dst);
 }
 
 template <typename B, typename M>
@@ -135,21 +135,21 @@ DocumentWeightIterator
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx) const
 {
     assert(idx.valid());
-    return self.getPostingList().beginFrozen(idx);
+    return self.get_posting_store().beginFrozen(idx);
 }
 
 template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
-    return self.getPostingList().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
+    return self.get_posting_store().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
 }
 
 template <typename B, typename M>
 bool
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
 {
-    return self.getPostingList().has_btree(idx);
+    return self.get_posting_store().has_btree(idx);
 }
 
 template <typename B, typename M>

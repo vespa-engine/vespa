@@ -82,20 +82,20 @@ class PostingListSearchContextT : public PostingListSearchContext
 protected:
     using DataType = DataT;
     using Traits = PostingListTraits<DataType>;
-    using PostingList = typename Traits::PostingList;
+    using PostingStore = typename Traits::PostingStoreType;
     using Posting = typename Traits::Posting;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using FrozenView = typename PostingList::BTreeType::FrozenView;
+    using FrozenView = typename PostingStore::BTreeType::FrozenView;
 
-    const PostingList    &_postingList;
+    const PostingStore& _posting_store;
     /*
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingListMerger<DataT> _merger;
 
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingList &postingList,
+                              bool hasWeight, const PostingStore& posting_store,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
@@ -128,11 +128,11 @@ protected:
     using Dictionary = typename Parent::Dictionary;
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using EntryRef = vespalib::datastore::EntryRef;
-    using PostingList = typename Parent::PostingList;
+    using PostingStore = typename Parent::PostingStore;
     using Parent::_docIdLimit;
     using Parent::_lowerDictItr;
     using Parent::_merger;
-    using Parent::_postingList;
+    using Parent::_posting_store;
     using Parent::_uniqueValues;
     using Parent::_upperDictItr;
     using Parent::singleHits;
@@ -142,7 +142,7 @@ protected:
     mutable std::vector<EntryRef>   _posting_indexes;
 
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingList &postingList,
+                                    bool hasWeight, const PostingStore& posting_store,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListFoldedSearchContextT() override;
 
@@ -242,7 +242,7 @@ PostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearc
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),
-              toBeSearched.getPostingList(),
+              toBeSearched.get_posting_store(),
               useBitVector,
               *this),
       _toBeSearched(toBeSearched),
@@ -454,7 +454,7 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::calc_estimated_hits_in_range(
     constexpr uint32_t max_posting_lists_to_count = 1000;
     auto it = this->_lowerDictItr;
     for (uint32_t count = 0; (it != this->_upperDictItr) && (count < max_posting_lists_to_count); ++it, ++count) {
-        exact_sum += this->_postingList.frozenSize(it.getData().load_acquire());
+        exact_sum += this->_posting_store.frozenSize(it.getData().load_acquire());
     }
     if (it != this->_upperDictItr) {
         uint32_t remaining_posting_lists = this->_upperDictItr - it;

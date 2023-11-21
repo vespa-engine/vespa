@@ -59,7 +59,7 @@ private:
     using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
     using generation_t = typename MultiValueStringAttributeT<B, T>::generation_t;
 
-    using PostingParent::_postingList;
+    using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
@@ -70,9 +70,9 @@ private:
     void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override ;
 
 public:
-    using PostingParent::getPostingList;
+    using PostingParent::get_posting_store;
     using Dictionary = EnumPostingTree;
-    using PostingList = typename PostingParent::PostingList;
+    using PostingStore = typename PostingParent::PostingStore;
 
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
     MultiValueStringPostingAttributeT(const vespalib::string & name);

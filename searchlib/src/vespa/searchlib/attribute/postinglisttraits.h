@@ -19,7 +19,7 @@ public:
     using AggrCalcType = vespalib::btree::NoAggrCalc;
     using const_iterator = vespalib::btree::BTreeConstIterator<uint32_t, vespalib::btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>, BTreeTraits >;
     using PostingStoreBase = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>, BTreeTraits, AggrCalcType> ;
-    using PostingList = PostingStore<vespalib::btree::BTreeNoLeafData>;
+    using PostingStoreType = PostingStore<vespalib::btree::BTreeNoLeafData>;
     using Posting = PostingStoreBase::KeyDataType;
 };
 
@@ -33,7 +33,7 @@ public:
     using AggrCalcType = vespalib::btree::MinMaxAggrCalc;
     using const_iterator = vespalib::btree::BTreeConstIterator<uint32_t, int32_t, AggregatedType, std::less<uint32_t>, BTreeTraits >;
     using PostingStoreBase = vespalib::btree::BTreeStore<uint32_t, int32_t, AggregatedType, std::less<uint32_t>, BTreeTraits, AggrCalcType>;
-    using PostingList = PostingStore<int32_t>;
+    using PostingStoreType = PostingStore<int32_t>;
     using Posting = PostingStoreBase::KeyDataType;
 };
 

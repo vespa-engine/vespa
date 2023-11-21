@@ -43,15 +43,15 @@ private:
     using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
     using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 
-    using PostingParent::_postingList;
+    using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
     using PostingParent::forwardedOnAddDoc;
 public:
-    using PostingList = typename PostingParent::PostingList;
+    using PostingStore = typename PostingParent::PostingStore;
     using Dictionary = EnumPostingTree;
-    using PostingParent::getPostingList;
+    using PostingParent::get_posting_store;
 
 private:
     void freezeEnumDictionary() override;

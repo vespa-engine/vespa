@@ -43,10 +43,10 @@ protected:
     using DocId = AttributeVector::DocId;
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
-    using PostingList = typename AggregationTraits::PostingList;
+    using PostingStore = typename AggregationTraits::PostingStoreType;
     using PostingMap = std::map<EnumPostingPair, PostingChange<P> >;
 
-    PostingList _postingList;
+    PostingStore _posting_store;
     AttributeVector &_attr;
     IEnumStoreDictionary& _dictionary;
 
@@ -57,8 +57,8 @@ protected:
 
     void updatePostings(PostingMap &changePost, const vespalib::datastore::EntryComparator &cmp);
     void clearAllPostings();
-    void disableFreeLists() { _postingList.disableFreeLists(); }
-    void disable_entry_hold_list() { _postingList.disable_entry_hold_list(); }
+    void disableFreeLists() { _posting_store.disableFreeLists(); }
+    void disable_entry_hold_list() { _posting_store.disable_entry_hold_list(); }
     void handle_load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
@@ -71,8 +71,8 @@ protected:
     bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) override;
 
 public:
-    const PostingList & getPostingList() const { return _postingList; }
-    PostingList & getPostingList()             { return _postingList; }
+    const PostingStore & get_posting_store() const { return _posting_store; }
+    PostingStore & get_posting_store()             { return _posting_store; }
 };
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
@@ -86,14 +86,14 @@ public:
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
     using ComparatorType = typename EnumStore::ComparatorType;
-    using PostingList = typename Parent::PostingList;
+    using PostingStore = typename Parent::PostingStore;
     using PostingMap = typename Parent::PostingMap;
 
     using Parent::clearAllPostings;
     using Parent::updatePostings;
     using Parent::handle_load_posting_lists_and_update_enum_store;
     using Parent::clearPostings;
-    using Parent::_postingList;
+    using Parent::_posting_store;
     using Parent::_attr;
     using Parent::_dictionary;
 
