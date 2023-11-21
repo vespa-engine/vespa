@@ -15,8 +15,8 @@ PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
                          IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.get_dictionary(), attr.getStatus(),
-                   attr.getConfig()),
+      _posting_store(enumStore.get_dictionary(), attr.getStatus(),
+                     attr.getConfig()),
       _attr(attr),
       _dictionary(enumStore.get_dictionary())
 { }
@@ -28,11 +28,11 @@ template <typename P>
 void
 PostingListAttributeBase<P>::clearAllPostings()
 {
-    _postingList.clearBuilder();
+    _posting_store.clearBuilder();
     _attr.incGeneration(); // Force freeze
     auto clearer = [this](EntryRef posting_idx)
                    {
-                       _postingList.clear(posting_idx);
+                       _posting_store.clear(posting_idx);
                    };
     _dictionary.clear_all_posting_lists(clearer);
     _attr.incGeneration(); // Force freeze
@@ -69,7 +69,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
             if (loader.is_folded_change(enum_indexes[posting_enum], enum_indexes[preve])) {
                 postings.removeDups();
                 newIndex = EntryRef();
-                _postingList.apply(newIndex,
+                _posting_store.apply(newIndex,
                                    postings._additions.data(),
                                    postings._additions.data() +
                                    postings._additions.size(),
@@ -91,7 +91,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     loader.set_ref_count(enum_indexes[preve], refCount);
     postings.removeDups();
     newIndex = EntryRef();
-    _postingList.apply(newIndex,
+    _posting_store.apply(newIndex,
                        postings._additions.data(),
                        postings._additions.data() + postings._additions.size(),
                        postings._removals.data(),
@@ -112,7 +112,7 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
         change.removeDups();
         auto updater= [this, &change](EntryRef posting_idx) -> EntryRef
                       {
-                          _postingList.apply(posting_idx,
+                          _posting_store.apply(posting_idx,
                                              change._additions.data(),
                                              change._additions.data() + change._additions.size(),
                                              change._removals.data(),
@@ -135,7 +135,7 @@ PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc,
     if (doc >= wantCapacity) {
         wantCapacity = doc + 1;
     }
-    return _postingList.resizeBitVectors(wantSize, wantCapacity);
+    return _posting_store.resizeBitVectors(wantSize, wantCapacity);
 }
 
 template <typename P>
@@ -155,7 +155,7 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     EntryRef er(eidx);
     auto updater = [this, &postings](EntryRef posting_idx) -> EntryRef
                    {
-                       _postingList.apply(posting_idx,
+                       _posting_store.apply(posting_idx,
                                           postings._additions.data(),
                                           postings._additions.data() + postings._additions.size(),
                                           postings._removals.data(),
@@ -169,28 +169,28 @@ template <typename P>
 void
 PostingListAttributeBase<P>::forwardedShrinkLidSpace(uint32_t newSize)
 {
-    (void) _postingList.resizeBitVectors(newSize, newSize);
+    (void) _posting_store.resizeBitVectors(newSize, newSize);
 }
 
 template <typename P>
 attribute::PostingStoreMemoryUsage
 PostingListAttributeBase<P>::getMemoryUsage() const
 {
-    return _postingList.getMemoryUsage();
+    return _posting_store.getMemoryUsage();
 }
 
 template <typename P>
 bool
 PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
 {
-    return _postingList.consider_compact_worst_btree_nodes(compaction_strategy);
+    return _posting_store.consider_compact_worst_btree_nodes(compaction_strategy);
 }
 
 template <typename P>
 bool
 PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
 {
-    return _postingList.consider_compact_worst_buffers(compaction_strategy);
+    return _posting_store.consider_compact_worst_buffers(compaction_strategy);
 }
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
@@ -219,7 +219,7 @@ handle_load_posting_lists(LoadedVector& loaded)
         EntryRef newIndex;
         PostingChange<P> postings;
         uint32_t docIdLimit = _attr.getNumDocs();
-        _postingList.resizeBitVectors(docIdLimit, docIdLimit);
+        _posting_store.resizeBitVectors(docIdLimit, docIdLimit);
         if ( ! loaded.empty() ) {
             vespalib::Array<typename LoadedVector::Type> similarValues;
             auto value = loaded.read();
@@ -237,7 +237,7 @@ handle_load_posting_lists(LoadedVector& loaded)
                 } else {
                     postings.removeDups();
                     newIndex = EntryRef();
-                    _postingList.apply(newIndex,
+                    _posting_store.apply(newIndex,
                                        postings._additions.data(),
                                        postings._additions.data() +
                                        postings._additions.size(),
@@ -259,7 +259,7 @@ handle_load_posting_lists(LoadedVector& loaded)
             }
             postings.removeDups();
             newIndex = EntryRef();
-            _postingList.apply(newIndex,
+            _posting_store.apply(newIndex,
                                postings._additions.data(),
                                postings._additions.data() +
                                postings._additions.size(),

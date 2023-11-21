@@ -449,7 +449,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
 {
     const typename VectorType::EnumStore & enumStore = vec.getEnumStore();
     auto& dict = enumStore.get_dictionary();
-    const typename VectorType::PostingList & postingList = vec.getPostingList();
+    const auto& posting_store = vec.get_posting_store();
 
     for (size_t i = 0; i < values.size(); ++i) {
         const uint32_t docBegin = range.getBegin(i);
@@ -457,10 +457,9 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
 
         auto find_result = dict.find_posting_list(enumStore.make_comparator(values[i]), dict.get_frozen_root());
         ASSERT_TRUE(find_result.first.valid());
-        bool has_bitvector = VectorType::PostingList::isBitVector(postingList.getTypeId(find_result.second));
+        bool has_bitvector = VectorType::PostingStore::isBitVector(posting_store.getTypeId(find_result.second));
 
-        typename VectorType::PostingList::Iterator postings;
-        postings = postingList.begin(find_result.second);
+        auto postings = posting_store.begin(find_result.second);
         uint32_t numHits(0);
         bool has_btree = postings.valid();
         if (postings.valid()) {
@@ -472,12 +471,12 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
             EXPECT_EQ(doc, docEnd);
         } else {
             EXPECT_TRUE(has_bitvector && vec.getIsFilter());
-            numHits = postingList.getBitVectorEntry(find_result.second)->_bv->reader().countTrueBits();
+            numHits = posting_store.getBitVectorEntry(find_result.second)->_bv->reader().countTrueBits();
         }
         if (has_bitvector) {
             uint32_t doc = docBegin;
             uint32_t bv_num_hits = 0;
-            auto& bv = postingList.getBitVectorEntry(find_result.second)->_bv->reader();
+            auto& bv = posting_store.getBitVectorEntry(find_result.second)->_bv->reader();
             for (auto lid = bv.getFirstTrueBit(); lid < bv.size(); lid = bv.getNextTrueBit(lid + 1)) {
                 EXPECT_EQ(doc++, lid);
                 ++bv_num_hits;
@@ -701,12 +700,11 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
 {
     const typename AttributeType::EnumStore & enumStore = vec.getEnumStore();
     auto& dict = enumStore.get_dictionary();
-    const typename AttributeType::PostingList & postingList = vec.getPostingList();
+    const auto& posting_store = vec.get_posting_store();
     auto find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
     ASSERT_TRUE(find_result.first.valid());
 
-    typename AttributeType::PostingList::Iterator postings;
-    postings = postingList.begin(find_result.second);
+    auto postings = posting_store.begin(find_result.second);
 
     DocSet::iterator docBegin = expected.begin();
     DocSet::iterator docEnd = expected.end();
