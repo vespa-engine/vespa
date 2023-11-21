@@ -12,7 +12,7 @@ enabled=1
 
 [copr:copr.fedorainfracloud.org:group_vespa:vespa]
 name=Copr repo for vespa owned by @vespa
-baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/centos-stream-8-$basearch/
+baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/epel-8-$basearch/
 type=rpm-md
 skip_if_unavailable=True
 gpgcheck=1
