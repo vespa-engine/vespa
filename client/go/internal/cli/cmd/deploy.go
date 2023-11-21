@@ -60,7 +60,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				return err
 			}
 			timeout := time.Duration(waitSecs) * time.Second
-			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target, Timeout: timeout}
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
 				if err != nil {
@@ -162,7 +162,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
-			opts := vespa.DeploymentOptions{Target: target, Timeout: timeout}
+			opts := vespa.DeploymentOptions{Target: target}
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
 				return err

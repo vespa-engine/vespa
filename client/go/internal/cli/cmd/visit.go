@@ -90,8 +90,8 @@ func newVisitCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "visit",
-		Short: "Fetch and print all documents from Vespa",
-		Long: `Fetch and print all documents from Vespa.
+		Short: "Retrieve and print all documents from Vespa",
+		Long: `Retrieve and print all documents from Vespa.
 
 By default prints each document received on its own line (JSONL format).
 `,
