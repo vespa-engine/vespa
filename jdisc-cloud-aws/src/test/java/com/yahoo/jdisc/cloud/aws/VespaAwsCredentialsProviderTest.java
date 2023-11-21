@@ -27,12 +27,20 @@ public class VespaAwsCredentialsProviderTest {
 
         Instant updatedExpiry = clock.instant().plus(Duration.ofHours(24));
         writeCredentials(credentialsPath, updatedExpiry);
+
         // File updated, but old credentials still valid
         credentials = credentialsProvider.getCredentials();
         assertExpiryEquals(originalExpiry, credentials);
 
         // Credentials refreshes when it is < 30 minutes left until expiry
         clock.advance(Duration.ofHours(11).plus(Duration.ofMinutes(31)));
+        credentials = credentialsProvider.getCredentials();
+        assertExpiryEquals(updatedExpiry, credentials);
+
+        // Credentials refreshes when they are long expired (since noone asked for them for a long time)
+        updatedExpiry = clock.instant().plus(Duration.ofDays(12));
+        writeCredentials(credentialsPath, updatedExpiry);
+        clock.advance(Duration.ofDays(11));
         credentials = credentialsProvider.getCredentials();
         assertExpiryEquals(updatedExpiry, credentials);
     }
