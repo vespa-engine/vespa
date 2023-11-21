@@ -295,13 +295,6 @@ public class Flags {
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_GLOBAL_PHASE = defineFeatureFlag(
-            "enable-global-phase", true,
-            List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",
-            "Enable global phase ranking",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-12-01",
             "Whether to enable the one program that should not be named",
