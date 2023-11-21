@@ -244,7 +244,7 @@ public class StreamingSearcherTestCase {
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",
-                "Illegal query", "Streaming search needs one and only one");
+                "Illegal query", "Streaming search requires either");
         checkError(searcher, "/?streaming.userid=1&query=parseexception",
                 "Invalid query parameter", "Failed to parse document selection string");
         checkError(searcher, "/?streaming.userid=1&query=tokenizeexception",
