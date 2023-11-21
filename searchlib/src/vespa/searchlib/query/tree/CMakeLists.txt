@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_query_tree OBJECT
     SOURCES
     const_bool_nodes.cpp
+    integer_term_vector.cpp
     intermediate.cpp
     intermediatenodes.cpp
     location.cpp
@@ -10,6 +11,7 @@ vespa_add_library(searchlib_query_tree OBJECT
     simplequery.cpp
     stackdumpcreator.cpp
     stackdumpquerycreator.cpp
+    string_term_vector.cpp
     term.cpp
     termnodes.cpp
     DEPENDS
