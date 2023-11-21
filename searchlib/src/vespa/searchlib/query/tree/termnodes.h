@@ -7,6 +7,7 @@
 #include "querynodemixin.h"
 #include "range.h"
 #include "term.h"
+#include "term_vector.h"
 #include "const_bool_nodes.h"
 
 namespace search::query {
@@ -177,19 +178,8 @@ public:
 class MultiTerm : public Node {
 public:
     enum class Type {STRING, INTEGER, UNKNOWN};
-    using StringAndWeight = std::pair<vespalib::stringref, Weight>;
-    using IntegerAndWeight = std::pair<int64_t, Weight>;
-    struct TermVector {
-        using StringAndWeight = MultiTerm::StringAndWeight;
-        using IntegerAndWeight = MultiTerm::IntegerAndWeight;
-        virtual ~TermVector() = default;
-        virtual void addTerm(vespalib::stringref term, Weight weight) = 0;
-        virtual void addTerm(int64_t term, Weight weight) = 0;
-        virtual StringAndWeight getAsString(uint32_t index) const = 0;
-        virtual IntegerAndWeight getAsInteger(uint32_t index) const = 0;
-        virtual Weight getWeight(uint32_t index) const = 0;
-        virtual uint32_t size() const = 0;
-    };
+    using StringAndWeight = TermVector::StringAndWeight;
+    using IntegerAndWeight = TermVector::IntegerAndWeight;
     ~MultiTerm() override;
     void addTerm(vespalib::stringref term, Weight weight);
     void addTerm(int64_t term, Weight weight);
