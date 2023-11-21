@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The possible types of nodes in the node repository
@@ -36,6 +37,13 @@ public enum NodeType {
 
     private final String description;
     private final List<NodeType> childNodeTypes;
+
+    public static Optional<NodeType> ofOptional(String name) {
+        for (var type : values()) {
+            if (type.name().equals(name)) return Optional.of(type);
+        }
+        return Optional.empty();
+    }
 
     NodeType(String description, NodeType... childNodeTypes) {
         this.childNodeTypes = List.of(childNodeTypes);
