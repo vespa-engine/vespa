@@ -156,7 +156,7 @@ func (d *Dispatcher) processResults() {
 	defer d.wg.Done()
 	for op := range d.results {
 		d.statsMu.Lock()
-		d.stats.Add(op.result)
+		d.stats.Add(op.result, op.attempts > 1)
 		d.statsMu.Unlock()
 		retry := d.shouldRetry(op, op.result)
 		d.logResult(op, retry)
