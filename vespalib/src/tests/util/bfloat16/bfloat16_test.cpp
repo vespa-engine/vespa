@@ -83,13 +83,15 @@ TEST(BFloat16Test, constants_check) {
 	EXPECT_EQ(try_half_epsilon.to_float(), 1.0f);
 
 	EXPECT_LT(big, std::numeric_limits<float>::max());
+	EXPECT_GT(big, 0.5 * std::numeric_limits<float>::max());
 	EXPECT_GT(low, std::numeric_limits<float>::lowest());
+	EXPECT_EQ(low, -big);
 
-	printf("bfloat16 epsilon: %.10g (float has %.20g)\n", eps, std::numeric_limits<float>::epsilon());
-	printf("bfloat16 norm_min: %.20g (float has %.20g)\n", n_min, std::numeric_limits<float>::min());
-	printf("bfloat16 denorm_min: %.20g (float has %.20g)\n", d_min, std::numeric_limits<float>::denorm_min());
-	printf("bfloat16 max: %.20g (float has %.20g)\n", big, std::numeric_limits<float>::max());
-	printf("bfloat16 lowest: %.20g (float has %.20g)\n", low, std::numeric_limits<float>::lowest());
+	printf("bfloat16 epsilon: %a (float has %a)\n", eps, std::numeric_limits<float>::epsilon());
+	printf("bfloat16 norm_min: %a (float has %a)\n", n_min, std::numeric_limits<float>::min());
+	printf("bfloat16 denorm_min: %a (float has %a)\n", d_min, std::numeric_limits<float>::denorm_min());
+	printf("bfloat16 max: %a (float has %a)\n", big, std::numeric_limits<float>::max());
+	printf("bfloat16 lowest: %a (float has %a)\n", low, std::numeric_limits<float>::lowest());
 }
 
 TEST(BFloat16Test, traits_check) {
@@ -165,52 +167,19 @@ TEST(BFloat16Test, check_special_values) {
     EXPECT_EQ(memcmp(&f_snan, &f_from_b_snan, sizeof(float)), 0);
 }
 
-#include <onnxruntime/core/framework/endian.h>
-
-// extract from onnx-internal header file:
-namespace onnxruntime {
-
-//BFloat16
-struct BFloat16 {
-  uint16_t val{0};
-  explicit BFloat16() = default;
-  explicit BFloat16(uint16_t v) : val(v) {}
-  explicit BFloat16(float v) {
-    if (endian::native == endian::little) {
-      std::memcpy(&val, reinterpret_cast<char*>(&v) + sizeof(uint16_t), sizeof(uint16_t));
-    } else {
-      std::memcpy(&val, &v, sizeof(uint16_t));
-    }
-  }
-
-  float ToFloat() const {
-    float result;
-    char* const first = reinterpret_cast<char*>(&result);
-    char* const second = first + sizeof(uint16_t);
-    if (endian::native == endian::little) {
-      std::memset(first, 0, sizeof(uint16_t));
-      std::memcpy(second, &val, sizeof(uint16_t));
-    } else {
-      std::memcpy(first, &val, sizeof(uint16_t));
-      std::memset(second, 0, sizeof(uint16_t));
-    }
-    return result;
-  }
-};
-
-}  // namespace onnxruntime
+#include <onnxruntime/onnxruntime_cxx_api.h>
 
 TEST(OnnxBFloat16Test, has_same_encoding) {
-    EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(onnxruntime::BFloat16));
+    EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(Ort::BFloat16_t));
     EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(uint16_t));
-    EXPECT_EQ(sizeof(onnxruntime::BFloat16), sizeof(uint16_t));
+    EXPECT_EQ(sizeof(Ort::BFloat16_t), sizeof(uint16_t));
     vespalib::BFloat16 our_value;
     uint32_t ok_count = 0;
     uint32_t nan_count = 0;
     for (uint32_t i = 0; i < (1u << 16u); ++i) {
         uint16_t bits = i;
         our_value.assign_bits(bits);
-        onnxruntime::BFloat16 their_value(bits);
+        Ort::BFloat16_t their_value = Ort::BFloat16_t::FromBits(bits);
         if (our_value.get_bits() != bits) {
             printf("bad bits %04x -> %04x (vespalib)\n", bits, our_value.get_bits());
             printf("onnx converts -> %04x\n", their_value.val);
@@ -226,7 +195,7 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
         EXPECT_EQ(our_value.get_bits(), their_value.val);
         if (our_value.get_bits() != their_value.val) {
             printf("vespalib bits %04x != %04x onnx bits\n", our_value.get_bits(), their_value.val);
-            printf("corresponds to floats %g and %g\n", our_value.to_float(), their_value.ToFloat());
+            printf("corresponds to floats %a and %a\n", our_value.to_float(), their_value.ToFloat());
             continue;
         }
         float our_float = our_value.to_float();
@@ -237,13 +206,13 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
             continue;
         } 
         if (our_float != their_float) {
-            printf("bits %04x as float differs: vespalib %g != %g onnx\n", bits, our_value.to_float(), their_value.ToFloat());
+            printf("bits %04x as float differs: vespalib %a != %a onnx\n", bits, our_value.to_float(), their_value.ToFloat());
         } else {
             ++ok_count;
         }
         EXPECT_EQ(our_float, their_float);
         vespalib::BFloat16 our_back(our_float);
-        onnxruntime::BFloat16 their_back(their_float);
+        Ort::BFloat16_t their_back(their_float);
         EXPECT_EQ(our_back.get_bits(), their_back.val);
     }
     printf("normal floats behave equally OK in both vespalib and onnx: %d (0x%04x)\n", ok_count, ok_count);
