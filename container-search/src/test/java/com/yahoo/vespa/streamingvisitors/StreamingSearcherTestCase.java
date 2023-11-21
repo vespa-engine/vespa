@@ -244,17 +244,15 @@ public class StreamingSearcherTestCase {
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",
-                "Backend communication error", "Streaming search needs one and only one");
+                "Illegal query", "Streaming search needs one and only one");
         checkError(searcher, "/?streaming.userid=1&query=parseexception",
-                "Backend communication error", "Failed to parse document selection string");
+                "Invalid query parameter", "Failed to parse document selection string");
         checkError(searcher, "/?streaming.userid=1&query=tokenizeexception",
-                "Backend communication error", "Failed to tokenize document selection string");
+                "Invalid query parameter", "Failed to tokenize document selection string");
         checkError(searcher, "/?streaming.userid=1&query=interruptedexception",
                 "Backend communication error", "Interrupted");
         checkError(searcher, "/?streaming.userid=1&query=timeoutexception",
                 "Timed out", "Timed out");
-        checkError(searcher, "/?streaming.userid=1&query=illegalargumentexception",
-                "Backend communication error", "Illegal argument");
         checkError(searcher, "/?streaming.userid=1&query=nosummary",
                 "Backend communication error", "Did not find summary for hit with document id");
         checkError(searcher, "/?streaming.userid=1&query=nosummarytofill",
