@@ -136,10 +136,8 @@ public class StreamingSearcher extends VespaBackEndSearcher {
 
         initializeMissingQueryFields(query);
         if (documentSelectionQueryParameterCount(query) != 1) {
-            return new Result(query, ErrorMessage.createIllegalQuery("Streaming search needs one and " +
-                                                                     "only one of these query parameters to be set: " +
-                                                                     "streaming.userid, streaming.groupname, or " +
-                                                                     "streaming.selection"));
+            return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
+                                                                     "streaming.groupname or streaming.selection"));
         }
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
