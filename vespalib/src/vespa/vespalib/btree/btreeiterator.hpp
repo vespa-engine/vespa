@@ -530,6 +530,38 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
+set_subtree_position(const InternalNodeType* node, uint32_t level, uint32_t idx, size_t position)
+{
+    /*
+     * Walk down subtree adjusting iterator for new partial position.
+     */
+    _path[level].setIdx(idx);
+    size_t remaining_steps = position;
+    while (level > 0) {
+        --level;
+        node = _allocator->mapInternalRef(node->getChild(idx));
+        assert(remaining_steps < node->validLeaves());
+        idx = 0;
+        while (idx < node->validSlots()) {
+            auto valid_leaves = _allocator->validLeaves(node->getChild(idx));
+            if (remaining_steps < valid_leaves) {
+                break;
+            }
+            remaining_steps -= valid_leaves;
+            ++idx;
+        }
+        assert(idx < node->validSlots());
+        _path[level].setNodeAndIdx(node, idx);
+    }
+    auto lnode = _allocator->mapLeafRef(node->getChild(idx));
+    assert(remaining_steps < lnode->validSlots());
+    _leaf.setNodeAndIdx(lnode, remaining_steps);
+}
+
+template <typename KeyT, typename DataT, typename AggrT,
+          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
+void
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 step_forward(size_t steps)
 {
     auto lnode = _leaf.getNode();
@@ -557,10 +589,7 @@ step_forward(size_t steps)
         node = _path[level].getNode();
         idx = _path[level].getIdx() + 1;
         while (idx < node->validSlots()) {
-            auto ref = node->getChild(idx);
-            auto valid_leaves = (level != 0) ?
-                                _allocator->mapInternalRef(ref)->validLeaves() :
-                                _allocator->mapLeafRef(ref)->validLeaves();
+            auto valid_leaves = _allocator->validLeaves(node->getChild(idx));
             if (remaining_steps < valid_leaves) {
                 break;
             }
@@ -577,32 +606,61 @@ step_forward(size_t steps)
             }
         }
     }
-    /*
-     * Walk down subtree adjusting iterator for new position.
-     */
-    _path[level].setIdx(idx);
-    while (level > 0) {
-        --level;
-        node = _allocator->mapInternalRef(node->getChild(idx));
-        assert(remaining_steps < node->validLeaves());
-        idx = 0;
-        while (idx < node->validSlots()) {
-            auto ref = node->getChild(idx);
-            auto valid_leaves = (level != 0) ?
-                                _allocator->mapInternalRef(ref)->validLeaves() :
-                                _allocator->mapLeafRef(ref)->validLeaves();
-            if (remaining_steps < valid_leaves) {
-                break;
-            }
-            remaining_steps -= valid_leaves;
-            ++idx;
-        }
-        assert(idx < node->validSlots());
-        _path[level].setNodeAndIdx(node, idx);
+    set_subtree_position(node, level, idx, remaining_steps);
+}
+
+template <typename KeyT, typename DataT, typename AggrT,
+          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
+void
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
+step_backward(size_t steps)
+{
+    int64_t remaining_steps = steps;
+    if (remaining_steps == 0) {
+        return;
     }
-    lnode = _allocator->mapLeafRef(node->getChild(idx));
-    assert(remaining_steps < lnode->validSlots());
-    _leaf.setNodeAndIdx(lnode, remaining_steps);
+    if (_leaf.getNode() == nullptr) {
+        rbegin();
+        if (_leaf.getNode() == nullptr) {
+            return;
+        }
+        --remaining_steps;
+    }
+    auto idx = _leaf.getIdx();
+    if (idx >= remaining_steps) {
+        _leaf.setIdx(idx - remaining_steps);
+        return;
+    }
+    if (_pathSize == 0) {
+        _leaf.setIdx(0);
+        return;
+    }
+    remaining_steps -= idx;
+    uint32_t level = 0;
+    uint32_t levels = _pathSize;
+    const InternalNodeType* node;
+    /*
+     * Find intermediate node representing subtree containing old and new
+     * position.
+     */
+    for (;;) {
+        node = _path[level].getNode();
+        idx = _path[level].getIdx();
+        while (idx > 0 && remaining_steps > 0) {
+            --idx;
+            remaining_steps -= _allocator->validLeaves(node->getChild(idx));
+        }
+        if (remaining_steps <= 0) {
+            break;
+        } else {
+            ++level;
+            if (level == levels) {
+                begin();
+                return;
+            }
+        }
+    }
+    set_subtree_position(node, level, idx, -remaining_steps);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
