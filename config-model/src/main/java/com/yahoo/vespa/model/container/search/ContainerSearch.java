@@ -25,6 +25,7 @@ import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -72,8 +73,15 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     }
 
     private static Collection<String> getSchemasWithGlobalPhase(DeployState state) {
-        return state.rankProfileRegistry().all().stream()
-                .filter(rp -> rp.getGlobalPhase() != null).map(rp -> rp.schema().getName()).collect(Collectors.toSet());
+        var res = new HashSet<String>();
+        for (var schema : state.getSchemas()) {
+            for (var rp : state.rankProfileRegistry().rankProfilesOf(schema)) {
+                if (rp.getGlobalPhase() != null) {
+                    res.add(schema.getName());
+                }
+            }
+        }
+        return res;
     }
 
     public void connectSearchClusters(Map<String, SearchCluster> searchClusters) {
