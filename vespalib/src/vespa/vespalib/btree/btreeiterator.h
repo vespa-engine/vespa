@@ -240,7 +240,7 @@ protected:
     void step_forward(size_t steps);
 
     /*
-     * Step iterator forwards the given number of steps.
+     * Step iterator backwards the given number of steps.
      */
     void step_backward(size_t steps);
 
