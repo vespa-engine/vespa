@@ -233,6 +233,7 @@ private:
     void testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, std::vector<ValueType> values);
     void testRangeSearch();
     void testRangeSearchLimited();
+    void testRangeSearchLimitedHugeDictionary();
 
 
     // test case insensitive search
@@ -504,7 +505,7 @@ SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected,
             ASSERT_TRUE(array != nullptr);
             uint32_t i = 0;
             for (auto iter = expected.begin(); iter != expected.end(); ++iter, ++i) {
-                EXPECT_TRUE(array[i].getDocId() == *iter);
+                EXPECT_EQUAL(array[i].getDocId(), *iter);
             }
         }
     }
@@ -1174,6 +1175,42 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
         }
         performRangeSearch(vec, ss.str(), expected);
     }
+}
+
+DocSet
+createDocs(uint32_t from, int32_t count) {
+    DocSet docs;
+    if (count >= 0) {
+        for (int32_t i(0); i < count; i++) {
+            docs.put(from + i);
+        }
+    } else {
+        for (int32_t i(0); i > count; i--) {
+            docs.put(from + i);
+        }
+    }
+    return docs;
+}
+
+void
+SearchContextTest::testRangeSearchLimitedHugeDictionary() {
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    std::vector<int32_t> v;
+    v.reserve(2000);
+    for (size_t i(0); i < v.capacity(); i++) {
+        v.push_back(i);
+    }
+    auto ptr = AttributeBuilder("limited-int32", cfg).fill(v).get();
+    auto& vec = dynamic_cast<IntegerAttribute &>(*ptr);
+
+    performRangeSearch(vec, "[1;9;1200]", createDocs(2, 9));
+    performRangeSearch(vec, "[1;1109;1200]", createDocs(2, 1109));
+    performRangeSearch(vec, "[1;3009;1200]", createDocs(2, 1200));
+
+    performRangeSearch(vec, "[1;9;-1200]", createDocs(2, 9));
+    performRangeSearch(vec, "[1;1109;-1200]", createDocs(2, 1109));
+    performRangeSearch(vec, "[1;3009;-1200]", createDocs(2000, -1200));
 }
 
 void
@@ -1980,6 +2017,7 @@ SearchContextTest::Main()
     testSearchIterator();
     testRangeSearch();
     testRangeSearchLimited();
+    testRangeSearchLimitedHugeDictionary();
     testCaseInsensitiveSearch();
     testRegexSearch();
     testPrefixSearch();

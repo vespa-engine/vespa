@@ -32,14 +32,27 @@ add_docs(AttributeVector& attr, size_t num_docs)
     attr.addDocs(num_docs);
 }
 
+
 template <typename AttrType, typename ValueType>
 void
-fill_helper(AttributeVector& attr, std::initializer_list<ValueType> values)
+fill_helper(AttributeVector& attr, std::span<ValueType> values)
 {
     add_docs(attr, values.size());
     auto& real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
-    for (auto value : values) {
+    for (const auto& value : values) {
+        real.update(docid++, value);
+    }
+    attr.commit(true);
+}
+
+template <typename AttrType, typename ValueType>
+void
+fill_helper(AttributeVector& attr, std::initializer_list<ValueType> values) {
+    add_docs(attr, values.size());
+    auto& real = dynamic_cast<AttrType&>(attr);
+    uint32_t docid = 1;
+    for (const auto& value : values) {
         real.update(docid++, value);
     }
     attr.commit(true);
@@ -54,7 +67,7 @@ fill_array_helper(AttributeVector& attr, std::initializer_list<std::initializer_
     auto& real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
     for (auto value : values) {
-        for (auto elem : value) {
+        for (const auto& elem : value) {
             real.append(docid, elem, 1);
         }
         ++docid;
@@ -71,7 +84,7 @@ fill_wset_helper(AttributeVector& attr, std::initializer_list<std::initializer_l
     auto& real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
     for (auto value : values) {
-        for (auto elem : value) {
+        for (const auto& elem : value) {
             real.append(docid, elem.first, elem.second);
         }
         ++docid;
@@ -85,6 +98,13 @@ AttributeBuilder&
 AttributeBuilder::docs(size_t num_docs)
 {
     add_docs(_attr, num_docs);
+    return *this;
+}
+
+AttributeBuilder&
+AttributeBuilder::fill(std::span<int32_t> values)
+{
+    fill_helper<IntegerAttribute, int32_t>(_attr, values);
     return *this;
 }
 

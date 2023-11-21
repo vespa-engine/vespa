@@ -243,25 +243,46 @@ PostingListSearchContextT<DataT>::approximateHits() const
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
+PostingListSearchContextT<DataT>::applyRangeLimit(long rangeLimit)
 {
+    long n = 0;
+    size_t count = 0;
     if (rangeLimit > 0) {
         DictionaryConstIterator middle = _lowerDictItr;
-        for (int n(0); (n < rangeLimit) && (middle != _upperDictItr); ++middle) {
+        for (; (n < rangeLimit) && (count < max_posting_lists_to_count) && (middle != _upperDictItr); ++middle, count++) {
             n += _posting_store.frozenSize(middle.getData().load_acquire());
         }
-        _upperDictItr = middle;
-        _uniqueValues = _upperDictItr - _lowerDictItr;
+        if (middle == _upperDictItr) {
+            // All there is
+        } else if (n >= rangeLimit) {
+            _upperDictItr = middle;
+        } else {
+            size_t offset = ((rangeLimit - n) * count)/n;
+            middle += offset;
+            if (middle.valid() && ((_upperDictItr - middle) > 0)) {
+                _upperDictItr = middle;
+            }
+        }
     } else if ((rangeLimit < 0) && (_lowerDictItr != _upperDictItr)) {
         rangeLimit = -rangeLimit;
         DictionaryConstIterator middle = _upperDictItr;
-        for (int n(0); (n < rangeLimit) && (middle != _lowerDictItr); ) {
+        for (; (n < rangeLimit) && (count < max_posting_lists_to_count) && (middle != _lowerDictItr); count++) {
             --middle;
             n += _posting_store.frozenSize(middle.getData().load_acquire());
         }
-        _lowerDictItr = middle;
-        _uniqueValues = _upperDictItr - _lowerDictItr;
+        if (middle == _lowerDictItr) {
+            // All there is
+        } else if (n >= rangeLimit) {
+            _lowerDictItr = middle;
+        } else {
+            size_t offset = ((rangeLimit - n) * count)/n;
+            middle -= offset;
+            if (middle.valid() && ((middle - _lowerDictItr) > 0)) {
+                _lowerDictItr = middle;
+            }
+        }
     }
+    _uniqueValues = std::abs(_upperDictItr - _lowerDictItr);
 }
 
 

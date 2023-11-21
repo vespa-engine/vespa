@@ -34,6 +34,7 @@ protected:
     using FrozenDictionary = Dictionary::FrozenView;
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
+    static constexpr uint32_t max_posting_lists_to_count = 1000;
 
     const IEnumStoreDictionary&   _dictionary;
     const ISearchContext&         _baseSearchCtx;
@@ -113,7 +114,7 @@ protected:
 
     unsigned int singleHits() const;
     unsigned int approximateHits() const override;
-    void applyRangeLimit(int rangeLimit);
+    void applyRangeLimit(long rangeLimit);
 };
 
 
@@ -451,14 +452,14 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::calc_estimated_hits_in_range(
 {
     size_t exact_sum = 0;
     size_t estimated_sum = 0;
-    constexpr uint32_t max_posting_lists_to_count = 1000;
+
     auto it = this->_lowerDictItr;
-    for (uint32_t count = 0; (it != this->_upperDictItr) && (count < max_posting_lists_to_count); ++it, ++count) {
+    for (uint32_t count = 0; (it != this->_upperDictItr) && (count < this->max_posting_lists_to_count); ++it, ++count) {
         exact_sum += this->_posting_store.frozenSize(it.getData().load_acquire());
     }
     if (it != this->_upperDictItr) {
         uint32_t remaining_posting_lists = this->_upperDictItr - it;
-        float hits_per_posting_list = static_cast<float>(exact_sum) / static_cast<float>(max_posting_lists_to_count);
+        float hits_per_posting_list = static_cast<float>(exact_sum) / static_cast<float>(this->max_posting_lists_to_count);
         estimated_sum = remaining_posting_lists * hits_per_posting_list;
     }
     return exact_sum + estimated_sum;
