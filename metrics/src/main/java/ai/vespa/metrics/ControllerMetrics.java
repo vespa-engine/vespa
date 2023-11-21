@@ -62,6 +62,7 @@ public enum ControllerMetrics implements VespaMetrics {
     METERING_VCPU("metering.vcpu", Unit.VCPU, "Controller: Metering VCPU"),
     METERING_LAST_REPORTED("metering_last_reported", Unit.SECONDS_SINCE_EPOCH, "Controller: Metering last reported"),
     METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)"),
+    METERING_LAST_REFRESH("metering_last_refresh", Unit.SECONDS_SINCE_EPOCH, "Controller: Last refresh time"),
 
     MAIL_SENT("mail.sent", Unit.OPERATION, "Mail sent"),
     MAIL_FAILED("mail.failed", Unit.OPERATION, "Mail delivery failed"),
