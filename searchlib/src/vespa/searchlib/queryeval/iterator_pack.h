@@ -18,6 +18,7 @@ private:
     MatchDataUP                            _md;
 
 public:
+    using ref_t = uint16_t;
     SearchIteratorPack();
     ~SearchIteratorPack();
     SearchIteratorPack(SearchIteratorPack &&rhs) noexcept;
@@ -31,25 +32,25 @@ public:
     // TODO: use MultiSearch::Children to pass ownership
     SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md);
 
-    uint32_t get_docid(uint16_t ref) const {
+    uint32_t get_docid(ref_t ref) const {
         return _children[ref]->getDocId();
     }
 
-    uint32_t seek(uint16_t ref, uint32_t docid) {
+    uint32_t seek(ref_t ref, uint32_t docid) {
         _children[ref]->seek(docid);
         return _children[ref]->getDocId();
     }
 
-    int32_t get_weight(uint16_t ref, uint32_t docid) {
+    int32_t get_weight(ref_t ref, uint32_t docid) {
         _children[ref]->doUnpack(docid);
         return _childMatch[ref]->getWeight();
     }
 
-    void unpack(uint16_t ref, uint32_t docid) {
+    void unpack(ref_t ref, uint32_t docid) {
         _children[ref]->doUnpack(docid);
     }
 
-    uint16_t size() const { return _children.size(); }
+    ref_t size() const { return _children.size(); }
     void initRange(uint32_t begin, uint32_t end) {
         for (auto & child: _children) {
             child->initRange(begin, end);

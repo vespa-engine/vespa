@@ -2,6 +2,7 @@
 
 #include "iterator_pack.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <limits>
 
 namespace search {
 
@@ -10,7 +11,7 @@ AttributeIteratorPack::~AttributeIteratorPack() = default;
 AttributeIteratorPack::AttributeIteratorPack(std::vector<DocumentWeightIterator> &&children)
     : _children(std::move(children))
 {
-    assert(_children.size() < 0x10000);
+    assert(_children.size() <= std::numeric_limits<ref_t>::max());
 }
 
 std::unique_ptr<BitVector>
