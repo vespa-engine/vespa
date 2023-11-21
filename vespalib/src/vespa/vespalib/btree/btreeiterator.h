@@ -232,10 +232,17 @@ protected:
         return *this;
     }
 
+    void set_subtree_position(const InternalNodeType* node, uint32_t level, uint32_t idx, size_t position);
+
     /*
      * Step iterator forwards the given number of steps.
      */
     void step_forward(size_t steps);
+
+    /*
+     * Step iterator backwards the given number of steps.
+     */
+    void step_backward(size_t steps);
 
     ~BTreeIteratorBase();
     BTreeIteratorBase(const BTreeIteratorBase &other);
@@ -507,6 +514,7 @@ protected:
     using ParentType::_compatLeafNode;
     using ParentType::clearPath;
     using ParentType::setupEmpty;
+    using ParentType::step_backward;
     using ParentType::step_forward;
 public:
     using ParentType::end;
@@ -568,6 +576,14 @@ public:
      */
     BTreeConstIterator & operator+=(size_t steps) {
         step_forward(steps);
+        return *this;
+    }
+
+    /*
+     * Step iterator backward the given number of steps.
+     */
+    BTreeConstIterator & operator-=(size_t steps) {
+        step_backward(steps);
         return *this;
     }
     /**
@@ -712,6 +728,7 @@ public:
     using ParentType::_leafRoot;
     using ParentType::_compatLeafNode;
     using ParentType::end;
+    using ParentType::step_backward;
     using ParentType::step_forward;
     using EntryRef = datastore::EntryRef;
 
@@ -743,6 +760,11 @@ public:
 
     BTreeIterator & operator+=(size_t steps) {
         step_forward(steps);
+        return *this;
+    }
+
+    BTreeIterator & operator-=(size_t steps) {
+        step_backward(steps);
         return *this;
     }
 
