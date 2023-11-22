@@ -23,6 +23,8 @@ private:
     uint32_t                        _prefix_size;
     bool                            _cased;
 
+    static constexpr uint32_t beyond_unicode = 0x110000;
+
     const char* skip_prefix(const char* word) const;
 public:
     DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
@@ -47,7 +49,7 @@ public:
                     return true;
                 }
                 _successor.resize(_prefix.size());
-                _successor.emplace_back(1);
+                _successor.emplace_back(beyond_unicode);
             } else {
                 _successor.resize(_prefix.size());
                 auto match = _dfa.match(word, _successor);
@@ -63,6 +65,7 @@ public:
             }
         }
         DfaStringComparator cmp(data_store, _successor, _cased);
+        assert(cmp.less(itr.getKey().load_acquire(), vespalib::datastore::EntryRef()));
         itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
         return false;
     }
