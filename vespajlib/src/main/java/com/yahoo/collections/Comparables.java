@@ -18,7 +18,7 @@ public class Comparables {
     }
 
     /**
-     * Returns the least element, or {@code second} if they are equal according to
+     * Returns the greatest element, or {@code second} if they are equal according to
      * {@link Comparable#compareTo(Object) compareTo}.
      */
     public static <T extends Comparable<? super T>> T max(T first, T second) {
