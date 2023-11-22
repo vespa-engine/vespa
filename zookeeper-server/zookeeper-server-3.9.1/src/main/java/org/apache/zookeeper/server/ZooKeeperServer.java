@@ -18,7 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -290,9 +289,6 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     // Connection throttling
     private final BlueThrottle connThrottle = new BlueThrottle();
 
-    @SuppressFBWarnings(value = "IS2_INCONSISTENT_SYNC", justification =
-        "Internally the throttler has a BlockingQueue so "
-        + "once the throttler is created and started, it is thread-safe")
     private RequestThrottler requestThrottler;
     public static final String SNAP_COUNT = "zookeeper.snapCount";
 
@@ -1474,7 +1470,6 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         return connThrottle.getDropChance();
     }
 
-    @SuppressFBWarnings(value = "IS2_INCONSISTENT_SYNC", justification = "the value won't change after startup")
     public void processConnectRequest(ServerCnxn cnxn, ConnectRequest request) throws IOException, ClientCnxnLimitException {
         LOG.debug(
             "Session establishment request from client {} client's lastZxid is 0x{}",
