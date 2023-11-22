@@ -151,14 +151,15 @@ func fetchFromController(deployment DeploymentOptions, path string) error {
 		pkgURL *url.URL
 		err    error
 	)
-	if deployment.Target.Deployment().Zone.Environment == "dev" {
+	switch deployment.Target.Deployment().Zone.Environment {
+	case "dev", "perf":
 		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/job/%s/package",
 			deployment.Target.Deployment().Application.Tenant,
 			deployment.Target.Deployment().Application.Application,
 			deployment.Target.Deployment().Application.Instance,
 			deployment.Target.Deployment().Zone.Environment+"-"+deployment.Target.Deployment().Zone.Region,
 		))
-	} else {
+	default:
 		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/package",
 			deployment.Target.Deployment().Application.Tenant,
 			deployment.Target.Deployment().Application.Application),
