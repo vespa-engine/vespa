@@ -26,7 +26,7 @@ public:
     ~SameElementBlueprint() override;
 
     // no match data
-    bool isWhiteList() const override { return true; }
+    bool isWhiteList() const noexcept final { return true; }
 
     // used by create visitor
     FieldSpec getNextChildField(const vespalib::string &field_name, uint32_t field_id);

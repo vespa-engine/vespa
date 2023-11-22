@@ -18,7 +18,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
-    bool isAndNot() const override { return true; }
+    AndNotBlueprint * asAndNot() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -44,7 +44,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
-    bool isAnd() const override { return true; }
+    AndBlueprint * asAnd() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -68,7 +68,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
-    bool isOr() const override { return true; }
+    OrBlueprint * asOr() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -166,7 +166,7 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
-    bool isRank() const override { return true; }
+    bool isRank() const noexcept final { return true; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -199,7 +199,7 @@ public:
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
-    bool isSourceBlender() const override { return true; }
+    SourceBlenderBlueprint * asSourceBlender() noexcept final { return this; }
     uint8_t calculate_cost_tier() const override;
 };
 

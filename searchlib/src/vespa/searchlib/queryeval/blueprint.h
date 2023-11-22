@@ -27,6 +27,11 @@ class SearchIterator;
 class ExecuteInfo;
 class MatchingElementsSearch;
 class LeafBlueprint;
+class IntermediateBlueprint;
+class SourceBlenderBlueprint;
+class AndBlueprint;
+class AndNotBlueprint;
+class OrBlueprint;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -251,16 +256,19 @@ public:
     vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
     virtual vespalib::string getClassName() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual bool isEquiv() const { return false; }
-    virtual bool isWhiteList() const { return false; }
-    virtual bool isIntermediate() const { return false; }
-    virtual LeafBlueprint * asLeaf() noexcept { return nullptr; }
-    virtual bool isAnd() const { return false; }
-    virtual bool isAndNot() const { return false; }
-    virtual bool isOr() const { return false; }
-    virtual bool isSourceBlender() const { return false; }
-    virtual bool isRank() const { return false; }
-    virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
+    virtual bool isEquiv() const noexcept { return false; }
+    virtual bool isWhiteList() const noexcept { return false; }
+    virtual IntermediateBlueprint * asIntermediate() noexcept { return nullptr; }
+    const IntermediateBlueprint * asIntermediate() const noexcept { return const_cast<Blueprint *>(this)->asIntermediate(); }
+    virtual const LeafBlueprint * asLeaf() const noexcept { return nullptr; }
+    virtual AndBlueprint * asAnd() noexcept { return nullptr; }
+    bool isAnd() const noexcept { return const_cast<Blueprint *>(this)->asAnd() != nullptr; }
+    virtual AndNotBlueprint * asAndNot() noexcept { return nullptr; }
+    bool isAndNot() const noexcept { return const_cast<Blueprint *>(this)->asAndNot() != nullptr; }
+    virtual OrBlueprint * asOr() noexcept { return nullptr; }
+    virtual SourceBlenderBlueprint * asSourceBlender() noexcept { return nullptr; }
+    virtual bool isRank() const noexcept { return false; }
+    virtual const attribute::ISearchContext *get_attribute_search_context() const noexcept { return nullptr; }
 
     // For document summaries with matched-elements-only set.
     virtual std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const;
@@ -354,7 +362,7 @@ public:
     void freeze() final;
 
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
-    bool isIntermediate() const override { return true; }
+    IntermediateBlueprint * asIntermediate() noexcept final { return this; }
 };
 
 
@@ -400,7 +408,7 @@ public:
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
-    LeafBlueprint * asLeaf() noexcept final { return this; }
+    const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
     virtual bool getRange(vespalib::string & from, vespalib::string & to) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const = 0;

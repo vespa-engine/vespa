@@ -644,21 +644,23 @@ IntermediateBlueprint::freeze()
 namespace {
 
 bool
-areAnyParentsEquiv(const Blueprint * node)
-{
+areAnyParentsEquiv(const Blueprint * node) {
     return (node != nullptr) && (node->isEquiv() || areAnyParentsEquiv(node->getParent()));
 }
 
 bool
-canBlueprintSkipUnpack(const Blueprint & bp, const fef::MatchData & md)
-{
+emptyUnpackInfo(const IntermediateBlueprint * intermediate, const fef::MatchData & md) {
+    return intermediate != nullptr && intermediate->calculateUnpackInfo(md).empty();
+}
+
+bool
+canBlueprintSkipUnpack(const Blueprint & bp, const fef::MatchData & md) {
     if (bp.always_needs_unpack()) {
         return false;
     }
-    return (bp.isWhiteList() ||
-            (bp.getState().numFields() != 0) ||
-            (bp.isIntermediate() &&
-             static_cast<const IntermediateBlueprint &>(bp).calculateUnpackInfo(md).empty()));
+    return bp.isWhiteList() ||
+           (bp.getState().numFields() != 0) ||
+           emptyUnpackInfo(bp.asIntermediate(), md);
 }
 
 }

@@ -34,13 +34,13 @@ size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources,
 template <typename CombineType>
 void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
     std::vector<size_t> source_blenders;
-    SourceBlenderBlueprint *reference = nullptr;
+    const SourceBlenderBlueprint * reference = nullptr;
     for (size_t i = begin_idx; i < self.childCnt(); ++i) {
-        if (self.getChild(i).isSourceBlender()) {
-            auto *child = static_cast<SourceBlenderBlueprint *>(&self.getChild(i));
-            if (reference == nullptr || reference->isCompatibleWith(*child)) {
+        const SourceBlenderBlueprint * sbChild = self.getChild(i).asSourceBlender();
+        if (sbChild) {
+            if (reference == nullptr || reference->isCompatibleWith(*sbChild)) {
                 source_blenders.push_back(i);
-                reference = child;
+                reference = sbChild;
             }
         }
     }
@@ -50,16 +50,14 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
         while (!source_blenders.empty()) {
             blender_up = self.removeChild(source_blenders.back());
             source_blenders.pop_back();
-            assert(blender_up->isSourceBlender());
-            auto *blender = static_cast<SourceBlenderBlueprint *>(blender_up.get());
+            SourceBlenderBlueprint * blender = blender_up->asSourceBlender();
             while (blender->childCnt() > 0) {
                 Blueprint::UP child_up = blender->removeChild(blender->childCnt() - 1);
                 size_t source_idx = lookup_create_source(sources, child_up->getSourceId(), self.get_docid_limit());
                 sources[source_idx]->addChild(std::move(child_up));
             }
         }
-        assert(blender_up->isSourceBlender());
-        auto *top = static_cast<SourceBlenderBlueprint *>(blender_up.get());
+        SourceBlenderBlueprint * top = blender_up->asSourceBlender();
         while (!sources.empty()) {
             top->addChild(std::move(sources.back()));
             sources.pop_back();
@@ -109,8 +107,8 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
         return;
     }
     if (pass == OptimizePass::FIRST) {
-        if (getChild(0).isAndNot()) {
-            auto *child = static_cast<AndNotBlueprint *>(&getChild(0));
+        AndNotBlueprint * child = getChild(0).asAndNot();
+        if (child != nullptr) {
             while (child->childCnt() > 1) {
                 addChild(child->removeChild(1));
             }
@@ -197,8 +195,8 @@ AndBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; i < childCnt(); ++i) {
-            if (getChild(i).isAnd()) {
-                auto *child = static_cast<AndBlueprint *>(&getChild(i));
+            AndBlueprint * child = getChild(i).asAnd();
+            if (child != nullptr) {
                 while (child->childCnt() > 0) {
                     addChild(child->removeChild(0));
                 }
@@ -299,8 +297,8 @@ OrBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
-            if (getChild(i).isOr()) {
-                auto *child = static_cast<OrBlueprint *>(&getChild(i));
+            OrBlueprint * child = getChild(i).asOr();
+            if (child != nullptr) {
                 while (child->childCnt() > 0) {
                     addChild(child->removeChild(0));
                 }

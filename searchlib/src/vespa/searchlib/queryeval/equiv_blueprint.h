@@ -27,7 +27,7 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
-    bool isEquiv() const override { return true; }
+    bool isEquiv() const noexcept final { return true; }
 };
 
 }

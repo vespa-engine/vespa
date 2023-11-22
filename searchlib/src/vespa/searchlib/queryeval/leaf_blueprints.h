@@ -83,7 +83,7 @@ public:
         return *this;
     }
 
-    const attribute::ISearchContext *get_attribute_search_context() const override {
+    const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
         return _ctx.get();
     }
 
