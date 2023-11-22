@@ -6,6 +6,7 @@ vespa_add_library(searchlib_attribute OBJECT
     attribute.cpp
     attribute_blueprint_factory.cpp
     attribute_header.cpp
+    attribute_object_visitor.cpp
     attribute_operation.cpp
     attribute_read_guard.cpp
     attribute_weighted_set_blueprint.cpp
@@ -38,27 +39,27 @@ vespa_add_library(searchlib_attribute OBJECT
     defines.cpp
     dfa_fuzzy_matcher.cpp
     dfa_string_comparator.cpp
+    direct_weighted_set_blueprint.cpp
     distance_metric_utils.cpp
     diversity.cpp
     dociditerator.cpp
     document_weight_or_filter_search.cpp
-    searchcontextelementiterator.cpp
     empty_search_context.cpp
-    enumattribute.cpp
-    enumattributesaver.cpp
-    enumcomparator.cpp
-    enumhintsearchcontext.cpp
-    enummodifier.cpp
     enum_store_compaction_spec.cpp
     enum_store_dictionary.cpp
     enum_store_loaders.cpp
-    enumstore.cpp
+    enumattribute.cpp
+    enumattributesaver.cpp
+    enumcomparator.cpp
     enumerated_multi_value_read_view.cpp
-    extendableattributes.cpp
+    enumhintsearchcontext.cpp
+    enummodifier.cpp
+    enumstore.cpp
     extendable_numeric_array_multi_value_read_view.cpp
     extendable_numeric_weighted_set_multi_value_read_view.cpp
     extendable_string_array_multi_value_read_view.cpp
     extendable_string_weighted_set_multi_value_read_view.cpp
+    extendableattributes.cpp
     fixedsourceselector.cpp
     flagattribute.cpp
     floatbase.cpp
@@ -82,8 +83,8 @@ vespa_add_library(searchlib_attribute OBJECT
     multi_numeric_enum_search_context.cpp
     multi_numeric_flag_search_context.cpp
     multi_numeric_search_context.cpp
-    multi_string_enum_search_context.cpp
     multi_string_enum_hint_search_context.cpp
+    multi_string_enum_search_context.cpp
     multi_value_mapping.cpp
     multi_value_mapping_base.cpp
     multienumattribute.cpp
@@ -98,11 +99,11 @@ vespa_add_library(searchlib_attribute OBJECT
     multivalueattributesaver.cpp
     multivalueattributesaverutils.cpp
     not_implemented_attribute.cpp
-    numericbase.cpp
     numeric_matcher.cpp
     numeric_range_matcher.cpp
     numeric_search_context.cpp
     numeric_sort_blob_writer.cpp
+    numericbase.cpp
     posting_list_merger.cpp
     postingchange.cpp
     postinglistattribute.cpp
@@ -121,6 +122,17 @@ vespa_add_library(searchlib_attribute OBJECT
     reference_mappings.cpp
     save_utils.cpp
     search_context.cpp
+    searchcontextelementiterator.cpp
+    single_enum_search_context.cpp
+    single_numeric_enum_search_context.cpp
+    single_numeric_search_context.cpp
+    single_raw_attribute.cpp
+    single_raw_attribute_loader.cpp
+    single_raw_attribute_saver.cpp
+    single_raw_ext_attribute.cpp
+    single_small_numeric_search_context.cpp
+    single_string_enum_hint_search_context.cpp
+    single_string_enum_search_context.cpp
     singleboolattribute.cpp
     singleenumattribute.cpp
     singleenumattributesaver.cpp
@@ -131,22 +143,12 @@ vespa_add_library(searchlib_attribute OBJECT
     singlesmallnumericattribute.cpp
     singlestringattribute.cpp
     singlestringpostattribute.cpp
-    single_enum_search_context.cpp
-    single_numeric_enum_search_context.cpp
-    single_numeric_search_context.cpp
-    single_raw_attribute.cpp
-    single_raw_attribute_loader.cpp
-    single_raw_attribute_saver.cpp
-    single_raw_ext_attribute.cpp
-    single_small_numeric_search_context.cpp
-    single_string_enum_search_context.cpp
-    single_string_enum_hint_search_context.cpp
     sourceselector.cpp
-    stringbase.cpp
     string_matcher.cpp
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
+    stringbase.cpp
     valuemodifier.cpp
     DEPENDS
 )
