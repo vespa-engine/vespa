@@ -220,6 +220,7 @@ public class EvaluationTestCase {
     @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
+
         tester.assertEvaluates("{}", "tensor0", "{}");
 
         // tensor map
@@ -227,6 +228,9 @@ public class EvaluationTestCase {
                               "map(tensor0, f(x) (log10(x)))", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
         tester.assertEvaluates("{ {d1:0}:4, {d1:1}:9, {d1:2 }:16 }",
                               "map(tensor0, f(x) (x * x))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        // Unicode key
+        tester.assertEvaluates("tensor<int8>(drink{}):{Martini\uD83C\uDF78:30.0}",
+                               "tensor<int8>(drink{}): {\"Martini\uD83C\uDF78\": 30 }");
         // -- tensor map shorthands
         tester.assertEvaluates("{ {d1:0}:0, {d1:1}:1, {d1:2 }:0 }",
                                "tensor0 == 3", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
