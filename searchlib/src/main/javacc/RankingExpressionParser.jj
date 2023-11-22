@@ -5,6 +5,7 @@
  * @author  bratseth
  */
 options {
+    UNICODE_INPUT = true;
     CACHE_TOKENS       = true;
     DEBUG_PARSER       = false;
     USER_TOKEN_MANAGER = false;
