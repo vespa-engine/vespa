@@ -5,7 +5,6 @@
 #include "dfa_string_comparator.h"
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/fuzzy/levenshtein_dfa.h>
-#include <iostream>
 
 namespace search::attribute {
 
@@ -41,34 +40,7 @@ public:
      * functionality in the dictionary.
      */
     template <typename DictionaryConstIteratorType>
-    bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) {
-        if (_prefix_size > 0) {
-            word = skip_prefix(word);
-            if (_prefix.size() < _prefix_size) {
-                if (*word == '\0') {
-                    return true;
-                }
-                _successor.resize(_prefix.size());
-                _successor.emplace_back(beyond_unicode);
-            } else {
-                _successor.resize(_prefix.size());
-                auto match = _dfa.match(word, _successor);
-                if (match.matches()) {
-                    return true;
-                }
-            }
-        } else {
-            _successor.clear();
-            auto match = _dfa.match(word, _successor);
-            if (match.matches()) {
-                return true;
-            }
-        }
-        DfaStringComparator cmp(data_store, _successor, _cased);
-        assert(cmp.less(itr.getKey().load_acquire(), vespalib::datastore::EntryRef()));
-        itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
-        return false;
-    }
+    bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store);
 };
 
 }
