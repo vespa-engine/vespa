@@ -15,17 +15,27 @@ import (
 func OptionallyReduceTimerFrequency() {
 	if os.Getenv(envvars.VESPA_TIMER_HZ) == "" {
 		backticks := BackTicksIgnoreStderr
-		out, _ := backticks.Run("uname", "-r")
-		if strings.Contains(out, "linuxkit") {
-			if os.Getenv(envvars.VESPA_TIMER_HZ) != "100" {
-				trace.Trace(
-					"Running docker on macos.",
-					"Reducing base frequency from 1000hz to 100hz due to high cost of sampling time.",
-					"This will reduce timeout accuracy.")
+		uname, _ := backticks.Run("uname", "-r")
+		if strings.Contains(uname, "linuxkit") {
+			setTimerHZ("Docker on macOS detected.", "100")
+		} else {
+			virt, _ := backticks.Run("systemd-detect-virt", "--vm")
+			if strings.TrimSpace(virt) == "qemu" {
+				setTimerHZ("QEMU virtualization detected.", "100")
 			}
-			os.Setenv(envvars.VESPA_TIMER_HZ, "100")
 		}
 	}
+}
+
+func setTimerHZ(description, timerHZ string) {
+	if os.Getenv(envvars.VESPA_TIMER_HZ) == timerHZ {
+		return
+	}
+	trace.Trace(
+		description,
+		"Reducing base frequency from 1000hz to "+timerHZ+"hz due to high cost of sampling time.",
+		"This will reduce timeout accuracy.")
+	os.Setenv(envvars.VESPA_TIMER_HZ, timerHZ)
 }
 
 func TuneResourceLimits() {
