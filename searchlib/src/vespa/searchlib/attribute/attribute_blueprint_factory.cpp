@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_blueprint_factory.h"
+#include "attribute_blueprint_params.h"
+#include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
+#include "direct_weighted_set_blueprint.h"
+#include "document_weight_or_filter_search.h"
 #include "i_document_weight_attribute.h"
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
-#include "attribute_blueprint_params.h"
-#include "document_weight_or_filter_search.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
@@ -191,29 +193,7 @@ AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAtt
     }
 }
 
-vespalib::string
-get_type(const IAttributeVector& attr)
-{
-    auto coll_type = CollectionType(attr.getCollectionType());
-    auto basic_type = BasicType(attr.getBasicType());
-    if (coll_type.type() == CollectionType::SINGLE) {
-        return basic_type.asString();
-    }
-    std::ostringstream oss;
-    oss << coll_type.asString() << "<" << basic_type.asString() << ">";
-    return oss.str();
-}
 
-void
-visit_attribute(vespalib::ObjectVisitor& visitor, const IAttributeVector& attr)
-{
-    visitor.openStruct("attribute", "IAttributeVector");
-    visitor.visitString("name", attr.getName());
-    visitor.visitString("type", get_type(attr));
-    visitor.visitBool("fast_search", attr.getIsFastSearch());
-    visitor.visitBool("filter", attr.getIsFilter());
-    visitor.closeStruct();
-}
 
 void
 AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -408,101 +388,9 @@ private:
 
 //-----------------------------------------------------------------------------
 
-template <typename SearchType>
-class DirectWeightedSetBlueprint : public ComplexLeafBlueprint
-{
-private:
-    std::vector<int32_t>                                _weights;
-    std::vector<IDocumentWeightAttribute::LookupResult> _terms;
-    const IAttributeVector                             &_iattr;
-    const IDocumentWeightAttribute                     &_attr;
-    vespalib::datastore::EntryRef                       _dictionary_snapshot;
-
-public:
-    DirectWeightedSetBlueprint(const FieldSpec &field, const IAttributeVector &iattr, const IDocumentWeightAttribute &attr, size_t size_hint)
-        : ComplexLeafBlueprint(field),
-          _weights(),
-          _terms(),
-          _iattr(iattr),
-          _attr(attr),
-          _dictionary_snapshot(_attr.get_dictionary_snapshot())
-    {
-        set_allow_termwise_eval(true);
-        _weights.reserve(size_hint);
-        _terms.reserve(size_hint);
-    }
-    ~DirectWeightedSetBlueprint() override;
-
-    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight, HitEstimate & estimate) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
-        HitEstimate childEst(result.posting_size, (result.posting_size == 0));
-        if (!childEst.empty) {
-            if (estimate.empty) {
-                estimate = childEst;
-            } else {
-                estimate.estHits += childEst.estHits;
-            }
-            _weights.push_back(weight);
-            _terms.push_back(result);
-        }
-    }
-    void complete(HitEstimate estimate) {
-        setEstimate(estimate);
-    }
-
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override;
-
-    std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
-    std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
-        if (fields.has_field(_iattr.getName())) {
-            return queryeval::MatchingElementsSearch::create(_iattr, _dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult>(_terms));
-        } else {
-            return {};
-        }
-    }
-    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
-        LeafBlueprint::visitMembers(visitor);
-        visit_attribute(visitor, _iattr);
-    }
-};
-
-template <typename SearchType>
-SearchIterator::UP
-DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const
-{
-    assert(tfmda.size() == 1);
-    assert(getState().numFields() == 1);
-    if (_terms.empty()) {
-        return std::make_unique<queryeval::EmptySearch>();
-    }
-    std::vector<DocumentWeightIterator> iterators;
-    const size_t numChildren = _terms.size();
-    iterators.reserve(numChildren);
-    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
-        _attr.create(r.posting_idx, iterators);
-    }
-    bool field_is_filter = getState().fields()[0].isFilter();
-    if (field_is_filter && tfmda[0]->isNotNeeded()) {
-        return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
-    }
-    return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
-}
 
 
-template <typename SearchType>
-DirectWeightedSetBlueprint<SearchType>::~DirectWeightedSetBlueprint() = default;
 
-template <typename SearchType>
-std::unique_ptr<SearchIterator>
-DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
-{
-    std::vector<DocumentWeightIterator> iterators;
-    iterators.reserve(_terms.size());
-    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
-        _attr.create(r.posting_idx, iterators);
-    }
-    return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
-}
 
 //-----------------------------------------------------------------------------
 
@@ -798,7 +686,7 @@ public:
             setResult(std::move(ws));
         } else {
             if (_dwa != nullptr) {
-                auto *bp = new DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getNumTerms());
+                auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -809,7 +697,7 @@ public:
 
     void visit(query::DotProduct &n) override {
         if (_dwa != nullptr) {
-            auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getNumTerms());
+            auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
