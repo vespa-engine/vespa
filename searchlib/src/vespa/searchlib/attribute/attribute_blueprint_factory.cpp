@@ -162,7 +162,7 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
-    const attribute::ISearchContext *get_attribute_search_context() const override {
+    const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
         return _search_context.get();
     }
     bool getRange(vespalib::string &from, vespalib::string &to) const override;

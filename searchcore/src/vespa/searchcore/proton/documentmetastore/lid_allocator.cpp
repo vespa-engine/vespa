@@ -222,7 +222,7 @@ public:
         setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
-    bool isWhiteList() const override { return true; }
+    bool isWhiteList() const noexcept final { return true; }
 
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
         if (_all_lids_active) {
@@ -231,7 +231,7 @@ public:
         return create_search_helper(strict);
     }
 
-    ~WhiteListBlueprint() {
+    ~WhiteListBlueprint() override {
         for (auto matchData : _matchDataVector) {
             delete matchData;
         }

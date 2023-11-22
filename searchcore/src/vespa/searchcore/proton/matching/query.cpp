@@ -143,7 +143,7 @@ void exchange_location_nodes(const string &location_str,
 IntermediateBlueprint *
 asRankOrAndNot(Blueprint * blueprint) {
     return ((blueprint->isAndNot() || blueprint->isRank()))
-        ? static_cast<IntermediateBlueprint *>(blueprint)
+        ? blueprint->asIntermediate()
         : nullptr;
 }
 
