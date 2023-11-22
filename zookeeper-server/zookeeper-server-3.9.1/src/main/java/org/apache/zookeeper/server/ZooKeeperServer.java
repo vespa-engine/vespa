@@ -415,7 +415,6 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
      * creates a zookeeperserver instance.
      * @param txnLogFactory the file transaction snapshot logging class
      * @param tickTime the ticktime for the server
-     * @throws IOException
      */
     public ZooKeeperServer(FileTxnSnapLog txnLogFactory, int tickTime, String initialConfig) {
         this(txnLogFactory, tickTime, -1, -1, -1, new ZKDatabase(txnLogFactory), initialConfig, QuorumPeerConfig.isReconfigEnabled());
@@ -591,8 +590,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
      * Restores database from a snapshot. It is used by the restore admin server command.
      *
      * @param inputStream input stream of snapshot
-     * @Return last processed zxid
-     * @throws IOException
+     * @return last processed zxid
      */
     public synchronized long restoreFromSnapshot(final InputStream inputStream) throws IOException {
         if (inputStream == null) {
@@ -883,7 +881,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
      * error events, e.g., SyncRequestProcessor not being able to write a txn to
      * disk.</li>
      * <li>During shutdown the server sets the state to SHUTDOWN, which
-     * corresponds to the server not running.</li></ul>
+     * corresponds to the server not running.</li>
      *
      * <li>During maintenance (e.g. restore) the server sets the state to MAINTENANCE
      * </li></ul>
@@ -2331,17 +2329,16 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
 
     /**
      * Check Write Requests for Potential Access Restrictions
-     * <p/>
+     * <p>
      * Before a request is being proposed to the quorum, lets check it
      * against local ACLs. Non-write requests (read, session, etc.)
      * are passed along. Invalid requests are sent a response.
-     * <p/>
+     * <p>
      * While we are at it, if the request will set an ACL: make sure it's
      * a valid one.
      *
      * @param request
      * @return true if request is permitted, false if not.
-     * @throws java.io.IOException
      */
     public boolean authWriteRequest(Request request) {
         int err;
