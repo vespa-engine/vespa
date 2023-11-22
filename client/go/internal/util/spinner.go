@@ -14,6 +14,9 @@ import (
 // displayed after message.
 func Spinner(w io.Writer, message string, fn func() error) error {
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(w))
+	// Cursor is hidden by default. Hiding cursor requires Stop() to be called to restore cursor (i.e. if the process is
+	// interrupted), however we don't want to bother with a signal handler just for this
+	s.HideCursor = false
 	if err := s.Color("blue", "bold"); err != nil {
 		return err
 	}
