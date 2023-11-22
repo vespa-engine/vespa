@@ -487,26 +487,33 @@ addLeafs(uint32_t sourceId, std::unique_ptr<IntermediateBlueprint> parent, std::
     return addLeafs(std::move(parent), list);
 }
 
-TEST("test SourceBlender below AND optimization") {
-    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
-    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
-    //-------------------------------------------------------------------------
+struct SourceBlenderTestFixture {
+    InvalidSelector selector_1; // the one
+    InvalidSelector selector_2; // not the one
+    void addChildrenForSBTest(IntermediateBlueprint & parent);
+};
+
+void SourceBlenderTestFixture::addChildrenForSBTest(IntermediateBlueprint & parent) {
+    parent.addChild(ap(MyLeafSpec(2).create()));
+    parent.addChild(ap(MyLeafSpec(1).create()));
+    parent.addChild(ap(MyLeafSpec(3).create()));
+    parent.addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(selector_1), {{200, 2}, {100, 1}, {300, 3}}));
+    parent.addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(selector_1), {{20, 2}, {10, 1}, {30, 3}}));
+    parent.addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(selector_2), {{10, 1}, {20, 2}}));
+    parent.addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(selector_1), {{2000, 2}, {1000, 1}}));
+}
+
+TEST_F("test SourceBlender below AND optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<AndBlueprint>();
-    top->addChild(ap(MyLeafSpec(2).create()));
-    top->addChild(ap(MyLeafSpec(1).create()));
-    top->addChild(ap(MyLeafSpec(3).create()));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{200, 2}, {100, 1}, {300, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{20, 2}, {10, 1}, {30, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{2000, 2}, {1000, 1}}));
+    f.addChildrenForSBTest(*top);
 
     auto expect = std::make_unique<AndBlueprint>();
     expect->addChild(ap(MyLeafSpec(1).create()));
     expect->addChild(ap(MyLeafSpec(2).create()));
     expect->addChild(ap(MyLeafSpec(3).create()));
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
 
-    auto blender = std::make_unique<SourceBlenderBlueprint>(*selector_1);
+    auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafs(3, std::make_unique<AndBlueprint>(), {{30, 3}, {300, 3}}));
     blender->addChild(addLeafs(2, std::make_unique<AndBlueprint>(), {{20, 2}, {200, 2}, {2000, 2}}));
     blender->addChild(addLeafs(1, std::make_unique<AndBlueprint>(), {{10, 1}, {100, 1}, {1000, 1}}));
@@ -520,26 +527,17 @@ TEST("test SourceBlender below AND optimization") {
     EXPECT_EQUAL(expect_bp->asString(), top_bp->asString());
 }
 
-TEST("test SourceBlender below OR optimization") {
-    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
-    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
-    //-------------------------------------------------------------------------
+TEST_F("test SourceBlender below OR optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<OrBlueprint>();
-    top->addChild(ap(MyLeafSpec(2).create()));
-    top->addChild(ap(MyLeafSpec(1).create()));
-    top->addChild(ap(MyLeafSpec(3).create()));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{200, 2}, {100, 1}, {300, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{20, 2}, {10, 1}, {30, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{2000, 2}, {1000, 1}}));
+    f.addChildrenForSBTest(*top);
     //-------------------------------------------------------------------------
     auto expect = std::make_unique<OrBlueprint>();
-    auto blender = std::make_unique<SourceBlenderBlueprint>(*selector_1);
+    auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafs(3, std::make_unique<OrBlueprint>(), {{300, 3}, {30, 3}}));
     blender->addChild(addLeafs(2, std::make_unique<OrBlueprint>(), {{2000, 2}, {200, 2}, {20, 2}}));
     blender->addChild(addLeafs(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100, 1}, {10, 1}}));
     expect->addChild(std::move(blender));
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     expect->addChild(ap(MyLeafSpec(3).create()));
     expect->addChild(ap(MyLeafSpec(2).create()));
     expect->addChild(ap(MyLeafSpec(1).create()));
@@ -551,30 +549,20 @@ TEST("test SourceBlender below OR optimization") {
     EXPECT_EQUAL(expect_bp->asString(), top_bp->asString());
 }
 
-TEST("test SourceBlender below AND_NOT optimization") {
-    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
-    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
-    //-------------------------------------------------------------------------
+TEST_F("test SourceBlender below AND_NOT optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<AndNotBlueprint>();
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{42, 1}}));
-    top->addChild(ap(MyLeafSpec(2).create()));
-    top->addChild(ap(MyLeafSpec(1).create()));
-    top->addChild(ap(MyLeafSpec(3).create()));
-
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{200, 2}, {100, 1}, {300, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{20, 2}, {10, 1}, {30, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{2000, 2}, {1000, 1}}));
+    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_1), {{42, 1}}));
+    f.addChildrenForSBTest(*top);
 
     //-------------------------------------------------------------------------
     auto expect = std::make_unique<AndNotBlueprint>();
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{42, 1}}));
-    auto blender = std::make_unique<SourceBlenderBlueprint>(*selector_1);
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_1), {{42, 1}}));
+    auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafs(3, std::make_unique<OrBlueprint>(), {{300, 3}, {30, 3}}));
     blender->addChild(addLeafs(2, std::make_unique<OrBlueprint>(), {{2000, 2}, {200, 2}, {20, 2}}));
     blender->addChild(addLeafs(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100, 1}, {10, 1}}));
     expect->addChild(std::move(blender));
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     expect->addChild(ap(MyLeafSpec(3).create()));
     expect->addChild(ap(MyLeafSpec(2).create()));
     expect->addChild(ap(MyLeafSpec(1).create()));
@@ -587,28 +575,19 @@ TEST("test SourceBlender below AND_NOT optimization") {
     EXPECT_EQUAL(expect_up->asString(), top_up->asString());
 }
 
-TEST("test SourceBlender below RANK optimization") {
-    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
-    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
-    //-------------------------------------------------------------------------
+TEST_F("test SourceBlender below RANK optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<RankBlueprint>();
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{42, 1}}));
-    top->addChild(ap(MyLeafSpec(2).create()));
-    top->addChild(ap(MyLeafSpec(1).create()));
-    top->addChild(ap(MyLeafSpec(3).create()));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{200, 2}, {100, 1}, {300, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{20, 2}, {10, 1}, {30, 3}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
-    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{2000, 2}, {1000, 1}}));
+    top->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_1), {{42, 1}}));
+    f.addChildrenForSBTest(*top);
 
     //-------------------------------------------------------------------------
     auto expect = std::make_unique<RankBlueprint>();
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_1), {{42, 1}}));
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_1), {{42, 1}}));
     expect->addChild(ap(MyLeafSpec(2).create()));
     expect->addChild(ap(MyLeafSpec(1).create()));
     expect->addChild(ap(MyLeafSpec(3).create()));
-    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(*selector_2), {{10, 1}, {20, 2}}));
-    auto blender = std::make_unique<SourceBlenderBlueprint>(*selector_1);
+    expect->addChild(addLeafs(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
+    auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafs(3, std::make_unique<OrBlueprint>(), {{300, 3}, {30, 3}}));
     blender->addChild(addLeafs(2, std::make_unique<OrBlueprint>(), {{2000, 2}, {200, 2}, {20, 2}}));
     blender->addChild(addLeafs(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100, 1}, {10, 1}}));
@@ -625,44 +604,38 @@ TEST("test SourceBlender below RANK optimization") {
 TEST("test empty root node optimization and safeness") {
     //-------------------------------------------------------------------------
     // tests leaf node elimination
-    Blueprint::UP top1_up(ap(MyLeafSpec(0, true).create()));
+    Blueprint::UP top1(ap(MyLeafSpec(0, true).create()));
     //-------------------------------------------------------------------------
     // tests intermediate node elimination
-    Blueprint::UP top2_up(ap((new AndBlueprint())->
-                             addChild(ap(MyLeafSpec(0, true).create())).
-                             addChild(ap(MyLeafSpec(10).create())).
-                             addChild(ap(MyLeafSpec(20).create()))));
+    Blueprint::UP top2(ap((new AndBlueprint())->
+                          addChild(ap(MyLeafSpec(0, true).create())).
+                          addChild(ap(MyLeafSpec(10).create())).
+                          addChild(ap(MyLeafSpec(20).create()))));
     //-------------------------------------------------------------------------
     // tests safety of empty AND_NOT child removal
-    Blueprint::UP top3_up(ap((new AndNotBlueprint())->
-                             addChild(ap(MyLeafSpec(0, true).create())).
-                             addChild(ap(MyLeafSpec(10).create())).
-                             addChild(ap(MyLeafSpec(20).create()))));
+    Blueprint::UP top3(ap((new AndNotBlueprint())->
+                          addChild(ap(MyLeafSpec(0, true).create())).
+                          addChild(ap(MyLeafSpec(10).create())).
+                          addChild(ap(MyLeafSpec(20).create()))));
     //-------------------------------------------------------------------------
     // tests safety of empty RANK child removal
-    Blueprint::UP top4_up(ap((new RankBlueprint())->
-                             addChild(ap(MyLeafSpec(0, true).create())).
-                             addChild(ap(MyLeafSpec(10).create())).
-                             addChild(ap(MyLeafSpec(20).create()))));
+    Blueprint::UP top4(ap((new RankBlueprint())->
+                          addChild(ap(MyLeafSpec(0, true).create())).
+                          addChild(ap(MyLeafSpec(10).create())).
+                          addChild(ap(MyLeafSpec(20).create()))));
     //-------------------------------------------------------------------------
     // tests safety of empty OR child removal
-    Blueprint::UP top5_up(ap((new OrBlueprint())->
-                             addChild(ap(MyLeafSpec(0, true).create())).
-                             addChild(ap(MyLeafSpec(0, true).create())).
-                             addChild(ap(MyLeafSpec(0, true).create()))));
+    Blueprint::UP top5(ap((new OrBlueprint())->
+                          addChild(ap(MyLeafSpec(0, true).create())).
+                          addChild(ap(MyLeafSpec(0, true).create())).
+                          addChild(ap(MyLeafSpec(0, true).create()))));
     //-------------------------------------------------------------------------
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    //-------------------------------------------------------------------------
-    top1_up = Blueprint::optimize(std::move(top1_up));
-    top2_up = Blueprint::optimize(std::move(top2_up));
-    top3_up = Blueprint::optimize(std::move(top3_up));
-    top4_up = Blueprint::optimize(std::move(top4_up));
-    top5_up = Blueprint::optimize(std::move(top5_up));
-    EXPECT_EQUAL(expect_up->asString(), top1_up->asString());
-    EXPECT_EQUAL(expect_up->asString(), top2_up->asString());
-    EXPECT_EQUAL(expect_up->asString(), top3_up->asString());
-    EXPECT_EQUAL(expect_up->asString(), top4_up->asString());
-    EXPECT_EQUAL(expect_up->asString(), top5_up->asString());
+    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top1))->asString());
+    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top2))->asString());
+    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top3))->asString());
+    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top4))->asString());
+    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top5))->asString());
 }
 
 TEST("and with one empty child is optimized away") {
