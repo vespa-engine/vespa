@@ -138,8 +138,8 @@ public:
 
 bool
 allTermsHaveMatch(const SimplePhraseSearch::Children &terms, const vector<uint32_t> &eval_order, uint32_t doc_id) {
-    for (uint32_t i = 0; i < terms.size(); ++i) {
-        if (!terms[eval_order[i]]->seek(doc_id)) {
+    for (unsigned int order : eval_order) {
+        if (!terms[order]->seek(doc_id)) {
             return false;
         }
     }
@@ -147,13 +147,18 @@ allTermsHaveMatch(const SimplePhraseSearch::Children &terms, const vector<uint32
 }
 }  // namespace
 
-void
+inline void
 SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
     if (allTermsHaveMatch(getChildren(), _eval_order, doc_id)) {
-        AndSearch::doUnpack(doc_id);
-        if (PhraseMatcher(_childMatch, _eval_order, _iterators).hasMatch()) {
-            setDocId(doc_id);
-        }
+        matchPhrase(doc_id);
+    }
+}
+
+void
+SimplePhraseSearch::matchPhrase(uint32_t doc_id) {
+    AndSearch::doUnpack(doc_id);
+    if (PhraseMatcher(_childMatch, _eval_order, _iterators).hasMatch()) {
+        setDocId(doc_id);
     }
 }
 
@@ -180,25 +185,30 @@ void
 SimplePhraseSearch::doSeek(uint32_t doc_id) {
     phraseSeek(doc_id);
     if (_strict) {
-        uint32_t next_candidate = doc_id;
-        while (getDocId() < doc_id || getDocId() == beginId()) {
-            getChildren()[0]->seek(next_candidate + 1);
-            next_candidate = getChildren()[0]->getDocId();
-            if (isAtEnd(next_candidate)) {
-                setAtEnd();
-                return;
-            }
-            // child must behave as strict.
-            assert(next_candidate > doc_id && next_candidate != beginId());
+        doStrictSeek(doc_id);
+    }
+}
 
-            phraseSeek(next_candidate);
+void
+SimplePhraseSearch::doStrictSeek(uint32_t doc_id) {
+    uint32_t next_candidate = doc_id;
+    while (getDocId() < doc_id || getDocId() == beginId()) {
+        getChildren()[0]->seek(next_candidate + 1);
+        next_candidate = getChildren()[0]->getDocId();
+        if (isAtEnd(next_candidate)) {
+            setAtEnd();
+            return;
         }
+        // child must behave as strict.
+        assert(next_candidate > doc_id && next_candidate != beginId());
+
+        phraseSeek(next_candidate);
     }
 }
 
 void
 SimplePhraseSearch::doUnpack(uint32_t doc_id) {
-    // All children has already been unpacked before this call is made.
+    // All children have already been unpacked before this call is made.
 
     _tmd.reset(doc_id);
     PhraseMatcher(_childMatch, _eval_order, _iterators).fillPositions(_tmd);
