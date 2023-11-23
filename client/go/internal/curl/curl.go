@@ -7,9 +7,10 @@ import (
 	"os/exec"
 	"runtime"
 	"sort"
+	"strconv"
+	"time"
 
 	"github.com/alessio/shellescape"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 type header struct {
@@ -23,6 +24,7 @@ type Command struct {
 	PrivateKey    string
 	CaCertificate string
 	Certificate   string
+	Timeout       time.Duration
 	bodyFile      string
 	bodyInput     io.Reader
 	url           *url.URL
@@ -30,20 +32,20 @@ type Command struct {
 	rawArgs       []string
 }
 
-func (c *Command) GetUrlPrefix() string {
+func (c *Command) URLPrefix() string {
 	return c.url.Scheme + "://" + c.url.Host
 }
 
 func (c *Command) WithBodyFile(fn string) {
 	if c.bodyInput != nil {
-		util.JustExitMsg("cannot use both WithBodyFile and WithBodyInput")
+		panic("cannot use both WithBodyFile and WithBodyInput")
 	}
 	c.bodyFile = fn
 }
 
 func (c *Command) WithBodyInput(r io.Reader) {
 	if c.bodyFile != "" {
-		util.JustExitMsg("cannot use both WithBodyFile and WithBodyInput")
+		panic("cannot use both WithBodyFile and WithBodyInput")
 	}
 	c.bodyInput = r
 }
@@ -61,6 +63,9 @@ func (c *Command) Args() []string {
 	}
 	if c.Method != "" {
 		args = append(args, "-X", c.Method)
+	}
+	if c.Timeout > 0 {
+		args = append(args, "-m", strconv.FormatInt(int64(c.Timeout.Seconds()), 10))
 	}
 	sort.Slice(c.headers, func(i, j int) bool { return c.headers[i].key < c.headers[j].key })
 	for _, header := range c.headers {
