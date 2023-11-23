@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.yahoo.security.X509SslContext;
 import com.yahoo.security.tls.TlsContext;
 
 import javax.net.ssl.SSLContext;
@@ -17,9 +18,13 @@ public class VespaSslContextProvider implements Supplier<SSLContext> {
 
     @Override
     public SSLContext get() {
+        return tlsContext().context();
+    }
+
+    public X509SslContext tlsContext() {
         synchronized (VespaSslContextProvider.class) {
             if (tlsContext == null) throw new IllegalStateException("Vespa TLS is not enabled");
-            return tlsContext.sslContext().context();
+            return tlsContext.sslContext();
         }
     }
 
