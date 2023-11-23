@@ -2,7 +2,6 @@
 package com.yahoo.config.model.application.provider;
 
 import ai.vespa.json.Jackson;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -30,7 +29,6 @@ public class FilesApplicationFile extends ApplicationFile {
 
     private static final Logger log = Logger.getLogger("FilesApplicationFile");
     private final File file;
-    private final ObjectMapper mapper = Jackson.mapper();
 
     public FilesApplicationFile(Path path, File file) {
         super(path);
@@ -176,7 +174,7 @@ public class FilesApplicationFile extends ApplicationFile {
         } else {
             hash = ConfigUtils.getMd5(data);
         }
-        mapper.writeValue(metaFile, new MetaData(status, hash));
+        Jackson.mapper().writeValue(metaFile, new MetaData(status, hash));
     }
 
     private File createMetaDir() {
@@ -199,7 +197,7 @@ public class FilesApplicationFile extends ApplicationFile {
         log.log(Level.FINE, () -> "Getting metadata for " + metaFile);
         if (metaFile.exists()) {
             try {
-                return mapper.readValue(metaFile, MetaData.class);
+                return Jackson.mapper().readValue(metaFile, MetaData.class);
             } catch (IOException e) {
                 System.out.println("whot:" + Exceptions.toMessageString(e));
                 // return below
