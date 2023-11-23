@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_direct_posting_store.h>
 #include <vespa/searchlib/attribute/document_weight_or_filter_search.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/common/bitvector.h>

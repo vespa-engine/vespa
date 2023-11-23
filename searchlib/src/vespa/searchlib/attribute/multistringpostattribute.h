@@ -4,7 +4,7 @@
 
 #include "multistringattribute.h"
 #include "postinglistattribute.h"
-#include "i_document_weight_attribute.h"
+#include "i_docid_with_weight_posting_store.h"
 
 namespace search {
 
@@ -30,18 +30,19 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
-    struct DocumentWeightAttributeAdapter final : IDocumentWeightAttribute {
+    class DocidWithWeightPostingStoreAdapter final : public IDocidWithWeightPostingStore {
+    public:
         const MultiValueStringPostingAttributeT &self;
-        DocumentWeightAttributeAdapter(const MultiValueStringPostingAttributeT &self_in) : self(self_in) {}
+        DocidWithWeightPostingStoreAdapter(const MultiValueStringPostingAttributeT &self_in) : self(self_in) {}
         vespalib::datastore::EntryRef get_dictionary_snapshot() const override;
         LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const override;
         void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
-        void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override;
-        DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override;
+        void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const override;
+        DocidWithWeightIterator create(vespalib::datastore::EntryRef idx) const override;
         std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
         bool has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept override;
     };
-    DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
+    DocidWithWeightPostingStoreAdapter _posting_store_adapter;
 
     using LoadedVector = typename B::LoadedVector;
     using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
@@ -84,7 +85,7 @@ public:
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
-    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
+    const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const override;
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());

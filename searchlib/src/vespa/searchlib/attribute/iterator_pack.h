@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_document_weight_attribute.h"
+#include "i_direct_posting_store.h"
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 
 namespace search {
@@ -12,7 +12,7 @@ class BitVector;
 class AttributeIteratorPack
 {
 private:
-    std::vector<DocumentWeightIterator> _children;
+    std::vector<DocidWithWeightIterator> _children;
 
 public:
     using ref_t = uint16_t;
@@ -20,7 +20,7 @@ public:
     AttributeIteratorPack(AttributeIteratorPack &&rhs) noexcept = default;
     AttributeIteratorPack &operator=(AttributeIteratorPack &&rhs) noexcept = default;
 
-    explicit AttributeIteratorPack(std::vector<DocumentWeightIterator> &&children);
+    explicit AttributeIteratorPack(std::vector<DocidWithWeightIterator> &&children);
     ~AttributeIteratorPack();
 
     uint32_t get_docid(ref_t ref) const {

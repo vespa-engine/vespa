@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace search {
-    struct IDocumentWeightAttribute;
+    class IDocidWithWeightPostingStore;
     class QueryTermSimple;
 }
 
@@ -293,11 +293,11 @@ public:
                                                                 const SearchContextParams &params) const = 0;
 
     /**
-     * Type-safe down-cast to an attribute supporting direct document weight iterators.
+     * Type-safe down-cast to an attribute supporting direct access to posting lists with docid and weight.
      *
      * @return document weight attribute or nullptr if not supported.
      */
-    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const = 0;
+    virtual const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const = 0;
 
     /**
      * Type-safe down-cast to a tensor attribute.

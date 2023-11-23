@@ -36,7 +36,7 @@ public:
     static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
                                      bool field_is_filter,
                                      const std::vector<int32_t> &weights,
-                                     std::vector<DocumentWeightIterator> &&iterators);
+                                     std::vector<DocidWithWeightIterator> &&iterators);
 };
 
 }

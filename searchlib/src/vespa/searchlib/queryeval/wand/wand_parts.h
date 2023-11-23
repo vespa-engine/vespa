@@ -11,7 +11,7 @@
 #include <vespa/searchlib/attribute/iterator_pack.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search::queryeval::wand {
@@ -24,7 +24,7 @@ using score_t = int64_t;
 using docid_t = uint32_t;
 using ref_t = uint16_t;
 
-using Attr = IDocumentWeightAttribute;
+using Attr = IDirectPostingStore;
 using AttrDictEntry = Attr::LookupResult;
 using AttrDictEntries = std::vector<AttrDictEntry>;
 
@@ -94,9 +94,9 @@ struct TermInput {
 
 struct AttrInput {
     const std::vector<int32_t> &weights;
-    const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries;
+    const std::vector<IDirectPostingStore::LookupResult> &dict_entries;
     AttrInput(const std::vector<int32_t> &weights_in,
-              const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries_in)
+              const std::vector<IDirectPostingStore::LookupResult> &dict_entries_in)
         : weights(weights_in), dict_entries(dict_entries_in) {}
     size_t size() const { return weights.size(); }
     int32_t get_weight(ref_t ref) const { return weights[ref]; }
@@ -267,13 +267,13 @@ VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer &,
 struct VectorizedAttributeTerms : VectorizedState<AttributeIteratorPack> {
     template <typename Scorer>
     VectorizedAttributeTerms(const std::vector<int32_t> &weights,
-                             const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries,
-                             const IDocumentWeightAttribute &attr,
+                             const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
+                             const IDocidWithWeightPostingStore &attr,
                              const Scorer &,
                              docid_t docIdLimit)
     {
         std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), docIdLimit);
-        std::vector<DocumentWeightIterator> iterators;
+        std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(order.size());
         for (size_t i = 0; i < order.size(); ++i) {
             attr.create(dict_entries[order[i]].posting_idx, iterators);

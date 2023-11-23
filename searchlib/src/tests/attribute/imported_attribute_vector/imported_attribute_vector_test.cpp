@@ -140,8 +140,8 @@ TEST_F("getFixedWidth() is inherited from target attribute vector", Fixture) {
                  f.get_imported_attr()->getFixedWidth());
 }
 
-TEST_F("asDocumentWeightAttribute() returns nullptr", Fixture) {
-    EXPECT_TRUE(f.get_imported_attr()->asDocumentWeightAttribute() == nullptr);
+TEST_F("as_docid_with_weight_posting_store() returns nullptr", Fixture) {
+    EXPECT_TRUE(f.get_imported_attr()->as_docid_with_weight_posting_store() == nullptr);
 }
 
 TEST_F("asTensorAttribute() returns nullptr", Fixture) {

@@ -10,10 +10,15 @@ namespace search::queryeval { class SearchIterator; }
 
 namespace search {
 
-using DocumentWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
+using DocidWithWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
-struct IDocumentWeightAttribute
-{
+/**
+ * Baseline interface providing access to dictionary lookups and underlying posting lists for an attribute vector.
+ *
+ * This is used to speedup query execution for multi-term query operators as InTerm, WeightedSetTerm, DotProduct, Wand.
+ */
+class IDirectPostingStore {
+public:
     struct LookupKey {
         virtual ~LookupKey() = default;
         // It is required that the string is zero terminated
@@ -41,11 +46,9 @@ struct IDocumentWeightAttribute
      * (e.g. lowercased) value equals the folded value for enum_idx.
      */
     virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
-    virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const = 0;
-    virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
     virtual bool has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const = 0;
-    virtual ~IDocumentWeightAttribute() = default;
+    virtual ~IDirectPostingStore() = default;
 };
 
 }

@@ -47,9 +47,9 @@ protected:
     std::vector<DocIds> _split_lists;
 };
 
-class DwaIteratorChildrenVerifier : public WeightedChildrenVerifier {
+class DwwIteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
-    DwaIteratorChildrenVerifier() :
+    DwwIteratorChildrenVerifier() :
         WeightedChildrenVerifier(),
         _helper()
     {
@@ -59,18 +59,18 @@ public:
             _helper.set_doc(full_list[i], i % _num_children, 1);
         }
     }
-    ~DwaIteratorChildrenVerifier() override {}
+    ~DwwIteratorChildrenVerifier() override {}
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
-        std::vector<DocumentWeightIterator> children;
+        std::vector<DocidWithWeightIterator> children;
         for (size_t i = 0; i < _num_children; ++i) {
-            auto dict_entry = _helper.dwa().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dwa().get_dictionary_snapshot());
-            _helper.dwa().create(dict_entry.posting_idx, children);
+            auto dict_entry = _helper.dww().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dww().get_dictionary_snapshot());
+            _helper.dww().create(dict_entry.posting_idx, children);
         }
         return create(std::move(children));
     }
 protected:
-    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> &&) const  {
+    virtual SearchIterator::UP create(std::vector<DocidWithWeightIterator> &&) const  {
         return {};
     }
     DocumentWeightAttributeHelper _helper;

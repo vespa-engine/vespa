@@ -224,8 +224,8 @@ SearchIterator::UP
 ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
                               const MatchParams &matchParams,
                               const std::vector<int32_t> &weights,
-                              const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries,
-                              const IDocumentWeightAttribute &attr,
+                              const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
+                              const IDocidWithWeightPostingStore &attr,
                               bool strict)
 {
     assert(weights.size() == dict_entries.size());

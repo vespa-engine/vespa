@@ -43,7 +43,7 @@ MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const
                                                                            const AttributeVector::Config & cfg)
     : MultiValueNumericEnumAttribute<B, M>(name, cfg),
       PostingParent(*this, this->getEnumStore()),
-      _document_weight_attribute_adapter(*this)
+      _posting_store_adapter(*this)
 {
 }
 
@@ -86,15 +86,15 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
 
 template <typename B, typename M>
 vespalib::datastore::EntryRef
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::get_dictionary_snapshot() const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::get_dictionary_snapshot() const
 {
     const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
     return dictionary.get_frozen_root();
 }
 
 template <typename B, typename M>
-IDocumentWeightAttribute::LookupResult
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const
+IDirectPostingStore::LookupResult
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
     const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
     int64_t int_term;
@@ -116,7 +116,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback)const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback)const
 {
     (void) dictionary_snapshot;
     callback(enum_idx);
@@ -124,15 +124,15 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::collect
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const
 {
     assert(idx.valid());
     self.get_posting_store().beginFrozen(idx, dst);
 }
 
 template <typename B, typename M>
-DocumentWeightIterator
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx) const
+DocidWithWeightIterator
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx) const
 {
     assert(idx.valid());
     return self.get_posting_store().beginFrozen(idx);
@@ -140,27 +140,27 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(
 
 template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
     return self.get_posting_store().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
 }
 
 template <typename B, typename M>
 bool
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
 {
     return self.get_posting_store().has_btree(idx);
 }
 
 template <typename B, typename M>
-const IDocumentWeightAttribute *
-MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
+const IDocidWithWeightPostingStore*
+MultiValueNumericPostingAttribute<B, M>::as_docid_with_weight_posting_store() const
 {
     if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64) && !this->getIsFilter()) {
-        return &_document_weight_attribute_adapter;
+        return &_posting_store_adapter;
     }
     return nullptr;
 }
 
-} // namespace search
+}
 

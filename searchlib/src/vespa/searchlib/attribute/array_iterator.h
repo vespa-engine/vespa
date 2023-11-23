@@ -9,19 +9,17 @@
 namespace search {
 
 /**
- * Inner attribute iterator used for temporary posting lists (range
- * searches).
+ * Inner attribute iterator used for temporary posting lists (range searches).
  */
-
 template <typename P>
-class DocIdIterator
+class ArrayIterator
 {
 public:
-    DocIdIterator() : _cur(nullptr), _end(nullptr), _begin(nullptr) { }
+    ArrayIterator() : _cur(nullptr), _end(nullptr), _begin(nullptr) { }
 
     const P * operator->() const { return _cur; }
 
-    DocIdIterator & operator++() {
+    ArrayIterator & operator++() {
         ++_cur;
         return *this;
     }
@@ -49,7 +47,7 @@ public:
         _cur = std::lower_bound<const P *, P>(_begin, _end, keyWrap);
     }
 
-    void swap(DocIdIterator &rhs) {
+    void swap(ArrayIterator &rhs) {
         std::swap(_cur, rhs._cur);
         std::swap(_end, rhs._end);
         std::swap(_begin, rhs._begin);
@@ -62,7 +60,7 @@ protected:
 
 template <>
 inline int32_t
-DocIdIterator<AttributePosting>::getData() const
+ArrayIterator<AttributePosting>::getData() const
 {
     return 1;   // default weight 1 for single value attributes
 }
@@ -74,11 +72,11 @@ DocIdIterator<AttributePosting>::getData() const
  */
 
 template <typename P>
-class DocIdMinMaxIterator : public DocIdIterator<P>
+class DocIdMinMaxIterator : public ArrayIterator<P>
 {
 public:
     DocIdMinMaxIterator()
-        : DocIdIterator<P>()
+        : ArrayIterator<P>()
     { }
     inline vespalib::btree::MinMaxAggregated getAggregated() const { return vespalib::btree::MinMaxAggregated(1, 1); }
 };

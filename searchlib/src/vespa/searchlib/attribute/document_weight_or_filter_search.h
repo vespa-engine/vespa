@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "i_document_weight_attribute.h"
+#include "i_direct_posting_store.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::fef { class MatchData; }
@@ -15,7 +15,7 @@ class DocumentWeightOrFilterSearch : public queryeval::SearchIterator
 protected:
     DocumentWeightOrFilterSearch() = default;
 public:
-    static std::unique_ptr<SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children);
     static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
                                                   std::unique_ptr<fef::MatchData> md);
 };

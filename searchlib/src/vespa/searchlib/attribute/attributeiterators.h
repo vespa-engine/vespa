@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "dociditerator.h"
+#include "array_iterator.h"
 #include "postinglisttraits.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>

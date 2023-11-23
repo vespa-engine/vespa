@@ -274,10 +274,10 @@ private:
     }
 };
 
-class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
+class WeightIteratorChildrenVerifier : public search::test::DwwIteratorChildrenVerifier {
 private:
     SearchIterator::UP
-    create(std::vector<DocumentWeightIterator> && children) const override {
+    create(std::vector<DocidWithWeightIterator> && children) const override {
         return DotProductSearch::create(_tfmd, false, _weights, std::move(children));
     }
 };

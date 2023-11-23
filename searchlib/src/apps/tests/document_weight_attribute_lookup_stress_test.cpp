@@ -2,7 +2,7 @@
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <random>
@@ -28,7 +28,7 @@ Config make_config(bool hash)
     return cfg;
 }
 
-class MyKey : public search::IDocumentWeightAttribute::LookupKey
+class MyKey : public search::IDirectPostingStore::LookupKey
 {
     int64_t _key;
 public:
@@ -118,7 +118,7 @@ DocumentWeightAttributeLookupStressTest::lookup_loop(AttributeVector& attr, uint
     size_t lookups = loops * _lookup_keys.size();
     std::cout << "Performing " << lookups << " " << attr.getName() << " lookups" << std::endl;
     auto before = steady_clock::now();
-    auto dwa = attr.asDocumentWeightAttribute();
+    auto dwa = attr.as_docid_with_weight_posting_store();
     uint64_t hits = 0;
     uint64_t misses = 0;
     for (uint32_t loop = 0; loop < loops; ++loop) {

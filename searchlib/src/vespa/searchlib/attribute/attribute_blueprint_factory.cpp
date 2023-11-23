@@ -6,7 +6,7 @@
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_weighted_set_blueprint.h"
 #include "document_weight_or_filter_search.h"
-#include "i_document_weight_attribute.h"
+#include "i_direct_posting_store.h"
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
@@ -100,7 +100,7 @@ using vespalib::stringref;
 namespace search {
 namespace {
 
-class NodeAsKey final : public IDocumentWeightAttribute::LookupKey {
+class NodeAsKey final : public IDirectPostingStore::LookupKey {
 public:
     NodeAsKey(const Node & node, vespalib::string & scratchPad)
         : _node(node),
@@ -368,7 +368,7 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
 
 LocationPostFilterBlueprint::~LocationPostFilterBlueprint() = default;
 
-class LookupKey : public IDocumentWeightAttribute::LookupKey {
+class LookupKey : public IDirectPostingStore::LookupKey {
 public:
     LookupKey(MultiTerm & terms, uint32_t index) : _terms(terms), _index(index) {}
 
@@ -397,17 +397,17 @@ private:
 class DirectWandBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
-    mutable queryeval::SharedWeakAndPriorityQueue       _scores;
-    const queryeval::wand::score_t                      _scoreThreshold;
-    double                                              _thresholdBoostFactor;
-    const uint32_t                                      _scoresAdjustFrequency;
-    std::vector<int32_t>                                _weights;
-    std::vector<IDocumentWeightAttribute::LookupResult> _terms;
-    const IDocumentWeightAttribute                     &_attr;
-    vespalib::datastore::EntryRef                       _dictionary_snapshot;
+    mutable queryeval::SharedWeakAndPriorityQueue  _scores;
+    const queryeval::wand::score_t                 _scoreThreshold;
+    double                                         _thresholdBoostFactor;
+    const uint32_t                                 _scoresAdjustFrequency;
+    std::vector<int32_t>                           _weights;
+    std::vector<IDirectPostingStore::LookupResult> _terms;
+    const IDocidWithWeightPostingStore            &_attr;
+    vespalib::datastore::EntryRef                  _dictionary_snapshot;
 
 public:
-    DirectWandBlueprint(const FieldSpec &field, const IDocumentWeightAttribute &attr, uint32_t scoresToTrack,
+    DirectWandBlueprint(const FieldSpec &field, const IDocidWithWeightPostingStore &attr, uint32_t scoresToTrack,
                         queryeval::wand::score_t scoreThreshold, double thresholdBoostFactor, size_t size_hint)
         : ComplexLeafBlueprint(field),
           _scores(scoresToTrack),
@@ -425,8 +425,8 @@ public:
 
     ~DirectWandBlueprint() override;
 
-    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight, HitEstimate & estimate) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
+    void addTerm(const IDirectPostingStore::LookupKey & key, int32_t weight, HitEstimate & estimate) {
+        IDirectPostingStore::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (estimate.empty) {
@@ -463,9 +463,9 @@ std::unique_ptr<SearchIterator>
 DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const
 {
     if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        std::vector<DocumentWeightIterator> iterators;
+        std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(_terms.size());
-        for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+        for (const IDirectPostingStore::LookupResult &r : _terms) {
             _attr.create(r.posting_idx, iterators);
         }
         return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
@@ -498,15 +498,15 @@ AttributeFieldBlueprint::getRange(vespalib::string &from, vespalib::string &to) 
 class DirectAttributeBlueprint : public queryeval::SimpleLeafBlueprint
 {
 private:
-    const IAttributeVector                 &_iattr;
-    const IDocumentWeightAttribute         &_attr;
-    vespalib::datastore::EntryRef           _dictionary_snapshot;
-    IDocumentWeightAttribute::LookupResult  _dict_entry;
+    const IAttributeVector             &_iattr;
+    const IDocidWithWeightPostingStore &_attr;
+    vespalib::datastore::EntryRef       _dictionary_snapshot;
+    IDirectPostingStore::LookupResult   _dict_entry;
 
 public:
     DirectAttributeBlueprint(const FieldSpec &field, const IAttributeVector &iattr,
-                             const IDocumentWeightAttribute &attr,
-                             const IDocumentWeightAttribute::LookupKey & key)
+                             const IDocidWithWeightPostingStore &attr,
+                             const IDirectPostingStore::LookupKey & key)
         : SimpleLeafBlueprint(field),
           _iattr(iattr),
           _attr(attr),
@@ -547,7 +547,7 @@ public:
     }
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
         if (fields.has_field(_iattr.getName())) {
-            return queryeval::MatchingElementsSearch::create(_iattr, _dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult>(&_dict_entry, 1));
+            return queryeval::MatchingElementsSearch::create(_iattr, _dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult>(&_dict_entry, 1));
         } else {
             return {};
         }
@@ -574,7 +574,7 @@ class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
 private:
     const FieldSpec &_field;
     const IAttributeVector &_attr;
-    const IDocumentWeightAttribute *_dwa;
+    const IDocidWithWeightPostingStore *_dww;
     vespalib::string _scratchPad;
 
 public:
@@ -583,7 +583,7 @@ public:
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
-          _dwa(attr.asDocumentWeightAttribute()),
+          _dww(attr.as_docid_with_weight_posting_store()),
           _scratchPad()
     {
     }
@@ -591,9 +591,9 @@ public:
 
     template <class TermNode>
     void visitSimpleTerm(TermNode &n) {
-        if ((_dwa != nullptr) && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
+        if ((_dww != nullptr) && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
-            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwa, key));
+            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dww, key));
         } else {
             visitTerm(n);
         }
@@ -685,8 +685,8 @@ public:
             }
             setResult(std::move(ws));
         } else {
-            if (_dwa != nullptr) {
-                auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getNumTerms());
+            if (_dww != nullptr) {
+                auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dww, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -696,8 +696,8 @@ public:
     }
 
     void visit(query::DotProduct &n) override {
-        if (_dwa != nullptr) {
-            auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getNumTerms());
+        if (_dww != nullptr) {
+            auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dww, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
@@ -706,8 +706,8 @@ public:
     }
 
     void visit(query::WandTerm &n) override {
-        if (_dwa != nullptr) {
-            auto *bp = new DirectWandBlueprint(_field, *_dwa,
+        if (_dww != nullptr) {
+            auto *bp = new DirectWandBlueprint(_field, *_dww,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
                                                n.getNumTerms());
             createDirectWeightedSet(bp, n);

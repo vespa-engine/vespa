@@ -315,7 +315,7 @@ public:
         return result;
     }
     void expect_document_weight_attribute() {
-        EXPECT_TRUE(attr->asDocumentWeightAttribute() != nullptr);
+        EXPECT_TRUE(attr->as_docid_with_weight_posting_store() != nullptr);
     }
     void expect_filter_search(const SimpleResult& upper_and_lower, const Node& term) {
         expect_filter_search(upper_and_lower, upper_and_lower, term);

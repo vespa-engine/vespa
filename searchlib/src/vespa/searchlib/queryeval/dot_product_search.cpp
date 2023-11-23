@@ -179,7 +179,7 @@ SearchIterator::UP
 DotProductSearch::create(TermFieldMatchData &tmd,
                          bool field_is_filter,
                          const std::vector<int32_t> &weights,
-                         std::vector<DocumentWeightIterator> &&iterators)
+                         std::vector<DocidWithWeightIterator> &&iterators)
 {
     using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
     using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;
