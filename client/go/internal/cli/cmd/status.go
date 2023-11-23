@@ -17,7 +17,10 @@ import (
 )
 
 func newStatusCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
+	var (
+		waitSecs int
+		format   string
+	)
 	cmd := &cobra.Command{
 		Use: "status",
 		Aliases: []string{
@@ -32,7 +35,8 @@ This command shows the current endpoints, and their status, of a deployed Vespa
 application.`,
 		Example: `$ vespa status
 $ vespa status --cluster mycluster
-$ vespa status --cluster mycluster --wait 600`,
+$ vespa status --cluster mycluster --wait 600
+$ vepsa status --format plain --cluster mycluster`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
@@ -40,6 +44,9 @@ $ vespa status --cluster mycluster --wait 600`,
 			cluster := cli.config.cluster()
 			t, err := cli.target(targetOptions{})
 			if err != nil {
+				return err
+			}
+			if err := verifyFormat(format); err != nil {
 				return err
 			}
 			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
@@ -53,7 +60,7 @@ $ vespa status --cluster mycluster --wait 600`,
 					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
 				}
 				for _, s := range services {
-					if !printServiceStatus(s, waiter, cli) {
+					if !printServiceStatus(s, format, waiter, cli) {
 						failingContainers = append(failingContainers, s)
 					}
 				}
@@ -62,7 +69,7 @@ $ vespa status --cluster mycluster --wait 600`,
 				if err != nil {
 					return err
 				}
-				if !printServiceStatus(s, waiter, cli) {
+				if !printServiceStatus(s, format, waiter, cli) {
 					failingContainers = append(failingContainers, s)
 				}
 			}
@@ -70,7 +77,17 @@ $ vespa status --cluster mycluster --wait 600`,
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (cluster URL only)")
 	return cmd
+}
+
+func verifyFormat(format string) error {
+	switch format {
+	case "human", "plain":
+		return nil
+	default:
+		return fmt.Errorf("invalid format: %s", format)
+	}
 }
 
 func failingServicesErr(services ...*vespa.Service) error {
@@ -89,7 +106,10 @@ func failingServicesErr(services ...*vespa.Service) error {
 }
 
 func newStatusDeployCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
+	var (
+		waitSecs int
+		format   string
+	)
 	cmd := &cobra.Command{
 		Use:               "deploy",
 		Short:             "Show status of the Vespa deploy service",
@@ -102,18 +122,22 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := verifyFormat(format); err != nil {
+				return err
+			}
 			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			s, err := waiter.DeployService(t)
 			if err != nil {
 				return err
 			}
-			if !printServiceStatus(s, waiter, cli) {
+			if !printServiceStatus(s, format, waiter, cli) {
 				return failingServicesErr(s)
 			}
 			return nil
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text) or 'plain' (cluster URL only)")
 	return cmd
 }
 
@@ -167,18 +191,25 @@ $ vespa status deployment -t local [session-id] --wait 600
 	return cmd
 }
 
-func printServiceStatus(s *vespa.Service, waiter *Waiter, cli *CLI) bool {
-	desc := s.Description()
-	desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
+func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CLI) bool {
 	err := s.Wait(waiter.Timeout)
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
-	if err == nil {
-		sb.WriteString(color.GreenString("ready"))
-	} else {
-		sb.WriteString(color.RedString("not ready"))
-		sb.WriteString(": ")
-		sb.WriteString(err.Error())
+	switch format {
+	case "human":
+		desc := s.Description()
+		desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
+		sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
+		if err == nil {
+			sb.WriteString(color.GreenString("ready"))
+		} else {
+			sb.WriteString(color.RedString("not ready"))
+			sb.WriteString(": ")
+			sb.WriteString(err.Error())
+		}
+	case "plain":
+		sb.WriteString(s.BaseURL)
+	default:
+		panic("invalid format: " + format)
 	}
 	fmt.Fprintln(cli.Stdout, sb.String())
 	return err == nil
