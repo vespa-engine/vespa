@@ -127,11 +127,11 @@ TEST_F("require string lookup works correctly", StringFixture) {
 void verify_posting(const IDocidWithWeightPostingStore &api, const char *term) {
     auto result = api.lookup(term, api.get_dictionary_snapshot());
     ASSERT_TRUE(result.posting_idx.valid());
-    std::vector<DocumentWeightIterator> itr_store;
+    std::vector<DocidWithWeightIterator> itr_store;
     api.create(result.posting_idx, itr_store);
     ASSERT_EQUAL(1u, itr_store.size());
     {
-        DocumentWeightIterator &itr = itr_store[0];
+        DocidWithWeightIterator &itr = itr_store[0];
         if (itr.valid() && itr.getKey() < 1) {
             itr.linearSeek(1);
         }

@@ -188,7 +188,7 @@ SearchIterator::UP
 WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               bool field_is_filter,
                               const std::vector<int32_t> &weights,
-                              std::vector<DocumentWeightIterator> &&iterators)
+                              std::vector<DocidWithWeightIterator> &&iterators)
 {
     using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
     using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;

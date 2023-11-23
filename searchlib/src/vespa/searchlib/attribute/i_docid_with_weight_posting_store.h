@@ -13,8 +13,8 @@ namespace search {
  */
 class IDocidWithWeightPostingStore : public IDirectPostingStore {
 public:
-    virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const = 0;
-    virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
+    virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const = 0;
+    virtual DocidWithWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
 };
 
 }

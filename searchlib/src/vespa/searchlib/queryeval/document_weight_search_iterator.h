@@ -13,7 +13,7 @@ class DocumentWeightSearchIterator : public SearchIterator
 private:
     fef::TermFieldMatchData          &_tfmd;
     fef::TermFieldMatchDataPosition * _matchPosition;
-    DocumentWeightIterator            _iterator;
+    DocidWithWeightIterator            _iterator;
     queryeval::MinMaxPostingInfo      _postingInfo;
 
 public:

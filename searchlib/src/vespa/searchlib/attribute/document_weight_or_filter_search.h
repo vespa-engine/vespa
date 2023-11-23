@@ -15,7 +15,7 @@ class DocumentWeightOrFilterSearch : public queryeval::SearchIterator
 protected:
     DocumentWeightOrFilterSearch() = default;
 public:
-    static std::unique_ptr<SearchIterator> create(std::vector<DocumentWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children);
     static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
                                                   std::unique_ptr<fef::MatchData> md);
 };

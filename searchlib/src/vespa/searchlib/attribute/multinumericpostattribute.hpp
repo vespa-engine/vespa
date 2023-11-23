@@ -124,14 +124,14 @@ MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::col
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const
 {
     assert(idx.valid());
     self.get_posting_store().beginFrozen(idx, dst);
 }
 
 template <typename B, typename M>
-DocumentWeightIterator
+DocidWithWeightIterator
 MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx) const
 {
     assert(idx.valid());

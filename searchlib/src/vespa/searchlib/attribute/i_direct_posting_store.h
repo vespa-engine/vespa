@@ -10,7 +10,7 @@ namespace search::queryeval { class SearchIterator; }
 
 namespace search {
 
-using DocumentWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
+using DocidWithWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
 /**
  * Baseline interface providing access to dictionary lookups and underlying posting lists for an attribute vector.

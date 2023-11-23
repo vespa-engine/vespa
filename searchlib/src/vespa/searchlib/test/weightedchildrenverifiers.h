@@ -62,7 +62,7 @@ public:
     ~DwwIteratorChildrenVerifier() override {}
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
-        std::vector<DocumentWeightIterator> children;
+        std::vector<DocidWithWeightIterator> children;
         for (size_t i = 0; i < _num_children; ++i) {
             auto dict_entry = _helper.dww().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dww().get_dictionary_snapshot());
             _helper.dww().create(dict_entry.posting_idx, children);
@@ -70,7 +70,7 @@ public:
         return create(std::move(children));
     }
 protected:
-    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> &&) const  {
+    virtual SearchIterator::UP create(std::vector<DocidWithWeightIterator> &&) const  {
         return {};
     }
     DocumentWeightAttributeHelper _helper;

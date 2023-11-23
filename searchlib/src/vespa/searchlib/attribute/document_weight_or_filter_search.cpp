@@ -86,7 +86,7 @@ DocumentWeightOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-DocumentWeightOrFilterSearch::create(std::vector<DocumentWeightIterator>&& children)
+DocumentWeightOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
 {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();

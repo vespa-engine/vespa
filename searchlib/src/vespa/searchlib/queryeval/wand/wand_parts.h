@@ -273,7 +273,7 @@ struct VectorizedAttributeTerms : VectorizedState<AttributeIteratorPack> {
                              docid_t docIdLimit)
     {
         std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), docIdLimit);
-        std::vector<DocumentWeightIterator> iterators;
+        std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(order.size());
         for (size_t i = 0; i < order.size(); ++i) {
             attr.create(dict_entries[order[i]].posting_idx, iterators);

@@ -39,7 +39,7 @@ DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMat
     if (_terms.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
-    std::vector<DocumentWeightIterator> iterators;
+    std::vector<DocidWithWeightIterator> iterators;
     const size_t numChildren = _terms.size();
     iterators.reserve(numChildren);
     for (const IDirectPostingStore::LookupResult &r : _terms) {
@@ -56,7 +56,7 @@ template <typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
 DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
 {
-    std::vector<DocumentWeightIterator> iterators;
+    std::vector<DocidWithWeightIterator> iterators;
     iterators.reserve(_terms.size());
     for (const IDirectPostingStore::LookupResult &r : _terms) {
         _attr.create(r.posting_idx, iterators);

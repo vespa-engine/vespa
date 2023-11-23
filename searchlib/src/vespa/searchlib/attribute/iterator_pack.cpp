@@ -8,7 +8,7 @@ namespace search {
 
 AttributeIteratorPack::~AttributeIteratorPack() = default;
 
-AttributeIteratorPack::AttributeIteratorPack(std::vector<DocumentWeightIterator> &&children)
+AttributeIteratorPack::AttributeIteratorPack(std::vector<DocidWithWeightIterator> &&children)
     : _children(std::move(children))
 {
     assert(_children.size() <= std::numeric_limits<ref_t>::max());

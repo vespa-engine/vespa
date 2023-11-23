@@ -463,7 +463,7 @@ std::unique_ptr<SearchIterator>
 DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const
 {
     if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        std::vector<DocumentWeightIterator> iterators;
+        std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(_terms.size());
         for (const IDirectPostingStore::LookupResult &r : _terms) {
             _attr.create(r.posting_idx, iterators);
