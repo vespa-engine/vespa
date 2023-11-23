@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
@@ -43,11 +44,43 @@ type Authenticator interface {
 	Authenticate(request *http.Request) error
 }
 
+// CurlWriter configures printing of Curl-equivalent commands for HTTP requests passing through a Service.
+type CurlWriter struct {
+	Writer    io.Writer
+	InputFile string
+}
+
+func (c *CurlWriter) print(request *http.Request, tlsOptions TLSOptions, timeout time.Duration) error {
+	if c.Writer == nil {
+		return nil
+	}
+	cmd, err := curl.RawArgs(request.URL.String())
+	if err != nil {
+		return err
+	}
+	cmd.Method = request.Method
+	for k, vs := range request.Header {
+		for _, v := range vs {
+			cmd.Header(k, v)
+		}
+	}
+	cmd.CaCertificate = tlsOptions.CACertificateFile
+	cmd.Certificate = tlsOptions.CertificateFile
+	cmd.PrivateKey = tlsOptions.PrivateKeyFile
+	cmd.Timeout = timeout
+	if c.InputFile != "" {
+		cmd.WithBodyFile(c.InputFile)
+	}
+	_, err = fmt.Fprintln(c.Writer, cmd.String())
+	return err
+}
+
 // Service represents a Vespa service.
 type Service struct {
 	BaseURL    string
 	Name       string
 	TLSOptions TLSOptions
+	CurlWriter CurlWriter
 
 	deployAPI     bool
 	auth          Authenticator
@@ -116,6 +149,9 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 		if err := s.auth.Authenticate(request); err != nil {
 			return nil, fmt.Errorf("%w: %s", errAuth, err)
 		}
+	}
+	if err := s.CurlWriter.print(request, s.TLSOptions, timeout); err != nil {
+		return nil, err
 	}
 	return s.httpClient.Do(request, timeout)
 }
