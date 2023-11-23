@@ -272,7 +272,7 @@ func TestConfigTargetResolving(t *testing.T) {
 }
 
 func assertTargetType(t *testing.T, expected string, cli *CLI) {
-	targetType, err := cli.targetType(false)
+	targetType, err := cli.targetType(anyTarget)
 	require.Nil(t, err)
 	assert.Equal(t, expected, targetType.name)
 }

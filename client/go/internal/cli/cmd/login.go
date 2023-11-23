@@ -31,7 +31,7 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			targetType, err := cli.targetType(true)
+			targetType, err := cli.targetType(cloudTargetOnly)
 			if err != nil {
 				return err
 			}

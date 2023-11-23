@@ -31,7 +31,7 @@ func (w *Waiter) DeployService(target vespa.Target) (*vespa.Service, error) {
 
 // Service returns the service identified by cluster ID, available on target.
 func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, error) {
-	targetType, err := w.cli.targetType(false)
+	targetType, err := w.cli.targetType(anyTarget)
 	if err != nil {
 		return nil, err
 	}

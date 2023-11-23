@@ -57,5 +57,5 @@ func TestDestroy(t *testing.T) {
 	require.Nil(t, cli.Run("config", "set", "target", "local"))
 	require.Nil(t, cli.Run("config", "set", "application", "foo.bar.baz"))
 	require.NotNil(t, cli.Run("destroy", "-z", "prod.aws-us-east-1c"))
-	assert.Equal(t, "Error: unsupported target local: this command only supports targets cloud and hosted\n", stderr.String())
+	assert.Equal(t, "Error: command does not support local target\n", stderr.String())
 }

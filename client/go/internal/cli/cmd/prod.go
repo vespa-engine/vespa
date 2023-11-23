@@ -53,7 +53,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{noCertificate: true, cloudExclusive: true})
+			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
@@ -135,7 +135,7 @@ https://cloud.vespa.ai/en/reference/vespa-cloud-api#submission-properties
 		Example: `$ mvn package # when adding custom Java components
 $ vespa prod deploy`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{noCertificate: true, cloudExclusive: true})
+			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}

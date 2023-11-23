@@ -242,9 +242,6 @@ func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.UR
 
 // Prepare deployment and return the session ID
 func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
-	if deployment.Target.IsCloud() {
-		return PrepareResult{}, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
-	}
 	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
 		return PrepareResult{}, err
@@ -290,9 +287,6 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 
 // Activate deployment with sessionID from a past prepare
 func Activate(sessionID int64, deployment DeploymentOptions) error {
-	if deployment.Target.IsCloud() {
-		return fmt.Errorf("activate is not supported with %s target", deployment.Target.Type())
-	}
 	u, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/active", sessionID))
 	if err != nil {
 		return err

@@ -37,7 +37,7 @@ $ vespa destroy --force`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{cloudExclusive: true})
+			target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
