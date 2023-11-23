@@ -368,6 +368,12 @@ public class MetricsReporterTest {
         // Hosts are now in use
         metricsReporter.maintain();
         assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
+
+        // Fail one node, parent should not be considered empty as the FailedExpirer will remove the node
+        tester.fail(tester.getNodes(app, Node.State.active).stream().findFirst().get().hostname());
+        metricsReporter.maintain();
+        assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
+
     }
 
     private Number getMetric(String name, TestMetric metric, Map<String, String> dimensions) {

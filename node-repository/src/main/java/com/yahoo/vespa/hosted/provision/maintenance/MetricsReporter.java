@@ -403,7 +403,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                                                 node.exclusiveToApplicationId().isPresent())
                               .matching(host -> host.history().hasEventBefore(History.Event.Type.activated,
                                                                               now.minus(minActivePeriod)))
-                              .matching(host -> nodes.childrenOf(host).state(State.active).isEmpty())
+                              .matching(host -> nodes.childrenOf(host).isEmpty())
                               .size();
         metric.set(ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.baseName(), emptyHosts, null);
     }
