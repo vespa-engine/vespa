@@ -126,13 +126,10 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     /** Return a map of hits by their search node (partition) id */
     private static ListMap<Integer, FastHit> hitsByNode(Result result) {
         ListMap<Integer, FastHit> hitsByNode = new ListMap<>();
-        for (Iterator<Hit> i = result.hits().unorderedDeepIterator(); i.hasNext();) {
-            Hit h = i.next();
-            if (!(h instanceof FastHit hit))
-                continue;
+        for (Hit hit : (Iterable<Hit>) result.hits()::unorderedDeepIterator)
+            if (hit instanceof FastHit fastHit)
+                hitsByNode.put(fastHit.getDistributionKey(), fastHit);
 
-            hitsByNode.put(hit.getDistributionKey(), hit);
-        }
         return hitsByNode;
     }
 
@@ -144,7 +141,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             String error = "Could not fill hits from unknown node " + nodeId;
             receive(Client.ResponseOrError.fromError(error), hits);
             result.hits().addError(ErrorMessage.createEmptyDocsums(error));
-            log.warning("Got hits with partid " + nodeId + ", which is not included in the current dispatch config");
+            log.warning("Got hits with node id " + nodeId + ", which is not included in the current dispatch config");
             return;
         }
 
