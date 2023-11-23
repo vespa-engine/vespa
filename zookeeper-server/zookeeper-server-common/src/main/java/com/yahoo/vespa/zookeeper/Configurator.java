@@ -47,8 +47,9 @@ public class Configurator {
         // Doc says that it is max size of data in a zookeeper node, but it goes for everything that
         // needs to be serialized, see https://issues.apache.org/jira/browse/ZOOKEEPER-1162 for details
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
-        // Need to set this as a system property instead of config, config does not work
+        // Need to set these as a system properties instead of config, config does not work
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
+        System.setProperty("zookeeper.ssl.authProvider", "x509");
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
         System.setProperty("zookeeper.globalOutstandingLimit", "1000");
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
