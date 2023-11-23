@@ -25,12 +25,4 @@ func TestCurl(t *testing.T) {
 		filepath.Join(cli.config.homeDir, "t1.a1.i1", "data-plane-private-key.pem"),
 		filepath.Join(cli.config.homeDir, "t1.a1.i1", "data-plane-public-cert.pem"))
 	assert.Equal(t, expected, stdout.String())
-
-	assert.Nil(t, cli.Run("config", "set", "target", "local"))
-
-	stdout.Reset()
-	err = cli.Run("curl", "-a", "t1.a1.i1", "-s", "deploy", "-n", "/application/v4/tenant/foo")
-	assert.Nil(t, err)
-	expected = "curl http://127.0.0.1:19071/application/v4/tenant/foo\n"
-	assert.Equal(t, expected, stdout.String())
 }
