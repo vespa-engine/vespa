@@ -1,14 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper.client;
 
+import com.yahoo.security.X509SslContext;
 import com.yahoo.security.tls.TlsContext;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.junit.jupiter.api.Test;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-
 import java.util.List;
 
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.CLIENT_CONNECTION_SOCKET;
@@ -49,10 +47,7 @@ public class ZkClientConfigBuilderTest {
 
     private static class MockTlsContext implements TlsContext {
 
-        @Override
-        public SSLContext context() {
-            return null;
-        }
+        @Override public X509SslContext sslContext() { return X509SslContext.getDefault(); }
 
         @Override
         public SSLParameters parameters() {
@@ -61,16 +56,6 @@ public class ZkClientConfigBuilderTest {
             parameters.setCipherSuites(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384").toArray(new String[0]));
             parameters.setNeedClientAuth(true);
             return parameters;
-        }
-
-        @Override
-        public SSLEngine createSslEngine() {
-            return null;
-        }
-
-        @Override
-        public SSLEngine createSslEngine(String peerHost, int peerPort) {
-            return null;
         }
     }
 

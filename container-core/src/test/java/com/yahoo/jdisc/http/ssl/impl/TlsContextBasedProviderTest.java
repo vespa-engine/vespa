@@ -49,8 +49,9 @@ public class TlsContextBasedProviderTest {
                         SHA256_WITH_ECDSA,
                         BigInteger.ONE)
                 .build();
-        return new DefaultTlsContext(
-                List.of(certificate), keyPair.getPrivate(), List.of(certificate), new AuthorizedPeers(Set.of()), AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.ENABLED);
+        return DefaultTlsContext.of(
+                List.of(certificate), keyPair.getPrivate(), List.of(certificate), new AuthorizedPeers(Set.of()),
+                AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.ENABLED);
     }
 
     private static class SimpleTlsContextBasedProvider extends TlsContextBasedProvider {

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper.client;
 
-import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
 
 import javax.net.ssl.SSLContext;
@@ -14,7 +13,8 @@ import java.util.function.Supplier;
  */
 public class VespaSslContextProvider implements Supplier<SSLContext> {
 
-    private static final SSLContext sslContext = TransportSecurityUtils.getSystemTlsContext().map(TlsContext::context).orElse(null);
+    private static final SSLContext sslContext = TransportSecurityUtils.getSystemTlsContext()
+            .map(tc -> tc.sslContext().context()).orElse(null);
 
     @Override
     public SSLContext get() {

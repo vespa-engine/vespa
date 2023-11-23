@@ -112,7 +112,7 @@ public class ZKMetricUpdater implements Runnable {
         if (tlsContext == null || TransportSecurityUtils.getInsecureMixedMode() == MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
             return new Socket();
         }
-        return tlsContext.context().getSocketFactory().createSocket();
+        return tlsContext.createClientSslSocket();
     }
 
     private static final Pattern MONITORING_REPORT = Pattern.compile("^(\\w+)\\s+(\\d+)$", Pattern.MULTILINE);

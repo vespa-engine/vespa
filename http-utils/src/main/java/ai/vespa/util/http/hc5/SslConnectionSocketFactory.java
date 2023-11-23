@@ -31,7 +31,7 @@ public class SslConnectionSocketFactory {
 
     public static SSLConnectionSocketFactory of(TlsContext ctx, HostnameVerifier verifier) {
         return new SSLConnectionSocketFactory(
-                ctx.context(), ctx.parameters().getProtocols(), ctx.parameters().getCipherSuites(), verifier);
+                ctx.sslContext().context(), ctx.parameters().getProtocols(), ctx.parameters().getCipherSuites(), verifier);
     }
 
     public static SSLConnectionSocketFactory of(TlsContext ctx) { return of(ctx, defaultVerifier()); }

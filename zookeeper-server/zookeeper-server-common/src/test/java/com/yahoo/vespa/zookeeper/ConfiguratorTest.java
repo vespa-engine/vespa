@@ -24,7 +24,6 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -285,7 +284,7 @@ public class ConfiguratorTest {
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
-        return new DefaultTlsContext(
+        return DefaultTlsContext.of(
                 List.of(certificate), keyPair.getPrivate(), List.of(certificate), new AuthorizedPeers(Set.of()),
                 AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.DISABLED);
     }
