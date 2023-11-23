@@ -40,8 +40,8 @@ func TestSuite(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	discoveryRequest := createSearchRequest("http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge")
-	requests := []*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createSearchRequest(urlWithQuery)}
+	discoveryRequest := createDiscoveryRequest()
+	requests := []*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createRequestWithCustomHeader(urlWithQuery)}
 	requests = append(requests, discoveryRequest)
 	requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	requests = append(requests, createSearchRequest(baseUrl+"/search/?foo=%2F"))
@@ -116,8 +116,8 @@ func TestSingleTest(t *testing.T) {
 
 	baseUrl := "http://127.0.0.1:8080"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	discoveryRequest := createSearchRequest("http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge")
-	assertRequests([]*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createSearchRequest(rawUrl)}, client, t)
+	discoveryRequest := createDiscoveryRequest()
+	assertRequests([]*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
 }
 
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
@@ -156,7 +156,7 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 
 	baseUrl := "https://url"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	assertRequests([]*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createSearchRequest(rawUrl)}, client, t)
+	assertRequests([]*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
 }
 
 func createFeedRequest(urlPrefix string) *http.Request {
@@ -171,26 +171,40 @@ func createSearchRequest(rawUrl string) *http.Request {
 
 func createRequest(method string, uri string, body string) *http.Request {
 	requestUrl, _ := url.ParseRequestURI(uri)
-	return &http.Request{
+	r := &http.Request{
 		URL:    requestUrl,
 		Method: method,
-		Header: nil,
+		Header: http.Header{},
 		Body:   io.NopCloser(strings.NewReader(body)),
 	}
+	r.Header.Set("Content-Type", "application/json")
+	return r
+}
+
+func createRequestWithCustomHeader(url string) *http.Request {
+	r := createSearchRequest(url)
+	r.Header.Set("X-Foo", "bar")
+	return r
+}
+
+func createDiscoveryRequest() *http.Request {
+	r := createSearchRequest("http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge")
+	r.Header = http.Header{}
+	return r
 }
 
 func assertRequests(requests []*http.Request, client *mock.HTTPClient, t *testing.T) {
 	t.Helper()
-	if assert.Equal(t, len(requests), len(client.Requests)) {
-		for i, e := range requests {
-			a := client.Requests[i]
-			assert.Equal(t, e.URL.String(), a.URL.String())
-			assert.Equal(t, e.Method, a.Method)
-			actualBody := a.Body
-			if actualBody == nil {
-				actualBody = io.NopCloser(strings.NewReader(""))
-			}
-			assert.Equal(t, util.ReaderToJSON(e.Body), util.ReaderToJSON(actualBody))
+	require.Equal(t, len(requests), len(client.Requests))
+	for i, want := range requests {
+		got := client.Requests[i]
+		assert.Equal(t, want.URL.String(), got.URL.String())
+		assert.Equal(t, want.Method, got.Method)
+		assert.Equal(t, want.Header, got.Header)
+		actualBody := got.Body
+		if actualBody == nil {
+			actualBody = io.NopCloser(strings.NewReader(""))
 		}
+		assert.Equal(t, util.ReaderToJSON(want.Body), util.ReaderToJSON(actualBody))
 	}
 }

@@ -198,6 +198,14 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		method = "GET"
 	}
 
+	header := http.Header{}
+	for k, v := range step.Request.Headers {
+		header.Set(k, v)
+	}
+	if header.Get("Content-Type") == "" { // Set default if not specified by test
+		header.Set("Content-Type", "application/json") // TODO: Not guaranteed to be true ...
+	}
+
 	var service *vespa.Service
 	requestUri := step.Request.URI
 	if requestUri == "" {
@@ -237,9 +245,6 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		query.Add(name, value)
 	}
 	requestUrl.RawQuery = query.Encode()
-
-	header := http.Header{}
-	header.Add("Content-Type", "application/json") // TODO: Not guaranteed to be true ...
 
 	request := &http.Request{
 		URL:    requestUrl,
@@ -464,11 +469,12 @@ type step struct {
 }
 
 type request struct {
-	Cluster       string          `json:"cluster"`
-	Method        string          `json:"method"`
-	URI           string          `json:"uri"`
-	ParametersRaw json.RawMessage `json:"parameters"`
-	BodyRaw       json.RawMessage `json:"body"`
+	Cluster       string            `json:"cluster"`
+	Method        string            `json:"method"`
+	URI           string            `json:"uri"`
+	Headers       map[string]string `json:"headers"`
+	ParametersRaw json.RawMessage   `json:"parameters"`
+	BodyRaw       json.RawMessage   `json:"body"`
 }
 
 type response struct {

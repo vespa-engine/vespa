@@ -19,7 +19,7 @@
             "name": "re-feed music",
             "request": {
                 "method": "POST",
-                "body": { 
+                "body": {
                     "fields": {
                         "artist": "Foo Fighters"
                     }
@@ -44,7 +44,10 @@
             "name": "query for foo again",
             "request": {
                 "uri": "/search/?presentation.timing=true",
-                "parameters": "foo/query.json"
+                "parameters": "foo/query.json",
+                "headers": {
+                    "X-Foo": "bar"
+                }
             },
             "response": {
                 "body": {
