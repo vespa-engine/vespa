@@ -433,6 +433,22 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	}
 }
 
+func (c *CLI) cloudApiAuthenticator(deployment vespa.Deployment, system vespa.System) (vespa.Authenticator, error) {
+	apiKey, err := c.config.readAPIKey(c, system, deployment.Application.Tenant)
+	if err != nil {
+		return nil, err
+	}
+	if apiKey == nil {
+		authConfigPath := c.config.authConfigPath()
+		auth0, err := c.auth0Factory(c.httpClient, auth0.Options{ConfigPath: authConfigPath, SystemName: system.Name, SystemURL: system.URL})
+		if err != nil {
+			return nil, err
+		}
+		return auth0, nil
+	}
+	return vespa.NewRequestSigner(deployment.Application.SerializedForm(), apiKey), nil
+}
+
 func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL string) (vespa.Target, error) {
 	system, err := c.system(targetType)
 	if err != nil {
@@ -454,19 +470,9 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 	)
 	switch targetType {
 	case vespa.TargetCloud:
-		apiKey, err := c.config.readAPIKey(c, system, deployment.Application.Tenant)
-		if err != nil {
-			return nil, err
-		}
-		if apiKey == nil {
-			authConfigPath := c.config.authConfigPath()
-			auth0, err := c.auth0Factory(c.httpClient, auth0.Options{ConfigPath: authConfigPath, SystemName: system.Name, SystemURL: system.URL})
-			if err != nil {
-				return nil, err
-			}
-			apiAuth = auth0
-		} else {
-			apiAuth = vespa.NewRequestSigner(deployment.Application.SerializedForm(), apiKey)
+		// Only setup API authentication if we're using "cloud" target, and not a direct URL
+		if customURL == "" {
+			apiAuth, err = c.cloudApiAuthenticator(deployment, system)
 		}
 		deploymentTLSOptions = vespa.TLSOptions{}
 		if !opts.noCertificate {
