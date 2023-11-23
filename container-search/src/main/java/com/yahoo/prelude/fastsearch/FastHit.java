@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A regular hit from a Vespa backend
@@ -30,6 +32,8 @@ import java.util.function.BiConsumer;
  * @author Steinar Knutsen
  */
 public class FastHit extends Hit {
+
+    private static final Logger log = Logger.getLogger(FastHit.class.getName());
 
     private static final byte[] emptyGID = new byte[GlobalId.LENGTH];
     /** The index of the content node this hit originated at */
@@ -67,35 +71,26 @@ public class FastHit extends Hit {
      * Creates an empty and temporarily invalid summary hit
      */
     public FastHit() {
-        super(new Relevance(0.0));
-        globalId = emptyGID;
-        partId = 0;
-        distributionKey = 0;
+        this(emptyGID, 0.0, 0, 0);
     }
 
     public FastHit(byte[] gid, double relevance, int partId, int distributionKey) {
         this(gid, new Relevance(relevance), partId, distributionKey);
     }
+
     public FastHit(byte[] gid, Relevance relevance, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
         this.partId = partId;
         this.distributionKey = distributionKey;
+        if (distributionKey < 0)
+            log.log(Level.WARNING, "Distribution key is negative: " + this, new RuntimeException());
     }
 
     // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevancy) {
-        this(uri, relevancy, null);
-    }
-
-    // Note: This constructor is only used for tests, production use is always of the empty constructor
-    private FastHit(String uri, double relevance, String source) {
-        super(new Relevance(relevance));
-        partId = 0;
-        distributionKey = 0;
-        globalId = emptyGID;
+        this(emptyGID, relevancy, 0, 0);
         setId(uri);
-        setSource(source);
         types().add("summary");
     }
 
