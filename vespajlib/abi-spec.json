@@ -4041,20 +4041,6 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.json.Jackson" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public static com.fasterxml.jackson.databind.ObjectMapper createMapper()",
-      "public static com.fasterxml.jackson.databind.ObjectMapper createMapper(com.fasterxml.jackson.core.JsonFactoryBuilder)",
-      "public static com.fasterxml.jackson.databind.ObjectMapper mapper()"
-    ],
-    "fields" : [ ]
-  },
   "ai.vespa.llm.LanguageModel" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
