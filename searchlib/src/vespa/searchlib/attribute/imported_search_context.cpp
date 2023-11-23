@@ -128,7 +128,7 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             return SearchIterator::UP(new EmptySearch());
         } else {
             using Posting = vespalib::btree::BTreeKeyData<uint32_t, int32_t>;
-            using DocIt = DocIdIterator<Posting>;
+            using DocIt = ArrayIterator<Posting>;
             DocIt postings;
             auto array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);

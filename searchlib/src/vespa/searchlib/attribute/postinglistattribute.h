@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "dociditerator.h"
+#include "array_iterator.h"
 #include "enumattribute.h"
 #include "ipostinglistattributebase.h"
 #include "numericbase.h"

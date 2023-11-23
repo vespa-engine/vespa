@@ -3,7 +3,7 @@
 #pragma once
 
 #include "postinglistsearchcontext.h"
-#include "dociditerator.h"
+#include "array_iterator.h"
 #include "attributeiterators.h"
 #include "diversity.h"
 #include "postingstore.hpp"
@@ -156,7 +156,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
     if (_merger.hasArray() || _merger.hasBitVector()) { // synthetic results are available
         if (!_merger.emptyArray()) {
             assert(_merger.hasArray());
-            using DocIt = DocIdIterator<Posting>;
+            using DocIt = ArrayIterator<Posting>;
             DocIt postings;
             vespalib::ConstArrayRef<Posting> array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);

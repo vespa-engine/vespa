@@ -3,6 +3,7 @@ vespa_add_library(searchlib_attribute OBJECT
     SOURCES
     address_space_components.cpp
     address_space_usage.cpp
+    array_iterator.cpp
     attribute.cpp
     attribute_blueprint_factory.cpp
     attribute_header.cpp
@@ -42,7 +43,6 @@ vespa_add_library(searchlib_attribute OBJECT
     direct_weighted_set_blueprint.cpp
     distance_metric_utils.cpp
     diversity.cpp
-    dociditerator.cpp
     document_weight_or_filter_search.cpp
     empty_search_context.cpp
     enum_store_compaction_spec.cpp

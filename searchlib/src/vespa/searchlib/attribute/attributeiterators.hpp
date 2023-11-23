@@ -115,7 +115,7 @@ namespace {
 template <typename> struct is_tree_iterator;
 
 template <typename P>
-struct is_tree_iterator<DocIdIterator<P>> {
+struct is_tree_iterator<ArrayIterator<P>> {
     static constexpr bool value = false;
 };
 
