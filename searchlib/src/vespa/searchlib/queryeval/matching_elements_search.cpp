@@ -2,6 +2,7 @@
 
 #include "matching_elements_search.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -49,18 +50,18 @@ class FilterMatchingElementsSearch : public MatchingElementsSearch {
     vespalib::hash_set<BufferType, vespalib::hash<BufferType>, EqualFunc> _matches;
 
 public:
-    FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult> dict_entries);
+    FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries);
     void find_matching_elements(uint32_t doc_id, MatchingElements& result) override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
 };
 
 template <typename BufferType, typename AttributeType>
-FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult> dict_entries)
+FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
     : _attr(dynamic_cast<const AttributeType &>(attr)),
       _content(),
       _matches()
 {
-    auto dwa = attr.asDocumentWeightAttribute();
+    auto dwa = attr.as_docid_with_weight_posting_store();
     assert(dwa != nullptr);
     auto callback = [this](EntryRef folded) { _matches.insert(get_from_enum(_attr, folded)); };
     for (auto &entry : dict_entries) {
@@ -95,7 +96,7 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::initRange(uint32_t, uin
 }
 
 std::unique_ptr<MatchingElementsSearch>
-MatchingElementsSearch::create(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult> dict_entries)
+MatchingElementsSearch::create(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDirectPostingStore::LookupResult> dict_entries)
 {
     switch(attr.getBasicType()) {
     case BasicType::INT64:

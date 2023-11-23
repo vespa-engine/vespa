@@ -71,8 +71,8 @@ struct ParallelWeakAndSearch : public SearchIterator
     static SearchIterator::UP create(fef::TermFieldMatchData &tmd,
                                      const MatchParams &matchParams,
                                      const std::vector<int32_t> &weights,
-                                     const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries,
-                                     const IDocumentWeightAttribute &attr,
+                                     const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
+                                     const IDocidWithWeightPostingStore &attr,
                                      bool strict);
 };
 

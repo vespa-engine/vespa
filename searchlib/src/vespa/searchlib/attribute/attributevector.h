@@ -47,7 +47,7 @@ namespace search {
     class AttributeSaver;
     class IEnumStore;
     class IAttributeSaveTarget;
-    struct IDocumentWeightAttribute;
+    class IDocidWithWeightPostingStore;
     class QueryTermSimple;
     class QueryTermUCS4;
 
@@ -384,8 +384,7 @@ public:
 
 ////// Search API
 
-    // type-safe down-cast to attribute supporting direct document weight iterators
-    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
+    const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const override;
 
     const tensor::ITensorAttribute *asTensorAttribute() const override;
     const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;

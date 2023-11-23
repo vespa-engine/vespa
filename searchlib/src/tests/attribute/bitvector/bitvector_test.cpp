@@ -1,23 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
-
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/vespalib/util/compress.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
-#include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/compress.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP("bitvector_test");
 
 using search::AttributeFactory;
@@ -431,12 +429,12 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
     checkSearch(v, std::move(sc), 2, 1022, 205, !fastSearch && !filter, true);
     sc = getSearch<VectorType>(tv, filter);
     checkSearch(v, std::move(sc), 2, 1022, 205, !filter, true);
-    const search::IDocumentWeightAttribute *dwa = v->asDocumentWeightAttribute();
-    if (dwa != nullptr) {
-        auto lres = dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
+    const auto* dww = v->as_docid_with_weight_posting_store();
+    if (dww != nullptr) {
+        auto lres = dww->lookup(getSearchStr<VectorType>(), dww->get_dictionary_snapshot());
         using DWSI = search::queryeval::DocumentWeightSearchIterator;
         TermFieldMatchData md;
-        auto dwsi = std::make_unique<DWSI>(md, *dwa, lres);
+        auto dwsi = std::make_unique<DWSI>(md, *dww, lres);
         if (!filter) {
             TEST_DO(checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true));
         } else {

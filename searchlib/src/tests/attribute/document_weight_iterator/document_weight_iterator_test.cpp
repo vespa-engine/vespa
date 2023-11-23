@@ -1,18 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_weight_iterator_test");
@@ -58,9 +58,9 @@ void populate_string(AttributeVector::SP attr_ptr) {
 
 struct LongFixture {
     AttributeVector::SP attr;
-    const IDocumentWeightAttribute *api;
+    const IDocidWithWeightPostingStore *api;
     LongFixture() : attr(make_attribute(BasicType::INT64, CollectionType::WSET, true)),
-                    api(attr->asDocumentWeightAttribute())
+                    api(attr->as_docid_with_weight_posting_store())
     {
         ASSERT_TRUE(api != nullptr);
         add_docs(attr);
@@ -70,9 +70,9 @@ struct LongFixture {
 
 struct StringFixture {
     AttributeVector::SP attr;
-    const IDocumentWeightAttribute *api;
+    const IDocidWithWeightPostingStore *api;
     StringFixture() : attr(make_attribute(BasicType::STRING, CollectionType::WSET, true)),
-                      api(attr->asDocumentWeightAttribute())
+                      api(attr->as_docid_with_weight_posting_store())
     {
         ASSERT_TRUE(api != nullptr);
         add_docs(attr);
@@ -81,33 +81,33 @@ struct StringFixture {
 };
 
 TEST("require that appropriate attributes support the document weight attribute interface") {
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::WSET, true)->as_docid_with_weight_posting_store() != nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, true)->as_docid_with_weight_posting_store() != nullptr);
 }
 
 TEST("require that inappropriate attributes do not support the document weight attribute interface") {
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::SINGLE, false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::ARRAY,  false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::WSET,   false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::SINGLE,  true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::ARRAY,   true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE, false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,  false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET,   false)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE,  true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,   true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT32,  CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::DOUBLE, CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::SINGLE, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::ARRAY, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::WSET, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::SINGLE, true)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::ARRAY, true)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, false)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE, true)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY, true)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT32, CollectionType::WSET, true)->as_docid_with_weight_posting_store() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::DOUBLE, CollectionType::WSET, true)->as_docid_with_weight_posting_store() == nullptr);
 }
 
-void verify_valid_lookup(IDocumentWeightAttribute::LookupResult result) {
+void verify_valid_lookup(IDirectPostingStore::LookupResult result) {
     EXPECT_TRUE(result.posting_idx.valid());
     EXPECT_EQUAL(3u, result.posting_size);
     EXPECT_EQUAL(5, result.min_weight);
     EXPECT_EQUAL(20, result.max_weight);
 }
 
-void verify_invalid_lookup(IDocumentWeightAttribute::LookupResult result) {
+void verify_invalid_lookup(IDirectPostingStore::LookupResult result) {
     EXPECT_FALSE(result.posting_idx.valid());
     EXPECT_EQUAL(0u, result.posting_size);
     EXPECT_EQUAL(0, result.min_weight);
@@ -124,7 +124,7 @@ TEST_F("require string lookup works correctly", StringFixture) {
     verify_invalid_lookup(f1.api->lookup("bar", f1.api->get_dictionary_snapshot()));
 }
 
-void verify_posting(const IDocumentWeightAttribute &api, const char *term) {
+void verify_posting(const IDocidWithWeightPostingStore &api, const char *term) {
     auto result = api.lookup(term, api.get_dictionary_snapshot());
     ASSERT_TRUE(result.posting_idx.valid());
     std::vector<DocumentWeightIterator> itr_store;
@@ -195,7 +195,7 @@ public:
     ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
-        const IDocumentWeightAttribute *api(_attr->asDocumentWeightAttribute());
+        const auto* api = _attr->as_docid_with_weight_posting_store();
         ASSERT_TRUE(api != nullptr);
         auto dict_entry = api->lookup("123", api->get_dictionary_snapshot());
         ASSERT_TRUE(dict_entry.posting_idx.valid());

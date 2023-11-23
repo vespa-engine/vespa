@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
@@ -15,7 +15,7 @@ class DocumentWeightAttributeHelper
 private:
     AttributeVector::SP _attr;
     IntegerAttribute *_int_attr;
-    const IDocumentWeightAttribute *_dwa;
+    const IDocidWithWeightPostingStore *_dww;
 
     AttributeVector::SP make_attr();
 
@@ -23,10 +23,10 @@ public:
     DocumentWeightAttributeHelper()
         : _attr(make_attr()),
           _int_attr(dynamic_cast<IntegerAttribute *>(_attr.get())),
-          _dwa(_attr->asDocumentWeightAttribute())
+          _dww(_attr->as_docid_with_weight_posting_store())
     {
         ASSERT_TRUE(_int_attr != nullptr);
-        ASSERT_TRUE(_dwa != nullptr);
+        ASSERT_TRUE(_dww != nullptr);
     }
     ~DocumentWeightAttributeHelper();
 
@@ -45,7 +45,7 @@ public:
         _int_attr->commit();
     }
 
-    const IDocumentWeightAttribute &dwa() const { return *_dwa; }
+    const IDocidWithWeightPostingStore &dww() const { return *_dww; }
 };
 
 }

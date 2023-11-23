@@ -117,7 +117,7 @@ std::unique_ptr<ISearchContext> ImportedAttributeVectorReadGuard::createSearchCo
     return std::make_unique<ImportedSearchContext>(std::move(term), params, _imported_attribute, _target_attribute);
 }
 
-const IDocumentWeightAttribute *ImportedAttributeVectorReadGuard::asDocumentWeightAttribute() const {
+const IDocidWithWeightPostingStore *ImportedAttributeVectorReadGuard::as_docid_with_weight_posting_store() const {
     return nullptr;
 }
 

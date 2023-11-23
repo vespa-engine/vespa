@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_document_weight_attribute.h"
+#include "i_direct_posting_store.h"
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 
 namespace search {

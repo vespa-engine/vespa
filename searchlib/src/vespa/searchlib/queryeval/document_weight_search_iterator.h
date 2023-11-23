@@ -3,7 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search::queryeval {
@@ -18,8 +18,8 @@ private:
 
 public:
     DocumentWeightSearchIterator(fef::TermFieldMatchData &tfmd,
-                                 const IDocumentWeightAttribute &attr,
-                                 IDocumentWeightAttribute::LookupResult dict_entry)
+                                 const IDocidWithWeightPostingStore &attr,
+                                 IDirectPostingStore::LookupResult dict_entry)
         : _tfmd(tfmd),
           _matchPosition(_tfmd.populate_fixed()),
           _iterator(attr.create(dict_entry.posting_idx)),

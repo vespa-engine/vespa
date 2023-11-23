@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/fake_searchable.h>
+#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
-#include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
+#include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#include <vespa/searchlib/test/weightedchildrenverifiers.h>
+#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
+#include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/test/weightedchildrenverifiers.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace search::query;
 using namespace search::queryeval;
@@ -21,12 +21,13 @@ using feature_t = search::feature_t;
 using score_t = wand::score_t;
 using MatchParams = ParallelWeakAndSearch::MatchParams;
 using RankParams = ParallelWeakAndSearch::RankParams;
-using search::test::DocumentWeightAttributeHelper;
-using search::IDocumentWeightAttribute;
-using search::fef::TermFieldMatchData;
+using search::IDirectPostingStore;
+using search::IDocidWithWeightPostingStore;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
+using search::fef::TermFieldMatchData;
+using search::test::DocumentWeightAttributeHelper;
 
 
 struct Scores : public std::vector<score_t>
@@ -635,15 +636,15 @@ struct DummyHeap : public WeakAndHeap {
     void adjust(score_t *, score_t *) override {}
 };
 
-SearchIterator::UP create_wand(bool use_dwa,
+SearchIterator::UP create_wand(bool use_dww,
                                TermFieldMatchData &tfmd,
                                const MatchParams &matchParams,
                                const std::vector<int32_t> &weights,
-                               const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries,
-                               const IDocumentWeightAttribute &attr,
+                               const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
+                               const IDocidWithWeightPostingStore &attr,
                                bool strict)
 {
-    if (use_dwa) {
+    if (use_dww) {
         return ParallelWeakAndSearch::create(tfmd, matchParams, weights, dict_entries, attr, strict);
     }
     // use search iterators as children
@@ -665,25 +666,25 @@ SearchIterator::UP create_wand(bool use_dwa,
     return SearchIterator::UP(ParallelWeakAndSearch::create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict));
 }
 
-class Verifier : public search::test::DwaIteratorChildrenVerifier {
+class Verifier : public search::test::DwwIteratorChildrenVerifier {
 public:
-    Verifier(bool use_dwa) : _use_dwa(use_dwa) { }
+    Verifier(bool use_dww) : _use_dww(use_dww) { }
 private:
     SearchIterator::UP create(bool strict) const override {
         MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1);
-        std::vector<IDocumentWeightAttribute::LookupResult> dict_entries;
+        std::vector<IDirectPostingStore::LookupResult> dict_entries;
         for (size_t i = 0; i < _num_children; ++i) {
-            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dwa().get_dictionary_snapshot()));
+            dict_entries.push_back(_helper.dww().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dww().get_dictionary_snapshot()));
         }
-        return create_wand(_use_dwa, _tfmd, match_params, _weights, dict_entries, _helper.dwa(), strict);
+        return create_wand(_use_dww, _tfmd, match_params, _weights, dict_entries, _helper.dww(), strict);
     }
-    bool _use_dwa;
+    bool _use_dww;
     mutable DummyHeap _dummy_heap;
 };
 
 TEST("verify search iterator conformance") {
-    for (bool use_dwa: {false, true}) {
-        Verifier verifier(use_dwa);
+    for (bool use_dww: {false, true}) {
+        Verifier verifier(use_dww);
         verifier.verify();
     }
 }

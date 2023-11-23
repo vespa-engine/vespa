@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "i_document_weight_attribute.h"
+#include "i_direct_posting_store.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::fef { class MatchData; }

@@ -63,7 +63,7 @@ vespa_add_library(searchlib_attribute OBJECT
     fixedsourceselector.cpp
     flagattribute.cpp
     floatbase.cpp
-    i_document_weight_attribute.cpp
+    i_direct_posting_store.cpp
     i_enum_store.cpp
     iattributemanager.cpp
     iattributesavetarget.cpp

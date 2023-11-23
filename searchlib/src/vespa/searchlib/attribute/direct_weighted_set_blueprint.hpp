@@ -13,7 +13,7 @@ namespace search::attribute {
 template <typename SearchType>
 DirectWeightedSetBlueprint<SearchType>::DirectWeightedSetBlueprint(const queryeval::FieldSpec &field,
                                                                    const IAttributeVector &iattr,
-                                                                   const IDocumentWeightAttribute &attr,
+                                                                   const IDocidWithWeightPostingStore &attr,
                                                                    size_t size_hint)
     : ComplexLeafBlueprint(field),
       _weights(),
@@ -42,7 +42,7 @@ DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMat
     std::vector<DocumentWeightIterator> iterators;
     const size_t numChildren = _terms.size();
     iterators.reserve(numChildren);
-    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+    for (const IDirectPostingStore::LookupResult &r : _terms) {
         _attr.create(r.posting_idx, iterators);
     }
     bool field_is_filter = getState().fields()[0].isFilter();
@@ -58,7 +58,7 @@ DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstrain
 {
     std::vector<DocumentWeightIterator> iterators;
     iterators.reserve(_terms.size());
-    for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
+    for (const IDirectPostingStore::LookupResult &r : _terms) {
         _attr.create(r.posting_idx, iterators);
     }
     return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
