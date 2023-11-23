@@ -36,6 +36,7 @@ type visitArgs struct {
 	bucketSpace    string
 	bucketSpaces   []string
 	waitSecs       int
+	verbose        bool
 	cli            *CLI
 }
 
@@ -112,6 +113,9 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if err != nil {
 				return err
 			}
+			if vArgs.verbose {
+				service.CurlWriter = vespa.CurlWriter{Writer: cli.Stderr}
+			}
 			result = probeHandler(service, cli)
 			if result.Success {
 				result = visitClusters(&vArgs, service)
@@ -136,6 +140,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `The "default" or "global" bucket space`)
+	cmd.Flags().BoolVarP(&vArgs.verbose, "verbose", "v", false, `Print the equivalent curl command for the visit operation`)
 	cli.bindWaitFlag(cmd, 0, &vArgs.waitSecs)
 	return cmd
 }
