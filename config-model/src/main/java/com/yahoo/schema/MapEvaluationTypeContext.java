@@ -290,17 +290,43 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * There are two features which returns the (non-empty) tensor type: tensorFromLabels and tensorFromWeightedSet.
+     * There are three features which may return some (non-empty) tensor type:
+     * - tensorFromLabels
+     * - tensorFromWeightedSet
+     * - closest
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
      */
     private Optional<TensorType> tensorFeatureType(Reference reference) {
-        if ( ! reference.name().equals("tensorFromLabels") && ! reference.name().equals("tensorFromWeightedSet"))
+        if ( ! reference.name().equals("tensorFromLabels") &&
+             ! reference.name().equals("tensorFromWeightedSet") &&
+             ! reference.name().equals("closest"))
+        {
             return Optional.empty();
+        }
 
         if (reference.arguments().size() != 1 && reference.arguments().size() != 2)
             throw new IllegalArgumentException(reference.name() + " must have one or two arguments");
 
         ExpressionNode arg0 = reference.arguments().expressions().get(0);
+        if (reference.name().equals("closest")) {
+            if (arg0 instanceof ReferenceNode argRefNode) {
+                var argRef = argRefNode.reference();
+                if (argRef.isIdentifier()) {
+                    var attrFeature = FeatureNames.asAttributeFeature(argRef.name());
+                    TensorType attrTT = featureTypes.get(attrFeature);
+                    if (attrTT != null && attrTT.rank() > 0) {
+                        TensorType mapped = attrTT.mappedSubtype();
+                        if (mapped.rank() > 0) {
+                            return Optional.of(mapped);
+                        } else {
+                            throw new IllegalArgumentException("Unexpected tensor type " + attrTT + " for " + attrFeature + " used by " + reference);
+                        }
+                    }
+                }
+            }
+            throw new IllegalArgumentException("The first argument of " + reference.name() +
+                                               " must be the name of a tensor attribute, not " + arg0);
+        }
         if ( ! ( arg0 instanceof ReferenceNode) || ! FeatureNames.isSimpleFeature(((ReferenceNode)arg0).reference()))
             throw new IllegalArgumentException("The first argument of " + reference.name() +
                                                " must be a simple feature, not " + arg0);

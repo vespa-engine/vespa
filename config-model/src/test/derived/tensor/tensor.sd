@@ -145,4 +145,21 @@ schema tensor {
     }
   }
 
+  rank-profile with-closest-one {
+    inputs {
+      query(qvec) tensor<double>(x[5])
+    }
+    function dot_products() {
+      expression: reduce(query(qvec)*attribute(f7), sum, x)
+    }
+    first-phase {
+      expression: reduce(dot_products, max, p)
+    }
+    global-phase {
+      expression: sum(closest(f7)*attribute(f7)*query(qvec))
+    }
+    match-features {
+      closest(f7,foobarbaz)
+    }
+  }
 }
