@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +15,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
@@ -29,54 +26,24 @@ func addDocumentFlags(cli *CLI, cmd *cobra.Command, printCurl *bool, timeoutSecs
 	cli.bindWaitFlag(cmd, 0, waitSecs)
 }
 
-type serviceWithCurl struct {
-	curlCmdWriter io.Writer
-	bodyFile      string
-	service       *vespa.Service
-}
-
-func (s *serviceWithCurl) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	cmd, err := curl.RawArgs(request.URL.String())
-	if err != nil {
-		return nil, err
-	}
-	cmd.Method = request.Method
-	for k, vs := range request.Header {
-		for _, v := range vs {
-			cmd.Header(k, v)
-		}
-	}
-	if s.bodyFile != "" {
-		cmd.WithBodyFile(s.bodyFile)
-	}
-	cmd.Certificate = s.service.TLSOptions.CertificateFile
-	cmd.PrivateKey = s.service.TLSOptions.PrivateKeyFile
-	out := cmd.String() + "\n"
-	if _, err := io.WriteString(s.curlCmdWriter, out); err != nil {
-		return nil, err
-	}
-	return s.service.Do(request, timeout)
-}
-
-func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*document.Client, *serviceWithCurl, error) {
+func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*document.Client, *vespa.Service, error) {
 	docService, err := documentService(cli, waitSecs)
 	if err != nil {
 		return nil, nil, err
 	}
-	service := &serviceWithCurl{curlCmdWriter: io.Discard, service: docService}
 	if printCurl {
-		service.curlCmdWriter = cli.Stderr
+		docService.CurlWriter = vespa.CurlWriter{Writer: cli.Stderr}
 	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: document.CompressionAuto,
 		Timeout:     time.Duration(timeoutSecs) * time.Second,
 		BaseURL:     docService.BaseURL,
 		NowFunc:     time.Now,
-	}, []util.HTTPClient{service})
+	}, []util.HTTPClient{docService})
 	if err != nil {
 		return nil, nil, err
 	}
-	return client, service, nil
+	return client, docService, nil
 }
 
 func sendOperation(op document.Operation, args []string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI) error {
@@ -117,10 +84,10 @@ func sendOperation(op document.Operation, args []string, timeoutSecs, waitSecs i
 		doc.Operation = op
 	}
 	if doc.Body != nil {
-		service.bodyFile = f.Name()
+		service.CurlWriter.InputFile = f.Name()
 	}
 	result := client.Send(doc)
-	return printResult(cli, operationResult(false, doc, service.service, result), false)
+	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
 func readDocument(id string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI) error {
@@ -133,7 +100,7 @@ func readDocument(id string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI
 		return err
 	}
 	result := client.Get(docId)
-	return printResult(cli, operationResult(true, document.Document{Id: docId}, service.service, result), true)
+	return printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
 }
 
 func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) util.OperationResult {
@@ -262,7 +229,7 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 				}
 				doc := document.Document{Id: id, Operation: document.OperationRemove}
 				result := client.Send(doc)
-				return printResult(cli, operationResult(false, doc, service.service, result), false)
+				return printResult(cli, operationResult(false, doc, service, result), false)
 			} else {
 				return sendOperation(document.OperationRemove, args, timeoutSecs, waitSecs, printCurl, cli)
 			}

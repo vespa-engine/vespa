@@ -33,6 +33,10 @@ const (
 	targetFlag      = "target"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
+
+	anyTarget = iota
+	localTargetOnly
+	cloudTargetOnly
 )
 
 // CLI holds the Vespa CLI command tree, configuration and dependencies.
@@ -74,8 +78,8 @@ type targetOptions struct {
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
 	noCertificate bool
-	// cloudExclusive specifies whether to only allow Vespa Cloud and Hosted Vespa targets
-	cloudExclusive bool
+	// supportedType specifies what type of target to allow.
+	supportedType int
 }
 
 type targetType struct {
@@ -350,7 +354,7 @@ func (c *CLI) waiter(timeout time.Duration) *Waiter { return &Waiter{Timeout: ti
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
-	targetType, err := c.targetType(opts.cloudExclusive)
+	targetType, err := c.targetType(opts.supportedType)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +379,7 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 }
 
 // targetType resolves the real target type and its custom URL (if any)
-func (c *CLI) targetType(cloud bool) (targetType, error) {
+func (c *CLI) targetType(targetTypeRestriction int) (targetType, error) {
 	v, err := c.config.targetOrURL()
 	if err != nil {
 		return targetType{}, err
@@ -388,8 +392,10 @@ func (c *CLI) targetType(cloud bool) (targetType, error) {
 			return targetType{}, err
 		}
 	}
-	if cloud && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted {
-		return targetType{}, fmt.Errorf("unsupported target %s: this command only supports targets %s and %s", tt.name, vespa.TargetCloud, vespa.TargetHosted)
+	unsupported := (targetTypeRestriction == cloudTargetOnly && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted) ||
+		(targetTypeRestriction == localTargetOnly && tt.name != vespa.TargetLocal && tt.name != vespa.TargetCustom)
+	if unsupported {
+		return targetType{}, fmt.Errorf("command does not support %s target", tt.name)
 	}
 	return tt, nil
 }

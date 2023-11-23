@@ -117,7 +117,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("could not find application package: %w", err)
 			}
-			target, err := cli.target(targetOptions{})
+			target, err := cli.target(targetOptions{supportedType: localTargetOnly})
 			if err != nil {
 				return err
 			}
@@ -153,7 +153,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("could not read session id: %w", err)
 			}
-			target, err := cli.target(targetOptions{})
+			target, err := cli.target(targetOptions{supportedType: localTargetOnly})
 			if err != nil {
 				return err
 			}

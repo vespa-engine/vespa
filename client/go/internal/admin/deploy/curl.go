@@ -89,7 +89,7 @@ func runCurl(cmd *curl.Command, stdout io.Writer) error {
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			if ee.ProcessState.ExitCode() == 7 {
-				return fmt.Errorf("HTTP request failed. Could not connect to %s", cmd.GetUrlPrefix())
+				return fmt.Errorf("HTTP request failed. Could not connect to %s", cmd.URLPrefix())
 			}
 		}
 		return fmt.Errorf("HTTP request failed with curl %s", err.Error())

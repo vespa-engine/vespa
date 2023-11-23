@@ -129,7 +129,7 @@ func assertDocumentSend(args []string, expectedOperation string, expectedMethod 
 		}
 	}
 	if verbose {
-		expectedCurl := "curl -X " + expectedMethod + " -H 'Content-Type: application/json; charset=utf-8'"
+		expectedCurl := "curl -X " + expectedMethod + " -m 66 -H 'Content-Type: application/json; charset=utf-8'"
 		if expectedPayloadFile != "" {
 			expectedCurl += " --data-binary @" + expectedPayloadFile
 		}

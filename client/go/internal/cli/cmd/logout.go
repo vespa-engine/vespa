@@ -15,7 +15,7 @@ func newLogoutCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			targetType, err := cli.targetType(true)
+			targetType, err := cli.targetType(cloudTargetOnly)
 			if err != nil {
 				return err
 			}
