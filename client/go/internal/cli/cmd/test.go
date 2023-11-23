@@ -203,7 +203,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		header.Set(k, v)
 	}
 	if header.Get("Content-Type") == "" { // Set default if not specified by test
-		header.Set("Content-Type", "application/json") // TODO: Not guaranteed to be true ...
+		header.Set("Content-Type", "application/json")
 	}
 
 	var service *vespa.Service
