@@ -197,7 +197,7 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	t.Helper()
 	client := &mock.HTTPClient{}
 	clusterName := ""
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 3; i++ {
 		if isLocalTarget(args) {
 			clusterName = "foo"
 			mockServiceStatus(client, clusterName)
@@ -216,11 +216,17 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	assert.Equal(t, expectedTarget+"/status.html", client.LastRequest.URL.String())
 
 	// Test legacy command
-	statusArgs = []string{"status query"}
+	statusArgs = []string{"status", "query"}
 	stdout.Reset()
 	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t, prefix+" at "+expectedTarget+" is ready\n", stdout.String())
 	assert.Equal(t, expectedTarget+"/status.html", client.LastRequest.URL.String())
+
+	// Plain format
+	statusArgs = []string{"status", "--format=plain"}
+	stdout.Reset()
+	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
+	assert.Equal(t, expectedTarget+"\n", stdout.String())
 }
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
