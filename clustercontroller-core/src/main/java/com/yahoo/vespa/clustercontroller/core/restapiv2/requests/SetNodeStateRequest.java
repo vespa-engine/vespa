@@ -71,14 +71,14 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     static NodeState getRequestedNodeState(Map<String, UnitState> newStates, Node n) throws StateRestApiException {
         UnitState newState = newStates.get("user");
         if (newState == null) throw new InvalidContentException("No new user state given in request");
-        State state = switch (newState.getId().toLowerCase()) {
+        State state = switch (newState.id().toLowerCase()) {
             case "up" -> State.UP;
             case "retired" -> State.RETIRED;
             case "maintenance" -> State.MAINTENANCE;
             case "down" -> State.DOWN;
-            default -> throw new InvalidContentException("Invalid user state '" + newState.getId() + "' given.");
+            default -> throw new InvalidContentException("Invalid user state '" + newState.id() + "' given.");
         };
-        return new NodeState(n.getType(), state).setDescription(newState.getReason());
+        return new NodeState(n.getType(), state).setDescription(newState.reason());
     }
 
     @Override

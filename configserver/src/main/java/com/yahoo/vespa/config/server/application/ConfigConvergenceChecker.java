@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -79,7 +79,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
-    private final ObjectMapper jsonMapper = new ObjectMapper();
 
     @Inject
     public ConfigConvergenceChecker() {}
@@ -220,7 +219,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             int statusCode = response.getCode();
             if (statusCode != HttpStatus.SC_OK) throw new IOException("Expected status code 200, got " + statusCode);
             if (response.getBody() == null) throw new IOException("Response has no content");
-            return generationFromContainerState(jsonMapper.readTree(response.getBodyText()));
+            return generationFromContainerState(Jackson.mapper().readTree(response.getBodyText()));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

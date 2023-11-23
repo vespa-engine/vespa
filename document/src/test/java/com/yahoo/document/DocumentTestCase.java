@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
@@ -29,10 +29,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -960,7 +958,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         setUpSertestDocType();
         Document doc = getSertestDocument();
         String json = doc.toJson();
-        Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<>() {
+        Map<String, Object> parsed = Jackson.mapper().readValue(json, new TypeReference<>() {
         });
         assertEquals(parsed.get("id"), "id:ns:sertest::foobar");
         assertTrue(parsed.get("fields") instanceof Map);

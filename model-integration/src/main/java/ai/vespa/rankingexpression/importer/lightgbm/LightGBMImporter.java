@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.lightgbm;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.ModelImporter;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 
@@ -20,7 +20,6 @@ import java.io.IOException;
  */
 public class LightGBMImporter extends ModelImporter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     @Override
     public boolean canImport(String modelPath) {
         File modelFile = new File(modelPath);
@@ -33,8 +32,7 @@ public class LightGBMImporter extends ModelImporter {
      * Currently, we just check if the json has an element called "tree_info"
      */
     private boolean probe(File modelFile) {
-        try {
-            JsonParser parser = objectMapper.createParser(modelFile);
+        try (JsonParser parser = Jackson.mapper().createParser(modelFile)) {
             while (parser.nextToken() != null) {
                 JsonToken token = parser.getCurrentToken();
                 if (token == JsonToken.FIELD_NAME) {

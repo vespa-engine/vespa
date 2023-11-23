@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
@@ -31,14 +32,18 @@ public class MetricsParser {
         void accept(Metric metric);
     }
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     public static void parse(String data, Collector consumer) throws IOException {
-        parse(jsonMapper.createParser(data), consumer);
+        try (JsonParser parser = jsonMapper.createParser(data)) {
+            parse(parser, consumer);
+        }
     }
 
     static void parse(InputStream data, Collector consumer) throws IOException {
-        parse(jsonMapper.createParser(data), consumer);
+        try (JsonParser parser = jsonMapper.createParser(data)) {
+            parse(parser, consumer);
+        }
     }
 
     // Top level 'metrics' object, with e.g. 'time', 'status' and 'metrics'.
@@ -123,21 +128,19 @@ public class MetricsParser {
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
-            if (fieldName.equals("name")) {
-                name = parser.getText();
-            } else if (fieldName.equals("description")) {
-                description = parser.getText();
-            } else if (fieldName.equals("dimensions")) {
-                dim = parseDimensions(parser, uniqueDimensions);
-            } else if (fieldName.equals("values")) {
-                values = parseValues(parser);
-            } else {
-                if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
-                    parser.skipChildren();
+            switch (fieldName) {
+                case "name" -> name = parser.getText();
+                case "description" -> description = parser.getText();
+                case "dimensions" -> dim = parseDimensions(parser, uniqueDimensions);
+                case "values" -> values = parseValues(parser);
+                default -> {
+                    if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
+                        parser.skipChildren();
+                    }
                 }
             }
         }
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             throw new IOException("missing name for entry in 'values' array");
         }
         for (Map.Entry<String, Number> value : values) {

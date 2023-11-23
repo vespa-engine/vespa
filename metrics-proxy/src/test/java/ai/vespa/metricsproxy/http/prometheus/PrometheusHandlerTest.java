@@ -4,7 +4,6 @@ package ai.vespa.metricsproxy.http.prometheus;
 import ai.vespa.metricsproxy.http.HttpHandlerTestBase;
 import ai.vespa.metricsproxy.service.DummyService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import org.junit.BeforeClass;
@@ -14,16 +13,14 @@ import org.junit.Test;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
  */
-@SuppressWarnings("UnstableApiUsage")
 public class PrometheusHandlerTest extends HttpHandlerTestBase {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String V1_URI = URI_BASE + PrometheusHandler.V1_PATH;
     private static final String VALUES_URI = URI_BASE + PrometheusHandler.VALUES_PATH;
@@ -45,7 +42,7 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
     @Test
     public void v1_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V1_URI).readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = objectMapper().readTree(response);
         assertTrue(root.has("resources"));
 
         ArrayNode resources = (ArrayNode) root.get("resources");

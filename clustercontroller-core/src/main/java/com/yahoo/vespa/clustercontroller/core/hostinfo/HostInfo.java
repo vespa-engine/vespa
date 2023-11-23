@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
 public class HostInfo {
 
     private static final Logger log = Logger.getLogger(HostInfo.class.getName());
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = Jackson.createMapper();
     private String rawCreationString = "NOT SET";
     static {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

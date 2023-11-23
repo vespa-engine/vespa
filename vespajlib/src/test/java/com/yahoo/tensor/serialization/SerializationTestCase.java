@@ -2,8 +2,8 @@
 
 package com.yahoo.tensor.serialization;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -25,8 +25,8 @@ import static org.junit.Assert.assertTrue;
 
 public class SerializationTestCase {
 
-    private static String testPath = "eval/src/apps/make_tensor_binary_format_test_spec/test_spec.json";
-    private static List<String> tests = new ArrayList<>();
+    private static final String testPath = "eval/src/apps/make_tensor_binary_format_test_spec/test_spec.json";
+    private static final List<String> tests = new ArrayList<>();
 
     @Before
     public void loadTests() throws IOException {
@@ -46,8 +46,7 @@ public class SerializationTestCase {
     @Test
     public void testSerialization() throws IOException {
         for (String test : tests) {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(test);
+            JsonNode node = Jackson.mapper().readTree(test);
             if (node.has("tensor") && node.has("binary")) {
                 System.out.println("Running test: " + test);
 

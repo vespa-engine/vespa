@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.PortInfo;
@@ -41,8 +41,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author bjorncs
  */
 public class DefaultClusterReindexingStatusClient implements ClusterReindexingStatusClient {
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final Executor executor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("cluster-controller-reindexing-client-"));
@@ -101,7 +99,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
     }
 
     private static Map<String, ClusterReindexing> toClusterReindexing(byte[] requestBody) throws IOException {
-        JsonNode jsonNode = mapper.readTree(requestBody);
+        JsonNode jsonNode = Jackson.mapper().readTree(requestBody);
         Map<String, ClusterReindexing> clusters = new HashMap<>();
         for (var clusterNames = jsonNode.get("clusters").fieldNames(); clusterNames.hasNext(); ) {
             String clusterName = clusterNames.next();

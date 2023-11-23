@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.metrics.set.InfrastructureMetricSet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,7 +52,7 @@ import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotProviderOr
  */
 public class MetricsPacketsHandler extends AbstractRequestHandler {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     static final String APPLICATION_KEY = "application";
     static final String TIMESTAMP_KEY   = "timestamp";
@@ -226,8 +227,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             MetricValue value = metric.getValue();
             if (value instanceof CountMetric) {
                 metrics.put(name + ".count", ((CountMetric) value).getCount());
-            } else if (value instanceof GaugeMetric) {
-                GaugeMetric gauge = (GaugeMetric) value;
+            } else if (value instanceof GaugeMetric gauge) {
                 metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()))
                         .put(name + ".last", sanitizeDouble(gauge.getLast()))
                         .put(name + ".max", sanitizeDouble(gauge.getMax()))
@@ -252,8 +252,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             MetricValue value = metric.getValue();
             if (value instanceof CountMetric) {
                 metrics.put(name + ".count", ((CountMetric) value).getCount());
-            } else if (value instanceof GaugeMetric) {
-                GaugeMetric gauge = (GaugeMetric) value;
+            } else if (value instanceof GaugeMetric gauge) {
                 metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()));
                 metrics.put(name + ".last", sanitizeDouble(gauge.getLast()));
                 metrics.put(name + ".max", sanitizeDouble(gauge.getMax()));
@@ -262,7 +261,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 metrics.put(name + ".count", gauge.getCount());
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
-                        metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
+                        metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second);
                     }
                 }
             } else {

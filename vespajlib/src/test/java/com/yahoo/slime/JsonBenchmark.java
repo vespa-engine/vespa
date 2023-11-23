@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,12 +38,13 @@ public class JsonBenchmark {
 
         try {
             for (int i=0; i < numIterations; i++) {
-                JsonParser jsonParser = jsonFactory.createParser(json);
-                JsonToken array = jsonParser.nextToken();
-                for (JsonToken token = jsonParser.nextToken(); ! JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
-                    if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.getCurrentName())) {
-                        token = jsonParser.nextToken();
-                        count += jsonParser.getLongValue();
+                try (JsonParser jsonParser = jsonFactory.createParser(json)) {
+                    JsonToken array = jsonParser.nextToken();
+                    for (JsonToken token = jsonParser.nextToken(); !JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
+                        if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.getCurrentName())) {
+                            token = jsonParser.nextToken();
+                            count += jsonParser.getLongValue();
+                        }
                     }
                 }
             }
@@ -54,11 +55,10 @@ public class JsonBenchmark {
     }
     private static long benchmarkJacksonTree(byte [] json, int numIterations) {
         long count = 0;
-        ObjectMapper mapper = new ObjectMapper();
         // use the ObjectMapper to read the json string and create a tree
         try {
             for (int i=0; i < numIterations; i++) {
-                JsonNode node = mapper.readTree(json);
+                JsonNode node = Jackson.mapper().readTree(json);
                 for(JsonNode item : node) {
                     count += item.get("weight").asLong();
                 }

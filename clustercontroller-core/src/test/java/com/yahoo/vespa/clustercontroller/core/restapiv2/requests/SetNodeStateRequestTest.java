@@ -127,8 +127,8 @@ public class SetNodeStateRequestTest {
         NodeState storageNodeState = new NodeState(NodeType.STORAGE, storageWantedState);
         when(storageNodeInfo.getUserWantedState()).thenReturn(storageNodeState);
 
-        when(unitState.getId()).thenReturn(wantedStateString);
-        when(unitState.getReason()).thenReturn(REASON);
+        when(unitState.id()).thenReturn(wantedStateString);
+        when(unitState.reason()).thenReturn(REASON);
 
         when(cluster.calculateEffectOfNewState(any(), any(), any(), any(), any(), anyBoolean())).thenReturn(result);
 

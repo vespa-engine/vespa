@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.observability;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +55,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         Map<String, ? extends JsonNode> produceExtraFields(ApplicationStatusHandler handler);
     }
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     private final JsonNode applicationJson;
     private final JsonNode clientsJson;
@@ -271,7 +272,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         return ret;
     }
 
-    private class IgnoredContent implements ContentChannel {
+    private static class IgnoredContent implements ContentChannel {
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             handler.completed();

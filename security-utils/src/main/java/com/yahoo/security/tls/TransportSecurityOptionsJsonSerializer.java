@@ -59,7 +59,7 @@ class TransportSecurityOptionsJsonSerializer {
         }
         List<AuthorizedPeer> authorizedPeersEntity = entity.authorizedPeers;
         if (authorizedPeersEntity != null) {
-            if (authorizedPeersEntity.size() == 0) {
+            if (authorizedPeersEntity.isEmpty()) {
                 throw new IllegalArgumentException("'authorized-peers' cannot be empty");
             }
             builder.withAuthorizedPeers(new AuthorizedPeers(toPeerPolicies(authorizedPeersEntity)));
@@ -124,12 +124,12 @@ class TransportSecurityOptionsJsonSerializer {
     }
 
     private static RequiredPeerCredential.Field toField(CredentialField field) {
-        switch (field) {
-            case CN: return RequiredPeerCredential.Field.CN;
-            case SAN_DNS: return RequiredPeerCredential.Field.SAN_DNS;
-            case SAN_URI: return RequiredPeerCredential.Field.SAN_URI;
-            default: throw new IllegalArgumentException("Invalid field type: " + field);
-        }
+        return switch (field) {
+            case CN -> RequiredPeerCredential.Field.CN;
+            case SAN_DNS -> RequiredPeerCredential.Field.SAN_DNS;
+            case SAN_URI -> RequiredPeerCredential.Field.SAN_URI;
+            default -> throw new IllegalArgumentException("Invalid field type: " + field);
+        };
     }
 
     private static TransportSecurityOptionsEntity toTransportSecurityOptionsEntity(TransportSecurityOptions options) {
@@ -172,12 +172,12 @@ class TransportSecurityOptionsJsonSerializer {
     }
 
     private static CredentialField toField(RequiredPeerCredential.Field field) {
-        switch (field) {
-            case CN: return CredentialField.CN;
-            case SAN_DNS: return CredentialField.SAN_DNS;
-            case SAN_URI: return CredentialField.SAN_URI;
-            default: throw new IllegalArgumentException("Invalid field type: " + field);
-        }
+        return switch (field) {
+            case CN -> CredentialField.CN;
+            case SAN_DNS -> CredentialField.SAN_DNS;
+            case SAN_URI -> CredentialField.SAN_URI;
+            default -> throw new IllegalArgumentException("Invalid field type: " + field);
+        };
     }
 
     private static IllegalArgumentException missingFieldException(String fieldName) {

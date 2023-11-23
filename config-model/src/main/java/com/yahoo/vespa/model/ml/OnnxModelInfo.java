@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
@@ -91,7 +91,7 @@ public class OnnxModelInfo {
             resolveUnknownDimensionSizes(inputTypes, symbolicSizes, unboundSizes);
 
             TensorType type = TensorType.empty;
-            if (inputTypes.size() > 0 && onnxTypeInfo.needModelProbe(symbolicSizes)) {
+            if (!inputTypes.isEmpty() && onnxTypeInfo.needModelProbe(symbolicSizes)) {
                 type = OnnxModelProbe.probeModel(app, Path.fromString(modelPath), onnxName, inputTypes);
             }
             if (type.equals(TensorType.empty)) {
@@ -242,8 +242,7 @@ public class OnnxModelInfo {
     }
 
     static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app) throws IOException {
-        ObjectMapper m = new ObjectMapper();
-        JsonNode root = m.readTree(json);
+        JsonNode root = Jackson.mapper().readTree(json);
         Map<String, OnnxTypeInfo> inputs = new HashMap<>();
         Map<String, OnnxTypeInfo> outputs = new HashMap<>();
         Set<String> initializers = new HashSet<>();
@@ -306,32 +305,30 @@ public class OnnxModelInfo {
     }
 
     private static String onnxValueTypeToString(Onnx.TensorProto.DataType dataType) {
-        switch (dataType) {
-            case FLOAT: return "float";
-            case DOUBLE: return "double";
+        return switch (dataType) {
+            case FLOAT -> "float";
+            case DOUBLE -> "double";
             // Imperfect conversion, for now:
-            case BOOL: return "float";
-            case INT8: return "float";
-            case INT16: return "float";
-            case INT32: return "float";
-            case INT64: return "float";
-            case UINT8: return "float";
-            case UINT16: return "float";
-            case UINT32: return "float";
-            case UINT64: return "float";
-            default:
-                throw new IllegalArgumentException("A ONNX tensor with data type " + dataType +
-                        " cannot be converted to a Vespa tensor type");
-        }
+            case BOOL -> "float";
+            case INT8 -> "float";
+            case INT16 -> "float";
+            case INT32 -> "float";
+            case INT64 -> "float";
+            case UINT8 -> "float";
+            case UINT16 -> "float";
+            case UINT32 -> "float";
+            case UINT64 -> "float";
+            default -> throw new IllegalArgumentException("A ONNX tensor with data type " + dataType +
+                    " cannot be converted to a Vespa tensor type");
+        };
     }
 
     private static TensorType.Value stringToValueType(String type) {
-        switch (type) {
-            case "float": return TensorType.Value.FLOAT;
-            case "double": return TensorType.Value.DOUBLE;
-            default:
-                throw new IllegalArgumentException("Unknown tensor value type: " + type);
-        }
+        return switch (type) {
+            case "float" -> TensorType.Value.FLOAT;
+            case "double" -> TensorType.Value.DOUBLE;
+            default -> throw new IllegalArgumentException("Unknown tensor value type: " + type);
+        };
     }
 
     public static String asValidIdentifier(String str) {
@@ -389,7 +386,7 @@ public class OnnxModelInfo {
                         onnxDimensionSize = unknownSizes.iterator().next();
                     }
                 }
-                if (onnxDimensionSize < 0 && unboundSizes != null && unboundSizes.size() > 0) {
+                if (onnxDimensionSize < 0 && unboundSizes != null && !unboundSizes.isEmpty()) {
                     onnxDimensionSize = unboundSizes.iterator().next();
                 }
                 if (onnxDimensionSize <= 0) {

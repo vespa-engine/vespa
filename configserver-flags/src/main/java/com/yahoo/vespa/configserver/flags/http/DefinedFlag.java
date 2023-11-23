@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.configserver.flags.http;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -16,7 +17,7 @@ import java.io.OutputStream;
  * @author hakonhall
  */
 public class DefinedFlag extends HttpResponse {
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = Jackson.mapper();
 
     private final FlagDefinition flagDefinition;
 

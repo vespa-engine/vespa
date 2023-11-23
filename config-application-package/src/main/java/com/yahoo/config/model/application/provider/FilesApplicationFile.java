@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.io.IOUtils;
@@ -29,7 +30,7 @@ public class FilesApplicationFile extends ApplicationFile {
 
     private static final Logger log = Logger.getLogger("FilesApplicationFile");
     private final File file;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = Jackson.mapper();
 
     public FilesApplicationFile(Path path, File file) {
         super(path);

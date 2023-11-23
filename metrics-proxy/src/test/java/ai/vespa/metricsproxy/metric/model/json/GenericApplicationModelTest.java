@@ -4,7 +4,6 @@ package ai.vespa.metricsproxy.metric.model.json;
 import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -16,7 +15,7 @@ import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -90,7 +89,7 @@ public class GenericApplicationModelTest {
         assertEquals("service-dim-value", serviceMetrics.dimensions.get("service-dim"));
 
         // Visual inspection
-        System.out.println(createObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(nodeModel));
+        System.out.println(objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(nodeModel));
     }
 
     private MetricsPacket createMetricsPacket(String service, Number metricsValue, boolean isNode) {
@@ -112,8 +111,7 @@ public class GenericApplicationModelTest {
     }
 
     private static GenericApplicationModel genericJsonModelFromTestFile() throws IOException {
-        ObjectMapper mapper = createObjectMapper();
-        return mapper.readValue(getFileContents(TEST_FILE), GenericApplicationModel.class);
+        return objectMapper().readValue(getFileContents(TEST_FILE), GenericApplicationModel.class);
     }
 
 }

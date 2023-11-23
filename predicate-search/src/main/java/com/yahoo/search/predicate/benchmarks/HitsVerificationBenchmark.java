@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.benchmarks;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.yahoo.search.predicate.Config;
@@ -145,7 +146,7 @@ public class HitsVerificationBenchmark {
 
     private static void writeOutputToStandardOut(Map<String, Object> output) {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectMapper objectMapper = Jackson.createMapper();
             objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
             objectMapper.writeValue(System.out, output);
         } catch (IOException e) {

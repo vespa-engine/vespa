@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.metrics;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
@@ -32,8 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author gjoranv
  */
 public class MetricsV2HandlerTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String URI_BASE = "http://localhost";
 
@@ -80,7 +78,7 @@ public class MetricsV2HandlerTest {
     @Test
     void v2_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V2_URI).readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = Jackson.mapper().readTree(response);
         assertTrue(root.has("resources"));
 
         ArrayNode resources = (ArrayNode) root.get("resources");
@@ -100,7 +98,7 @@ public class MetricsV2HandlerTest {
     @Test
     void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(V2_URI + "/invalid").readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = Jackson.mapper().readTree(response);
         assertTrue(root.has("error"));
         assertTrue(root.get("error").textValue().startsWith("No content"));
     }
@@ -127,7 +125,7 @@ public class MetricsV2HandlerTest {
     private JsonNode getResponseAsJson(String consumer) {
         String response = testDriver.sendRequest(VALUES_URI + consumerQuery(consumer)).readAll();
         try {
-            return jsonMapper.readTree(response);
+            return Jackson.mapper().readTree(response);
         } catch (IOException e) {
             fail("Failed to create json object: " + e.getMessage());
             throw new RuntimeException(e);

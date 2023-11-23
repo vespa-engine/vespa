@@ -3,7 +3,6 @@ package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,7 +13,7 @@ import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -113,7 +112,7 @@ public class GenericJsonModelTest {
         assertEquals("service-dim-value", serviceMetrics.dimensions.get("service-dim"));
 
         // Visual inspection
-        System.out.println(createObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
+        System.out.println(objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }
 
     @Test
@@ -138,8 +137,7 @@ public class GenericJsonModelTest {
     }
 
     private GenericJsonModel genericJsonModelFromTestFile(String filename) throws IOException {
-        ObjectMapper mapper = createObjectMapper();
-        return mapper.readValue(getFileContents(filename), GenericJsonModel.class);
+        return objectMapper().readValue(getFileContents(filename), GenericJsonModel.class);
     }
 
     @Test

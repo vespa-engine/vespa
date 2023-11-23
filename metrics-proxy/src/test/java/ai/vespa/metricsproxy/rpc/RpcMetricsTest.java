@@ -6,7 +6,6 @@ import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.service.VespaService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -26,6 +25,7 @@ import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
@@ -41,8 +41,6 @@ import static org.junit.Assert.assertTrue;
  * @author gjoranv
  */
 public class RpcMetricsTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String METRICS_RESPONSE = getFileContents("metrics-storage-simple.json").trim();
     private static final String EXTRA_APP = "extra";
@@ -148,7 +146,7 @@ public class RpcMetricsTest {
 
     private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws IOException {
         String jsonResponse = getMetricsForYamas(service.getMonitoringName().id, client).trim();
-        ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
+        ArrayNode metrics = (ArrayNode) objectMapper().readTree(jsonResponse).get("metrics");
         assertEquals("Expected 3 metric messages", 3, metrics.size());
         for (int i = 0; i < metrics.size() - 1; i++) { // The last "metric message" contains only status code/message
             JsonNode jsonObject = metrics.get(i);
@@ -184,7 +182,7 @@ public class RpcMetricsTest {
     private void verifyMetricsFromRpcRequestForAllServices(RpcClient client) throws IOException {
         // Verify that metrics for all services can be retrieved in one request.
         String allServicesResponse = getMetricsForYamas(ALL_SERVICES, client).trim();
-        ArrayNode allServicesMetrics = (ArrayNode) jsonMapper.readTree(allServicesResponse).get("metrics");
+        ArrayNode allServicesMetrics = (ArrayNode) objectMapper().readTree(allServicesResponse).get("metrics");
         assertEquals(5, allServicesMetrics.size());
     }
 
@@ -221,13 +219,13 @@ public class RpcMetricsTest {
     }
 
     private JsonNode findExtraMetricsObject(String jsonResponse) throws IOException {
-        ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
+        ArrayNode metrics = (ArrayNode) objectMapper().readTree(jsonResponse).get("metrics");
         for (int i = 0; i <  metrics.size(); i++) {
             JsonNode jsonObject = metrics.get(i);
             assertTrue(jsonObject.has("application"));
             if (jsonObject.get("application").textValue().equals(EXTRA_APP)) return jsonObject;
         }
-        return jsonMapper.createObjectNode();
+        return objectMapper().createObjectNode();
     }
 
     private static String getMetricsForYamas(String service, RpcClient client) {

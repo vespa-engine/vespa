@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.metrics.ContainerMetrics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,7 +46,7 @@ import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
  */
 public class StateHandler extends AbstractRequestHandler implements CapabilityRequiringRequestHandler {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     public static final String STATE_API_ROOT = "/state/v1";
     private static final String METRICS_PATH = "metrics";
@@ -73,7 +74,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
     static SnapshotProvider getSnapshotProviderOrThrow(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
-        if (allPreprocessors.size() > 0) {
+        if (!allPreprocessors.isEmpty()) {
             return allPreprocessors.get(0);
         } else {
             throw new IllegalArgumentException("At least one snapshot provider is required.");

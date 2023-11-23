@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution.status;
 
+import ai.vespa.json.Jackson;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.airline.Command;
 import io.airlift.airline.HelpOption;
 import io.airlift.airline.Option;
@@ -102,10 +102,9 @@ public class FileDistributionStatusClient {
     }
 
     String parseAndGenerateOutput(String json) {
-        ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode;
         try {
-            jsonNode = objectMapper.readTree(json);
+            jsonNode = Jackson.mapper().readTree(json);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.custom;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ai.vespa.json.Jackson;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ public class SharedHostTest {
     }
 
     private void verifySerialization(SharedHost sharedHost) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(sharedHost);
         SharedHost deserialized = mapper.readValue(json, SharedHost.class);
         assertEquals(sharedHost, deserialized);

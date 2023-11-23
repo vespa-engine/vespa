@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,7 +87,7 @@ public class JsonNodeRawFlag implements RawFlag {
         // ObjectMapper is a heavy-weight object so we construct it only when we need it
         return mapper.updateAndGet((objectMapper) -> {
             if (objectMapper != null) return objectMapper;
-            return new ObjectMapper();
+            return Jackson.mapper();
         });
     }
 

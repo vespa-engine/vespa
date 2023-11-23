@@ -3,7 +3,6 @@ package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Test;
 
@@ -14,6 +13,7 @@ import java.util.Set;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.YAMAS_ROUTING;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
 import static org.junit.Assert.assertEquals;
@@ -24,12 +24,11 @@ import static org.junit.Assert.assertTrue;
  * @author gjoranv
  */
 public class YamasJsonUtilTest {
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
     private static JsonNode metrics(MetricsPacket packet, boolean addStatus) throws IOException {
         return metrics(List.of(packet), addStatus).get(0);
     }
     private static ArrayNode metrics(List<MetricsPacket> packets, boolean addStatus) throws IOException {
-        return (ArrayNode) jsonMapper.readTree(YamasJsonUtil.toJson(packets, addStatus)).get("metrics");
+        return (ArrayNode) objectMapper().readTree(YamasJsonUtil.toJson(packets, addStatus)).get("metrics");
     }
 
     @Test

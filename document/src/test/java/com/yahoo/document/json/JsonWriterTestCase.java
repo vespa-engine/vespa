@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json;
 
+import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
@@ -241,7 +242,7 @@ public class JsonWriterTestCase {
         String docId = "id:unittest:testmap::whee";
         Document doc = readDocumentFromJson(docId, fields);
 
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
         assertEquals(docId, generated.get("id"));
         // and from here on down there will be lots of unchecked casting and
@@ -262,7 +263,7 @@ public class JsonWriterTestCase {
         // we have to do everything by hand to check, as maps are unordered, but
         // are serialized as an ordered structure
 
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
         assertEquals(docId, generated.get("id"));
         // and from here on down there will be lots of unchecked casting and
@@ -311,7 +312,7 @@ public class JsonWriterTestCase {
         String fields = "{ \"actualMapStringToArrayOfInt\": { \"bamse\": [1, 2, 3] }}";
         Document doc = readDocumentFromJson(docId, fields);
 
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
         assertEquals(docId, generated.get("id"));
         // and from here on down there will be lots of unchecked casting and
@@ -331,7 +332,7 @@ public class JsonWriterTestCase {
         // we have to do everything by hand to check, as maps are unordered, but
         // are serialized as an ordered structure
 
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
         assertEquals(docId, generated.get("id"));
         // and from here on down there will be lots of unchecked casting and
@@ -354,7 +355,7 @@ public class JsonWriterTestCase {
     }
 
     private void assertEqualJson(byte[] expected, byte[] generated) throws IOException {
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<?, ?> exp = m.readValue(expected, Map.class);
         Map<?, ?> gen = m.readValue(generated, Map.class);
         if (! exp.equals(gen)) {
