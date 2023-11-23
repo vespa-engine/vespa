@@ -599,6 +599,9 @@ public class VespaMetricSet {
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_BY_GID_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_BY_GID_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_BY_GID_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_SETBUCKETSTATES_COUNT.rate());
 
         addMetric(metrics, StorageMetrics.VDS_MERGETHROTTLER_AVERAGEQUEUEWAITINGTIME, EnumSet.of(max, sum, count));
