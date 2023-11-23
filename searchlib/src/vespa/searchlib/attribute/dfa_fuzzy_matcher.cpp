@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dfa_fuzzy_matcher.h"
+#include "i_enum_store_dictionary.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 
@@ -93,5 +94,44 @@ DfaFuzzyMatcher::is_match(const char* word) const
     auto match = _dfa.match(word);
     return match.matches();
 }
+
+template <typename DictionaryConstIteratorType>
+bool
+DfaFuzzyMatcher::is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store) {
+    if (_prefix_size > 0) {
+        word = skip_prefix(word);
+        if (_prefix.size() < _prefix_size) {
+            if (*word == '\0') {
+                return true;
+            }
+            _successor.resize(_prefix.size());
+            _successor.emplace_back(beyond_unicode);
+        } else {
+            _successor.resize(_prefix.size());
+            auto match = _dfa.match(word, _successor);
+            if (match.matches()) {
+                return true;
+            }
+        }
+    } else {
+        _successor.clear();
+        auto match = _dfa.match(word, _successor);
+        if (match.matches()) {
+            return true;
+        }
+    }
+    DfaStringComparator cmp(data_store, _successor, _cased);
+    assert(cmp.less(itr.getKey().load_acquire(), vespalib::datastore::EntryRef()));
+    itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
+    return false;
+}
+
+template
+bool
+DfaFuzzyMatcher::is_match(const char* word, EnumPostingTree::ConstIterator& itr, const DfaStringComparator::DataStoreType& data_store);
+
+template
+bool
+DfaFuzzyMatcher::is_match(const char* word, EnumTree::ConstIterator& itr, const DfaStringComparator::DataStoreType& data_store);
 
 }
