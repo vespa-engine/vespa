@@ -49,7 +49,7 @@ public class VespaAsyncHttpClientBuilder {
             SSLParameters vespaTlsParameters = vespaTlsContext.parameters();
             tlsStrategy = ClientTlsStrategyBuilder.create()
                     .setHostnameVerifier(hostnameVerifier)
-                    .setSslContext(vespaTlsContext.context())
+                    .setSslContext(vespaTlsContext.sslContext().context())
                     .setTlsVersions(vespaTlsParameters.getProtocols())
                     .setCiphers(vespaTlsParameters.getCipherSuites())
                     .build();

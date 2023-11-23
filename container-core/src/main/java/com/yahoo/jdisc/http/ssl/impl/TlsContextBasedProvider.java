@@ -21,7 +21,7 @@ public abstract class TlsContextBasedProvider extends AbstractComponent implemen
     public void configureSsl(ConnectorSsl ssl, String name, int port) {
         TlsContext tlsContext = getTlsContext(name, port);
         SSLParameters parameters = tlsContext.parameters();
-        ssl.setSslContext(tlsContext.context());
+        ssl.setSslContext(tlsContext.sslContext().context());
         ssl.setEnabledProtocolVersions(List.of(parameters.getProtocols()));
         ssl.setEnabledCipherSuites(List.of(parameters.getCipherSuites()));
         if (parameters.getNeedClientAuth()) {

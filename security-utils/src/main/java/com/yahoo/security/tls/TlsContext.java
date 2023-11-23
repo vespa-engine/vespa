@@ -1,9 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
+import com.yahoo.security.X509SslContext;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -92,13 +97,32 @@ public interface TlsContext extends AutoCloseable {
         } catch (KeyManagementException e) { throw new IllegalStateException(e); }
     }
 
-    SSLContext context();
-
+    X509SslContext sslContext();
     SSLParameters parameters();
 
-    SSLEngine createSslEngine();
+    default SSLEngine createSslEngine() {
+        SSLEngine sslEngine = sslContext().context().createSSLEngine();
+        sslEngine.setSSLParameters(parameters());
+        return sslEngine;
+    }
 
-    SSLEngine createSslEngine(String peerHost, int peerPort);
+    default SSLEngine createSslEngine(String peerHost, int peerPort) {
+        SSLEngine sslEngine = sslContext().context().createSSLEngine(peerHost, peerPort);
+        sslEngine.setSSLParameters(parameters());
+        return sslEngine;
+    }
+
+    default SSLSocket createClientSslSocket() throws IOException {
+        var socket = (SSLSocket) sslContext().context().getSocketFactory().createSocket();
+        socket.setSSLParameters(parameters());
+        return socket;
+    }
+
+    default SSLServerSocket createServerSslSocket() throws IOException {
+        var socket = (SSLServerSocket) sslContext().context().getServerSocketFactory().createServerSocket();
+        socket.setSSLParameters(parameters());
+        return socket;
+    }
 
     @Override default void close() {}
 

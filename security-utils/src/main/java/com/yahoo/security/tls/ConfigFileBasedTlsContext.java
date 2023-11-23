@@ -8,9 +8,8 @@ import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.MutableX509TrustManager;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.X509SslContext;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -113,22 +112,20 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         HostnameVerification hostnameVerification = options.isHostnameValidationDisabled() ? HostnameVerification.DISABLED : HostnameVerification.ENABLED;
         PeerAuthorizerTrustManager authorizerTrustManager =
                 new PeerAuthorizerTrustManager(options.getAuthorizedPeers(), mode, hostnameVerification, mutableTrustManager);
-        SSLContext sslContext = new SslContextBuilder()
+        var sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
                 .withTrustManager(authorizerTrustManager)
-                .build();
+                .buildContext();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
         List<String> acceptedProtocols = options.getAcceptedProtocols();
         Set<String> protocols = acceptedProtocols.isEmpty() ? TlsContext.ALLOWED_PROTOCOLS : new HashSet<>(acceptedProtocols);
-        return new DefaultTlsContext(sslContext, ciphers, protocols, peerAuthentication);
+        return DefaultTlsContext.of(sslContext, ciphers, protocols, peerAuthentication);
     }
 
     // Wrapped methods from TlsContext
-    @Override public SSLContext context() { return tlsContext.context(); }
+    @Override public X509SslContext sslContext() { return tlsContext.sslContext(); }
     @Override public SSLParameters parameters() { return tlsContext.parameters(); }
-    @Override public SSLEngine createSslEngine() { return tlsContext.createSslEngine(); }
-    @Override public SSLEngine createSslEngine(String peerHost, int peerPort) { return tlsContext.createSslEngine(peerHost, peerPort); }
 
     @Override
     public void close() {

@@ -19,7 +19,7 @@ public class VespaSslContextProvider implements Supplier<SSLContext> {
     public SSLContext get() {
         synchronized (VespaSslContextProvider.class) {
             if (tlsContext == null) throw new IllegalStateException("Vespa TLS is not enabled");
-            return tlsContext.context();
+            return tlsContext.sslContext().context();
         }
     }
 
