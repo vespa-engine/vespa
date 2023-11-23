@@ -473,6 +473,9 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		// Only setup API authentication if we're using "cloud" target, and not a direct URL
 		if customURL == "" {
 			apiAuth, err = c.cloudApiAuthenticator(deployment, system)
+			if err != nil {
+				return nil, err
+			}
 		}
 		deploymentTLSOptions = vespa.TLSOptions{}
 		if !opts.noCertificate {
