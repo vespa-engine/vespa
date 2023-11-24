@@ -39,7 +39,8 @@ import org.slf4j.LoggerFactory;
 /**
  *
  * <em>NOTE: Overridden because ZK 3.9 completely broke the SSL setup APIs; for clients, key and trust stores are
- * now mandatory, unlike for servers, where it's still possible to provide a custom authProvider. This patch fixes that.</em>
+ * now mandatory, unlike for servers, where it's still possible to provide a custom authProvider. This patch fixes that.
+ * Based on https://github.com/apache/zookeeper/blob/branch-3.9/zookeeper-server/src/main/java/org/apache/zookeeper/common/ClientX509Util.java</em>
  * <p>
  * X509 utilities specific for client-server communication framework.
  */
