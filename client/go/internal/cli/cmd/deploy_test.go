@@ -276,6 +276,6 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withTarget/target/application.zip"))
 	assert.Equal(t,
-		"Error: error from deploy api at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: error from deploy API at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		stderr.String())
 }

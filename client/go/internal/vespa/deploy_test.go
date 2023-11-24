@@ -82,8 +82,10 @@ func TestSubmit(t *testing.T) {
 		Target:             target,
 		ApplicationPackage: ApplicationPackage{Path: appDir},
 	}
-	httpClient.NextResponseString(200, "ok")
-	require.Nil(t, Submit(opts, Submission{}))
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	build, err := Submit(opts, Submission{})
+	require.Nil(t, err)
+	require.Equal(t, int64(42), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
 	assert.Equal(t, "{}", httpClient.LastRequest.FormValue("submitOptions"))
 	f, err := httpClient.LastRequest.MultipartForm.File["applicationZip"][0].Open()
@@ -93,13 +95,16 @@ func TestSubmit(t *testing.T) {
 	f.Read(contents)
 	assert.Equal(t, "PK\x03\x04\x14", string(contents))
 
-	require.Nil(t, Submit(opts, Submission{
+	httpClient.NextResponseString(200, `{"build": 43}`)
+	build, err = Submit(opts, Submission{
 		Risk:        1,
 		Commit:      "sha",
 		Description: "broken garbage",
 		AuthorEmail: "foo@example.com",
 		SourceURL:   "https://github.com/foo/repo",
-	}))
+	})
+	require.Nil(t, err)
+	require.Equal(t, int64(43), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
 	assert.Equal(t, "https://api-ctl.vespa-cloud.com:4443/application/v4/tenant/t1/application/a1/submit", httpClient.LastRequest.URL.String())
 	assert.Equal(t,
