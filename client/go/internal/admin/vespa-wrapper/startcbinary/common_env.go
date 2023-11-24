@@ -45,7 +45,7 @@ func configureCommonEnv(spec *prog.Spec) {
 
 func configurePath(spec *prog.Spec) {
 	// Prefer newer gdb and pstack:
-	prependPath("/opt/rh/gcc-toolset-12/root/usr/bin", spec)
+	prependPath("/opt/rh/gcc-toolset/root/usr/bin", spec)
 	// Maven is needed for tester applications:
 	prependPath(vespa.FindHome()+"/local/maven/bin", spec)
 	prependPath(vespa.FindHome()+"/bin64", spec)
