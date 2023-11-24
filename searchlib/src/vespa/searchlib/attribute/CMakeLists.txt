@@ -40,7 +40,7 @@ vespa_add_library(searchlib_attribute OBJECT
     defines.cpp
     dfa_fuzzy_matcher.cpp
     dfa_string_comparator.cpp
-    direct_weighted_set_blueprint.cpp
+    direct_multi_term_blueprint.cpp
     distance_metric_utils.cpp
     diversity.cpp
     document_weight_or_filter_search.cpp
