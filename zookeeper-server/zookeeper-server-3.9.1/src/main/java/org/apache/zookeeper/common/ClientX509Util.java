@@ -71,17 +71,17 @@ public class ClientX509Util extends X509Util {
     public SslContext createNettySslContextForClient(ZKConfig config)
         throws X509Exception.KeyManagerException, X509Exception.TrustManagerException, SSLException {
 
-        KeyManager km = null;
-        TrustManager tm = null;
+        KeyManager km;
+        TrustManager tm;
         String authProviderProp = System.getProperty(getSslAuthProviderProperty());
         if (authProviderProp == null) {
             String keyStoreLocation = config.getProperty(getSslKeystoreLocationProperty(), "");
             String keyStorePassword = getPasswordFromConfigPropertyOrFile(config, getSslKeystorePasswdProperty(),
                                                                           getSslKeystorePasswdPathProperty());
             String keyStoreType = config.getProperty(getSslKeystoreTypeProperty());
-            SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
             if (keyStoreLocation.isEmpty()) {
                 LOG.warn("{} not specified", getSslKeystoreLocationProperty());
+                km = null;
             } else {
                 km = createKeyManager(keyStoreLocation, keyStorePassword, keyStoreType);
             }
