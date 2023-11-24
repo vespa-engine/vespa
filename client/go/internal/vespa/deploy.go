@@ -370,45 +370,45 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOptions, submission Submission) error {
+func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
 	if !opts.Target.IsCloud() {
-		return fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
+		return 0, fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}
 	if err := checkDeploymentOpts(opts); err != nil {
-		return err
+		return 0, err
 	}
 	submitURL := opts.Target.Deployment().System.SubmitURL(opts.Target.Deployment())
 	u, err := url.Parse(submitURL)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 	submitOptions, err := json.Marshal(submission)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if err := copyToPart(writer, bytes.NewReader(submitOptions), "submitOptions", ""); err != nil {
-		return err
+		return 0, err
 	}
 	applicationZip, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if err := copyToPart(writer, applicationZip, "applicationZip", "application.zip"); err != nil {
-		return err
+		return 0, err
 	}
 	if opts.ApplicationPackage.HasTests() {
 		testApplicationZip, err := opts.ApplicationPackage.zipReader(true)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if err := copyToPart(writer, testApplicationZip, "applicationTestZip", "application-test.zip"); err != nil {
-			return err
+			return 0, err
 		}
 	}
 	if err := writer.Close(); err != nil {
-		return err
+		return 0, err
 	}
 	request := &http.Request{
 		URL:    u,
@@ -419,10 +419,23 @@ func Submit(opts DeploymentOptions, submission Submission) error {
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	response, err := deployServiceDo(request, time.Minute*10, opts)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer response.Body.Close()
-	return checkResponse(request, response)
+	if err := checkResponse(request, response); err != nil {
+		return 0, err
+	}
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+	var submitResponse struct {
+		Build int64 `json:"build"`
+	}
+	if err := json.Unmarshal(responseBody, &submitResponse); err != nil {
+		return 0, err
+	}
+	return submitResponse.Build, nil
 }
 
 func deployServiceDo(request *http.Request, timeout time.Duration, opts DeploymentOptions) (*http.Response, error) {
@@ -527,7 +540,7 @@ func checkResponse(req *http.Request, response *http.Response) error {
 	if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid application package (%s)\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
-		return fmt.Errorf("error from deploy api at %s (%s):\n%s", req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("error from deploy API at %s (%s):\n%s", req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
 	return nil
 }

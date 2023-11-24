@@ -167,7 +167,6 @@ func TestProdDeployWithoutTests(t *testing.T) {
 func prodDeploy(pkgDir string, t *testing.T) {
 	t.Helper()
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponseString(200, `ok`)
 
 	cli, stdout, _ := newTestCLI(t, "CI=true")
 	cli.httpClient = httpClient
@@ -189,12 +188,14 @@ func prodDeploy(pkgDir string, t *testing.T) {
 
 	stdout.Reset()
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert"))
-	assert.Contains(t, stdout.String(), "Success: Deployed")
+	assert.Contains(t, stdout.String(), "Success: Deployed . with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 	stdout.Reset()
+	httpClient.NextResponseString(200, `{"build": 43}`)
 	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
-	assert.Contains(t, stdout.String(), "Success: Deployed")
+	assert.Contains(t, stdout.String(), "Success: Deployed . with build number 43")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -203,7 +204,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	createApplication(t, pkgDir, true, false)
 
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"build": 42}`)
 	cli, stdout, stderr := newTestCLI(t, "CI=true")
 	cli.httpClient = httpClient
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
@@ -215,7 +216,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "Success: Deployed")
+	assert.Contains(t, stdout.String(), "Success: Deployed "+pkgDir+"/target/application with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -224,7 +225,6 @@ func TestProdDeployInvalidZip(t *testing.T) {
 	createApplication(t, pkgDir, true, false)
 
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponseString(200, `ok`)
 	cli, _, stderr := newTestCLI(t, "CI=true")
 	cli.httpClient = httpClient
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
