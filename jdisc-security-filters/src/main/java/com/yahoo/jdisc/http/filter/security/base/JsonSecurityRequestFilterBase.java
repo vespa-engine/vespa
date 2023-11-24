@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.base;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,6 +29,8 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
 
     private static final Logger log = Logger.getLogger(JsonSecurityRequestFilterBase.class.getName());
 
+    protected ObjectMapper jsonMapper() { return Jackson.mapper(); }
+
     @Override
     public final void filter(DiscFilterRequest request, ResponseHandler handler) {
         filter(request)
@@ -38,7 +41,7 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
 
     private void writeResponse(DiscFilterRequest request, ErrorResponse error, ResponseHandler responseHandler) {
         JsonNode json;
-        var mapper = Jackson.mapper();
+        var mapper = jsonMapper();
         if (error.customJson != null) {
             json = error.customJson;
         } else {
