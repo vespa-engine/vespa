@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.yahoo.security.X509SslContext;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.common.X509Exception;
 import org.apache.zookeeper.data.Id;
@@ -28,11 +29,11 @@ public class VespaMtlsAuthenticationProvider extends X509AuthenticationProvider 
     }
 
     private static X509KeyManager keyManager() {
-        return new VespaSslContextProvider().tlsContext().keyManager();
+        return new VespaSslContextProvider().tlsContext().map(X509SslContext::keyManager).orElse(null);
     }
 
     private static X509TrustManager trustManager() {
-        return new VespaSslContextProvider().tlsContext().trustManager();
+        return new VespaSslContextProvider().tlsContext().map(X509SslContext::trustManager).orElse(null);
     }
 
     @Override
