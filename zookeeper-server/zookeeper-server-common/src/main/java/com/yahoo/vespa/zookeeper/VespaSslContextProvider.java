@@ -5,6 +5,7 @@ import com.yahoo.security.X509SslContext;
 import com.yahoo.security.tls.TlsContext;
 
 import javax.net.ssl.SSLContext;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -18,13 +19,12 @@ public class VespaSslContextProvider implements Supplier<SSLContext> {
 
     @Override
     public SSLContext get() {
-        return tlsContext().context();
+        return tlsContext().orElseThrow(() -> new IllegalStateException("Vespa TLS is not enabled")).context();
     }
 
-    public X509SslContext tlsContext() {
+    public Optional<X509SslContext> tlsContext() {
         synchronized (VespaSslContextProvider.class) {
-            if (tlsContext == null) throw new IllegalStateException("Vespa TLS is not enabled");
-            return tlsContext.sslContext();
+            return Optional.ofNullable(tlsContext.sslContext());
         }
     }
 
