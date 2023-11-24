@@ -206,6 +206,7 @@ private:
     void visit(RegExpTerm &n)      override { visitTerm(n); }
     void visit(NearestNeighborTerm &n) override { visitTerm(n); }
     void visit(FuzzyTerm &n) override { visitTerm(n); }
+    void visit(InTerm& n)          override { visitTerm(n); }
 
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,

@@ -456,6 +456,13 @@ struct MyFuzzyTerm : FuzzyTerm {
             : FuzzyTerm(t, f, i, w, m, p) {
     }
 };
+struct MyInTerm : InTerm {
+    MyInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type,
+             const string& f, int32_t i, Weight w)
+        : InTerm(std::move(terms), type, f, i, w)
+    {
+    }
+};
 
 struct MyQueryNodeTypes {
     using And = MyAnd;
@@ -484,6 +491,7 @@ struct MyQueryNodeTypes {
     using TrueQueryNode = MyTrue;
     using FalseQueryNode = MyFalse;
     using FuzzyTerm = MyFuzzyTerm;
+    using InTerm = MyInTerm;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {
@@ -673,7 +681,7 @@ TEST("require that empty intermediate node can be added") {
 }
 
 TEST("control size of SimpleQueryStackDumpIterator") {
-    EXPECT_EQUAL(120u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQUAL(128u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST("test query parsing error") {
@@ -783,6 +791,74 @@ TEST("first integer then string MultiTerm") {
     }
     EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);
+}
+
+namespace {
+
+std::vector<vespalib::string> in_strings = { "this", "is", "a", "test" };
+
+std::vector<int64_t> in_integers = { 24, INT64_C(93000000000) };
+
+template <typename TermType>
+std::unique_ptr<TermVector>
+make_subterms(const std::vector<TermType>& values)
+{
+    using TermVectorType = std::conditional_t<std::is_same_v<TermType,int64_t>,IntegerTermVector,StringTermVector>;
+    auto terms = std::make_unique<TermVectorType>(values.size());
+    for (auto term : values) {
+        terms->addTerm(term);
+    }
+    return terms;
+}
+
+template <typename TermType>
+void
+verify_subterms(InTerm& in_term, const std::vector<TermType>& values)
+{
+    EXPECT_EQUAL(values.size(), in_term.getNumTerms());
+    uint32_t i = 0;
+    for (auto term : values) {
+        if constexpr (std::is_same_v<TermType, int64_t>) {
+            EXPECT_EQUAL(term, in_term.getAsInteger(i).first);
+        } else {
+            EXPECT_EQUAL(term, in_term.getAsString(i).first);
+        }
+        ++i;
+    }
+}
+
+template <typename TermType>
+void
+verify_in_node(Node& node, const std::vector<TermType>& values)
+{
+    auto in_term = as_node<InTerm>(&node);
+    verify_subterms(*in_term, values);
+}
+
+template <typename TermType>
+void
+test_in_node(const std::vector<TermType>& values)
+{
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.add_in_term(make_subterms(values), MultiTerm::Type::STRING,
+                        "view", 0, Weight(0));
+    auto node = builder.build();
+    string stack_dump = StackDumpCreator::create(*node);
+    SimpleQueryStackDumpIterator iterator(stack_dump);
+    verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator), values);
+    verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::replicate(*node), values);
+}
+
+}
+
+TEST("require that in_term with strings can be created")
+{
+    test_in_node(in_strings);
+}
+
+TEST("require that in_term with integers can be created")
+{
+    test_in_node(in_integers);
 }
 
 }  // namespace

@@ -26,6 +26,7 @@ WeightedSetTerm::~WeightedSetTerm() = default;
 DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;
 FuzzyTerm::~FuzzyTerm() = default;
+InTerm::~InTerm() = default;
 
 namespace {
 
@@ -96,6 +97,13 @@ MultiTerm::MultiTerm(uint32_t num_terms)
       _num_terms(num_terms),
       _type(Type::UNKNOWN)
 {}
+
+MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
+    : _terms(std::move(terms)),
+      _num_terms(_terms->size()),
+      _type(type)
+{
+}
 
 MultiTerm::~MultiTerm() = default;
 

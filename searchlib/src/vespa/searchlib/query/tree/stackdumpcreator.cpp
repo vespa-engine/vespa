@@ -52,10 +52,14 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void append_type_and_features(ParseItem::ItemType type, uint8_t item_features) {
-        assert(static_cast<uint32_t>(type) < 31u);
-        uint8_t type_and_features = (static_cast<uint8_t>(type) | item_features);
-        _buf.preAlloc(sizeof(uint8_t));
-        _buf.append(&type_and_features, sizeof(uint8_t));
+        uint32_t type_code = static_cast<uint32_t>(type);
+        assert(type_code < ParseItem::item_type_extension_mark + 0x80);
+        if (type_code >= ParseItem::item_type_extension_mark) {
+            appendByte(ParseItem::item_type_extension_mark | item_features);
+            appendByte(type - ParseItem::item_type_extension_mark);
+        } else {
+            appendByte(type_code | item_features);
+        }
     }
 
     void appendDouble(double i) {
@@ -169,7 +173,9 @@ class QueryNodeConverter : public QueryVisitor {
             features |= ParseItem::IF_FLAGS;
         }
         append_type_and_features(type, features);
-        appendCompressedNumber(node.getWeight().percent());
+        if ((features & ParseItem::IF_WEIGHT) != 0) {
+            appendCompressedNumber(node.getWeight().percent());
+        }
         if ((features & ParseItem::IF_FLAGS) != 0) {
             appendByte(flags);
         }
@@ -294,6 +300,22 @@ class QueryNodeConverter : public QueryVisitor {
         appendCompressedPositiveNumber(node.get_allow_approximate() ? 0x1 : 0x0);
         appendCompressedPositiveNumber(node.get_explore_additional_hits());
         appendDouble(node.get_distance_threshold());
+    }
+
+    void visit(InTerm& node) override {
+        bool is_string = (node.getType() == MultiTerm::Type::STRING);
+        auto item_type = is_string  ? ParseItem::ITEM_STRING_IN : ParseItem::ITEM_NUMERIC_IN;
+        createWeightedSet(node, item_type, 0);
+        auto num_terms = node.getNumTerms();
+        if (is_string) {
+            for (size_t i = 0; i < num_terms; ++i) {
+                appendString(node.getAsString(i).first);
+            }
+        } else {
+            for (size_t i = 0; i < num_terms; ++i) {
+                appendLong(node.getAsInteger(i).first);
+            }
+        }
     }
 
 public:

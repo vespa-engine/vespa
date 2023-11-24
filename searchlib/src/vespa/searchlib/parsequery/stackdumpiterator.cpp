@@ -1,12 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stackdumpiterator.h"
+#include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <cassert>
 
+using search::query::IntegerTermVector;
 using search::query::PredicateQueryTerm;
+using search::query::StringTermVector;
 
 namespace search {
 
@@ -28,7 +32,8 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
       _extraIntArg3(0),
       _extraDoubleArg4(0),
       _extraDoubleArg5(0),
-      _predicate_query_term()
+      _predicate_query_term(),
+      _terms()
 {
 }
 
@@ -101,7 +106,14 @@ bool SimpleQueryStackDumpIterator::readNext() {
     // Find an item at the current position
     const char *p = _buf + _currPos;
     uint8_t typefield = *p++;
-    _currType = ParseItem::GetType(typefield);
+    uint8_t type_code = typefield & ParseItem::item_type_mask;
+    if (type_code == ParseItem::item_type_extension_mark) {
+        if (p >= _bufEnd || ((uint8_t) *p) >= 0x80) {
+            return false;
+        }
+        type_code += (uint8_t) *p++;
+    }
+    _currType = static_cast<ParseItem::ItemType>(type_code);
 
     if (ParseItem::GetFeature_Weight(typefield)) {
         int64_t tmpLong = readCompressedInt(p);
@@ -199,6 +211,12 @@ bool SimpleQueryStackDumpIterator::readNext() {
         // no content
         _currArity = 0;
         break;
+    case ParseItem::ITEM_STRING_IN:
+        read_string_in(p);
+        break;
+    case ParseItem::ITEM_NUMERIC_IN:
+        read_numeric_in(p);
+        break;
     default:
         // Unknown item, so report that no more are available
         return false;
@@ -269,6 +287,40 @@ std::unique_ptr<query::PredicateQueryTerm>
 SimpleQueryStackDumpIterator::getPredicateQueryTerm()
 {
     return std::move(_predicate_query_term);
+}
+
+void
+SimpleQueryStackDumpIterator::read_string_in(const char*& p)
+{
+    uint32_t num_terms = readCompressedPositiveInt(p);
+    _currArity = 0;
+    _curr_index_name = read_stringref(p);
+    _curr_term = vespalib::stringref();
+    auto terms = std::make_unique<StringTermVector>(num_terms);
+    for (uint32_t i = 0; i < num_terms; ++i) {
+        terms->addTerm(read_stringref(p));
+    }
+    _terms = std::move(terms);
+}
+
+void
+SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
+{
+    uint32_t num_terms = readCompressedPositiveInt(p);
+    _currArity = 0;
+    _curr_index_name = read_stringref(p);
+    _curr_term = vespalib::stringref();
+    auto terms = std::make_unique<IntegerTermVector>(num_terms);
+    for (uint32_t i = 0; i < num_terms; ++i) {
+        terms->addTerm(read_value<int64_t>(p));
+    }
+    _terms = std::move(terms);
+}
+
+std::unique_ptr<query::TermVector>
+SimpleQueryStackDumpIterator::get_terms()
+{
+    return std::move(_terms);
 }
 
 }

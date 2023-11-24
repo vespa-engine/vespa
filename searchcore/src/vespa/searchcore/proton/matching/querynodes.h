@@ -149,6 +149,7 @@ using ProtonWandTerm =        ProtonTerm<search::query::WandTerm>;
 using ProtonPredicateQuery =  ProtonTerm<search::query::PredicateQuery>;
 using ProtonRegExpTerm =      ProtonTerm<search::query::RegExpTerm>;
 using ProtonFuzzyTerm =       ProtonTerm<search::query::FuzzyTerm>;
+using ProtonInTerm =          ProtonTerm<search::query::InTerm>;
 
 struct ProtonNodeTypes {
     using And =                 ProtonAnd;
@@ -177,6 +178,7 @@ struct ProtonNodeTypes {
     using TrueQueryNode =       ProtonTrue;
     using FalseQueryNode =      ProtonFalse;
     using FuzzyTerm =           ProtonFuzzyTerm;
+    using InTerm =              ProtonInTerm;
 };
 
 }

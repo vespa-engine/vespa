@@ -54,4 +54,6 @@ SimpleNearestNeighborTerm::~SimpleNearestNeighborTerm() = default;
 
 SimpleFuzzyTerm::~SimpleFuzzyTerm() = default;
 
+SimpleInTerm::~SimpleInTerm() = default;
+
 }

@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -48,6 +49,12 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
 };
 struct MyTrue : TrueQueryNode {};
 struct MyFalse : FalseQueryNode {};
+struct MyInTerm : InTerm {
+    MyInTerm()
+        : InTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "view", 0, Weight(0))
+    {
+    }
+};
 
 struct MyQueryNodeTypes {
     using And = MyAnd;
@@ -76,6 +83,7 @@ struct MyQueryNodeTypes {
     using NearestNeighborTerm = MyNearestNeighborTerm;
     using FalseQueryNode = MyFalse;
     using TrueQueryNode = MyTrue;
+    using InTerm = MyInTerm;
 };
 
 class MyCustomVisitor : public CustomTypeVisitor<MyQueryNodeTypes>
@@ -115,6 +123,7 @@ public:
     void visit(MyTrue &) override { setVisited<MyTrue>(); }
     void visit(MyFalse &) override { setVisited<MyFalse>(); }
     void visit(MyFuzzyTerm &) override { setVisited<MyFuzzyTerm>(); }
+    void visit(MyInTerm&) override { setVisited<MyInTerm>(); }
 };
 
 template <class T>

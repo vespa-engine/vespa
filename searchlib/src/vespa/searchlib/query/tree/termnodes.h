@@ -191,7 +191,8 @@ public:
     uint32_t getNumTerms() const { return _num_terms; }
     Type getType() const { return _type; }
 protected:
-    MultiTerm(uint32_t num_terms);
+    explicit MultiTerm(uint32_t num_terms);
+    MultiTerm(std::unique_ptr<TermVector> terms, Type type);
 private:
     VESPA_DLL_LOCAL std::unique_ptr<TermVector> downgrade() __attribute__((noinline));
     std::unique_ptr<TermVector> _terms;
@@ -235,6 +236,16 @@ public:
     uint32_t getTargetNumHits() const { return _targetNumHits; }
     int64_t getScoreThreshold() const { return _scoreThreshold; }
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
+};
+
+class InTerm : public QueryNodeMixin<InTerm, MultiTerm>, public Term {
+public:
+    InTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const vespalib::string& view, int32_t id, Weight weight)
+        : QueryNodeMixinType(std::move(terms), type),
+          Term(view, id, weight)
+    {
+    }
+    virtual ~InTerm() = 0;
 };
 
 }

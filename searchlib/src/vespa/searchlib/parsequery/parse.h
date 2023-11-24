@@ -57,10 +57,20 @@ public:
         ITEM_TRUE                  =   28,
         ITEM_FALSE                 =   29,
         ITEM_FUZZY                 =   30,
-        ITEM_UNDEF                 =   32,
-        // NOTE: Only 5 bits are used to encode the item type in the protocol, and 31 is the last available value.
-        // We might need to use 31 to signal a protocol extension in order to support more item types.
+        ITEM_STRING_IN             =   31,
+        ITEM_NUMERIC_IN            =   32,
+        ITEM_UNDEF                 =   33,
     };
+
+    /*
+     * Mask for item type. 5 bits item type, 3 bits item features.
+     */
+    static constexpr uint8_t item_type_mask = 31;
+    /*
+     * Value encoded as item type in original serialization to indicate
+     * that an additional byte is needed for item type.
+     */
+    static constexpr uint8_t item_type_extension_mark = 31;
 
     /** A tag identifying the origin of this query node.
      */
@@ -78,10 +88,8 @@ public:
         IFLAG_NOPOSITIONDATA = 0x00000004, // we should not use position data when ranking this term
     };
 
-    /** Extra information on each item (creator id) coded in bits 12-19 of _type */
-    static inline ItemCreator GetCreator(uint8_t type) { return static_cast<ItemCreator>((type >> 3) & 0x01); }
-    /** The old item type now uses only the lower 12 bits in a backward compatible way) */
-    static inline ItemType GetType(uint8_t type) { return static_cast<ItemType>(type & 0x1F); }
+    /** Extra information on each item (creator id) coded in bit 3 of flags */
+    static inline ItemCreator GetCreator(uint8_t flags) { return static_cast<ItemCreator>((flags >> 3) & 0x01); }
 
     static inline bool GetFeature(uint8_t type, uint8_t feature)
     { return ((type & feature) != 0); }

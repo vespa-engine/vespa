@@ -30,6 +30,7 @@ class NearestNeighborTerm;
 class TrueQueryNode;
 class FalseQueryNode;
 class FuzzyTerm;
+class InTerm;
 
 struct QueryVisitor {
     virtual ~QueryVisitor() {}
@@ -60,6 +61,7 @@ struct QueryVisitor {
     virtual void visit(TrueQueryNode &) = 0;
     virtual void visit(FalseQueryNode &) = 0;
     virtual void visit(FuzzyTerm &) = 0;
+    virtual void visit(InTerm &) = 0;
 };
 
 }

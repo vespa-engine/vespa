@@ -171,6 +171,7 @@ protected:
         _result = std::make_unique<EmptyBlueprint>();
     }
     void visit(ProtonFuzzyTerm &n)      override { buildTerm(n); }
+    void visit(ProtonInTerm& n)         override { buildTerm(n); }
 
 public:
     BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :
