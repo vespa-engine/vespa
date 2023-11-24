@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "integer_term_vector.h"
 #include "intermediatenodes.h"
 #include "querybuilder.h"
 #include "queryvisitor.h"
+#include "string_term_vector.h"
 #include "termnodes.h"
 
 namespace search::query {
@@ -200,6 +202,30 @@ private:
                 node.getTerm(), node.getView(),
                 node.getId(), node.getWeight(),
                 node.getMaxEditDistance(), node.getPrefixLength()));
+    }
+
+    std::unique_ptr<TermVector> replicate_subterms(const InTerm& original) {
+        uint32_t num_terms = original.getNumTerms();
+        if (original.getType() == MultiTerm::Type::STRING) {
+            auto replica = std::make_unique<StringTermVector>(num_terms);
+            for (uint32_t i(0); i < num_terms; i++) {
+                auto v = original.getAsString(i);
+                replica->addTerm(v.first);
+            }
+            return replica;
+        } else if (original.getType() == MultiTerm::Type::INTEGER) {
+            auto replica = std::make_unique<IntegerTermVector>(num_terms);
+            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+                auto v = original.getAsInteger(i);
+                replica->addTerm(v.first);
+            }
+            return replica;
+        } else {
+            abort();
+        }
+    }
+    void visit(InTerm& node) override {
+        replicate(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
     }
 };
 

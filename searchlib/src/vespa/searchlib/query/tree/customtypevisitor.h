@@ -53,6 +53,7 @@ public:
     virtual void visit(typename NodeTypes::TrueQueryNode &) = 0;
     virtual void visit(typename NodeTypes::FalseQueryNode &) = 0;
     virtual void visit(typename NodeTypes::FuzzyTerm &) = 0;
+    virtual void visit(typename NodeTypes::InTerm&) = 0;
 
 private:
     // Route QueryVisit requests to the correct custom type.
@@ -83,6 +84,7 @@ private:
     using TTrueQueryNode = typename NodeTypes::TrueQueryNode;
     using TFalseQueryNode = typename NodeTypes::FalseQueryNode;
     using TFuzzyTerm = typename NodeTypes::FuzzyTerm;
+    using TInTerm = typename NodeTypes::InTerm;
 
     void visit(And &n) override { visit(static_cast<TAnd&>(n)); }
     void visit(AndNot &n) override { visit(static_cast<TAndNot&>(n)); }
@@ -110,6 +112,7 @@ private:
     void visit(TrueQueryNode &n) override { visit(static_cast<TTrueQueryNode&>(n)); }
     void visit(FalseQueryNode &n) override { visit(static_cast<TFalseQueryNode&>(n)); }
     void visit(FuzzyTerm &n) override { visit(static_cast<TFuzzyTerm &>(n)); }
+    void visit(InTerm& n) override { visit(static_cast<TInTerm&>(n)); }
 };
 
 }

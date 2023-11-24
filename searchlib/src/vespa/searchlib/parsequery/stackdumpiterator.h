@@ -6,7 +6,12 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-namespace search::query { class PredicateQueryTerm; }
+namespace search::query {
+
+class PredicateQueryTerm;
+class TermVector;
+
+}
 
 namespace search {
 /**
@@ -48,6 +53,7 @@ private:
     double   _extraDoubleArg5;
     /** The predicate query specification */
     std::unique_ptr<query::PredicateQueryTerm> _predicate_query_term;
+    std::unique_ptr<query::TermVector>         _terms;
 
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
@@ -58,6 +64,8 @@ private:
     VESPA_DLL_LOCAL void readNN(const char *&p);
     VESPA_DLL_LOCAL void readComplexTerm(const char *& p);
     VESPA_DLL_LOCAL void readFuzzy(const char *&p);
+    VESPA_DLL_LOCAL void read_string_in(const char*& p);
+    VESPA_DLL_LOCAL void read_numeric_in(const char*& p);
     VESPA_DLL_LOCAL bool readNext();
 public:
     /**
@@ -124,6 +132,7 @@ public:
     uint32_t getFuzzyPrefixLength() const { return _extraIntArg2; }
 
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
+    std::unique_ptr<query::TermVector> get_terms();
 
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }

@@ -70,6 +70,7 @@ struct DumpQuery : QueryVisitor {
     void visit(TrueQueryNode &) override {}
     void visit(FalseQueryNode &) override {}
     void visit(FuzzyTerm &) override {}
+    void visit(InTerm&) override {}
 };
 
 std::string dump_query(Node &root) {

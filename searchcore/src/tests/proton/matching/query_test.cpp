@@ -289,6 +289,7 @@ public:
     void visit(ProtonPredicateQuery &) override {}
     void visit(ProtonRegExpTerm &) override {}
     void visit(ProtonNearestNeighborTerm &) override {}
+    void visit(ProtonInTerm&) override {}
 };
 
 void Test::requireThatTermsAreLookedUp() {
@@ -441,6 +442,7 @@ public:
     void visit(ProtonRegExpTerm &) override {}
     void visit(ProtonNearestNeighborTerm &) override {}
     void visit(ProtonFuzzyTerm &) override {}
+    void visit(ProtonInTerm&) override { }
 };
 
 void Test::requireThatTermDataIsFilledIn() {

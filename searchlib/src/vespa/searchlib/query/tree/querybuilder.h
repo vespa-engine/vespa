@@ -21,6 +21,7 @@
 
 #include "predicate_query_term.h"
 #include "node.h"
+#include "termnodes.h"
 #include "const_bool_nodes.h"
 #include <vespa/searchlib/query/weight.h>
 #include <stack>
@@ -30,6 +31,7 @@ namespace search::query {
 class Intermediate;
 class Location;
 class Range;
+class TermVector;
 
 class QueryBuilderBase
 {
@@ -220,6 +222,7 @@ create_nearest_neighbor_term(vespalib::stringref query_tensor_name, vespalib::st
                                                        target_num_hits, allow_approximate, explore_additional_hits,
                                                        distance_threshold);
 }
+
 template <class NodeTypes>
 typename NodeTypes::FuzzyTerm *
 createFuzzyTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight,
@@ -227,6 +230,11 @@ createFuzzyTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, 
     return new typename NodeTypes::FuzzyTerm(term, view, id, weight, maxEditDistance, prefixLength);
 }
 
+template <class NodeTypes>
+typename NodeTypes::InTerm *
+create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, vespalib::stringref view, int32_t id, Weight weight) {
+    return new typename NodeTypes::InTerm(std::move(terms), type, view, id, weight);
+}
 
 template <class NodeTypes>
 class QueryBuilder : public QueryBuilderBase {
@@ -352,6 +360,10 @@ public:
     }
     typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
+    }
+    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, stringref view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
     }
 };
 

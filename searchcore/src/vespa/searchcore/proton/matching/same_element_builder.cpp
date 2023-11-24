@@ -70,6 +70,7 @@ public:
     void visit(ProtonTrue &) override {}
     void visit(ProtonFalse &) override {}
     void visit(ProtonFuzzyTerm &n) override { visitTerm(n); }
+    void visit(ProtonInTerm&) override { }
 };
 
 } // namespace proton::matching::<unnamed>

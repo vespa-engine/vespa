@@ -74,6 +74,13 @@ struct SimpleWandTerm : WandTerm {
         : WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
     ~SimpleWandTerm() override;
 };
+struct SimpleInTerm : InTerm {
+    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, vespalib::stringref view, int32_t id, Weight weight)
+        : InTerm(std::move(terms), type, view, id, weight)
+    {
+    }
+    ~SimpleInTerm() override;
+};
 struct SimpleRank : Rank
 {
     ~SimpleRank() override;
@@ -189,6 +196,7 @@ struct SimpleQueryNodeTypes {
     using RegExpTerm = SimpleRegExpTerm;
     using NearestNeighborTerm = SimpleNearestNeighborTerm;
     using FuzzyTerm = SimpleFuzzyTerm;
+    using InTerm = SimpleInTerm;
 };
 
 }
