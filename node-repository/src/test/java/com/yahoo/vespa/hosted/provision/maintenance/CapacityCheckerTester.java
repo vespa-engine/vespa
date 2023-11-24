@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -301,9 +301,8 @@ public class CapacityCheckerTester {
 
     public void populateNodeRepositoryFromJsonFile(Path path) throws IOException {
         byte[] jsonData = Files.readAllBytes(path);
-        ObjectMapper om = new ObjectMapper();
 
-        NodeRepositoryModel repositoryModel = om.readValue(jsonData, NodeRepositoryModel.class);
+        NodeRepositoryModel repositoryModel = Jackson.mapper().readValue(jsonData, NodeRepositoryModel.class);
         List<NodeModel> nodeModels = repositoryModel.nodes;
 
 

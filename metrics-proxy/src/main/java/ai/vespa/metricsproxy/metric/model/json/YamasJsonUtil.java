@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamWriteFeature;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +20,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static java.util.Collections.emptyList;
 import static java.util.logging.Level.WARNING;
 
@@ -56,9 +56,8 @@ public class YamasJsonUtil {
      */
     public static List<MetricsPacket.Builder> toMetricsPackets(String jsonString) {
         List<MetricsPacket.Builder> packets = new ArrayList<>();
-        try {
-            JsonParser jp = new JsonFactory().createParser(jsonString);
-            jp.setCodec(new ObjectMapper());
+        var mapper = objectMapper();
+        try (JsonParser jp = mapper.createParser(jsonString)) {
             while (jp.nextToken() != null) {
                 YamasJsonModel jsonModel = jp.readValueAs(YamasJsonModel.class);
                 packets.add(toMetricsPacketBuilder(jsonModel));

@@ -45,7 +45,7 @@ public class HitsVerificationBenchmark {
 
     public static void main(String[] rawArgs) throws IOException {
         Optional<BenchmarkArguments> wrappedArgs = getArguments(rawArgs);
-        if (!wrappedArgs.isPresent()) return;
+        if (wrappedArgs.isEmpty()) return;
         BenchmarkArguments args = wrappedArgs.get();
         Map<String, Object> output = new TreeMap<>();
         addArgsToOutput(output, args);

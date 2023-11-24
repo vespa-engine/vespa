@@ -14,7 +14,7 @@ import java.io.UncheckedIOException;
  */
 public class JsonTestHelper {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = Jackson.mapper();
 
     /**
      * Returns a normalized JSON String.

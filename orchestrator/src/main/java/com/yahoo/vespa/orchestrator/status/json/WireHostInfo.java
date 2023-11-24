@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status.json;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,7 +23,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WireHostInfo {
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = Jackson.mapper();
 
     @JsonProperty("status") public String status;
     @JsonProperty("suspendedSince") public Long suspendedSinceInMillis;

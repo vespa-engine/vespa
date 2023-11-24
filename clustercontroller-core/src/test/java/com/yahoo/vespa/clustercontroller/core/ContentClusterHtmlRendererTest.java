@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.json.Jackson;
 import com.google.common.collect.Sets;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
@@ -38,7 +38,7 @@ public class ContentClusterHtmlRendererTest {
 
         for (int x = 0; x < 10; x++) {
             NodeInfo nodeInfo = new DistributorNodeInfo(contentCluster, x, "dist " + x, null);
-            String json = new ObjectMapper().writeValueAsString(Map.of("vtag", Map.of("version", "release1" + (x == 2 ? "bad" : ""))));
+            String json = Jackson.mapper().writeValueAsString(Map.of("vtag", Map.of("version", "release1" + (x == 2 ? "bad" : ""))));
             nodeInfo.setHostInfo(HostInfo.createHostInfo(json));
             distributorNodeInfoByIndex.put(x, nodeInfo);
         }

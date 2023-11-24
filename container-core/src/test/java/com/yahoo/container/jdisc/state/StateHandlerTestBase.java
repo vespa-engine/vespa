@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ApplicationMetadataConfig;
@@ -60,7 +60,7 @@ public class StateHandlerTestBase {
     }
 
     JsonNode requestAsJson(String requestUri) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         return mapper.readTree(mapper.getFactory().createParser(requestAsString(requestUri)));
     }
 

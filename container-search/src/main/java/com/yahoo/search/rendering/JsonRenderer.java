@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
@@ -177,11 +177,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static JsonFactory createGeneratorFactory() {
-        var factory = new JsonFactoryBuilder()
-                .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
-                .build();
-        factory.setCodec(new ObjectMapper(factory).disable(FLUSH_AFTER_WRITE_VALUE));
-        return factory;
+        return Jackson.createMapper(new JsonFactoryBuilder()
+                .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()))
+                .disable(FLUSH_AFTER_WRITE_VALUE).getFactory();
     }
 
     @Override
@@ -358,7 +356,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         generator.writeNumberField(RELEVANCE, hit.getRelevance().getScore());
 
-        if (hit.types().size() > 0) {
+        if (!hit.types().isEmpty()) {
             generator.writeArrayFieldStart(TYPES);
             for (String t : hit.types()) {
                 generator.writeString(t);
@@ -505,7 +503,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private boolean shouldRenderJsonCallback() {
         String jsonCallback = getJsonCallback();
-        return jsonCallback != null && !"".equals(jsonCallback);
+        return jsonCallback != null && !jsonCallback.isEmpty();
     }
 
     private String getJsonCallback() {

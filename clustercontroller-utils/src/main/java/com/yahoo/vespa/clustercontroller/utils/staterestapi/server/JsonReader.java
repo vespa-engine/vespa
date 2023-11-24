@@ -14,31 +14,14 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class JsonReader {
-
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static class UnitStateImpl implements UnitState {
-
-        private final String id;
-        private final String reason;
-
-        public UnitStateImpl(String id, String reason) {
-            this.id = id;
-            this.reason = reason;
-        }
+    private record UnitStateImpl(String id, String reason) implements UnitState {
 
         @Override
-        public String getId() {
-            return id;
+            public String toString() {
+            return id() + ": " + reason();
         }
-
-        @Override
-        public String getReason() {
-            return reason;
-        }
-
-        @Override
-        public String toString() { return getId() +": " + getReason(); }
 
     }
 

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
@@ -32,10 +32,10 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
 
     private final JsonFactory generatorFactory;
 
-    private static Logger logger = Logger.getLogger(JSONFormatter.class.getName());
+    private static final Logger logger = Logger.getLogger(JSONFormatter.class.getName());
 
     public JSONFormatter() {
-        generatorFactory = new JsonFactory(new ObjectMapper());
+        generatorFactory = new JsonFactory(Jackson.mapper());
     }
 
     @Override

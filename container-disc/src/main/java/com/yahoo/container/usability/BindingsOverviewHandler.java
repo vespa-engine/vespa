@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.usability;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +33,7 @@ import java.util.Map;
  */
 public class BindingsOverviewHandler extends AbstractRequestHandler {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     private final JdiscBindingsConfig bindingsConfig;
 
@@ -54,21 +55,17 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             statusToReturn = com.yahoo.jdisc.Response.Status.OK;
         }
 
-        FastContentWriter writer = new FastContentWriter(new ResponseDispatch() {
+        try (FastContentWriter writer = new FastContentWriter(new ResponseDispatch() {
             @Override
             protected com.yahoo.jdisc.Response newResponse() {
                 com.yahoo.jdisc.Response response = new com.yahoo.jdisc.Response(statusToReturn);
                 response.headers().add("Content-Type", List.of("application/json"));
                 return response;
             }
-        }.connect(handler));
-
-        try {
+        }.connect(handler))) {
             writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(json));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        } finally {
-            writer.close();
         }
 
         return new IgnoredContent();

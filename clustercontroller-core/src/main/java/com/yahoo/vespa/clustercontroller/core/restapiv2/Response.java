@@ -45,11 +45,11 @@ public class Response {
         }
 
         @Override
-        public String getId() { return id; }
+        public String id() { return id; }
         @Override
-        public String getReason() { return reason; }
+        public String reason() { return reason; }
         @Override
-        public String toString() { return getId() +": " + getReason(); }
+        public String toString() { return id() +": " + reason(); }
     }
     public static class Link implements SubUnitList {
         private final Map<String, String> links = new LinkedHashMap<>();

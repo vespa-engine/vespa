@@ -65,8 +65,8 @@ public class JsonWriter {
         ObjectNode stateJson = json.putObject("state");
         Map<String, UnitState> state = stateData.getStatePerType();
         state.forEach((stateType, unitState) -> stateJson.putObject(stateType)
-                                                         .put("state", unitState.getId())
-                                                         .put("reason", unitState.getReason()));
+                                                         .put("state", unitState.id())
+                                                         .put("reason", unitState.reason()));
     }
 
     public void fillInJson(Map<String, SubUnitList> subUnitMap, ObjectNode json) {

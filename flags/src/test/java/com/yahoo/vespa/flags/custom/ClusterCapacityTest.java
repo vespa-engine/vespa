@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.custom;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.test.json.Jackson;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ public class ClusterCapacityTest {
     @Test
     void serialization() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null);
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
                              {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"}""",
@@ -33,7 +33,7 @@ public class ClusterCapacityTest {
     @Test
     void serialization2() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", null);
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
                              {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64"}""",
@@ -53,7 +53,7 @@ public class ClusterCapacityTest {
     @Test
     void serialization3() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin");
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
                              {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
@@ -74,7 +74,7 @@ public class ClusterCapacityTest {
     @Test
     void serializationWithNoNodeResources() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null, null);
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("{\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\"}", json);
 

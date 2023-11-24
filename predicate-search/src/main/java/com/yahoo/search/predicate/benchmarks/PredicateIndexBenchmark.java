@@ -55,7 +55,7 @@ public class PredicateIndexBenchmark {
 
     public static void main(String[] rawArgs) throws IOException {
         Optional<BenchmarkArguments> optionalArgs = getBenchmarkArguments(rawArgs);
-        if (!optionalArgs.isPresent()) return;
+        if (optionalArgs.isEmpty()) return;
         BenchmarkArguments args = optionalArgs.get();
 
         putBenchmarkArgumentsToOutput(args);

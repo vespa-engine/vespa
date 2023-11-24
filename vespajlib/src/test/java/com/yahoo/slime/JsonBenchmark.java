@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.test.json.Jackson;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,12 +38,13 @@ public class JsonBenchmark {
 
         try {
             for (int i=0; i < numIterations; i++) {
-                JsonParser jsonParser = jsonFactory.createParser(json);
-                JsonToken array = jsonParser.nextToken();
-                for (JsonToken token = jsonParser.nextToken(); ! JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
-                    if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.getCurrentName())) {
-                        token = jsonParser.nextToken();
-                        count += jsonParser.getLongValue();
+                try (JsonParser jsonParser = jsonFactory.createParser(json)) {
+                    JsonToken array = jsonParser.nextToken();
+                    for (JsonToken token = jsonParser.nextToken(); !JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
+                        if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.getCurrentName())) {
+                            token = jsonParser.nextToken();
+                            count += jsonParser.getLongValue();
+                        }
                     }
                 }
             }
@@ -54,8 +55,8 @@ public class JsonBenchmark {
     }
     private static long benchmarkJacksonTree(byte [] json, int numIterations) {
         long count = 0;
-        ObjectMapper mapper = new ObjectMapper();
         // use the ObjectMapper to read the json string and create a tree
+        var mapper = Jackson.mapper();
         try {
             for (int i=0; i < numIterations; i++) {
                 JsonNode node = mapper.readTree(json);
@@ -94,11 +95,11 @@ public class JsonBenchmark {
      * slime 1000 40000  = 17.5 seconds
      * @param argv type, num elements in weigted set, num iterations
      */
-    static public void main(String argv[]) {
+    static public void main(String [] argv) {
         String type = argv[0];
-        byte [] json = createJson(Integer.valueOf(argv[1]));
+        byte [] json = createJson(Integer.parseInt(argv[1]));
         warmup(json);
-        int count = Integer.valueOf(argv[2]);
+        int count = Integer.parseInt(argv[2]);
         System.out.println(System.currentTimeMillis() + " Start");
         long start = System.currentTimeMillis();
         long numValues;

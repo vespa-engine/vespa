@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.select;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -48,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class SelectTestCase {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = Jackson.mapper();
 
     private final SelectParser parser = new SelectParser(new ParserEnvironment());
 

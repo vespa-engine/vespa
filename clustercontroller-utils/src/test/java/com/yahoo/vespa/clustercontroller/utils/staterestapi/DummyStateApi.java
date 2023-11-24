@@ -125,11 +125,11 @@ public class DummyStateApi implements StateRestAPI {
                         Map<String, UnitState> m = new LinkedHashMap<>();
                         m.put("current", new UnitState() {
                             @Override
-                            public String getId() { return node.state; }
+                            public String id() { return node.state; }
                             @Override
-                            public String getReason() { return node.reason; }
+                            public String reason() { return node.reason; }
                             @Override
-                            public String toString() { return getId() +": " + getReason(); }
+                            public String toString() { return id() +": " + reason(); }
                         });
                         return m;
                     }
@@ -192,8 +192,8 @@ public class DummyStateApi implements StateRestAPI {
         if (newState.size() != 1 || !newState.containsKey("current")) {
             throw new InvalidContentException("Only state of type 'current' is allowed to be set.");
         }
-        n.state = newState.get("current").getId();
-        n.reason = newState.get("current").getReason();
+        n.state = newState.get("current").id();
+        n.reason = newState.get("current").reason();
         String reason = String.format("DummyStateAPI %s call", request.getResponseWait().getName());
         return new SetResponse(reason, true);
     }

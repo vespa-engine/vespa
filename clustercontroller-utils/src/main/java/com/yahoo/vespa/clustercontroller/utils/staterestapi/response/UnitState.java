@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 
 public interface UnitState {
 
-    String getId();
-    String getReason();
+    String id();
+    String reason();
 
 }

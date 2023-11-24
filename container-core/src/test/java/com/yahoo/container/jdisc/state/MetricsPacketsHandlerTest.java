@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -238,7 +238,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     private List<JsonNode> toJsonPackets(String response) throws Exception {
         List<JsonNode> jsonPackets = new ArrayList<>();
         String[] packets = response.split(PACKET_SEPARATOR);
-        ObjectMapper mapper = new ObjectMapper();
+        var mapper = Jackson.mapper();
         for (String packet : packets) {
             jsonPackets.add(mapper.readTree(mapper.getFactory().createParser(packet)));
         }

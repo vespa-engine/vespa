@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -42,11 +43,9 @@ class Json2SingleLevelMap {
     }
 
     private static ObjectMapper createMapper() {
-        var jsonFactory = new JsonFactoryBuilder()
+        return Jackson.createMapper(new JsonFactoryBuilder()
                 .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
-                .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true)
-                .build();
-        return new ObjectMapper(jsonFactory);
+                .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true));
     }
 
     Map<String, String> parse() {

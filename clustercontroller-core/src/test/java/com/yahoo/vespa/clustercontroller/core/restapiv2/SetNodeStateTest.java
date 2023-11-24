@@ -64,17 +64,17 @@ public class SetNodeStateTest extends StateRestApiTest {
                 final String reason) {
             newStates.put(type, new UnitState() {
                 @Override
-                public String getId() {
+                public String id() {
                     return state;
                 }
 
                 @Override
-                public String getReason() {
+                public String reason() {
                     return reason;
                 }
 
                 @Override
-                public String toString() { return getId() +": " + getReason(); }
+                public String toString() { return id() +": " + reason(); }
             });
             return this;
         }
@@ -117,9 +117,9 @@ public class SetNodeStateTest extends StateRestApiTest {
         restAPI.setUnitState(new SetUnitStateRequestImpl("music").setNewState("user", state, reason));
         for (int index : new int[]{1, 2, 3, 5, 7}) {
             UnitResponse response = restAPI.getState(new StateRequest("music/storage/" + index, 0));
-            String actualState = response.getCurrentState().getStatePerType().get("user").getId();
+            String actualState = response.getCurrentState().getStatePerType().get("user").id();
             assertThat(actualState, is(state.toLowerCase()));
-            String actualReason = response.getCurrentState().getStatePerType().get("user").getReason();
+            String actualReason = response.getCurrentState().getStatePerType().get("user").reason();
             assertThat(actualReason, is(reason));
         }
     }
@@ -264,8 +264,8 @@ public class SetNodeStateTest extends StateRestApiTest {
         Response.NodeResponse nodeResponse = (Response.NodeResponse) response;
         UnitState unitState = nodeResponse.getStatePerType().get(type);
         assertNotNull(unitState, "No such type " + type + " at path " + path);
-        assertEquals(state.toString().toLowerCase(), unitState.getId());
-        assertEquals(reason, unitState.getReason());
+        assertEquals(state.toString().toLowerCase(), unitState.id());
+        assertEquals(reason, unitState.reason());
     }
 
     private void assertSetUnitState(int index, State state, String failureReason) throws StateRestApiException {

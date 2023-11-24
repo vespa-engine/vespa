@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -89,8 +89,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author bratseth
  */
 public class JsonRendererTestCase {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static ThreadPoolExecutor executor;
     private static JsonRenderer blueprint;
@@ -571,7 +569,7 @@ public class JsonRendererTestCase {
         execution.search(q);
         new Execution(new Chain<>(), execution.context());
         String summary = render(execution, r);
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
 
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(summary, Map.class);
@@ -1187,7 +1185,7 @@ public class JsonRendererTestCase {
                 + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("json objects");
-        ObjectNode j = jsonMapper.createObjectNode();
+        ObjectNode j = Jackson.mapper().createObjectNode();
         JSONString s = new JSONString("{\"a\": \"b\"}");
         Slime slime = new Slime();
         Cursor c = slime.setObject();
@@ -1613,7 +1611,7 @@ public class JsonRendererTestCase {
         assertEquals("", validateJSON(expected));
         assertEquals("", validateJSON(generated));
 
-        ObjectMapper m = new ObjectMapper();
+        var m = Jackson.mapper();
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
         assertEquals(exp, gen);
@@ -1621,7 +1619,7 @@ public class JsonRendererTestCase {
 
     private String validateJSON(String presumablyValidJson) {
         try {
-            jsonMapper.readTree(presumablyValidJson);
+            Jackson.mapper().readTree(presumablyValidJson);
             return "";
         } catch (IOException e) {
             return e.getMessage();

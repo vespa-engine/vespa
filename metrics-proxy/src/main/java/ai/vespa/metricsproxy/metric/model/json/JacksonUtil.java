@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model.json;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -22,6 +23,7 @@ public class JacksonUtil {
 
     private static final ThreadLocal<DecimalFormat> withinLongRangeFormat = ThreadLocal.withInitial(JacksonUtil::createWithinLongRangeFormat);
     private static final ThreadLocal<DecimalFormat> outsideLongRangeFormat = ThreadLocal.withInitial(JacksonUtil::createOutsideLongRangeFormat);
+    private static final ObjectMapper objectMapper = createObjectMapper();
     private static DecimalFormat createWithinLongRangeFormat() {
         DecimalFormat df = new DecimalFormat("#.####", new DecimalFormatSymbols(Locale.ENGLISH));
         df.setMaximumFractionDigits(13);
@@ -35,13 +37,16 @@ public class JacksonUtil {
     /**
      * Returns an object mapper with a custom floating point serializer to avoid scientific notation
      */
-    public static ObjectMapper createObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = Jackson.createMapper();
         SimpleModule module = new SimpleModule("DoubleSerializer",
                                                new Version(1, 0, 0, "", null, null));
         module.addSerializer(Double.class, new DoubleSerializer());
         mapper.registerModule(module);
         return mapper;
+    }
+    public static ObjectMapper objectMapper() {
+        return objectMapper;
     }
     /**
      * Returns an object mapper with a custom floating point serializer to avoid scientific notation
@@ -63,8 +68,8 @@ public class JacksonUtil {
     }
 
     public static class DoubleSerializer extends JsonSerializer<Double> {
-        private DecimalFormat withinLongRangeFormat = createWithinLongRangeFormat();
-        private DecimalFormat outsideLongRangeFormat = createOutsideLongRangeFormat();
+        private final DecimalFormat withinLongRangeFormat = createWithinLongRangeFormat();
+        private final DecimalFormat outsideLongRangeFormat = createOutsideLongRangeFormat();
         @Override
         public void serialize(Double value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeNumber(format(value, withinLongRangeFormat, outsideLongRangeFormat));

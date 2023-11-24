@@ -16,6 +16,7 @@ import java.util.List;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -78,8 +79,7 @@ public class YamasJsonModelTest {
         // Read file that was taken from production (real -life example that is)
         String filename = getClass().getClassLoader().getResource("yamas-array-no-routing.json").getFile();
         BufferedReader reader = Files.newBufferedReader(Paths.get(filename));
-        ObjectMapper mapper = new ObjectMapper();
-        YamasJsonModel jsonModel = mapper.readValue(reader, YamasJsonModel.class);
+        YamasJsonModel jsonModel = objectMapper().readValue(reader, YamasJsonModel.class);
 
         // Do some sanity checking
         assertNull(jsonModel.routing);
@@ -104,8 +104,7 @@ public class YamasJsonModelTest {
     private YamasJsonModel getYamasJsonModel(String testFile) throws IOException {
         String filename = getClass().getClassLoader().getResource(testFile).getFile();
         BufferedReader reader = Files.newBufferedReader(Paths.get(filename));
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(reader, YamasJsonModel.class);
+        return objectMapper().readValue(reader, YamasJsonModel.class);
     }
 
 }

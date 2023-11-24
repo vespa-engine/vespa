@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.json.Jackson;
 import com.yahoo.concurrent.Receiver;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.response.DataList;
@@ -88,8 +88,6 @@ public class AsyncGroupPopulationTestCase {
     }
 
     private static class InstrumentedGroup extends HitGroup {
-        private static final long serialVersionUID = 4585896586414935558L;
-
         InstrumentedGroup(String id) {
             super(id, new Relevance(1), new ObservableIncoming<Hit>());
             ((ObservableIncoming<Hit>) incoming()).assignOwner(this);
@@ -135,9 +133,8 @@ public class AsyncGroupPopulationTestCase {
         Boolean b = f.get();
         assertTrue(b);
         String rawGot = Utf8.toString(out.toByteArray());
-        ObjectMapper m = new ObjectMapper();
-        Map<?, ?> expected = m.readValue(rawExpected, Map.class);
-        Map<?, ?> got = m.readValue(rawGot, Map.class);
+        Map<?, ?> expected = Jackson.mapper().readValue(rawExpected, Map.class);
+        Map<?, ?> got = Jackson.mapper().readValue(rawGot, Map.class);
         assertEquals(expected, got);
     }
 

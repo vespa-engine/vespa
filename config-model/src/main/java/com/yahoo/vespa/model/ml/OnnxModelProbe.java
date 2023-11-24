@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.OnnxMemoryStats;
@@ -31,7 +31,6 @@ import java.util.Map;
 public class OnnxModelProbe {
 
     private static final String binary = "vespa-analyze-onnx-model";
-    private static final ObjectMapper jsonParser = new ObjectMapper();
 
     static TensorType probeModel(ApplicationPackage app, Path modelPath, String outputName, Map<String, TensorType> inputTypes) {
         TensorType outputType = TensorType.empty;
@@ -155,6 +154,6 @@ public class OnnxModelProbe {
             throw new IllegalArgumentException("Error from '" + binary + "'. Return code: " + returnCode + ". " +
                                                "Output: '" + output + "'");
         }
-        return jsonParser.readTree(output.toString());
+        return Jackson.mapper().readTree(output.toString());
     }
 }

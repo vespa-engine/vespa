@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.rule;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
 import com.yahoo.jdisc.Metric;
@@ -30,8 +30,6 @@ import static org.mockito.Mockito.verify;
  * @author bjorncs
  */
 class RuleBasedRequestFilterTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     @Test
     void matches_rule_that_allows_all_methods_and_paths() {
@@ -230,9 +228,9 @@ class RuleBasedRequestFilterTest {
         Response response = handler.getResponse();
         assertNotNull(response);
         assertEquals(expectedCode, response.getStatus());
-        ObjectNode expectedJson = jsonMapper.createObjectNode();
+        ObjectNode expectedJson = Jackson.mapper().createObjectNode();
         expectedJson.put("message", expectedMessage).put("code", expectedCode);
-        JsonNode actualJson = jsonMapper.readTree(handler.readAll().getBytes());
+        JsonNode actualJson = Jackson.mapper().readTree(handler.readAll().getBytes());
         assertEquals(expectedJson, actualJson);
     }
 

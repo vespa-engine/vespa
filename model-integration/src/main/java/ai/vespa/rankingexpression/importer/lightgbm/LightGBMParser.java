@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.lightgbm;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,8 +28,8 @@ class LightGBMParser {
     private final List<String> featureNames;
     private final Map<Integer, List<String>> categoryValues;  // pr feature index
 
-    LightGBMParser(String filePath) throws JsonProcessingException, IOException {
-        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    LightGBMParser(String filePath) throws IOException {
+        ObjectMapper mapper = Jackson.createMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         JsonNode root = mapper.readTree(new File(filePath));
 
         objective = root.get("objective").asText("regression");

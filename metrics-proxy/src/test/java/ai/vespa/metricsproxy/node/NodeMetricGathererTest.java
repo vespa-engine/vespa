@@ -5,7 +5,6 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
@@ -13,14 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author olaa
  */
 public class NodeMetricGathererTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     @Test
     public void testJSONObjectIsCorrectlyConvertedToMetricsPacket() {
@@ -31,17 +29,17 @@ public class NodeMetricGathererTest {
 
         assertEquals("host_life", packet.service.id);
         assertEquals(123, packet.timestamp);
-        assertEquals(12l, packet.metrics().get(MetricId.toMetricId("uptime")));
-        assertEquals(1l, packet.metrics().get(MetricId.toMetricId("alive")));
+        assertEquals(12L, packet.metrics().get(MetricId.toMetricId("uptime")));
+        assertEquals(1L, packet.metrics().get(MetricId.toMetricId("alive")));
         assertEquals(Set.of(ConsumerId.toConsumerId("Vespa")), packet.consumers());
     }
 
     private JsonNode generateHostLifePacket() {
 
-        ObjectNode jsonObject = jsonMapper.createObjectNode();
+        ObjectNode jsonObject = objectMapper().createObjectNode();
         jsonObject.put("timestamp", 123);
         jsonObject.put("application", "host_life");
-        ObjectNode metrics = jsonMapper.createObjectNode();
+        ObjectNode metrics = objectMapper().createObjectNode();
         metrics.put("uptime", 12);
         metrics.put("alive", 1);
         jsonObject.set("metrics", metrics);

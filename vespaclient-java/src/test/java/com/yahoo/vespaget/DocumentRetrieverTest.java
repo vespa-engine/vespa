@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.json.Jackson;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
@@ -182,9 +182,8 @@ public class DocumentRetrieverTest {
         documentRetriever.retrieveDocuments();
 
         verify(mockedSession, times(3)).syncSend(any());
-        ObjectMapper m = new ObjectMapper();
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> feed = m.readValue(outContent.toByteArray(), List.class);
+        List<Map<String, Object>> feed = Jackson.mapper().readValue(outContent.toByteArray(), List.class);
         assertEquals(DOC_ID_1, feed.get(0).get("id"));
         assertEquals(DOC_ID_2, feed.get(1).get("id"));
         assertEquals(DOC_ID_3, feed.get(2).get("id"));

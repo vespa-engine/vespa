@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.Optional;
  */
 class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
 
-    private final JsonFactory jsonFactory = new JsonFactory(new ObjectMapper());
+    private final JsonFactory jsonFactory = new JsonFactory(Jackson.mapper());
 
     @Override
     public void write(ConnectionLogEntry record, OutputStream outputStream) throws IOException {

@@ -7,7 +7,6 @@ import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import ai.vespa.metricsproxy.service.DownService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,7 +18,7 @@ import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
-import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,8 +32,6 @@ import static org.junit.Assert.fail;
  */
 public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
-
     static String rootUri;
     static String valuesUri;
 
@@ -45,7 +42,7 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     private MODEL getResponseAsJsonModel(String consumer) {
         String response = testDriver.sendRequest(valuesUri + "?consumer=" + consumer).readAll();
         try {
-            return createObjectMapper().readValue(response, modelClass);
+            return objectMapper().readValue(response, modelClass);
         } catch (IOException e) {
             fail("Failed to create json model: " + e.getMessage());
             throw new RuntimeException(e);
@@ -59,14 +56,14 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(rootUri + "/invalid").readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = objectMapper().readTree(response);
         assertTrue(root.has("error"));
     }
 
     @Test
     public void root_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(rootUri).readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = objectMapper().readTree(response);
         assertTrue(root.has("resources"));
 
         ArrayNode resources = (ArrayNode) root.get("resources");
@@ -80,7 +77,7 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     @Test
     public void visually_inspect_values_response() throws Exception {
         String response = testDriver.sendRequest(valuesUri).readAll();
-        ObjectMapper mapper = createObjectMapper();
+        var mapper = objectMapper();
         var jsonModel = mapper.readValue(response, modelClass);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.yahoo.test.json.Jackson;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import org.junit.jupiter.api.Test;
@@ -98,8 +98,8 @@ public class SerializationTest {
         assertThat(wireData.defaultFetchVector.get("node-type"), equalTo("nt1"));
 
         // Verify serialization of RawFlag == serialization by ObjectMapper
-        ObjectMapper mapper = new ObjectMapper();
-        String serializedWithObjectMapper = mapper.writeValueAsString(mapper.readTree(json));
+        var mapper = Jackson.mapper();
+        String serializedWithObjectMapper = Jackson.mapper().writeValueAsString(mapper.readTree(json));
         assertThat(wireData.serializeToJson(), equalTo(serializedWithObjectMapper));
 
         // Unfortunately the order of attributes members are different...

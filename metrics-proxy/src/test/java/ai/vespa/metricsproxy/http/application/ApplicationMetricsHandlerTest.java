@@ -10,7 +10,6 @@ import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
@@ -30,7 +29,7 @@ import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH;
-import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -46,8 +45,6 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ApplicationMetricsHandlerTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String HOST = "localhost";
     private static final String URI_BASE = "http://" + HOST;
@@ -105,7 +102,7 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void v1_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(METRICS_V1_URI).readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = objectMapper().readTree(response);
         assertTrue(root.has("resources"));
 
         ArrayNode resources = (ArrayNode) root.get("resources");
@@ -121,7 +118,7 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void visually_inspect_values_response_metrics() throws Exception {
         String response = testDriver.sendRequest(METRICS_VALUES_URI).readAll();
-        ObjectMapper mapper = createObjectMapper();
+        var mapper = objectMapper();
         var jsonModel = mapper.readValue(response, GenericApplicationModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }
@@ -202,14 +199,14 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(METRICS_V1_URI + "/invalid").readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JsonNode root = objectMapper().readTree(response);
         assertTrue(root.has("error"));
     }
 
     private GenericApplicationModel getResponseAsJsonModel(String consumer) {
         String response = testDriver.sendRequest(METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
         try {
-            return createObjectMapper().readValue(response, GenericApplicationModel.class);
+            return objectMapper().readValue(response, GenericApplicationModel.class);
         } catch (IOException e) {
             fail("Failed to create json model: " + e.getMessage());
             throw new RuntimeException(e);

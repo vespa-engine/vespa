@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
+import com.yahoo.json.Jackson;
 import ai.vespa.metricsproxy.metric.HealthMetric;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -20,7 +20,6 @@ import java.util.logging.Logger;
  * @author Jo Kristian Bergum
  */
 public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
     private final static Logger log = Logger.getLogger(RemoteHealthMetricFetcher.class.getPackage().getName());
 
     private final static String HEALTH_PATH = STATE_PATH + "health";
@@ -54,7 +53,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
 
     private HealthMetric parse(InputStream data) {
         try {
-            JsonNode o = jsonMapper.readTree(data);
+            JsonNode o = Jackson.mapper().readTree(data);
             JsonNode status = o.get("status");
             String code = status.get("code").asText();
             String message = "";
