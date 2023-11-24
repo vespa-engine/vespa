@@ -4,7 +4,7 @@
 #include "attribute_blueprint_params.h"
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
-#include "direct_weighted_set_blueprint.h"
+#include "direct_multi_term_blueprint.h"
 #include "document_weight_or_filter_search.h"
 #include "i_direct_posting_store.h"
 #include "iterator_pack.h"
@@ -686,7 +686,7 @@ public:
             setResult(std::move(ws));
         } else {
             if (_dww != nullptr) {
-                auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dww, n.getNumTerms());
+                auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dww, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -697,7 +697,7 @@ public:
 
     void visit(query::DotProduct &n) override {
         if (_dww != nullptr) {
-            auto *bp = new attribute::DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dww, n.getNumTerms());
+            auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dww, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);

@@ -16,13 +16,13 @@ namespace search::queryeval { class SearchIterator; }
 namespace search::attribute {
 
 /**
- * Blueprint used for WeightedSetTerm or DotProduct over a multi-value attribute
- * which supports the IDirectPostingStore interface.
+ * Blueprint used for multi-term query operators as InTerm, WeightedSetTerm or DotProduct
+ * over a multi-value attribute which supports the IDocidWithWeightPostingStore interface.
  *
  * This allows access to low-level posting lists, which speeds up query execution.
  */
 template <typename SearchType>
-class DirectWeightedSetBlueprint : public queryeval::ComplexLeafBlueprint
+class DirectMultiTermBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
     std::vector<int32_t>                           _weights;
@@ -32,8 +32,8 @@ private:
     vespalib::datastore::EntryRef                  _dictionary_snapshot;
 
 public:
-    DirectWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector &iattr, const IDocidWithWeightPostingStore &attr, size_t size_hint);
-    ~DirectWeightedSetBlueprint() override;
+    DirectMultiTermBlueprint(const queryeval::FieldSpec &field, const IAttributeVector &iattr, const IDocidWithWeightPostingStore &attr, size_t size_hint);
+    ~DirectMultiTermBlueprint() override;
 
     void addTerm(const IDirectPostingStore::LookupKey & key, int32_t weight, HitEstimate & estimate) {
         IDirectPostingStore::LookupResult result = _attr.lookup(key, _dictionary_snapshot);

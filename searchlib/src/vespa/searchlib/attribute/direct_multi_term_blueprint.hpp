@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "direct_weighted_set_blueprint.h"
+#include "direct_multi_term_blueprint.h"
 #include "document_weight_or_filter_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -11,10 +11,10 @@
 namespace search::attribute {
 
 template <typename SearchType>
-DirectWeightedSetBlueprint<SearchType>::DirectWeightedSetBlueprint(const queryeval::FieldSpec &field,
-                                                                   const IAttributeVector &iattr,
-                                                                   const IDocidWithWeightPostingStore &attr,
-                                                                   size_t size_hint)
+DirectMultiTermBlueprint<SearchType>::DirectMultiTermBlueprint(const queryeval::FieldSpec &field,
+                                                               const IAttributeVector &iattr,
+                                                               const IDocidWithWeightPostingStore &attr,
+                                                               size_t size_hint)
     : ComplexLeafBlueprint(field),
       _weights(),
       _terms(),
@@ -28,11 +28,11 @@ DirectWeightedSetBlueprint<SearchType>::DirectWeightedSetBlueprint(const queryev
 }
 
 template <typename SearchType>
-DirectWeightedSetBlueprint<SearchType>::~DirectWeightedSetBlueprint() = default;
+DirectMultiTermBlueprint<SearchType>::~DirectMultiTermBlueprint() = default;
 
 template <typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
+DirectMultiTermBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
@@ -54,7 +54,7 @@ DirectWeightedSetBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMat
 
 template <typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
+DirectMultiTermBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
 {
     std::vector<DocidWithWeightIterator> iterators;
     iterators.reserve(_terms.size());
