@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	CURRENT_GCC_TOOLSET = "/opt/rh/gcc-toolset-12/root/usr/bin"
+	CURRENT_GCC_TOOLSET = "/opt/rh/gcc-toolset/root/usr/bin"
 )
 
 // backwards-compatible parsing of default-env.txt
@@ -293,7 +293,7 @@ func ensureGoodPath(receiver loadEnvReceiver) {
 	builder.appendPath(FindHome() + "/bin")
 	builder.appendPath(FindHome() + "/bin64")
 	// Prefer newer gdb and pstack:
-	builder.appendPath("/opt/rh/gcc-toolset-12/root/usr/bin")
+	builder.appendPath("/opt/rh/gcc-toolset/root/usr/bin")
 	// how to find the "java" program?
 	if javaHome := os.Getenv(envvars.JAVA_HOME); javaHome != "" {
 		builder.appendPath(javaHome + "/bin")

@@ -42,7 +42,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies >= 1.2.4
+BuildRequires: vespa-build-dependencies >= 1.2.5
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -68,7 +68,7 @@ Requires: zstd
 
 %if 0%{?el8}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
+%define _devtoolset_enable /opt/rh/gcc-toolset/enable
 
 %define _use_vespa_gtest 1
 %define _use_vespa_openblas 1
@@ -85,7 +85,7 @@ Requires: vespa-gtest = 1.13.0
 
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
+%define _devtoolset_enable /opt/rh/gcc-toolset/enable
 %define _use_vespa_protobuf 1
 
 Requires: gtest
@@ -278,21 +278,6 @@ Vespa - The open big data serving engine - devel package
 %endif
 %else
 %setup -q
-file_to_patch=/opt/rh/gcc-toolset-12/root/usr/include/c++/12/bits/stl_vector.h
-if test -f $file_to_patch
-then
-  if grep -qs '_M_realloc_insert(iterator __position, const value_type& __x) __attribute((noinline))' $file_to_patch
-  then
-    :
-  else
-    if test -w $file_to_patch
-    then
-      patch $file_to_patch < dist/patch.stl_vector.h.diff
-    else
-      echo "Failed patching $file_to_patch since it is not writable for me"
-    fi
-  fi
-fi
 
 echo '%{version}' > VERSION
 case '%{version}' in

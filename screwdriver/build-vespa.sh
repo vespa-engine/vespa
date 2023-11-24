@@ -6,7 +6,7 @@ set -e
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
 
-source /etc/profile.d/enable-gcc-toolset-12.sh
+source /etc/profile.d/enable-gcc-toolset.sh
 
 export MALLOC_ARENA_MAX=1
 export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
