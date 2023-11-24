@@ -804,7 +804,7 @@ std::unique_ptr<TermVector>
 make_subterms(const std::vector<TermType>& values)
 {
     using TermVectorType = std::conditional_t<std::is_same_v<TermType,int64_t>,IntegerTermVector,StringTermVector>;
-    auto terms = std::make_unique<TermVectorType>(in_strings.size());
+    auto terms = std::make_unique<TermVectorType>(values.size());
     for (auto term : values) {
         terms->addTerm(term);
     }
