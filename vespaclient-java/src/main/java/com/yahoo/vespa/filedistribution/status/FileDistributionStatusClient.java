@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution.status;
 
-import ai.vespa.json.Jackson;
+import com.yahoo.json.Jackson;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.airlift.airline.Command;
