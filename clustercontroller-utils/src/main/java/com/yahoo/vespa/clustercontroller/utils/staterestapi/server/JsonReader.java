@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class JsonReader {
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private record UnitStateImpl(String id, String reason) implements UnitState {
 
@@ -42,7 +43,7 @@ public class JsonReader {
     }
 
     public SetRequestData getStateRequestData(HttpRequest request) throws Exception {
-        JsonNode json = Jackson.mapper().readTree(request.getPostContent().toString());
+        JsonNode json = mapper.readTree(request.getPostContent().toString());
 
         final boolean probe = json.has("probe") && json.get("probe").booleanValue();
 

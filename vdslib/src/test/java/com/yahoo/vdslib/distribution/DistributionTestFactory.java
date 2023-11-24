@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.subscription.ConfigGetter;
@@ -20,6 +20,8 @@ import static org.junit.Assert.assertTrue;
 
 // TODO: Use config builder instead of ConfigGetter to create test config.
 public class DistributionTestFactory extends CrossPlatformTestFactory {
+
+    final ObjectMapper mapper = new ObjectMapper();
 
     private static final String testDirectory = "src/tests/distribution/testdata";
     private int redundancy;
@@ -175,7 +177,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     }
 
     public String serialize() {
-        ObjectNode test = new ObjectNode(Jackson.mapper().getNodeFactory())
+        ObjectNode test = new ObjectNode(mapper.getNodeFactory())
                 .put("cluster-state", state.toString())
                 .put("distribution", new StorDistributionConfig(distributionConfig).toString())
                 .put("node-type", nodeType.toString())
@@ -193,7 +195,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     }
 
     public void parse(String serialized) throws Exception {
-        JsonNode json = Jackson.mapper().readTree(serialized);
+        JsonNode json = mapper.readTree(serialized);
         upStates = json.get("up-states").textValue();
         nodeCount = json.get("redundancy").intValue();
         redundancy = json.get("redundancy").intValue();

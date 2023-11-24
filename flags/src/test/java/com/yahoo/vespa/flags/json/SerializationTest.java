@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.yahoo.test.json.Jackson;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import org.junit.jupiter.api.Test;

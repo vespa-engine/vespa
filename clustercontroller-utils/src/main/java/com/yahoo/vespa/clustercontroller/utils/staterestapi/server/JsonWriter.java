@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.CurrentUnitState;
@@ -19,6 +19,8 @@ import java.util.Map;
 
 public class JsonWriter {
 
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private String pathPrefix = "/";
 
     public JsonWriter() { }
@@ -31,7 +33,7 @@ public class JsonWriter {
     }
 
     public JsonNode createJson(UnitResponse data) {
-        ObjectNode json = new ObjectNode(Jackson.mapper().getNodeFactory());
+        ObjectNode json = new ObjectNode(mapper.getNodeFactory());
         fillInJson(data, json);
         return json;
     }
@@ -92,11 +94,11 @@ public class JsonWriter {
     }
 
     public JsonNode createErrorJson(String description) {
-        return new ObjectNode(Jackson.mapper().getNodeFactory()).put("message", description);
+        return new ObjectNode(mapper.getNodeFactory()).put("message", description);
     }
 
     public JsonNode createJson(SetResponse setResponse) {
-        return new ObjectNode(Jackson.mapper().getNodeFactory()).put("wasModified", setResponse.getWasModified())
+        return new ObjectNode(mapper.getNodeFactory()).put("wasModified", setResponse.getWasModified())
                                                       .put("reason", setResponse.getReason());
     }
 

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.benchmarks;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Iterators;
@@ -56,7 +55,7 @@ public class PredicateIndexBenchmark {
 
     public static void main(String[] rawArgs) throws IOException {
         Optional<BenchmarkArguments> optionalArgs = getBenchmarkArguments(rawArgs);
-        if (!optionalArgs.isPresent()) return;
+        if (optionalArgs.isEmpty()) return;
         BenchmarkArguments args = optionalArgs.get();
 
         putBenchmarkArgumentsToOutput(args);
@@ -240,7 +239,7 @@ public class PredicateIndexBenchmark {
 
     private static void writeOutputToStandardOut() {
         try {
-            ObjectMapper objectMapper = Jackson.createMapper();
+            ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
             objectMapper.writeValue(System.out, output);
         } catch (IOException e) {

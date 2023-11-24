@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -21,6 +20,7 @@ import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentReader;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.test.json.Jackson;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
 
@@ -958,8 +958,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         setUpSertestDocType();
         Document doc = getSertestDocument();
         String json = doc.toJson();
-        Map<String, Object> parsed = Jackson.mapper().readValue(json, new TypeReference<>() {
-        });
+        Map<String, Object> parsed = Jackson.mapper().readValue(json, new TypeReference<>() {});
         assertEquals(parsed.get("id"), "id:ns:sertest::foobar");
         assertTrue(parsed.get("fields") instanceof Map);
         Object fieldMap = parsed.get("fields");

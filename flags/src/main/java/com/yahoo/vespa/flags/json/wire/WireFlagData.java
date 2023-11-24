@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json.wire;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +24,7 @@ public class WireFlagData {
     @JsonProperty("rules") public List<WireRule> rules;
     @JsonProperty("attributes") public Map<String, String> defaultFetchVector;
 
-    private static final ObjectMapper mapper = Jackson.mapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public byte[] serializeToBytes() {
         return uncheck(() -> mapper.writeValueAsBytes(this));

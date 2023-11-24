@@ -2,8 +2,8 @@
 
 package com.yahoo.config.model.api;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.path.Path;
@@ -19,6 +19,7 @@ import java.util.Optional;
 public record OnnxMemoryStats(long vmSize, long vmRss, long mallocPeak, long mallocCurrent) {
     private static final String VM_SIZE_FIELD = "vm_size", VM_RSS_FIELD = "vm_rss",
             MALLOC_PEAK_FIELD = "malloc_peak", MALLOC_CURRENT_FIELD = "malloc_current";
+    private static final ObjectMapper jsonParser = new ObjectMapper();
 
     /** Parse output from `vespa-analyze-onnx-model --probe-types` */
     public static OnnxMemoryStats fromJson(JsonNode json) {
@@ -30,7 +31,7 @@ public record OnnxMemoryStats(long vmSize, long vmRss, long mallocPeak, long mal
 
     /** @see #fromJson(JsonNode)  */
     public static OnnxMemoryStats fromJson(ApplicationFile file) throws IOException {
-        return fromJson(Jackson.mapper().readTree(file.createReader()));
+        return fromJson(jsonParser.readTree(file.createReader()));
     }
 
     public static Path memoryStatsFilePath(Path modelPath) {
@@ -41,7 +42,7 @@ public record OnnxMemoryStats(long vmSize, long vmRss, long mallocPeak, long mal
     public long peakMemoryUsage() { return Long.max(vmSize, Long.max(vmRss, Long.max(mallocPeak, mallocCurrent))); }
 
     public JsonNode toJson() {
-        return Jackson.mapper().createObjectNode().put(VM_SIZE_FIELD, vmSize).put(VM_RSS_FIELD, vmRss)
+        return jsonParser.createObjectNode().put(VM_SIZE_FIELD, vmSize).put(VM_RSS_FIELD, vmRss)
                 .put(MALLOC_PEAK_FIELD, mallocPeak).put(MALLOC_CURRENT_FIELD, mallocCurrent);
     }
 }

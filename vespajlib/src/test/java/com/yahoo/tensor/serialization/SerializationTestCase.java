@@ -2,11 +2,11 @@
 
 package com.yahoo.tensor.serialization;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.test.json.Jackson;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,8 +45,9 @@ public class SerializationTestCase {
 
     @Test
     public void testSerialization() throws IOException {
+        var mapper = Jackson.mapper();
         for (String test : tests) {
-            JsonNode node = Jackson.mapper().readTree(test);
+            JsonNode node = mapper.readTree(test);
             if (node.has("tensor") && node.has("binary")) {
                 System.out.println("Running test: " + test);
 

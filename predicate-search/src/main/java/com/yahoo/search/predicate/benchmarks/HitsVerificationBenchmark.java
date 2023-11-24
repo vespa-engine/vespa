@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.benchmarks;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.yahoo.search.predicate.Config;
@@ -46,7 +45,7 @@ public class HitsVerificationBenchmark {
 
     public static void main(String[] rawArgs) throws IOException {
         Optional<BenchmarkArguments> wrappedArgs = getArguments(rawArgs);
-        if (!wrappedArgs.isPresent()) return;
+        if (wrappedArgs.isEmpty()) return;
         BenchmarkArguments args = wrappedArgs.get();
         Map<String, Object> output = new TreeMap<>();
         addArgsToOutput(output, args);
@@ -146,7 +145,7 @@ public class HitsVerificationBenchmark {
 
     private static void writeOutputToStandardOut(Map<String, Object> output) {
         try {
-            ObjectMapper objectMapper = Jackson.createMapper();
+            ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
             objectMapper.writeValue(System.out, output);
         } catch (IOException e) {

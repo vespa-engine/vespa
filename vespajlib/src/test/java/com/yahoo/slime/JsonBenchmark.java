@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import ai.vespa.json.Jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.test.json.Jackson;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,9 +56,10 @@ public class JsonBenchmark {
     private static long benchmarkJacksonTree(byte [] json, int numIterations) {
         long count = 0;
         // use the ObjectMapper to read the json string and create a tree
+        var mapper = Jackson.mapper();
         try {
             for (int i=0; i < numIterations; i++) {
-                JsonNode node = Jackson.mapper().readTree(json);
+                JsonNode node = mapper.readTree(json);
                 for(JsonNode item : node) {
                     count += item.get("weight").asLong();
                 }
@@ -94,11 +95,11 @@ public class JsonBenchmark {
      * slime 1000 40000  = 17.5 seconds
      * @param argv type, num elements in weigted set, num iterations
      */
-    static public void main(String argv[]) {
+    static public void main(String [] argv) {
         String type = argv[0];
-        byte [] json = createJson(Integer.valueOf(argv[1]));
+        byte [] json = createJson(Integer.parseInt(argv[1]));
         warmup(json);
-        int count = Integer.valueOf(argv[2]);
+        int count = Integer.parseInt(argv[2]);
         System.out.println(System.currentTimeMillis() + " Start");
         long start = System.currentTimeMillis();
         long numValues;
