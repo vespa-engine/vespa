@@ -42,8 +42,7 @@ public class InstanceCsrGeneratorTest {
         var expectedSans = Set.of(
                 new SubjectAlternativeName(DNS, "bar.foo.prod-us-north-1.vespa.yahoo.cloud"),
                 new SubjectAlternativeName(DNS, "0.default.default.foo-app.vespa.us-north-1.prod.node.instanceid.athenz.prod-us-north-1.vespa.yahoo.cloud"),
-                new SubjectAlternativeName(URI, "vespa://cluster-type/container"),
-                new SubjectAlternativeName(URI, "spiffe://foo/sa/bar"));
+                new SubjectAlternativeName(URI, "vespa://cluster-type/container"));
       assertEquals(expectedSans, actualSans);
     }
 }

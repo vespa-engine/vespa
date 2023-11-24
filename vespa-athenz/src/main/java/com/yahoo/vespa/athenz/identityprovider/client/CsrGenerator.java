@@ -50,8 +50,7 @@ public class CsrGenerator {
                                 instanceIdentity.getName(),
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
-                .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
-                .addSubjectAlternativeName(URI, instanceIdentity.spiffeUri().toString());
+                .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId));
         if (clusterType != null) pkcs10CsrBuilder.addSubjectAlternativeName(URI, clusterType.asCertificateSanUri().toString());
         ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP, ip)));
         return pkcs10CsrBuilder.build();
@@ -65,8 +64,7 @@ public class CsrGenerator {
         X500Principal principal = new X500Principal(String.format("OU=%s, cn=%s:role.%s", providerService, role.domain().getName(), role.roleName()));
         var b = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
-                .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix))
-                .addSubjectAlternativeName(URI, "spiffe://%s/ra/%s".formatted(role.domain().getName(), role.roleName()));
+                .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix));
         if (clusterType != null) b.addSubjectAlternativeName(URI, clusterType.asCertificateSanUri().toString());
         return b.build();
     }
