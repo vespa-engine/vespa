@@ -373,6 +373,10 @@ getent passwd %{_vespa_user} >/dev/null || \
     useradd -r %{?_vespa_user_uid:-u %{_vespa_user_uid}} -g %{_vespa_group} --home-dir %{_prefix} -s /sbin/nologin \
     -c "Create owner of all Vespa data files" %{_vespa_user}
 %endif
+%if 0%{?el8} || 0%{?el9}
+# TODO Hardcoded toolset version, should be detected in a better way.
+ln -sf /opt/rh/gcc-toolset-13 /opt/rh/gcc-toolset
+%endif
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
 exit 0
