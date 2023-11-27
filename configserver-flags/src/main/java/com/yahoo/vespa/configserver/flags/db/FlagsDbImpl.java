@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.configserver.flags.db;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * @author hakonhall
  */
-public class FlagsDbImpl implements FlagsDb {
+public class FlagsDbImpl extends AbstractComponent implements FlagsDb {
     private static final Path ROOT_PATH = Path.fromString("/flags/v1");
 
     private final Curator curator;
@@ -64,4 +65,10 @@ public class FlagsDbImpl implements FlagsDb {
     private static Path getZkPathFor(FlagId flagId) {
         return ROOT_PATH.append(flagId.toString());
     }
+
+    @Override
+    public void deconstruct() {
+        cache.close(); // Also shuts down the executor service
+    }
+
 }
