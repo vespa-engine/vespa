@@ -114,48 +114,52 @@ TEST("test AndNot Blueprint") {
     // createSearch tested by iterator unit test
 }
 
+template <typename BP>
+void optimize(std::unique_ptr<BP> &ref) {
+    auto optimized = Blueprint::optimize(std::move(ref));
+    ref.reset(dynamic_cast<BP*>(optimized.get()));
+    ASSERT_TRUE(ref);
+    optimized.release();
+}
+
 TEST("test And propagates updated histestimate") {
-    AndBlueprint bp;
-    bp.setSourceId(2);
-    bp.addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.optimize_self(Blueprint::OptimizePass::FIRST);
-    bp.optimize_self(Blueprint::OptimizePass::SECOND);
-    bp.optimize_self(Blueprint::OptimizePass::LAST);
-    bp.setDocIdLimit(5000);
-    bp.fetchPostings(ExecuteInfo::TRUE);
-    EXPECT_EQUAL(3u, bp.childCnt());
-    for (uint32_t i = 0; i < bp.childCnt(); i++) {
-        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
+    auto bp = std::make_unique<AndBlueprint>();
+    bp->setSourceId(2);
+    bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
+    optimize(bp);
+    bp->setDocIdLimit(5000);
+    bp->fetchPostings(ExecuteInfo::TRUE);
+    EXPECT_EQUAL(3u, bp->childCnt());
+    for (uint32_t i = 0; i < bp->childCnt(); i++) {
+        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
         EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f/250, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
 }
 
 TEST("test Or propagates updated histestimate") {
-    OrBlueprint bp;
-    bp.setSourceId(2);
-    bp.addChild(ap(MyLeafSpec(5000).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp.optimize_self(Blueprint::OptimizePass::FIRST);
-    bp.optimize_self(Blueprint::OptimizePass::SECOND);
-    bp.optimize_self(Blueprint::OptimizePass::LAST);
-    bp.setDocIdLimit(5000);
-    bp.fetchPostings(ExecuteInfo::TRUE);
-    EXPECT_EQUAL(4u, bp.childCnt());
-    for (uint32_t i = 0; i < bp.childCnt(); i++) {
-        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
+    auto bp = std::make_unique<OrBlueprint>();
+    bp->setSourceId(2);
+    bp->addChild(ap(MyLeafSpec(5000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
+    optimize(bp);
+    bp->setDocIdLimit(5000);
+    bp->fetchPostings(ExecuteInfo::TRUE);
+    EXPECT_EQUAL(4u, bp->childCnt());
+    for (uint32_t i = 0; i < bp->childCnt(); i++) {
+        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
         EXPECT_TRUE(child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
-    EXPECT_EQUAL(3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(3)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate());
 }
 
 TEST("test And Blueprint") {
@@ -469,6 +473,7 @@ struct SourceBlenderTestFixture {
     InvalidSelector selector_1; // the one
     InvalidSelector selector_2; // not the one
     void addChildrenForSBTest(IntermediateBlueprint & parent);
+    void addChildrenForSimpleSBTest(IntermediateBlueprint & parent);
 };
 
 void
@@ -488,7 +493,13 @@ void SourceBlenderTestFixture::addChildrenForSBTest(IntermediateBlueprint & pare
     parent.addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(selector_1), {{2000, 2}, {1000, 1}}));
 }
 
-TEST_F("test SourceBlender below AND optimization", SourceBlenderTestFixture) {
+void SourceBlenderTestFixture::addChildrenForSimpleSBTest(IntermediateBlueprint & parent) {
+    parent.addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(selector_1), {{200, 2}, {100, 1}, {300, 3}}));
+    parent.addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(selector_1), {{20, 2}, {10, 1}, {30, 3}}));
+    parent.addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(selector_1), {{2000, 2}, {1000, 1}}));
+}
+
+TEST_F("test SourceBlender below AND partial optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<AndBlueprint>();
     f.addChildrenForSBTest(*top);
 
@@ -505,7 +516,19 @@ TEST_F("test SourceBlender below AND optimization", SourceBlenderTestFixture) {
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
-TEST_F("test SourceBlender below OR optimization", SourceBlenderTestFixture) {
+TEST_F("test AND replaced by source blender after full optimization", SourceBlenderTestFixture) {
+    auto top = std::make_unique<AndBlueprint>();
+    f.addChildrenForSimpleSBTest(*top);
+
+    auto expect = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
+    expect->addChild(addLeafsWithSourceId(3, std::make_unique<AndBlueprint>(), {{30,  3}, {300, 3}}));
+    expect->addChild(addLeafsWithSourceId(2, std::make_unique<AndBlueprint>(), {{20,   2}, {200,  2}, {2000, 2}}));
+    expect->addChild(addLeafsWithSourceId(1, std::make_unique<AndBlueprint>(), {{10,   1}, {100,  1}, {1000, 1}}));
+
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST_F("test SourceBlender below OR partial optimization", SourceBlenderTestFixture) {
     auto top = std::make_unique<OrBlueprint>();
     f.addChildrenForSBTest(*top);
     //-------------------------------------------------------------------------
@@ -517,6 +540,18 @@ TEST_F("test SourceBlender below OR optimization", SourceBlenderTestFixture) {
     expect->addChild(std::move(blender));
     expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     addLeafs(*expect, {3, 2, 1});
+
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST_F("test OR replaced by source blender after full optimization", SourceBlenderTestFixture) {
+    auto top = std::make_unique<OrBlueprint>();
+    f.addChildrenForSimpleSBTest(*top);
+
+    auto expect = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
+    expect->addChild(addLeafsWithSourceId(3, std::make_unique<OrBlueprint>(), {{300, 3}, {30,  3}}));
+    expect->addChild(addLeafsWithSourceId(2, std::make_unique<OrBlueprint>(), {{2000, 2}, {200,  2}, {20,   2}}));
+    expect->addChild(addLeafsWithSourceId(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100,  1}, {10,   1}}));
 
     optimize_and_compare(std::move(top), std::move(expect));
 }
@@ -592,14 +627,69 @@ TEST("and with one empty child is optimized away") {
     EXPECT_EQUAL(expect_up->asString(), top->asString());
 }
 
+TEST("AND AND collapsing") {
+    auto top = std::make_unique<AndBlueprint>();
+    addLeafs(*top, {1,3,5});
+    auto sub_and = std::make_unique<AndBlueprint>();
+    addLeafs(*sub_and, {2,4});
+    top->addChild(std::move(sub_and));
+    auto expect = std::make_unique<AndBlueprint>();
+    addLeafs(*expect, {1,2,3,4,5});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("OR OR collapsing") {
+    auto top = std::make_unique<OrBlueprint>();
+    addLeafs(*top, {1,3,5});
+    auto sub_and = std::make_unique<OrBlueprint>();
+    addLeafs(*sub_and, {2,4});
+    top->addChild(std::move(sub_and));
+    auto expect = std::make_unique<OrBlueprint>();
+    addLeafs(*expect, {5,4,3,2,1});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("AND_NOT AND_NOT collapsing") {
+    auto top = std::make_unique<AndNotBlueprint>();
+    auto sub_and_not = std::make_unique<AndNotBlueprint>();
+    addLeafs(*sub_and_not, {1,3,5});
+    top->addChild(std::move(sub_and_not));
+    addLeafs(*top, {2,4});
+    auto expect = std::make_unique<AndNotBlueprint>();
+    addLeafs(*expect, {1,5,4,3,2});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("AND_NOT AND AND_NOT collapsing") {
+    auto top = std::make_unique<AndNotBlueprint>();
+    auto sub_and = std::make_unique<AndBlueprint>();
+    auto sub_and_not = std::make_unique<AndNotBlueprint>();
+    addLeafs(*sub_and_not, {1,5,6});
+    sub_and->addChild(std::move(sub_and_not));
+    addLeafs(*sub_and, {3,2});
+    sub_and_not = std::make_unique<AndNotBlueprint>();
+    addLeafs(*sub_and_not, {4,8,9});
+    sub_and->addChild(std::move(sub_and_not));
+    top->addChild(std::move(sub_and));
+    addLeafs(*top, {7});
+    //-------------------------------------------------------------------------
+    auto expect = std::make_unique<AndNotBlueprint>();
+    auto sub_expect = std::make_unique<AndBlueprint>();
+    addLeafs(*sub_expect, {1,2,3,4});
+    expect->addChild(std::move(sub_expect));
+    addLeafs(*expect, {9,8,7,6,5});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
 TEST("test single child optimization") {
     InvalidSelector selector;
     //-------------------------------------------------------------------------
     Blueprint::UP top = ap((new AndNotBlueprint())->
-               addChild(ap((new AndBlueprint())->
-                           addChild(ap((new OrBlueprint())->
-                                           addChild(ap((new SourceBlenderBlueprint(selector))->
-                                                           addChild(addLeafs(std::make_unique<RankBlueprint>(), {42})))))))));
+                           addChild(ap((new AndBlueprint())->
+                                       addChild(ap((new RankBlueprint())->
+                                                   addChild(ap((new OrBlueprint())->
+                                                               addChild(ap((new SourceBlenderBlueprint(selector))->
+                                                                           addChild(addLeafs(std::make_unique<RankBlueprint>(), {42})))))))))));
     //-------------------------------------------------------------------------
     Blueprint::UP expect = addLeafs(std::make_unique<SourceBlenderBlueprint>(selector), {42});
     //-------------------------------------------------------------------------

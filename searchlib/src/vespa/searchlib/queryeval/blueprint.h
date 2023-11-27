@@ -32,6 +32,7 @@ class SourceBlenderBlueprint;
 class AndBlueprint;
 class AndNotBlueprint;
 class OrBlueprint;
+class EmptyBlueprint;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -50,7 +51,7 @@ public:
     using Children = std::vector<Blueprint::UP>;
     using SearchIteratorUP = std::unique_ptr<SearchIterator>;
 
-    enum class OptimizePass { FIRST, SECOND, LAST };
+    enum class OptimizePass { FIRST, LAST };
     
     struct HitEstimate {
         uint32_t estHits;
@@ -270,6 +271,9 @@ public:
     virtual bool isRank() const noexcept { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const noexcept { return nullptr; }
 
+    // to avoid replacing an empty blueprint with another empty blueprint
+    virtual EmptyBlueprint *as_empty() noexcept { return nullptr; }
+
     // For document summaries with matched-elements-only set.
     virtual std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const;
 };
@@ -347,6 +351,7 @@ public:
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
+    Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
