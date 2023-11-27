@@ -181,13 +181,13 @@ DotProductSearch::create(TermFieldMatchData &tmd,
                          const std::vector<int32_t> &weights,
                          std::vector<DocidWithWeightIterator> &&iterators)
 {
-    using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
-    using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;
+    using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, DocidWithWeightIteratorPack>;
+    using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, DocidWithWeightIteratorPack>;
 
     if (iterators.size() < 128) {
-        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators)));
+        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators)));
     }
-    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators)));
+    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators)));
 }
 
 //-----------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 #include "direct_multi_term_blueprint.h"
 #include "document_weight_or_filter_search.h"
 #include "i_direct_posting_store.h"
-#include "iterator_pack.h"
+#include "posting_iterator_pack.h"
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/common/location.h>

@@ -572,7 +572,7 @@ TEST("require that attribute weighted set term works") {
         ASSERT_EQUAL(5u, result.hits.size());
         if (fast_search && result.iterator_dump.find("MonitoringDumpIterator") == vespalib::string::npos) {
             fprintf(stderr, "DUMP: %s\n", result.iterator_dump.c_str());
-            EXPECT_TRUE(result.iterator_dump.find("AttributeIteratorPack") != vespalib::string::npos);
+            EXPECT_TRUE(result.iterator_dump.find("PostingIteratorPack") != vespalib::string::npos);
         }
         EXPECT_EQUAL(10u, result.hits[0].docid);
         EXPECT_EQUAL(20, result.hits[0].match_weight);

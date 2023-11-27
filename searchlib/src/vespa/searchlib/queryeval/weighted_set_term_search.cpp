@@ -190,13 +190,13 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               const std::vector<int32_t> &weights,
                               std::vector<DocidWithWeightIterator> &&iterators)
 {
-    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
-    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;
+    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, DocidWithWeightIteratorPack>;
+    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, DocidWithWeightIteratorPack>;
 
     if (iterators.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
+        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators))));
     }
-    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
+    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators))));
 }
 
 //-----------------------------------------------------------------------------

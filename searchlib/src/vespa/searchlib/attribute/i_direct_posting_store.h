@@ -10,6 +10,14 @@ namespace search::queryeval { class SearchIterator; }
 
 namespace search {
 
+/**
+ * Direct (low-level) iterator over a btree posting list that contains only docids.
+ */
+using DocidIterator = attribute::PostingListTraits<vespalib::btree::BTreeNoLeafData>::const_iterator;
+
+/**
+ * Direct (low-level) iterator over a btree posting list that contains {docid, weight} tuples.
+ */
 using DocidWithWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
 /**

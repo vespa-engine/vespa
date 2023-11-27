@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/attribute/iterator_pack.h>
+#include <vespa/searchlib/attribute/posting_iterator_pack.h>
 
 namespace search::fef { class TermFieldMatchData; }
 

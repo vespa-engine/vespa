@@ -74,7 +74,6 @@ vespa_add_library(searchlib_attribute OBJECT
     imported_search_context.cpp
     integerbase.cpp
     ipostinglistsearchcontext.cpp
-    iterator_pack.cpp
     load_utils.cpp
     loadedenumvalue.cpp
     loadednumericvalue.cpp
@@ -104,6 +103,7 @@ vespa_add_library(searchlib_attribute OBJECT
     numeric_search_context.cpp
     numeric_sort_blob_writer.cpp
     numericbase.cpp
+    posting_iterator_pack.cpp
     posting_list_merger.cpp
     postingchange.cpp
     postinglistattribute.cpp

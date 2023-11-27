@@ -8,7 +8,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
-#include <vespa/searchlib/attribute/iterator_pack.h>
+#include <vespa/searchlib/attribute/posting_iterator_pack.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
@@ -264,7 +264,7 @@ VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer &,
 
 //-----------------------------------------------------------------------------
 
-struct VectorizedAttributeTerms : VectorizedState<AttributeIteratorPack> {
+struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
     template <typename Scorer>
     VectorizedAttributeTerms(const std::vector<int32_t> &weights,
                              const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
@@ -279,7 +279,7 @@ struct VectorizedAttributeTerms : VectorizedState<AttributeIteratorPack> {
             attr.create(dict_entries[order[i]].posting_idx, iterators);
             docId(i) = (iterators.back().valid()) ? iterators.back().getKey() : search::endDocId;
         }
-        iteratorPack() = AttributeIteratorPack(std::move(iterators));
+        iteratorPack() = DocidWithWeightIteratorPack(std::move(iterators));
     }
     void visit_members(vespalib::ObjectVisitor &) const {}
 };
