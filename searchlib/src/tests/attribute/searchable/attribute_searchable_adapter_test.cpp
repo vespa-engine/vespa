@@ -20,6 +20,7 @@
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -56,6 +57,8 @@ using search::query::SimpleSubstringTerm;
 using search::query::SimpleStringTerm;
 using search::query::SimpleWandTerm;
 using search::query::SimpleWeightedSetTerm;
+using search::query::SimpleInTerm;
+using search::query::StringTermVector;
 using search::query::Weight;
 using search::queryeval::Blueprint;
 using search::queryeval::FieldSpec;
@@ -584,6 +587,37 @@ TEST("require that attribute weighted set term works") {
         EXPECT_EQUAL(10, result.hits[3].match_weight);
         EXPECT_EQUAL(50u, result.hits[4].docid);
         EXPECT_EQUAL(30, result.hits[4].match_weight);
+    }
+}
+
+TEST("require that attribute in term works") {
+    for (int i = 0; i <= 0x3; ++i) {
+        bool fast_search = ((i & 0x1) != 0);
+        bool strict = ((i & 0x2) != 0);
+        MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
+        auto stv = std::make_unique<StringTermVector>(4);
+        stv->addTerm("foo");
+        stv->addTerm("bar");
+        stv->addTerm("baz");
+        stv->addTerm("fox");
+        SimpleInTerm node(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(1));
+        Result result = do_search(attribute_manager, node, strict);
+        EXPECT_FALSE(result.est_empty);
+        ASSERT_EQUAL(5u, result.hits.size());
+        if (fast_search && result.iterator_dump.find("MonitoringDumpIterator") == vespalib::string::npos) {
+            fprintf(stderr, "DUMP: %s\n", result.iterator_dump.c_str());
+            EXPECT_TRUE(result.iterator_dump.find("PostingIteratorPack") != vespalib::string::npos);
+        }
+        EXPECT_EQUAL(10u, result.hits[0].docid);
+        EXPECT_EQUAL(1, result.hits[0].match_weight);
+        EXPECT_EQUAL(20u, result.hits[1].docid);
+        EXPECT_EQUAL(1, result.hits[1].match_weight);
+        EXPECT_EQUAL(30u, result.hits[2].docid);
+        EXPECT_EQUAL(1, result.hits[2].match_weight);
+        EXPECT_EQUAL(40u, result.hits[3].docid);
+        EXPECT_EQUAL(1, result.hits[3].match_weight);
+        EXPECT_EQUAL(50u, result.hits[4].docid);
+        EXPECT_EQUAL(1, result.hits[4].match_weight);
     }
 }
 

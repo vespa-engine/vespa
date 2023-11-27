@@ -672,7 +672,8 @@ public:
         return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
     }
 
-    void visit(query::WeightedSetTerm &n) override {
+    template <typename Node>
+    void create_weighted_set_or_in(Node &n) {
         bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());
         bool isInteger = _attr.isIntegerType();
@@ -693,6 +694,10 @@ public:
                 createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
             }
         }
+    }
+
+    void visit(query::WeightedSetTerm &n) override {
+        create_weighted_set_or_in(n);
     }
 
     void visit(query::DotProduct &n) override {
@@ -719,6 +724,11 @@ public:
             createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }
+
+    void visit(query::InTerm &n) override {
+        create_weighted_set_or_in(n);
+    }
+
     void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {
         Issue::report("NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
                       _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());

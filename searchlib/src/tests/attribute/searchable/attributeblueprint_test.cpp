@@ -14,6 +14,7 @@
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
@@ -41,6 +42,8 @@ using search::query::SimplePrefixTerm;
 using search::query::SimpleStringTerm;
 using search::query::SimpleWandTerm;
 using search::query::SimpleWeightedSetTerm;
+using search::query::SimpleInTerm;
+using search::query::StringTermVector;
 using search::query::Weight;
 using search::queryeval::Blueprint;
 using search::queryeval::EmptyBlueprint;
@@ -452,6 +455,13 @@ TEST(AttributeBlueprintTest, direct_weighted_set_blueprint_creates_or_like_filte
         term.addTerm("bar", Weight(20));
         f.expect_filter_search(SimpleResult({1, 3}), term);
     }
+    {
+        auto stv = std::make_unique<StringTermVector>(2);
+        stv->addTerm("foo");
+        stv->addTerm("bar");
+        SimpleInTerm term(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(0));
+        f.expect_filter_search(SimpleResult({1, 3}), term);
+    }
 }
 
 TEST(AttributeBlueprintTest, attribute_weighted_set_blueprint_creates_or_like_filter_search)
@@ -461,6 +471,13 @@ TEST(AttributeBlueprintTest, attribute_weighted_set_blueprint_creates_or_like_fi
         SimpleWeightedSetTerm term(2, field, 0, Weight(0));
         term.addTerm("foo", Weight(10));
         term.addTerm("bar", Weight(20));
+        f.expect_filter_search(SimpleResult({1, 3}), term);
+    }
+    {
+        auto stv = std::make_unique<StringTermVector>(2);
+        stv->addTerm("foo");
+        stv->addTerm("bar");
+        SimpleInTerm term(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(0));
         f.expect_filter_search(SimpleResult({1, 3}), term);
     }
 }
