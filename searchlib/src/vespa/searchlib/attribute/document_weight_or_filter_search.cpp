@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_weight_or_filter_search.h"
-#include "iterator_pack.h"
+#include "posting_iterator_pack.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
 #include <vespa/searchlib/common/bitvector.h>
@@ -93,8 +93,8 @@ DocumentWeightOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& chil
     } else {
         std::sort(children.begin(), children.end(),
                   [](const auto & a, const auto & b) { return a.size() > b.size(); });
-        using OrFilter = DocumentWeightOrFilterSearchImpl<AttributeIteratorPack>;
-        return std::make_unique<OrFilter>(AttributeIteratorPack(std::move(children)));
+        using OrFilter = DocumentWeightOrFilterSearchImpl<DocidWithWeightIteratorPack>;
+        return std::make_unique<OrFilter>(DocidWithWeightIteratorPack(std::move(children)));
     }
 }
 

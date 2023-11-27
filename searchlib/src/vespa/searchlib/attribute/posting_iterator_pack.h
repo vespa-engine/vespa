@@ -9,19 +9,22 @@ namespace search {
 
 class BitVector;
 
-class AttributeIteratorPack
-{
+/**
+ * Class that wraps a set of underlying low-level posting lists and provides an API to search in them.
+ */
+template <typename IteratorType>
+class PostingIteratorPack {
 private:
-    std::vector<DocidWithWeightIterator> _children;
+    std::vector<IteratorType> _children;
 
 public:
     using ref_t = uint16_t;
-    AttributeIteratorPack() noexcept : _children() {}
-    AttributeIteratorPack(AttributeIteratorPack &&rhs) noexcept = default;
-    AttributeIteratorPack &operator=(AttributeIteratorPack &&rhs) noexcept = default;
+    PostingIteratorPack() noexcept : _children() {}
+    PostingIteratorPack(PostingIteratorPack &&rhs) noexcept = default;
+    PostingIteratorPack &operator=(PostingIteratorPack &&rhs) noexcept = default;
 
-    explicit AttributeIteratorPack(std::vector<DocidWithWeightIterator> &&children);
-    ~AttributeIteratorPack();
+    explicit PostingIteratorPack(std::vector<IteratorType> &&children);
+    ~PostingIteratorPack();
 
     uint32_t get_docid(ref_t ref) const {
         return _children[ref].valid() ? _children[ref].getKey() : endDocId;
@@ -56,6 +59,8 @@ private:
     }
 };
 
+using DocidIteratorPack = PostingIteratorPack<DocidIterator>;
+using DocidWithWeightIteratorPack = PostingIteratorPack<DocidWithWeightIterator>;
 
-} // namespace search
+}
 
