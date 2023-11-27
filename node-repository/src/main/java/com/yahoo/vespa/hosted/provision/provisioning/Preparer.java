@@ -77,7 +77,7 @@ public class Preparer {
         LockedNodeList allNodes = nodeRepository.nodes().list(PROBE_LOCK);
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes);
-        if (probeAllocation.fulfilledAndNoChanges()) {
+        if (probeAllocation.fulfilledWithoutChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             indices.commitProbe();
             return acceptedNodes;
@@ -188,9 +188,9 @@ public class Preparer {
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
         validateAccount(requested.cloudAccount(), application, allNodes);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
-        var allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
-                                                           requested.cloudAccount().isExclave(nodeRepository.zone()),
-                                                           nodeRepository.nameResolver());
+        IP.Allocation.Context allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
+                                                                             requested.cloudAccount().isExclave(nodeRepository.zone()),
+                                                                             nodeRepository.nameResolver());
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                           application,
                                                           cluster,
@@ -203,6 +203,12 @@ public class Preparer {
                                                           nodeRepository.spareCount(),
                                                           nodeRepository.exclusiveAllocation(cluster));
         allocation.offer(prioritizer.collect());
+        if (requested.type() == NodeType.tenant && !requested.canFail() && allocation.changes()) {
+            // This should not happen and indicates a bug in the allocation code because boostrap redeployment
+            // resulted in allocation changes
+            throw new IllegalArgumentException("Refusing change to allocated nodes for " + cluster + " in " +
+                                               application + " during bootstrap deployment: " + requested);
+        }
         return allocation;
     }
 

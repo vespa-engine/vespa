@@ -137,7 +137,7 @@ public class RebalancerTest {
 
     @Test
     public void testRebalancingDoesNotReduceSwitchExclusivity() {
-        Capacity capacity = Capacity.from(new ClusterResources(4, 1, RebalancerTester.cpuResources), true, false);
+        Capacity capacity = Capacity.from(new ClusterResources(4, 1, RebalancerTester.cpuResources), true, true);
         List<ApplicationContext> apps = List.of(new ApplicationContext(cpuApp, RebalancerTester.clusterSpec("c"), capacity));
         RebalancerTester tester = new RebalancerTester(4, apps);
 

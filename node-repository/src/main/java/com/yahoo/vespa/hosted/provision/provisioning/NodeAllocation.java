@@ -150,6 +150,9 @@ class NodeAllocation {
                 if (candidate.wantToRetire()) {
                     continue;
                 }
+                if (requested.type() == NodeType.tenant && !requested.canFail()) {
+                    continue; // Cannot allocate nodes when bootstrapping
+                }
                 candidate = candidate.allocate(application,
                                                ClusterMembership.from(cluster, nextIndex.get()),
                                                requested.resources().orElse(candidate.resources()),
@@ -312,8 +315,13 @@ class NodeAllocation {
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
-    boolean fulfilledAndNoChanges() {
-        return fulfilled() && reservableNodes().isEmpty() && newNodes().isEmpty();
+    boolean fulfilledWithoutChanges() {
+        return fulfilled() && !changes();
+    }
+
+    /** Returns true if this allocation changed any nodes */
+    boolean changes() {
+        return !reservableNodes().isEmpty() || !newNodes().isEmpty();
     }
 
     /** Returns true if this allocation has retired nodes */

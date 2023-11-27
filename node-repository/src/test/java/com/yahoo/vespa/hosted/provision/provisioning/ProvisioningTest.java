@@ -771,6 +771,7 @@ public class ProvisioningTest {
 
         Capacity capacityCannotFail = Capacity.from(new ClusterResources(5, 1, defaultResources), false, false);
         tester.activate(application, tester.prepare(application, cluster, capacityCannotFail));
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).owner(application).size());
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
         assertEquals(6, tester.nodeRepository().nodes().list(Node.State.active).owner(application).size());
     }

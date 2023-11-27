@@ -84,9 +84,9 @@ public class NodePrioritizer {
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
     public List<NodeCandidate> collect() {
-        addApplicationNodes();
+        addExistingNodes();
         addReadyNodes();
-        addCandidatesOnExistingHosts();
+        addNewNodes();
         return prioritize();
     }
 
@@ -117,7 +117,7 @@ public class NodePrioritizer {
     }
 
     /** Add a node on each host with enough capacity for the requested flavor  */
-    private void addCandidatesOnExistingHosts() {
+    private void addNewNodes() {
         if (requested.resources().isEmpty()) return;
 
         for (Node host : allNodes) {
@@ -148,7 +148,7 @@ public class NodePrioritizer {
     }
 
     /** Add existing nodes allocated to the application */
-    private void addApplicationNodes() {
+    private void addExistingNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.stream()
                 .filter(node -> node.type() == requested.type())
