@@ -555,9 +555,7 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     if (pass == OptimizePass::LAST) {
         sort(_children);
     }
-    if (pass == OptimizePass::FIRST) {
-        maybe_eliminate_self(self, get_replacement());
-    }
+    maybe_eliminate_self(self, get_replacement());
 }
 
 void
@@ -737,9 +735,7 @@ LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 {
     assert(self == this);
     optimize_self(pass);
-    if (pass == OptimizePass::FIRST) {
-        maybe_eliminate_self(self, get_replacement());
-    }
+    maybe_eliminate_self(self, get_replacement());
 }
 
 void
