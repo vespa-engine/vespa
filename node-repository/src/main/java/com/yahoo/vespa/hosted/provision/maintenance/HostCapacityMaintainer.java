@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningThrottler;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +113,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 Map<Optional<String>, List<Node>> currentNodesByParent = nodeRepository().nodes().list().stream().collect(groupingBy(Node::parentHostname));
                 List<Node> candidateHosts = new ArrayList<>(getHosts(currentNodesByParent));
                 candidateHosts.retainAll(typeEmptyHosts);
+                // Deprovision newly provisioned hosts before older to reduce churn
+                candidateHosts.sort(Comparator.comparing((Node node) -> node.history().event(History.Event.Type.provisioned).map(History.Event::at).orElse(Instant.now()))
+                                              .reversed());
 
                 for (Node host : candidateHosts) {
                     attempts++;
