@@ -36,8 +36,8 @@ void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
         self->setSourceId(discard->getSourceId());
         discard->setParent(nullptr);
     }
-    // replace with empty blueprint if empty
-    if (self->getState().estimate().empty) {
+    // replace with empty blueprint if empty, skip if already empty blueprint
+    if ((self->as_empty() == nullptr) && self->getState().estimate().empty) {
         Blueprint::UP discard(self);
         self = new EmptyBlueprint(discard->getState().fields());
         self->setParent(discard->getParent());
@@ -130,7 +130,6 @@ Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
     Blueprint *root = bp.release();
     root->optimize(root, OptimizePass::FIRST);
-    root->optimize(root, OptimizePass::SECOND);
     root->optimize(root, OptimizePass::LAST);
     return Blueprint::UP(root);
 }

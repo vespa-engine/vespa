@@ -52,7 +52,7 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
             source_blenders.pop_back();
             SourceBlenderBlueprint * blender = blender_up->asSourceBlender();
             while (blender->childCnt() > 0) {
-                Blueprint::UP child_up = blender->removeChild(blender->childCnt() - 1);
+                Blueprint::UP child_up = blender->removeLastChild();
                 size_t source_idx = lookup_create_source(sources, child_up->getSourceId(), self.get_docid_limit());
                 sources[source_idx]->addChild(std::move(child_up));
             }
@@ -107,13 +107,23 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
         return;
     }
     if (pass == OptimizePass::FIRST) {
-        AndNotBlueprint * child = getChild(0).asAndNot();
-        if (child != nullptr) {
+        if (auto *child = getChild(0).asAndNot()) {
             while (child->childCnt() > 1) {
-                addChild(child->removeChild(1));
+                addChild(child->removeLastChild());
             }
             insertChild(1, child->removeChild(0));
             removeChild(0);
+        }
+        if (auto *child = getChild(0).asAnd()) {
+            for (size_t i = 0; i < child->childCnt(); ++i) {
+                if (auto *grand_child = child->getChild(i).asAndNot()) {
+                    while (grand_child->childCnt() > 1) {
+                        addChild(grand_child->removeLastChild());
+                    }
+                    child->addChild(grand_child->removeChild(0));
+                    child->removeChild(i--);
+                }
+            }
         }
         for (size_t i = 1; i < childCnt(); ++i) {
             if (getChild(i).getState().estimate().empty) {
@@ -195,10 +205,9 @@ AndBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; i < childCnt(); ++i) {
-            AndBlueprint * child = getChild(i).asAnd();
-            if (child != nullptr) {
+            if (auto *child = getChild(i).asAnd()) {
                 while (child->childCnt() > 0) {
-                    addChild(child->removeChild(0));
+                    addChild(child->removeLastChild());
                 }
                 removeChild(i--);
             }
@@ -297,10 +306,9 @@ OrBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
-            OrBlueprint * child = getChild(i).asOr();
-            if (child != nullptr) {
+            if (auto *child = getChild(i).asOr()) {
                 while (child->childCnt() > 0) {
-                    addChild(child->removeChild(0));
+                    addChild(child->removeLastChild());
                 }
                 removeChild(i--);
             } else if (getChild(i).getState().estimate().empty) {

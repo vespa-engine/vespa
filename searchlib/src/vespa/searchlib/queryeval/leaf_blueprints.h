@@ -20,6 +20,7 @@ public:
     EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
     EmptyBlueprint() = default;
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    EmptyBlueprint *as_empty() noexcept final override { return this; }
 };
 
 class AlwaysTrueBlueprint : public SimpleLeafBlueprint
