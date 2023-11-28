@@ -451,8 +451,8 @@ addLeafs(IntermediateBlueprint & parent, std::initializer_list<uint32_t> estimat
 }
 
 struct EstimateWithStrict {
-    EstimateWithStrict(uint32_t estimate, bool strict) : _estimate(estimate), _strict(strict) {}
-    EstimateWithStrict(uint32_t estimate) : EstimateWithStrict(estimate, false) {}
+    EstimateWithStrict(uint32_t estimate, bool strict) noexcept : _estimate(estimate), _strict(strict) {}
+    EstimateWithStrict(uint32_t estimate) noexcept : EstimateWithStrict(estimate, false) {}
     uint32_t _estimate;
     bool     _strict;
 };
@@ -470,6 +470,15 @@ struct SourceBlenderTestFixture {
     InvalidSelector selector_2; // not the one
     void addChildrenForSBTest(IntermediateBlueprint & parent);
 };
+
+void
+optimize_and_compare(Blueprint::UP top, Blueprint::UP expect) {
+    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
+    top = Blueprint::optimize(std::move(top));
+    EXPECT_EQUAL(expect->asString(), top->asString());
+    expect = Blueprint::optimize(std::move(expect));
+    EXPECT_EQUAL(expect->asString(), top->asString());
+}
 
 void SourceBlenderTestFixture::addChildrenForSBTest(IntermediateBlueprint & parent) {
     addLeafs(parent, {2,1,3});
@@ -493,12 +502,7 @@ TEST_F("test SourceBlender below AND optimization", SourceBlenderTestFixture) {
     blender->addChild(addLeafsWithSourceId(1, std::make_unique<AndBlueprint>(), {{10,   1}, {100,  1}, {1000, 1}}));
     expect->addChild(std::move(blender));
 
-    //-------------------------------------------------------------------------
-    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
-    auto top_bp = Blueprint::optimize(std::move(top));
-    EXPECT_EQUAL(expect->asString(), top_bp->asString());
-    auto expect_bp = Blueprint::optimize(std::move(expect));
-    EXPECT_EQUAL(expect_bp->asString(), top_bp->asString());
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST_F("test SourceBlender below OR optimization", SourceBlenderTestFixture) {
@@ -514,12 +518,7 @@ TEST_F("test SourceBlender below OR optimization", SourceBlenderTestFixture) {
     expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     addLeafs(*expect, {3, 2, 1});
 
-    //-------------------------------------------------------------------------
-    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
-    auto top_bp = Blueprint::optimize(std::move(top));
-    EXPECT_EQUAL(expect->asString(), top_bp->asString());
-    auto expect_bp = Blueprint::optimize(std::move(expect));
-    EXPECT_EQUAL(expect_bp->asString(), top_bp->asString());
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST_F("test SourceBlender below AND_NOT optimization", SourceBlenderTestFixture) {
@@ -538,12 +537,7 @@ TEST_F("test SourceBlender below AND_NOT optimization", SourceBlenderTestFixture
     expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     addLeafs(*expect, {3, 2, 1});
 
-    //-------------------------------------------------------------------------
-    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
-    auto top_up = Blueprint::optimize(std::move(top));
-    EXPECT_EQUAL(expect->asString(), top_up->asString());
-    auto expect_up = Blueprint::optimize(std::move(expect));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST_F("test SourceBlender below RANK optimization", SourceBlenderTestFixture) {
@@ -562,12 +556,7 @@ TEST_F("test SourceBlender below RANK optimization", SourceBlenderTestFixture) {
     blender->addChild(addLeafsWithSourceId(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100,  1}, {10,   1}}));
     expect->addChild(std::move(blender));
 
-    //-------------------------------------------------------------------------
-    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
-    auto top_up = Blueprint::optimize(std::move(top));
-    EXPECT_EQUAL(expect->asString(), top_up->asString());
-    auto expect_up = Blueprint::optimize(std::move(expect));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("test empty root node optimization and safeness") {
@@ -606,49 +595,33 @@ TEST("and with one empty child is optimized away") {
 TEST("test single child optimization") {
     InvalidSelector selector;
     //-------------------------------------------------------------------------
-    Blueprint::UP top_up = ap((new AndNotBlueprint())->
+    Blueprint::UP top = ap((new AndNotBlueprint())->
                addChild(ap((new AndBlueprint())->
                            addChild(ap((new OrBlueprint())->
                                            addChild(ap((new SourceBlenderBlueprint(selector))->
                                                            addChild(addLeafs(std::make_unique<RankBlueprint>(), {42})))))))));
     //-------------------------------------------------------------------------
-    Blueprint::UP expect_up = addLeafs(std::make_unique<SourceBlenderBlueprint>(selector), {42});
+    Blueprint::UP expect = addLeafs(std::make_unique<SourceBlenderBlueprint>(selector), {42});
     //-------------------------------------------------------------------------
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("test empty OR child optimization") {
-    Blueprint::UP top_up = addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
-    Blueprint::UP expect_up = addLeafs(std::make_unique<OrBlueprint>(), {30, 20, 10, 0});
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    Blueprint::UP top = addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
+    Blueprint::UP expect = addLeafs(std::make_unique<OrBlueprint>(), {30, 20, 10, 0});
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("test empty AND_NOT child optimization") {
-    Blueprint::UP top_up = addLeafs(std::make_unique<AndNotBlueprint>(), {42, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
-    Blueprint::UP expect_up = addLeafs(std::make_unique<AndNotBlueprint>(), {42, 30, 20, 10, 0});
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    Blueprint::UP top = addLeafs(std::make_unique<AndNotBlueprint>(), {42, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
+    Blueprint::UP expect = addLeafs(std::make_unique<AndNotBlueprint>(), {42, 30, 20, 10, 0});
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("test empty RANK child optimization") {
-    Blueprint::UP top_up = addLeafs(std::make_unique<RankBlueprint>(), {42, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
-    Blueprint::UP expect_up = addLeafs(std::make_unique<RankBlueprint>(), {42, 20, 10, 0, 30});
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    Blueprint::UP top = addLeafs(std::make_unique<RankBlueprint>(), {42, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
+    Blueprint::UP expect = addLeafs(std::make_unique<RankBlueprint>(), {42, 20, 10, 0, 30});
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("require that replaced blueprints retain source id") {
@@ -1006,23 +979,15 @@ TEST("require that ANDNOT without children is optimized to empty search") {
 }
 
 TEST("require that highest cost tier sorts last for OR") {
-    Blueprint::UP top_up = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {30, 3}, {20, 2}, {10, 1}});
-    Blueprint::UP expect_up = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {10, 1}, {20, 2}, {30, 3}});
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    Blueprint::UP top = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {30, 3}, {20, 2}, {10, 1}});
+    Blueprint::UP expect = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {10, 1}, {20, 2}, {30, 3}});
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("require that highest cost tier sorts last for AND") {
-    Blueprint::UP top_up = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {20, 3}, {30, 2}, {50, 1}});
-    Blueprint::UP expect_up = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {50, 1}, {30, 2}, {20, 3}});
-    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
-    top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
-    expect_up = Blueprint::optimize(std::move(expect_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    Blueprint::UP top = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {20, 3}, {30, 2}, {50, 1}});
+    Blueprint::UP expect = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {50, 1}, {30, 2}, {20, 3}});
+    optimize_and_compare(std::move(top), std::move(expect));
 }
 
 template<typename BP>
