@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
@@ -68,7 +67,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     public LoadBalancerInstance provision(LoadBalancerSpec spec) {
         if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
         var instance = new LoadBalancerInstance(
-                Optional.of(DomainName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value())),
+                Optional.of(DomainName.of("lb-" + spec.application().toShortString().replaceAll("_", "--") + "-" + spec.cluster().value())),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(new DnsZone("zone-id-1")),
