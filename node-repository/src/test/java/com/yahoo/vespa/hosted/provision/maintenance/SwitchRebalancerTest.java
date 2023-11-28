@@ -92,8 +92,6 @@ public class SwitchRebalancerTest {
 
             // Retired node becomes inactive and makes zone stable
             deactivate(tester, retired);
-            nodesIn(cluster, tester).state(Node.State.dirty)
-                                    .forEach(node -> tester.nodeRepository().nodes().removeRecursively(node, true));
         }
         assertEquals("Rebalanced all clusters", clusters, rebalancedClusters);
 
@@ -187,8 +185,6 @@ public class SwitchRebalancerTest {
         tester.assertSwitches(Set.of(switch0, switch1, switch2, switch3), app, spec.id());
         retired = nodesIn(spec.id(), tester).state(Node.State.active).retired();
         deactivate(tester, retired);
-        nodesIn(spec.id(), tester).state(Node.State.dirty)
-                                  .forEach(node -> tester.nodeRepository().nodes().removeRecursively(node.hostname()));
 
         // Next iteration does nothing
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
