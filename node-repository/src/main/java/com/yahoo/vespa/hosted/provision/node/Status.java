@@ -133,11 +133,6 @@ public class Status {
         return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt);
     }
 
-    /** Returns a copy of this with wantToUpgradeFlavor set to given value */
-    public Status withWantToUpgradeFlavor(boolean wantToUpgradeFlavor) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt);
-    }
-
     /** Returns a copy of this with the OS version set to given version */
     public Status withOsVersion(OsVersion version) {
         return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, version, firmwareVerifiedAt);
