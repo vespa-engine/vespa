@@ -69,9 +69,9 @@ public class SwitchRebalancer extends NodeMover<Move> {
     private NodeList clusterOf(Node node, NodeList allNodes) {
         ApplicationId application = node.allocation().get().owner();
         ClusterSpec.Id cluster = node.allocation().get().membership().cluster().id();
-        return allNodes.state(Node.State.active)
-                       .owner(application)
-                       .cluster(cluster);
+        // This considers all states to prevent unnecessary moves. E.g. we don't want to start moving nodes to a host
+        // which already contain a failed node in our cluster
+        return allNodes.owner(application).cluster(cluster);
     }
 
     /** Returns whether allocatedNode is on an exclusive switch */
