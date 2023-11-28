@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Retire and deprovision hosts that are scheduled for maintenance by the cloud provider.
- *
+ * <p>
  * Only applies to dynamically provisioned zones, where a replacement host will be provisioned.
  *
  * @author mpolden
