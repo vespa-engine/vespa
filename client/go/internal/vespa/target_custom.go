@@ -11,14 +11,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
 type customTarget struct {
 	targetType    string
 	baseURL       string
-	httpClient    util.HTTPClient
+	httpClient    httputil.Client
 	tlsOptions    TLSOptions
 	retryInterval time.Duration
 }
@@ -36,7 +36,7 @@ type serviceInfo struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget(httpClient util.HTTPClient, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterval time.Duration) Target {
 	return &customTarget{
 		targetType:    TargetLocal,
 		baseURL:       "http://127.0.0.1",
@@ -47,7 +47,7 @@ func LocalTarget(httpClient util.HTTPClient, tlsOptions TLSOptions, retryInterva
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(httpClient util.HTTPClient, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func CustomTarget(httpClient httputil.Client, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration) Target {
 	return &customTarget{
 		targetType:    TargetCustom,
 		baseURL:       baseURL,

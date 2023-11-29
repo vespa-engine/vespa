@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 )
 
 type HTTPClient struct {
@@ -95,4 +95,4 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 		nil
 }
 
-func (c *HTTPClient) Clone() util.HTTPClient { return c }
+func (c *HTTPClient) Clone() httputil.Client { return c }

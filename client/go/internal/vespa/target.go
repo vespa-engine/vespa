@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
@@ -84,7 +84,7 @@ type Service struct {
 
 	deployAPI     bool
 	auth          Authenticator
-	httpClient    util.HTTPClient
+	httpClient    httputil.Client
 	customClient  bool
 	retryInterval time.Duration
 }
@@ -143,7 +143,7 @@ type LogOptions struct {
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if !s.customClient {
 		// Do not override TLS config if a custom client has been configured
-		util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
+		httputil.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
 	}
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
@@ -157,7 +157,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 }
 
 // SetClient sets a custom HTTP client that this service should use.
-func (s *Service) SetClient(client util.HTTPClient) {
+func (s *Service) SetClient(client httputil.Client) {
 	s.httpClient = client
 	s.customClient = true
 }

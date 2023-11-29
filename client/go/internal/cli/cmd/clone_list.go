@@ -7,14 +7,14 @@ import (
 	"sort"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 )
 
-func listSampleApps(client util.HTTPClient) ([]string, error) {
+func listSampleApps(client httputil.Client) ([]string, error) {
 	return listSampleAppsAt("https://api.github.com/repos/vespa-engine/sample-apps/contents/", client)
 }
 
-func listSampleAppsAt(url string, client util.HTTPClient) ([]string, error) {
+func listSampleAppsAt(url string, client httputil.Client) ([]string, error) {
 	rfs, err := getRepositoryFiles(url, client)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func listSampleAppsAt(url string, client util.HTTPClient) ([]string, error) {
 	return apps, nil
 }
 
-func getRepositoryFiles(url string, client util.HTTPClient) ([]repositoryFile, error) {
+func getRepositoryFiles(url string, client httputil.Client) ([]repositoryFile, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

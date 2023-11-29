@@ -15,6 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
@@ -39,7 +40,7 @@ func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*docum
 		Timeout:     time.Duration(timeoutSecs) * time.Second,
 		BaseURL:     docService.BaseURL,
 		NowFunc:     time.Now,
-	}, []util.HTTPClient{docService})
+	}, []httputil.Client{docService})
 	if err != nil {
 		return nil, nil, err
 	}

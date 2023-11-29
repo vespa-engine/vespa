@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 
 // Client is a client for Athenz ZTS, an authentication token service.
 type Client struct {
-	client   util.HTTPClient
+	client   httputil.Client
 	tokenURL *url.URL
 	domain   string
 	now      func() time.Time
@@ -38,7 +38,7 @@ type Token struct {
 func (t *Token) isExpired(now time.Time) bool { return t.ExpiresAt.Sub(now) < expirySlack }
 
 // NewClient creates a new client for an Athenz ZTS service located at serviceURL.
-func NewClient(client util.HTTPClient, domain, serviceURL string) (*Client, error) {
+func NewClient(client httputil.Client, domain, serviceURL string) (*Client, error) {
 	tokenURL, err := url.Parse(serviceURL)
 	if err != nil {
 		return nil, err

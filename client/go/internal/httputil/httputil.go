@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package util
+package httputil
 
 import (
 	"context"
@@ -14,15 +14,16 @@ import (
 	"golang.org/x/net/http2"
 )
 
-type HTTPClient interface {
+// Client represents a HTTP client usable by the Vespa CLI.
+type Client interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
 }
 
-type defaultHTTPClient struct {
+type defaultClient struct {
 	client *http.Client
 }
 
-func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+func (c *defaultClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}
@@ -33,8 +34,10 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func ConfigureTLS(client HTTPClient, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
-	c, ok := client.(*defaultHTTPClient)
+// ConfigureTLS configures the given client with given certificates and caCertificate. If trustAll is true, the client
+// will skip verification of the certificate chain.
+func ConfigureTLS(client Client, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
+	c, ok := client.(*defaultClient)
 	if !ok {
 		return
 	}
@@ -60,8 +63,10 @@ func ConfigureTLS(client HTTPClient, certificates []tls.Certificate, caCertifica
 	}
 }
 
-func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
-	c, ok := client.(*defaultHTTPClient)
+// ForceHTTP2 configures the given client exclusively with a HTTP/2 transport. The other options are passed to
+// ConfigureTLS. If certificates is nil, the client will be configured with H2C (HTTP/2 over clear-text).
+func ForceHTTP2(client Client, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
+	c, ok := client.(*defaultClient)
 	if !ok {
 		return
 	}
@@ -85,8 +90,9 @@ func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate
 	ConfigureTLS(client, certificates, caCertificate, trustAll)
 }
 
-func CreateClient(timeout time.Duration) HTTPClient {
-	return &defaultHTTPClient{
+// NewClients creates a new HTTP client the given default timeout.
+func NewClient(timeout time.Duration) Client {
+	return &defaultClient{
 		client: &http.Client{
 			Timeout:   timeout,
 			Transport: http.DefaultTransport,
