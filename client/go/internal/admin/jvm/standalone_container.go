@@ -10,7 +10,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -82,6 +82,6 @@ func (c *StandaloneContainer) exportExtraEnv(ps *prog.Spec) {
 	if ioutil.IsDir(app) {
 		ps.Setenv(envvars.STANDALONE_JDISC_APP_LOCATION, app)
 	} else {
-		util.ExitMsg("standalone container requires an application directory, missing: " + app)
+		osutil.ExitMsg("standalone container requires an application directory, missing: " + app)
 	}
 }

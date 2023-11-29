@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -17,11 +17,11 @@ func getConfigServerHosts(s string) []string {
 	if s != "" {
 		return []string{s}
 	}
-	backticks := util.BackTicksForwardStderr
+	backticks := osutil.BackTicksForwardStderr
 	got, err := backticks.Run(vespa.FindHome()+"/bin/vespa-print-default", "configservers")
 	res := strings.Fields(got)
 	if err != nil || len(res) < 1 {
-		util.ExitMsg("bad configservers: " + got)
+		osutil.ExitMsg("bad configservers: " + got)
 	}
 	trace.Debug("found", len(res), "configservers:", res)
 	return res
@@ -31,13 +31,13 @@ func getConfigServerPort(i int) int {
 	if i > 0 {
 		return i
 	}
-	backticks := util.BackTicksForwardStderr
+	backticks := osutil.BackTicksForwardStderr
 	got, err := backticks.Run(vespa.FindHome()+"/bin/vespa-print-default", "configserver_rpc_port")
 	if err == nil {
 		i, err = strconv.Atoi(strings.TrimSpace(got))
 	}
 	if err != nil || i < 1 {
-		util.ExitMsg("bad configserver_rpc_port: " + got)
+		osutil.ExitMsg("bad configserver_rpc_port: " + got)
 	}
 	trace.Debug("found configservers rpc port:", i)
 	return i
@@ -55,13 +55,13 @@ func detectModel(opts *Options) *VespaModelConfig {
 			"-p", strconv.Itoa(cfgPort),
 			"-s", cfgHost,
 		}
-		backticks := util.BackTicksForwardStderr
+		backticks := osutil.BackTicksForwardStderr
 		data, err := backticks.Run(vespa.FindHome()+"/bin/vespa-get-config", args...)
 		parsed := parseModelConfig(data)
 		if err == nil && parsed != nil {
 			return parsed
 		}
 	}
-	util.ExitMsg("could not get model config")
+	osutil.ExitMsg("could not get model config")
 	panic("unreachable")
 }

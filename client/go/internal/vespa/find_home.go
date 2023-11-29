@@ -12,7 +12,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -85,7 +85,7 @@ func FindAndVerifyVespaHome() string {
 	myself := fmt.Sprintf("%s/%s", vespaHome, scriptUtilsFilename)
 	if !ioutil.IsExecutable(myself) {
 		trace.Warning("missing or bad file:", myself)
-		util.ExitMsg("Not a valid VESPA_HOME: " + vespaHome)
+		osutil.ExitMsg("Not a valid VESPA_HOME: " + vespaHome)
 	}
 	return vespaHome
 }

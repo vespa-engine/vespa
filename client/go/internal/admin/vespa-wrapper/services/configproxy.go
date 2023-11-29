@@ -15,7 +15,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/jvm"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -30,9 +30,9 @@ func JustRunConfigproxy() int {
 	vespa.CheckCorrectUser()
 	configsources := defaults.VespaConfigserverRpcAddrs()
 	if len(configsources) < 1 {
-		util.ExitMsg("could not find any configservers")
+		osutil.ExitMsg("could not find any configservers")
 	}
-	util.TuneResourceLimits()
+	osutil.TuneResourceLimits()
 	c := jvm.NewConfigProxyJvm(PROXY_SERVICE_NAME)
 	userargs := os.Getenv(envvars.VESPA_CONFIGPROXY_JVMARGS)
 	c.ConfigureOptions(configsources, userargs)
@@ -68,7 +68,7 @@ func startProxyWithRunserver() {
 
 func waitForProxyResponse() bool {
 	hname, _ := vespa.FindOurHostname()
-	backtick := util.BackTicksWithStderr
+	backtick := osutil.BackTicksWithStderr
 	start := time.Now()
 	fmt.Printf("Waiting for config proxy to start\n")
 	for sleepcount := 0; sleepcount < 1800; sleepcount++ {
@@ -135,7 +135,7 @@ func StartConfigproxy() int {
 }
 
 func stopProxyWithRunserver() {
-	_, err := util.SystemCommand.Run("vespa-runserver",
+	_, err := osutil.SystemCommand.Run("vespa-runserver",
 		"-s", PROXY_SERVICE_NAME,
 		"-p", CONFIGPROXY_PIDFILE, "-S")
 	if err != nil {

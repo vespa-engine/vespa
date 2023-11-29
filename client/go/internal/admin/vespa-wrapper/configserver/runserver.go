@@ -10,7 +10,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/list"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -40,7 +40,7 @@ func (rs *RunServer) ProgPath() string {
 }
 
 func (rs *RunServer) WouldRun() bool {
-	backticks := util.BackTicksForwardStderr
+	backticks := osutil.BackTicksForwardStderr
 	out, err := backticks.Run(rs.ProgPath(), "-s", rs.ServiceName, "-p", rs.PidFile(), "-W")
 	trace.Trace("output from -W:", out, "error:", err)
 	return err == nil
@@ -56,6 +56,6 @@ func (rs *RunServer) Exec(prog string) {
 		prog,
 	}
 	argv.AppendAll(rs.Args...)
-	err := util.Execvp(rs.ProgPath(), argv)
-	util.ExitErr(err)
+	err := osutil.Execvp(rs.ProgPath(), argv)
+	osutil.ExitErr(err)
 }

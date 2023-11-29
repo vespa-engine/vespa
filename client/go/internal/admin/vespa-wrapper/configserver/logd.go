@@ -8,12 +8,12 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func maybeStartLogd() {
 	if os.Getenv(envvars.VESPA_CONFIGSERVER_MULTITENANT) == "true" {
-		backticks := util.BackTicksForwardStderr
+		backticks := osutil.BackTicksForwardStderr
 		out, err := backticks.Run("libexec/vespa/start-logd")
 		if err != nil {
 			panic(err)

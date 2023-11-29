@@ -11,7 +11,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/list"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 type Container interface {
@@ -72,5 +72,5 @@ func (cb *containerBase) Exec() {
 	trace.Info("JVM env:", readableEnv(p.Env))
 	trace.Info("JVM exec:", argv)
 	err := p.Run()
-	util.ExitErr(err)
+	osutil.ExitErr(err)
 }

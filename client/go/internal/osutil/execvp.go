@@ -3,7 +3,7 @@
 
 //go:build !windows
 
-package util
+package osutil
 
 import (
 	"fmt"

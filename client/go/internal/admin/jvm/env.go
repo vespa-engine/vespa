@@ -12,7 +12,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func (opts *Options) exportEnvSettings(ps *prog.Spec) {
@@ -46,6 +46,6 @@ func (opts *Options) exportEnvSettings(ps *prog.Spec) {
 			ps.Setenv(envvars.LD_PRELOAD, preload)
 		}
 	}
-	util.OptionallyReduceTimerFrequency()
+	osutil.OptionallyReduceTimerFrequency()
 	c.exportExtraEnv(ps)
 }

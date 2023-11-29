@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 // main entry point for vespa-deploy fetch
@@ -90,7 +90,7 @@ func getPartAfterSlash(path string) string {
 		return parts[idx-1]
 	}
 	if idx == 0 {
-		util.ExitMsg("cannot find part after slash: " + path)
+		osutil.ExitMsg("cannot find part after slash: " + path)
 	}
 	return parts[idx]
 }

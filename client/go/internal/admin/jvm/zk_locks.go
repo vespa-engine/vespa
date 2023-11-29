@@ -8,7 +8,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -16,12 +16,12 @@ const (
 )
 
 func RemoveStaleZkLocks(c Container) {
-	backticks := util.BackTicksWithStderr
+	backticks := osutil.BackTicksWithStderr
 	cmd := fmt.Sprintf("rm -f '%s/%s.%s'*lck", defaults.VespaHome(), ZOOKEEPER_LOG_FILE_PREFIX, c.ServiceName())
 	trace.Trace("cleaning locks:", cmd)
 	out, err := backticks.Run("/bin/sh", "-c", cmd)
 	if err != nil {
 		trace.Warning("Failure [", out, "] when running command:", cmd)
-		util.ExitErr(err)
+		osutil.ExitErr(err)
 	}
 }

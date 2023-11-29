@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 // common struct used various places in the clustercontroller REST api:
@@ -117,6 +117,6 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 		return &parsedJson, &cc
 	}
 	// no success:
-	util.ExitMsg(fmt.Sprint(errs))
+	osutil.ExitMsg(fmt.Sprint(errs))
 	panic("unreachable")
 }

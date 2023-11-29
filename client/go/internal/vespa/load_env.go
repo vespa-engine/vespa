@@ -15,7 +15,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -249,7 +249,7 @@ func shellQuote(s string) string {
 	}
 	if i != l {
 		err := fmt.Errorf("expected length %d but was %d", l, i)
-		util.ExitErr(err)
+		osutil.ExitErr(err)
 	}
 	return string(res)
 }

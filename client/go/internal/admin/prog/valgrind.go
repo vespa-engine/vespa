@@ -10,7 +10,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -23,7 +23,7 @@ func (p *Spec) ConfigureValgrind() {
 	p.shouldUseCallgrind = false
 	if p.MatchesListEnv(envvars.VESPA_USE_VALGRIND) {
 		trace.Trace("using valgrind as", p.Program, "has basename in", envvars.VESPA_USE_VALGRIND)
-		backticks := util.BackTicksWithStderr
+		backticks := osutil.BackTicksWithStderr
 		out, err := backticks.Run(VALGRIND_PROG, "--help")
 		if err != nil {
 			trace.Trace("trial run of valgrind fails:", err, "=>", out)

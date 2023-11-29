@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 func removeStaleZkLocks(vespaHome string) {
-	backticks := util.BackTicksIgnoreStderr
+	backticks := osutil.BackTicksIgnoreStderr
 	cmd := fmt.Sprintf("rm -f '%s/%s'*lck", vespaHome, ZOOKEEPER_LOG_FILE_PREFIX)
 	trace.Trace("cleaning locks:", cmd)
 	backticks.Run("/bin/sh", "-c", cmd)

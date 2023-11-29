@@ -10,7 +10,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -23,7 +23,7 @@ func Run(args []string) int {
 	spec := NewProgSpec(args)
 	err := vespa.LoadDefaultEnv()
 	if err != nil {
-		util.ExitErr(err)
+		osutil.ExitErr(err)
 	}
 	hostname, err := vespa.FindOurHostname()
 	if err != nil {

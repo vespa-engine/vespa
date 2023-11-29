@@ -13,7 +13,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -177,6 +177,6 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 	if c.ConfigId() != "" {
 		ps.Setenv(envvars.VESPA_CONFIG_ID, c.ConfigId())
 	} else {
-		util.ExitMsg("application container requires a config id")
+		osutil.ExitMsg("application container requires a config id")
 	}
 }

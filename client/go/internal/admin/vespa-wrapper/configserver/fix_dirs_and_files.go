@@ -4,13 +4,13 @@
 package configserver
 
 import (
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
-func makeFixSpec() util.FixSpec {
+func makeFixSpec() osutil.FixSpec {
 	vespaUid, vespaGid := vespa.FindVespaUidAndGid()
-	return util.FixSpec{
+	return osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
 		DirMode:  0755,
@@ -18,7 +18,7 @@ func makeFixSpec() util.FixSpec {
 	}
 }
 
-func fixDirsAndFiles(fixSpec util.FixSpec) {
+func fixDirsAndFiles(fixSpec osutil.FixSpec) {
 	fixSpec.FixDir("var/zookeeper")
 	fixSpec.FixDir("var/zookeeper/conf")
 	fixSpec.FixDir("var/zookeeper/version-2")
