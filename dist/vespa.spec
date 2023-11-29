@@ -501,7 +501,6 @@ fi
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
-%{_prefix}/share
 %exclude %{_prefix}/share/cmake
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
@@ -556,6 +555,7 @@ fi
 %{_prefix}/libexec/vespa/vespa-wrapper
 %{_prefix}/libexec/vespa/find-pid
 %{_prefix}/libexec/vespa/vespa-curl-wrapper
+%{_prefix}/share
 
 %files base-libs
 %if %{_defattr_is_vespa_vespa}
