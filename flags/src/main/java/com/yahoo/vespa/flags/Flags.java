@@ -16,13 +16,11 @@ import java.util.function.Predicate;
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -419,6 +417,13 @@ public class Flags {
             "first place.",
             "Takes effect at redeployment",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ENABLE_NEW_PAYMENT_METHOD_FLOW = defineFeatureFlag(
+            "enable-new-payment-method-flow", false,
+            List.of("bjorncs"), "2023-11-29", "2024-03-01",
+            "Whether to enable the new billing flow",
+            "Takes effect immediately",
+            TENANT_ID, CONSOLE_USER_EMAIL);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
