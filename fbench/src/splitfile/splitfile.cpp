@@ -28,6 +28,10 @@ main(int argc, char** argv)
         switch(opt) {
         case 'p':
             pattern = optarg;
+            if (pattern == nullptr) {
+                printf("Missing 'pattern' argument to -p option !\n");
+                return -1;
+            }
             break;
         case 'm':
             linebufsize = atoi(optarg);
