@@ -627,71 +627,106 @@ TEST("and with one empty child is optimized away") {
     EXPECT_EQUAL(expect_up->asString(), top->asString());
 }
 
+struct make {
+    make(make &&) = delete;
+    make &operator=(make &&) = delete;
+    static constexpr uint32_t invalid_source = -1;
+    uint32_t source_tag = invalid_source;
+    std::unique_ptr<IntermediateBlueprint> making;
+    make(std::unique_ptr<IntermediateBlueprint> making_in) : making(std::move(making_in)) {}
+    operator std::unique_ptr<Blueprint>() && noexcept { return std::move(making); }
+    make &&source(uint32_t source_id) && {
+        source_tag = source_id;
+        return std::move(*this);
+    }
+    make &&add(std::unique_ptr<Blueprint> child) && {
+        if (source_tag != invalid_source) {
+            child->setSourceId(source_tag);
+            source_tag = invalid_source;
+        }
+        making->addChild(std::move(child));
+        return std::move(*this);
+    }
+    make &&leaf(uint32_t estimate) && {
+        return std::move(*this).add(ap(MyLeafSpec(estimate).create()));
+    }
+    make &&leafs(std::initializer_list<uint32_t> estimates) && {
+        for (uint32_t estimate: estimates) {
+            std::move(*this).leaf(estimate);
+        }
+        return std::move(*this);
+    }
+    static make OR() { return make(std::make_unique<OrBlueprint>()); }
+    static make AND() { return make(std::make_unique<AndBlueprint>()); }
+    static make RANK() { return make(std::make_unique<RankBlueprint>()); }
+    static make ANDNOT() { return make(std::make_unique<AndNotBlueprint>()); }
+    static make SB(ISourceSelector &selector) { return make(std::make_unique<SourceBlenderBlueprint>(selector)); }
+};
+
 TEST("AND AND collapsing") {
-    auto top = std::make_unique<AndBlueprint>();
-    addLeafs(*top, {1,3,5});
-    auto sub_and = std::make_unique<AndBlueprint>();
-    addLeafs(*sub_and, {2,4});
-    top->addChild(std::move(sub_and));
-    auto expect = std::make_unique<AndBlueprint>();
-    addLeafs(*expect, {1,2,3,4,5});
+    Blueprint::UP top = make::AND().leafs({1,3,5}).add(make::AND().leafs({2,4}));
+    Blueprint::UP expect = make::AND().leafs({1,2,3,4,5});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("OR OR collapsing") {
-    auto top = std::make_unique<OrBlueprint>();
-    addLeafs(*top, {1,3,5});
-    auto sub_and = std::make_unique<OrBlueprint>();
-    addLeafs(*sub_and, {2,4});
-    top->addChild(std::move(sub_and));
-    auto expect = std::make_unique<OrBlueprint>();
-    addLeafs(*expect, {5,4,3,2,1});
+    Blueprint::UP top = make::OR().leafs({1,3,5}).add(make::OR().leafs({2,4}));
+    Blueprint::UP expect = make::OR().leafs({5,4,3,2,1});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("AND_NOT AND_NOT collapsing") {
-    auto top = std::make_unique<AndNotBlueprint>();
-    auto sub_and_not = std::make_unique<AndNotBlueprint>();
-    addLeafs(*sub_and_not, {1,3,5});
-    top->addChild(std::move(sub_and_not));
-    addLeafs(*top, {2,4});
-    auto expect = std::make_unique<AndNotBlueprint>();
-    addLeafs(*expect, {1,5,4,3,2});
+    Blueprint::UP top = make::ANDNOT().add(make::ANDNOT().leafs({1,3,5})).leafs({2,4});
+    Blueprint::UP expect = make::ANDNOT().leafs({1,5,4,3,2});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("AND_NOT AND AND_NOT collapsing") {
-    auto top = std::make_unique<AndNotBlueprint>();
-    auto sub_and = std::make_unique<AndBlueprint>();
-    auto sub_and_not = std::make_unique<AndNotBlueprint>();
-    addLeafs(*sub_and_not, {1,5,6});
-    sub_and->addChild(std::move(sub_and_not));
-    addLeafs(*sub_and, {3,2});
-    sub_and_not = std::make_unique<AndNotBlueprint>();
-    addLeafs(*sub_and_not, {4,8,9});
-    sub_and->addChild(std::move(sub_and_not));
-    top->addChild(std::move(sub_and));
-    addLeafs(*top, {7});
-    //-------------------------------------------------------------------------
-    auto expect = std::make_unique<AndNotBlueprint>();
-    auto sub_expect = std::make_unique<AndBlueprint>();
-    addLeafs(*sub_expect, {1,2,3,4});
-    expect->addChild(std::move(sub_expect));
-    addLeafs(*expect, {9,8,7,6,5});
+    Blueprint::UP top = make::ANDNOT()
+        .add(make::AND()
+             .add(make::ANDNOT().leafs({1,5,6}))
+             .leafs({3,2})
+             .add(make::ANDNOT().leafs({4,8,9})))
+        .leaf(7);
+    Blueprint::UP expect = make::ANDNOT()
+        .add(make::AND().leafs({1,2,3,4}))
+        .leafs({9,8,7,6,5});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("AND_NOT AND AND_NOT collapsing into full source blender optimization") {
+    InvalidSelector sel;
+    Blueprint::UP top =
+        make::ANDNOT()
+        .add(make::AND()
+             .add(make::ANDNOT()
+                  .add(make::SB(sel)
+                       .source(1).leaf(1)
+                       .source(2).leaf(2))
+                  .leaf(5))
+             .add(make::SB(sel)
+                  .source(1).leaf(3)
+                  .source(2).leaf(4)))
+        .leaf(6);
+    Blueprint::UP expect =
+        make::ANDNOT()
+        .add(make::SB(sel)
+             .source(1).add(make::AND()
+                            .source(1).leaf(1)
+                            .source(1).leaf(3))
+             .source(2).add(make::AND()
+                            .source(2).leaf(2)
+                            .source(2).leaf(4)))
+        .leafs({6,5});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
 TEST("test single child optimization") {
     InvalidSelector selector;
     //-------------------------------------------------------------------------
-    Blueprint::UP top = ap((new AndNotBlueprint())->
-                           addChild(ap((new AndBlueprint())->
-                                       addChild(ap((new RankBlueprint())->
-                                                   addChild(ap((new OrBlueprint())->
-                                                               addChild(ap((new SourceBlenderBlueprint(selector))->
-                                                                           addChild(addLeafs(std::make_unique<RankBlueprint>(), {42})))))))))));
+    Blueprint::UP top = make::ANDNOT().add(make::AND().add(make::RANK().add(make::OR().add(make::SB(selector).source(2).add(make::RANK().leaf(42))))));
     //-------------------------------------------------------------------------
-    Blueprint::UP expect = addLeafs(std::make_unique<SourceBlenderBlueprint>(selector), {42});
+    Blueprint::UP expect = make::SB(selector).source(2).leaf(42);
     //-------------------------------------------------------------------------
     optimize_and_compare(std::move(top), std::move(expect));
 }
