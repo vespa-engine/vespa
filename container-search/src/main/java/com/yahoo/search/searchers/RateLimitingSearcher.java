@@ -36,7 +36,6 @@ import java.util.concurrent.ThreadLocalRandom;
  *                       localRate to true to make this be rate per node.
  *     <li>rate.idDimension - (String) the name of the rate-id dimension used when logging metrics.
  *                                 If this is not specified, the metric will be logged without dimensions.
- *     <li>rate.local - (Boolean) set to true to let the quota be per node instead of across the cluster.
  *     <li>rate.dryRun - (Boolean) emit metrics on rejected requests but don't actually reject them
  * </ul>
  * <p>
