@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import org.junit.jupiter.api.Test;
 
@@ -15,23 +16,23 @@ public class ConditionTest {
     @Test
     void testWhitelist() {
         String hostname1 = "host1";
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
+        var params = new Condition.CreateParams(Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = WhitelistCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
-        assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.INSTANCE_ID, "foo")));
-        assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
-        assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, hostname1)));
+        assertFalse(condition.test(new FetchVector().with(Dimension.INSTANCE_ID, "foo")));
+        assertFalse(condition.test(new FetchVector().with(Dimension.HOSTNAME, "bar")));
+        assertTrue(condition.test(new FetchVector().with(Dimension.HOSTNAME, hostname1)));
     }
 
     @Test
     void testBlacklist() {
         String hostname1 = "host1";
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues(hostname1);
+        var params = new Condition.CreateParams(Dimension.HOSTNAME).withValues(hostname1);
         Condition condition = BlacklistCondition.create(params);
         assertTrue(condition.test(new FetchVector()));
-        assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.INSTANCE_ID, "foo")));
-        assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
-        assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, hostname1)));
+        assertTrue(condition.test(new FetchVector().with(Dimension.INSTANCE_ID, "foo")));
+        assertTrue(condition.test(new FetchVector().with(Dimension.HOSTNAME, "bar")));
+        assertFalse(condition.test(new FetchVector().with(Dimension.HOSTNAME, hostname1)));
     }
 
     @Test
@@ -44,7 +45,7 @@ public class ConditionTest {
         // Test with empty fetch vector along vespa version dimension (this should never happen as the
         // version is always available through Vtag, although Vtag has a dummy version number for e.g.
         // locally run unit tests that hasn't set the release Vespa version).
-        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION).withPredicate(">=7.1.2");
+        var params = new Condition.CreateParams(Dimension.VESPA_VERSION).withPredicate(">=7.1.2");
         Condition condition = RelationalCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
     }
@@ -56,8 +57,8 @@ public class ConditionTest {
     }
 
     private boolean vespaVersionCondition(String vespaVersion, String predicate) {
-        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION).withPredicate(predicate);
+        var params = new Condition.CreateParams(Dimension.VESPA_VERSION).withPredicate(predicate);
         Condition condition = RelationalCondition.create(params);
-        return condition.test(new FetchVector().with(FetchVector.Dimension.VESPA_VERSION, vespaVersion));
+        return condition.test(new FetchVector().with(Dimension.VESPA_VERSION, vespaVersion));
     }
 }

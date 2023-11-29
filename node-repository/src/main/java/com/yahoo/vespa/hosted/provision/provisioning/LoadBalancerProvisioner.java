@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.ZoneEndpoint;
@@ -15,7 +14,7 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -45,7 +44,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.applicationmodel.TenantId.HOSTED_VESPA;
 import static com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec.preProvisionOwner;
 import static com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec.preProvisionSpec;
 import static java.util.stream.Collectors.groupingBy;
@@ -369,7 +367,7 @@ public class LoadBalancerProvisioner {
                                                    LoadBalancer currentLoadBalancer,
                                                    ZoneEndpoint zoneEndpoint,
                                                    CloudAccount cloudAccount) {
-        boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.INSTANCE_ID,
+        boolean shouldDeactivateRouting = deactivateRouting.with(Dimension.INSTANCE_ID,
                                                                  id.application().serializedForm())
                                                            .value();
         Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes, cloudAccount);
@@ -427,7 +425,7 @@ public class LoadBalancerProvisioner {
     /** Find IP addresses reachable by the load balancer service */
     private Set<String> reachableIpAddresses(Node node, CloudAccount cloudAccount) {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
-        boolean forceIpv6 = ipv6AwsTargetGroups.with(FetchVector.Dimension.CLOUD_ACCOUNT, cloudAccount.account()).value();
+        boolean forceIpv6 = ipv6AwsTargetGroups.with(Dimension.CLOUD_ACCOUNT, cloudAccount.account()).value();
         var protocol = forceIpv6 ? LoadBalancerService.Protocol.ipv6 :
                 service.protocol(node.cloudAccount().isExclave(nodeRepository.zone()));
         // Remove addresses unreachable by the load balancer service

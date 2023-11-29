@@ -48,7 +48,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
+import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static java.util.stream.Collectors.toSet;
 
 /**

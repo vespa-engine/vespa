@@ -32,8 +32,8 @@ public class FlagsTest {
         final boolean defaultValue = false;
         FlagSource source = mock(FlagSource.class);
         BooleanFlag booleanFlag = Flags.defineFeatureFlag("id", defaultValue, List.of("owner"), "1970-01-01", "2100-01-01", "description",
-                "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME)
-                .with(FetchVector.Dimension.ZONE_ID, "a-zone")
+                                                          "modification effect", Dimension.ZONE_ID, Dimension.HOSTNAME)
+                .with(Dimension.ZONE_ID, "a-zone")
                 .bindTo(source);
         assertThat(booleanFlag.id().toString(), equalTo("id"));
 
@@ -44,31 +44,31 @@ public class FlagsTest {
         ArgumentCaptor<FetchVector> vector = ArgumentCaptor.forClass(FetchVector.class);
         verify(source).fetch(any(), vector.capture());
         // hostname is set by default
-        Optional<String> hostname = vector.getValue().getValue(FetchVector.Dimension.HOSTNAME);
+        Optional<String> hostname = vector.getValue().getValue(Dimension.HOSTNAME);
         assertTrue(hostname.isPresent());
         assertFalse(hostname.get().isEmpty());
         // zone is set because it was set on the unbound flag above
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.ZONE_ID), is(Optional.of("a-zone")));
+        assertThat(vector.getValue().getValue(Dimension.ZONE_ID), is(Optional.of("a-zone")));
         // application and node type are not set
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.INSTANCE_ID), is(Optional.empty()));
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.NODE_TYPE), is(Optional.empty()));
+        assertThat(vector.getValue().getValue(Dimension.INSTANCE_ID), is(Optional.empty()));
+        assertThat(vector.getValue().getValue(Dimension.NODE_TYPE), is(Optional.empty()));
 
         RawFlag rawFlag = mock(RawFlag.class);
         when(source.fetch(eq(new FlagId("id")), any())).thenReturn(Optional.of(rawFlag));
         when(rawFlag.asJsonNode()).thenReturn(BooleanNode.getTrue());
 
         // raw flag deserializes to true
-        assertThat(booleanFlag.with(FetchVector.Dimension.INSTANCE_ID, "an-app").value(), equalTo(true));
+        assertThat(booleanFlag.with(Dimension.INSTANCE_ID, "an-app").value(), equalTo(true));
 
         verify(source, times(2)).fetch(any(), vector.capture());
         // application was set on the (bound) flag.
-        assertThat(vector.getValue().getValue(FetchVector.Dimension.INSTANCE_ID), is(Optional.of("an-app")));
+        assertThat(vector.getValue().getValue(Dimension.INSTANCE_ID), is(Optional.of("an-app")));
     }
 
     @Test
     void testString() {
         testGeneric(Flags.defineStringFlag("string-id", "default value", List.of("owner"), "1970-01-01", "2100-01-01", "description",
-                                           "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
+                                           "modification effect", Dimension.ZONE_ID, Dimension.HOSTNAME),
                     "other value");
     }
 
@@ -100,7 +100,7 @@ public class FlagsTest {
         instance.string = "foo";
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
-                        List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", FetchVector.Dimension.HOSTNAME),
+                                            List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", Dimension.HOSTNAME),
                 instance);
 
         testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"),

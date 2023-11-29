@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -66,7 +66,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     private boolean shouldMaintain(ApplicationId id) {
         BooleanFlag skipMaintenanceDeployment = PermanentFlags.SKIP_MAINTENANCE_DEPLOYMENT.bindTo(flagSource)
-                .with(FetchVector.Dimension.INSTANCE_ID, id.serializedForm());
+                .with(Dimension.INSTANCE_ID, id.serializedForm());
         return ! skipMaintenanceDeployment.value();
     }
 

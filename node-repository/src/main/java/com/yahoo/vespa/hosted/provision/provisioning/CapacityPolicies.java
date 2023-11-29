@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
+import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static java.util.Objects.requireNonNull;
 
 /**

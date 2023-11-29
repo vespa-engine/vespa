@@ -31,7 +31,7 @@ public abstract class FlagImpl<T, F extends FlagImpl<T, F>> implements Flag<T, F
     }
 
     @Override
-    public F with(FetchVector.Dimension dimension, String dimensionValue) {
+    public F with(Dimension dimension, String dimensionValue) {
         return factory.create(id, defaultValue, fetchVector.with(dimension, dimensionValue), serializer, source);
     }
 

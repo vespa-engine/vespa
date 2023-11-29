@@ -2,6 +2,7 @@
 package com.yahoo.vespa.configserver.flags.db;
 
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.JsonNodeRawFlag;
@@ -28,11 +29,11 @@ public class FlagsDbImplTest {
         MockCurator curator = new MockCurator();
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues("host1");
+        var params = new Condition.CreateParams(Dimension.HOSTNAME).withValues("host1");
         Condition condition1 = WhitelistCondition.create(params);
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
         FlagId flagId = new FlagId("id");
-        FlagData data = new FlagData(flagId, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
+        FlagData data = new FlagData(flagId, new FetchVector().with(Dimension.ZONE_ID, "zone-a"), rule1);
         db.setValue(flagId, data);
 
         Optional<FlagData> dataCopy = db.getValue(flagId);
@@ -43,7 +44,7 @@ public class FlagsDbImplTest {
                 dataCopy.get().serializeToJson());
 
         FlagId flagId2 = new FlagId("id2");
-        FlagData data2 = new FlagData(flagId2, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
+        FlagData data2 = new FlagData(flagId2, new FetchVector().with(Dimension.ZONE_ID, "zone-a"), rule1);
         db.setValue(flagId2, data2);
         Map<FlagId, FlagData> flags = db.getAllFlagData();
         assertEquals(flags.size(), 2);

@@ -16,7 +16,7 @@ public class FlagDefinition {
     private final Instant expiresAt;
     private final String description;
     private final String modificationEffect;
-    private final List<FetchVector.Dimension> dimensions;
+    private final List<Dimension> dimensions;
 
     public FlagDefinition(
             UnboundFlag<?, ?, ?> unboundFlag,
@@ -25,7 +25,7 @@ public class FlagDefinition {
             Instant expiresAt,
             String description,
             String modificationEffect,
-            FetchVector.Dimension... dimensions) {
+            Dimension... dimensions) {
         this.unboundFlag = unboundFlag;
         this.owners = owners;
         this.createdAt = createdAt;
@@ -40,7 +40,7 @@ public class FlagDefinition {
         return unboundFlag;
     }
 
-    public List<FetchVector.Dimension> getDimensions() {
+    public List<Dimension> getDimensions() {
         return dimensions;
     }
 
@@ -58,7 +58,7 @@ public class FlagDefinition {
 
     public Instant getExpiresAt() { return expiresAt; }
 
-    private static void validate(List<String> owners, Instant createdAt, Instant expiresAt, List<FetchVector.Dimension> dimensions) {
+    private static void validate(List<String> owners, Instant createdAt, Instant expiresAt, List<Dimension> dimensions) {
         if (expiresAt.isBefore(createdAt)) {
             throw new IllegalArgumentException(
                     String.format(
@@ -74,14 +74,14 @@ public class FlagDefinition {
             throw new IllegalArgumentException("Owner(s) must be specified");
         }
 
-        if (dimensions.contains(FetchVector.Dimension.CONSOLE_USER_EMAIL)) {
-            Set<FetchVector.Dimension> disallowedCombinations = EnumSet.allOf(FetchVector.Dimension.class);
-            disallowedCombinations.remove(FetchVector.Dimension.CONSOLE_USER_EMAIL);
-            disallowedCombinations.remove(FetchVector.Dimension.INSTANCE_ID);
-            disallowedCombinations.remove(FetchVector.Dimension.TENANT_ID);
+        if (dimensions.contains(Dimension.CONSOLE_USER_EMAIL)) {
+            Set<Dimension> disallowedCombinations = EnumSet.allOf(Dimension.class);
+            disallowedCombinations.remove(Dimension.CONSOLE_USER_EMAIL);
+            disallowedCombinations.remove(Dimension.INSTANCE_ID);
+            disallowedCombinations.remove(Dimension.TENANT_ID);
             disallowedCombinations.retainAll(dimensions);
             if (!disallowedCombinations.isEmpty())
-                throw new IllegalArgumentException("Dimension " + FetchVector.Dimension.CONSOLE_USER_EMAIL + " cannot be combined with " + disallowedCombinations);
+                throw new IllegalArgumentException("Dimension " + Dimension.CONSOLE_USER_EMAIL + " cannot be combined with " + disallowedCombinations);
         }
     }
 }

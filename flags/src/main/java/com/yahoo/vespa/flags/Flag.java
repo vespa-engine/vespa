@@ -21,10 +21,10 @@ public interface Flag<T, F> {
     FlagSerializer<T> serializer();
 
     /** Returns an immutable clone of the current object, except with the dimension set accordingly. */
-    F with(FetchVector.Dimension dimension, String dimensionValue);
+    F with(Dimension dimension, String dimensionValue);
 
-    /** Same as {@link #with(FetchVector.Dimension, String)} if value is present, and otherwise returns {@code this}. */
-    default F with(FetchVector.Dimension dimension, Optional<String> dimensionValue) {
+    /** Same as {@link #with(Dimension, String)} if value is present, and otherwise returns {@code this}. */
+    default F with(Dimension dimension, Optional<String> dimensionValue) {
         return dimensionValue.map(value -> with(dimension, value)).orElse(self());
     }
 
