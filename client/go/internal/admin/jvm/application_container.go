@@ -4,7 +4,9 @@
 package jvm
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
@@ -22,6 +24,13 @@ type ApplicationContainer struct {
 	containerBase
 }
 
+func md5Hex(text string) string {
+	hasher := md5.New()
+	io.WriteString(hasher, text)
+	hash := hasher.Sum(nil)
+	return fmt.Sprintf("%x", hash)
+}
+
 func (a *ApplicationContainer) ArgForMain() string {
 	dir := defaults.UnderVespaHome("lib/jars")
 	return fmt.Sprintf("file:%s/%s", dir, JAR_FOR_APPLICATION_CONTAINER)
@@ -31,7 +40,7 @@ func (a *ApplicationContainer) Discriminator() string {
 	cfgId := a.ConfigId()
 	if cfgId != "" {
 		trace.Trace("Discriminator: using md5 of", cfgId)
-		return util.Md5Hex(cfgId + "\n")
+		return md5Hex(cfgId + "\n")
 	}
 	svcName := a.ServiceName()
 	if svcName != "" {
@@ -40,7 +49,7 @@ func (a *ApplicationContainer) Discriminator() string {
 	}
 	pid := os.Getpid()
 	trace.Trace("Discriminator: using md5 of", pid)
-	return util.Md5Hex(fmt.Sprintf("%d", pid))
+	return md5Hex(fmt.Sprintf("%d", pid))
 }
 
 func (a *ApplicationContainer) addJdiscProperties() {
