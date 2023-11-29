@@ -10,6 +10,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -17,7 +18,7 @@ import (
 type Options struct {
 	container   Container
 	classPath   []string
-	jvmArgs     util.ArrayList[string]
+	jvmArgs     list.ArrayList[string]
 	mainClass   string
 	jarWithDeps string
 	fixSpec     util.FixSpec

@@ -10,6 +10,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -60,7 +61,7 @@ func readableEnv(env map[string]string) string {
 }
 
 func (cb *containerBase) Exec() {
-	argv := util.ArrayListOf(cb.JvmOptions().Args())
+	argv := list.ArrayListOf(cb.JvmOptions().Args())
 	argv.Insert(0, "java")
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()

@@ -9,6 +9,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -46,7 +47,7 @@ func (rs *RunServer) WouldRun() bool {
 }
 
 func (rs *RunServer) Exec(prog string) {
-	argv := util.ArrayList[string]{
+	argv := list.ArrayList[string]{
 		PROG_NAME,
 		"-s", rs.ServiceName,
 		"-r", "30",
