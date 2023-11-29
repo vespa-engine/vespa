@@ -11,6 +11,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -46,7 +47,7 @@ func FindHome() string {
 		}
 		for _, dir := range strings.Split(os.Getenv(envvars.PATH), ":") {
 			fn := fmt.Sprintf("%s/%s", dir, myProgName)
-			if util.IsRegularFile(fn) {
+			if ioutil.IsFile(fn) {
 				trace.Debug("findPath", myProgName, "=>", dir)
 				return dir
 			}
@@ -56,7 +57,7 @@ func FindHome() string {
 	// detect path from argv[0]
 	for path := findPath(); path != ""; path = dirName(path) {
 		mySelf := fmt.Sprintf("%s/%s", path, scriptUtilsFilename)
-		if util.IsRegularFile(mySelf) {
+		if ioutil.IsFile(mySelf) {
 			trace.Debug("found", mySelf, "VH =>", path)
 			os.Setenv(envvars.VESPA_HOME, path)
 			return path
@@ -82,7 +83,7 @@ func HasFileUnderVespaHome(fn string) (bool, string) {
 func FindAndVerifyVespaHome() string {
 	vespaHome := FindHome()
 	myself := fmt.Sprintf("%s/%s", vespaHome, scriptUtilsFilename)
-	if !util.IsExecutableFile(myself) {
+	if !ioutil.IsExecutable(myself) {
 		trace.Warning("missing or bad file:", myself)
 		util.JustExitMsg("Not a valid VESPA_HOME: " + vespaHome)
 	}

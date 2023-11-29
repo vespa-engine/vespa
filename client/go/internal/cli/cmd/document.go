@@ -16,7 +16,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
@@ -111,15 +111,15 @@ func operationResult(read bool, doc document.Document, service *vespa.Service, r
 	bodyReader := bytes.NewReader(result.Body)
 	if result.HTTPStatus == 200 {
 		if read {
-			return SuccessWithPayload("Read "+doc.Id.String(), util.ReaderToJSON(bodyReader))
+			return SuccessWithPayload("Read "+doc.Id.String(), ioutil.ReaderToJSON(bodyReader))
 		} else {
 			return Success(doc.Operation.String() + " " + doc.Id.String())
 		}
 	}
 	if result.HTTPStatus/100 == 4 {
-		return FailureWithPayload("Invalid document operation: Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
+		return FailureWithPayload("Invalid document operation: Status "+strconv.Itoa(result.HTTPStatus), ioutil.ReaderToJSON(bodyReader))
 	}
-	return FailureWithPayload(service.Description()+" at "+service.BaseURL+": Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
+	return FailureWithPayload(service.Description()+" at "+service.BaseURL+": Status "+strconv.Itoa(result.HTTPStatus), ioutil.ReaderToJSON(bodyReader))
 }
 
 func newDocumentCmd(cli *CLI) *cobra.Command {

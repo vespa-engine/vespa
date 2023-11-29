@@ -11,6 +11,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -33,7 +34,7 @@ func (opts *Options) exportEnvSettings(ps *prog.Spec) {
 	if preload := ps.Getenv(envvars.PRELOAD); preload != "" {
 		checked := []string{}
 		for _, fileName := range strings.Split(preload, ":") {
-			if util.PathExists(fileName) {
+			if ioutil.Exists(fileName) {
 				checked = append(checked, fileName)
 			} else {
 				trace.Info("File in PRELOAD missing, skipped:", fileName)

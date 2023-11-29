@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 func TestClone(t *testing.T) {
@@ -101,9 +101,9 @@ func TestClone(t *testing.T) {
 
 func assertFiles(t *testing.T, app string) {
 	t.Helper()
-	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
-	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
-	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))
+	assert.True(t, ioutil.Exists(filepath.Join(app, "README.md")))
+	assert.True(t, ioutil.Exists(filepath.Join(app, "src", "main", "application")))
+	assert.True(t, ioutil.IsDir(filepath.Join(app, "src", "main", "application")))
 
 	servicesStat, err := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
 	require.Nil(t, err)

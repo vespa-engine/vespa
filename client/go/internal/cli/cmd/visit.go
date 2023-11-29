@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -244,7 +244,7 @@ func probeHandler(service *vespa.Service, cli *CLI) (res OperationResult) {
 		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster declaration in services.xml")
 		return Failure("Missing /document/v1 API")
 	} else {
-		return FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, ioutil.ReaderToJSON(response.Body))
 	}
 }
 
@@ -397,9 +397,9 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 			return nil, Failure("error reading response: " + err.Error())
 		}
 	} else if response.StatusCode/100 == 4 {
-		return vvo, FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
+		return vvo, FailureWithPayload("Invalid document operation: "+response.Status, ioutil.ReaderToJSON(response.Body))
 	} else {
-		return vvo, FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return vvo, FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, ioutil.ReaderToJSON(response.Body))
 	}
 }
 

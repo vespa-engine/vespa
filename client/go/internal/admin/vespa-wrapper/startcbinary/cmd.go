@@ -9,6 +9,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -34,12 +35,12 @@ func Run(args []string) int {
 func IsCandidate(program string) bool {
 	binary := program + "-bin"
 	if strings.Contains(binary, "/") {
-		return util.IsRegularFile(binary)
+		return ioutil.IsFile(binary)
 	} else {
 		path := strings.Split(os.Getenv(envvars.PATH), ":")
 		for _, dir := range path {
 			fn := dir + "/" + binary
-			if util.IsRegularFile(fn) {
+			if ioutil.IsFile(fn) {
 				return true
 			}
 		}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -122,10 +122,10 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 
 	if !overwriteCertificate {
 		hint := "Use -f flag to force overwriting"
-		if util.PathExists(privateKeyFile.path) {
+		if ioutil.Exists(privateKeyFile.path) {
 			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile.path)), hint)
 		}
-		if util.PathExists(certificateFile.path) {
+		if ioutil.Exists(certificateFile.path) {
 			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
@@ -213,7 +213,7 @@ func copyCertificate(cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage
 	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
 		return fmt.Errorf("could not create security directory: %w", err)
 	}
-	err = util.AtomicWriteFile(dstPath, data)
+	err = ioutil.AtomicWriteFile(dstPath, data)
 	if err == nil {
 		cli.printSuccess("Copied certificate from ", tlsOptions.CertificateFile, " to ", dstPath)
 	}

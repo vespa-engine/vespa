@@ -8,6 +8,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -27,11 +28,11 @@ func (rs *RunServer) PidFile() string {
 
 func (rs *RunServer) ProgPath() string {
 	p := fmt.Sprintf("%s/bin64/%s", defaults.VespaHome(), PROG_NAME)
-	if util.IsExecutableFile(p) {
+	if ioutil.IsExecutable(p) {
 		return p
 	}
 	p = fmt.Sprintf("%s/bin/%s", defaults.VespaHome(), PROG_NAME)
-	if util.IsExecutableFile(p) {
+	if ioutil.IsExecutable(p) {
 		return p
 	}
 	panic(fmt.Errorf("not an executable file: %s", p))

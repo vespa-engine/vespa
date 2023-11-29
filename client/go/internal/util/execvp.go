@@ -12,6 +12,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"golang.org/x/sys/unix"
 )
 
@@ -22,7 +23,7 @@ func findInPath(prog string) string {
 	path := strings.Split(os.Getenv(envvars.PATH), ":")
 	for _, dir := range path {
 		fn := dir + "/" + prog
-		if IsExecutableFile(fn) {
+		if ioutil.IsExecutable(fn) {
 			return fn
 		}
 	}

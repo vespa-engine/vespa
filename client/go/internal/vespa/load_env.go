@@ -14,6 +14,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -276,7 +277,7 @@ func (builder *pathBuilder) applyTo(receiver loadEnvReceiver) {
 }
 
 func (builder *pathBuilder) appendPath(p string) {
-	if !util.IsDirectory(p) {
+	if !ioutil.IsDir(p) {
 		return
 	}
 	for _, elem := range builder.curPath {

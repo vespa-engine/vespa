@@ -22,7 +22,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -295,7 +295,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 				color.RedString(strconv.Itoa(response.StatusCode)),
 				color.CyanString(method),
 				color.CyanString(requestUrl.String()),
-				util.ReaderToJSON(response.Body)), nil
+				ioutil.ReaderToJSON(response.Body)), nil
 	}
 
 	if responseBodySpec == nil {

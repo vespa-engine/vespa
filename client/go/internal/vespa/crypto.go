@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 )
 
 const (
@@ -36,18 +36,18 @@ type PemKeyPair struct {
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
 func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	if util.PathExists(certificateFile) && !overwrite {
+	if ioutil.Exists(certificateFile) && !overwrite {
 		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
 	}
-	return util.AtomicWriteFile(certificateFile, kp.Certificate)
+	return ioutil.AtomicWriteFile(certificateFile, kp.Certificate)
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
 func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
-	if util.PathExists(privateKeyFile) && !overwrite {
+	if ioutil.Exists(privateKeyFile) && !overwrite {
 		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	return util.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
+	return ioutil.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.

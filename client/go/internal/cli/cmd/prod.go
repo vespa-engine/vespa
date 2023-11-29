@@ -15,7 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/xml"
 )
@@ -187,7 +187,7 @@ $ vespa prod deploy`,
 
 func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, contents string) error {
 	dst := filepath.Join(pkg.Path, filename)
-	if util.PathExists(dst) {
+	if ioutil.Exists(dst) {
 		data, err := os.ReadFile(dst)
 		if err != nil {
 			return err
@@ -199,7 +199,7 @@ func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, c
 		renamed := false
 		for i := 1; i <= 1000; i++ {
 			bak := fmt.Sprintf("%s.%d.bak", dst, i)
-			if !util.PathExists(bak) {
+			if !ioutil.Exists(bak) {
 				fmt.Fprintf(stdout, "Backing up existing %s to %s\n", color.YellowString(filename), color.YellowString(bak))
 				if err := os.Rename(dst, bak); err != nil {
 					return err

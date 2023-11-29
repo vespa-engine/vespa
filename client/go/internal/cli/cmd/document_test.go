@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -148,7 +148,7 @@ func assertDocumentSend(args []string, expectedOperation string, expectedMethod 
 			Fields json.RawMessage `json:"fields"`
 		}
 		assert.Nil(t, json.Unmarshal(data, &expectedPayload))
-		assert.Equal(t, `{"fields":`+string(expectedPayload.Fields)+"}", util.ReaderToString(client.LastRequest.Body))
+		assert.Equal(t, `{"fields":`+string(expectedPayload.Fields)+"}", ioutil.ReaderToString(client.LastRequest.Body))
 	} else {
 		assert.Nil(t, client.LastRequest.Body)
 	}

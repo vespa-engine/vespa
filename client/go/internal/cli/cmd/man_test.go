@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 )
 
 func TestMan(t *testing.T) {
@@ -15,5 +15,5 @@ func TestMan(t *testing.T) {
 	cli, stdout, _ := newTestCLI(t)
 	assert.Nil(t, cli.Run("man", tmpDir))
 	assert.Equal(t, fmt.Sprintf("Success: Man pages written to %s\n", tmpDir), stdout.String())
-	assert.True(t, util.PathExists(filepath.Join(tmpDir, "vespa.1")))
+	assert.True(t, ioutil.Exists(filepath.Join(tmpDir, "vespa.1")))
 }

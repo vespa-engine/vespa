@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 )
 
 func setup(t *testing.T) string {
@@ -36,15 +37,15 @@ func testFixSpec(t *testing.T, spec FixSpec) {
 	spec.FixFile(tmpDir + "/a/f3")
 	spec.FixFile(tmpDir + "/b/f4")
 	spec.FixFile(tmpDir + "/a/bad/f5")
-	assert.Equal(t, true, IsDirectory(tmpDir+"/a"))
-	assert.Equal(t, true, IsDirectory(tmpDir+"/b"))
-	assert.Equal(t, true, IsDirectory(tmpDir+"/a/bad"))
-	assert.Equal(t, true, IsDirectory(tmpDir+"/a/bad/ok"))
-	assert.Equal(t, true, IsRegularFile(tmpDir+"/a/f1"))
-	assert.Equal(t, true, IsRegularFile(tmpDir+"/a/f2"))
-	assert.Equal(t, false, IsRegularFile(tmpDir+"/a/f3"))
-	assert.Equal(t, false, IsRegularFile(tmpDir+"/b/f4"))
-	assert.Equal(t, false, IsRegularFile(tmpDir+"/a/bad/f5"))
+	assert.Equal(t, true, ioutil.IsDir(tmpDir+"/a"))
+	assert.Equal(t, true, ioutil.IsDir(tmpDir+"/b"))
+	assert.Equal(t, true, ioutil.IsDir(tmpDir+"/a/bad"))
+	assert.Equal(t, true, ioutil.IsDir(tmpDir+"/a/bad/ok"))
+	assert.Equal(t, true, ioutil.IsFile(tmpDir+"/a/f1"))
+	assert.Equal(t, true, ioutil.IsFile(tmpDir+"/a/f2"))
+	assert.Equal(t, false, ioutil.IsFile(tmpDir+"/a/f3"))
+	assert.Equal(t, false, ioutil.IsFile(tmpDir+"/b/f4"))
+	assert.Equal(t, false, ioutil.IsFile(tmpDir+"/a/bad/f5"))
 
 	info, err := os.Stat(tmpDir + "/a")
 	assert.Nil(t, err)

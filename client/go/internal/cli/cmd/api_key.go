@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -71,7 +71,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 		return err
 	}
 	apiKeyFile := cli.config.apiKeyPath(app.Tenant)
-	if util.PathExists(apiKeyFile) && !overwriteKey {
+	if ioutil.Exists(apiKeyFile) && !overwriteKey {
 		err := fmt.Errorf("refusing to overwrite %s", apiKeyFile)
 		cli.printErr(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
