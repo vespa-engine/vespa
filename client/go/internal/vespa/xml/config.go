@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -25,7 +24,7 @@ func init() {
 </deployment>`
 	d, err := ReadDeployment(strings.NewReader(defaultDeploymentRaw))
 	if err != nil {
-		util.JustExitWith(err)
+		panic(err)
 	}
 	DefaultDeployment = d
 }
