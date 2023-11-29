@@ -10,7 +10,7 @@ plugins {
 }
 
 group="ai.vespa"
-version="1.4.0" // Also update pom.xml version AND the version below if this is changed
+version="1.5.0" // Also update pom.xml version AND the version below if this is changed
 
 defaultTasks("buildPlugin")
 
@@ -43,7 +43,7 @@ sourceSets {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-  version.set("2023.1")
+  version.set("2023.2")
 }
 
 tasks {
@@ -55,11 +55,11 @@ tasks {
   }
 
   patchPluginXml {
-    version.set("1.4.0") // TODO: Use one version property
-    sinceBuild.set("231")
+    version.set("1.5.0") // Keep in sync with pom.xml TODO: Use one version property
+    sinceBuild.set("232")
     // Appears on the plugin page in preferences/plugins
     changeNotes.set("""
-       Support for IntelliJ 2023
+       Support for IntelliJ 2023.2
     """)
   }
 
