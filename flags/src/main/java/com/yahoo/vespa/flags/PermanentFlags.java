@@ -13,15 +13,15 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
+import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
+import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
+import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
+import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
+import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
 
 /**
  * Definition for permanent feature flags
@@ -417,42 +417,42 @@ public class PermanentFlags {
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
-            String flagId, boolean defaultValue, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, boolean defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineFeatureFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static UnboundStringFlag defineStringFlag(
-            String flagId, String defaultValue, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, String defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineStringFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static UnboundStringFlag defineStringFlag(
-            String flagId, String defaultValue, String description, String modificationEffect, Predicate<String> validator, FetchVector.Dimension... dimensions) {
+            String flagId, String defaultValue, String description, String modificationEffect, Predicate<String> validator, Dimension... dimensions) {
         return Flags.defineStringFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
 
     private static UnboundIntFlag defineIntFlag(
-            String flagId, int defaultValue, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, int defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineIntFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static UnboundLongFlag defineLongFlag(
-            String flagId, long defaultValue, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, long defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineLongFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static UnboundDoubleFlag defineDoubleFlag(
-            String flagId, double defaultValue, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, double defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineDoubleFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static <T> UnboundJacksonFlag<T> defineJacksonFlag(
-            String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineJacksonFlag(flagId, defaultValue, jacksonClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
     private static <T> UnboundListFlag<T> defineListFlag(
-            String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+            String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 

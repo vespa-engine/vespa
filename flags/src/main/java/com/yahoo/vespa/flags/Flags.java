@@ -13,14 +13,18 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.INSTANCE_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
+import static com.yahoo.vespa.flags.Dimension.APPLICATION;
+import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
+import static com.yahoo.vespa.flags.Dimension.CLAVE;
+import static com.yahoo.vespa.flags.Dimension.CLOUD;
+import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
+import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
+import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
+import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.SYSTEM;
+import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
+import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
 /**
  * Definitions of feature flags.
@@ -34,8 +38,8 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
  *     an unbound flag to a flag source produces a (bound) flag, e.g. {@link BooleanFlag} and {@link StringFlag}.</li>
  *     <li>If you would like your flag value to be dependent on e.g. the application ID, then 1. you should
  *     declare this in the unbound flag definition in this file (referring to
- *     {@link FetchVector.Dimension#INSTANCE_ID}), and 2. specify the application ID when retrieving the value, e.g.
- *     {@link BooleanFlag#with(FetchVector.Dimension, String)}. See {@link FetchVector} for more info.</li>
+ *     {@link Dimension#INSTANCE_ID}), and 2. specify the application ID when retrieving the value, e.g.
+ *     {@link BooleanFlag#with(Dimension, String)}. See {@link FetchVector} for more info.</li>
  * </ol>
  *
  * <p>Once the code is in place, you can override the flag value. This depends on the flag source, but typically
@@ -75,6 +79,15 @@ public class Flags {
             "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
+
+    public static final UnboundStringFlag NESSUS_AGENT_GROUP = defineStringFlag(
+            "nessus-agent-group", "All",
+            List.of("hakonhall"), "2023-11-29", "2023-12-29",
+            "Either run nessusagent as before (All), or link against \"vespa-ci\"," +
+            " or disable the nessusagent (empty string \"\")",
+            "Takes effect after host admin restart",
+            (String value) -> value.equals("All") || value.equals("vespa-ci") || value.isEmpty(),
+            ARCHITECTURE, CLAVE);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
@@ -410,14 +423,14 @@ public class Flags {
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
-                                                       String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                       String modificationEffect, Dimension... dimensions) {
         return define(UnboundBooleanFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
-                                                     String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                     String modificationEffect, Dimension... dimensions) {
         return defineStringFlag(flagId, defaultValue, owners,
                                 createdAt, expiresAt, description,
                                 modificationEffect, value -> true,
@@ -428,7 +441,7 @@ public class Flags {
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Predicate<String> validator,
-                                                     FetchVector.Dimension... dimensions) {
+                                                     Dimension... dimensions) {
         return define((i, d, v) -> new UnboundStringFlag(i, d, v, validator),
                       flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
@@ -436,28 +449,28 @@ public class Flags {
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundIntFlag defineIntFlag(String flagId, int defaultValue, List<String> owners,
                                                String createdAt, String expiresAt, String description,
-                                               String modificationEffect, FetchVector.Dimension... dimensions) {
+                                               String modificationEffect, Dimension... dimensions) {
         return define(UnboundIntFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundLongFlag defineLongFlag(String flagId, long defaultValue, List<String> owners,
                                                  String createdAt, String expiresAt, String description,
-                                                 String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                 String modificationEffect, Dimension... dimensions) {
         return define(UnboundLongFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
-                                                     String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                     String modificationEffect, Dimension... dimensions) {
         return define(UnboundDoubleFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, List<String> owners,
                                                               String createdAt, String expiresAt, String description,
-                                                              String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                              String modificationEffect, Dimension... dimensions) {
         return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass),
                 flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
@@ -465,7 +478,7 @@ public class Flags {
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
                                                         List<String> owners, String createdAt, String expiresAt,
-                                                        String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+                                                        String description, String modificationEffect, Dimension... dimensions) {
         return define((fid, dval, fvec) -> new UnboundListFlag<>(fid, dval, elementClass, fvec),
                 flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
@@ -500,8 +513,8 @@ public class Flags {
      *                           use them in the controller in this way.
      * @param <T>                The boxed type of the flag value, e.g. Boolean for flags guarding features.
      * @param <U>                The type of the unbound flag, e.g. UnboundBooleanFlag.
-     * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} and
-     *         {@link FetchVector.Dimension#VESPA_VERSION VESPA_VERSION} already set. The ZONE environment
+     * @return An unbound flag with {@link Dimension#HOSTNAME HOSTNAME} and
+     *         {@link Dimension#VESPA_VERSION VESPA_VERSION} already set. The ZONE environment
      *         is typically implicit.
      */
     private static <T, U extends UnboundFlag<?, ?, ?>> U define(TypedUnboundFlagFactory<T, U> factory,
@@ -512,7 +525,7 @@ public class Flags {
                                                                 String expiresAt,
                                                                 String description,
                                                                 String modificationEffect,
-                                                                FetchVector.Dimension[] dimensions) {
+                                                                Dimension[] dimensions) {
         FlagId id = new FlagId(flagId);
         FetchVector vector = new FetchVector()
                 .with(HOSTNAME, Defaults.getDefaults().vespaHostname())

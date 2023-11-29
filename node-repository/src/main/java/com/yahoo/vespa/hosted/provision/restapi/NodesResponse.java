@@ -13,7 +13,7 @@ import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -199,13 +199,13 @@ class NodesResponse extends SlimeJsonResponse {
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {
         String value = flag
-                .with(FetchVector.Dimension.HOSTNAME, node.hostname())
-                .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
-                .with(FetchVector.Dimension.TENANT_ID, allocation.owner().tenant().value())
-                .with(FetchVector.Dimension.INSTANCE_ID, allocation.owner().serializedForm())
-                .with(FetchVector.Dimension.CLUSTER_TYPE, allocation.membership().cluster().type().name())
-                .with(FetchVector.Dimension.CLUSTER_ID, allocation.membership().cluster().id().value())
-                .with(FetchVector.Dimension.VESPA_VERSION, allocation.membership().cluster().vespaVersion().toFullString())
+                .with(Dimension.HOSTNAME, node.hostname())
+                .with(Dimension.NODE_TYPE, node.type().name())
+                .with(Dimension.TENANT_ID, allocation.owner().tenant().value())
+                .with(Dimension.INSTANCE_ID, allocation.owner().serializedForm())
+                .with(Dimension.CLUSTER_TYPE, allocation.membership().cluster().type().name())
+                .with(Dimension.CLUSTER_ID, allocation.membership().cluster().id().value())
+                .with(Dimension.VESPA_VERSION, allocation.membership().cluster().vespaVersion().toFullString())
                 .value();
 
         return value.isEmpty() ?

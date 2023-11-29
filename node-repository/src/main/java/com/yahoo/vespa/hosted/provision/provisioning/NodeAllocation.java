@@ -9,7 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -94,9 +94,9 @@ class NodeAllocation {
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
-                                                                        .with(FetchVector.Dimension.INSTANCE_ID, application.serializedForm())
-                                                                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
-                                                                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
+                                                                        .with(Dimension.INSTANCE_ID, application.serializedForm())
+                                                                        .with(Dimension.CLUSTER_TYPE, cluster.type().name())
+                                                                        .with(Dimension.CLUSTER_ID, cluster.id().value())
                                                                         .value())
                                           .filter(s -> !s.isBlank());
     }

@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -59,7 +59,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         int failures = 0;
         outer:
         for (var applicationNodes : activeNodesByApplication().entrySet()) {
-            boolean enabled = enabledFlag.with(FetchVector.Dimension.INSTANCE_ID,
+            boolean enabled = enabledFlag.with(Dimension.INSTANCE_ID,
                                                applicationNodes.getKey().serializedForm()).value();
             if (!enabled) continue;
             for (var clusterNodes : nodesByCluster(applicationNodes.getValue()).entrySet()) {

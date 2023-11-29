@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.file;
 
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
@@ -55,7 +56,7 @@ public class FlagDbFileTest {
 
         // Changing value of id1, removing id2, adding id3
         dataMap.remove(id2);
-        FlagData newData1 = new FlagData(id1, new FetchVector().with(FetchVector.Dimension.HOSTNAME, "h1"));
+        FlagData newData1 = new FlagData(id1, new FetchVector().with(Dimension.HOSTNAME, "h1"));
         dataMap.put(id1, newData1);
         FlagId id3 = new FlagId("id3");
         FlagData data3 = new FlagData(id3, new FetchVector());

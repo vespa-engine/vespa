@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
@@ -32,11 +33,11 @@ public interface Condition extends Predicate<FetchVector> {
     }
 
     class CreateParams {
-        private final FetchVector.Dimension dimension;
+        private final Dimension dimension;
         private List<String> values = List.of();
         private Optional<String> predicate = Optional.empty();
 
-        public CreateParams(FetchVector.Dimension dimension) { this.dimension = Objects.requireNonNull(dimension); }
+        public CreateParams(Dimension dimension) { this.dimension = Objects.requireNonNull(dimension); }
 
         public CreateParams withValues(String... values) { return withValues(List.of(values)); }
         public CreateParams withValues(List<String> values) {
@@ -49,7 +50,7 @@ public interface Condition extends Predicate<FetchVector> {
             return this;
         }
 
-        public FetchVector.Dimension dimension() { return dimension; }
+        public Dimension dimension() { return dimension; }
         public List<String> values() { return values; }
         public Optional<String> predicate() { return predicate; }
 
@@ -69,7 +70,7 @@ public interface Condition extends Predicate<FetchVector> {
         Condition.Type type = Condition.Type.fromWire(wireCondition.type);
 
         Objects.requireNonNull(wireCondition.dimension);
-        FetchVector.Dimension dimension = DimensionHelper.fromWire(wireCondition.dimension);
+        Dimension dimension = Dimension.fromWire(wireCondition.dimension);
         var params = new CreateParams(dimension);
 
         if (wireCondition.values != null) {
@@ -85,7 +86,7 @@ public interface Condition extends Predicate<FetchVector> {
 
     Condition.Type type();
 
-    FetchVector.Dimension dimension();
+    Dimension dimension();
 
     CreateParams toCreateParams();
 

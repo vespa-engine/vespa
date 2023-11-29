@@ -8,7 +8,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.configserver.flags.db.FlagsDbImpl;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.UnboundBooleanFlag;
@@ -34,7 +34,7 @@ public class FlagsHandlerTest {
             "id1", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc1", "mod1");
     private static final UnboundBooleanFlag FLAG2 = Flags.defineFeatureFlag(
             "id2", true, List.of("joe"), "2010-01-01", "2030-01-01", "desc2", "mod2",
-            FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.INSTANCE_ID);
+            Dimension.HOSTNAME, Dimension.INSTANCE_ID);
 
     private final FlagsDb flagsDb = new FlagsDbImpl(new MockCurator());
     private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testContext(), flagsDb);
@@ -54,7 +54,7 @@ public class FlagsHandlerTest {
     void testDefined() {
         try (Flags.Replacer replacer = Flags.clearFlagsForTesting()) {
             fixUnusedWarning(replacer);
-            Flags.defineFeatureFlag("id", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc", "mod", FetchVector.Dimension.HOSTNAME);
+            Flags.defineFeatureFlag("id", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc", "mod", Dimension.HOSTNAME);
             verifySuccessfulRequest(Method.GET, "/defined", "",
                     "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"owners\":[\"joe\"],\"createdAt\":\"2010-01-01T00:00:00Z\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"dimensions\":[\"hostname\"]}}");
 

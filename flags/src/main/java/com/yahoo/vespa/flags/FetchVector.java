@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.yahoo.vespa.flags.json.DimensionHelper;
-
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
@@ -18,80 +16,6 @@ import java.util.function.Consumer;
  * @author hakonhall
  */
 public class FetchVector {
-    /**
-     * Note: If this enum is changed, you must also change {@link DimensionHelper}.
-     */
-    public enum Dimension {
-        /**
-         * Application from ApplicationId::toSerializedFormWithoutInstance() of the form tenant:applicationName.
-         * <p><em>WARNING: NOT ApplicationId</em> - see {@link #INSTANCE_ID}.</p>
-         */
-        APPLICATION,
-
-        /**
-         * Cloud from com.yahoo.config.provision.CloudName::value, e.g. yahoo, aws, gcp.
-         *
-         * <p><em>Eager resolution</em>:  This dimension is resolved before putting the flag data to the config server
-         * or controller, unless controller and the flag has declared this dimension.
-         */
-        CLOUD,
-
-        /**
-         * Cloud account ID from com.yahoo.config.provision.CloudAccount::value, e.g. aws:123456789012
-         */
-        CLOUD_ACCOUNT,
-
-        /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
-        CLUSTER_ID,
-
-        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
-        CLUSTER_TYPE,
-
-        /** Email address of user - provided by auth0 in console. */
-        CONSOLE_USER_EMAIL,
-
-        /** Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test. */
-        ENVIRONMENT,
-
-        /**
-         * Fully qualified hostname.
-         *
-         * <p>NOTE: There is seldom any need to set HOSTNAME, as it is always set implicitly (in {@link Flags})
-         * from {@code Defaults.getDefaults().vespaHostname()}. The hostname may e.g. be overridden when
-         * fetching flag value for a Docker container node.
-         */
-        HOSTNAME,
-
-        /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
-        INSTANCE_ID,
-
-        /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
-        NODE_TYPE,
-
-        /**
-         * Hosted Vespa system from com.yahoo.config.provision.SystemName::value, e.g. main, cd, public, publiccd.
-         * <em>Eager resolution</em>, see {@link #CLOUD}.
-         */
-        SYSTEM,
-
-        /** Value from TenantName::value, e.g. vespa-team */
-        TENANT_ID,
-
-        /**
-         * Vespa version from Version::toFullString of the form Major.Minor.Micro.
-         *
-         * <p>NOTE: There is seldom any need to set VESPA_VERSION, as it is always set implicitly
-         * (in {@link Flags}) from {@link com.yahoo.component.Vtag#currentVersion}. The version COULD e.g.
-         * be overridden when fetching flag value for a Docker container node.
-         */
-        VESPA_VERSION,
-
-        /**
-         * Virtual zone ID from com.yahoo.config.provision.zone.ZoneId::value of the form environment.region,
-         * see com.yahoo.config.provision.zone.ZoneApi::getVirtualId.  <em>Eager resolution</em>, see {@link #CLOUD}.
-         */
-        ZONE_ID
-    }
 
     private final Map<Dimension, String> map;
 
@@ -115,7 +39,7 @@ public class FetchVector {
 
     public boolean isEmpty() { return map.isEmpty(); }
 
-    public boolean hasDimension(FetchVector.Dimension dimension) { return map.containsKey(dimension);}
+    public boolean hasDimension(Dimension dimension) { return map.containsKey(dimension);}
 
     public Set<Dimension> dimensions() { return map.keySet(); }
 

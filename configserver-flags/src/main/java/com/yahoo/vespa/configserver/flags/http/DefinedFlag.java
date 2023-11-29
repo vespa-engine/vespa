@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.flags.FlagDefinition;
-import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +41,7 @@ public class DefinedFlag extends HttpResponse {
         definitionNode.put("createdAt", flagDefinition.getCreatedAt().toString());
         definitionNode.put("expiresAt", flagDefinition.getExpiresAt().toString());
         ArrayNode dimensionsNode = definitionNode.putArray("dimensions");
-        flagDefinition.getDimensions().forEach(dimension -> dimensionsNode.add(DimensionHelper.toWire(dimension)));
+        flagDefinition.getDimensions().forEach(dimension -> dimensionsNode.add(dimension.toWire()));
     }
 
     @Override

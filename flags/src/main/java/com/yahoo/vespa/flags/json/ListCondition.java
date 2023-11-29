@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
@@ -12,7 +13,7 @@ import java.util.Objects;
  */
 public abstract class ListCondition implements Condition {
     private final Condition.Type type;
-    private final FetchVector.Dimension dimension;
+    private final Dimension dimension;
     private final List<String> values;
     private final boolean isWhitelist;
 
@@ -33,7 +34,7 @@ public abstract class ListCondition implements Condition {
     }
 
     @Override
-    public FetchVector.Dimension dimension() {
+    public Dimension dimension() {
         return dimension;
     }
 
@@ -52,7 +53,7 @@ public abstract class ListCondition implements Condition {
     public WireCondition toWire() {
         var condition = new WireCondition();
         condition.type = type.toWire();
-        condition.dimension = DimensionHelper.toWire(dimension);
+        condition.dimension = dimension.toWire();
         condition.values = values.isEmpty() ? null : values;
         return condition;
     }

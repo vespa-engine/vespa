@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
@@ -14,7 +15,7 @@ import java.util.function.Predicate;
 public class RelationalCondition implements Condition {
     private final RelationalPredicate relationalPredicate;
     private final Predicate<String> predicate;
-    private final FetchVector.Dimension dimension;
+    private final Dimension dimension;
 
     public static RelationalCondition create(CreateParams params) {
         if (!params.values().isEmpty()) {
@@ -37,12 +38,12 @@ public class RelationalCondition implements Condition {
                 return new RelationalCondition(relationalPredicate, p, params.dimension());
             default:
                 throw new IllegalArgumentException(RelationalCondition.class.getSimpleName() +
-                        " not supported for dimension " + FetchVector.Dimension.VESPA_VERSION.name());
+                                                   " not supported for dimension " + Dimension.VESPA_VERSION.name());
         }
     }
 
     private RelationalCondition(RelationalPredicate relationalPredicate, Predicate<String> predicate,
-                                FetchVector.Dimension dimension) {
+                                Dimension dimension) {
         this.relationalPredicate = relationalPredicate;
         this.predicate = predicate;
         this.dimension = dimension;
@@ -54,7 +55,7 @@ public class RelationalCondition implements Condition {
     }
 
     @Override
-    public FetchVector.Dimension dimension() {
+    public Dimension dimension() {
         return dimension;
     }
 
@@ -76,7 +77,7 @@ public class RelationalCondition implements Condition {
     public WireCondition toWire() {
         var condition = new WireCondition();
         condition.type = Condition.Type.RELATIONAL.toWire();
-        condition.dimension = DimensionHelper.toWire(dimension);
+        condition.dimension = dimension.toWire();
         condition.predicate = relationalPredicate.toWire();
         return condition;
     }
