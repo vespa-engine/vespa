@@ -52,6 +52,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_PREDICATE = "predicate";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
+    private static final String CMD_INTEGER = "integer";
     private static final String CMD_STRING = "string";
     private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
     private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
@@ -172,9 +173,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (isUriField(field)) {
             addUriIndexCommands(field);
         }
-
         if (field.getDataType().getPrimitiveType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
+            if (isTypeOrNested(field, DataType.INT) || isTypeOrNested(field, DataType.LONG) ||
+                    isTypeOrNested(field, DataType.BYTE)) {
+                addIndexCommand(field, CMD_INTEGER);
+            }
         }
         if (isTypeOrNested(field, DataType.STRING)) {
             addIndexCommand(field, CMD_STRING);

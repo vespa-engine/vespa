@@ -47,6 +47,7 @@ public class Index {
     private boolean normalize = false;
     private boolean literalBoost = false;
     private boolean numerical = false;
+    private boolean integer = false;
     private boolean string = false;
     private boolean predicate = false;
 
@@ -132,6 +133,8 @@ public class Index {
 
         if (command.startsWith("type tensor(") || command.startsWith("type tensor<")) { // TODO: Type info can replace numerical, predicate, multivalue
             setTensor(true);
+        } else if (command.equals("integer")) {
+            setInteger(true);
         } else if ("fullurl".equals(command)) {
             setUriIndex(true);
         } else if ("urlhost".equals(command)) {
@@ -314,6 +317,10 @@ public class Index {
     public void setString(boolean string) { this.string = string; }
 
     public boolean isString() { return string; }
+
+    public void setInteger(boolean integer) { this.integer = integer; }
+
+    public boolean isInteger() { return integer; }
 
     public void setPredicate(boolean isPredicate) { this.predicate = isPredicate; }
 

@@ -415,7 +415,10 @@ public class YqlParser implements Parser {
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
         String field = getIndex(ast.getArgument(0));
-        boolean stringField = indexFactsSession.getIndex(field).isString();
+        var index = indexFactsSession.getIndex(field);
+        boolean stringField = index.isString();
+        if (!index.isInteger() && !stringField)
+            throw new IllegalArgumentException("index " + field + " is not an integer or string field");
         Item item = null;
         if (stringField) {
             item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
@@ -638,7 +641,8 @@ public class YqlParser implements Parser {
         for (var value : values) {
             switch (value.getOperator()) {
                 case LITERAL -> {
-                    Long tokenValue = value.getArgument(0, Number.class).longValue();
+                    Number numberTokenValue = value.getArgument(0, Number.class);
+                    Long tokenValue = (numberTokenValue instanceof Integer) ? numberTokenValue.longValue() : Long.class.cast(numberTokenValue);
                     out.addToken(tokenValue);
                 }
                 case VARREF -> {

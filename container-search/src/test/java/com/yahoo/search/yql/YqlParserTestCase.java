@@ -82,10 +82,14 @@ public class YqlParserTestCase {
 
     static private IndexFacts createIndexFactsForInTest() {
         SearchDefinition sd = new SearchDefinition("default");
-        sd.addIndex(new Index("field"));
+        Index fieldIndex = new Index("field");
+        fieldIndex.setInteger(true);
+        sd.addIndex(fieldIndex);
         Index stringIndex = new Index("string");
         stringIndex.setString(true);
         sd.addIndex(stringIndex);
+        Index floatIndex = new Index("float");
+        sd.addIndex(floatIndex);
         return new IndexFacts(new IndexModel(sd));
     }
 
@@ -1183,10 +1187,9 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
-        parser.setUserQuery(createUserQuery());
-        query = parse("select * from sources * where field in (29.9, -7.4)");
-        assertNumericInItem("field", new long[]{-7, 29}, query);
         parser.setUserQuery(null);
+        assertParseFail("select * from sources * where field in (29.9, -7.4)",
+                new ClassCastException("Cannot cast java.lang.Double to java.lang.Long"));
         assertParseFail("select * from sources * where string in ('a', 25L)",
                 new ClassCastException("Cannot cast java.lang.Long to java.lang.String"));
         assertParseFail("select * from sources * where field in ('a', 25L)",
@@ -1195,6 +1198,8 @@ public class YqlParserTestCase {
                 new IllegalArgumentException("Field 'nofield' does not exist."));
         assertParseFail("select * from sources * where field not in (25)",
                 new IllegalArgumentException("Expected AND, CALL, CONTAINS, EQ, GT, GTEQ, IN, LT, LTEQ or OR, got NOT_IN."));
+        assertParseFail("select * from sources * where float in (25)",
+                new IllegalArgumentException("index float is not an integer or string field"));
     }
 
     private static void assertNumericInItem(String field, long[] values, QueryTree query) {
