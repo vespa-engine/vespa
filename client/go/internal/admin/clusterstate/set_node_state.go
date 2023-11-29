@@ -80,7 +80,7 @@ func runSetNodeState(opts *Options, args []string) {
 	}
 	wanted, err := knownState(args[0])
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	reason := ""
 	if len(args) > 1 {
@@ -138,7 +138,7 @@ func (cc *ClusterControllerSpec) setNodeUserState(s serviceSpec, wanted KnownSta
 	}
 	jsonBytes, err := json.Marshal(request)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	url := fmt.Sprintf("http://%s:%d/cluster/v2/%s/%s/%d",
 		cc.host, cc.port,

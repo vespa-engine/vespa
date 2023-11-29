@@ -24,7 +24,7 @@ func NewDeployCmd() *cobra.Command {
 		curOptions Options
 	)
 	if err := vespa.LoadDefaultEnv(); err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	cobra.EnableCommandSorting = false
 	cmd := &cobra.Command{

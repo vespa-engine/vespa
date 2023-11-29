@@ -23,11 +23,11 @@ func commonPreChecks() {
 	veHome := vespa.FindAndVerifyVespaHome()
 	err := os.Chdir(veHome)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	err = vespa.LoadDefaultEnv()
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 }
 
@@ -36,7 +36,7 @@ func StartStandaloneContainer(extraArgs []string) int {
 	util.TuneResourceLimits()
 	serviceName := os.Getenv("VESPA_SERVICE_NAME")
 	if serviceName == "" {
-		util.JustExitMsg("Missing service name, ensure VESPA_SERVICE_NAME is set in the environment")
+		util.ExitMsg("Missing service name, ensure VESPA_SERVICE_NAME is set in the environment")
 	}
 	c := jvm.NewStandaloneContainer(serviceName)
 	jvmOpts := c.JvmOptions()

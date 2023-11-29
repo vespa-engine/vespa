@@ -101,6 +101,6 @@ func writeEnvAsProperties(envv []string, propsFile string) {
 	trace.Trace("write props file:", propsFile)
 	err := os.WriteFile(propsFile, envAsProperties(envv), 0600)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 }

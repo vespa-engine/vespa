@@ -90,7 +90,7 @@ func getPartAfterSlash(path string) string {
 		return parts[idx-1]
 	}
 	if idx == 0 {
-		util.JustExitMsg("cannot find part after slash: " + path)
+		util.ExitMsg("cannot find part after slash: " + path)
 	}
 	return parts[idx]
 }

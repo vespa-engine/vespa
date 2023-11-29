@@ -60,20 +60,20 @@ func urlWithoutQuery(url string) string {
 func newCurlCommand(url string, args []string) *curl.Command {
 	tls, err := vespa.LoadTlsConfig()
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	if tls != nil && strings.HasPrefix(url, "http:") {
 		url = "https:" + url[5:]
 	}
 	cmd, err := curl.RawArgs(url, args...)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	if tls != nil {
 		if tls.DisableHostnameValidation {
 			cmd, err = curl.RawArgs(url, append(args, "--insecure")...)
 			if err != nil {
-				util.JustExitWith(err)
+				util.ExitErr(err)
 			}
 		}
 		cmd.PrivateKey = tls.Files.PrivateKey

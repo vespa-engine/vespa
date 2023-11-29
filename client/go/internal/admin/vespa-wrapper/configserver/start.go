@@ -37,7 +37,7 @@ func commonPreChecks() (veHome string) {
 	checkIsConfigserver(veHost)
 	e = os.Chdir(veHome)
 	if e != nil {
-		util.JustExitWith(e)
+		util.ExitErr(e)
 	}
 	return
 }

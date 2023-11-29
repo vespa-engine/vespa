@@ -9,12 +9,12 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 )
 
-type JustExitError struct {
+type ExitError struct {
 	err error
 	msg string
 }
 
-func (j *JustExitError) String() string {
+func (j *ExitError) String() string {
 	if j.err != nil {
 		if j.msg == "" {
 			return j.err.Error()
@@ -27,22 +27,22 @@ func (j *JustExitError) String() string {
 	return j.msg
 }
 
-func (j *JustExitError) Error() string {
+func (j *ExitError) Error() string {
 	return j.String()
 }
 
-func JustExitMsg(message string) {
+func ExitMsg(message string) {
 	trace.Trace("just exit with message")
-	j := JustExitError{
+	j := ExitError{
 		err: nil,
 		msg: message,
 	}
 	panic(&j)
 }
 
-func JustExitWith(e error) {
+func ExitErr(e error) {
 	trace.Trace("just exit with error")
-	j := JustExitError{
+	j := ExitError{
 		err: e,
 		msg: "",
 	}

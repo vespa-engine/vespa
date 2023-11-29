@@ -31,7 +31,7 @@ func commonPreChecks() (veHome, veHost string) {
 	}
 	err = os.Chdir(veHome)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	return
 }

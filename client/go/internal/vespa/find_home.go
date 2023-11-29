@@ -85,7 +85,7 @@ func FindAndVerifyVespaHome() string {
 	myself := fmt.Sprintf("%s/%s", vespaHome, scriptUtilsFilename)
 	if !ioutil.IsExecutable(myself) {
 		trace.Warning("missing or bad file:", myself)
-		util.JustExitMsg("Not a valid VESPA_HOME: " + vespaHome)
+		util.ExitMsg("Not a valid VESPA_HOME: " + vespaHome)
 	}
 	return vespaHome
 }

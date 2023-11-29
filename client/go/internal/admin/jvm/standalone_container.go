@@ -82,6 +82,6 @@ func (c *StandaloneContainer) exportExtraEnv(ps *prog.Spec) {
 	if ioutil.IsDir(app) {
 		ps.Setenv(envvars.STANDALONE_JDISC_APP_LOCATION, app)
 	} else {
-		util.JustExitMsg("standalone container requires an application directory, missing: " + app)
+		util.ExitMsg("standalone container requires an application directory, missing: " + app)
 	}
 }

@@ -20,5 +20,5 @@ func checkIsConfigserver(myname string) {
 		}
 	}
 	trace.Warning("only these hosts should run a config server:", onlyHosts)
-	util.JustExitMsg(fmt.Sprintf("this host [%s] should not run a config server", myname))
+	util.ExitMsg(fmt.Sprintf("this host [%s] should not run a config server", myname))
 }

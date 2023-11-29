@@ -177,6 +177,6 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 	if c.ConfigId() != "" {
 		ps.Setenv(envvars.VESPA_CONFIG_ID, c.ConfigId())
 	} else {
-		util.JustExitMsg("application container requires a config id")
+		util.ExitMsg("application container requires a config id")
 	}
 }

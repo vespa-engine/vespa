@@ -249,7 +249,7 @@ func shellQuote(s string) string {
 	}
 	if i != l {
 		err := fmt.Errorf("expected length %d but was %d", l, i)
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	return string(res)
 }

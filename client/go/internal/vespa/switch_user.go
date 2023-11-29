@@ -55,7 +55,7 @@ func CheckCorrectUser() {
 	if err2 != nil {
 		trace.Warning("note: user.Lookup(", vespaUser, ") failed:", err2)
 	}
-	util.JustExitMsg("running as wrong user. Check your VESPA_USER setting")
+	util.ExitMsg("running as wrong user. Check your VESPA_USER setting")
 }
 
 // re-execute a vespa-wrapper action after switching to the vespa user

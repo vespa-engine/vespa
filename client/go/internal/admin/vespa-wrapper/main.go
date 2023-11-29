@@ -99,7 +99,7 @@ func main() {
 
 func handleSimplePanic() {
 	if r := recover(); r != nil {
-		if jee, ok := r.(*util.JustExitError); ok {
+		if jee, ok := r.(*util.ExitError); ok {
 			fmt.Fprintln(os.Stderr, jee)
 			os.Exit(1)
 		} else {

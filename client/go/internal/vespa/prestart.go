@@ -57,7 +57,7 @@ func RunPreStart() error {
 	// fix wrong ownerships within directories:
 	var fixer fs.WalkDirFunc = func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			util.JustExitWith(err)
+			util.ExitErr(err)
 		}
 		if d.IsDir() {
 			fixSpec.FixDir(path)

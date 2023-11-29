@@ -119,7 +119,7 @@ func TestSuperUserOnly(t *testing.T) {
 
 func expectSimplePanic() {
 	if r := recover(); r != nil {
-		if jee, ok := r.(*JustExitError); ok {
+		if jee, ok := r.(*ExitError); ok {
 			trace.Trace("got as expected:", jee)
 			return
 		}

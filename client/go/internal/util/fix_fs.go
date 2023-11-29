@@ -149,5 +149,5 @@ func (spec *FixSpec) complainAndExit(got error, fn string, wanted os.FileMode) {
 	out, _ := BackTicksWithStderr.Run("stat", "--", fn)
 	trace.Warning(out)
 	trace.Warning("this is a fatal error!")
-	JustExitWith(got)
+	ExitErr(got)
 }

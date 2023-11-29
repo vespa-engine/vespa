@@ -22,6 +22,6 @@ func RemoveStaleZkLocks(c Container) {
 	out, err := backticks.Run("/bin/sh", "-c", cmd)
 	if err != nil {
 		trace.Warning("Failure [", out, "] when running command:", cmd)
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 }

@@ -21,11 +21,11 @@ func VespaStopServices() int {
 	}
 	err := vespa.LoadDefaultEnv()
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	err = vespa.MaybeSwitchUser("vespa-stop-services")
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	vespa.CheckCorrectUser()
 	trace.Debug("running as correct user")

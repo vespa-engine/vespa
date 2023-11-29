@@ -30,7 +30,7 @@ func JustRunConfigproxy() int {
 	vespa.CheckCorrectUser()
 	configsources := defaults.VespaConfigserverRpcAddrs()
 	if len(configsources) < 1 {
-		util.JustExitMsg("could not find any configservers")
+		util.ExitMsg("could not find any configservers")
 	}
 	util.TuneResourceLimits()
 	c := jvm.NewConfigProxyJvm(PROXY_SERVICE_NAME)

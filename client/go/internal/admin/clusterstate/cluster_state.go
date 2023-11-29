@@ -117,6 +117,6 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 		return &parsedJson, &cc
 	}
 	// no success:
-	util.JustExitMsg(fmt.Sprint(errs))
+	util.ExitMsg(fmt.Sprint(errs))
 	panic("unreachable")
 }

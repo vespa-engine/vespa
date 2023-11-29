@@ -72,5 +72,5 @@ func (cb *containerBase) Exec() {
 	trace.Info("JVM env:", readableEnv(p.Env))
 	trace.Info("JVM exec:", argv)
 	err := p.Run()
-	util.JustExitWith(err)
+	util.ExitErr(err)
 }

@@ -22,7 +22,7 @@ func useMock(prog, target string) {
 	os.Remove(symlink)
 	err := os.Symlink(mock, symlink)
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 }
 

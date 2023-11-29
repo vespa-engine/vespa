@@ -21,7 +21,7 @@ func getConfigServerHosts(s string) []string {
 	got, err := backticks.Run(vespa.FindHome()+"/bin/vespa-print-default", "configservers")
 	res := strings.Fields(got)
 	if err != nil || len(res) < 1 {
-		util.JustExitMsg("bad configservers: " + got)
+		util.ExitMsg("bad configservers: " + got)
 	}
 	trace.Debug("found", len(res), "configservers:", res)
 	return res
@@ -37,7 +37,7 @@ func getConfigServerPort(i int) int {
 		i, err = strconv.Atoi(strings.TrimSpace(got))
 	}
 	if err != nil || i < 1 {
-		util.JustExitMsg("bad configserver_rpc_port: " + got)
+		util.ExitMsg("bad configserver_rpc_port: " + got)
 	}
 	trace.Debug("found configservers rpc port:", i)
 	return i
@@ -62,6 +62,6 @@ func detectModel(opts *Options) *VespaModelConfig {
 			return parsed
 		}
 	}
-	util.JustExitMsg("could not get model config")
+	util.ExitMsg("could not get model config")
 	panic("unreachable")
 }

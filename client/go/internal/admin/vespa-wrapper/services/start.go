@@ -37,10 +37,10 @@ func checkjava() {
 	out, err := backticks.Run("java", "-version")
 	if err != nil {
 		trace.Warning("cannot run 'java -version'")
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	if !strings.Contains(out, "64-Bit Server VM") {
-		util.JustExitWith(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s\n", out))
+		util.ExitErr(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s\n", out))
 	}
 }
 
@@ -64,7 +64,7 @@ func VespaStartServices() int {
 	drop_caches()
 	err := vespa.MaybeSwitchUser("start-services")
 	if err != nil {
-		util.JustExitWith(err)
+		util.ExitErr(err)
 	}
 	return StartServices()
 }
