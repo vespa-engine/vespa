@@ -137,6 +137,10 @@
                 <configuration>
                     <forkCount>4</forkCount>
                     <rerunFailingTestsCount>5</rerunFailingTestsCount>
+                    <systemPropertyVariables>
+                        <!-- Avoid 64 MiB default in favor of just 64 KiB -->
+                        <zookeeper.preAllocSize>64</zookeeper.preAllocSize>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
