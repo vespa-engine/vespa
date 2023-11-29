@@ -31,9 +31,12 @@ import java.util.concurrent.ThreadLocalRandom;
  *     <li>rate.id - (String) the id of the client from rate limiting perspective
  *     <li>rate.cost - (Double) the cost Double of this query. This is read after executing the query and hence can be set
  *     by downstream searchers inspecting the result to allow differencing the cost of various queries. Default is 1.
- *     <li>rate.quota - (Double) the cost per second a particular id is allowed to consume in this system.
+ *     <li>rate.quota - (Double) the cost per second a particular id is allowed to consume. By default this is across
+ *                       all nodes of the cluster (i.e, this is invariant with cluster size), set the config variable
+ *                       localRate to true to make this be rate per node.
  *     <li>rate.idDimension - (String) the name of the rate-id dimension used when logging metrics.
  *                                 If this is not specified, the metric will be logged without dimensions.
+ *     <li>rate.local - (Boolean) set to true to let the quota be per node instead of across the cluster.
  *     <li>rate.dryRun - (Boolean) emit metrics on rejected requests but don't actually reject them
  * </ul>
  * <p>
@@ -69,6 +72,8 @@ public class RateLimitingSearcher extends Searcher {
     /** Shared capacity across all threads. Each thread will ask for more capacity from here when they run out. */
     private final AvailableCapacity availableCapacity;
 
+    private final boolean localRate;
+
     /** Capacity already allocated to this thread */
     private final ThreadLocal<Map<String, Double>> allocatedCapacity = new ThreadLocal<>();
 
@@ -90,10 +95,14 @@ public class RateLimitingSearcher extends Searcher {
     }
 
     /** For testing - allows injection of a timer to avoid depending on the system clock */
-    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, MetricReceiver metric, Clock clock) {
+    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig,
+                                ClusterInfoConfig clusterInfoConfig,
+                                MetricReceiver metric,
+                                Clock clock) {
         this.capacityIncrement = rateLimitingConfig.capacityIncrement();
         this.recheckForCapacityProbability = rateLimitingConfig.recheckForCapacityProbability();
         this.availableCapacity = new AvailableCapacity(rateLimitingConfig.maxAvailableCapacity(), clock);
+        this.localRate = rateLimitingConfig.localRate();
 
         this.nodeCount = clusterInfoConfig.nodeCount();
 
@@ -109,7 +118,8 @@ public class RateLimitingSearcher extends Searcher {
             return execution.search(query);
         }
 
-        rate = rate / nodeCount;
+        if ( ! localRate)
+            rate = rate / nodeCount;
 
         if (allocatedCapacity.get() == null) // new thread
             allocatedCapacity.set(new HashMap<>());
@@ -122,7 +132,7 @@ public class RateLimitingSearcher extends Searcher {
             requestCapacity(id, rate);
         }
 
-        if (rate==0 || getAllocatedCapacity(id) <= 0) { // we are still over rate: reject
+        if (rate == 0 || getAllocatedCapacity(id) <= 0) { // we are still over rate: reject
             String idDim = query.properties().getString(idDimensionKey, null);
             if (idDim == null) {
                 overQuotaCounter.add(1);
