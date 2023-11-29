@@ -406,6 +406,7 @@ int main(int argc, char **argv) {
     }
     Context ctx;
     if ((expr_cnt == 1) && (vespalib::string(argv[expr_idx]) == "interactive")) {
+        setlocale(LC_ALL, "");
         return interactive_mode(ctx);
     }
     if ((expr_cnt == 1) && (vespalib::string(argv[expr_idx]) == "json-repl")) {
