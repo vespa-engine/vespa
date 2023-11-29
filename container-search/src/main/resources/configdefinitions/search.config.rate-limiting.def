@@ -17,3 +17,6 @@ maxAvailableCapacity double default=10000
 # A good number may be 1 / (maxAvailableCapacity * average-cost)
 recheckForCapacityProbability double default=0.001
 
+# Set to true to interpret the rate.quota given in the query as a node-local value
+# instead of a cluster-wide value.
+localRate bool default=false

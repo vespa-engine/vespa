@@ -31,23 +31,10 @@ public class RateLimitingSearcherTestCase {
 
     @Test
     void testRateLimiting() {
-        RateLimitingConfig.Builder rateLimitingConfig = new RateLimitingConfig.Builder();
-        rateLimitingConfig.maxAvailableCapacity(4);
-        rateLimitingConfig.capacityIncrement(2);
-        rateLimitingConfig.recheckForCapacityProbability(1.0);
-
-        ClusterInfoConfig.Builder clusterInfoConfig = new ClusterInfoConfig.Builder();
-        clusterInfoConfig.clusterId("testCluster");
-        clusterInfoConfig.nodeCount(4);
-
         ManualClock clock = new ManualClock();
         MetricReceiver.MockReceiver metric = new MetricReceiver.MockReceiver();
-
-        Chain<Searcher> chain = new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
-                        new ClusterInfoConfig(clusterInfoConfig),
-                        metric, clock),
-                new CostSettingSearcher());
-        assertEquals(2, tryRequests(chain, "id1"), "'rate' request are available initially");
+        var chain = createChain(false, clock, metric);
+        assertEquals(2, tryRequests(chain, "id1"), "'rate/nodes' request are available initially");
         assertTrue(executeWasAllowed(chain, "id1", true), "However, don't reject if we dryRun");
         clock.advance(Duration.ofMillis(1500)); // causes 2 new requests to become available
         assertEquals(2, tryRequests(chain, "id1"), "'rate' new requests became available");
@@ -74,6 +61,34 @@ public class RateLimitingSearcherTestCase {
         Map<Point, UntypedMetric> map = metric.getSnapshot().getMapForMetric("requestsOverQuota");
         assertEquals(requestsToTry - 2 + 1 + requestsToTry - 2 + 3, map.get(metric.point("id", "id1")).getCount());
         assertEquals(requestsToTry - 2 + requestsToTry - 4,         map.get(metric.point("id", "id2")).getCount());
+    }
+
+    @Test
+    void testLocalRateLimiting() {
+        ManualClock clock = new ManualClock();
+        MetricReceiver.MockReceiver metric = new MetricReceiver.MockReceiver();
+        var chain = createChain(true, clock, metric);
+
+        assertEquals(9, tryRequests(chain, "id1"), "'rate' request are available initially");
+    }
+
+    private Chain<Searcher> createChain(boolean localRate, ManualClock clock, MetricReceiver.MockReceiver metric) {
+        RateLimitingConfig.Builder rateLimitingConfig = new RateLimitingConfig.Builder();
+        rateLimitingConfig.maxAvailableCapacity(4);
+        rateLimitingConfig.capacityIncrement(2);
+        rateLimitingConfig.recheckForCapacityProbability(1.0);
+        rateLimitingConfig.localRate(localRate);
+
+        ClusterInfoConfig.Builder clusterInfoConfig = new ClusterInfoConfig.Builder();
+        clusterInfoConfig.clusterId("testCluster");
+        clusterInfoConfig.nodeCount(4);
+
+
+        return new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
+                                                                new ClusterInfoConfig(clusterInfoConfig),
+                                                                metric,
+                                                                clock),
+                                       new CostSettingSearcher());
     }
 
     private int requestsToTry = 50;
