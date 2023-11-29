@@ -157,26 +157,26 @@ func getEpoch(timeStamp string) (int64, error) {
 	return t, nil
 }
 
-func checkArguments(vArgs visitArgs) (res util.OperationResult) {
+func checkArguments(vArgs visitArgs) (res OperationResult) {
 	if vArgs.slices > 0 || vArgs.sliceId > -1 {
 		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
-			return util.Failure("Both 'slices' and 'slice-id' must be set")
+			return Failure("Both 'slices' and 'slice-id' must be set")
 		}
 		if vArgs.sliceId >= vArgs.slices {
-			return util.Failure("The 'slice-id' must be in range [0, slices)")
+			return Failure("The 'slice-id' must be in range [0, slices)")
 		}
 	}
 	// to and from will support RFC3339 format soon, add more validation then
 	if vArgs.from != "" {
 		_, err := getEpoch(vArgs.from)
 		if err != nil {
-			return util.Failure("Invalid 'from' argument: '" + vArgs.from + "': " + err.Error())
+			return Failure("Invalid 'from' argument: '" + vArgs.from + "': " + err.Error())
 		}
 	}
 	if vArgs.to != "" {
 		_, err := getEpoch(vArgs.to)
 		if err != nil {
-			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
+			return Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
 		}
 	}
 	for _, b := range vArgs.bucketSpaces {
@@ -186,10 +186,10 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 			"global":
 			// Do nothing
 		default:
-			return util.Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
+			return Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
 		}
 	}
-	return util.Success("")
+	return Success("")
 }
 
 type HandlersInfo struct {
@@ -208,11 +208,11 @@ func parseHandlersOutput(r io.Reader) (*HandlersInfo, error) {
 	return &handlersInfo, err
 }
 
-func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
+func probeHandler(service *vespa.Service, cli *CLI) (res OperationResult) {
 	urlPath := service.BaseURL + "/"
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
-		return util.Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
+		return Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
 	}
 	request := &http.Request{
 		URL:    url,
@@ -221,20 +221,20 @@ func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
 	timeout := time.Duration(90) * time.Second
 	response, err := service.Do(request, timeout)
 	if err != nil {
-		return util.Failure("Request failed: " + err.Error())
+		return Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
 		handlersInfo, err := parseHandlersOutput(response.Body)
 		if err != nil || len(handlersInfo.Handlers) == 0 {
 			cli.printWarning("Could not parse JSON response from"+urlPath, err.Error())
-			return util.Failure("Bad endpoint")
+			return Failure("Bad endpoint")
 		}
 		for _, h := range handlersInfo.Handlers {
 			if strings.HasSuffix(h.HandlerClass, "DocumentV1ApiHandler") {
 				for _, binding := range h.ServerBindings {
 					if strings.Contains(binding, "/document/v1/") {
-						return util.Success("handler OK")
+						return Success("handler OK")
 					}
 				}
 				w := fmt.Sprintf("expected /document/v1/ binding, but got: %v", h.ServerBindings)
@@ -242,13 +242,13 @@ func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
 			}
 		}
 		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster declaration in services.xml")
-		return util.Failure("Missing /document/v1 API")
+		return Failure("Missing /document/v1 API")
 	} else {
-		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }
 
-func visitClusters(vArgs *visitArgs, service *vespa.Service) (res util.OperationResult) {
+func visitClusters(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	clusters := []string{
 		vArgs.contentCluster,
 	}
@@ -294,7 +294,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 	return clusters
 }
 
-func runVisit(vArgs *visitArgs, service *vespa.Service) (res util.OperationResult) {
+func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
 	var totalDocuments int = 0
 	var continuationToken string
@@ -340,7 +340,7 @@ func quoteArgForUrl(arg string) string {
 	return buf.String()
 }
 
-func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, util.OperationResult) {
+func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, OperationResult) {
 	urlPath := service.BaseURL + "/document/v1/?cluster=" + quoteArgForUrl(vArgs.contentCluster)
 	if vArgs.fieldSet != "" {
 		urlPath = urlPath + "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
@@ -370,7 +370,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
-		return nil, util.Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
+		return nil, Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
 	}
 	request := &http.Request{
 		URL:    url,
@@ -379,7 +379,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	timeout := time.Duration(900) * time.Second
 	response, err := service.Do(request, timeout)
 	if err != nil {
-		return nil, util.Failure("Request failed: " + err.Error())
+		return nil, Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()
 	vvo, err := parseVisitOutput(response.Body)
@@ -390,16 +390,16 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 				vArgs.cli.printWarning(fmt.Sprintf("Inconsistent contents from: %v", url))
 				vArgs.cli.printWarning(fmt.Sprintf("claimed count: %d", vvo.DocumentCount))
 				vArgs.cli.printWarning(fmt.Sprintf("document blobs: %d", len(vvo.Documents)))
-				return nil, util.Failure("Inconsistent contents from document API")
+				return nil, Failure("Inconsistent contents from document API")
 			}
-			return vvo, util.Success("visited " + vArgs.contentCluster)
+			return vvo, Success("visited " + vArgs.contentCluster)
 		} else {
-			return nil, util.Failure("error reading response: " + err.Error())
+			return nil, Failure("error reading response: " + err.Error())
 		}
 	} else if response.StatusCode/100 == 4 {
-		return vvo, util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
+		return vvo, FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
-		return vvo, util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return vvo, FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }
 
