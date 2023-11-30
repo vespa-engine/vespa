@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.base.Joiner;
 import com.yahoo.tensor.TensorType;
 
+import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -282,9 +284,19 @@ public class ConstantTensorJsonValidator {
     }
 
     private void validateNumeric(String where, JsonToken token) throws IOException {
-        if (token != JsonToken.VALUE_NUMBER_FLOAT && token != JsonToken.VALUE_NUMBER_INT) {
-            throw new InvalidConstantTensorException(parser, String.format("Inside '%s': cell value is not a number (%s)", where, token.toString()));
+        if (token == JsonToken.VALUE_NUMBER_FLOAT || token == JsonToken.VALUE_NUMBER_INT) {
+            return; // ok
         }
+        if (token == JsonToken.VALUE_STRING) {
+            String input = parser.getValueAsString();
+            try {
+                double d = decodeNumberString(input);
+                return;
+            } catch (NumberFormatException e) {
+                throw new InvalidConstantTensorException(parser, String.format("Inside '%s': %s", where, e.getMessage()));
+            }
+        }
+        throw new InvalidConstantTensorException(parser, String.format("Inside '%s': cell value is not a number (%s)", where, token.toString()));
     }
 
     private void assertCurrentTokenIs(JsonToken wantedToken) {

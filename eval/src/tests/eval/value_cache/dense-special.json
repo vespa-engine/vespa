@@ -1,0 +1,7 @@
+[
+    "Infinity", "+Infinity",
+    "INF", "+INF",
+    "-Infinity", "-INF",
+    "NAN", "+NAN",
+    "-nan", "-NAN"
+]

@@ -669,6 +669,24 @@ public class JsonFormatTestCase {
                               "{\"type\":\"tensor<float>(x[1])\",\"values\":[0.3333333432674408]}");
     }
 
+    @Test
+    public void testSpecialNumberStrings() {
+        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("Infinity"), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("+Infinity"), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("Inf"), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("+Inf"), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("infinity"), 0.0);
+        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-Infinity"), 0.0);
+        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-Inf"), 0.0);
+        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-infinity"), 0.0);
+        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-inf"), 0.0);
+        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("nan")));
+        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("NaN")));
+        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("+NaN")));
+        assertEquals(0xFFF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("-nan")));
+        assertEquals(0xFFF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("-NaN")));
+    }
+
     private void assertEncodeShortForm(String tensor, String expected) {
         assertEncodeShortForm(Tensor.from(tensor), expected);
     }
