@@ -56,6 +56,7 @@ public:
     virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
     virtual bool has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const = 0;
+    virtual bool has_bitvector(vespalib::datastore::EntryRef idx) const noexcept = 0;
     virtual ~IDirectPostingStore() = default;
 };
 

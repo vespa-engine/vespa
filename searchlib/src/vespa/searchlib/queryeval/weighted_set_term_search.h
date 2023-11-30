@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/attribute/posting_iterator_pack.h>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace search::fef { class TermFieldMatchData; }
@@ -35,7 +36,7 @@ public:
 
     static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
                                      bool field_is_filter,
-                                     const std::vector<int32_t> &weights,
+                                     std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                                      std::vector<DocidWithWeightIterator> &&iterators);
 
     // used during docsum fetching to identify matching elements

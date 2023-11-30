@@ -153,10 +153,17 @@ MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has
 }
 
 template <typename B, typename M>
+bool
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef idx) const noexcept
+{
+    return self.get_posting_store().has_bitvector(idx);
+}
+
+template <typename B, typename M>
 const IDocidWithWeightPostingStore*
 MultiValueNumericPostingAttribute<B, M>::as_docid_with_weight_posting_store() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64) && !this->getIsFilter()) {
+    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64)) {
         return &_posting_store_adapter;
     }
     return nullptr;

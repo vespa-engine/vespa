@@ -6,7 +6,15 @@
 #include "document_weight_or_filter_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
 #include <memory>
+#include <type_traits>
+
+using search::queryeval::FilterWrapper;
+using search::queryeval::SearchIterator;
+
+namespace search::queryeval { class WeightedSetTermSearch; }
 
 namespace search::attribute {
 
@@ -31,37 +39,104 @@ template <typename SearchType>
 DirectMultiTermBlueprint<SearchType>::~DirectMultiTermBlueprint() = default;
 
 template <typename SearchType>
-std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
+typename DirectMultiTermBlueprint<SearchType>::IteratorWeights
+DirectMultiTermBlueprint<SearchType>::create_iterators(std::vector<DocidWithWeightIterator>& weight_iterators,
+                                                       std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
+                                                       bool use_bitvector_when_available,
+                                                       fef::TermFieldMatchData& tfmd, bool strict) const
+
 {
-    assert(tfmda.size() == 1);
-    assert(getState().numFields() == 1);
-    if (_terms.empty()) {
-        return std::make_unique<queryeval::EmptySearch>();
+    std::vector<int32_t> result_weights;
+    for (size_t i = 0; i < _terms.size(); ++i) {
+        const auto& r = _terms[i];
+        if (use_bitvector_when_available && _attr.has_bitvector(r.posting_idx)) {
+            if (bitvectors.empty()) {
+                // With a combination of weight iterators and bitvectors,
+                // ensure that the resulting weight vector matches the weight iterators.
+                result_weights.reserve(_weights.size());
+                result_weights.insert(result_weights.begin(), _weights.begin(), _weights.begin() + i);
+            }
+            bitvectors.push_back(_attr.make_bitvector_iterator(r.posting_idx, get_docid_limit(), tfmd, strict));
+        } else {
+            _attr.create(r.posting_idx, weight_iterators);
+            if (!bitvectors.empty()) {
+                result_weights.push_back(_weights[i]);
+            }
+        }
     }
-    std::vector<DocidWithWeightIterator> iterators;
-    const size_t numChildren = _terms.size();
-    iterators.reserve(numChildren);
-    for (const IDirectPostingStore::LookupResult &r : _terms) {
-        _attr.create(r.posting_idx, iterators);
+    if (result_weights.empty()) {
+        // Only weight iterators are used, so just reference the original weight vector.
+        return std::cref(_weights);
+    } else {
+        return result_weights;
     }
-    bool field_is_filter = getState().fields()[0].isFilter();
-    if (field_is_filter && tfmda[0]->isNotNeeded()) {
-        return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+}
+
+template <typename SearchType>
+std::unique_ptr<SearchIterator>
+DirectMultiTermBlueprint<SearchType>::combine_iterators(std::unique_ptr<SearchIterator> multi_term_iterator,
+                                                        std::vector<std::unique_ptr<SearchIterator>>&& bitvectors,
+                                                        bool strict) const
+{
+    if (!bitvectors.empty()) {
+        if (multi_term_iterator) {
+            bitvectors.push_back(std::move(multi_term_iterator));
+        }
+        return queryeval::OrSearch::create(std::move(bitvectors), strict);
     }
-    return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
+    return multi_term_iterator;
 }
 
 template <typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<SearchType>::createFilterSearch(bool, FilterConstraint) const
+DirectMultiTermBlueprint<SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda, bool strict, bool is_filter_search) const
 {
-    std::vector<DocidWithWeightIterator> iterators;
-    iterators.reserve(_terms.size());
-    for (const IDirectPostingStore::LookupResult &r : _terms) {
-        _attr.create(r.posting_idx, iterators);
+    if (_terms.empty()) {
+        return std::make_unique<queryeval::EmptySearch>();
     }
-    return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+    std::vector<DocidWithWeightIterator> weight_iterators;
+    std::vector<queryeval::SearchIterator::UP> bitvectors;
+    const size_t num_children = _terms.size();
+    weight_iterators.reserve(num_children);
+    bool use_bit_vector_when_available = is_filter_search || !_attr.has_always_weight_iterator();
+    auto weights = create_iterators(weight_iterators, bitvectors, use_bit_vector_when_available, *tfmda[0], strict);
+    if (is_filter_search) {
+        auto filter = !weight_iterators.empty() ? attribute::DocumentWeightOrFilterSearch::create(std::move(weight_iterators)) : std::unique_ptr<SearchIterator>();
+        return combine_iterators(std::move(filter), std::move(bitvectors), strict);
+    }
+    bool field_is_filter = getState().fields()[0].isFilter();
+    if constexpr (std::is_same_v<SearchType, queryeval::WeightedSetTermSearch>) {
+        auto multi_term = !weight_iterators.empty() ?
+                SearchType::create(*tfmda[0], field_is_filter, std::move(weights), std::move(weight_iterators))
+                : std::unique_ptr<SearchIterator>();
+        return combine_iterators(std::move(multi_term), std::move(bitvectors), strict);
+    } else {
+        // In this case we should only have weight iterators.
+        assert(weight_iterators.size() == _terms.size());
+        assert(weights.index() == 0);
+        return SearchType::create(*tfmda[0], field_is_filter, std::get<0>(weights).get(), std::move(weight_iterators));
+    }
+}
+
+template <typename SearchType>
+std::unique_ptr<queryeval::SearchIterator>
+DirectMultiTermBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
+{
+    assert(tfmda.size() == 1);
+    assert(getState().numFields() == 1);
+    bool field_is_filter = getState().fields()[0].isFilter();
+    bool is_filter_search = field_is_filter && tfmda[0]->isNotNeeded();
+    return create_search_helper(tfmda, strict, is_filter_search);
+}
+
+template <typename SearchType>
+std::unique_ptr<queryeval::SearchIterator>
+DirectMultiTermBlueprint<SearchType>::createFilterSearch(bool strict, FilterConstraint) const
+{
+    assert(getState().numFields() == 1);
+    auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
+    wrapper->wrap(create_search_helper(wrapper->tfmda(), strict, true));
+    return wrapper;
 }
 
 }

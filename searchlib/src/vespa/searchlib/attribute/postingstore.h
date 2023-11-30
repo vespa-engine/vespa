@@ -190,6 +190,9 @@ public:
     bool has_btree(const EntryRef ref) const noexcept {
         return !ref.valid() || !isBitVector(getTypeId(RefType(ref))) || !isFilter();
     }
+    bool has_bitvector(const EntryRef ref) const noexcept {
+        return ref.valid() && isBitVector(getTypeId(RefType(ref)));
+    }
 
     std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(RefType ref, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const;
 

@@ -15,6 +15,13 @@ class IDocidWithWeightPostingStore : public IDirectPostingStore {
 public:
     virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const = 0;
     virtual DocidWithWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
+
+    /**
+     * Returns true when posting list iterators with weight are present for all terms.
+     *
+     * This means posting list iterators exist in addition to eventual bitvector posting lists.
+     */
+    virtual bool has_always_weight_iterator() const noexcept = 0;
 };
 
 }
