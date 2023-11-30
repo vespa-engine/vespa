@@ -186,7 +186,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         synchronized (appLock) {
             application = null;
         }
-        activateContainer(null);
+        try (DeactivatedContainer deactivated = activateContainer(null)) { }
         synchronized (appLock) {
             this.applicationInUseTracker = null;
         }

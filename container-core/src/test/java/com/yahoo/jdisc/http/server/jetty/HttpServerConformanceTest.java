@@ -61,9 +61,8 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
+    private static final Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
 
-    @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
     private static Level httpRequestDispatchLoggerOriginalLevel;
     private static CloseableHttpClient httpClient;
     private static ExecutorService executorService;

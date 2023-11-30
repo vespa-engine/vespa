@@ -267,10 +267,10 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * values for the {@link IntermediateSessionParams} object.</p>
      *
      * @param name          The local unique name for the created session.
-     * @param broadcastName Whether or not to broadcast this session's name on
+     * @param broadcastName Whether to broadcast this session's name on
      *                      the network.
      * @param msgHandler    The handler to receive the messages for the session.
-     * @param replyHandler  The handler to received the replies for the session.
+     * @param replyHandler  The handler to receive the replies for the session.
      * @return The created session.
      */
     public IntermediateSession createIntermediateSession(String name,

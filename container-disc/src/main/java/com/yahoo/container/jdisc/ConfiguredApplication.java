@@ -304,14 +304,14 @@ public final class ConfiguredApplication implements Application {
         for (ServerProvider server : currentServers) {
             builder.serverProviders().install(server);
         }
-        activateContainer(builder, cleanupTask);
-        startAndStopServers(currentServers);
-
-        startAndRemoveClients(Container.get().getClientProviderRegistry().allComponents());
-        signalActivation();
+        try (DeactivatedContainer deactivating = activateContainer(builder, cleanupTask)) {
+            startAndStopServers(currentServers);
+            startAndRemoveClients(Container.get().getClientProviderRegistry().allComponents());
+            signalActivation();
+        }
     }
 
-    private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
+    private DeactivatedContainer activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
         DeactivatedContainer deactivated = activator.activateContainer(builder);
         if (deactivated != null) {
             nonTerminatedContainerTracker.register();
@@ -323,6 +323,7 @@ public final class ConfiguredApplication implements Application {
                 }
             });
         }
+        return deactivated;
     }
 
     private void signalActivation() {
@@ -466,7 +467,7 @@ public final class ConfiguredApplication implements Application {
         shutdownReconfigurer();
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
-        activateContainer(null, () -> log.info("Last active container generation has terminated"));
+        try (DeactivatedContainer deactivated = activateContainer(null, () -> log.info("Last active container generation has terminated"))) { }
         subscriberFactory.close();
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
     }

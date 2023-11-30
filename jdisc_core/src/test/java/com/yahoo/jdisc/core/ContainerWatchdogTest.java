@@ -42,6 +42,9 @@ public class ContainerWatchdogTest {
         assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
 
         containerWithoutRetainedResources.release();
+        assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
+
+        containerWithoutRetainedResources.shutdown().close();
         assertEquals(0, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
     }
 

@@ -18,8 +18,12 @@ public class ContainerTerminationTestCase {
     @Test
     void requireThatAccessorsWork() {
         Object obj = new Object();
-        ContainerTermination termination = new ContainerTermination(obj);
+        MyTask task = new MyTask();
+        ContainerTermination termination = new ContainerTermination(obj, task::run);
         assertSame(obj, termination.appContext());
+        assertFalse(task.done);
+        termination.close();
+        assertTrue(task.done);
     }
 
     @Test
@@ -36,7 +40,7 @@ public class ContainerTerminationTestCase {
 
     @Test
     void requireThatEarlyTerminationIsNotified() {
-        ContainerTermination termination = new ContainerTermination(null);
+        ContainerTermination termination = new ContainerTermination(null, null);
         termination.run();
         MyTask task = new MyTask();
         termination.notifyTermination(task);
@@ -45,7 +49,7 @@ public class ContainerTerminationTestCase {
 
     @Test
     void requireThatLaterTerminationIsNotified() {
-        ContainerTermination termination = new ContainerTermination(null);
+        ContainerTermination termination = new ContainerTermination(null, null);
         MyTask task = new MyTask();
         termination.notifyTermination(task);
         assertFalse(task.done);
@@ -55,7 +59,7 @@ public class ContainerTerminationTestCase {
 
     @Test
     void requireThatNotifyCanOnlyBeCalledOnce() {
-        ContainerTermination termination = new ContainerTermination(null);
+        ContainerTermination termination = new ContainerTermination(null, null);
         termination.notifyTermination(new MyTask());
         try {
             termination.notifyTermination(new MyTask());
