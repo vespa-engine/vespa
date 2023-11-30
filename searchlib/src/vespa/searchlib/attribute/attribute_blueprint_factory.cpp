@@ -577,6 +577,11 @@ private:
     const IDocidWithWeightPostingStore *_dww;
     vespalib::string _scratchPad;
 
+    bool use_docid_with_weight_posting_store() const {
+        // TODO: Relax requirement on always having weight iterator for query operators where that makes sense.
+        return (_dww != nullptr) && (_dww->has_always_weight_iterator());
+    }
+
 public:
     CreateBlueprintVisitor(Searchable &searchable, const IRequestContext &requestContext,
                            const FieldSpec &field, const IAttributeVector &attr)
@@ -591,7 +596,7 @@ public:
 
     template <class TermNode>
     void visitSimpleTerm(TermNode &n) {
-        if ((_dww != nullptr) && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
+        if (use_docid_with_weight_posting_store() && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
             setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dww, key));
         } else {
@@ -686,7 +691,7 @@ public:
             }
             setResult(std::move(ws));
         } else {
-            if (_dww != nullptr) {
+            if (use_docid_with_weight_posting_store()) {
                 auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dww, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
@@ -701,7 +706,7 @@ public:
     }
 
     void visit(query::DotProduct &n) override {
-        if (_dww != nullptr) {
+        if (use_docid_with_weight_posting_store()) {
             auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dww, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
@@ -711,7 +716,7 @@ public:
     }
 
     void visit(query::WandTerm &n) override {
-        if (_dww != nullptr) {
+        if (use_docid_with_weight_posting_store()) {
             auto *bp = new DirectWandBlueprint(_field, *_dww,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
                                                n.getNumTerms());

@@ -166,6 +166,13 @@ MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has
 }
 
 template <typename B, typename M>
+bool
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef idx) const noexcept
+{
+    return self.get_posting_store().has_bitvector(idx);
+}
+
+template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
@@ -177,7 +184,7 @@ const IDocidWithWeightPostingStore*
 MultiValueStringPostingAttributeT<B, T>::as_docid_with_weight_posting_store() const
 {
     // TODO: Add support for handling bit vectors too, and lift restriction on isFilter.
-    if (this->hasWeightedSetType() && this->isStringType() && ! this->getIsFilter()) {
+    if (this->hasWeightedSetType() && this->isStringType()) {
         return &_posting_store_adapter;
     }
     return nullptr;
