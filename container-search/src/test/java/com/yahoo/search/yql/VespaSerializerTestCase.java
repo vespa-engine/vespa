@@ -49,7 +49,9 @@ public class VespaSerializerTestCase {
 
     static private IndexFacts createIndexFactsForInTest() {
         SearchDefinition sd = new SearchDefinition("sourceA");
-        sd.addIndex(new Index("field"));
+        Index fieldIndex = new Index("field");
+        fieldIndex.setInteger(true);
+        sd.addIndex(fieldIndex);
         Index stringIndex = new Index("string");
         stringIndex.setString(true);
         sd.addIndex(stringIndex);
