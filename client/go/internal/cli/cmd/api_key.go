@@ -72,7 +72,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 	}
 	apiKeyFile := cli.config.apiKeyPath(app.Tenant)
 	if ioutil.Exists(apiKeyFile) && !overwriteKey {
-		err := fmt.Errorf("refusing to overwrite %s", apiKeyFile)
+		err := fmt.Errorf("refusing to overwrite '%s'", apiKeyFile)
 		cli.printErr(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
 		return ErrCLI{error: err, quiet: true}
@@ -82,17 +82,17 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
 	if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
-		cli.printSuccess("Developer private key written to ", apiKeyFile)
+		cli.printSuccess("Developer private key written to '", apiKeyFile, "'")
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
-		return fmt.Errorf("failed to write: %s: %w", apiKeyFile, err)
+		return fmt.Errorf("failed to write: '%s': %w", apiKeyFile, err)
 	}
 }
 
 func printPublicKey(system vespa.System, apiKeyFile, tenant string) error {
 	pemKeyData, err := os.ReadFile(apiKeyFile)
 	if err != nil {
-		return fmt.Errorf("failed to read: %s: %w", apiKeyFile, err)
+		return fmt.Errorf("failed to read: '%s': %w", apiKeyFile, err)
 	}
 	key, err := vespa.ECPrivateKeyFrom(pemKeyData)
 	if err != nil {

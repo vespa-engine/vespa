@@ -123,10 +123,10 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 	if !overwriteCertificate {
 		hint := "Use -f flag to force overwriting"
 		if ioutil.Exists(privateKeyFile.path) {
-			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile.path)), hint)
+			return errHint(fmt.Errorf("private key '%s' already exists", color.CyanString(privateKeyFile.path)), hint)
 		}
 		if ioutil.Exists(certificateFile.path) {
-			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile.path)), hint)
+			return errHint(fmt.Errorf("certificate '%s' already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
 
@@ -140,8 +140,8 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
-	cli.printSuccess("Certificate written to ", color.CyanString(certificateFile.path))
-	cli.printSuccess("Private key written to ", color.CyanString(privateKeyFile.path))
+	cli.printSuccess("Certificate written to ", color.CyanString("'"+certificateFile.path+"'"))
+	cli.printSuccess("Private key written to ", color.CyanString("'"+privateKeyFile.path+"'"))
 	if !skipApplicationPackage {
 		return doCertAdd(cli, overwriteCertificate, args)
 	}
@@ -158,7 +158,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 		return err
 	}
 	if pkg.HasCertificate() && !overwriteCertificate {
-		return errHint(fmt.Errorf("application package %s already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
+		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
 	}
 	return maybeCopyCertificate(true, false, cli, target, pkg)
 }
@@ -166,13 +166,13 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
 	if pkg.IsZip() {
 		if ignoreZip {
-			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since "+pkg.Path+" is compressed",
+			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since '"+pkg.Path+"' is compressed",
 				"Deployment to Vespa Cloud requires certificate in application package",
 				"See https://cloud.vespa.ai/en/security/guide")
 			return nil
 		} else {
 			hint := "Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'"
-			return errHint(fmt.Errorf("cannot add certificate to compressed application package: %s", pkg.Path), hint)
+			return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path), hint)
 		}
 	}
 	if force {
@@ -215,7 +215,7 @@ func copyCertificate(cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage
 	}
 	err = ioutil.AtomicWriteFile(dstPath, data)
 	if err == nil {
-		cli.printSuccess("Copied certificate from ", tlsOptions.CertificateFile, " to ", dstPath)
+		cli.printSuccess("Copied certificate from '", tlsOptions.CertificateFile, "' to '", dstPath, "'")
 	}
 	return err
 }
