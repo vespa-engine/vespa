@@ -47,7 +47,7 @@ QueryWrapperTest::testQueryWrapper()
         QueryWrapper::TermList & tl = wrap.getTermList();
 
         QueryTermList terms;
-        q.getLeafs(terms);
+        q.getLeaves(terms);
         ASSERT_TRUE(tl.size() == 5 && terms.size() == 5);
         for (size_t i = 0; i < 5; ++i) {
             EXPECT_EQUAL(tl[i].getTerm(), terms[i]);

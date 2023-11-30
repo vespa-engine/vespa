@@ -226,7 +226,7 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
                                   search::fef::IQueryEnvironment& query_env)
 {
     QueryTermList qtl;
-    query.getLeafs(qtl);
+    query.getLeaves(qtl);
     vespalib::string tmp;
     for (auto& searcher : *this) {
         QueryTermList onlyInIndex;

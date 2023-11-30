@@ -17,8 +17,8 @@ public:
     ~QueryConnector();
     const HitList & evaluateHits(HitList & hl) const override;
     void reset() override;
-    void getLeafs(QueryTermList & tl) override;
-    void getLeafs(ConstQueryTermList & tl) const override;
+    void getLeaves(QueryTermList & tl) override;
+    void getLeaves(ConstQueryTermList & tl) const override;
     void getPhrases(QueryNodeRefList & tl) override;
     void getPhrases(ConstQueryNodeRefList & tl) const override;
     size_t depth() const override;
@@ -192,8 +192,8 @@ public:
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.
-    void getLeafs(QueryTermList & tl);
-    void getLeafs(ConstQueryTermList & tl) const;
+    void getLeaves(QueryTermList & tl);
+    void getLeaves(ConstQueryTermList & tl) const;
     /// Gives you all phrases of this tree.
     void getPhrases(QueryNodeRefList & tl);
     void getPhrases(ConstQueryNodeRefList & tl) const;

@@ -74,8 +74,8 @@ QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & te
 
 void QueryTerm::getPhrases(QueryNodeRefList & tl)            { (void) tl; }
 void QueryTerm::getPhrases(ConstQueryNodeRefList & tl) const { (void) tl; }
-void QueryTerm::getLeafs(QueryTermList & tl)                 { tl.push_back(this); }
-void QueryTerm::getLeafs(ConstQueryTermList & tl)      const { tl.push_back(this); }
+void QueryTerm::getLeaves(QueryTermList & tl)                 { tl.push_back(this); }
+void QueryTerm::getLeaves(ConstQueryTermList & tl)      const { tl.push_back(this); }
 bool QueryTerm::evaluate()                             const { return !_hitList.empty(); }
 void QueryTerm::reset()                                      { _hitList.clear(); }
 const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }

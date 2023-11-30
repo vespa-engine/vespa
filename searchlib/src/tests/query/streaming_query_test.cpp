@@ -378,13 +378,13 @@ TEST("testGetQueryParts") {
     Query q(empty, stackDump);
     QueryTermList terms;
     QueryNodeRefList phrases;
-    q.getLeafs(terms);
+    q.getLeaves(terms);
     q.getPhrases(phrases);
     ASSERT_TRUE(terms.size() == 7);
     ASSERT_TRUE(phrases.size() == 2);
     {
         QueryTermList pts;
-        phrases[0]->getLeafs(pts);
+        phrases[0]->getLeaves(pts);
         ASSERT_TRUE(pts.size() == 3);
         for (size_t i = 0; i < 3; ++i) {
             EXPECT_EQUAL(pts[i], terms[i + 1]);
@@ -392,7 +392,7 @@ TEST("testGetQueryParts") {
     }
     {
         QueryTermList pts;
-        phrases[1]->getLeafs(pts);
+        phrases[1]->getLeaves(pts);
         ASSERT_TRUE(pts.size() == 2);
         for (size_t i = 0; i < 2; ++i) {
             EXPECT_EQUAL(pts[i], terms[i + 5]);
@@ -415,7 +415,7 @@ TEST("testPhraseEvaluate") {
     QueryNodeRefList phrases;
     q.getPhrases(phrases);
     QueryTermList terms;
-    q.getLeafs(terms);
+    q.getLeaves(terms);
     for (QueryTerm * qt : terms) {
         qt->resizeFieldId(1);
     }
@@ -754,7 +754,7 @@ TEST("testSameElementEvaluate") {
     verifyQueryTermNode("field.f3", (*sameElem)[2].get());
 
     QueryTermList terms;
-    q.getLeafs(terms);
+    q.getLeaves(terms);
     EXPECT_EQUAL(3u, terms.size());
     for (QueryTerm * qt : terms) {
         qt->resizeFieldId(3);
