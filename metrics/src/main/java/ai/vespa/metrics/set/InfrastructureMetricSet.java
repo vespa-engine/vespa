@@ -146,6 +146,7 @@ public class InfrastructureMetricSet {
 
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_QUEUED, EnumSet.of(count, sum));
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_JOBS_ACTIVE, EnumSet.of(count, sum));
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_EXECUTOR_SIZE, EnumSet.of(max));
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ABORT.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_DURATION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.max());

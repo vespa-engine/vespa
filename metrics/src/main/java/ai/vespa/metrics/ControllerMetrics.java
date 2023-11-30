@@ -11,6 +11,7 @@ public enum ControllerMetrics implements VespaMetrics {
 
     DEPLOYMENT_JOBS_QUEUED("deployment.jobsQueued", Unit.TASK, "The number of deployment jobs queued"),
     DEPLOYMENT_JOBS_ACTIVE("deployment.jobsActive", Unit.TASK, "The number of deployment jobs active"),
+    DEPLOYMENT_EXECUTOR_SIZE("deployment.executorSize", Unit.THREAD, "The number of deployment jobs that can run in parallel"),
     DEPLOYMENT_START("deployment.start", Unit.DEPLOYMENT, "The number of started deployment jobs"),
     DEPLOYMENT_NODE_ALLOCATION_FAILURE("deployment.nodeAllocationFailure", Unit.DEPLOYMENT, "The number of deployments failed due to node allocation failures"),
     DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT("deployment.endpointCertificateTimeout", Unit.DEPLOYMENT, "The number of deployments failed due to timeout acquiring endpoint certificate"),
