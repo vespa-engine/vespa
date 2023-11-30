@@ -42,7 +42,7 @@ public class Messenger implements Runnable {
      *
      * @param task The task to add.
      */
-    void addRecurrentTask(final Task task) {
+    void addRecurrentTask(Task task) {
         children.add(task);
     }
 
@@ -64,7 +64,7 @@ public class Messenger implements Runnable {
      * @param msg     The message to send.
      * @param handler The handler to send to.
      */
-    public void deliverMessage(final Message msg, final MessageHandler handler) {
+    public void deliverMessage(Message msg, MessageHandler handler) {
         if (destroyed.get()) {
             msg.discard();
         } else {
@@ -80,7 +80,7 @@ public class Messenger implements Runnable {
      * @param reply   The reply to return.
      * @param handler The handler to return to.
      */
-    public void deliverReply(final Reply reply, final ReplyHandler handler) {
+    public void deliverReply(Reply reply, ReplyHandler handler) {
         if (destroyed.get()) {
             reply.discard();
         } else {
@@ -95,7 +95,7 @@ public class Messenger implements Runnable {
      *
      * @param task The task to enqueue.
      */
-    public void enqueue(final Task task) {
+    public void enqueue(Task task) {
         if (destroyed.get()) {
             task.destroy();
             return;
@@ -116,7 +116,7 @@ public class Messenger implements Runnable {
         if (Thread.currentThread() == thread) {
             return; // no need to wait for self
         }
-        final SyncTask task = new SyncTask();
+        SyncTask task = new SyncTask();
         enqueue(task);
         task.await();
     }
@@ -140,7 +140,7 @@ public class Messenger implements Runnable {
                     }
                 }
                 thread.join();
-            } catch (final InterruptedException e) {
+            } catch (InterruptedException e) {
                 // ignore
             }
             done = true;
@@ -161,7 +161,7 @@ public class Messenger implements Runnable {
                         } else {
                             wait(timeoutMS);
                         }
-                    } catch (final InterruptedException e) {
+                    } catch (InterruptedException e) {
                         continue;
                     }
                 }
@@ -175,26 +175,26 @@ public class Messenger implements Runnable {
             if (task != null) {
                 try {
                     task.run();
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     log.log(Level.SEVERE, "An exception was thrown while running " + task.getClass().getName(), e);
                 }
                 try {
                     task.destroy();
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     log.warning("An exception was thrown while destroying " + task.getClass().getName() + ": " + e);
                     log.warning("Someone, somewhere might have to wait indefinitely for something.");
                 }
             }
-            for (final Task child : children) {
+            for (Task child : children) {
                 child.run();
             }
         }
-        for (final Task child : children) {
+        for (Task child : children) {
             child.destroy();
         }
         synchronized (this) {
             while (!queue.isEmpty()) {
-                final Task task = queue.poll();
+                Task task = queue.poll();
                 task.destroy();
             }
             notify();
@@ -236,7 +236,7 @@ public class Messenger implements Runnable {
         public void await() {
             try {
                 latch.await();
-            } catch (final InterruptedException e) {
+            } catch (InterruptedException e) {
                 // ignore
             }
         }

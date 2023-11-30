@@ -31,9 +31,9 @@ class ProxyRequestHandler implements DelegatedRequestHandler {
 
     @Override
     public ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        try (final ResourceReference requestReference = request.refer()) {
+        try (ResourceReference requestReference = request.refer()) {
             ContentChannel contentChannel;
-            final ResponseHandler proxyResponseHandler = new ProxyResponseHandler(
+            ResponseHandler proxyResponseHandler = new ProxyResponseHandler(
                     request, new NullContentResponseHandler(responseHandler));
             try {
                 contentChannel = delegate.handleRequest(request, proxyResponseHandler);

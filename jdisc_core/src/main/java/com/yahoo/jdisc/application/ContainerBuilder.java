@@ -35,9 +35,7 @@ public class ContainerBuilder {
     public ContainerBuilder(Iterable<Module> guiceModules) {
         this.guiceModules.installAll(guiceModules);
         this.guiceModules.install(new AbstractModule() {
-
-            @Override
-            public void configure() {
+            @Override public void configure() {
                 bind(ContainerBuilder.class).toInstance(ContainerBuilder.this);
             }
         });

@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class DocumentProcessingTask implements Runnable {
 
-    private static Logger log = Logger.getLogger(DocumentProcessingTask.class.getName());
+    private static final Logger log = Logger.getLogger(DocumentProcessingTask.class.getName());
     private final List<Processing> processings = new ArrayList<>();
     private final List<Processing> processingsDone = new ArrayList<>();
 

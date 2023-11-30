@@ -140,7 +140,7 @@ public class Request extends AbstractResource {
     public URI getUri() { return uri; }
 
     /**
-     * Returns whether or not this Request was created by a {@link ServerProvider}. The value of this is used by
+     * Returns whether this Request was created by a {@link ServerProvider}. The value of this is used by
      * {@link Container#resolveHandler(Request)} to decide whether to match against server- or client-bindings.
      *
      * @return true, if this is a server request

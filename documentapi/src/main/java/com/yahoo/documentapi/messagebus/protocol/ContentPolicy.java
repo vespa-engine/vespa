@@ -595,13 +595,11 @@ public class ContentPolicy extends SlobrokPolicy {
                 return !reply.hasErrors(); // For simplicity, count any reply with > 1 error.
             }
             var error = reply.getError(0);
-            switch (error.getCode()) {
+            return switch (error.getCode()) {
                 // TODO this feels like a layering violation, but we use DocumentProtocol directly in other places in this policy anyway...
-                case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED:
-                case DocumentProtocol.ERROR_BUSY:
-                    return false;
-                default: return true;
-            }
+                case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, DocumentProtocol.ERROR_BUSY -> false;
+                default -> true;
+            };
         }
 
         void handleErrorReply(Reply reply, Object untypedContext) {

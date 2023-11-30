@@ -63,13 +63,11 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler, 
      * @param routable the routable to forward.
      */
     public void forward(Routable routable) {
-        if (routable instanceof Reply) {
-            Reply reply = (Reply)routable;
-            ReplyHandler handler = reply.popHandler();
-            handler.handleReply(reply);
+        if (routable instanceof Reply reply) {
+            reply.popHandler().handleReply(reply);
         } else {
             routable.pushHandler(this);
-            mbus.handleMessage((Message)routable);
+            mbus.handleMessage((Message) routable);
         }
     }
 

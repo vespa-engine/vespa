@@ -30,17 +30,9 @@ public final class FutureResponse extends CompletableFuture<Response> implements
      *
      * @param content The content channel for the Response.
      */
-    public FutureResponse(final ContentChannel content) {
-        this(new ResponseHandler() {
-
-            @Override
-            public ContentChannel handleResponse(Response response) {
-                return content;
-            }
-        });
+    public FutureResponse(ContentChannel content) {
+        this(response -> content);
     }
-
-    public void addListener(Runnable r, Executor e) { whenCompleteAsync((__, ___) -> r.run(), e); }
 
     /**
      * <p>Constructs a new FutureResponse that calls the given {@link ResponseHandler} when {@link
@@ -51,6 +43,8 @@ public final class FutureResponse extends CompletableFuture<Response> implements
     public FutureResponse(ResponseHandler handler) {
         this.handler = handler;
     }
+
+    public void addListener(Runnable r, Executor e) { whenCompleteAsync((__, ___) -> r.run(), e); }
 
     @Override
     public ContentChannel handleResponse(Response response) {

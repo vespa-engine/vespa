@@ -367,7 +367,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * sessions from receiving data from message bus.</p>
      *
      * @param name          The name of the session to remove.
-     * @param broadcastName Whether or not session name was broadcast.
+     * @param broadcastName Whether session name was broadcast.
      */
     public synchronized void unregisterSession(String name, boolean broadcastName) {
         net.unregisterSession(name, this, broadcastName);

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
  *
  * <p>The following is a simple example on how to use this class:</p>
  * <pre>
- * public void handleRequest(final Request parent, final ResponseHandler handler) {
+ * public void handleRequest(Request parent, ResponseHandler handler) {
  *     new RequestDispatch() {
  *         &#64;Override
  *         protected Request newRequest() {
@@ -80,8 +80,8 @@ public abstract class RequestDispatch implements Future<Response>, ResponseHandl
      * @return The ContentChannel to write the Request's content to.
      */
     public final ContentChannel connect() {
-        final Request request = newRequest();
-        try (final ResourceReference ref = References.fromResource(request)) {
+        Request request = newRequest();
+        try (ResourceReference ref = References.fromResource(request)) {
             return request.connect(futureResponse);
         }
     }

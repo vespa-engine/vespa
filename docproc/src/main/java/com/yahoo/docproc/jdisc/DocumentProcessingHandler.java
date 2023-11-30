@@ -147,7 +147,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         RequestContext requestContext;
         if (request instanceof MbusRequest) {
-            requestContext = new MbusRequestContext((MbusRequest) request, handler, docprocServiceRegistry, docFactoryRegistry, containerDocConfig);
+            requestContext = new MbusRequestContext((MbusRequest) request, handler, docFactoryRegistry, containerDocConfig);
         } else {
             //Other types can be added here in the future
             throw new IllegalArgumentException("Request type not supported: " + request);

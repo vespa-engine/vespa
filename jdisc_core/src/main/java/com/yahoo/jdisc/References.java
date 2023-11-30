@@ -7,27 +7,22 @@ package com.yahoo.jdisc;
  * @author bakksjo
  */
 public class References {
-    // Prevents instantiation.
-    private References() {
-    }
+
+    private References() { }
 
     /**
      * A {@link ResourceReference} that does nothing.
      * Useful for e.g. testing of resource types when reference counting is not the focus.
      */
-    public static final ResourceReference NOOP_REFERENCE = new ResourceReference() {
-        @Override
-        public void close() {
-        }
-    };
+    public static final ResourceReference NOOP_REFERENCE = () -> { };
 
     /**
      * <p>Returns a {@link ResourceReference} that invokes {@link SharedResource#release()} on
      * {@link ResourceReference#close() close}. Useful for treating the "main" reference of a {@link SharedResource}
      * just as any other reference obtained by calling {@link SharedResource#refer()}. Example:</p>
      * <pre>
-     *     final Request request = new Request(...);
-     *     try (final ResourceReference ref = References.fromResource(request)) {
+     *     Request request = new Request(...);
+     *     try (ResourceReference ref = References.fromResource(request)) {
      *         ....
      *     }
      *     // The request will be released on exit from the try block.
@@ -36,12 +31,8 @@ public class References {
      * @param resource The resource to create a ResourceReference for.
      * @return a ResourceReference whose close() method will call release() on the given resource.
      */
-    public static ResourceReference fromResource(final SharedResource resource) {
-        return new ResourceReference() {
-            @Override
-            public void close() {
-                resource.release();
-            }
-        };
+    public static ResourceReference fromResource(SharedResource resource) {
+        return resource::release;
     }
+
 }
