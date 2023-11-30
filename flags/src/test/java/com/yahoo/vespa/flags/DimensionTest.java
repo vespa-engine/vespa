@@ -7,12 +7,7 @@ package com.yahoo.vespa.flags;
 class DimensionTest {
     /**
      * A compile-time test:  If this breaks you have most likely added (or removed) a dimension?
-     * If so you need to update the following:</p>
-     *
-     * <ul>
-     *     <li>Dimension validation in SystemFlagsDataArchive</li>
-     *     <li>Flag edit documenting dimension list in EditFlagDataCommandTest</li>
-     * </ul>
+     * If so you need to update the Dimension validation in SystemFlagsDataArchive.
      */
     @SuppressWarnings("unused")
     public String remember_to_update_SystemFlagsDataArchive(Dimension dimension) {
