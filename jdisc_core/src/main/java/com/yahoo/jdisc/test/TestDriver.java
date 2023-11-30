@@ -76,7 +76,7 @@ public class TestDriver implements ContainerActivator, CurrentContainer {
     /** Returns the deactivated container, with its container reference already released. */
     @Override
     public DeactivatedContainer activateContainer(ContainerBuilder builder) {
-        try (DeactivatedContainer deactivated = loader.activateContainer(buionf
+        try (DeactivatedContainer deactivated = loader.activateContainer(builder)) { return deactivated; }
     }
 
     @Override
