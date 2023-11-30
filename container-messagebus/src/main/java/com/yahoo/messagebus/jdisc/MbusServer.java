@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public final class MbusServer extends AbstractResource implements ServerProvider, MessageHandler {
 
-    private enum State {INITIALIZING, RUNNING, STOPPED}
+    private enum State { INITIALIZING, RUNNING, STOPPED }
     private final static Logger log = Logger.getLogger(MbusServer.class.getName());
     private final AtomicReference<State> runState = new AtomicReference<>(State.INITIALIZING);
     private final CurrentContainer container;
@@ -91,7 +91,10 @@ public final class MbusServer extends AbstractResource implements ServerProvider
         Request request = null;
         ContentChannel content = null;
         try {
-            request = new MbusRequest(container, uri, msg);
+            request = new MbusRequest(container, uri, msg) {
+                final ResourceReference sessionReference = session.refer();
+                @Override protected void destroy() { try (sessionReference) { super.destroy(); } }
+            };
             content = request.connect(new ServerResponseHandler(msg));
         } catch (RuntimeException e) {
             dispatchErrorReply(msg, ErrorCode.APP_FATAL_ERROR, e.toString());
@@ -152,4 +155,5 @@ public final class MbusServer extends AbstractResource implements ServerProvider
             return null;
         }
     }
+
 }

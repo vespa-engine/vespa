@@ -2,13 +2,24 @@
 package com.yahoo.messagebus.jdisc;
 
 import com.google.inject.AbstractModule;
+import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
-import com.yahoo.jdisc.handler.*;
+import com.yahoo.jdisc.handler.AbstractRequestHandler;
+import com.yahoo.jdisc.handler.CompletionHandler;
+import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.RequestDeniedException;
+import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.messagebus.Error;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.test.ServerTestDriver;
 import com.yahoo.messagebus.shared.ServerSession;
 import com.yahoo.messagebus.test.SimpleMessage;
@@ -23,13 +34,61 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class MbusServerTestCase {
+
+    @Test
+    public void requireThatServerRequestRetainsSession() {
+        AtomicReference<ContentChannel> responseChannel = new AtomicReference<>();
+        Container container = new Container() {
+            @Override public long currentTimeMillis() { return 0; }
+            @Override public void release() { }
+            @Override public RequestHandler resolveHandler(Request request) {
+                return new AbstractRequestHandler() {
+                    @Override public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+                        responseChannel.set(handler.handleResponse(new Response(Response.Status.OK)));
+                        return null;
+                    }
+                };
+            }
+            @Override public <T> T getInstance(Class<T> type) { return null; }
+        };
+        CurrentContainer current = new CurrentContainer() {
+            @Override public Container newReference(URI uri) { return container; }
+        };
+
+        MySession session = new MySession();
+        assertEquals(1, session.refCount);
+        MbusServer server = new MbusServer(current, session);
+        assertEquals(2, session.refCount);
+
+        server.handleMessage(new SimpleMessage("too early"));
+        assertEquals(2, session.refCount);
+
+        server.start();
+        server.handleMessage(new SimpleMessage("retained"));
+        assertEquals(3, session.refCount);
+
+        session.release();
+        assertEquals(2, session.refCount);
+        server.destroy();
+        assertEquals(1, session.refCount);
+
+        server.handleMessage(new SimpleMessage("too late"));
+        assertEquals(1, session.refCount);
+
+        responseChannel.get().close(null);
+        assertEquals(0, session.refCount);
+    }
 
     @Test
     public void requireThatServerRetainsSession() {
