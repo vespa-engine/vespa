@@ -107,7 +107,7 @@ e.g. vespa deploy or vespa query. Possible values are:
 
 Authentication is configured automatically for the cloud and hosted targets. To
 set a custom private key and certificate, e.g. for use with a self-hosted Vespa
-installation using mTLS, see the documentation of 'vespa cert'.
+installation using mTLS, see the documentation of 'vespa auth cert'.
 
 zone
 
