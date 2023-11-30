@@ -41,9 +41,9 @@ class QueryNode
   /// Clears all the hitlists so the query tree can be reused.
   virtual void reset() = 0;
   /// Gives you all leafs of this tree.
-  virtual void getLeafs(QueryTermList & tl) = 0;
+  virtual void getLeaves(QueryTermList & tl) = 0;
   /// Gives you all leafs of this tree. Indicating that they are all const.
-  virtual void getLeafs(ConstQueryTermList & tl) const = 0;
+  virtual void getLeaves(ConstQueryTermList & tl) const = 0;
   /// Gives you all phrases of this tree.
   virtual void getPhrases(QueryNodeRefList & tl) = 0;
   /// Gives you all phrases of this tree. Indicating that they are all const.

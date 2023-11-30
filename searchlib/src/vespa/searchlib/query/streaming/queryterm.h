@@ -62,8 +62,8 @@ public:
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
     void reset() override;
-    void getLeafs(QueryTermList & tl) override;
-    void getLeafs(ConstQueryTermList & tl) const override;
+    void getLeaves(QueryTermList & tl) override;
+    void getLeaves(ConstQueryTermList & tl) const override;
     /// Gives you all phrases of this tree.
     void getPhrases(QueryNodeRefList & tl) override;
     /// Gives you all phrases of this tree. Indicating that they are all const.

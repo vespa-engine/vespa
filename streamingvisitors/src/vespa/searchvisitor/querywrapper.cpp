@@ -34,12 +34,12 @@ QueryWrapper::QueryWrapper(Query & query) :
     _phraseList(query),
     _termList()
 {
-    QueryTermList leafs;
-    query.getLeafs(leafs);
-    for (size_t i = 0; i < leafs.size(); ++i) {
+    QueryTermList leaves;
+    query.getLeaves(leaves);
+    for (size_t i = 0; i < leaves.size(); ++i) {
         size_t index = 0;
-        PhraseQueryNode * parent = _phraseList.findPhrase(leafs[i], index);
-        _termList.push_back(Term(leafs[i], parent, index));
+        PhraseQueryNode * parent = _phraseList.findPhrase(leaves[i], index);
+        _termList.push_back(Term(leaves[i], parent, index));
     }
 }
 

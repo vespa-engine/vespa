@@ -45,18 +45,18 @@ QueryConnector::reset()
 }
 
 void
-QueryConnector::getLeafs(QueryTermList & tl)
+QueryConnector::getLeaves(QueryTermList & tl)
 {
     for (const auto & node : _children) {
-        node->getLeafs(tl);
+        node->getLeaves(tl);
     }
 }
 
 void
-QueryConnector::getLeafs(ConstQueryTermList & tl) const
+QueryConnector::getLeaves(ConstQueryTermList & tl) const
 {
     for (const auto & node : _children) {
-        node->getLeafs(tl);
+        node->getLeaves(tl);
     }
 }
 
@@ -355,16 +355,16 @@ Query::build(const QueryNodeResultFactory & factory, vespalib::stringref queryRe
 }
 
 void
-Query::getLeafs(QueryTermList & tl) {
+Query::getLeaves(QueryTermList & tl) {
     if (valid()) {
-        _root->getLeafs(tl);
+        _root->getLeaves(tl);
     }
 }
 
 void
-Query::getLeafs(ConstQueryTermList & tl) const {
+Query::getLeaves(ConstQueryTermList & tl) const {
     if (valid()) {
-        _root->getLeafs(tl);
+        _root->getLeaves(tl);
     }
 }
 

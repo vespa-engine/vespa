@@ -781,7 +781,7 @@ void
 SearchVisitor::setupSnippetModifiers()
 {
     QueryTermList qtl;
-    _query.getLeafs(qtl);
+    _query.getLeaves(qtl);
     _snippetModifierManager.setup(qtl, _fieldSearchSpecMap.specMap(), _fieldSearchSpecMap.documentTypeMap().begin()->second,
                                   *_fieldPathMap, _rankController.getRankProcessor()->get_query_env());
 }

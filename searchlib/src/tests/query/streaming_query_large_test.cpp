@@ -50,7 +50,7 @@ TEST("testveryLongQueryResultingInBug6850778") {
     Query q(factory, stackDump);
     QueryTermList terms;
     QueryNodeRefList phrases;
-    q.getLeafs(terms);
+    q.getLeaves(terms);
     ASSERT_EQUAL(NUMITEMS + 2, terms.size());
 }
 
