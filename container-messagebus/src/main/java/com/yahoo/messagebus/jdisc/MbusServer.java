@@ -67,6 +67,8 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     @Override
     protected void destroy() {
         log.log(Level.INFO, "Destroying message bus server: " + session.name());
+        if (runState.get() == State.RUNNING)
+            log.log(Level.WARNING, "Message bus server destroyed before being disconnected: " + session.name());
         runState.set(State.STOPPED);
         sessionReference.close();
     }
@@ -79,6 +81,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
             return;
         }
         if (state == State.STOPPED) {
+            log.log(Level.WARNING, "Message bus server received message after being stopped: " + session.name());
             dispatchErrorReply(msg, ErrorCode.NETWORK_SHUTDOWN, "MBusServer has been closed.");
             return;
         }

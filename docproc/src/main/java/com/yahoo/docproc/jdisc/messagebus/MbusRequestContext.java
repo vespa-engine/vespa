@@ -5,7 +5,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
-import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.impl.HandledProcessingException;
 import com.yahoo.docproc.Processing;
 import com.yahoo.docproc.impl.TransientFailureException;
@@ -56,11 +55,10 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     private final static String internalNoThrottledSourcePath = "/" + internalNoThrottledSource;
 
     public MbusRequestContext(MbusRequest request, ResponseHandler responseHandler,
-                              ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
                               ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
                               ContainerDocumentConfig containerDocConfig) {
         this.request = request;
-        this.requestMsg = (DocumentMessage)request.getMessage();
+        this.requestMsg = (DocumentMessage) request.getMessage();
         this.responseHandler = responseHandler;
         this.processingFactory = new ProcessingFactory(docFactoryRegistry,
                                                        containerDocConfig, getServiceName());

@@ -398,7 +398,6 @@ public class DocprocService extends AbstractComponent {
         }
     }
 
-    private class NoCallStackException extends RuntimeException {
-    }
+    private static class NoCallStackException extends RuntimeException { }
 
 }

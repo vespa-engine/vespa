@@ -90,7 +90,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
     @Override
     public void handleReply(final Reply reply) {
         reply.getTrace().trace(6, "Reply received by MbusClient.");
-        final ResponseHandler handler = (ResponseHandler)reply.getContext();
+        ResponseHandler handler = (ResponseHandler) reply.getContext();
         reply.popHandler(); // restore user context
         try {
             handler.handleResponse(new MbusResponse(StatusCodes.fromMbusReply(reply), reply))

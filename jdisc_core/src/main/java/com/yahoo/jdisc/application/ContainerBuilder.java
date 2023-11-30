@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * <p>This is the inactive, mutable {@link Container}. Because it requires references to the application internals, it
@@ -35,9 +38,7 @@ public class ContainerBuilder {
     public ContainerBuilder(Iterable<Module> guiceModules) {
         this.guiceModules.installAll(guiceModules);
         this.guiceModules.install(new AbstractModule() {
-
-            @Override
-            public void configure() {
+            @Override public void configure() {
                 bind(ContainerBuilder.class).toInstance(ContainerBuilder.this);
             }
         });
@@ -73,42 +74,26 @@ public class ContainerBuilder {
         return serverBindings.get(BindingSet.DEFAULT);
     }
 
-    public BindingRepository<RequestHandler> serverBindings(String setName) {
-        BindingRepository<RequestHandler> ret = serverBindings.get(setName);
-        if (ret == null) {
-            ret = new BindingRepository<>();
-            serverBindings.put(setName, ret);
-        }
-        return ret;
-    }
-
-    public Map<String, BindingSet<RequestHandler>> activateServerBindings() {
-        Map<String, BindingSet<RequestHandler>> ret = new HashMap<>();
-        for (Map.Entry<String, BindingRepository<RequestHandler>> entry : serverBindings.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue().activate());
-        }
-        return ImmutableMap.copyOf(ret);
-    }
-
     public BindingRepository<RequestHandler> clientBindings() {
         return clientBindings.get(BindingSet.DEFAULT);
     }
 
+    public BindingRepository<RequestHandler> serverBindings(String setName) {
+        return serverBindings.computeIfAbsent(setName, __ -> new BindingRepository<>());
+    }
+
     public BindingRepository<RequestHandler> clientBindings(String setName) {
-        BindingRepository<RequestHandler> ret = clientBindings.get(setName);
-        if (ret == null) {
-            ret = new BindingRepository<>();
-            clientBindings.put(setName, ret);
-        }
-        return ret;
+        return clientBindings.computeIfAbsent(setName, __ -> new BindingRepository<>());
+    }
+
+    public Map<String, BindingSet<RequestHandler>> activateServerBindings() {
+        return serverBindings.entrySet().stream().collect(toUnmodifiableMap(entry -> entry.getKey(),
+                                                                            entry -> entry.getValue().activate()));
     }
 
     public Map<String, BindingSet<RequestHandler>> activateClientBindings() {
-        Map<String, BindingSet<RequestHandler>> ret = new HashMap<>();
-        for (Map.Entry<String, BindingRepository<RequestHandler>> entry : clientBindings.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue().activate());
-        }
-        return ImmutableMap.copyOf(ret);
+        return clientBindings.entrySet().stream().collect(toUnmodifiableMap(entry -> entry.getKey(),
+                                                                            entry -> entry.getValue().activate()));
     }
 
     @SuppressWarnings({ "unchecked" })

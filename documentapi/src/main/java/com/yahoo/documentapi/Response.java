@@ -105,10 +105,10 @@ public class Response {
         /** The operation was a success. */
         SUCCESS,
 
-        /** The operation failed due to an unmet test-and-set condition. */
+        /** The operation was not carried out due to an unmet test-and-set condition. */
         CONDITION_FAILED,
 
-        /** The operation failed because its target document was not found. */
+        /** The operation was not carried out because its target document was not found. */
         NOT_FOUND,
 
         /** The operation failed because the cluster had insufficient storage to accept it. */

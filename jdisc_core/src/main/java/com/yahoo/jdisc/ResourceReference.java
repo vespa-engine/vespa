@@ -6,8 +6,8 @@ package com.yahoo.jdisc;
  *
  * <p>Implements {@link AutoCloseable} so that it can be used in try-with-resources statements. Example</p>
  * <pre>
- *     void doSomethingWithRequest(final Request request) {
- *         try (final ResourceReference ref = request.refer()) {
+ *     void doSomethingWithRequest(Request request) {
+ *         try (ResourceReference ref = request.refer()) {
  *             // Do something with request
  *         }
  *         // ref.close() will be called automatically on exit from the try block, releasing the reference on 'request'.

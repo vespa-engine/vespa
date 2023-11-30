@@ -28,7 +28,7 @@ public interface RequestContext {
     void processingFailed(Exception exception);
 
     /** Returns whether this request has timed out */
-    default boolean hasExpired() { return false;}
+    default boolean hasExpired() { return false; }
 
     void skip();
 

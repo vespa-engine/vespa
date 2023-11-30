@@ -109,4 +109,5 @@ public class SharedIntermediateSession extends AbstractResource
         session.destroy();
         mbusReference.close();
     }
+
 }

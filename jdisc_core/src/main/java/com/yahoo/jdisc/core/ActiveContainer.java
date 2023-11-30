@@ -37,12 +37,12 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         serverProviders = builder.serverProviders().activate();
         serverProviders.forEach(resourceReferences::retain);
         serverBindings = builder.activateServerBindings();
-        serverBindings.forEach(
-                (ignoredName, bindingSet) -> bindingSet.forEach(
+        serverBindings.values().forEach(
+                bindingSet -> bindingSet.forEach(
                         binding -> resourceReferences.retain(binding.getValue())));
         clientBindings = builder.activateClientBindings();
-        clientBindings.forEach(
-                (ignoredName, bindingSet) -> bindingSet.forEach(
+        clientBindings.values().forEach(
+                bindingSet -> bindingSet.forEach(
                         binding -> resourceReferences.retain(binding.getValue())));
         bindingSetSelector = builder.getInstance(BindingSetSelector.class);
         timeoutMgr = builder.getInstance(TimeoutManagerImpl.class);

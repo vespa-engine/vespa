@@ -157,7 +157,7 @@ public class DocumentProtocol implements Protocol {
     /** We failed accessing the disk, which we think is a disk hardware problem. */
     public static final int ERROR_DISK_FAILURE = ErrorCode.APP_TRANSIENT_ERROR + 1007;
 
-    /** We failed during an IO operation, we dont think is a specific disk hardware problem. */
+    /** We failed during an IO operation, we don't think is a specific disk hardware problem. */
     public static final int ERROR_IO_FAILURE = ErrorCode.APP_TRANSIENT_ERROR + 1008;
 
     /**

@@ -290,18 +290,17 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         Message msg = reply.getMessage();
         String err = getErrorMessage(reply);
         Response.Outcome outcome = toOutcome(reply);
-        switch (msg.getType()) {
-        case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());
-        case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome, reply.getTrace());
-        case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
-        case DocumentProtocol.MESSAGE_GETDOCUMENT:
-            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
-        default:
-            return new Response(reqId, err, outcome, reply.getTrace());
-        }
+        return switch (msg.getType()) {
+            case DocumentProtocol.MESSAGE_PUTDOCUMENT ->
+                    new DocumentResponse(reqId, ((PutDocumentMessage) msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());
+            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT ->
+                    new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage) msg).getDocumentUpdate(), err, outcome, reply.getTrace());
+            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT ->
+                    new DocumentIdResponse(reqId, ((RemoveDocumentMessage) msg).getDocumentId(), err, outcome, reply.getTrace());
+            case DocumentProtocol.MESSAGE_GETDOCUMENT ->
+                    new DocumentIdResponse(reqId, ((GetDocumentMessage) msg).getDocumentId(), err, outcome, reply.getTrace());
+            default -> new Response(reqId, err, outcome, reply.getTrace());
+        };
     }
 
     private static Response toSuccess(Reply reply, long reqId) {

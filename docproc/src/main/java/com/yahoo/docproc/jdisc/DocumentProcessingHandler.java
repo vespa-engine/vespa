@@ -116,7 +116,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     @Override
     protected void destroy() {
         laterExecutor.shutdown();
-        docprocServiceRegistry.allComponents().forEach(docprocService -> docprocService.deconstruct());
+        if ( ! laterExecutor.getQueue().isEmpty()) {
+            // This should not happen, as container should keep this alive until all requests are served.
+            log.log(Level.SEVERE, "Docproc laterExecutor queue not empty on shutdown, " + laterExecutor.getQueue().size() + " tasks discarded");
+        }
+        docprocServiceRegistry.allComponents().forEach(DocprocService::deconstruct);
     }
 
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {
@@ -147,7 +151,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         RequestContext requestContext;
         if (request instanceof MbusRequest) {
-            requestContext = new MbusRequestContext((MbusRequest) request, handler, docprocServiceRegistry, docFactoryRegistry, containerDocConfig);
+            requestContext = new MbusRequestContext((MbusRequest) request, handler, docFactoryRegistry, containerDocConfig);
         } else {
             //Other types can be added here in the future
             throw new IllegalArgumentException("Request type not supported: " + request);
