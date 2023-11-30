@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -31,13 +31,13 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 		t.Fatal(err)
 	}
 	httpClient := &mock.HTTPClient{}
-	cli.httpClientFactory = func(timeout time.Duration) util.HTTPClient { return httpClient }
+	cli.httpClientFactory = func(timeout time.Duration) httputil.Client { return httpClient }
 	cli.httpClient = httpClient
 	cli.exec = &mock.Exec{}
-	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
+	cli.auth0Factory = func(httpClient httputil.Client, options auth0.Options) (vespa.Authenticator, error) {
 		return &mockAuthenticator{}, nil
 	}
-	cli.ztsFactory = func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error) {
+	cli.ztsFactory = func(httpClient httputil.Client, domain, url string) (vespa.Authenticator, error) {
 		return &mockAuthenticator{}, nil
 	}
 	return cli, &stdout, &stderr

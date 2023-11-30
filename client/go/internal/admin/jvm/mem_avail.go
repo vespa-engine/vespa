@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func parseFree(txt string) AmountOfMemory {
@@ -91,7 +91,7 @@ func vespa_cg2get_impl(rootdir, limitname string) (output string, err error) {
 
 func getAvailableMemory() AmountOfMemory {
 	result := BytesOfMemory(0)
-	backticks := util.BackTicksWithStderr
+	backticks := osutil.BackTicksWithStderr
 	freeOutput, err := backticks.Run("free", "-m")
 	if err == nil {
 		result = parseFree(freeOutput)

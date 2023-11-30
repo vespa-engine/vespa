@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
@@ -124,7 +124,7 @@ $ cat docs.jsonl | vespa feed -`,
 	return cmd
 }
 
-func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]util.HTTPClient, string, error) {
+func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]httputil.Client, string, error) {
 	if n < 1 {
 		return nil, "", fmt.Errorf("need at least one client")
 	}
@@ -132,7 +132,7 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]uti
 	if err != nil {
 		return nil, "", err
 	}
-	services := make([]util.HTTPClient, 0, n)
+	services := make([]httputil.Client, 0, n)
 	baseURL := ""
 	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	for i := 0; i < n; i++ {
@@ -144,7 +144,7 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]uti
 		// Create a separate HTTP client for each service
 		client := cli.httpClientFactory(timeout)
 		// Feeding should always use HTTP/2
-		util.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
+		httputil.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
 		service.SetClient(client)
 		services = append(services, service)
 	}

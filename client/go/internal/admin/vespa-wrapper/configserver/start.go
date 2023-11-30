@@ -9,7 +9,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/jvm"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -37,7 +37,7 @@ func commonPreChecks() (veHome string) {
 	checkIsConfigserver(veHost)
 	e = os.Chdir(veHome)
 	if e != nil {
-		util.JustExitWith(e)
+		osutil.ExitErr(e)
 	}
 	return
 }
@@ -45,8 +45,8 @@ func commonPreChecks() (veHome string) {
 func JustStartConfigserver() int {
 	vespaHome := commonPreChecks()
 	vespa.CheckCorrectUser()
-	util.TuneResourceLimits()
-	util.TuneLogging(SERVICE_NAME, "com.google.api.client.http.HttpTransport", "config=off")
+	osutil.TuneResourceLimits()
+	osutil.TuneLogging(SERVICE_NAME, "com.google.api.client.http.HttpTransport", "config=off")
 	exportSettings(vespaHome)
 	removeStaleZkLocks(vespaHome)
 	c := jvm.NewStandaloneContainer(SERVICE_NAME)
@@ -76,7 +76,7 @@ func runConfigserverWithRunserver() int {
 func StartConfigserverEtc() int {
 	vespaHome := commonPreChecks()
 	vespa.RunPreStart()
-	util.TuneResourceLimits()
+	osutil.TuneResourceLimits()
 	fixSpec := makeFixSpec()
 	fixDirsAndFiles(fixSpec)
 	exportSettings(vespaHome)

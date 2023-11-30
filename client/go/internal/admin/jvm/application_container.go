@@ -4,14 +4,16 @@
 package jvm
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -20,6 +22,13 @@ const (
 
 type ApplicationContainer struct {
 	containerBase
+}
+
+func md5Hex(text string) string {
+	hasher := md5.New()
+	io.WriteString(hasher, text)
+	hash := hasher.Sum(nil)
+	return fmt.Sprintf("%x", hash)
 }
 
 func (a *ApplicationContainer) ArgForMain() string {
@@ -31,7 +40,7 @@ func (a *ApplicationContainer) Discriminator() string {
 	cfgId := a.ConfigId()
 	if cfgId != "" {
 		trace.Trace("Discriminator: using md5 of", cfgId)
-		return util.Md5Hex(cfgId + "\n")
+		return md5Hex(cfgId + "\n")
 	}
 	svcName := a.ServiceName()
 	if svcName != "" {
@@ -40,7 +49,7 @@ func (a *ApplicationContainer) Discriminator() string {
 	}
 	pid := os.Getpid()
 	trace.Trace("Discriminator: using md5 of", pid)
-	return util.Md5Hex(fmt.Sprintf("%d", pid))
+	return md5Hex(fmt.Sprintf("%d", pid))
 }
 
 func (a *ApplicationContainer) addJdiscProperties() {
@@ -168,6 +177,6 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 	if c.ConfigId() != "" {
 		ps.Setenv(envvars.VESPA_CONFIG_ID, c.ConfigId())
 	} else {
-		util.JustExitMsg("application container requires a config id")
+		osutil.ExitMsg("application container requires a config id")
 	}
 }

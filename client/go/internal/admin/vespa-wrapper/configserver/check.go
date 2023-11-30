@@ -8,7 +8,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func checkIsConfigserver(myname string) {
@@ -20,5 +20,5 @@ func checkIsConfigserver(myname string) {
 		}
 	}
 	trace.Warning("only these hosts should run a config server:", onlyHosts)
-	util.JustExitMsg(fmt.Sprintf("this host [%s] should not run a config server", myname))
+	osutil.ExitMsg(fmt.Sprintf("this host [%s] should not run a config server", myname))
 }

@@ -15,7 +15,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
@@ -39,7 +40,7 @@ func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*docum
 		Timeout:     time.Duration(timeoutSecs) * time.Second,
 		BaseURL:     docService.BaseURL,
 		NowFunc:     time.Now,
-	}, []util.HTTPClient{docService})
+	}, []httputil.Client{docService})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -103,22 +104,22 @@ func readDocument(id string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI
 	return printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
 }
 
-func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) util.OperationResult {
+func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) OperationResult {
 	if result.Err != nil {
-		return util.Failure(result.Err.Error())
+		return Failure(result.Err.Error())
 	}
 	bodyReader := bytes.NewReader(result.Body)
 	if result.HTTPStatus == 200 {
 		if read {
-			return util.SuccessWithPayload("Read "+doc.Id.String(), util.ReaderToJSON(bodyReader))
+			return SuccessWithPayload("Read "+doc.Id.String(), ioutil.ReaderToJSON(bodyReader))
 		} else {
-			return util.Success(doc.Operation.String() + " " + doc.Id.String())
+			return Success(doc.Operation.String() + " " + doc.Id.String())
 		}
 	}
 	if result.HTTPStatus/100 == 4 {
-		return util.FailureWithPayload("Invalid document operation: Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
+		return FailureWithPayload("Invalid document operation: Status "+strconv.Itoa(result.HTTPStatus), ioutil.ReaderToJSON(bodyReader))
 	}
-	return util.FailureWithPayload(service.Description()+" at "+service.BaseURL+": Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
+	return FailureWithPayload(service.Description()+" at "+service.BaseURL+": Status "+strconv.Itoa(result.HTTPStatus), ioutil.ReaderToJSON(bodyReader))
 }
 
 func newDocumentCmd(cli *CLI) *cobra.Command {
@@ -269,7 +270,7 @@ func documentService(cli *CLI, waitSecs int) (*vespa.Service, error) {
 	return waiter.Service(target, cli.config.cluster())
 }
 
-func printResult(cli *CLI, result util.OperationResult, payloadOnlyOnSuccess bool) error {
+func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) error {
 	out := cli.Stdout
 	if !result.Success {
 		out = cli.Stderr

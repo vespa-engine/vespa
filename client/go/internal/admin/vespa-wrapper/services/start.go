@@ -10,7 +10,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -33,14 +33,14 @@ func StartServices() int {
 }
 
 func checkjava() {
-	backticks := util.BackTicksWithStderr
+	backticks := osutil.BackTicksWithStderr
 	out, err := backticks.Run("java", "-version")
 	if err != nil {
 		trace.Warning("cannot run 'java -version'")
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	if !strings.Contains(out, "64-Bit Server VM") {
-		util.JustExitWith(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s\n", out))
+		osutil.ExitErr(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s\n", out))
 	}
 }
 
@@ -53,7 +53,7 @@ func VespaStartServices() int {
 	trace.Debug("common prechecks ok, running in", home, "on", host)
 	vespa.RunPreStart()
 	trace.Debug("prestart ok")
-	util.TuneResourceLimits()
+	osutil.TuneResourceLimits()
 	increase_vm_max_map_count()
 	trace.Debug("resource limits ok")
 	checkjava()
@@ -64,7 +64,7 @@ func VespaStartServices() int {
 	drop_caches()
 	err := vespa.MaybeSwitchUser("start-services")
 	if err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	return StartServices()
 }

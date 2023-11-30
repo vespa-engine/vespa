@@ -10,7 +10,8 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 type Container interface {
@@ -60,7 +61,7 @@ func readableEnv(env map[string]string) string {
 }
 
 func (cb *containerBase) Exec() {
-	argv := util.ArrayListOf(cb.JvmOptions().Args())
+	argv := list.ArrayListOf(cb.JvmOptions().Args())
 	argv.Insert(0, "java")
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
@@ -71,5 +72,5 @@ func (cb *containerBase) Exec() {
 	trace.Info("JVM env:", readableEnv(p.Env))
 	trace.Info("JVM exec:", argv)
 	err := p.Run()
-	util.JustExitWith(err)
+	osutil.ExitErr(err)
 }

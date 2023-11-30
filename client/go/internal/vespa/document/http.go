@@ -18,7 +18,7 @@ import (
 	"github.com/go-json-experiment/json"
 	"github.com/klauspost/compress/gzip"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 )
 
 type Compression int
@@ -52,7 +52,7 @@ type ClientOptions struct {
 }
 
 type countingHTTPClient struct {
-	client   util.HTTPClient
+	client   httputil.Client
 	inflight atomic.Int64
 }
 
@@ -70,7 +70,7 @@ type pendingDocument struct {
 	err     error
 }
 
-func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, error) {
+func NewClient(options ClientOptions, httpClients []httputil.Client) (*Client, error) {
 	if len(httpClients) < 1 {
 		return nil, fmt.Errorf("need at least one HTTP client")
 	}

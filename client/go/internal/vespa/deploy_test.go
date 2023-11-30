@@ -14,8 +14,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
@@ -235,7 +235,7 @@ func TestFetch(t *testing.T) {
 	dir := t.TempDir()
 	dst, err := Fetch(opts, dir)
 	require.Nil(t, err)
-	assert.True(t, util.PathExists(dst))
+	assert.True(t, ioutil.Exists(dst))
 
 	f, err := os.Open(dst)
 	require.Nil(t, err)
@@ -264,7 +264,7 @@ func TestFetchCloud(t *testing.T) {
 	dir := t.TempDir()
 	dst, err := Fetch(opts, dir)
 	require.Nil(t, err)
-	assert.True(t, util.PathExists(dst))
+	assert.True(t, ioutil.Exists(dst))
 }
 
 type pkgFixture struct {

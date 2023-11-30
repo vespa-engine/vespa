@@ -13,7 +13,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -48,7 +48,7 @@ func startSentinelWithRunserver() {
 }
 
 func waitForSentinelPid() bool {
-	backtick := util.BackTicksWithStderr
+	backtick := osutil.BackTicksWithStderr
 	start := time.Now()
 	for sleepcount := 0; sleepcount < 1000; sleepcount++ {
 		time.Sleep(10 * time.Millisecond)
@@ -84,7 +84,7 @@ func StartConfigSentinel() int {
 }
 
 func stopSentinelWithRunserver() {
-	_, err := util.SystemCommand.Run("vespa-runserver",
+	_, err := osutil.SystemCommand.Run("vespa-runserver",
 		"-s", SENTINEL_SERVICE_NAME,
 		"-p", SENTINEL_PIDFILE, "-S")
 	if err != nil {

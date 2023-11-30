@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/build"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -24,7 +24,7 @@ func NewDeployCmd() *cobra.Command {
 		curOptions Options
 	)
 	if err := vespa.LoadDefaultEnv(); err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	cobra.EnableCommandSorting = false
 	cmd := &cobra.Command{

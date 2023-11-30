@@ -21,7 +21,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -277,7 +278,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 
 	var response *http.Response
 	if externalEndpoint {
-		util.ConfigureTLS(context.cli.httpClient, []tls.Certificate{}, nil, false)
+		httputil.ConfigureTLS(context.cli.httpClient, []tls.Certificate{}, nil, false)
 		response, err = context.cli.httpClient.Do(request, 60*time.Second)
 	} else {
 		response, err = service.Do(request, 600*time.Second) // Vespa should provide a response within the given request timeout
@@ -294,7 +295,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 				color.RedString(strconv.Itoa(response.StatusCode)),
 				color.CyanString(method),
 				color.CyanString(requestUrl.String()),
-				util.ReaderToJSON(response.Body)), nil
+				ioutil.ReaderToJSON(response.Body)), nil
 	}
 
 	if responseBodySpec == nil {

@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func RunPreStart() error {
@@ -23,7 +23,7 @@ func RunPreStart() error {
 		return err
 	}
 	vespaUid, vespaGid := FindVespaUidAndGid()
-	fixSpec := util.FixSpec{
+	fixSpec := osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
 		DirMode:  0755,
@@ -57,7 +57,7 @@ func RunPreStart() error {
 	// fix wrong ownerships within directories:
 	var fixer fs.WalkDirFunc = func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			util.JustExitWith(err)
+			osutil.ExitErr(err)
 		}
 		if d.IsDir() {
 			fixSpec.FixDir(path)

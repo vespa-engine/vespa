@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 type QrStartConfig struct {
@@ -42,10 +42,10 @@ func (a *ApplicationContainer) getQrStartCfg() *QrStartConfig {
 		"-n", "search.config.qr-start",
 		"-i", a.ConfigId(),
 	}
-	backticks := util.BackTicksForwardStderr
+	backticks := osutil.BackTicksForwardStderr
 	data, err := backticks.Run("vespa-get-config", args...)
 	if err != nil {
-		util.JustExitMsg("could not get qr-start config: " + err.Error())
+		osutil.ExitMsg("could not get qr-start config: " + err.Error())
 	} else {
 		codec := json.NewDecoder(strings.NewReader(data))
 		err = codec.Decode(&parsedJson)

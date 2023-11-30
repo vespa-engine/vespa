@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
@@ -20,7 +21,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/zts"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -58,8 +59,8 @@ type CLI struct {
 	config  *Config
 	version version.Version
 
-	httpClient        util.HTTPClient
-	httpClientFactory func(timeout time.Duration) util.HTTPClient
+	httpClient        httputil.Client
+	httpClientFactory func(timeout time.Duration) httputil.Client
 	auth0Factory      auth0Factory
 	ztsFactory        ztsFactory
 }
@@ -102,9 +103,33 @@ func (c *execSubprocess) Run(name string, args ...string) ([]byte, error) {
 	return exec.Command(name, args...).Output()
 }
 
-type auth0Factory func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error)
+type auth0Factory func(httpClient httputil.Client, options auth0.Options) (vespa.Authenticator, error)
 
-type ztsFactory func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error)
+type ztsFactory func(httpClient httputil.Client, domain, url string) (vespa.Authenticator, error)
+
+// newSpinner writes message to writer w and executes function fn. While fn is running a spinning animation will be
+// displayed after message.
+func newSpinner(w io.Writer, message string, fn func() error) error {
+	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(w))
+	// Cursor is hidden by default. Hiding cursor requires Stop() to be called to restore cursor (i.e. if the process is
+	// interrupted), however we don't want to bother with a signal handler just for this
+	s.HideCursor = false
+	if err := s.Color("blue", "bold"); err != nil {
+		return err
+	}
+	if !strings.HasSuffix(message, " ") {
+		message += " "
+	}
+	s.Prefix = message
+	s.FinalMSG = "\r" + message + "done\n"
+	s.Start()
+	err := fn()
+	if err != nil {
+		s.FinalMSG = "\r" + message + "failed\n"
+	}
+	s.Stop()
+	return err
+}
 
 // New creates the Vespa CLI, writing output to stdout and stderr, and reading environment variables from environment.
 func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
@@ -136,7 +161,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	if err != nil {
 		return nil, err
 	}
-	httpClientFactory := util.CreateClient
+	httpClientFactory := httputil.NewClient
 	cli := CLI{
 		Environment: env,
 		Stdin:       os.Stdin,
@@ -152,10 +177,10 @@ For detailed description of flags and configuration, see 'vespa help config'.
 
 		httpClient:        httpClientFactory(time.Second * 10),
 		httpClientFactory: httpClientFactory,
-		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
+		auth0Factory: func(httpClient httputil.Client, options auth0.Options) (vespa.Authenticator, error) {
 			return auth0.NewClient(httpClient, options)
 		},
-		ztsFactory: func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error) {
+		ztsFactory: func(httpClient httputil.Client, domain, url string) (vespa.Authenticator, error) {
 			return zts.NewClient(httpClient, domain, url)
 		},
 	}
@@ -239,7 +264,7 @@ func (c *CLI) configureSpinner() {
 			return fn()
 		}
 	} else {
-		c.spinner = util.Spinner
+		c.spinner = newSpinner
 	}
 }
 

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
@@ -120,10 +120,10 @@ func ZoneFromString(s string) (ZoneID, error) {
 }
 
 func Fetch(deployment DeploymentOptions, path string) (string, error) {
-	if util.IsDirectory(path) {
+	if ioutil.IsDir(path) {
 		path = filepath.Join(path, "application.zip")
 	}
-	if util.PathExists(path) {
+	if ioutil.Exists(path) {
 		return "", fmt.Errorf("%s already exists", path)
 	}
 	if deployment.Target.IsCloud() {
@@ -540,7 +540,7 @@ func checkResponse(req *http.Request, response *http.Response) error {
 	if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid application package (%s)\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
-		return fmt.Errorf("error from deploy API at %s (%s):\n%s", req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("error from deploy API at %s (%s):\n%s", req.URL.Host, response.Status, ioutil.ReaderToJSON(response.Body))
 	}
 	return nil
 }

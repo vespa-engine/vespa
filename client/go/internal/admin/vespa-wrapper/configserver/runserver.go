@@ -8,7 +8,9 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -27,25 +29,25 @@ func (rs *RunServer) PidFile() string {
 
 func (rs *RunServer) ProgPath() string {
 	p := fmt.Sprintf("%s/bin64/%s", defaults.VespaHome(), PROG_NAME)
-	if util.IsExecutableFile(p) {
+	if ioutil.IsExecutable(p) {
 		return p
 	}
 	p = fmt.Sprintf("%s/bin/%s", defaults.VespaHome(), PROG_NAME)
-	if util.IsExecutableFile(p) {
+	if ioutil.IsExecutable(p) {
 		return p
 	}
 	panic(fmt.Errorf("not an executable file: %s", p))
 }
 
 func (rs *RunServer) WouldRun() bool {
-	backticks := util.BackTicksForwardStderr
+	backticks := osutil.BackTicksForwardStderr
 	out, err := backticks.Run(rs.ProgPath(), "-s", rs.ServiceName, "-p", rs.PidFile(), "-W")
 	trace.Trace("output from -W:", out, "error:", err)
 	return err == nil
 }
 
 func (rs *RunServer) Exec(prog string) {
-	argv := util.ArrayList[string]{
+	argv := list.ArrayList[string]{
 		PROG_NAME,
 		"-s", rs.ServiceName,
 		"-r", "30",
@@ -54,6 +56,6 @@ func (rs *RunServer) Exec(prog string) {
 		prog,
 	}
 	argv.AppendAll(rs.Args...)
-	err := util.Execvp(rs.ProgPath(), argv)
-	util.JustExitWith(err)
+	err := osutil.Execvp(rs.ProgPath(), argv)
+	osutil.ExitErr(err)
 }

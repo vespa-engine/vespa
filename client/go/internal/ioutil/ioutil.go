@@ -2,7 +2,7 @@
 // File utilities.
 // Author: bratseth
 
-package util
+package ioutil
 
 import (
 	"bytes"
@@ -14,26 +14,26 @@ import (
 	"strings"
 )
 
-// Returns true if the given path exists
-func PathExists(path string) bool {
+// Exists returns true if the given path exists.
+func Exists(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) && info != nil
 }
 
-// Returns true if the given path points to an existing directory
-func IsDirectory(path string) bool {
+// IsDir returns true if the given path points to an existing directory.
+func IsDir(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) && info != nil && info.IsDir()
 }
 
-// Returns true if the given path points to an existing file
-func IsRegularFile(path string) bool {
+// IsFile returns true if the given path points to an existing regular file.
+func IsFile(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) && info != nil && info.Mode().IsRegular()
 }
 
-// Returns true if the given path points to an executable
-func IsExecutableFile(path string) bool {
+// IsExecutable returns true if the given path points to an executable file.
+func IsExecutable(path string) bool {
 	info, err := os.Stat(path)
 	return !errors.Is(err, os.ErrNotExist) &&
 		info != nil &&
@@ -41,21 +41,21 @@ func IsExecutableFile(path string) bool {
 		((int(info.Mode()) & 0111) == 0111)
 }
 
-// Returns the content of a reader as a string
+// ReaderToString Returns the content of reader as a string. Read errors are ignored.
 func ReaderToString(reader io.Reader) string {
 	var buffer strings.Builder
 	io.Copy(&buffer, reader)
 	return buffer.String()
 }
 
-// Returns the content of a reader as a byte array
+// ReaderToBytes returns the content of a reader as a byte array. Read errors are ignored.
 func ReaderToBytes(reader io.Reader) []byte {
 	var buffer bytes.Buffer
 	buffer.ReadFrom(reader)
 	return buffer.Bytes()
 }
 
-// Returns the contents of reader as indented JSON
+// ReaderToJSON returns the contents of reader as indented JSON. Read errors are ignored.
 func ReaderToJSON(reader io.Reader) string {
 	bodyBytes, _ := io.ReadAll(reader)
 	var prettyJSON bytes.Buffer

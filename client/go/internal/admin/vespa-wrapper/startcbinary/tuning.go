@@ -4,10 +4,10 @@
 package startcbinary
 
 import (
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func configureTuning() {
-	util.OptionallyReduceTimerFrequency()
-	util.TuneResourceLimits()
+	osutil.OptionallyReduceTimerFrequency()
+	osutil.TuneResourceLimits()
 }

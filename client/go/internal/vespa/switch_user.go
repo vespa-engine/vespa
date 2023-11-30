@@ -11,7 +11,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const ENV_CHECK = envvars.VESPA_ALREADY_SWITCHED_USER_TO
@@ -55,7 +55,7 @@ func CheckCorrectUser() {
 	if err2 != nil {
 		trace.Warning("note: user.Lookup(", vespaUser, ") failed:", err2)
 	}
-	util.JustExitMsg("running as wrong user. Check your VESPA_USER setting")
+	osutil.ExitMsg("running as wrong user. Check your VESPA_USER setting")
 }
 
 // re-execute a vespa-wrapper action after switching to the vespa user
@@ -87,7 +87,7 @@ func MaybeSwitchUser(action string) error {
 		mySelf := fmt.Sprintf("%s/%s", vespaHome, scriptUtilsFilename)
 		os.Setenv(ENV_CHECK, wantUser.Username)
 		args := []string{SU_PROG, mySelf, action}
-		return util.Execvp(SU_PROG, args)
+		return osutil.Execvp(SU_PROG, args)
 	}
 	return nil
 }

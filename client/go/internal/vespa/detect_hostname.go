@@ -11,7 +11,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 // detect if this host is IPv6-only, in which case we want to pass
@@ -109,7 +109,7 @@ func findOurHostnameFrom(name string) (string, error) {
 	if good {
 		return trimmed, nil
 	}
-	backticks := util.BackTicksIgnoreStderr
+	backticks := osutil.BackTicksIgnoreStderr
 	out, err := backticks.Run("vespa-detect-hostname")
 	if err != nil {
 		out, err = backticks.Run("hostname", "-f")

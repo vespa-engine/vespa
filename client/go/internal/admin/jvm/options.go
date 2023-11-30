@@ -10,22 +10,23 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/list"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
 type Options struct {
 	container   Container
 	classPath   []string
-	jvmArgs     util.ArrayList[string]
+	jvmArgs     list.ArrayList[string]
 	mainClass   string
 	jarWithDeps string
-	fixSpec     util.FixSpec
+	fixSpec     osutil.FixSpec
 }
 
 func NewOptions(c Container) *Options {
 	vespaUid, vespaGid := vespa.FindVespaUidAndGid()
-	fixSpec := util.FixSpec{
+	fixSpec := osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
 		DirMode:  0755,
@@ -79,7 +80,7 @@ func (opts *Options) AddJvmArgsFromString(args string) {
 
 func (opts *Options) ConfigureCpuCount(cnt int) {
 	if cnt <= 0 {
-		out, err := util.BackTicksForwardStderr.Run("nproc", "--all")
+		out, err := osutil.BackTicksForwardStderr.Run("nproc", "--all")
 		if err != nil {
 			trace.Trace("failed nproc:", err)
 		} else {

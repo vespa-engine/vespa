@@ -9,7 +9,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/jvm"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -23,20 +23,20 @@ func commonPreChecks() {
 	veHome := vespa.FindAndVerifyVespaHome()
 	err := os.Chdir(veHome)
 	if err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	err = vespa.LoadDefaultEnv()
 	if err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 }
 
 func StartStandaloneContainer(extraArgs []string) int {
 	commonPreChecks()
-	util.TuneResourceLimits()
+	osutil.TuneResourceLimits()
 	serviceName := os.Getenv("VESPA_SERVICE_NAME")
 	if serviceName == "" {
-		util.JustExitMsg("Missing service name, ensure VESPA_SERVICE_NAME is set in the environment")
+		osutil.ExitMsg("Missing service name, ensure VESPA_SERVICE_NAME is set in the environment")
 	}
 	c := jvm.NewStandaloneContainer(serviceName)
 	jvmOpts := c.JvmOptions()

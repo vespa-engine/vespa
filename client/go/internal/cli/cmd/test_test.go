@@ -15,8 +15,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -205,6 +205,6 @@ func assertRequests(requests []*http.Request, client *mock.HTTPClient, t *testin
 		if actualBody == nil {
 			actualBody = io.NopCloser(strings.NewReader(""))
 		}
-		assert.Equal(t, util.ReaderToJSON(want.Body), util.ReaderToJSON(actualBody))
+		assert.Equal(t, ioutil.ReaderToJSON(want.Body), ioutil.ReaderToJSON(actualBody))
 	}
 }

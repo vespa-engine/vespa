@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Author: arnej
 
-package util
+package osutil
 
 import (
 	"errors"
@@ -149,5 +149,5 @@ func (spec *FixSpec) complainAndExit(got error, fn string, wanted os.FileMode) {
 	out, _ := BackTicksWithStderr.Run("stat", "--", fn)
 	trace.Warning(out)
 	trace.Warning("this is a fatal error!")
-	JustExitWith(got)
+	ExitErr(got)
 }

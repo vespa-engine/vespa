@@ -17,7 +17,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/services"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/standalone"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/startcbinary"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -99,7 +99,7 @@ func main() {
 
 func handleSimplePanic() {
 	if r := recover(); r != nil {
-		if jee, ok := r.(*util.JustExitError); ok {
+		if jee, ok := r.(*osutil.ExitError); ok {
 			fmt.Fprintln(os.Stderr, jee)
 			os.Exit(1)
 		} else {

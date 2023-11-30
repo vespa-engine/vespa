@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
@@ -35,7 +35,7 @@ type cloudTarget struct {
 	apiOptions        APIOptions
 	deploymentOptions CloudDeploymentOptions
 	logOptions        LogOptions
-	httpClient        util.HTTPClient
+	httpClient        httputil.Client
 	apiAuth           Authenticator
 	deploymentAuth    Authenticator
 	retryInterval     time.Duration
@@ -74,7 +74,7 @@ type logMessage struct {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
-func CloudTarget(httpClient util.HTTPClient, apiAuth Authenticator, deploymentAuth Authenticator,
+func CloudTarget(httpClient httputil.Client, apiAuth Authenticator, deploymentAuth Authenticator,
 	apiOptions APIOptions, deploymentOptions CloudDeploymentOptions,
 	logOptions LogOptions, retryInterval time.Duration) (Target, error) {
 	return &cloudTarget{

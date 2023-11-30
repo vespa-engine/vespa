@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -76,8 +76,8 @@ func TestProdInit(t *testing.T) {
 	assert.Contains(t, servicesXML, contentFragment)
 
 	// Backups are created
-	assert.True(t, util.PathExists(deploymentPath+".1.bak"))
-	assert.True(t, util.PathExists(servicesPath+".1.bak"))
+	assert.True(t, ioutil.Exists(deploymentPath+".1.bak"))
+	assert.True(t, ioutil.Exists(servicesPath+".1.bak"))
 }
 
 func readFileString(t *testing.T, filename string) string {

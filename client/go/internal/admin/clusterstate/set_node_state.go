@@ -16,7 +16,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/build"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 const (
@@ -80,7 +80,7 @@ func runSetNodeState(opts *Options, args []string) {
 	}
 	wanted, err := knownState(args[0])
 	if err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	reason := ""
 	if len(args) > 1 {
@@ -138,7 +138,7 @@ func (cc *ClusterControllerSpec) setNodeUserState(s serviceSpec, wanted KnownSta
 	}
 	jsonBytes, err := json.Marshal(request)
 	if err != nil {
-		util.JustExitWith(err)
+		osutil.ExitErr(err)
 	}
 	url := fmt.Sprintf("http://%s:%d/cluster/v2/%s/%s/%d",
 		cc.host, cc.port,

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 )
 
 const (
@@ -31,7 +31,7 @@ type Credentials struct {
 
 // Client is a client for the Auth0 service.
 type Client struct {
-	httpClient    util.HTTPClient
+	httpClient    httputil.Client
 	Authenticator *auth.Authenticator // TODO: Make this private
 	options       Options
 	provider      auth0Provider
@@ -80,7 +80,7 @@ func cancelOnInterrupt() context.Context {
 
 // NewClient constructs a new Auth0 client, storing configuration in the given configPath. The client will be configured for
 // use in the given Vespa system.
-func NewClient(httpClient util.HTTPClient, options Options) (*Client, error) {
+func NewClient(httpClient httputil.Client, options Options) (*Client, error) {
 	a := Client{}
 	a.httpClient = httpClient
 	a.options = options

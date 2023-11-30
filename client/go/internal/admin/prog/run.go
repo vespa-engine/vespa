@@ -5,7 +5,7 @@ package prog
 
 import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
 func (spec *Spec) Run() error {
@@ -22,5 +22,5 @@ func (spec *Spec) Run() error {
 		spec.Setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
 	}
 	envv := spec.EffectiveEnv()
-	return util.Execvpe(prog, args, envv)
+	return osutil.Execvpe(prog, args, envv)
 }
