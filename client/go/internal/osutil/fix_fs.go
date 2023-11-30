@@ -68,7 +68,7 @@ func (spec *FixSpec) FixDir(dirName string) {
 		spec.complainAndExit(err, dirName, spec.DirMode)
 	}
 	if !info.IsDir() {
-		err = fmt.Errorf("Not a directory: '%s'", dirName)
+		err = fmt.Errorf("not a directory: '%s'", dirName)
 		spec.complainAndExit(err, dirName, spec.DirMode)
 	}
 	trace.SpamDebug("chown: ", dirName, spec.UserId, spec.GroupId)
@@ -95,7 +95,7 @@ func (spec *FixSpec) FixFile(fileName string) {
 		return
 	}
 	if info.IsDir() {
-		err = fmt.Errorf("Should not be a directory: '%s'", fileName)
+		err = fmt.Errorf("should not be a directory: '%s'", fileName)
 		spec.complainAndExit(err, fileName, spec.FileMode)
 	}
 	trace.SpamDebug("chown: ", fileName, spec.UserId, spec.GroupId)

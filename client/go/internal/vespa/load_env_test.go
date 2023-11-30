@@ -106,7 +106,7 @@ override VESPA_V2 v2
 	assert.Equal(t, os.Getenv("VESPA_V1"), "v1")
 	assert.Equal(t, os.Getenv("VESPA_V2"), "v2")
 	assert.NotNil(t, err)
-	assert.Equal(t, err.Error(), "Not a valid environment variable name: '.A'")
+	assert.Equal(t, err.Error(), "not a valid environment variable name: '.A'")
 }
 
 func TestFindUser(t *testing.T) {

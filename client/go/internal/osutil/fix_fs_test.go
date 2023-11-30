@@ -23,6 +23,7 @@ func setup(t *testing.T) string {
 	err = os.WriteFile(tmpDir+"/a/f1", []byte{10}, 0644)
 	assert.Nil(t, err)
 	err = os.WriteFile(tmpDir+"/a/f2", []byte{10}, 0111)
+	assert.Nil(t, err)
 	return tmpDir
 }
 
@@ -91,6 +92,7 @@ func TestSuperUserOnly(t *testing.T) {
 		return
 	}
 	u, err := user.Current()
+	assert.Nil(t, err)
 	if u.Username != "root" {
 		trace.Trace("skip TestSuperUserOnly, user != root")
 		return
