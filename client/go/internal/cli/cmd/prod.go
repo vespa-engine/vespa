@@ -317,7 +317,7 @@ func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount 
 	validator := func(input string) error {
 		min, _, err := xml.ParseNodeCount(input)
 		if min < 2 {
-			return fmt.Errorf("at least 2 nodes are required for all clusters in a production environment.\nSee https://cloud.vespa.ai/en/production-deployment for more details.")
+			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", min), "See https://cloud.vespa.ai/en/production-deployment")
 		}
 		return err
 	}
