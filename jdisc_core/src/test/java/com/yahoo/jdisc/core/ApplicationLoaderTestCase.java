@@ -22,6 +22,7 @@ import org.osgi.framework.BundleContext;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -72,23 +74,14 @@ public class ApplicationLoaderTestCase {
     void requireThatApplicationStartExceptionUnsetsAndDestroysApplication() throws Exception {
         MyApplication app = MyApplication.newStartException();
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                Arrays.asList(new MyApplicationModule(app)));
+                                                         List.of(new MyApplicationModule(app)));
         loader.init(null, false);
-        try {
-            loader.start();
-            fail();
-        } catch (MyException e) {
-
-        }
+        assertThrows(MyException.class, loader::start);
         assertNull(loader.application());
         assertFalse(app.stop.await(100, TimeUnit.MILLISECONDS));
         assertTrue(app.destroy.await(600, TimeUnit.SECONDS));
-        try {
-            loader.activateContainer(loader.newContainerBuilder());
-            fail();
-        } catch (ApplicationNotReadyException e) {
-
-        }
+        assertThrows(ApplicationNotReadyException.class,
+                     () -> loader.activateContainer(loader.newContainerBuilder()));
         loader.stop();
         loader.destroy();
     }
@@ -97,14 +90,10 @@ public class ApplicationLoaderTestCase {
     void requireThatApplicationStopExceptionDestroysApplication() throws Exception {
         MyApplication app = MyApplication.newStopException();
         ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(),
-                Arrays.asList(new MyApplicationModule(app)));
+                                                         List.of(new MyApplicationModule(app)));
         loader.init(null, false);
         loader.start();
-        try {
-            loader.stop();
-        } catch (MyException e) {
-
-        }
+        loader.stop();
         assertTrue(app.destroy.await(600, TimeUnit.SECONDS));
         loader.destroy();
     }

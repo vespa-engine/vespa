@@ -34,22 +34,23 @@ MyApplication(ContainerActivator activator) {
  * com.yahoo.jdisc.application.DeactivatedContainer DeactivatedContainer} instance - an API that can be used by the
  * Application to asynchronously wait for Container termination in order to completely shut down components that are no
  * longer required. This activation pattern is used both for Application startup, runtime reconfigurations, as well as
- * for Application shutdown. It allows all jDISC Application to continously serve Requests during reconfiguration,
+ * for Application shutdown. It allows all jDISC Application to continuously serve Requests during reconfiguration,
  * causing no down time other than what the Application itself explicitly enforces.</p>
  *
 <pre>
 void reconfigureApplication() {
-   (...)
-   reconfiguredContainerBuilder.handlers().install(myRetainedClients);
-   reconfiguredContainerBuilder.servers().install(myRetainedServers);
-   myExpiredServers.close();
-   DeactivatedContainer deactivatedContainer = containerActivator.activateContainer(reconfiguredContainerBuilder);
-   deactivatedContainer.notifyTermination(new Runnable() {
-       void run() {
-           myExpiredClients.destroy();
-           myExpiredServers.destroy();
-       }
-   });
+    (...)
+    reconfiguredContainerBuilder.handlers().install(myRetainedClients);
+    reconfiguredContainerBuilder.servers().install(myRetainedServers);
+    myExpiredServers.close();
+    try (DeactivatedContainer deactivatedContainer = containerActivator.activateContainer(reconfiguredContainerBuilder)) {
+        deactivatedContainer.notifyTermination(new Runnable() {
+            void run() {
+                myExpiredClients.destroy();
+                myExpiredServers.destroy();
+            }
+        });
+    }
 }
 </pre>
  *

@@ -55,7 +55,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
             }
         });
         guiceInjector = builder.guiceModules().activate();
-        termination = new ContainerTermination(builder.appContext());
+        termination = new ContainerTermination(builder.appContext(), refer());
     }
 
     @Override

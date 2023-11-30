@@ -7,13 +7,14 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ContentChannel;
 
 /**
- * <p>This interface represents a {@link Container} which has been deactivated. An instance of this class is returned by
- * the {@link ContainerActivator#activateContainer(ContainerBuilder)} method, and is used to schedule a cleanup task
- * that is executed once the the deactivated Container has terminated.</p>
+ * <p>This interface represents a {@link Container} which is in the process of being deactivated. Closing this
+ * releases the last non-request-response reference to the container, and enables its termination.
+ * An instance of this class is returned by the {@link ContainerActivator#activateContainer(ContainerBuilder)} method,
+ * and is used to schedule a cleanup task that is executed once the the deactivated Container has terminated. </p>
  *
  * @author Simon Thoresen Hult
  */
-public interface DeactivatedContainer {
+public interface DeactivatedContainer extends AutoCloseable {
 
     /**
      * <p>Returns the context object that was previously attached to the corresponding {@link ContainerBuilder} through
@@ -34,5 +35,12 @@ public interface DeactivatedContainer {
      * @param task The task to run once this DeactivatedContainer has terminated.
      */
     void notifyTermination(Runnable task);
+
+    /**
+     * <p>Close this DeactivatedContainer. This releases the last non-request-response reference to the container, and
+     * enables its termination.</p>
+     */
+    @Override
+    void close();
 
 }
