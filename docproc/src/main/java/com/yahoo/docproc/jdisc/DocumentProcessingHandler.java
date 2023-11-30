@@ -116,7 +116,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     @Override
     protected void destroy() {
         laterExecutor.shutdown();
-        docprocServiceRegistry.allComponents().forEach(docprocService -> docprocService.deconstruct());
+        if ( ! laterExecutor.getQueue().isEmpty()) {
+            // This should not happen, as container should keep this alive until all requests are served.
+            log.log(Level.SEVERE, "Docproc laterExecutor queue not empty on shutdown, " + laterExecutor.getQueue().size() + " tasks discarded");
+        }
+        docprocServiceRegistry.allComponents().forEach(DocprocService::deconstruct);
     }
 
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {

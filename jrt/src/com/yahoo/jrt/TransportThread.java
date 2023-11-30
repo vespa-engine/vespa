@@ -296,6 +296,9 @@ public class TransportThread {
      */
     public TransportThread sync() {
         SyncCmd cmd = new SyncCmd();
+        if (Thread.currentThread() == thread) {
+            log.log(Level.WARNING, "Attempting to sync " + thread + " with itself, which will deadlock");
+        }
         if (postCommand(cmd)) {
             cmd.waitDone();
         } else {
