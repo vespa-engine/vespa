@@ -41,7 +41,7 @@ public class Request extends AbstractResource {
     private final HeaderFields headers = new HeaderFields();
     private final Container container;
     private final Request parent;
-    private final ResourceReference parentReference;
+    private final ResourceReference resourceReference;
     private final long creationTime;
     private final boolean serverRequest;
     private final URI uri;
@@ -83,15 +83,17 @@ public class Request extends AbstractResource {
         this(current, uri, true);
     }
 
-    public Request(CurrentContainer current, URI uri, boolean isServerRequest) { this(current, uri, isServerRequest, -1); }
+    public Request(CurrentContainer current, URI uri, boolean isServerRequest) {
+        this(current, uri, isServerRequest, -1);
+    }
 
     public Request(CurrentContainer current, URI uri, boolean isServerRequest, long creationTime) {
-        parent = null;
-        parentReference = null;
-        serverRequest = isServerRequest;
+        this.parent = null;
+        this.container = current.newReference(uri, this);
+        this.resourceReference = container::release;
         this.uri = uri.normalize();
-        container = current.newReference(uri, this);
         this.creationTime = creationTime >= 0 ? creationTime : container.currentTimeMillis();
+        this.serverRequest = isServerRequest;
     }
 
 
@@ -121,11 +123,11 @@ public class Request extends AbstractResource {
      */
     public Request(Request parent, URI uri) {
         this.parent = parent;
-        container = null;
-        creationTime = parent.container().currentTimeMillis();
-        serverRequest = false;
+        this.container = null;
+        this.resourceReference = parent.refer(this);
         this.uri = uri.normalize();
-        parentReference = this.parent.refer(this);
+        this.creationTime = parent.container().currentTimeMillis();
+        this.serverRequest = false;
     }
 
     /** Returns the {@link Container} for which this Request was created */
@@ -395,12 +397,7 @@ public class Request extends AbstractResource {
 
     @Override
     protected void destroy() {
-        if (parentReference != null) {
-            parentReference.close();
-        }
-        if (container != null) {
-            container.release();
-        }
+        resourceReference.close();
     }
 
 }
