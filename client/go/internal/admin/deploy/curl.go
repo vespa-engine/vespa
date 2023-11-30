@@ -112,10 +112,6 @@ func curlPutArgs() []string {
 		"--write-out", "\n%{http_code}")
 }
 
-func curlGetArgs() []string {
-	return commonCurlArgs()
-}
-
 func curlPostArgs() []string {
 	return append(commonCurlArgs(),
 		"--write-out", "\n%{http_code}")

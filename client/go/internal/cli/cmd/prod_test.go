@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -238,20 +237,4 @@ func TestProdDeployInvalidZip(t *testing.T) {
 
 	assert.NotNil(t, cli.Run("prod", "deploy", zipFile))
 	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
-}
-
-func copyFile(t *testing.T, dstFilename, srcFilename string) {
-	dst, err := os.Create(dstFilename)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer dst.Close()
-	src, err := os.Open(srcFilename)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer src.Close()
-	if _, err := io.Copy(dst, src); err != nil {
-		t.Fatal(err)
-	}
 }
