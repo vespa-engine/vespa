@@ -1199,7 +1199,8 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where field not in (25)",
                 new IllegalArgumentException("Expected AND, CALL, CONTAINS, EQ, GT, GTEQ, IN, LT, LTEQ or OR, got NOT_IN."));
         assertParseFail("select * from sources * where float in (25)",
-                new IllegalArgumentException("index float is not an integer or string field"));
+                new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
+                        "The field float is not of these types"));
     }
 
     private static void assertNumericInItem(String field, long[] values, QueryTree query) {

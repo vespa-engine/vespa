@@ -418,7 +418,8 @@ public class YqlParser implements Parser {
         var index = indexFactsSession.getIndex(field);
         boolean stringField = index.isString();
         if (!index.isInteger() && !stringField)
-            throw new IllegalArgumentException("index " + field + " is not an integer or string field");
+            throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
+                    field + " is not of these types");
         Item item = null;
         if (stringField) {
             item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
