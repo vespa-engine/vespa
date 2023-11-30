@@ -210,6 +210,7 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
 {
     if (length == 0) {
         // Do not consider empty terms.
+        insert(nullptr); // keep arity of parent in sync!
         return;
     }
     juniper::ItemCreator creator = item->get_creator();
@@ -220,7 +221,7 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
         break;
     default:
         /** Keep track of eliminated children to have correct arity in rep. */
-        insert(NULL);
+        insert(nullptr);
         if (LOG_WOULD_LOG(debug)) {
             std::string s(keyword, length);
             std::string ind = get_index(item);
@@ -237,7 +238,7 @@ void QueryVisitor::VisitKeyword(const QueryItem* item, const char* keyword,
             std::string ind = get_index(item);
             LOG(debug, "juniper: VisitKeyword(%s:%s) - not applicable index", ind.c_str(), s.c_str());
         }
-        insert(NULL); // keep arity of parent in sync!
+        insert(nullptr); // keep arity of parent in sync!
         return;
     }
     if (LOG_WOULD_LOG(debug)) {
