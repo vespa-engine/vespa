@@ -73,8 +73,7 @@ void
 PostingListSearchContextT<DataT>::fillBitVector()
 {
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        _merger.addToBitVector(PostingListTraverser<PostingStore>(_posting_store,
-                                                                           it.getData().load_acquire()));
+        _merger.addToBitVector(PostingListTraverser<PostingStore>(_posting_store, it.getData().load_acquire()));
     }
 }
 
