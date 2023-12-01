@@ -400,13 +400,23 @@ public class JsonFormat {
         };
     }
 
+    private static void decodeMaybeNestedValuesInBlock(Inspector arrayField, double[] target, MutableInteger index) {
+        if (arrayField.entries() == 0) {
+            throw new IllegalArgumentException("The block value array does not contain any values");
+        }
+        arrayField.traverse((ArrayTraverser) (__, value) -> {
+                if (value.type() == Type.ARRAY) {
+                    decodeMaybeNestedValuesInBlock(value, target, index);
+                } else {
+                    target[index.next()] = decodeNumeric(value);
+                }
+            });
+    }
+
     private static double[] decodeValuesInBlock(Inspector valuesField, MixedTensor.BoundBuilder mixedBuilder) {
         double[] values = new double[(int)mixedBuilder.denseSubspaceSize()];
         if (valuesField.type() == Type.ARRAY) {
-            if (valuesField.entries() == 0) {
-                throw new IllegalArgumentException("The block value array does not contain any values");
-            }
-            valuesField.traverse((ArrayTraverser) (index, value) -> values[index] = decodeNumeric(value));
+            decodeMaybeNestedValuesInBlock(valuesField, values, new MutableInteger(0));
         } else if (valuesField.type() == Type.STRING) {
             double[] decoded = decodeHexString(valuesField.asString(), mixedBuilder.type().valueType());
             if (decoded.length == 0) {
