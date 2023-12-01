@@ -28,6 +28,7 @@ std::ostream &operator<<(std::ostream &os, Level level) {
 }
 
 bool equal(const vespalib::string & a, const vespalib::string &b) {
+    EXPECT_EQUAL(a, b);
     return a == b;
 }
 
@@ -52,6 +53,10 @@ struct RankFixture {
         for (size_t i(0); i < std::min(errors.size(), expected.size()); i++) {
             EXPECT_EQUAL(errors[i].first, expected[i].second.first);
             EXPECT_TRUE(expected[i].first(errors[i].second, expected[i].second.second));
+        }
+        for (size_t i(expected.size()); i < errors.size(); i++) {
+            EXPECT_EQUAL(errors[i].first, Level::INFO);
+            EXPECT_EQUAL(errors[i].second, "");
         }
         return ok;
     }
