@@ -1582,6 +1582,7 @@
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void addToken(java.lang.String)",
+      "public void removeToken(java.lang.String)",
       "public java.util.Collection getTokens()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"

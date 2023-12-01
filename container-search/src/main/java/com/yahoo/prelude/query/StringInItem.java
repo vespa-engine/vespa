@@ -68,6 +68,10 @@ public class StringInItem extends InItem {
         tokens.add(token);
     }
 
+    public void removeToken(String token) {
+        tokens.remove(token);
+    }
+
     public Collection<String> getTokens() { return Set.copyOf(tokens); }
 
     @Override
