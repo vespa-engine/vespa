@@ -402,7 +402,7 @@ MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, Resu
     if (doom.hard_doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupUnordered(hits, numHits, bits);
+        man.groupUnordered(_distributionKey, hits, numHits, bits);
     }
     if (doom.hard_doom()) return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
@@ -410,7 +410,7 @@ MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, Resu
     if (doom.hard_doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupInRelevanceOrder(hits, numHits);
+        man.groupInRelevanceOrder(_distributionKey, hits, numHits);
     }
     if (doom.hard_doom()) return;
     fillPartialResult(context, totalHits, numHits, hits, bits);
@@ -420,9 +420,6 @@ MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, Resu
     }
     if (auto task = matchToolsFactory.createOnFirstPhaseTask()) {
         task->run(search::ResultSet::stealResult(std::move(*result)));
-    }
-    if (hasGrouping) {
-        context.grouping->setDistributionKey(_distributionKey);
     }
 }
 

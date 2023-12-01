@@ -20,7 +20,7 @@ class GroupingContext;
 class GroupingManager
 {
 private:
-    GroupingContext         &_groupingContext;
+    GroupingContext   &_groupingContext;
 public:
     GroupingManager(const GroupingManager &) = delete;
     GroupingManager &operator=(const GroupingManager &) = delete;
@@ -29,12 +29,9 @@ public:
      *
      * @param groupingContext Context to use for grouping
      **/
-    GroupingManager(GroupingContext & groupingContext);
-
-    /**
-     * Release resources
-     **/
-    ~GroupingManager();
+    GroupingManager(GroupingContext & groupingContext) noexcept
+        : _groupingContext(groupingContext)
+    {}
 
     /**
      * @return true if this manager is holding an empty grouping request.
@@ -56,7 +53,7 @@ public:
      * @param searchResults the result set in array form
      * @param binSize size of search result array
      **/
-    void groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize);
+    void groupInRelevanceOrder(uint32_t distributionKey, const RankedHit *searchResults, uint32_t binSize);
 
     /**
      * Perform actual grouping on the given the results.
@@ -67,7 +64,7 @@ public:
      * @param binSize size of search result array
      * @param overflow The unranked hits.
      **/
-    void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const BitVector * overflow);
+    void groupUnordered(uint32_t distributionKey, const RankedHit *searchResults, uint32_t binSize, const BitVector * overflow);
 
     /**
      * Merge another grouping context into the underlying context of

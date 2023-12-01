@@ -301,7 +301,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());
-    manager.groupInRelevanceOrder(&hit, 1);
+    manager.groupInRelevanceOrder(7, &hit, 1);
     CheckAttributeReferences attrCheck_after;
     GroupingList &gl3(initContext.getGroupingList());
     for (auto & grouping : gl3) {
@@ -360,7 +360,7 @@ TEST_F("testEmptySessionId", DoomFixture()) {
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());
-    manager.groupInRelevanceOrder(&hit, 1);
+    manager.groupInRelevanceOrder(8, &hit, 1);
     EXPECT_EQUAL(id, session.getSessionId());
     ASSERT_TRUE(!session.getGroupingManager().empty());
     ASSERT_TRUE(session.finished() && session.getSessionId().empty());
@@ -427,7 +427,7 @@ void doGrouping(GroupingContext &ctx,
     hits.emplace_back(doc1, rank1);
     hits.emplace_back(doc2, rank2);
     hits.emplace_back(doc3, rank3);
-    man.groupInRelevanceOrder(&hits[0], 3);
+    man.groupInRelevanceOrder(9, &hits[0], 3);
 }
 
 TEST_F("test grouping fork/join", DoomFixture()) {

@@ -19,13 +19,6 @@ using vespalib::make_string_short::fmt;
 
 //-----------------------------------------------------------------------------
 
-GroupingManager::GroupingManager(GroupingContext & groupingContext)
-    : _groupingContext(groupingContext)
-{
-}
-
-GroupingManager::~GroupingManager() = default;
-
 using search::expression::ExpressionNode;
 using search::expression::AttributeNode;
 using search::expression::ConfigureStaticParams;
@@ -66,15 +59,17 @@ GroupingManager::init(const IAttributeContext &attrCtx)
 }
 
 void
-GroupingManager::groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize)
+GroupingManager::groupInRelevanceOrder(uint32_t distributionKey, const RankedHit *searchResults, uint32_t binSize)
 {
     _groupingContext.groupInRelevanceOrder(searchResults, binSize);
+    _groupingContext.setDistributionKey(distributionKey);
 }
 
 void
-GroupingManager::groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow)
+GroupingManager::groupUnordered(uint32_t distributionKey, const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow)
 {
     _groupingContext.groupUnordered(searchResults, binSize, overflow);
+    _groupingContext.setDistributionKey(distributionKey);
 }
 
 void
