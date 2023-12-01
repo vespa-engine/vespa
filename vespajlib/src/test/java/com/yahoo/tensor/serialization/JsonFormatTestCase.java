@@ -613,6 +613,38 @@ public class JsonFormatTestCase {
         }
     }
 
+    @Test
+    public void testMultiMixedTensor() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(cat{},x[2],y[2])"));
+        // a:
+        builder.cell().label("cat", "a").label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("cat", "a").label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("cat", "a").label("x", 1).label("y", 0).value(4.0);
+        builder.cell().label("cat", "a").label("x", 1).label("y", 1).value(5.0);
+        // b:
+        builder.cell().label("cat", "b").label("x", 0).label("y", 0).value(6.0);
+        builder.cell().label("cat", "b").label("x", 0).label("y", 1).value(7.0);
+        builder.cell().label("cat", "b").label("x", 1).label("y", 0).value(8.0);
+        builder.cell().label("cat", "b").label("x", 1).label("y", 1).value(9.0);
+        Tensor tensor = builder.build();
+        String shortJson = """
+                {
+                    "type": "tensor(cat{},x[2],y[2])",
+                    "blocks": {"a":[[2.0,3.0],[4.0,5.0]],"b":[[6.0,7.0],[8.0,9.0]]}
+                }
+                """;
+        byte[] shortEncoded = JsonFormat.encode(tensor, true, false);
+        assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
+        String oldJson = """
+                {
+                    "type": "tensor(cat{},x[2],y[2])",
+                    "blocks": {"a":[2,3,4,5],"b":[6,7,8,9]}
+                }
+                """;
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), oldJson.getBytes(StandardCharsets.UTF_8)));
+    }
+
     private void assertEncodeDecode(Tensor tensor) {
         Tensor decoded = JsonFormat.decode(tensor.type(), JsonFormat.encode(tensor, false, false));
         assertEquals(tensor, decoded);
