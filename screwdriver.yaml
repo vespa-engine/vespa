@@ -318,7 +318,7 @@ jobs:
           fi
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io
+          dnf install -y docker-ce docker-ce-cli containerd.io python3 python3-pip
           docker system info
       - checkout: |
           mkdir -p workdir
@@ -398,7 +398,7 @@ jobs:
           VESPA_MAJOR=$(echo $VESPA_VERSION | cut -d. -f1)
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf -y install docker-ce docker-ce-cli containerd.io
+          dnf -y install docker-ce docker-ce-cli containerd.io python3 python3-pip
           docker system info
       - checkout: |
           git clone https://github.com/vespa-engine/docker-image
@@ -445,23 +445,6 @@ jobs:
                 .
             fi
           fi
-
-  publish-el8-preview:
-    annotations:
-      screwdriver.cd/cpu: 7
-      screwdriver.cd/ram: 16
-      screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 300
-      screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: HIGH
-      screwdriver.cd/buildPeriodically: H 6 1 * *
-    environment:
-      BASE_IMAGE: "el8"
-      IMAGE_NAME: "vespa-el8-preview"
-    secrets:
-      - DOCKER_HUB_DEPLOY_KEY
-    steps: *publish-el9-preview-steps
 
   publish-cli-release:
     requires: [publish-release]
