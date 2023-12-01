@@ -11,6 +11,7 @@ import com.yahoo.prelude.IndexModel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.StringInItem;
 import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Index;
@@ -230,6 +231,28 @@ public class LowercasingTestCase {
         WordItem w1 = (WordItem) root.getItem(1);
         assertEquals("abc", w0.getWord());
         assertEquals("def", w1.getWord());
+    }
+
+    @Test
+    void testIn() {
+        Query q = new Query();
+        AndItem root = new AndItem();
+        StringInItem tmp;
+        tmp = new StringInItem(BAMSE);
+        tmp.addToken("AbC");
+        root.addItem(tmp);
+        tmp = new StringInItem(TEDDY);
+        tmp.addToken("dEf");
+        root.addItem(tmp);
+        q.getModel().getQueryTree().setRoot(root);
+        Result r = createExecution().search(q);
+        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
+        StringInItem w0 = (StringInItem) root.getItem(0);
+        StringInItem w1 = (StringInItem) root.getItem(1);
+        assertEquals(1, w0.getTokens().size());
+        assertEquals(1, w1.getTokens().size());
+        assertEquals("abc", w0.getTokens().iterator().next());
+        assertEquals("dEf", w1.getTokens().iterator().next());
     }
 
 }
