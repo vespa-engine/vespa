@@ -25,7 +25,7 @@ func testAPIKey(t *testing.T, subcommand []string) {
 	err = cli.Run(args...)
 	assert.Nil(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "Success: Developer private key written to")
+	assert.Contains(t, stdout.String(), "Success: Developer private key for tenant t1 written to")
 
 	err = cli.Run(subcommand...)
 	assert.NotNil(t, err)

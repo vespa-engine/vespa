@@ -63,7 +63,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 				return err
 			}
 			if pkg.IsZip() {
-				return errHint(fmt.Errorf("cannot modify compressed application package %s", pkg.Path),
+				return errHint(fmt.Errorf("cannot modify compressed application package '%s'", pkg.Path),
 					"Try running 'mvn clean' and run this command again")
 			}
 
@@ -169,7 +169,7 @@ $ vespa prod deploy`,
 			if err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
 			} else {
-				cli.printSuccess(fmt.Sprintf("Deployed %s with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
+				cli.printSuccess(fmt.Sprintf("Deployed '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
 				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
 					deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
 			}
@@ -317,7 +317,7 @@ func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount 
 	validator := func(input string) error {
 		min, _, err := xml.ParseNodeCount(input)
 		if min < 2 {
-			return fmt.Errorf("at least 2 nodes are required for all clusters in a production environment.\nSee https://cloud.vespa.ai/en/production-deployment for more details.")
+			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", min), "See https://cloud.vespa.ai/en/production-deployment")
 		}
 		return err
 	}

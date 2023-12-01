@@ -93,7 +93,7 @@ func loadDefaultEnvTo(r loadEnvReceiver) error {
 		varName := fields[1]
 		varVal := fields[2]
 		if !isValidShellVariableName(varName) {
-			err = fmt.Errorf("Not a valid environment variable name: '%s'", varName)
+			err = fmt.Errorf("not a valid environment variable name: '%s'", varName)
 			continue
 		}
 		if strings.HasPrefix(varVal, `"`) && strings.HasSuffix(varVal, `"`) {
@@ -259,7 +259,7 @@ func (p *shellEnvExporter) dump(w io.Writer) {
 		fmt.Fprintf(w, "%s=%s\n", vn, vv)
 		fmt.Fprintf(w, "export %s\n", vn)
 	}
-	for vn, _ := range p.unsetVars {
+	for vn := range p.unsetVars {
 		fmt.Fprintf(w, "unset %s\n", vn)
 	}
 }

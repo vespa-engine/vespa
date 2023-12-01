@@ -3,14 +3,12 @@ package logfmt
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOutputFormat(t *testing.T) {
-	type args struct {
-		val string
-	}
 	tests := []struct {
 		expected OutputFormat
 		arg      string

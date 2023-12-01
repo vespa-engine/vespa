@@ -160,7 +160,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 	}
 	f, err := os.Open(zipFile)
 	if err != nil {
-		return nil, fmt.Errorf("could not open application package at %s: %w", ap.Path, err)
+		return nil, fmt.Errorf("could not open application package at '%s': %w", ap.Path, err)
 	}
 	return f, nil
 }

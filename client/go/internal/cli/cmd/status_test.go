@@ -228,19 +228,3 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t, expectedTarget+"\n", stdout.String())
 }
-
-func assertDocumentStatus(target string, args []string, t *testing.T) {
-	t.Helper()
-	client := &mock.HTTPClient{}
-	if isLocalTarget(args) {
-		mockServiceStatus(client, "default")
-	}
-	cli, stdout, _ := newTestCLI(t)
-	cli.httpClient = client
-	assert.Nil(t, cli.Run("status", "document"))
-	assert.Equal(t,
-		"Container (document API) at "+target+" is ready\n",
-		stdout.String(),
-		"vespa status container")
-	assert.Equal(t, target+"/status.html", client.LastRequest.URL.String())
-}

@@ -86,9 +86,9 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 			log.Println()
 			if opts.Target.IsCloud() {
-				cli.printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
+				cli.printSuccess("Triggered deployment of ", color.CyanString("'"+pkg.Path+"'"), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 			} else {
-				cli.printSuccess("Deployed ", color.CyanString(pkg.Path), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
+				cli.printSuccess("Deployed ", color.CyanString("'"+pkg.Path+"'"), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 				printPrepareLog(cli.Stderr, result)
 			}
 			if opts.Target.IsCloud() {
@@ -133,7 +133,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			if err := cli.config.writeSessionID(vespa.DefaultApplication, result.ID); err != nil {
 				return fmt.Errorf("could not write session id: %w", err)
 			}
-			cli.printSuccess("Prepared ", color.CyanString(pkg.Path), " with session ", result.ID)
+			cli.printSuccess("Prepared ", color.CyanString("'"+pkg.Path+"'"), " with session ", result.ID)
 			printPrepareLog(cli.Stderr, result)
 			return nil
 		},

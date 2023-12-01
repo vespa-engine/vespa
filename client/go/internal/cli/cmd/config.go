@@ -33,9 +33,9 @@ func newConfigCmd() *cobra.Command {
 		Short: "Manage persistent values for global flags",
 		Long: `Manage persistent values for global flags.
 
-This command allows setting persistent values for global flags. On future
-invocations the flag can then be omitted as it is read from the config file
-instead.
+This command allows setting persistent values for the global flags found in
+Vespa CLI. On future invocations the flag can then be omitted as it is read
+ from the config file instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.
@@ -58,16 +58,16 @@ The following global flags/options can be configured:
 application
 
 Specifies the application ID to manage. It has three parts, separated by
-dots, with the third part being optional. If the part is omitted it defaults to
-"default". This is only relevant for the "cloud" and "hosted" targets. See
-https://cloud.vespa.ai/en/tenant-apps-instances for more details. This has no
-default value. Examples: tenant1.app1, tenant1.app1.instance1
+dots, with the third part being optional. If the third part is omitted it
+defaults to "default". This is only relevant for the "cloud" and "hosted"
+targets. See https://cloud.vespa.ai/en/tenant-apps-instances for more details.
+This has no default value. Examples: tenant1.app1, tenant1.app1.instance1
 
 cluster
 
 Specifies the container cluster to manage. If left empty (default) and the
 application has only one container cluster, that cluster is chosen
-automatically. When an application has multiple cluster this must be set a
+automatically. When an application has multiple cluster this must specify a
 valid cluster name, as specified in services.xml. See
 https://docs.vespa.ai/en/reference/services-container.html for more details.
 
@@ -80,9 +80,9 @@ colors if supported by the terminal, "never" completely disables colors and
 instance
 
 Specifies the instance of the application to manage. When specified, this takes
-precedence over the instance specified as part of application. This has no
-default value and is only relevant for the "cloud" and "hosted" targets.
-Example: instance2
+precedence over the instance specified as part of the 'application' option.
+This has no default value and is only relevant for the "cloud" and "hosted"
+targets. Example: instance2
 
 quiet
 
@@ -107,7 +107,7 @@ e.g. vespa deploy or vespa query. Possible values are:
 
 Authentication is configured automatically for the cloud and hosted targets. To
 set a custom private key and certificate, e.g. for use with a self-hosted Vespa
-installation using mTLS, see the documentation of 'vespa cert'.
+installation configured with mTLS, see the documentation of 'vespa auth cert'.
 
 zone
 

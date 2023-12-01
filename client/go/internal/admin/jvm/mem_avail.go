@@ -28,16 +28,6 @@ func parseFree(txt string) AmountOfMemory {
 	return BytesOfMemory(0)
 }
 
-func parentDir(dir string) string {
-	lastSlash := 0
-	for idx, ch := range dir {
-		if ch == '/' {
-			lastSlash = idx
-		}
-	}
-	return dir[:lastSlash]
-}
-
 func readLineFrom(filename string) (string, error) {
 	content, err := os.ReadFile(filename)
 	s := string(content)
