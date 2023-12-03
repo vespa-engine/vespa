@@ -55,8 +55,8 @@ org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${maven-shade-plugin.vespa.version}
 org.eclipse.aether:aether-api:1.0.0.v20140518
 org.eclipse.aether:aether-util:1.0.0.v20140518
-org.eclipse.sisu:org.eclipse.sisu.inject:0.3.5
-org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.5
+org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
+org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.iq80.snappy:snappy:0.4
