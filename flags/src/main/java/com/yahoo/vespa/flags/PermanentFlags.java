@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -412,6 +413,14 @@ public class PermanentFlags {
             "cert-pool-size", 0,
             "Target number of preprovisioned endpoints certificates to maintain",
             "Takes effect on next run of CertPoolMaintainer"
+    );
+
+    public static final UnboundBooleanFlag ENCLAVE_WITHOUT_WIREGUARD = defineFeatureFlag(
+            "enclave-without-wireguard", false,
+            "Do not use wireguard for inclave. This should only be set for a single legacy account, " +
+            "and removed once that account is no longer in use with us",
+            "Affects generated terraform code, and ip allocation on host provisioning",
+            CLOUD_ACCOUNT
     );
 
     private PermanentFlags() {}
