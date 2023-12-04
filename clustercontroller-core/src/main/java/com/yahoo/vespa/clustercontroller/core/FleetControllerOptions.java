@@ -5,6 +5,9 @@ import ai.vespa.validation.Validation;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.database.DatabaseFactory;
+import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 /**
  * Immutable class representing all the options that can be set in the fleetcontroller.
@@ -128,6 +132,9 @@ public class FleetControllerOptions {
 
     private final int maxNumberOfGroupsAllowedToBeDown;
 
+    private final Function<FleetControllerContext, DatabaseFactory> dbFactoryFn;
+
+    // TODO less impressive length...!
     private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
                                    int fleetControllerCount,
@@ -168,7 +175,8 @@ public class FleetControllerOptions {
                                    boolean clusterFeedBlockEnabled,
                                    Map<String, Double> clusterFeedBlockLimit,
                                    double clusterFeedBlockNoiseLevel,
-                                   int maxNumberOfGroupsAllowedToBeDown) {
+                                   int maxNumberOfGroupsAllowedToBeDown,
+                                   Function<FleetControllerContext, DatabaseFactory> dbFactoryFn) {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -210,6 +218,7 @@ public class FleetControllerOptions {
         this.clusterFeedBlockLimit = clusterFeedBlockLimit;
         this.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
         this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
+        this.dbFactoryFn = dbFactoryFn;
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -382,6 +391,8 @@ public class FleetControllerOptions {
 
     public int maxNumberOfGroupsAllowedToBeDown() { return maxNumberOfGroupsAllowedToBeDown; }
 
+    public Function<FleetControllerContext, DatabaseFactory> dbFactoryFn() { return dbFactoryFn; }
+
     public static class Builder {
 
         private String clusterName;
@@ -425,6 +436,7 @@ public class FleetControllerOptions {
         private Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
         private double clusterFeedBlockNoiseLevel = 0.01;
         private int maxNumberOfGroupsAllowedToBeDown = 1;
+        private Function<FleetControllerContext, DatabaseFactory> dbFactoryFn = ZooKeeperDatabaseFactory::new;
 
         public Builder(String clusterName, Collection<ConfiguredNode> nodes) {
             this.clusterName = clusterName;
@@ -677,6 +689,11 @@ public class FleetControllerOptions {
             return this;
         }
 
+        public Builder setDbFactoryFn(Function<FleetControllerContext, DatabaseFactory> fn) {
+            this.dbFactoryFn = fn;
+            return this;
+        }
+
         public FleetControllerOptions build() {
             return new FleetControllerOptions(clusterName,
                                               index,
@@ -718,7 +735,8 @@ public class FleetControllerOptions {
                                               clusterFeedBlockEnabled,
                                               clusterFeedBlockLimit,
                                               clusterFeedBlockNoiseLevel,
-                                              maxNumberOfGroupsAllowedToBeDown);
+                                              maxNumberOfGroupsAllowedToBeDown,
+                                              dbFactoryFn);
         }
 
         public static Builder copy(FleetControllerOptions options) {
@@ -764,6 +782,7 @@ public class FleetControllerOptions {
             builder.clusterFeedBlockLimit = Map.copyOf(options.clusterFeedBlockLimit);
             builder.clusterFeedBlockNoiseLevel = options.clusterFeedBlockNoiseLevel;
             builder.maxNumberOfGroupsAllowedToBeDown = options.maxNumberOfGroupsAllowedToBeDown;
+            builder.dbFactoryFn = options.dbFactoryFn;
 
             return builder;
         }

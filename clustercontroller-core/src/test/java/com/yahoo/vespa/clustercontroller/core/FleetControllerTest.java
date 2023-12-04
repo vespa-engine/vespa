@@ -16,7 +16,6 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
@@ -49,13 +48,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public abstract class FleetControllerTest implements Waiter {
 
-    private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
+    protected static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     private static final int DEFAULT_NODE_COUNT = 10;
 
     private final Duration timeout = Duration.ofSeconds(30);
     protected Slobrok slobrok;
 
     protected FleetControllerOptions options;
+    private boolean useRealZooKeeperInTest = true;
     ZooKeeperTestServer zooKeeperServer;
     protected final List<FleetController> fleetControllers = new ArrayList<>();
     protected List<DummyVdsNode> nodes = new ArrayList<>();
@@ -71,6 +71,10 @@ public abstract class FleetControllerTest implements Waiter {
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
+    }
+
+    protected void useRealZooKeeperInTest(boolean useRealZk) {
+        this.useRealZooKeeperInTest = useRealZk;
     }
 
     protected static FleetControllerOptions.Builder defaultOptions() {
@@ -121,7 +125,7 @@ public abstract class FleetControllerTest implements Waiter {
         var log = new EventLog(timer, metricUpdater);
         var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
+        var database = new DatabaseHandler(context, options.dbFactoryFn().apply(context), timer, options.zooKeeperServerAddress(), timer);
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
         // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
         // Reasons unknown.  Larger values like the default 10_000 causes that much additional running time for some tests.
@@ -139,7 +143,13 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected FleetControllerOptions setUpFleetController(Timer timer, FleetControllerOptions.Builder builder) throws Exception {
-        setUpZooKeeperServer(builder);
+        // TODO consolidate CC setup in tests; currently partial duplication of
+        //  setup/init code across test subclasses.
+        if (useRealZooKeeperInTest) {
+            setUpZooKeeperServer(builder);
+        } else {
+            builder.setDbFactoryFn(FakeZooKeeperDatabase.Factory::new);
+        }
         builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
         options = builder.build();
         startFleetController(timer);

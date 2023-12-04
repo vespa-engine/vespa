@@ -14,8 +14,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class DistributionBitCountTest extends FleetControllerTest {
+
+    DistributionBitCountTest() {
+        useRealZooKeeperInTest(false);
+    }
 
     private FleetControllerOptions setUpSystem() throws Exception {
         List<ConfiguredNode> configuredNodes = new ArrayList<>();

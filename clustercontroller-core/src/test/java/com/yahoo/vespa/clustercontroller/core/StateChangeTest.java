@@ -9,7 +9,6 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -23,13 +22,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class StateChangeTest extends FleetControllerTest {
 
     private final FakeTimer timer = new FakeTimer();
 
     private FleetController ctrl;
     private DummyCommunicator communicator;
+
+    StateChangeTest() {
+        useRealZooKeeperInTest(false);
+    }
 
     private void initialize(FleetControllerOptions.Builder builder) throws Exception {
         List<Node> nodes = new ArrayList<>();
@@ -38,7 +40,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new Node(NodeType.DISTRIBUTOR, i));
         }
 
-        setUpZooKeeperServer(builder);
+        builder.setDbFactoryFn(FakeZooKeeperDatabase.Factory::new);
         communicator = new DummyCommunicator(nodes, timer);
         boolean start = false;
         FleetControllerOptions options = builder.build();
