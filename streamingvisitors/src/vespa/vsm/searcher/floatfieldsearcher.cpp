@@ -39,10 +39,8 @@ void FloatFieldSearcherT<T>::prepare(search::streaming::QueryTermList& qtl,
     for (auto qt : qtl) {
     size_t sz(qt->termLen());
         if (sz) {
-            double low;
-            double high;
-            bool valid = qt->getAsDoubleTerm(low, high);
-            _floatTerm.push_back(FloatInfo(low, high, valid));
+            auto range = qt->getRange<T>();
+            _floatTerm.push_back(FloatInfo(range.low, range.high, range.valid));
         }
     }
 }

@@ -29,10 +29,8 @@ void IntFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
     for (auto qt : qtl) {
         size_t sz(qt->termLen());
         if (sz) {
-            int64_t low;
-            int64_t high;
-            bool valid = qt->getAsIntegerTerm(low, high);
-            _intTerm.push_back(IntInfo(low, high, valid));
+            auto range = qt->getRange<int64_t>();
+            _intTerm.push_back(IntInfo(range.low, range.high, range.valid));
         }
     }
 }
