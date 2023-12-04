@@ -324,6 +324,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag CREATE_POSTINGLIST_WHEN_NON_STRICT = defineFeatureFlag(
+            "create-postinglist-when-non-strict", true,
+            List.of("baldersheim"), "2023-12-04", "2024-01-31",
+            "If true posting list can be created on the fly also for non-strict iterators",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2024-02-01",
