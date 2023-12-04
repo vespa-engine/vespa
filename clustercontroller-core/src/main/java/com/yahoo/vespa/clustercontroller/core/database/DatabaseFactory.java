@@ -9,9 +9,9 @@ package com.yahoo.vespa.clustercontroller.core.database;
 public interface DatabaseFactory {
 
     class Params {
-        String dbAddress;
-        int dbSessionTimeout;
-        Database.DatabaseListener listener;
+        public String dbAddress;
+        public int dbSessionTimeout;
+        public Database.DatabaseListener listener;
 
         Params databaseAddress(String address) { this.dbAddress = address; return this; }
         Params databaseSessionTimeout(int timeout) { this.dbSessionTimeout = timeout; return this; }
