@@ -468,7 +468,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (alwaysMarkPhraseExpensive) {
                 properties.add(new Pair<>("vespa.matching.always_mark_phrase_expensive", String.valueOf(alwaysMarkPhraseExpensive)));
             }
-            if (createPostinglistWhenNonStrict) {
+            if ( ! createPostinglistWhenNonStrict) {
                 properties.add(new Pair<>("vespa.matching.create_postinglist_when_non_strict", String.valueOf(createPostinglistWhenNonStrict)));
             }
             if (postFilterThreshold.isPresent()) {
