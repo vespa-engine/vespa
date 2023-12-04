@@ -106,7 +106,8 @@ public:
 
     void handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              vespalib::ThreadBundle &thread_bundle, search::engine::Trace& trace);
+                              vespalib::ThreadBundle &thread_bundle, search::engine::Trace& trace,
+                              bool create_postinglist_when_non_strict);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.

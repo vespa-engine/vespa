@@ -204,12 +204,14 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.optimize();
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         float hitRate = std::min(1.0F, float(maxNumHits)/float(searchContext.getDocIdLimit()));
-        _query.fetchPostings(search::queryeval::ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom()));
+        bool create_postinglist_when_non_strict = CreatePostingListWithNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
+        _query.fetchPostings(search::queryeval::ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),
+                                                                    create_postinglist_when_non_strict));
         if (is_search) {
             _query.handle_global_filter(_requestContext.getDoom(), searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,
                                         _attribute_blueprint_params.global_filter_upper_limit,
-                                        thread_bundle, trace);
+                                        thread_bundle, trace, create_postinglist_when_non_strict);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

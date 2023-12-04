@@ -63,7 +63,7 @@ SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
     double hit_rate = execInfo.hitRate() * _terms[0]->hit_ratio();
     for (size_t i = 1; i < _terms.size(); ++i) {
         Blueprint & term = *_terms[i];
-        term.fetchPostings(ExecuteInfo::create(false, hit_rate, execInfo.getDoom()));
+        term.fetchPostings(ExecuteInfo::create(false, hit_rate, execInfo));
         hit_rate = hit_rate * term.hit_ratio();
     }
 }

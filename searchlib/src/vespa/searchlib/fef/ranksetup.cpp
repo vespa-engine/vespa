@@ -61,6 +61,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _compileError(false),
       _degradationAscendingOrder(false),
       _always_mark_phrase_expensive(false),
+      _create_postinglist_when_non_strict(true),
       _diversityAttribute(),
       _diversityMinGroups(1),
       _diversityCutoffFactor(10.0),
@@ -135,6 +136,7 @@ RankSetup::configure()
     _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
     _mutateAllowQueryOverride = mutate::AllowQueryOverride::check(_indexEnv.getProperties());
     _always_mark_phrase_expensive = matching::AlwaysMarkPhraseExpensive::check(_indexEnv.getProperties());
+    _create_postinglist_when_non_strict = matching::CreatePostingListWithNonStrict::check(_indexEnv.getProperties());
 }
 
 void
