@@ -30,7 +30,7 @@ void IntFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
         size_t sz(qt->termLen());
         if (sz) {
             auto range = qt->getRange<int64_t>();
-            _intTerm.push_back(IntInfo(range.low, range.high, range.valid));
+            _intTerm.emplace_back(range.low, range.high, range.valid);
         }
     }
 }

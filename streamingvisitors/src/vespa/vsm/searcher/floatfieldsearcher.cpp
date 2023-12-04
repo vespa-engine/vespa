@@ -40,7 +40,7 @@ void FloatFieldSearcherT<T>::prepare(search::streaming::QueryTermList& qtl,
     size_t sz(qt->termLen());
         if (sz) {
             auto range = qt->getRange<T>();
-            _floatTerm.push_back(FloatInfo(range.low, range.high, range.valid));
+            _floatTerm.emplace_back(range.low, range.high, range.valid);
         }
     }
 }
