@@ -20,7 +20,7 @@ protected:
     class FloatInfo
     {
     public:
-        FloatInfo(T low, T high, bool v) : _lower(low), _upper(high), _valid(v) { }
+        FloatInfo(T low, T high, bool v) noexcept : _lower(low), _upper(high), _valid(v) { }
         bool cmp(T key) const;
         bool valid()          const { return _valid; }
         void setValid(bool v)       { _valid = v; }
