@@ -33,7 +33,7 @@
 
         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
-        <commons-logging.vespa.version>1.3.0</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
+        <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
         <error-prone-annotations.vespa.version>2.23.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>32.1.3-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
@@ -103,7 +103,6 @@
         <icu4j.vespa.version>74.1</icu4j.vespa.version>
         <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
-        <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.4</jaxb.runtime.vespa.version>
         <jetty.vespa.version>11.0.18</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>

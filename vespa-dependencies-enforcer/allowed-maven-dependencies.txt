@@ -78,7 +78,7 @@ io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.activation:javax.activation-api:1.2.0
-javax.annotation:javax.annotation-api:${javax.annotation.vespa.version}
+javax.annotation:javax.annotation-api:${commons-logging.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}
 javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}
