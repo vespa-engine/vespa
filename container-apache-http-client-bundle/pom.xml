@@ -77,7 +77,15 @@
                         <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
                         <Export-Package>org.apache.hc.*;version=1.0.0;-noimport:=true,org.apache.http.*;version=1.0.0;-noimport:=true</Export-Package>
                         <Embed-Dependency>*;scope=compile;type=!pom;inline=true</Embed-Dependency>
-                        <Import-Package>!javax.servlet,javax.*,org.slf4j,org.ietf.jgss</Import-Package>
+                        <Import-Package>
+                            !javax.servlet,
+                            javax.*,
+                            org.slf4j,
+                            org.slf4j.spi,
+                            org.slf4j.helpers,
+                            org.slf4j.event,
+                            org.ietf.jgss
+                        </Import-Package>
                         <Embed-Transitive>true</Embed-Transitive>
                         <_nouses>true</_nouses>
                     </instructions>
