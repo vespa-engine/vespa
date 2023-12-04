@@ -5,19 +5,21 @@
   ],
   "dependencyDashboardApproval": true,
   "transitiveRemediation": true,
-  "prHourlyLimit": 10,
-  "prConcurrentLimit": 10,
+  "prHourlyLimit": 20,
+  "prConcurrentLimit": 20,
   "ignorePaths": [],
-  "ignoreDeps": [
-    "com.github.spotbugs:spotbugs-annotations",
-    "com.yahoo.vespa.bundle-plugin:test-bundles",
-    "com.yahoo.vespa.jdisc_core:test_bundles",
-    "com.yahoo.vespa:cloud-tenant-base",
-    "com.yahoo.vespa:container-dependency-versions",
-    "com.yahoo.vespa:hosted-tenant-base",
-    "com.yahoo.vespa:parent",
-    "com.yahoo.vespa:zookeeper-server-parent",
-    "github.com/go-json-experiment/json",
-    "javax.servlet:javax.servlet-api"
+  "ignoreDeps": [],
+  "schedule": ["before 6am on thursday"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^com\\.yahoo\\.vespa"],
+      "matchManagers": ["maven"],
+      "enabled": false
+    },
+    {
+      "minimumReleaseAge": "14 days",
+      "dependencyDashboardApproval": false
+    }
   ]
+}
 }
