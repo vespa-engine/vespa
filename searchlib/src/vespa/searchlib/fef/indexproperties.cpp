@@ -461,9 +461,9 @@ bool AlwaysMarkPhraseExpensive::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
-const vespalib::string CreatePostingListWithNonStrict::NAME("vespa.matching.create_postinglist_when_non_strict");
-const bool CreatePostingListWithNonStrict::DEFAULT_VALUE(true);
-bool CreatePostingListWithNonStrict::check(const Properties &props, bool fallback) {
+const vespalib::string CreatePostingListWhenNonStrict::NAME("vespa.matching.create_postinglist_when_non_strict");
+const bool CreatePostingListWhenNonStrict::DEFAULT_VALUE(true);
+bool CreatePostingListWhenNonStrict::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
