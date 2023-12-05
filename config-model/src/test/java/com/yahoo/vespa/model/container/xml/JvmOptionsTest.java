@@ -187,6 +187,25 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                 "Invalid or misplaced JVM GC options in services.xml: -XX:+UseConcMarkSweepGC");
     }
 
+    @Test
+    void verify_no_option_no_nodes_element_gives_value_from_feature_flag() throws IOException, SAXException {
+        String servicesXml = """
+                <container version='1.0'>
+                  <search/>
+                </container>
+                """;
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        // Need to create VespaModel to make deploy properties have effect
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .properties(new TestProperties().setJvmGCOptions("-XX:+UseParNewGC"))
+                .build());
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrStartBuilder, "container/container.0");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals("-XX:+UseParNewGC", qrStartConfig.jvm().gcopts());
+    }
+
     private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {
         verifyLogMessage(isHosted, "gc-options", override, invalidOptions);
     }
