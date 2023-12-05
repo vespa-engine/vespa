@@ -3,26 +3,29 @@
 
 namespace vespamalloc {
 
-
-void AFListBase::linkInList(AtomicHeadPtr & head, AFListBase * list) noexcept
+void
+AFListBase::linkInList(AtomicHeadPtr & head, AFListBase * list) noexcept
 {
     AFListBase * tail;
     for (tail = list; tail->_next != nullptr ;tail = tail->_next) { }
     linkIn(head, list, tail);
 }
 
-void AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tail) noexcept
+void
+AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tail) noexcept
 {
     HeadPtr oldHead = head.load(std::memory_order_relaxed);
     HeadPtr newHead(csl, oldHead._tag + 1);
     tail->_next = static_cast<AFListBase *>(oldHead._ptr);
+    // linkIn/linkOut performs a release/acquire pair
     while ( __builtin_expect(! head.compare_exchange_weak(oldHead, newHead, std::memory_order_release, std::memory_order_relaxed), false) ) {
-        newHead._tag =  oldHead._tag + 1;
+        newHead._tag = oldHead._tag + 1;
         tail->_next = static_cast<AFListBase *>(oldHead._ptr);
     }
 }
 
-AFListBase * AFListBase::linkOut(AtomicHeadPtr & head) noexcept
+AFListBase *
+AFListBase::linkOut(AtomicHeadPtr & head) noexcept
 {
     HeadPtr oldHead = head.load(std::memory_order_relaxed);
     auto *csl = static_cast<AFListBase *>(oldHead._ptr);
@@ -30,6 +33,7 @@ AFListBase * AFListBase::linkOut(AtomicHeadPtr & head) noexcept
         return nullptr;
     }
     HeadPtr newHead(csl->_next, oldHead._tag + 1);
+    // linkIn/linkOut performs a release/acquire pair
     while ( __builtin_expect(! head.compare_exchange_weak(oldHead, newHead, std::memory_order_acquire, std::memory_order_relaxed), false) ) {
         csl = static_cast<AFListBase *>(oldHead._ptr);
         if (csl == nullptr) {

@@ -17,6 +17,8 @@ class AllocPoolT
 public:
     typedef AFList<MemBlockPtrT> ChunkSList;
     AllocPoolT(DataSegment & ds);
+    AllocPoolT(const AllocPoolT & ap) = delete;
+    AllocPoolT & operator = (const AllocPoolT & ap) = delete;
     ~AllocPoolT();
 
     ChunkSList *getFree(SizeClassT sc, size_t minBlocks);
@@ -40,8 +42,7 @@ private:
     ChunkSList * malloc(const Guard & guard, SizeClassT sc) __attribute__((noinline));
     ChunkSList * getChunks(const Guard & guard, size_t numChunks) __attribute__((noinline));
     ChunkSList * allocChunkList(const Guard & guard) __attribute__((noinline));
-    AllocPoolT(const AllocPoolT & ap);
-    AllocPoolT & operator = (const AllocPoolT & ap);
+    void validate(const void * ptr) const noexcept;
 
     class AllocFree
     {
