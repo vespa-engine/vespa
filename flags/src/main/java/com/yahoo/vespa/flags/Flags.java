@@ -79,12 +79,15 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag NESSUS_AGENT_GROUP = defineStringFlag(
-            "nessus-agent-group", "All",
+            "nessus-agent-group", ":legacy",
             List.of("hakonhall"), "2023-11-29", "2023-12-29",
-            "Either run nessusagent as before (All), or link against \"vespa-ci\"," +
-            " or disable the nessusagent (empty string \"\")",
+            "Link nessusagent to the given group, or run legacy task (\":legacy\"), or disable task (\"\").",
             "Takes effect after host admin restart",
-            (String value) -> value.equals("All") || value.equals("vespa-ci") || value.isEmpty(),
+            (String value) -> value.equals(":legacy") ||  // Run legacy task.  Is a no-op outside YAHOO cloud.
+                              value.equals(":stop") ||    // Stop / shut down Nessus if it is running
+                              value.equals("All") ||      // Link to All group.
+                              value.equals("vespa-ci") || // Link to vespa-ci group.
+                              value.isEmpty(),            // Skip task
             ARCHITECTURE, CLAVE);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
