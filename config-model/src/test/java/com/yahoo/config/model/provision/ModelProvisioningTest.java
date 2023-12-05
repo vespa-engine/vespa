@@ -1644,7 +1644,6 @@ public class ModelProvisioningTest {
 
         VespaModelTester tester = new VespaModelTester();
         tester.setHosted(true);
-        tester.setAdminClusterArchitecture(Architecture.arm64);
         tester.useDedicatedNodeForLogserver(true);
         tester.addHosts(new NodeResources(13.5, 100, 1000, 0.3), 4);
         tester.addHosts(new NodeResources(0.5, 2, 50, 0.3, DiskSpeed.fast, StorageType.any, Architecture.arm64), 4); // 3 ccs, 1 logserver
