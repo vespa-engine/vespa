@@ -852,7 +852,6 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
         if (_shared_service) {
             metrics.shared.update(_shared_service->shared().getStats());
-            metrics.warmup.update(_shared_service->warmup().getStats());
             metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
@@ -1013,7 +1012,6 @@ Proton::get_child(vespalib::stringref name) const
                                                            (_summaryEngine) ? &_summaryEngine->get_executor() : nullptr,
                                                            (_flushEngine) ? &_flushEngine->get_executor() : nullptr,
                                                            &_executor,
-                                                           (_shared_service) ? &_shared_service->warmup() : nullptr,
                                                            (_shared_service) ? &_shared_service->field_writer() : nullptr);
 
     } else if (name == HW_INFO) {

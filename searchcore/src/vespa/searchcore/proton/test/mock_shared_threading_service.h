@@ -12,7 +12,6 @@ namespace proton {
 class MockSharedThreadingService : public ISharedThreadingService {
 private:
     using ThreadExecutor = vespalib::ThreadExecutor;
-    ThreadExecutor              & _warmup;
     ThreadExecutor              & _shared;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
     vespalib::InvokeServiceImpl   _invokeService;
@@ -20,11 +19,8 @@ private:
     storage::spi::dummy::DummyBucketExecutor _bucket_executor;
     vespalib::Clock               _clock;
 public:
-    MockSharedThreadingService(ThreadExecutor& warmup_in,
-                               ThreadExecutor& shared_in,
-                               size_t num_bucket_executors = 2);
+    MockSharedThreadingService(ThreadExecutor& shared_in, size_t num_bucket_executors = 2);
     ~MockSharedThreadingService() override;
-    ThreadExecutor& warmup() override { return _warmup; }
     ThreadExecutor& shared() override { return _shared; }
     vespalib::ISequencedTaskExecutor& field_writer() override { return *_field_writer; }
     vespalib::InvokeService & invokeService() override { return _invokeService; }

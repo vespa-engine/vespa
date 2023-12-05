@@ -26,18 +26,18 @@ struct ContentProtonMetrics : metrics::MetricSet
         ExecutorMetrics match;
         ExecutorMetrics docsum;
         ExecutorMetrics shared;
-        ExecutorMetrics warmup;
+        ExecutorMetrics warmup; //TODO not used anymore, remove
         ExecutorMetrics field_writer;
 
-        ProtonExecutorMetrics(metrics::MetricSet *parent);
-        ~ProtonExecutorMetrics();
+        explicit ProtonExecutorMetrics(metrics::MetricSet *parent);
+        ~ProtonExecutorMetrics() override;
     };
 
     struct SessionCacheMetrics : metrics::MetricSet {
         SessionManagerMetrics search;
         SessionManagerMetrics grouping;
 
-        SessionCacheMetrics(metrics::MetricSet *parent);
+        explicit SessionCacheMetrics(metrics::MetricSet *parent);
         ~SessionCacheMetrics() override;
     };
 

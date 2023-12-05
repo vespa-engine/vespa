@@ -247,7 +247,7 @@ public:
         : _dmk(docTypeName),
           _fileHeaderContext(),
           _summaryExecutor(8),
-          _shared_service(_summaryExecutor, _summaryExecutor),
+          _shared_service(_summaryExecutor),
           _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
           _made_dir(std::filesystem::create_directory(std::filesystem::path("tmpdb"))),
           _queryLimiter(),

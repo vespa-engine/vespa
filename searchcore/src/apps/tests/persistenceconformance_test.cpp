@@ -215,7 +215,7 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _queryLimiter(),
       _metricsWireService(),
       _summaryExecutor(8),
-      _shared_service(_summaryExecutor, _summaryExecutor),
+      _shared_service(_summaryExecutor),
       _tls(_shared_service.transport(), "tls", tlsListenPort, baseDir, _fileHeaderContext)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;

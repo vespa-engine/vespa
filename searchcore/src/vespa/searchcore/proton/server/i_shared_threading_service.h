@@ -22,11 +22,6 @@ public:
     virtual ~ISharedThreadingService() = default;
 
     /**
-     * Returns the executor used for warmup (e.g. index warmup).
-     */
-    virtual vespalib::ThreadExecutor& warmup() = 0;
-
-    /**
      * Returns the shared executor used for various assisting tasks in a document db.
      *
      * Example usages include:
