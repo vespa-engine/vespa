@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.config.provision.NodeResources.Architecture;
-
 /**
  * A test-only Properties class
  *
@@ -81,7 +79,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
     private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
-    private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
@@ -359,11 +356,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setRpcEventsBeforeWakeup(int value) {
         this.rpc_events_before_wakeup = value;
-        return this;
-    }
-
-    public TestProperties setAdminClusterNodeResourcesArchitecture(Architecture architecture) {
-        this.adminClusterNodeResourcesArchitecture = architecture;
         return this;
     }
 

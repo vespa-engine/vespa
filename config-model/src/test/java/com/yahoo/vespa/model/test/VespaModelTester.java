@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 
 /**
@@ -57,7 +56,6 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
-    private Architecture adminClusterArchitecture = Architecture.getDefault();;
     private HostProvisioner provisioner;
 
     public VespaModelTester() {
@@ -107,11 +105,6 @@ public class VespaModelTester {
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setModelProperties(TestProperties testProperties) { this.modelProperties = testProperties; }
-
-    /** Sets architecture to use for admin clusters. Default: x86_64 */
-    public void setAdminClusterArchitecture(Architecture architecture) {
-        this.adminClusterArchitecture = architecture;
-    }
 
     /** Sets the tenant, application name, and instance name of the model being built. */
     public void setApplicationId(String tenant, String applicationName, String instanceName) {
@@ -231,8 +224,7 @@ public class VespaModelTester {
                 .setMultitenant(hosted) // Note: system tests are multitenant but not hosted
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
-                .setAdminClusterNodeResourcesArchitecture(adminClusterArchitecture);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
 
         DeployState.Builder deployState = deployStateBuilder
                 .applicationPackage(appPkg)
