@@ -347,6 +347,16 @@ namespace matching {
         static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
         static bool check(const Properties &props, bool fallback);
     };
+
+    /**
+     * When enabled posting lists can be created on the fly even if iterator is not strict.
+     **/
+    struct CreatePostingListWhenNonStrict {
+        static const vespalib::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
+        static bool check(const Properties &props, bool fallback);
+    };
 }
 
 namespace softtimeout {
