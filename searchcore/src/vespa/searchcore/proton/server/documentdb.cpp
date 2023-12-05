@@ -19,7 +19,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
@@ -218,7 +217,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
-              _writeService, shared_service.warmup(), fileHeaderContext, std::move(attribute_interlock),
+              _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
               metricsWireService, getMetrics(), queryLimiter, shared_service.clock(),
               _configMutex, _baseDir, hwInfo),
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),

@@ -163,7 +163,11 @@ WarmupIndexCollection::fireWarmup(Task::UP task)
 {
     vespalib::steady_time now(vespalib::steady_clock::now());
     if (now < _warmupEndTime) {
-        _executor.execute(std::move(task));
+        auto bounced = _executor.execute(std::move(task));
+        if (bounced) {
+            //TODO Reduce to debug
+            LOG(warning, "Warmup prohibited due to overload.");
+        }
     } else {
         std::unique_lock<std::mutex> guard(_lock);
         if (_warmupEndTime != vespalib::steady_time()) {

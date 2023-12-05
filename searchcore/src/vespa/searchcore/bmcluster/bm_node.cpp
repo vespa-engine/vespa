@@ -497,7 +497,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _metrics_wire_service(),
       _config_stores(),
       _summary_executor(8),
-      _shared_service(_summary_executor, _summary_executor),
+      _shared_service(_summary_executor),
       _tls(_shared_service.transport(), "tls", _tls_listen_port, _base_dir, _file_header_context),
       _document_db_owner(),
       _bucket_space(document::test::makeBucketSpace(_doc_type_name.getName())),

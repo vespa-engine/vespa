@@ -129,7 +129,7 @@ Fixture::Fixture(bool file_config)
       _dummy(),
       _myDBOwner(),
       _summaryExecutor(8),
-      _shared_service(_summaryExecutor, _summaryExecutor),
+      _shared_service(_summaryExecutor),
       _hwInfo(),
       _db(),
       _fileHeaderContext(),

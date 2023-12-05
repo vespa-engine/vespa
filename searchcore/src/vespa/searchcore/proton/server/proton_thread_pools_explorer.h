@@ -21,7 +21,6 @@ private:
     const vespalib::ThreadExecutor* _docsum;
     const vespalib::ThreadExecutor* _flush;
     const vespalib::ThreadExecutor* _proton;
-    const vespalib::ThreadExecutor* _warmup;
     vespalib::ISequencedTaskExecutor* _field_writer;
 
 public:
@@ -30,7 +29,6 @@ public:
                               const vespalib::ThreadExecutor* docsum,
                               const vespalib::ThreadExecutor* flush,
                               const vespalib::ThreadExecutor* proton,
-                              const vespalib::ThreadExecutor* warmup,
                               vespalib::ISequencedTaskExecutor* field_writer);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
