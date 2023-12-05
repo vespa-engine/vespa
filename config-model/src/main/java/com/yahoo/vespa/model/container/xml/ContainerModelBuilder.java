@@ -955,6 +955,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
             cluster.addContainers(allocateWithoutNodesTag(cluster, context));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, null));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
