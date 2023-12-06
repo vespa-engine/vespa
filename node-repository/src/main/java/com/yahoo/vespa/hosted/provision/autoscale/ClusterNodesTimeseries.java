@@ -51,7 +51,7 @@ public class ClusterNodesTimeseries {
 
     /** Returns the average number of measurements per node */
     public double measurementsPerNode() {
-        if (clusterNodes.size() == 0) return 0;
+        if (clusterNodes.isEmpty()) return 0;
         return (double) totalMeasurementsIn(timeseries) / clusterNodes.size();
     }
 

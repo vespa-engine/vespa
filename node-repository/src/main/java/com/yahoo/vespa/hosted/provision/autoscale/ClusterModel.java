@@ -72,7 +72,7 @@ public class ClusterModel {
     // Lazily initialized members
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
-    private OptionalDouble averageQueryRate = null;
+    private OptionalDouble averageQueryRate = OptionalDouble.empty();
 
     public ClusterModel(NodeRepository nodeRepository,
                         Application application,
@@ -307,7 +307,7 @@ public class ClusterModel {
 
     /** Returns the average query rate in the scaling window. */
     private OptionalDouble averageQueryRate() {
-        if (averageQueryRate != null) return averageQueryRate;
+        if (averageQueryRate.isPresent()) return averageQueryRate;
         return averageQueryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
     }
 
