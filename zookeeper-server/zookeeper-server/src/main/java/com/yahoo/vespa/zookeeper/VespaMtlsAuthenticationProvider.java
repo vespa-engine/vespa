@@ -3,11 +3,13 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.security.X509SslContext;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.common.X509Exception;
 import org.apache.zookeeper.data.Id;
 import org.apache.zookeeper.server.ServerCnxn;
 import org.apache.zookeeper.server.auth.AuthenticationProvider;
 import org.apache.zookeeper.server.auth.X509AuthenticationProvider;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;

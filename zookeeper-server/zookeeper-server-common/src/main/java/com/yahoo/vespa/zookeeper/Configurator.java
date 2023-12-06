@@ -140,6 +140,7 @@ public class Configurator {
         }
 
     }
+
     static Map<String, String> getServerConfig(List<ZookeeperServerConfig.Server> serversConfig, int joinerId) {
         Map<String, String> configEntries = new LinkedHashMap<>();
         for (Server server : serversConfig) {
