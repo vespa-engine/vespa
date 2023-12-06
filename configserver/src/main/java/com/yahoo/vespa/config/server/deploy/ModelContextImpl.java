@@ -203,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final String summaryDecodePolicy;
         private final boolean alwaysMarkPhraseExpensive;
         private final boolean createPostinglistWhenNonStrict;
+        private final boolean useEstimateForFetchPostings;
         private final int contentLayerMetadataFeatureLevel;
         private final boolean dynamicHeapSize;
         private final String unknownConfigDefinition;
@@ -254,6 +255,7 @@ public class ModelContextImpl implements ModelContext {
             this.usePerDocumentThrottledDeleteBucket = flagValue(source, appId, version, Flags.USE_PER_DOCUMENT_THROTTLED_DELETE_BUCKET);
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
             this.createPostinglistWhenNonStrict = flagValue(source, appId, version, Flags.CREATE_POSTINGLIST_WHEN_NON_STRICT);
+            this.useEstimateForFetchPostings = flagValue(source, appId, version, Flags.USE_ESTIMATE_FOR_FETCH_POSTINGS);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -301,6 +303,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public boolean createPostinglistWhenNonStrict() { return createPostinglistWhenNonStrict; }
+        @Override public boolean useEstimateForFetchPostings() { return useEstimateForFetchPostings; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }

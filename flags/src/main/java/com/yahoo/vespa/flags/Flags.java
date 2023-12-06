@@ -334,6 +334,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_ESTIMATE_FOR_FETCH_POSTINGS = defineFeatureFlag(
+            "use-estimate-for-fetch-postings", false,
+            List.of("baldersheim"), "2023-12-06", "2024-01-31",
+            "If true an estimate assuming uncorrelated query terms is used in Blueprint::fetchPostings",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2024-02-01",
