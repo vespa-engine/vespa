@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -63,8 +64,8 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
         }
     }
 
-    private static final Request TURN_FORWARDING_DELAY_ON_REQUEST = new Request(null, 0, 0, 0, null, null);
-    private static final Request TURN_FORWARDING_DELAY_OFF_REQUEST = new Request(null, 0, 0, 0, null, null);
+    private static final Request turnForwardingDelayOn = new Request(null, 0, 0, 0, null, null);
+    private static final Request turnForwardingDelayOff = new Request(null, 0, 0, 0, null, null);
 
     private static class DelayingProcessor implements RequestProcessor, Flushable {
         private final RequestProcessor next;
@@ -90,12 +91,12 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
         public void shutdown() {
             next.shutdown();
         }
-        private void startDelaying() {
+        private void close() {
             if (delayed == null) {
                 delayed = new ArrayDeque<>();
             }
         }
-        private void flushAndStopDelaying() throws RequestProcessorException {
+        private void open() throws RequestProcessorException {
             if (delayed != null) {
                 for (Request request : delayed) {
                     next.processRequest(request);
@@ -119,7 +120,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     private int randRoll;
     private long randSize;
 
-    private final BlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<Request>();
 
     private final Semaphore snapThreadMutex = new Semaphore(1);
 
@@ -224,12 +225,12 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
                     break;
                 }
 
-                if (si == TURN_FORWARDING_DELAY_ON_REQUEST) {
-                    nextProcessor.startDelaying();
+                if (si == turnForwardingDelayOn) {
+                    nextProcessor.close();
                     continue;
                 }
-                if (si == TURN_FORWARDING_DELAY_OFF_REQUEST) {
-                    nextProcessor.flushAndStopDelaying();
+                if (si == turnForwardingDelayOff) {
+                    nextProcessor.open();
                     continue;
                 }
 
@@ -295,7 +296,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     public void setDelayForwarding(boolean delayForwarding) {
-        queuedRequests.add(delayForwarding ? TURN_FORWARDING_DELAY_ON_REQUEST : TURN_FORWARDING_DELAY_OFF_REQUEST);
+        queuedRequests.add(delayForwarding ? turnForwardingDelayOn : turnForwardingDelayOff);
     }
 
     private void flush() throws IOException, RequestProcessorException {

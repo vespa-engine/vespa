@@ -1,4 +1,3 @@
-// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +18,10 @@
 
 package org.apache.zookeeper.server.quorum;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import javax.management.JMException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.jmx.MBeanRegistry;
 import org.apache.zookeeper.metrics.MetricsContext;
@@ -32,11 +35,6 @@ import org.apache.zookeeper.server.ServerCnxn;
 import org.apache.zookeeper.server.ServerMetrics;
 import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
-
-import javax.management.JMException;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  *
@@ -177,7 +175,7 @@ public class LeaderZooKeeperServer extends QuorumZooKeeperServer {
             this,
             getZKDatabase().getSessionWithTimeOuts(),
             tickTime,
-            self.getId(),
+            self.getMyId(),
             self.areLocalSessionsEnabled(),
             getZooKeeperServerListener());
     }
@@ -293,7 +291,7 @@ public class LeaderZooKeeperServer extends QuorumZooKeeperServer {
      */
     @Override
     public long getServerId() {
-        return self.getId();
+        return self.getMyId();
     }
 
     @Override

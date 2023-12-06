@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,9 +19,6 @@
 
 package org.apache.zookeeper.server.quorum;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
 import org.apache.zookeeper.jmx.MBeanRegistry;
 import org.apache.zookeeper.server.DataTreeBean;
 import org.apache.zookeeper.server.ServerCnxn;
@@ -28,6 +26,10 @@ import org.apache.zookeeper.server.SyncRequestProcessor;
 import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServerBean;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Parent class for all ZooKeeperServers for Learners
@@ -71,7 +73,7 @@ public abstract class LearnerZooKeeperServer extends QuorumZooKeeperServer {
      */
     @Override
     public long getServerId() {
-        return self.getMyId();
+        return self.getId();
     }
 
     @Override
@@ -80,7 +82,7 @@ public abstract class LearnerZooKeeperServer extends QuorumZooKeeperServer {
             this,
             getZKDatabase().getSessionWithTimeOuts(),
             this.tickTime,
-            self.getMyId(),
+            self.getId(),
             self.areLocalSessionsEnabled(),
             getZooKeeperServerListener());
     }
@@ -155,7 +157,8 @@ public abstract class LearnerZooKeeperServer extends QuorumZooKeeperServer {
     public synchronized void shutdown(boolean fullyShutDown) {
         if (!canShutdown()) {
             LOG.debug("ZooKeeper server is not running, so not proceeding to shutdown!");
-        } else {
+        }
+        else {
             LOG.info("Shutting down");
             try {
                 if (syncProcessor != null) {
@@ -167,7 +170,8 @@ public abstract class LearnerZooKeeperServer extends QuorumZooKeeperServer {
                     // that contains entries we have already written to our transaction log.
                     syncProcessor.shutdown();
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 LOG.warn("Ignoring unexpected exception in syncprocessor shutdown", e);
             }
         }

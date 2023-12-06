@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,9 +19,6 @@
 
 package org.apache.zookeeper.server.quorum;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BiConsumer;
 import org.apache.zookeeper.server.FinalRequestProcessor;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
@@ -29,6 +27,10 @@ import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiConsumer;
 
 /**
  * A ZooKeeperServer for the Observer node type. Not much is different, but
@@ -48,7 +50,7 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
 
     /*
      * Pending sync requests
-     */ ConcurrentLinkedQueue<Request> pendingSyncs = new ConcurrentLinkedQueue<>();
+     */ ConcurrentLinkedQueue<Request> pendingSyncs = new ConcurrentLinkedQueue<Request>();
 
     ObserverZooKeeperServer(FileTxnSnapLog logFactory, QuorumPeer self, ZKDatabase zkDb) throws IOException {
         super(logFactory, self.tickTime, self.minSessionTimeout, self.maxSessionTimeout, self.clientPortListenBacklog, zkDb, self);
@@ -106,6 +108,9 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
         if (syncRequestProcessorEnabled) {
             syncProcessor = new SyncRequestProcessor(this, null);
             syncProcessor.start();
+        }
+        else {
+            syncProcessor = null;
         }
     }
 
