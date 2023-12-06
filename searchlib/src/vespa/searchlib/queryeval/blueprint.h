@@ -113,7 +113,9 @@ public:
             _estimateHits = est.estHits;
             _estimateEmpty = est.empty;
         }
+        //TODO replace use of estimate by using empty/estHits directly and then have a real estimate here
         HitEstimate estimate() const noexcept { return {_estimateHits, _estimateEmpty}; }
+
         double hit_ratio(uint32_t docid_limit) const noexcept {
             uint32_t total_hits = _estimateHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
@@ -237,6 +239,8 @@ public:
     const Blueprint &root() const;
 
     double hit_ratio() const noexcept { return getState().hit_ratio(_docid_limit); }
+    // TODO Call getState().estimate() when it return a normalized estimate
+    double estimate() const noexcept { return getState().hit_ratio(_docid_limit); }
 
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
@@ -318,7 +322,7 @@ private:
     bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
-    virtual double computeNextHitRate(const Blueprint & child, double hitRate) const;
+    virtual double computeNextHitRate(const Blueprint & child, double hit_rate, bool use_estimate) const;
 
 protected:
     // returns an empty collection if children have empty or
