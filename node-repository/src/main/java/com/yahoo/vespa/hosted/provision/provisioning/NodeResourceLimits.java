@@ -72,9 +72,6 @@ public class NodeResourceLimits {
 
     private double minAdvertisedVcpu(ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
         if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
-        if (zone().environment().isProduction() && ! zone().system().isCd() &&
-                exclusive && ! applicationId.instance().isTester()) return 2;
-        if (zone().environment().isProduction() && cluster.type().isContent()) return 1.0;
         if (zone().environment() == Environment.dev && ! exclusive) return 0.1;
         return 0.5;
     }
