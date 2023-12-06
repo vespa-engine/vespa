@@ -34,14 +34,6 @@ public class ResourceChange {
         }
     }
 
-    private boolean requiresRedistribution() {
-        if ( ! model.clusterSpec().type().isContent()) return false;
-        if (from.nodes() != to.nodes()) return true;
-        if (from.groups() != to.groups()) return true;
-        if (requiresNodeReplacement()) return true;
-        return false;
-    }
-
     /**
      * Returns the estimated number of nodes that will be retired by this change,
      * given that it is a content cluster and no node replacement is necessary.
