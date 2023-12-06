@@ -71,6 +71,7 @@ private:
     bool                     _degradationAscendingOrder;
     bool                     _always_mark_phrase_expensive;
     bool                     _create_postinglist_when_non_strict;
+    bool                     _use_estimate_for_fetch_postings;
     vespalib::string         _diversityAttribute;
     uint32_t                 _diversityMinGroups;
     double                   _diversityCutoffFactor;
@@ -224,6 +225,7 @@ public:
     }
     bool always_mark_phrase_expensive() const noexcept { return _always_mark_phrase_expensive; }
     bool create_postinglist_when_non_strict() const noexcept { return _create_postinglist_when_non_strict; }
+    bool use_estimate_for_fetch_postings() const noexcept { return _use_estimate_for_fetch_postings; }
     /** get number of hits to collect during graceful degradation in match phase */
     uint32_t getDegradationMaxHits() const {
         return _degradationMaxHits;

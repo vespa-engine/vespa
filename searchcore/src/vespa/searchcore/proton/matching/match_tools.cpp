@@ -17,6 +17,7 @@ using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
 using search::attribute::AttributeBlueprintParams;
+using search::queryeval::ExecuteInfo;
 using vespalib::Issue;
 
 using namespace search::fef::indexproperties::matchphase;
@@ -205,13 +206,15 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         float hitRate = std::min(1.0F, float(maxNumHits)/float(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
-        _query.fetchPostings(search::queryeval::ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),
-                                                                    create_postinglist_when_non_strict));
+        bool use_estimate_for_fetch_postings = UseEstimateForFetchPostings::check(_queryEnv.getProperties(), rankSetup.use_estimate_for_fetch_postings());
+        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),
+                                                 create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
         if (is_search) {
             _query.handle_global_filter(_requestContext.getDoom(), searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,
                                         _attribute_blueprint_params.global_filter_upper_limit,
-                                        thread_bundle, trace, create_postinglist_when_non_strict);
+                                        thread_bundle, trace, create_postinglist_when_non_strict,
+                                        use_estimate_for_fetch_postings);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

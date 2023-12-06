@@ -28,7 +28,7 @@ SameElementBlueprint::~SameElementBlueprint() = default;
 FieldSpec
 SameElementBlueprint::getNextChildField(const vespalib::string &field_name, uint32_t field_id)
 {
-    return FieldSpec(field_name, field_id, _layout.allocTermField(field_id), false);
+    return {field_name, field_id, _layout.allocTermField(field_id), false};
 }
 
 void
@@ -60,11 +60,13 @@ SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     if (_terms.empty()) return;
     _terms[0]->fetchPostings(execInfo);
-    double hit_rate = execInfo.hitRate() * _terms[0]->hit_ratio();
+    double estimate = execInfo.use_estimate_for_fetch_postings() ? _terms[0]->hit_ratio() : _terms[0]->estimate();
+    double hit_rate = execInfo.hitRate() * estimate;
     for (size_t i = 1; i < _terms.size(); ++i) {
         Blueprint & term = *_terms[i];
         term.fetchPostings(ExecuteInfo::create(false, hit_rate, execInfo));
-        hit_rate = hit_rate * term.hit_ratio();
+        estimate = execInfo.use_estimate_for_fetch_postings() ? _terms[0]->hit_ratio() : _terms[0]->estimate();
+        hit_rate = hit_rate * estimate;
     }
 }
 

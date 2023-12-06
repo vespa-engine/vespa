@@ -467,6 +467,12 @@ bool CreatePostingListWhenNonStrict::check(const Properties &props, bool fallbac
     return lookupBool(props, NAME, fallback);
 }
 
+const vespalib::string UseEstimateForFetchPostings::NAME("vespa.matching.use_estimate_for_fetch_postings");
+const bool UseEstimateForFetchPostings::DEFAULT_VALUE(false);
+bool UseEstimateForFetchPostings::check(const Properties &props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
 } // namespace matching
 
 namespace softtimeout {

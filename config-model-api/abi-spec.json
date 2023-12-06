@@ -1288,7 +1288,8 @@
       "public long mergingMaxMemoryUsagePerNode()",
       "public boolean usePerDocumentThrottledDeleteBucket()",
       "public boolean alwaysMarkPhraseExpensive()",
-      "public boolean createPostinglistWhenNonStrict()"
+      "public boolean createPostinglistWhenNonStrict()",
+      "public boolean useEstimateForFetchPostings()"
     ],
     "fields" : [ ]
   },
