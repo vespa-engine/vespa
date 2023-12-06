@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
+#include <cassert>
 #include <unistd.h>
 
 /**
@@ -16,22 +17,21 @@ int
 main(int argc, char** argv)
 {
     // parameters with default values.
-    const char *pattern = "query%03d.txt";
+    std::string pattern = "query%03d.txt";
     int linebufsize = 10240;
 
     // parse options and override defaults.
     int         opt;
-    bool        optError;
+    bool        optError = false;
 
-    optError = false;
     while((opt = getopt(argc, argv, "p:m:")) != -1) {
         switch(opt) {
         case 'p':
-            pattern = optarg;
-            if (pattern == nullptr) {
+            if (optarg == nullptr) {
                 printf("Missing 'pattern' argument to -p option !\n");
                 return -1;
             }
+            pattern = optarg;
             break;
         case 'm':
             linebufsize = atoi(optarg);
@@ -65,10 +65,6 @@ main(int argc, char** argv)
         return -1;
     }
 
-    int i;
-    int res;
-    std::vector<char> linebuf(linebufsize);
-    char filename[1024];
     std::unique_ptr<FileReader> input = std::make_unique<FileReader>();
     std::vector<std::unique_ptr<std::ostream>> output;
 
@@ -86,8 +82,10 @@ main(int argc, char** argv)
 
     // open output files
     output.reserve(outcnt);
-    for (i = 0; i < outcnt; i++) {
-        snprintf(filename, 1024, pattern, i);
+    for (int i = 0; i < outcnt; i++) {
+        char filename[1024];
+        int written = snprintf(filename, sizeof(filename), pattern.c_str(), i);
+        assert(written < int(sizeof(filename)));
         output.emplace_back(std::make_unique<std::ofstream>(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc));
         if (! output.back()) {
             printf("could not open output file: %s\n", filename);
@@ -97,11 +95,13 @@ main(int argc, char** argv)
     }
 
     // split file
+    std::vector<char> linebuf(linebufsize);
+    int res;
     while ((res = input->ReadLine(&linebuf[0], linebufsize - 1)) >= 0) {
         if (res < linebufsize - 1) {
             linebuf[res] = '\n';
             linebuf[res + 1] = '\0'; // just in case
-            i = random() % outcnt;
+            int i = random() % outcnt;
             if (!output[i]->write(&linebuf[0], res + 1)) {
                 printf("error writing to file '%d'\n", i);
             }
