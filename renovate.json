@@ -3,22 +3,19 @@
   "extends": [
     "config:base"
   ],
-  "dependencyDashboardApproval": true,
+  "dependencyDashboardApproval": false,
   "transitiveRemediation": true,
   "prHourlyLimit": 20,
   "prConcurrentLimit": 20,
   "ignorePaths": [],
   "ignoreDeps": [],
   "schedule": ["before 6am on thursday"],
+  "minimumReleaseAge": "14 days",
   "packageRules": [
     {
       "matchPackagePatterns": ["^com\\.yahoo\\.vespa"],
       "matchManagers": ["maven"],
       "enabled": false
-    },
-    {
-      "minimumReleaseAge": "14 days",
-      "dependencyDashboardApproval": false
     }
   ]
 }
