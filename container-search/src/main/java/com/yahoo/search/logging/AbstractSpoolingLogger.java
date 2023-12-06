@@ -23,6 +23,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     private final ScheduledExecutorService executorService;
     protected final Spooler spooler;
 
+    @SuppressWarnings("unused") // Used by subclasses
     public AbstractSpoolingLogger() {
         this(new Spooler(Clock.systemUTC()));
     }
@@ -30,7 +31,8 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     public AbstractSpoolingLogger(Spooler spooler) {
         this.spooler = spooler;
         this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
-        executorService.scheduleWithFixedDelay(this, 0, 1L, TimeUnit.SECONDS);
+        // Delay some time before starting to process files, subclasses might need to be constructed fully first
+        this.executorService.scheduleWithFixedDelay(this, 5, 1L, TimeUnit.SECONDS);
     }
 
     public void run() {
