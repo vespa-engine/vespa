@@ -190,7 +190,7 @@ public class Spooler {
         String fileName = currentFileName();
         Path file = spoolPath.resolve(processingPath).resolve(fileName);
         try {
-            log.log(Level.FINE, () -> "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
+            log.log(Level.FINEST, () -> "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
             Files.writeString(file, entry.serialize() + "\n", StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
             firstWriteTimestamp.compareAndExchange(Instant.EPOCH, clock.instant());
             entryCounter.incrementAndGet();

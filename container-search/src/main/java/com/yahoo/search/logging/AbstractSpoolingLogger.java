@@ -12,7 +12,8 @@ import java.util.logging.Level;
 
 /**
  * Abstract class that deals with storing event entries on disk and making sure all stored
- * entries are eventually sent
+ * entries are eventually sent. Note that the {@link #start()} method needs to be called by subclasses as
+ * the last statement in their constructor.
  *
  * @author hmusum
  */
@@ -31,8 +32,11 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     public AbstractSpoolingLogger(Spooler spooler) {
         this.spooler = spooler;
         this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
-        // Delay some time before starting to process files, subclasses might need to be constructed fully first
-        this.executorService.scheduleWithFixedDelay(this, 5, 1L, TimeUnit.SECONDS);
+    }
+
+    /** Start processing files, must be called by subclasses */
+    public void start() {
+        this.executorService.scheduleWithFixedDelay(this, 0, 1L, TimeUnit.SECONDS);
     }
 
     public void run() {
