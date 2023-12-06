@@ -99,6 +99,7 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals("host-3.yahoo.com", values.get(0).getFirst());
             assertEquals(0.13, values.get(0).getSecond().load().cpu(), delta);
             assertEquals(0.9375, values.get(0).getSecond().load().memory(), delta);
+            assertFalse("Unstable because buckets are being merged", values.get(0).getSecond().stable());
         }
 
     }
@@ -265,7 +266,25 @@ public class MetricsV2MetricsFetcherTest {
                                 }
                               }
                             ]
-                          }
+                          },
+                          "services": [
+                            {
+                              "name": "distributor",
+                              "timestamp": 1234,
+                              "status": {
+                                "code": "up"
+                              },
+                              "metrics": [
+                                {
+                                  "values": {
+                                    "vds.idealstate.merge_bucket.pending.last": 42.2
+                                  },
+                                  "dimensions": {
+                                  }
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }

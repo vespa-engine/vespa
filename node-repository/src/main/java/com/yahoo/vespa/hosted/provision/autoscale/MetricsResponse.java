@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.HostedNodeAdminMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
 import ai.vespa.metrics.StorageMetrics;
@@ -78,7 +79,7 @@ public class MetricsResponse {
                                                                              Metric.disk.from(nodeValues)),
                                                                     (long)Metric.generation.from(nodeValues),
                                                                     Metric.inService.from(nodeValues) > 0,
-                                                                    clusterIsStable(node.get(), applicationNodes),
+                                                                    clusterIsStable(node.get(), applicationNodes, nodeValues),
                                                                     Metric.queryRate.from(nodeValues))));
 
         var cluster = node.get().allocation().get().membership().cluster().id();
@@ -107,7 +108,10 @@ public class MetricsResponse {
         item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
 
-    private boolean clusterIsStable(Node node, NodeList applicationNodes) {
+    private boolean clusterIsStable(Node node, NodeList applicationNodes, ListMap<String, Double> nodeValues) {
+        if (Metric.redistributing.from(nodeValues) > 0) {
+            return false;
+        }
         ClusterSpec cluster = node.allocation().get().membership().cluster();
         return applicationNodes.cluster(cluster.id()).retired().isEmpty();
     }
@@ -204,6 +208,20 @@ public class MetricsResponse {
             double computeFinal(ListMap<String, Double> values) {
                 // Really a boolean. Default true. If any is oos -> oos.
                 return values.values().stream().flatMap(List::stream).anyMatch(v -> v == 0) ? 0 : 1;
+            }
+
+        },
+        redistributing { // whether data redistribution is ongoing
+
+            @Override
+            public List<String> metricResponseNames() {
+                return List.of(DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_PENDING.last());
+            }
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
+                // Really a bool. True if any node is merging buckets.
+                return values.values().stream().flatMap(List::stream).anyMatch(v -> v > 0) ? 1 : 0;
             }
 
         },

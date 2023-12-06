@@ -2,6 +2,7 @@
 package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.HostedNodeAdminMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
 import ai.vespa.metrics.StorageMetrics;
@@ -38,10 +39,13 @@ public class AutoscalingMetrics {
         metrics.add(HostedNodeAdminMetrics.DISK_UTIL.baseName()); // node level -default
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // the basis for blocking
 
+        // Config
         metrics.add(ContainerMetrics.APPLICATION_GENERATION.last());
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_CONFIG_GENERATION.last());
 
+        // Status
         metrics.add(ContainerMetrics.IN_SERVICE.last());
+        metrics.add(DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_PENDING.last());
 
         // Query rate
         metrics.add(ContainerMetrics.QUERIES.rate());
@@ -57,7 +61,7 @@ public class AutoscalingMetrics {
     }
 
     private static Set<Metric> toMetrics(List<String> metrics) {
-        return metrics.stream().map(Metric::new).collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+        return metrics.stream().map(Metric::new).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
 }
