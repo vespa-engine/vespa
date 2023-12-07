@@ -4,6 +4,7 @@
 #include "rankprocessor.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
+#include <vespa/searchlib/query/streaming/multi_term.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <algorithm>
@@ -26,6 +27,7 @@ using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 using search::streaming::Hit;
 using search::streaming::HitList;
+using search::streaming::MultiTerm;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
@@ -273,6 +275,10 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                     tmd->setRawScore(docid, raw_score.value());
                 }
             }
+        } else if (auto multi_term = term.getTerm()->as_multi_term()) {
+            auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
+            auto& td = qtd.getTermData();
+            multi_term->unpack_match_data(docid, td, matchData);
         } else if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
             bool isPhrase = term.isFirstPhraseTerm();
             QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());

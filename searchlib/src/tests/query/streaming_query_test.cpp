@@ -1,10 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/fef/simpletermdata.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <limits>
 #include <cmath>
@@ -13,6 +17,8 @@ using namespace search;
 using namespace search::query;
 using namespace search::streaming;
 using TermType = QueryTerm::Type;
+using search::fef::SimpleTermData;
+using search::fef::MatchData;
 
 void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weight) {
     EXPECT_EQ(h.wordpos(), expWordpos);
@@ -865,6 +871,28 @@ TEST(StreamingQueryTest, test_nearest_neighbor_query_node)
     node->reset();
     EXPECT_FALSE(node->get_distance().has_value());
     EXPECT_FALSE(node->evaluate());
+}
+
+TEST(StreamingQueryTest, test_in_term)
+{
+    auto term_vector = std::make_unique<StringTermVector>(1);
+    term_vector->addTerm("7");
+    search::streaming::InTerm term({}, "index", TermType::WORD, std::move(term_vector));
+    SimpleTermData td;
+    td.addField(10);
+    td.addField(11);
+    td.addField(12);
+    td.lookupField(10)->setHandle(0);
+    td.lookupField(12)->setHandle(1);
+    auto& q = *term.get_terms().front();
+    q.add(0, 11, 0, 1);
+    q.add(0, 12, 0, 1);
+    MatchData md(MatchData::params().numTermFields(2));
+    term.unpack_match_data(23, td, md);
+    auto tmd0 = md.resolveTermField(0);
+    EXPECT_NE(23, tmd0->getDocId());
+    auto tmd2 = md.resolveTermField(1);
+    EXPECT_EQ(23, tmd2->getDocId());
 }
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)

@@ -98,4 +98,10 @@ QueryTerm::as_nearest_neighbor_query_node() noexcept
     return nullptr;
 }
 
+MultiTerm*
+QueryTerm::as_multi_term() noexcept
+{
+    return nullptr;
+}
+
 }
