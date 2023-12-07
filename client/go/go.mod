@@ -1,13 +1,15 @@
 module github.com/vespa-engine/vespa/client/go
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/alessio/shellescape v1.4.2
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.16.0
 	// This is the most recent version compatible with Go 1.20. Upgrade when we upgrade our Go version
-	github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528
+	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/klauspost/compress v1.17.4
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.20
