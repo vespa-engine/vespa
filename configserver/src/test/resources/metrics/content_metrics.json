@@ -6,7 +6,9 @@
       "metrics": [
         {
           "values": {
-            "vds.distributor.docsstored.average": 3000
+            "vds.distributor.docsstored.average": 3000,
+            "vds.distributor.gets.latency.count": 43.0,
+            "vds.distributor.gets.latency.sum": 3000
           },
           "dimensions": {
             "clustertype": "content",
