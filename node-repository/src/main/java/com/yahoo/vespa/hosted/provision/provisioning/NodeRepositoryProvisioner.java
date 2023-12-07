@@ -113,8 +113,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
-        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
-        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
 
         if (!requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: GPU capacity cannot have ranges");

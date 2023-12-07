@@ -177,7 +177,6 @@ public class Fixture {
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
         HostResourcesCalculator resourceCalculator = new DynamicProvisioningTester.MockHostResourcesCalculator(zone);
         final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        boolean reversedFlavorOrder = false;
         int hostCount = 0;
 
         public Fixture.Builder zone(Zone zone) {

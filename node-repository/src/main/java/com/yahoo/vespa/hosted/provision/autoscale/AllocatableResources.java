@@ -216,9 +216,9 @@ public class AllocatableResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, applicationId, clusterSpec, exclusive, true).diskGb();
+                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec, exclusive, true).diskGb();
                     if (diskGb > applicationLimits.max().nodeResources().diskGb() || diskGb < applicationLimits.min().nodeResources().diskGb()) // TODO: Remove when disk limit is enforced
-                        diskGb = systemLimits.enlargeToLegal(cappedWantedResources, applicationId, clusterSpec, exclusive, false).diskGb();
+                        diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec, exclusive, false).diskGb();
                     advertisedResources = advertisedResources.withDiskGb(diskGb);
                     realResources = realResources.withDiskGb(diskGb);
                 }
@@ -260,7 +260,7 @@ public class AllocatableResources {
                                                                       boolean bestCase) {
         var systemLimits = nodeRepository.nodeResourceLimits();
         var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive, bestCase);
-        advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive, true); // Ask for something legal
+        advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive, true); // Ask for something legal
         advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
         var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase); // What we'll really get
         if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec)

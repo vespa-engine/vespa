@@ -26,12 +26,12 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
+    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
         boolean exclusive = nodeRepository.exclusiveAllocation(cluster);
-        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
-        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(applicationId, cluster, exclusive))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(applicationId, cluster, exclusive));
+        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(cluster, exclusive))
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster, exclusive));
+        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(cluster, exclusive))
+            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster, exclusive));
         if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
     }
@@ -53,30 +53,30 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(applicationId, cluster)) return false;
+        if (realResources.vcpu() < minRealVcpu(cluster)) return false;
         if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive, boolean followRecommendations) {
+    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec cluster, boolean exclusive, boolean followRecommendations) {
         if (requested.isUnspecified()) return requested;
 
         if (followRecommendations) // TODO: Do unconditionally when we enforce this limit
             requested = requested.withDiskGb(Math.max(minAdvertisedDiskGb(requested, cluster), requested.diskGb()));
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster, exclusive), requested.vcpu()))
-                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(applicationId, cluster, exclusive), requested.memoryGb()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(cluster, exclusive), requested.vcpu()))
+                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster, exclusive), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu(ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
+    private double minAdvertisedVcpu(ClusterSpec cluster, boolean exclusive) {
         if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
         if (zone().environment() == Environment.dev && ! exclusive) return 0.1;
         return 0.5;
     }
 
-    private double minAdvertisedMemoryGb(ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
+    private double minAdvertisedMemoryGb(ClusterSpec cluster, boolean exclusive) {
         if (cluster.type() == ClusterSpec.Type.admin) return 1;
         if (!exclusive) return 4;
         return 8;
@@ -103,8 +103,8 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) {
-        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(cluster));
+    private double minRealVcpu(ClusterSpec cluster) {
+        return minAdvertisedVcpu(cluster, nodeRepository.exclusiveAllocation(cluster));
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {
