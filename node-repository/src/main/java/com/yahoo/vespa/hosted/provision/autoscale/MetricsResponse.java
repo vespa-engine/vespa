@@ -112,6 +112,7 @@ public class MetricsResponse {
         if (Metric.redistributing.from(nodeValues) > 0) {
             return false;
         }
+        // TODO(mpolden): This check can be removed after everything has upgraded to 8.271+
         ClusterSpec cluster = node.allocation().get().membership().cluster();
         return applicationNodes.cluster(cluster.id()).retired().isEmpty();
     }
