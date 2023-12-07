@@ -21,7 +21,7 @@ com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.versio
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
-com.github.spotbugs:spotbugs-annotations:3.1.9
+com.github.spotbugs:spotbugs-annotations:${spotbugs.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:1.0.1
