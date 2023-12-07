@@ -515,7 +515,7 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
                 <!-- No version property, as we don't want maven-dependency-plugin to alert about newer versions. -->
-                <version>3.1.9</version>
+                <version>3.1.12</version>
             </dependency>
             <dependency>
                 <groupId>org.wiremock</groupId>
