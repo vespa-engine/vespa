@@ -134,8 +134,14 @@ public class ClusterDeploymentMetricsRetriever {
             }
             case VESPA_QRSERVER -> optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
                     aggregator.get().addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
-            case VESPA_DISTRIBUTOR -> optionalDouble(values.field("vds.distributor.docsstored.average"))
-                    .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
+            case VESPA_DISTRIBUTOR -> {
+                optionalDouble(values.field("vds.distributor.docsstored.average"))
+                        .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
+                // TODO: Replace with container metrics when available. Using distributor get metrics as a proxy for container metrics
+                optionalDouble(values.field("vds.distributor.gets.latency.sum")).ifPresent(rlSum ->
+                        aggregator.get().addReadLatency(rlSum, values.field("vds.distributor.gets.latency.count").asDouble()));
+            }
+
             case VESPA_CONTAINER_CLUSTERCONTROLLER ->
                     optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
                             aggregator.get()

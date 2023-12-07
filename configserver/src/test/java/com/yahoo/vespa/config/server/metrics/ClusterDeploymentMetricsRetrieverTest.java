@@ -68,6 +68,8 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareAggregators(
                 new DeploymentMetricsAggregator()
                         .addDocumentCount(6000.0)
+                        .addReadLatency(3000 , 43)
+                        .addReadLatency(3000 , 43) // there are 2 content nodes
                         .addMemoryUsage(0.89074, 0.8)
                         .addDiskUsage(0.83517, 0.75),
                 aggregatorMap.get(expectedContentCluster)
@@ -105,8 +107,10 @@ public class ClusterDeploymentMetricsRetrieverTest {
 
         compareOptionals(expected.aggregateDocumentCount(), actual.aggregateDocumentCount(), assertDoubles);
         compareOptionals(expected.aggregateQueryRate(), actual.aggregateQueryRate(), assertDoubles);
+        compareOptionals(expected.aggregateReadRate(), actual.aggregateReadRate(), assertDoubles);
         compareOptionals(expected.aggregateFeedRate(), actual.aggregateFeedRate(), assertDoubles);
         compareOptionals(expected.aggregateQueryLatency(), actual.aggregateQueryLatency(), assertDoubles);
+        compareOptionals(expected.aggregateReadLatency(), actual.aggregateReadLatency(), assertDoubles);
         compareOptionals(expected.aggregateFeedLatency(), actual.aggregateFeedLatency(), assertDoubles);
         compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
         compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));

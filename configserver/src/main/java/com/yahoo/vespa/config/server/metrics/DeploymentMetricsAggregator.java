@@ -10,6 +10,7 @@ import java.util.Optional;
 public class DeploymentMetricsAggregator {
 
     private LatencyMetrics feed;
+    private LatencyMetrics read;
     private LatencyMetrics qr;
     private LatencyMetrics container;
     private Double documentCount;
@@ -18,6 +19,11 @@ public class DeploymentMetricsAggregator {
 
     public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
+        return this;
+    }
+
+    public synchronized DeploymentMetricsAggregator addReadLatency(double sum, double count) {
+        this.read = combineLatency(this.read, sum, count);
         return this;
     }
 
@@ -52,6 +58,14 @@ public class DeploymentMetricsAggregator {
 
     public Optional<Double> aggregateFeedRate() {
         return Optional.ofNullable(feed).map(m -> m.count / 60);
+    }
+
+    public Optional<Double> aggregateReadLatency() {
+        return Optional.ofNullable(read).map(m -> m.sum / m.count).filter(num -> !num.isNaN());
+    }
+
+    public Optional<Double> aggregateReadRate() {
+        return Optional.ofNullable(read).map(m -> m.count / 60);
     }
 
     public Optional<Double> aggregateQueryLatency() {

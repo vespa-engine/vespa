@@ -28,9 +28,11 @@ public class DeploymentMetricsResponse extends SlimeJsonResponse {
             DeploymentMetricsAggregator aggregator = entry.getValue();
             Cursor metrics = cluster.setObject("metrics");
             aggregator.aggregateQueryRate().ifPresent(queryRate -> metrics.setDouble("queriesPerSecond", queryRate));
+            aggregator.aggregateReadRate().ifPresent(readRate -> metrics.setDouble("readsPerSecond", readRate));
             aggregator.aggregateFeedRate().ifPresent(feedRate -> metrics.setDouble("feedPerSecond", feedRate));
             aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
             aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
+            aggregator.aggregateReadLatency().ifPresent(readLatency -> metrics.setDouble("readLatency", readLatency));
             aggregator.aggregateFeedLatency().ifPresent(feedLatency -> metrics.setDouble("feedLatency", feedLatency));
 
             aggregator.memoryUsage().ifPresent(memory -> {
