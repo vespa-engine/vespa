@@ -12,6 +12,7 @@
 namespace search::streaming {
 
 class NearestNeighborQueryNode;
+class MultiTerm;
 
 /**
    This is a leaf in the Query tree. All terms are leafs.
@@ -89,6 +90,7 @@ public:
     void setFuzzyMaxEditDistance(uint32_t fuzzyMaxEditDistance) { _fuzzyMaxEditDistance = fuzzyMaxEditDistance; }
     void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
+    virtual MultiTerm* as_multi_term() noexcept;
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;

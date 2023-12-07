@@ -3,6 +3,8 @@
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/searchlib/query/streaming/multi_term.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.fieldsearcher");
@@ -230,6 +232,7 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
     vespalib::string tmp;
     for (auto& searcher : *this) {
         QueryTermList onlyInIndex;
+        vespalib::hash_set<const void*> seen;
         FieldIdT fid = searcher->field();
         for (auto qt : qtl) {
             for (const auto& doc_type_elem : difm) {
@@ -237,8 +240,16 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
                 auto found = fim.find(FieldSearchSpecMap::stripNonFields(qt->index()));
                 if (found != fim.end()) {
                     const FieldIdTList & index = found->second;
-                    if ((find(index.begin(), index.end(), fid) != index.end()) && (find(onlyInIndex.begin(), onlyInIndex.end(), qt) == onlyInIndex.end())) {
-                        onlyInIndex.push_back(qt);
+                    if ((find(index.begin(), index.end(), fid) != index.end()) && !seen.contains(qt)) {
+                        seen.insert(qt);
+                        auto multi_term = qt->as_multi_term();
+                        if (multi_term != nullptr) {
+                            for (auto& subterm : multi_term->get_terms()) {
+                                onlyInIndex.emplace_back(subterm.get());
+                            }
+                        } else {
+                            onlyInIndex.emplace_back(qt);
+                        }
                     }
                 } else {
                     LOG(debug, "Could not find the requested index=%s in the index config map. Query does not fit search definition.",
