@@ -90,6 +90,10 @@ public class YqlParserTestCase {
         sd.addIndex(stringIndex);
         Index floatIndex = new Index("float");
         sd.addIndex(floatIndex);
+        Index mixedIndex = new Index("mixed");
+        mixedIndex.setInteger(true);
+        mixedIndex.setString(true);
+        sd.addIndex(mixedIndex);
         return new IndexFacts(new IndexModel(sd));
     }
 
@@ -1201,6 +1205,9 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where float in (25)",
                 new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
                         "The field float is not of these types"));
+        assertParseFail("select * from sources * where mixed in (25)",
+                new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
+                        "and string fields. The fieldset mixed has both"));
     }
 
     private static void assertNumericInItem(String field, long[] values, QueryTree query) {
