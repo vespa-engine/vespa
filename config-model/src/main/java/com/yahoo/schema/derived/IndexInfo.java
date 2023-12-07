@@ -351,6 +351,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         boolean anyStemming = false;
         boolean anyNormalizing = false;
         boolean anyString = false;
+        boolean anyInteger = false;
         String phraseSegmentingCommand = null;
         String stemmingCommand = null;
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
@@ -381,6 +382,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             Optional<String> explicitPhraseSegmentingCommand = field.getQueryCommands().stream().filter(c -> c.startsWith(CMD_PHRASE_SEGMENTING)).findFirst();
             if (explicitPhraseSegmentingCommand.isPresent()) {
                 phraseSegmentingCommand = explicitPhraseSegmentingCommand.get();
+            }
+            if (isTypeOrNested(field, DataType.INT) || isTypeOrNested(field, DataType.LONG) ||
+                    isTypeOrNested(field, DataType.BYTE)) {
+                anyInteger = true;
             }
         }
         if (anyIndexing && anyAttributing && fieldSet.getMatching() == null) {
@@ -444,6 +449,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
         if (anyString) {
             addIndexCommand(iiB, fieldSet.getName(), CMD_STRING);
+        }
+        if (anyInteger) {
+            addIndexCommand(iiB, fieldSet.getName(), CMD_INTEGER);
         }
         if (fieldSetMatching != null) {
             // Explicit matching set on fieldset

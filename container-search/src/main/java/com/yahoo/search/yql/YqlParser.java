@@ -420,6 +420,10 @@ public class YqlParser implements Parser {
         if (!index.isInteger() && !stringField)
             throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
                     field + " is not of these types");
+        if (index.isInteger() && stringField) {
+            throw new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer and string fields. The fieldset " +
+                        field + " has both");
+        }
         Item item = null;
         if (stringField) {
             item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
