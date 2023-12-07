@@ -12,8 +12,8 @@ using search::query::TermVector;
 
 namespace search::streaming {
 
-InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, Type type, std::unique_ptr<TermVector> terms)
-    : MultiTerm(std::move(result_base), index, type, std::move(terms))
+InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, std::unique_ptr<TermVector> terms)
+    : MultiTerm(std::move(result_base), index, Type::WORD, std::move(terms))
 {
 }
 

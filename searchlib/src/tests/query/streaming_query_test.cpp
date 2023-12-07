@@ -877,16 +877,18 @@ TEST(StreamingQueryTest, test_in_term)
 {
     auto term_vector = std::make_unique<StringTermVector>(1);
     term_vector->addTerm("7");
-    search::streaming::InTerm term({}, "index", TermType::WORD, std::move(term_vector));
+    search::streaming::InTerm term({}, "index", std::move(term_vector));
     SimpleTermData td;
     td.addField(10);
     td.addField(11);
     td.addField(12);
     td.lookupField(10)->setHandle(0);
     td.lookupField(12)->setHandle(1);
+    EXPECT_FALSE(term.evaluate());
     auto& q = *term.get_terms().front();
     q.add(0, 11, 0, 1);
     q.add(0, 12, 0, 1);
+    EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
     auto tmd0 = md.resolveTermField(0);

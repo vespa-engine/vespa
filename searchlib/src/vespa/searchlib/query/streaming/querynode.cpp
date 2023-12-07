@@ -182,7 +182,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     break;
     case ParseItem::ITEM_STRING_IN:
     case ParseItem::ITEM_NUMERIC_IN:
-        qn = std::make_unique<InTerm>(factory.create(), queryRep.getIndexName(), QueryTermSimple::Type::WORD, queryRep.get_terms());
+        qn = std::make_unique<InTerm>(factory.create(), queryRep.getIndexName(), queryRep.get_terms());
         break;
     default:
     {

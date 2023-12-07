@@ -11,7 +11,7 @@ namespace search::streaming {
  */
 class InTerm : public MultiTerm {
 public:
-    InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, Type type, std::unique_ptr<query::TermVector> terms);
+    InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, std::unique_ptr<query::TermVector> terms);
     ~InTerm() override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data) override;
 };
