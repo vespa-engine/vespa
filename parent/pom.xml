@@ -674,6 +674,11 @@
                 <version>${commons-codec.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons-logging.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>aircompressor</artifactId>
                 <version>${aircompressor.vespa.version}</version>
