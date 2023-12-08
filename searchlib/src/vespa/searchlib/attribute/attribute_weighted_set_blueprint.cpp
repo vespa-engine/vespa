@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_weighted_set_blueprint.h"
+#include "multi_term_filter.hpp"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -19,9 +20,8 @@ namespace {
 
 using attribute::ISearchContext;
 using attribute::IAttributeVector;
-//-----------------------------------------------------------------------------
 
-class UseAttr
+class AttrWrapper
 {
 private:
     const attribute::IAttributeVector &_attr;
@@ -30,18 +30,16 @@ protected:
     const attribute::IAttributeVector &attribute() const { return _attr; }
 
 public:
-    explicit UseAttr(const attribute::IAttributeVector & attr)
+    explicit AttrWrapper(const attribute::IAttributeVector & attr)
         : _attr(attr) {}
 };
 
-//-----------------------------------------------------------------------------
-
-class UseStringEnum : public UseAttr
+class StringEnumWrapper : public AttrWrapper
 {
 public:
     using TokenT = uint32_t;
-    explicit UseStringEnum(const IAttributeVector & attr)
-        : UseAttr(attr) {}
+    explicit StringEnumWrapper(const IAttributeVector & attr)
+        : AttrWrapper(attr) {}
     auto mapToken(const ISearchContext &context) const {
         return attribute().findFoldedEnums(context.queryTerm()->getTerm());
     }
@@ -50,13 +48,11 @@ public:
     }
 };
 
-//-----------------------------------------------------------------------------
-
-class UseInteger : public UseAttr
+class IntegerWrapper : public AttrWrapper
 {
 public:
     using TokenT = uint64_t;
-    explicit UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
+    explicit IntegerWrapper(const IAttributeVector & attr) : AttrWrapper(attr) {}
     std::vector<int64_t> mapToken(const ISearchContext &context) const {
         std::vector<int64_t> result;
         Int64Range range(context.getAsIntegerTerm());
@@ -70,58 +66,25 @@ public:
     }
 };
 
-//-----------------------------------------------------------------------------
-
-template <typename T>
-class AttributeFilter final : public queryeval::SearchIterator
+template <typename WrapperType>
+std::unique_ptr<queryeval::SearchIterator>
+make_multi_term_filter(fef::TermFieldMatchData& tfmd,
+                       const IAttributeVector& attr,
+                       const std::vector<int32_t>& weights,
+                       const std::vector<ISearchContext*>& contexts)
 {
-private:
-    using Key = typename T::TokenT;
-    using Map = vespalib::hash_map<Key, int32_t, vespalib::hash<Key>, std::equal_to<Key>, vespalib::hashtable_base::and_modulator>;
-    using TFMD = fef::TermFieldMatchData;
-
-    TFMD    &_tfmd;
-    T        _attr;
-    Map      _map;
-    int32_t  _weight;
-
-public:
-    AttributeFilter(fef::TermFieldMatchData &tfmd,
-                    const IAttributeVector & attr,
-                    const std::vector<int32_t> & weights,
-                    const std::vector<ISearchContext*> & contexts)
-        : _tfmd(tfmd), _attr(attr), _map(), _weight(0)
-    {
-        for (size_t i = 0; i < contexts.size(); ++i) {
-            for (int64_t token : _attr.mapToken(*contexts[i])) {
-                _map[token] = weights[i];
-            }
+    using FilterType = attribute::MultiTermFilter<WrapperType>;
+    typename FilterType::TokenMap tokens;
+    WrapperType wrapper(attr);
+    for (size_t i = 0; i < contexts.size(); ++i) {
+        for (auto token : wrapper.mapToken(*contexts[i])) {
+            tokens[token] = weights[i];
         }
     }
-    void and_hits_into(BitVector & result,uint32_t begin_id) override {
-        auto end = _map.end();
-        result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
-    }
+    return std::make_unique<FilterType>(tfmd, wrapper, std::move(tokens));
+}
 
-    void doSeek(uint32_t docId) override {
-        auto pos = _map.find(_attr.getToken(docId));
-        if (pos != _map.end()) {
-            _weight = pos->second;
-            setDocId(docId);
-        }
-    }
-    void doUnpack(uint32_t docId) override {
-        _tfmd.reset(docId);
-        fef::TermFieldMatchDataPosition pos;
-        pos.setElementWeight(_weight);
-        _tfmd.appendPosition(pos);
-    }
-    void visitMembers(vespalib::ObjectVisitor &) const override {}
-};
-
-//-----------------------------------------------------------------------------
-
-} // namespace search::<unnamed>
+}
 
 AttributeWeightedSetBlueprint::AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr)
     : queryeval::ComplexLeafBlueprint(field),
@@ -176,10 +139,10 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
         bool isString = (_attr.isStringType() && _attr.hasEnum());
         assert(!_attr.hasMultiValue());
         if (isString) {
-            return std::make_unique<AttributeFilter<UseStringEnum>>(tfmd, _attr, _weights, _contexts);
+            return make_multi_term_filter<StringEnumWrapper>(tfmd, _attr, _weights, _contexts);
         } else {
             assert(_attr.isIntegerType());
-            return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
+            return make_multi_term_filter<IntegerWrapper>(tfmd, _attr, _weights, _contexts);
         }
     }
 }
