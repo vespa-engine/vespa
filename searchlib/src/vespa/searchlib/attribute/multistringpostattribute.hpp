@@ -144,39 +144,47 @@ MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::col
 
 template <typename B, typename T>
 void
-MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const
+MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx, std::vector<DocidWithWeightIterator> &dst) const
 {
-    assert(idx.valid());
-    self.get_posting_store().beginFrozen(idx, dst);
+    assert(posting_idx.valid());
+    self.get_posting_store().beginFrozen(posting_idx, dst);
 }
 
 template <typename B, typename M>
 DocidWithWeightIterator
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx) const
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx) const
 {
-    assert(idx.valid());
-    return self.get_posting_store().beginFrozen(idx);
+    assert(posting_idx.valid());
+    return self.get_posting_store().beginFrozen(posting_idx);
 }
 
 template <typename B, typename M>
 bool
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept
 {
-    return self.get_posting_store().has_btree(idx);
+    return self.get_posting_store().has_btree(posting_idx);
 }
 
 template <typename B, typename M>
 bool
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef idx) const noexcept
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept
 {
-    return self.get_posting_store().has_bitvector(idx);
+    return self.get_posting_store().has_bitvector(posting_idx);
+}
+
+template <typename B, typename M>
+int64_t
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::get_integer_value(vespalib::datastore::EntryRef) const noexcept
+{
+    // This is not supported for string attributes and is never called.
+    abort();
 }
 
 template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
+MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
-    return self.get_posting_store().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
+    return self.get_posting_store().make_bitvector_iterator(posting_idx, doc_id_limit, match_data, strict);
 }
 
 template <typename B, typename T>

@@ -124,39 +124,46 @@ MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::col
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx, std::vector<DocidWithWeightIterator> &dst) const
 {
-    assert(idx.valid());
-    self.get_posting_store().beginFrozen(idx, dst);
+    assert(posting_idx.valid());
+    self.get_posting_store().beginFrozen(posting_idx, dst);
 }
 
 template <typename B, typename M>
 DocidWithWeightIterator
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef idx) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx) const
 {
-    assert(idx.valid());
-    return self.get_posting_store().beginFrozen(idx);
+    assert(posting_idx.valid());
+    return self.get_posting_store().beginFrozen(posting_idx);
 }
 
 template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
-    return self.get_posting_store().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
+    return self.get_posting_store().make_bitvector_iterator(posting_idx, doc_id_limit, match_data, strict);
 }
 
 template <typename B, typename M>
 bool
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept
 {
-    return self.get_posting_store().has_btree(idx);
+    return self.get_posting_store().has_btree(posting_idx);
 }
 
 template <typename B, typename M>
 bool
-MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef idx) const noexcept
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept
 {
-    return self.get_posting_store().has_bitvector(idx);
+    return self.get_posting_store().has_bitvector(posting_idx);
+}
+
+template <typename B, typename M>
+int64_t
+MultiValueNumericPostingAttribute<B, M>::DocidWithWeightPostingStoreAdapter::get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept
+{
+    return self._enumStore.get_value(enum_idx);
 }
 
 template <typename B, typename M>
