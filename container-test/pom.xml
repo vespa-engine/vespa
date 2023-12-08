@@ -49,6 +49,10 @@
          for user projects must be added in compile scope here. These dependencies are explicitly excluded
          (or set to non-compile scope) in the container and/or container-dev modules. -->
     <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>aircompressor</artifactId>
     </dependency>
