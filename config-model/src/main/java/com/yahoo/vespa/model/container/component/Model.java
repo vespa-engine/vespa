@@ -57,8 +57,8 @@ class Model {
 
     void registerOnnxModelCost(ApplicationContainerCluster c, OnnxModelOptions onnxModelOptions) {
         var resolvedUrl = resolvedUrl().orElse(null);
-        if (file != null) c.onnxModelCost().registerModel(file, onnxModelOptions);
-        else if (resolvedUrl != null) c.onnxModelCost().registerModel(resolvedUrl, onnxModelOptions);
+        if (file != null) c.onnxModelCostCalculator().registerModel(file, onnxModelOptions);
+        else if (resolvedUrl != null) c.onnxModelCostCalculator().registerModel(resolvedUrl, onnxModelOptions);
     }
 
     String name() { return paramName; }

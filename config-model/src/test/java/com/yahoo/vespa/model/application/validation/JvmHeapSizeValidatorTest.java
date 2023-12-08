@@ -22,6 +22,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -120,6 +121,9 @@ class JvmHeapSizeValidatorTest {
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
+        @Override public Map<String, ModelInfo> models() { return Map.of(); }
+        @Override public void setRestartOnDeploy() {}
+        @Override public boolean restartOnDeploy() { return false;}
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}

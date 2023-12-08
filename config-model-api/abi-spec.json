@@ -1289,7 +1289,8 @@
       "public boolean usePerDocumentThrottledDeleteBucket()",
       "public boolean alwaysMarkPhraseExpensive()",
       "public boolean createPostinglistWhenNonStrict()",
-      "public boolean useEstimateForFetchPostings()"
+      "public boolean useEstimateForFetchPostings()",
+      "public boolean restartOnDeployWhenOnnxModelChanges()"
     ],
     "fields" : [ ]
   },
@@ -1457,7 +1458,10 @@
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
       "public abstract void registerModel(java.net.URI)",
-      "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)"
+      "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
+      "public abstract java.util.Map models()",
+      "public abstract void setRestartOnDeploy()",
+      "public abstract boolean restartOnDeploy()"
     ],
     "fields" : [ ]
   },
@@ -1477,7 +1481,30 @@
       "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
       "public void registerModel(java.net.URI)",
-      "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)"
+      "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
+      "public java.util.Map models()",
+      "public void setRestartOnDeploy()",
+      "public boolean restartOnDeploy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.OnnxModelCost$ModelInfo" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, long, long, java.util.Optional)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String modelId()",
+      "public long estimatedCost()",
+      "public long hash()",
+      "public java.util.Optional onnxModelOptions()"
     ],
     "fields" : [ ]
   },

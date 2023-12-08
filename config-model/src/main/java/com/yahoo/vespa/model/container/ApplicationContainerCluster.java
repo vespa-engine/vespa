@@ -87,7 +87,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final Set<String> previousHosts;
-    private final OnnxModelCost.Calculator onnxModelCost;
+    private final OnnxModelCost onnxModelCost;
+    private final OnnxModelCost.Calculator onnxModelCostCalculator;
     private final DeployLogger logger;
 
     private ContainerModelEvaluation modelEvaluation;
@@ -136,7 +137,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
                 : defaultHeapSizePercentageOfAvailableMemory;
-        onnxModelCost = deployState.onnxModelCost().newCalculator(
+        onnxModelCost = deployState.onnxModelCost();
+        onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId());
         logger = deployState.getDeployLogger();
     }
@@ -150,6 +152,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         registerApplicationBundles(deployState);
         registerUserConfiguredFiles(deployState);
         createEndpoints(deployState);
+        if (onnxModelCostCalculator.restartOnDeploy())
+            setDeferChangesUntilRestart(true);
     }
 
     private void registerApplicationBundles(DeployState deployState) {
@@ -215,7 +219,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double totalMemory = dynamicHeapSize
                     ? getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow()
                     : getContainers().get(0).getHostResource().realResources().memoryGb();
-            double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCost.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
+            double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCostCalculator.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
             double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
             logger.log(FINE, () -> "cluster id '%s': memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"
@@ -381,7 +385,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public String name() { return getName(); }
 
-    public OnnxModelCost.Calculator onnxModelCost() { return onnxModelCost; }
+    public OnnxModelCost onnxModelCost() { return onnxModelCost; }
+
+    public OnnxModelCost.Calculator onnxModelCostCalculator() { return onnxModelCostCalculator; }
 
     /** Returns whether the deployment in given deploy state should have endpoints */
     private static boolean configureEndpoints(DeployState deployState) {

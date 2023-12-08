@@ -210,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int searchHandlerThreadpool;
         private final long mergingMaxMemoryUsagePerNode;
         private final boolean usePerDocumentThrottledDeleteBucket;
+        private final boolean restartOnDeployWhenOnnxModelChanges;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -256,6 +257,7 @@ public class ModelContextImpl implements ModelContext {
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
             this.createPostinglistWhenNonStrict = flagValue(source, appId, version, Flags.CREATE_POSTINGLIST_WHEN_NON_STRICT);
             this.useEstimateForFetchPostings = flagValue(source, appId, version, Flags.USE_ESTIMATE_FOR_FETCH_POSTINGS);
+            this.restartOnDeployWhenOnnxModelChanges = flagValue(source, appId, version, Flags.RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -310,6 +312,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
         @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
         @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
+        @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

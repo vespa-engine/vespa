@@ -27,7 +27,7 @@ public class JvmHeapSizeValidator extends Validator {
                 ds.getDeployLogger().log(Level.FINE, "Host resources unknown or percentage overridden with 'allocated-memory'");
                 return;
             }
-            long jvmModelCost = appCluster.onnxModelCost().aggregatedModelCostInBytes();
+            long jvmModelCost = appCluster.onnxModelCostCalculator().aggregatedModelCostInBytes();
             if (jvmModelCost > 0) {
                 int percentLimit = 15;
                 double gbLimit = 0.6;

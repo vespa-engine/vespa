@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeVal
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
+import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
@@ -122,7 +123,8 @@ public class Validation {
                 new NodeResourceChangeValidator(),
                 new RedundancyIncreaseValidator(),
                 new CertificateRemovalChangeValidator(),
-                new RedundancyValidator()
+                new RedundancyValidator(),
+                new RestartOnDeployForOnnxModelChangesValidator(),
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
                                                  .flatMap(v -> v.validate(currentModel, nextModel, deployState).stream())
