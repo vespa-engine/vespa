@@ -41,11 +41,12 @@ private:
         vespalib::datastore::EntryRef get_dictionary_snapshot() const override;
         LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const override;
         void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
-        void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const override;
-        DocidWithWeightIterator create(vespalib::datastore::EntryRef idx) const override;
-        std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
-        bool has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept override;
-        bool has_bitvector(vespalib::datastore::EntryRef idx) const noexcept override;
+        void create(vespalib::datastore::EntryRef posting_idx, std::vector<DocidWithWeightIterator> &dst) const override;
+        DocidWithWeightIterator create(vespalib::datastore::EntryRef posting_idx) const override;
+        std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
+        bool has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept override;
+        bool has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept override;
+        int64_t get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept override;
         bool has_always_weight_iterator() const noexcept override { return !_is_filter; }
     };
     DocidWithWeightPostingStoreAdapter _posting_store_adapter;
