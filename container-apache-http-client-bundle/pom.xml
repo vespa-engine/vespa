@@ -23,6 +23,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -80,10 +86,8 @@
                         <Import-Package>
                             !javax.servlet,
                             javax.*,
-                            org.slf4j,
-                            org.slf4j.spi,
-                            org.slf4j.helpers,
-                            org.slf4j.event,
+                            org.apache.commons.logging.*,
+                            org.slf4j.*,
                             org.ietf.jgss
                         </Import-Package>
                         <Embed-Transitive>true</Embed-Transitive>
