@@ -107,7 +107,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                 if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                     var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();
                     onnxModels.asMap().forEach(
-                            (__, model) -> owningCluster.onnxModelCost().registerModel(app.getFile(model.getFilePath()), model.onnxModelOptions()));
+                            (__, model) -> owningCluster.onnxModelCostCalculator().registerModel(app.getFile(model.getFilePath()), model.onnxModelOptions()));
                     owningCluster.addComponent(factory);
                 }
             }

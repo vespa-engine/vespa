@@ -6,11 +6,12 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.net.URI;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author bjorncs
  */
-// TODO: Rename
 public interface OnnxModelCost {
 
     Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
@@ -21,7 +22,12 @@ public interface OnnxModelCost {
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
         void registerModel(URI uri);
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
+        Map<String, ModelInfo> models();
+        void setRestartOnDeploy();
+        boolean restartOnDeploy();
     }
+
+    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {}
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
@@ -32,6 +38,9 @@ public interface OnnxModelCost {
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
         @Override public void registerModel(URI uri) {}
         @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
+        @Override public Map<String, ModelInfo> models() { return Map.of(); }
+        @Override public void setRestartOnDeploy() {}
+        @Override public boolean restartOnDeploy() { return false; }
     }
 
 }

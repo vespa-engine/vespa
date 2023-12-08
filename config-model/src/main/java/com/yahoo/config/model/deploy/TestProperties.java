@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean dynamicHeapSize = false;
     private long mergingMaxMemoryUsagePerNode = -1;
     private boolean usePerDocumentThrottledDeleteBucket = false;
+    private boolean restartOnDeployWhenOnnxModelChanges = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -146,6 +147,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
     @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
     @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
+    @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -385,6 +387,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUsePerDocumentThrottledDeleteBucket(boolean enableThrottling) {
         this.usePerDocumentThrottledDeleteBucket = enableThrottling;
+        return this;
+    }
+
+    public TestProperties setRestartOnDeployForOnnxModelChanges(boolean enable) {
+        this.restartOnDeployWhenOnnxModelChanges = enable;
         return this;
     }
 
