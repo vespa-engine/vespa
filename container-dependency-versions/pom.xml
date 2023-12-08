@@ -83,11 +83,6 @@
                 <version>${guice.vespa.version}</version>
             </dependency>
             <dependency>
-              <groupId>commons-logging</groupId>
-              <artifactId>commons-logging</artifactId>
-              <version>${commons-logging.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
                 <version>${javax.inject.vespa.version}</version>

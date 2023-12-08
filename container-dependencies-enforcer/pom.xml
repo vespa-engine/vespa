@@ -77,7 +77,6 @@
                                         <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}:provided</include>
                                         <include>com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}:provided</include>
-                                        <include>commons-logging:commons-logging:${commons-logging.vespa.version}:provided</include>
                                         <include>javax.inject:javax.inject:${javax.inject.vespa.version}:provided</include>
                                         <include>javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}:provided</include>

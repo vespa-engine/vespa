@@ -82,7 +82,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
-                        com.fasterxml.jackson.core:jackson-databind, commons-logging:commons-logging</allowEmbeddedArtifacts>
+                        com.fasterxml.jackson.core:jackson-databind</allowEmbeddedArtifacts>
                 </configuration>
             </plugin>
         </plugins>
