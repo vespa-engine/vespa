@@ -511,11 +511,11 @@
             </dependency>
             <dependency>
                 <!-- Needed by zookeeper, which has an optional dependency.
-                     Version must be the same as the one zk uses - check the zk pom file.  -->
+                     Version must be the same as the one zk uses - check the zk pom file.
+                     https://github.com/apache/zookeeper/blob/master/pom.xml -->
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
-                <!-- No version property, as we don't want maven-dependency-plugin to alert about newer versions. -->
-                <version>3.1.9</version>
+                <version>${spotbugs.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wiremock</groupId>
