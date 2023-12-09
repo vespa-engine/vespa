@@ -22,6 +22,7 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
+    double calculate_relative_estimate() const final { return 0.5; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
     }
@@ -639,6 +640,7 @@ getExpectedBlueprint()
            "    estimate: HitEstimate {\n"
            "        empty: false\n"
            "        estHits: 9\n"
+           "        relative_estimate: 0.5\n"
            "        cost_tier: 1\n"
            "        tree_size: 2\n"
            "        allow_termwise_eval: false\n"
@@ -658,6 +660,7 @@ getExpectedBlueprint()
            "            estimate: HitEstimate {\n"
            "                empty: false\n"
            "                estHits: 9\n"
+           "                relative_estimate: 0.5\n"
            "                cost_tier: 1\n"
            "                tree_size: 1\n"
            "                allow_termwise_eval: true\n"
@@ -687,6 +690,7 @@ getExpectedSlimeBlueprint() {
            "        '[type]': 'HitEstimate',"
            "        empty: false,"
            "        estHits: 9,"
+           "        relative_estimate: 0.5,"
            "        cost_tier: 1,"
            "        tree_size: 2,"
            "        allow_termwise_eval: false"
@@ -711,6 +715,7 @@ getExpectedSlimeBlueprint() {
            "                '[type]': 'HitEstimate',"
            "                empty: false,"
            "                estHits: 9,"
+           "                relative_estimate: 0.5,"
            "                cost_tier: 1,"
            "                tree_size: 1,"
            "                allow_termwise_eval: true"
@@ -767,9 +772,9 @@ TEST("requireThatDocIdLimitInjectionWorks")
 }
 
 TEST("Control object sizes") {
-    EXPECT_EQUAL(32u, sizeof(Blueprint::State));
+    EXPECT_EQUAL(40u, sizeof(Blueprint::State));
     EXPECT_EQUAL(32u, sizeof(Blueprint));
-    EXPECT_EQUAL(64u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(72u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {

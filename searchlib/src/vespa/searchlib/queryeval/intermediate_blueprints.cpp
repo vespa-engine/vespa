@@ -81,9 +81,34 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
     }
 }
 
+double rel_est_first_child(const Blueprint::Children &children) {
+    return children.empty() ? 0.0 : children[0]->getState().relative_estimate();
+}
+
+double rel_est_and(const Blueprint::Children &children) {
+    double flow = 1.0;
+    for (const Blueprint::UP &child: children) {
+        flow *= child->getState().relative_estimate();
+    }
+    return children.empty() ? 0.0 : flow;
+}
+
+double rel_est_or(const Blueprint::Children &children) {
+    double flow = 1.0;
+    for (const Blueprint::UP &child: children) {
+        flow *= (1.0 - child->getState().relative_estimate());
+    }
+    return (1.0 - flow);
+}
+
 } // namespace search::queryeval::<unnamed>
 
 //-----------------------------------------------------------------------------
+
+double
+AndNotBlueprint::calculate_relative_estimate() const {
+    return rel_est_first_child(get_children());
+}
 
 Blueprint::HitEstimate
 AndNotBlueprint::combine(const std::vector<HitEstimate> &data) const
@@ -188,6 +213,11 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
 
 //-----------------------------------------------------------------------------
 
+double
+AndBlueprint::calculate_relative_estimate() const {
+    return rel_est_and(get_children());
+}
+
 Blueprint::HitEstimate
 AndBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -282,7 +312,7 @@ OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate, bool u
     constexpr double MIN_INVERSE_HIT_RATIO = 0.10;
     double estimate = use_estimate ? child.estimate() : child.hit_ratio();
     double inverse_child_estimate = 1.0 - estimate;
-    return (inverse_child_estimate > MIN_INVERSE_HIT_RATIO)
+    return (use_estimate || (inverse_child_estimate > MIN_INVERSE_HIT_RATIO))
         ? hit_rate * inverse_child_estimate
         : hit_rate;
 }
@@ -290,6 +320,11 @@ OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate, bool u
 //-----------------------------------------------------------------------------
 
 OrBlueprint::~OrBlueprint() = default;
+
+double
+OrBlueprint::calculate_relative_estimate() const {
+    return rel_est_or(get_children());
+}
 
 Blueprint::HitEstimate
 OrBlueprint::combine(const std::vector<HitEstimate> &data) const
@@ -382,6 +417,13 @@ OrBlueprint::calculate_cost_tier() const
 //-----------------------------------------------------------------------------
 WeakAndBlueprint::~WeakAndBlueprint() = default;
 
+double
+WeakAndBlueprint::calculate_relative_estimate() const {
+    double child_est = rel_est_or(get_children());
+    double my_est = abs_to_rel_est(_n, get_docid_limit());
+    return std::min(my_est, child_est);
+}
+
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -441,6 +483,11 @@ WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) c
 
 //-----------------------------------------------------------------------------
 
+double
+NearBlueprint::calculate_relative_estimate() const {
+    return rel_est_and(get_children());
+}
+
 Blueprint::HitEstimate
 NearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -493,6 +540,11 @@ NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 }
 
 //-----------------------------------------------------------------------------
+
+double
+ONearBlueprint::calculate_relative_estimate() const {
+    return rel_est_and(get_children());
+}
 
 Blueprint::HitEstimate
 ONearBlueprint::combine(const std::vector<HitEstimate> &data) const
@@ -549,6 +601,11 @@ ONearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) con
 }
 
 //-----------------------------------------------------------------------------
+
+double
+RankBlueprint::calculate_relative_estimate() const {
+    return rel_est_first_child(get_children());
+}
 
 Blueprint::HitEstimate
 RankBlueprint::combine(const std::vector<HitEstimate> &data) const
@@ -641,6 +698,11 @@ SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector) 
 }
 
 SourceBlenderBlueprint::~SourceBlenderBlueprint() = default;
+
+double
+SourceBlenderBlueprint::calculate_relative_estimate() const {
+    return rel_est_or(get_children());
+}
 
 Blueprint::HitEstimate
 SourceBlenderBlueprint::combine(const std::vector<HitEstimate> &data) const
