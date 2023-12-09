@@ -29,7 +29,6 @@ class MatchingElementsSearch;
 class LeafBlueprint;
 class IntermediateBlueprint;
 class SourceBlenderBlueprint;
-class WeakAndBlueprint;
 class AndBlueprint;
 class AndNotBlueprint;
 class OrBlueprint;
@@ -75,7 +74,6 @@ public:
     {
     private:
         FieldSpecBaseList _fields;
-        double            _relative_estimate;
         uint32_t          _estimateHits;
         uint32_t          _tree_size : 20;
         bool              _estimateEmpty : 1;
@@ -111,9 +109,6 @@ public:
             return nullptr;
         }
 
-        void relative_estimate(double value) noexcept { _relative_estimate = value; }
-        double relative_estimate() const noexcept { return _relative_estimate; }
-        
         void estimate(HitEstimate est) noexcept {
             _estimateHits = est.estHits;
             _estimateEmpty = est.empty;
@@ -122,9 +117,10 @@ public:
         HitEstimate estimate() const noexcept { return {_estimateHits, _estimateEmpty}; }
 
         double hit_ratio(uint32_t docid_limit) const noexcept {
-            return abs_to_rel_est(_estimateHits, docid_limit);
+            uint32_t total_hits = _estimateHits;
+            uint32_t total_docs = std::max(total_hits, docid_limit);
+            return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
-
         void tree_size(uint32_t value) noexcept {
             assert(value < 0x100000);
             _tree_size = value;
@@ -137,12 +133,6 @@ public:
         void cost_tier(uint8_t value) noexcept { _cost_tier = value; }
         uint8_t cost_tier() const noexcept { return _cost_tier; }
     };
-    
-    // converts from an absolute to a relative estimate
-    static double abs_to_rel_est(uint32_t est, uint32_t docid_limit) noexcept {
-        uint32_t total_docs = std::max(est, docid_limit);
-        return (total_docs == 0) ? 0.0 : double(est) / double(total_docs);
-    }
 
     // utility that just takes maximum estimate
     static HitEstimate max(const std::vector<HitEstimate> &data);
@@ -248,9 +238,9 @@ public:
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
 
-    double hit_ratio() const { return getState().hit_ratio(_docid_limit); }
-    double estimate() const { return getState().relative_estimate(); }
-    virtual double calculate_relative_estimate() const = 0;
+    double hit_ratio() const noexcept { return getState().hit_ratio(_docid_limit); }
+    // TODO Call getState().estimate() when it return a normalized estimate
+    double estimate() const noexcept { return getState().hit_ratio(_docid_limit); }
 
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
@@ -282,7 +272,6 @@ public:
     bool isAndNot() const noexcept { return const_cast<Blueprint *>(this)->asAndNot() != nullptr; }
     virtual OrBlueprint * asOr() noexcept { return nullptr; }
     virtual SourceBlenderBlueprint * asSourceBlender() noexcept { return nullptr; }
-    virtual WeakAndBlueprint * asWeakAnd() noexcept { return nullptr; }
     virtual bool isRank() const noexcept { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const noexcept { return nullptr; }
 
@@ -368,7 +357,7 @@ public:
     Blueprint::UP removeChild(size_t n);
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
-    
+
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children) const = 0;
@@ -394,7 +383,6 @@ protected:
     void optimize(Blueprint* &self, OptimizePass pass) final;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
-        _state.relative_estimate(calculate_relative_estimate());
         notifyChange();
     }
     void set_cost_tier(uint32_t value);
@@ -425,8 +413,7 @@ protected:
 public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
-    void setDocIdLimit(uint32_t limit) noexcept final;
-    double calculate_relative_estimate() const override;
+    void setDocIdLimit(uint32_t limit) noexcept final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
