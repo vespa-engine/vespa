@@ -22,7 +22,7 @@ import static java.util.logging.Level.FINE;
  */
 public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValidator {
 
-    private static final Logger log = Logger.getLogger(RestartOnDeployForOnnxModelChangesValidator.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(RestartOnDeployForOnnxModelChangesValidator.class.getName());
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
@@ -60,7 +60,9 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     private Optional<String> modelChanged(OnnxModelCost.ModelInfo a, OnnxModelCost.ModelInfo b) {
         if (a.estimatedCost() != b.estimatedCost()) return Optional.of("estimated cost");
         if (a.hash() != b.hash()) return Optional.of("model hash");
-        if (! a.onnxModelOptions().equals(b.onnxModelOptions())) return Optional.of("model option(s)");
+        if (a.onnxModelOptions().isPresent() && b.onnxModelOptions().isPresent()
+                && ! a.onnxModelOptions().get().equals(b.onnxModelOptions().get()))
+            return Optional.of("model option(s)");
         return Optional.empty();
     }
 
