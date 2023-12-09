@@ -102,15 +102,10 @@ protected:
         }
         return result;
     }
-    
-    Blueprint::UP make_whitelist_blueprint(uint32_t docid_limit) {
+
+    SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
         auto blueprint = _allocator.createWhiteListBlueprint();
         blueprint->setDocIdLimit(docid_limit);
-        return blueprint;
-    }
-    
-    SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
-        auto blueprint = make_whitelist_blueprint(docid_limit);
         std::unique_ptr<SearchIterator> iterator;
         MatchData md(MatchData::params());
         if (filter) {
@@ -124,7 +119,8 @@ protected:
     }
 
     Trinary filter_search_iterator_matches_any(uint32_t docid_limit) {
-        auto blueprint = make_whitelist_blueprint(docid_limit);
+        auto blueprint = _allocator.createWhiteListBlueprint();
+        blueprint->setDocIdLimit(docid_limit);
         auto iterator = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
         return iterator->matches_any();
     }
@@ -172,17 +168,6 @@ TEST_F(LidAllocatorTest, filter_search_iterator_matches_all_when_all_lids_are_ac
     EXPECT_EQ(Trinary::True, filter_search_iterator_matches_any(6));
     EXPECT_EQ(SimpleResult({1, 2, 3, 4, 5}), get_active_lids_in_search_iterator(6, true));
     EXPECT_EQ(SimpleResult({1, 2, 3, 4}), get_active_lids_in_search_iterator(6, false));
-}
-
-TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate)
-{
-    register_lids({ 1, 2, 3, 4 });
-    activate_lids({ 1, 2, 3, 4 }, true);
-    // the number of hits are overestimated based on the number of
-    // documents that could be active (100 in this test fixture)
-    EXPECT_EQ(make_whitelist_blueprint(1000)->estimate(), 0.1);
-    EXPECT_EQ(make_whitelist_blueprint(200)->estimate(), 0.5);
-    EXPECT_EQ(make_whitelist_blueprint(5)->estimate(), 1.0);
 }
 
 class LidAllocatorPerformanceTest : public LidAllocatorTest,

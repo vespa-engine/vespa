@@ -15,7 +15,6 @@ class AndNotBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -42,7 +41,6 @@ class AndBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -67,7 +65,6 @@ class OrBlueprint : public IntermediateBlueprint
 public:
     ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -94,13 +91,11 @@ private:
     std::vector<uint32_t> _weights;
 
 public:
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
-    WeakAndBlueprint * asWeakAnd() noexcept final { return this; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -124,7 +119,6 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     bool should_optimize_children() const override { return false; }
@@ -147,7 +141,6 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     bool should_optimize_children() const override { return false; }
@@ -167,7 +160,6 @@ public:
 class RankBlueprint final : public IntermediateBlueprint
 {
 public:
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -195,7 +187,6 @@ private:
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
-    double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children) const override;
