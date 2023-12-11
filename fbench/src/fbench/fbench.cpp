@@ -299,7 +299,7 @@ FBench::Usage()
     printf(" -P       : use POST for requests instead of GET.\n");
     printf(" -a <str> : append string to each query\n");
     printf(" -n <num> : run with <num> parallel clients [10]\n");
-    printf(" -c <num> : each client will make a request each <num> milliseconds [1000]\n");
+    printf(" -c <num> : each client will make a request each <num> milliseconds [0]\n");
     printf("            ('-1' -> cycle time should be twice the response time)\n");
     printf(" -l <num> : minimum response size for successful requests [0]\n");
     printf(" -i <num> : do not log the <num> first results. -1 means no logging [0]\n");
