@@ -140,24 +140,6 @@ void exchange_location_nodes(const string &location_str,
     }
 }
 
-IntermediateBlueprint *
-asRankOrAndNot(Blueprint * blueprint) {
-    return ((blueprint->isAndNot() || blueprint->isRank()))
-        ? blueprint->asIntermediate()
-        : nullptr;
-}
-
-IntermediateBlueprint *
-lastConsequtiveRankOrAndNot(Blueprint * blueprint) {
-    IntermediateBlueprint * prev = nullptr;
-    IntermediateBlueprint * curr = asRankOrAndNot(blueprint);
-    while (curr != nullptr) {
-        prev =  curr;
-        curr = asRankOrAndNot(&curr->getChild(0));
-    }
-    return prev;
-}
-
 }  // namespace
 
 Query::Query() = default;
@@ -211,26 +193,8 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
     MatchDataReserveVisitor reserve_visitor(mdl);
     _query_tree->accept(reserve_visitor);
 
-    _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, context);
+    _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, std::move(_whiteListBlueprint), context);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
-    if (_whiteListBlueprint) {
-        auto andBlueprint = std::make_unique<AndBlueprint>();
-        IntermediateBlueprint * rankOrAndNot = lastConsequtiveRankOrAndNot(_blueprint.get());
-        if (rankOrAndNot != nullptr) {
-            (*andBlueprint)
-                    .addChild(rankOrAndNot->removeChild(0))
-                    .addChild(std::move(_whiteListBlueprint))
-                    .setDocIdLimit(context.getDocIdLimit());
-            rankOrAndNot->insertChild(0, std::move(andBlueprint));
-        } else {
-            (*andBlueprint)
-                    .addChild(std::move(_blueprint))
-                    .addChild(std::move(_whiteListBlueprint))
-                    .setDocIdLimit(context.getDocIdLimit());
-            _blueprint = std::move(andBlueprint);
-        }
-        LOG(debug, "blueprint after white listing:\n%s\n", _blueprint->asString().c_str());
-    }
 }
 
 void
