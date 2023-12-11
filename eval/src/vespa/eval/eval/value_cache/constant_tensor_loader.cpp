@@ -43,6 +43,9 @@ double decodeDouble(const Inspector &inspector) {
         }
         LOG(warning, "bad string-encoded numeric value '%.*s'", (int)orig.size(), orig.data());
     }
+    if (inspector.valid() && inspector.type().getId() == vespalib::slime::NIX::ID) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     return inspector.asDouble();
 }
 

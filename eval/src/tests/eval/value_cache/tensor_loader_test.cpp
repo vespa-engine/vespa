@@ -138,7 +138,7 @@ void checkBitEq(double a, double b) {
 }
 
 TEST_F("require that special string-encoded values work", ConstantTensorLoader(factory)) {
-    auto c = f1.create(TEST_PATH("dense-special.json"), "tensor<float>(z[10])");
+    auto c = f1.create(TEST_PATH("dense-special.json"), "tensor<float>(z[11])");
     const auto &v = c->value();
     auto cells = v.cells().template typify<float>();
     EXPECT_EQUAL(std::numeric_limits<float>::infinity(), cells[0]);
@@ -149,8 +149,9 @@ TEST_F("require that special string-encoded values work", ConstantTensorLoader(f
     EXPECT_EQUAL(-std::numeric_limits<float>::infinity(), cells[5]);
     TEST_DO(checkBitEq(std::numeric_limits<float>::quiet_NaN(), cells[6]));
     TEST_DO(checkBitEq(std::numeric_limits<float>::quiet_NaN(), cells[7]));
-    TEST_DO(checkBitEq(-std::numeric_limits<float>::quiet_NaN(), cells[8]));
+    TEST_DO(checkBitEq(std::numeric_limits<float>::quiet_NaN(), cells[8]));
     TEST_DO(checkBitEq(-std::numeric_limits<float>::quiet_NaN(), cells[9]));
+    TEST_DO(checkBitEq(-std::numeric_limits<float>::quiet_NaN(), cells[10]));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
