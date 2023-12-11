@@ -391,11 +391,9 @@ IntermediateBlueprint::~IntermediateBlueprint() = default;
 void
 IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept
 {
-    if (limit != get_docid_limit()) {
-        Blueprint::setDocIdLimit(limit);
-        for (Blueprint::UP &child : _children) {
-            child->setDocIdLimit(limit);
-        }
+    Blueprint::setDocIdLimit(limit);
+    for (Blueprint::UP &child : _children) {
+        child->setDocIdLimit(limit);
     }
 }
 
@@ -712,11 +710,9 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 void
 LeafBlueprint::setDocIdLimit(uint32_t limit) noexcept {
-    if (limit != get_docid_limit()) {
-        Blueprint::setDocIdLimit(limit);
-        _state.relative_estimate(calculate_relative_estimate());
-        notifyChange();
-    }
+    Blueprint::setDocIdLimit(limit);
+    _state.relative_estimate(calculate_relative_estimate());
+    notifyChange();
 }
 
 double
