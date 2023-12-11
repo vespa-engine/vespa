@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ClusterResources;
@@ -156,6 +157,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes) {
         log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(from) + "\nto   " + toString(to));
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALED.baseName(), 1,
+                   metric.createContext(MetricsReporter.dimensions(application, clusterNodes.clusterSpec().id())));
     }
 
     static String toString(ClusterResources r) {
