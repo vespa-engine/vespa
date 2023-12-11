@@ -219,15 +219,16 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
         if (rankOrAndNot != nullptr) {
             (*andBlueprint)
                     .addChild(rankOrAndNot->removeChild(0))
-                    .addChild(std::move(_whiteListBlueprint));
+                    .addChild(std::move(_whiteListBlueprint))
+                    .setDocIdLimit(context.getDocIdLimit());
             rankOrAndNot->insertChild(0, std::move(andBlueprint));
         } else {
             (*andBlueprint)
                     .addChild(std::move(_blueprint))
-                    .addChild(std::move(_whiteListBlueprint));
+                    .addChild(std::move(_whiteListBlueprint))
+                    .setDocIdLimit(context.getDocIdLimit());
             _blueprint = std::move(andBlueprint);
         }
-        _blueprint->setDocIdLimit(context.getDocIdLimit());
         LOG(debug, "blueprint after white listing:\n%s\n", _blueprint->asString().c_str());
     }
 }
