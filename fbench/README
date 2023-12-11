@@ -103,7 +103,7 @@ mark optional parameters and default values):
 | 		[-r restartLimit] [-k] <hostname> <port>
 | 
 |  -n <num> : run with <num> parallel clients [10]
-|  -c <num> : each client will make a request each <num> milliseconds [1000]
+|  -c <num> : each client will make a request each <num> milliseconds [0]
 | 	      ('-1' -> cycle time should be twice the response time)
 |  -l <num> : minimum response size for successful requests [0]
 |  -i <num> : do not log the <num> first results. -1 means no logging [0]
