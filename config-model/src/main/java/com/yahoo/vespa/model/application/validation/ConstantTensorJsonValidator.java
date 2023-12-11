@@ -284,7 +284,7 @@ public class ConstantTensorJsonValidator {
     }
 
     private void validateNumeric(String where, JsonToken token) throws IOException {
-        if (token == JsonToken.VALUE_NUMBER_FLOAT || token == JsonToken.VALUE_NUMBER_INT) {
+        if (token == JsonToken.VALUE_NUMBER_FLOAT || token == JsonToken.VALUE_NUMBER_INT || token == JsonToken.VALUE_NULL) {
             return; // ok
         }
         if (token == JsonToken.VALUE_STRING) {
