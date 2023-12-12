@@ -224,7 +224,7 @@ Query::handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
-    fetchPostings(ExecuteInfo::create(true, 1.0F, &doom, create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
+    fetchPostings(ExecuteInfo::create(true, 1.0, &doom, create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
 }
 
 bool
