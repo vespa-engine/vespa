@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -150,6 +150,9 @@ public class AutoscalingMaintainerTest {
         assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
         events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
         assertEquals(2, events.get(2).generation());
+
+        // Metric counts number of times the cluster is rescaled
+        assertEquals(2, tester.metric().sumNumberValues("clusterAutoscaled"), Double.MIN_VALUE);
     }
 
     @Test

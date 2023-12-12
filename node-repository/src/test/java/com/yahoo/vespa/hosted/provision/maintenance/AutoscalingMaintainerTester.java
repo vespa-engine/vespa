@@ -37,6 +37,7 @@ public class AutoscalingMaintainerTester {
     private final ProvisioningTester provisioningTester;
     private final AutoscalingMaintainer maintainer;
     private final MockDeployer deployer;
+    private final TestMetric metric;
 
     public AutoscalingMaintainerTester(MockDeployer.ApplicationContext ... appContexts) {
         this(new Zone(Environment.prod, RegionName.from("us-east3")), appContexts);
@@ -46,9 +47,10 @@ public class AutoscalingMaintainerTester {
         provisioningTester = new ProvisioningTester.Builder().zone(zone).flavorsConfig(flavorsConfig()).build();
         provisioningTester.clock().setInstant(Instant.ofEpochMilli(0));
         deployer = new MockDeployer(provisioningTester.provisioner(), provisioningTester.clock(), List.of(appContexts));
+        metric = new TestMetric();
         maintainer = new AutoscalingMaintainer(provisioningTester.nodeRepository(),
                                                deployer,
-                                               new TestMetric(),
+                                               metric,
                                                Duration.ofMinutes(1));
         provisioningTester.makeReadyNodes(20, "flt", NodeType.host, 8);
         provisioningTester.activateTenantHosts();
@@ -58,6 +60,7 @@ public class AutoscalingMaintainerTester {
     public ManualClock clock() { return provisioningTester.clock(); }
     public MockDeployer deployer() { return deployer; }
     public AutoscalingMaintainer maintainer() { return maintainer; }
+    public TestMetric metric() { return metric; }
 
     public static ApplicationId makeApplicationId(String name) { return ProvisioningTester.applicationId(name); }
     public static ClusterSpec containerClusterSpec() { return ProvisioningTester.containerClusterSpec(); }
