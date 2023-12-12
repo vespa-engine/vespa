@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/doom.h>
+#include <vespa/vespalib/util/thread_bundle.h>
 
 namespace search::queryeval {
 
@@ -12,26 +13,28 @@ namespace search::queryeval {
  */
 class ExecuteInfo {
 public:
-    ExecuteInfo() noexcept : ExecuteInfo(false, 1.0, nullptr, true, true) { }
-    bool isStrict() const noexcept { return _strict; }
+    ExecuteInfo() noexcept : ExecuteInfo(false, 1.0, nullptr, nullptr, true, true) { }
+    bool is_strict() const noexcept { return _strict; }
     bool create_postinglist_when_non_strict() const noexcept { return _create_postinglist_when_non_strict; }
     bool use_estimate_for_fetch_postings() const noexcept { return _use_estimate_for_fetch_postings; }
-    double hitRate() const noexcept { return _hitRate; }
+    double hit_rate() const noexcept { return _hitRate; }
     bool soft_doom() const noexcept { return _doom && _doom->soft_doom(); }
-    const vespalib::Doom * getDoom() const { return _doom; }
+    const vespalib::Doom * doom() const noexcept { return _doom; }
+    vespalib::ThreadBundle * thread_bundle() const noexcept { return _thread_bundle; }
+
     static const ExecuteInfo TRUE;
     static const ExecuteInfo FALSE;
     static ExecuteInfo create(bool strict, const ExecuteInfo & org) noexcept {
         return create(strict, org._hitRate, org);
     }
     static ExecuteInfo create(bool strict, double hitRate, const ExecuteInfo & org) noexcept {
-        return {strict, hitRate, org.getDoom(), org.create_postinglist_when_non_strict(), org.use_estimate_for_fetch_postings()};
+        return {strict, hitRate, org.doom(), org.thread_bundle(), org.create_postinglist_when_non_strict(), org.use_estimate_for_fetch_postings()};
     }
 
-    static ExecuteInfo create(bool strict, double hitRate, const vespalib::Doom * doom, bool postinglist_when_non_strict,
-                              bool use_estimate_for_fetch_postings) noexcept
+    static ExecuteInfo create(bool strict, double hitRate, const vespalib::Doom * doom, vespalib::ThreadBundle * thread_bundle_in,
+                              bool postinglist_when_non_strict, bool use_estimate_for_fetch_postings) noexcept
     {
-         return {strict, hitRate, doom, postinglist_when_non_strict, use_estimate_for_fetch_postings};
+         return {strict, hitRate, doom, thread_bundle_in, postinglist_when_non_strict, use_estimate_for_fetch_postings};
     }
     static ExecuteInfo createForTest(bool strict) noexcept {
         return createForTest(strict, 1.0);
@@ -40,22 +43,24 @@ public:
         return createForTest(strict, hitRate, nullptr);
     }
     static ExecuteInfo createForTest(bool strict, double hitRate, const vespalib::Doom * doom) noexcept {
-        return create(strict, hitRate, doom, true, true);
+        return create(strict, hitRate, doom, nullptr, true, true);
     }
 private:
-    ExecuteInfo(bool strict, double hitRate_in, const vespalib::Doom * doom, bool postinglist_when_non_strict,
-                bool use_estimate_for_fetch_postings) noexcept
+    ExecuteInfo(bool strict, double hitRate_in, const vespalib::Doom * doom, vespalib::ThreadBundle * thread_bundle_in,
+                bool postinglist_when_non_strict, bool use_estimate_for_fetch_postings) noexcept
         : _doom(doom),
+          _thread_bundle(thread_bundle_in),
           _hitRate(hitRate_in),
           _strict(strict),
           _create_postinglist_when_non_strict(postinglist_when_non_strict),
           _use_estimate_for_fetch_postings(use_estimate_for_fetch_postings)
     { }
-    const vespalib::Doom * _doom;
-    double                 _hitRate;
-    bool                   _strict;
-    bool                   _create_postinglist_when_non_strict;
-    bool                   _use_estimate_for_fetch_postings;
+    const vespalib::Doom   * _doom;
+    vespalib::ThreadBundle * _thread_bundle;
+    double                   _hitRate;
+    bool                     _strict;
+    bool                     _create_postinglist_when_non_strict;
+    bool                     _use_estimate_for_fetch_postings;
 };
 
 }

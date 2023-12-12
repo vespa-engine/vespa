@@ -8,7 +8,10 @@
 namespace search::attribute { struct AttributeBlueprintParams; }
 namespace search::attribute { class IAttributeVector; }
 namespace vespalib::eval { struct Value; }
-namespace vespalib { class Doom; }
+namespace vespalib {
+    class Doom;
+    struct ThreadBundle;
+}
 
 namespace search::queryeval {
 
@@ -26,6 +29,10 @@ public:
      * @return time of soft doom.
      */
     virtual const vespalib::Doom & getDoom() const = 0;
+    /**
+     * Provide an optional thread bundle that can be used for multithreading parts of the query.
+     */
+    virtual vespalib::ThreadBundle * thread_bundle() const = 0;
 
     /**
      * Provide access to attributevectors

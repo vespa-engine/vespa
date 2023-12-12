@@ -25,6 +25,7 @@ public:
                        vespalib::steady_time hard=vespalib::steady_time::max());
     ~FakeRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
+    vespalib::ThreadBundle * thread_bundle() const override { return nullptr; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext
                    ? _attributeContext->getAttribute(name)

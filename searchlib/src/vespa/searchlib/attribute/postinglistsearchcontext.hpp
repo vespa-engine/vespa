@@ -110,7 +110,7 @@ PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & e
     // The threshold for when to use array merging is therefore 0.0025 (0.08 / 32).
     constexpr float threshold_for_using_array = 0.0025;
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
-        if (execInfo.isStrict() || use_posting_lists_when_non_strict(execInfo)) {
+        if (execInfo.is_strict() || use_posting_lists_when_non_strict(execInfo)) {
             size_t sum = estimated_hits_in_range();
             if (sum < (_docIdLimit * threshold_for_using_array)) {
                 _merger.reserveArray(_uniqueValues, sum);

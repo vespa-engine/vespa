@@ -318,7 +318,7 @@ bool
 StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const
 {
     if (this->isFuzzy()) {
-        uint32_t exp_doc_hits = this->_docIdLimit * info.hitRate();
+        uint32_t exp_doc_hits = this->_docIdLimit * info.hit_rate();
         constexpr uint32_t fuzzy_use_posting_lists_doc_limit = 10000;
         /**
          * The above constant was derived after a query latency experiment with fuzzy matching
@@ -441,7 +441,7 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_st
     constexpr float lookup_match_constant = 5.0;
     constexpr float posting_list_merge_constant = 1.0;
 
-    uint32_t exp_doc_hits = this->_docIdLimit * info.hitRate();
+    uint32_t exp_doc_hits = this->_docIdLimit * info.hit_rate();
     float avg_values_per_document = static_cast<float>(this->_numValues) / static_cast<float>(this->_docIdLimit);
     float lookup_match_cost = exp_doc_hits * avg_values_per_document * lookup_match_constant;
     float posting_list_cost = this->estimated_hits_in_range() * posting_list_merge_constant;

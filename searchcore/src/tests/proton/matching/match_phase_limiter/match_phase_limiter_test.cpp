@@ -78,7 +78,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         if (postings_fetched) {
-            EXPECT_EQUAL(postings_strict.isStrict(), strict);
+            EXPECT_EQUAL(postings_strict.is_strict(), strict);
         }
         return std::make_unique<MockSearch>(spec, term, strict, tfmda, postings_fetched);
     }

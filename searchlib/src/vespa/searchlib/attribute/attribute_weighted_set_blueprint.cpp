@@ -163,7 +163,7 @@ AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint)
 void
 AttributeWeightedSetBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
-    if (execInfo.isStrict()) {
+    if (execInfo.is_strict()) {
         for (auto * context : _contexts) {
             context->fetchPostings(execInfo);
         }

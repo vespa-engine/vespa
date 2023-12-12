@@ -18,12 +18,15 @@ namespace proton {
 
 using search::attribute::IAttributeVector;
 
-RequestContext::RequestContext(const Doom & doom, IAttributeContext & attributeContext,
+RequestContext::RequestContext(const Doom & doom,
+                               vespalib::ThreadBundle & thread_bundle_in,
+                               IAttributeContext & attributeContext,
                                const search::fef::IQueryEnvironment& query_env,
                                search::fef::IObjectStore& shared_store,
                                const search::attribute::AttributeBlueprintParams& attribute_blueprint_params,
                                const MetaStoreReadGuardSP * metaStoreReadGuard)
     : _doom(doom),
+      _thread_bundle(thread_bundle_in),
       _attributeContext(attributeContext),
       _query_env(query_env),
       _shared_store(shared_store),

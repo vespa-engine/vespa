@@ -134,11 +134,11 @@ TEST("test And propagates updated histestimate") {
     EXPECT_EQUAL(3u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
+        EXPECT_EQUAL((i == 0), child.executeInfo.is_strict());
     }
-    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hit_rate());
+    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hit_rate());
+    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hit_rate());
 }
 
 TEST("test Or propagates updated histestimate") {
@@ -154,12 +154,12 @@ TEST("test Or propagates updated histestimate") {
     EXPECT_EQUAL(4u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_TRUE(child.executeInfo.isStrict());
+        EXPECT_TRUE(child.executeInfo.is_strict());
     }
-    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate(), 1e-6);
-    EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate(), 1e-6);
-    EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate(), 1e-6);
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hit_rate());
+    EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hit_rate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hit_rate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hit_rate(), 1e-6);
 }
 
 TEST("test And Blueprint") {
