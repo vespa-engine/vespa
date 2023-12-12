@@ -217,7 +217,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
                             bool create_postinglist_when_non_strict, bool use_estimate_for_fetch_postings)
 {
     if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
-                              *requestContext.thread_bundle(), &trace))
+                              requestContext.thread_bundle(), &trace))
     {
         return;
     }

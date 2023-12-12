@@ -38,7 +38,7 @@ public:
     explicit WarmupRequestContext(const vespalib::Clock & clock);
     ~WarmupRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
-    vespalib::ThreadBundle * thread_bundle() const override { return nullptr; }
+    vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
     const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
     const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
     const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;

@@ -4,7 +4,7 @@
 
 namespace search::queryeval {
 
-const ExecuteInfo ExecuteInfo::TRUE(true, 1.0, nullptr, nullptr, true, true);
-const ExecuteInfo ExecuteInfo::FALSE(false, 1.0, nullptr, nullptr, true, true);
+const ExecuteInfo ExecuteInfo::TRUE(true, 1.0, nullptr, vespalib::ThreadBundle::trivial(), true, true);
+const ExecuteInfo ExecuteInfo::FALSE(false, 1.0, nullptr, vespalib::ThreadBundle::trivial(), true, true);
 
 }

@@ -32,7 +32,7 @@ public:
     /**
      * Provide an optional thread bundle that can be used for multithreading parts of the query.
      */
-    virtual vespalib::ThreadBundle * thread_bundle() const = 0;
+    virtual vespalib::ThreadBundle & thread_bundle() const = 0;
 
     /**
      * Provide access to attributevectors

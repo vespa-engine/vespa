@@ -62,8 +62,7 @@ void
 PostingListSearchContextT<DataT>::fillArray()
 {
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        _merger.addToArray(PostingListTraverser<PostingStore>(_posting_store,
-                                                             it.getData().load_acquire()));
+        _merger.addToArray(PostingListTraverser<PostingStore>(_posting_store, it.getData().load_acquire()));
     }
     _merger.merge();
 }

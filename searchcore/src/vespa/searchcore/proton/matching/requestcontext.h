@@ -31,7 +31,7 @@ public:
                    const MetaStoreReadGuardSP * metaStoreReadGuard);
 
     const Doom & getDoom() const override { return _doom; }
-    vespalib::ThreadBundle * thread_bundle() const override { return &_thread_bundle; }
+    vespalib::ThreadBundle & thread_bundle() const override { return _thread_bundle; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;

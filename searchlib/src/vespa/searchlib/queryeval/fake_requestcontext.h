@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/vespalib/util/doom.h>
+#include <vespa/vespalib/util/thread_bundle.h>
 #include <limits>
 
 namespace vespalib { class TestClock; }
@@ -25,7 +26,7 @@ public:
                        vespalib::steady_time hard=vespalib::steady_time::max());
     ~FakeRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
-    vespalib::ThreadBundle * thread_bundle() const override { return nullptr; }
+    vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext
                    ? _attributeContext->getAttribute(name)
