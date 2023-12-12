@@ -19,7 +19,7 @@ public:
           _pidx(pidx)
     {
     }
-    ~PostingListTraverser() { }
+    ~PostingListTraverser() = default;
 
     template <typename Func>
     void

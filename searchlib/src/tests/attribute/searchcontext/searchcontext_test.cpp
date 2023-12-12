@@ -22,6 +22,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <initializer_list>
 #include <set>
@@ -150,9 +151,13 @@ private:
 
     ResultSetPtr performSearch(SearchIterator & sb, uint32_t numDocs);
     template <typename V, typename T>
-    ResultSetPtr performSearch(const V & vec, const T & term, TermType termType=TermType::WORD);
+    ResultSetPtr performSearch(const V & vec, const T & term);
+    template <typename V, typename T>
+    ResultSetPtr performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const T & term, TermType termType);
     template <typename V>
-    void performSearch(const V & vec, const vespalib::string & term,
+    void performSearch(const V & vec, const vespalib::string & term, const DocSet & expected, TermType termType);
+    template <typename V>
+    void performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const vespalib::string & term,
                        const DocSet & expected, TermType termType);
     void checkResultSet(const ResultSet & rs, const DocSet & exp, bool bitVector);
 
@@ -461,11 +466,18 @@ SearchContextTest::performSearch(SearchIterator & sb, uint32_t numDocs)
 
 template <typename V, typename T>
 ResultSetPtr
-SearchContextTest::performSearch(const V & vec, const T & term, TermType termType)
+SearchContextTest::performSearch(const V & vec, const T & term)
+{
+    return performSearch(search::queryeval::ExecuteInfo::TRUE, vec, term, TermType::WORD);
+}
+
+template <typename V, typename T>
+ResultSetPtr
+SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const T & term, TermType termType)
 {
     TermFieldMatchData dummy;
     SearchContextPtr sc = getSearch(vec, term, termType);
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(executeInfo);
     SearchBasePtr sb = sc->createIterator(&dummy, true);
     ResultSetPtr rs = performSearch(*sb, vec.getNumDocs());
     return rs;
@@ -473,7 +485,7 @@ SearchContextTest::performSearch(const V & vec, const T & term, TermType termTyp
 
 template <typename V>
 void
-SearchContextTest::performSearch(const V & vec, const vespalib::string & term,
+SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const vespalib::string & term,
                                  const DocSet & expected, TermType termType)
 {
 #if 0
@@ -482,9 +494,16 @@ SearchContextTest::performSearch(const V & vec, const vespalib::string & term,
     std::cout << "}, prefix(" << (prefix ? "true" : "false") << ")" << std::endl;
 #endif
     { // strict search iterator
-        ResultSetPtr rs = performSearch(vec, term, termType);
+        ResultSetPtr rs = performSearch(executeInfo, vec, term, termType);
         checkResultSet(*rs, expected, false);
     }
+}
+template <typename V>
+void
+SearchContextTest::performSearch(const V & vec, const vespalib::string & term,
+                                 const DocSet & expected, TermType termType)
+{
+    performSearch(search::queryeval::ExecuteInfo::TRUE, vec, term, expected, termType);
 }
 
 void
@@ -1090,10 +1109,13 @@ SearchContextTest::testSearchIteratorUnpacking()
 
 template <typename VectorType>
 void
-SearchContextTest::performRangeSearch(const VectorType & vec, const vespalib::string & term,
-                                      const DocSet & expected)
+SearchContextTest::performRangeSearch(const VectorType & vec, const vespalib::string & term, const DocSet & expected)
 {
-    performSearch(vec, term, expected, TermType::WORD);
+    for (size_t num_threads : {1,3}) {
+        vespalib::SimpleThreadBundle thread_bundle(num_threads);
+        auto executeInfo = search::queryeval::ExecuteInfo::create(true, 1.0, nullptr, thread_bundle, true, true);
+        performSearch(executeInfo, vec, term, expected, TermType::WORD);
+    }
 }
 
 template <typename VectorType, typename ValueType>

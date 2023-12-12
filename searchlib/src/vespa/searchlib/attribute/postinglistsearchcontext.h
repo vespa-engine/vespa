@@ -73,7 +73,7 @@ protected:
      */
     virtual size_t calc_estimated_hits_in_range() const = 0;
     virtual void fillArray() = 0;
-    virtual void fillBitVector() = 0;
+    virtual void fillBitVector(vespalib::ThreadBundle & thread_bundle) = 0;
 };
 
 
@@ -102,7 +102,7 @@ protected:
 
     void lookupSingle();
     void fillArray() override;
-    void fillBitVector() override;
+    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
 
     void fetchPostings(const queryeval::ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
@@ -115,6 +115,7 @@ protected:
     unsigned int singleHits() const;
     unsigned int approximateHits() const override;
     void applyRangeLimit(long rangeLimit);
+    struct FillPart;
 };
 
 
@@ -153,7 +154,7 @@ protected:
     template <bool fill_array>
     void fill_array_or_bitvector();
     void fillArray() override;
-    void fillBitVector() override;
+    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
 };
 
 

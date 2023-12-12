@@ -39,6 +39,7 @@ public:
     bool emptyArray() const noexcept { return _array.empty(); }
     vespalib::ConstArrayRef<Posting> getArray() const noexcept { return _array; }
     const BitVector *getBitVector() const noexcept { return _bitVector.get(); }
+    BitVector *getBitVector() noexcept { return _bitVector.get(); }
     const std::shared_ptr<BitVector> &getBitVectorSP() const noexcept { return _bitVector; }
     uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
 
