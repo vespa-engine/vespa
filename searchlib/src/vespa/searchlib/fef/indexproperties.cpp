@@ -473,6 +473,12 @@ bool UseEstimateForFetchPostings::check(const Properties &props, bool fallback) 
     return lookupBool(props, NAME, fallback);
 }
 
+const vespalib::string UseThreadBundleForFetchPostings::NAME("vespa.matching.use_thread_bundle_for_fetch_postings");
+const bool UseThreadBundleForFetchPostings::DEFAULT_VALUE(false);
+bool UseThreadBundleForFetchPostings::check(const Properties &props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
 } // namespace matching
 
 namespace softtimeout {
