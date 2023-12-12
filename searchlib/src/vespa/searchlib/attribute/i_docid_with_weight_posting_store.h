@@ -13,6 +13,8 @@ namespace search {
  */
 class IDocidWithWeightPostingStore : public IDirectPostingStore {
 public:
+    using IteratorType = DocidWithWeightIterator;
+
     virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocidWithWeightIterator> &dst) const = 0;
     virtual DocidWithWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
 
@@ -23,6 +25,8 @@ public:
      */
     virtual bool has_always_weight_iterator() const noexcept = 0;
 };
+
+
 
 }
 
