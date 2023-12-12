@@ -62,8 +62,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
             modelChanged(nextModelInfo, currentModels.get(nextModelInfo.modelId())).ifPresent(change -> {
                 String message = "Onnx model '%s' has changed (%s), need to restart services in %s"
                         .formatted(nextModelInfo.modelId(), change, cluster);
-                cluster.onnxModelCostCalculator().setRestartOnDeploy();
-                addRestartAction(actions, cluster, message);
+                setRestartOnDeployAndAddRestartAction(actions, cluster, message);
             });
         }
         return actions;
@@ -79,7 +78,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         if (! currentModelIds.equals(nextModelIds)) {
             String message = "Onnx model set has changed from %s to %s, need to restart services in %s"
                     .formatted(currentModelIds, nextModelIds, cluster);
-            addRestartAction(actions, cluster, message);
+            setRestartOnDeployAndAddRestartAction(actions, cluster, message);
         }
         return actions;
     }
@@ -94,7 +93,8 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         return Optional.empty();
     }
 
-    private static void addRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
+    private static void setRestartOnDeployAndAddRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
+        cluster.onnxModelCostCalculator().setRestartOnDeploy();
         actions.add(new VespaRestartAction(cluster.id(), message));
     }
 
