@@ -15,6 +15,9 @@ import java.util.logging.Level;
  */
 public class JvmHeapSizeValidator extends Validator {
 
+    public static final int percentLimit = 15;
+    public static final double gbLimit = 0.6;
+
     @Override
     public void validate(VespaModel model, DeployState ds) {
         if (!ds.featureFlags().dynamicHeapSize()) return;
@@ -29,8 +32,6 @@ public class JvmHeapSizeValidator extends Validator {
             }
             long jvmModelCost = appCluster.onnxModelCostCalculator().aggregatedModelCostInBytes();
             if (jvmModelCost > 0) {
-                int percentLimit = 15;
-                double gbLimit = 0.6;
                 double availableMemoryGb = mp.availableMemoryGb().getAsDouble();
                 double modelCostGb = jvmModelCost / (1024D * 1024 * 1024);
                 ds.getDeployLogger().log(Level.FINE, () -> Text.format("JVM: %d%% (limit: %d%%), %.2fGB (limit: %.2fGB), ONNX: %.2fGB",

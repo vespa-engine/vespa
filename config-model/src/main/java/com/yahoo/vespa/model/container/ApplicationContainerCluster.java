@@ -210,9 +210,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (memoryPercentage != null) return Optional.of(JvmMemoryPercentage.of(memoryPercentage));
 
         if (isHostedVespa()) {
-            int availableMemoryPercentage = getHostClusterId().isPresent() ?
-                                            heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
-                                            heapSizePercentageOfAvailableMemory;
+            int availableMemoryPercentage = availableMemoryPercentage();
             if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(availableMemoryPercentage)); // Node memory is not known
 
             // Node memory is known so convert available memory percentage to node memory percentage
@@ -227,6 +225,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             return Optional.of(JvmMemoryPercentage.of(memoryPercentage, availableMemory));
         }
         return Optional.empty();
+    }
+
+    public int availableMemoryPercentage() {
+        return getHostClusterId().isPresent() ?
+                heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
+                heapSizePercentageOfAvailableMemory;
     }
 
     /** Create list of endpoints, these will be consumed later by LbServicesProducer */
