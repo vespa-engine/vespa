@@ -204,7 +204,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Optimize query execution plan");
         _query.optimize();
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
-        float hitRate = std::min(1.0F, float(maxNumHits)/float(searchContext.getDocIdLimit()));
+        double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
         bool use_estimate_for_fetch_postings = UseEstimateForFetchPostings::check(_queryEnv.getProperties(), rankSetup.use_estimate_for_fetch_postings());
         _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),

@@ -136,9 +136,9 @@ TEST("test And propagates updated histestimate") {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
         EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
 }
 
 TEST("test Or propagates updated histestimate") {
@@ -156,10 +156,10 @@ TEST("test Or propagates updated histestimate") {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
         EXPECT_TRUE(child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_APPROX(0.5f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate(), 1e-6);
-    EXPECT_APPROX(0.5*3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate(), 1e-6);
-    EXPECT_APPROX(0.5*3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate(), 1e-6);
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
+    EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate(), 1e-6);
 }
 
 TEST("test And Blueprint") {
