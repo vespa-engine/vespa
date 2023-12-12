@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.deploy.DeployState;
@@ -15,8 +16,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.gbLimit;
+import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.percentLimit;
 import static java.util.logging.Level.FINE;
 import static com.yahoo.config.model.api.OnnxModelCost.ModelInfo;
+import static java.util.logging.Level.INFO;
 
 /**
  * If Onnx models change in a way that requires restart of containers in
@@ -36,13 +40,15 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
 
         // Compare onnx models used by each cluster and set restart on deploy for cluster if estimated cost,
         // model hash or model options have changed
-        // TODO: Skip if container has enough memory to handle reload of onnx model (2 models in memory at the same time)
         for (var cluster : nextModel.getContainerClusters().values()) {
             var clusterInCurrentModel = currentModel.getContainerClusters().get(cluster.getName());
             if (clusterInCurrentModel == null) continue;
 
             var currentModels = clusterInCurrentModel.onnxModelCostCalculator().models();
             var nextModels = cluster.onnxModelCostCalculator().models();
+
+            if (enoughMemoryToAvoidRestart(clusterInCurrentModel, cluster, deployState.getDeployLogger()))
+                continue;
 
             log.log(FINE, "Validating " + cluster + ", current models=" + currentModels + ", next models=" + nextModels);
             actions.addAll(validateModelChanges(cluster, currentModels, nextModels));
@@ -58,7 +64,6 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         for (var nextModelInfo : nextModels.values()) {
             if (! currentModels.containsKey(nextModelInfo.modelId())) continue;
 
-            log.log(FINE, "Checking if " + nextModelInfo + " has changed");
             modelChanged(nextModelInfo, currentModels.get(nextModelInfo.modelId())).ifPresent(change -> {
                 String message = "Onnx model '%s' has changed (%s), need to restart services in %s"
                         .formatted(nextModelInfo.modelId(), change, cluster);
@@ -84,6 +89,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     }
 
     private Optional<String> modelChanged(OnnxModelCost.ModelInfo a, OnnxModelCost.ModelInfo b) {
+        log.log(FINE, "Checking if model has changed (%s) -> (%s)".formatted(a, b));
         if (a.estimatedCost() != b.estimatedCost()) return Optional.of("estimated cost");
         if (a.hash() != b.hash()) return Optional.of("model hash");
         if (a.onnxModelOptions().isPresent() && b.onnxModelOptions().isEmpty()) return Optional.of("model option(s)");
@@ -94,16 +100,38 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     }
 
     private static void setRestartOnDeployAndAddRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
+        log.log(INFO, message);
         cluster.onnxModelCostCalculator().setRestartOnDeploy();
         actions.add(new VespaRestartAction(cluster.id(), message));
     }
 
-    private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster cluster) {
-        // Node memory is known so convert available memory percentage to node memory percentage
+    private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,
+                                                      ApplicationContainerCluster cluster,
+                                                      DeployLogger deployLogger) {
+        double currentModelCostInGb = onnxModelCostInGb(clusterInCurrentModel);
+        double nextModelCostInGb = onnxModelCostInGb(cluster);
+
         double totalMemory = cluster.getContainers().get(0).getHostResource().realResources().memoryGb();
-        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb);
-        double costInGb = (double) cluster.onnxModelCostCalculator().aggregatedModelCostInBytes() / 1024 / 1024 / 1024;
-        return ( 2 * costInGb < availableMemory);
+        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - currentModelCostInGb - currentModelCostInGb);
+        if (availableMemory <= 0.0)
+            return false;
+
+        var availableMemoryPercentage = cluster.availableMemoryPercentage();
+        int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
+
+        if (memoryPercentage < percentLimit || availableMemory < gbLimit) {
+            deployLogger.log(INFO, "Validating %s, not enough memory (%s) to avoid restart (models require %s), consider a flavor with more memory to avoid this"
+                    .formatted(cluster, availableMemory, currentModelCostInGb + nextModelCostInGb));
+            return false;
+        }
+
+        log.log(FINE, "Validating " + cluster + ", enough memory (%s) to avoid restart (models require %s)"
+                .formatted(availableMemory, currentModelCostInGb + nextModelCostInGb));
+        return true;
+    }
+
+    private static double onnxModelCostInGb(ApplicationContainerCluster clusterInCurrentModel) {
+        return (double) clusterInCurrentModel.onnxModelCostCalculator().aggregatedModelCostInBytes() / 1024 / 1024 / 1024;
     }
 
 }

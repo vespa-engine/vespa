@@ -5,7 +5,9 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 /**
@@ -14,6 +16,9 @@ import java.util.logging.Level;
  * @author bjorncs
  */
 public class JvmHeapSizeValidator extends Validator {
+
+    public static int percentLimit = 15;
+    public static double gbLimit = 0.6;
 
     @Override
     public void validate(VespaModel model, DeployState ds) {
@@ -29,8 +34,6 @@ public class JvmHeapSizeValidator extends Validator {
             }
             long jvmModelCost = appCluster.onnxModelCostCalculator().aggregatedModelCostInBytes();
             if (jvmModelCost > 0) {
-                int percentLimit = 15;
-                double gbLimit = 0.6;
                 double availableMemoryGb = mp.availableMemoryGb().getAsDouble();
                 double modelCostGb = jvmModelCost / (1024D * 1024 * 1024);
                 ds.getDeployLogger().log(Level.FINE, () -> Text.format("JVM: %d%% (limit: %d%%), %.2fGB (limit: %.2fGB), ONNX: %.2fGB",
