@@ -22,14 +22,14 @@ namespace search::attribute {
  *
  * This uses access to low-level posting lists, which speeds up query execution.
  */
-template <typename SearchType>
+template <typename PostingStoreType, typename SearchType>
 class DirectMultiTermBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
     std::vector<int32_t>                           _weights;
     std::vector<IDirectPostingStore::LookupResult> _terms;
     const IAttributeVector                        &_iattr;
-    const IDocidWithWeightPostingStore            &_attr;
+    const PostingStoreType                        &_attr;
     vespalib::datastore::EntryRef                  _dictionary_snapshot;
 
     using IteratorWeights = std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>>;
@@ -46,7 +46,7 @@ private:
     std::unique_ptr<queryeval::SearchIterator> create_search_helper(const fef::TermFieldMatchDataArray& tfmda, bool strict, bool is_filter_search) const;
 
 public:
-    DirectMultiTermBlueprint(const queryeval::FieldSpec &field, const IAttributeVector &iattr, const IDocidWithWeightPostingStore &attr, size_t size_hint);
+    DirectMultiTermBlueprint(const queryeval::FieldSpec &field, const IAttributeVector &iattr, const PostingStoreType &attr, size_t size_hint);
     ~DirectMultiTermBlueprint() override;
 
     void addTerm(const IDirectPostingStore::LookupKey & key, int32_t weight, HitEstimate & estimate) {

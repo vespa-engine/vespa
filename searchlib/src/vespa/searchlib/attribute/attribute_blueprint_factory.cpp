@@ -692,7 +692,8 @@ public:
             setResult(std::move(ws));
         } else {
             if (use_docid_with_weight_posting_store()) {
-                auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dww, n.getNumTerms());
+                auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::WeightedSetTermSearch>
+                        (_field, _attr, *_dww, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -707,7 +708,8 @@ public:
 
     void visit(query::DotProduct &n) override {
         if (use_docid_with_weight_posting_store()) {
-            auto *bp = new attribute::DirectMultiTermBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dww, n.getNumTerms());
+            auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::DotProductSearch>
+                    (_field, _attr, *_dww, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
