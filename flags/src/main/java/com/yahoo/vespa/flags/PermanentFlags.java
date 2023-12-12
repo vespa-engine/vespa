@@ -248,7 +248,7 @@ public class PermanentFlags {
             "logctl-override", List.of(), String.class,
             "A list of vespa-logctl statements that are run on container startup. " +
                     "Each item should be on the form <service>:<component> <level>=on",
-            "Takes effect on container restart",
+            "Takes effect on Podman container (re)start",
             INSTANCE_ID, HOSTNAME
     );
 
