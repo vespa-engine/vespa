@@ -5,9 +5,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
-import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 /**
@@ -17,8 +15,8 @@ import java.util.logging.Level;
  */
 public class JvmHeapSizeValidator extends Validator {
 
-    public static int percentLimit = 15;
-    public static double gbLimit = 0.6;
+    public static final int percentLimit = 15;
+    public static final double gbLimit = 0.6;
 
     @Override
     public void validate(VespaModel model, DeployState ds) {
