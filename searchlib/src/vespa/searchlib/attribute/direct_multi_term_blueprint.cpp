@@ -7,8 +7,8 @@
 
 namespace search::attribute {
 
-template class DirectMultiTermBlueprint<queryeval::WeightedSetTermSearch>;
-template class DirectMultiTermBlueprint<queryeval::DotProductSearch>;
+template class DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::WeightedSetTermSearch>;
+template class DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::DotProductSearch>;
 
 }
 

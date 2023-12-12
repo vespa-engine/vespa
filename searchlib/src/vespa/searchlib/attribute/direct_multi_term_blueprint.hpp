@@ -18,11 +18,11 @@ namespace search::queryeval { class WeightedSetTermSearch; }
 
 namespace search::attribute {
 
-template <typename SearchType>
-DirectMultiTermBlueprint<SearchType>::DirectMultiTermBlueprint(const queryeval::FieldSpec &field,
-                                                               const IAttributeVector &iattr,
-                                                               const IDocidWithWeightPostingStore &attr,
-                                                               size_t size_hint)
+template <typename PostingStoreType, typename SearchType>
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::DirectMultiTermBlueprint(const queryeval::FieldSpec &field,
+                                                                                 const IAttributeVector &iattr,
+                                                                                 const PostingStoreType &attr,
+                                                                                 size_t size_hint)
     : ComplexLeafBlueprint(field),
       _weights(),
       _terms(),
@@ -35,15 +35,15 @@ DirectMultiTermBlueprint<SearchType>::DirectMultiTermBlueprint(const queryeval::
     _terms.reserve(size_hint);
 }
 
-template <typename SearchType>
-DirectMultiTermBlueprint<SearchType>::~DirectMultiTermBlueprint() = default;
+template <typename PostingStoreType, typename SearchType>
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::~DirectMultiTermBlueprint() = default;
 
-template <typename SearchType>
-typename DirectMultiTermBlueprint<SearchType>::IteratorWeights
-DirectMultiTermBlueprint<SearchType>::create_iterators(std::vector<DocidWithWeightIterator>& weight_iterators,
-                                                       std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
-                                                       bool use_bitvector_when_available,
-                                                       fef::TermFieldMatchData& tfmd, bool strict) const
+template <typename PostingStoreType, typename SearchType>
+typename DirectMultiTermBlueprint<PostingStoreType, SearchType>::IteratorWeights
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::vector<DocidWithWeightIterator>& weight_iterators,
+                                                                         std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
+                                                                         bool use_bitvector_when_available,
+                                                                         fef::TermFieldMatchData& tfmd, bool strict) const
 
 {
     std::vector<int32_t> result_weights;
@@ -72,11 +72,11 @@ DirectMultiTermBlueprint<SearchType>::create_iterators(std::vector<DocidWithWeig
     }
 }
 
-template <typename SearchType>
+template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<SearchIterator>
-DirectMultiTermBlueprint<SearchType>::combine_iterators(std::unique_ptr<SearchIterator> multi_term_iterator,
-                                                        std::vector<std::unique_ptr<SearchIterator>>&& bitvectors,
-                                                        bool strict) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(std::unique_ptr<SearchIterator> multi_term_iterator,
+                                                                          std::vector<std::unique_ptr<SearchIterator>>&& bitvectors,
+                                                                          bool strict) const
 {
     if (!bitvectors.empty()) {
         if (multi_term_iterator) {
@@ -87,9 +87,9 @@ DirectMultiTermBlueprint<SearchType>::combine_iterators(std::unique_ptr<SearchIt
     return multi_term_iterator;
 }
 
-template <typename SearchType>
+template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda, bool strict, bool is_filter_search) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda, bool strict, bool is_filter_search) const
 {
     if (_terms.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
@@ -118,9 +118,9 @@ DirectMultiTermBlueprint<SearchType>::create_search_helper(const fef::TermFieldM
     }
 }
 
-template <typename SearchType>
+template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
@@ -129,9 +129,9 @@ DirectMultiTermBlueprint<SearchType>::createLeafSearch(const fef::TermFieldMatch
     return create_search_helper(tfmda, strict, is_filter_search);
 }
 
-template <typename SearchType>
+template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<SearchType>::createFilterSearch(bool strict, FilterConstraint) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(bool strict, FilterConstraint) const
 {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());

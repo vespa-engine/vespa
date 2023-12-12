@@ -108,7 +108,7 @@ validate_posting_lists(const IDocidWithWeightPostingStore& store)
 
 class DirectMultiTermBlueprintTest : public ::testing::Test {
 public:
-    using BlueprintType = DirectMultiTermBlueprint<WeightedSetTermSearch>;
+    using BlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
     std::shared_ptr<AttributeVector> attr;
     const IDocidWithWeightPostingStore* store;
     std::shared_ptr<BlueprintType> blueprint;
