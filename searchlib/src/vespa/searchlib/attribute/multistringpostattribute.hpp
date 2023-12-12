@@ -4,6 +4,7 @@
 
 #include "multistringpostattribute.h"
 #include "multi_string_enum_search_context.h"
+#include "string_direct_posting_store_adapter.hpp"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 
@@ -13,7 +14,7 @@ template <typename B, typename T>
 MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c)
     : MultiValueStringAttributeT<B, T>(name, c),
       PostingParent(*this, this->getEnumStore()),
-      _posting_store_adapter(*this)
+      _posting_store_adapter(this->get_posting_store(), this->_enumStore, this->getIsFilter())
 {
 }
 
@@ -101,90 +102,6 @@ MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
     auto doc_id_limit = this->getCommittedDocIdLimit();
     BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
-}
-
-
-template <typename B, typename T>
-vespalib::datastore::EntryRef
-MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::get_dictionary_snapshot() const
-{
-    const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
-    return dictionary.get_frozen_root();
-}
-
-template <typename B, typename T>
-IDirectPostingStore::LookupResult
-MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const
-{
-    const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
-    vespalib::stringref keyAsString = key.asString();
-    // Assert the unfortunate assumption of the comparators.
-    // Should be lifted once they take the length too.
-    assert(keyAsString.data()[keyAsString.size()] == '\0');
-    auto comp = self._enumStore.make_folded_comparator(keyAsString.data());
-    auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
-    if (find_result.first.valid()) {
-        auto pidx = find_result.second;
-        if (pidx.valid()) {
-            const auto& store = self.get_posting_store();
-            auto minmax = store.getAggregated(pidx);
-            return LookupResult(pidx, store.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
-        }
-    }
-    return LookupResult();
-}
-
-template <typename B, typename T>
-void
-MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const
-{
-    const IEnumStoreDictionary &dictionary = self._enumStore.get_dictionary();
-    dictionary.collect_folded(enum_idx, dictionary_snapshot, callback);
-}
-
-template <typename B, typename T>
-void
-MultiValueStringPostingAttributeT<B, T>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx, std::vector<DocidWithWeightIterator> &dst) const
-{
-    assert(posting_idx.valid());
-    self.get_posting_store().beginFrozen(posting_idx, dst);
-}
-
-template <typename B, typename M>
-DocidWithWeightIterator
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::create(vespalib::datastore::EntryRef posting_idx) const
-{
-    assert(posting_idx.valid());
-    return self.get_posting_store().beginFrozen(posting_idx);
-}
-
-template <typename B, typename M>
-bool
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept
-{
-    return self.get_posting_store().has_btree(posting_idx);
-}
-
-template <typename B, typename M>
-bool
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept
-{
-    return self.get_posting_store().has_bitvector(posting_idx);
-}
-
-template <typename B, typename M>
-int64_t
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::get_integer_value(vespalib::datastore::EntryRef) const noexcept
-{
-    // This is not supported for string attributes and is never called.
-    abort();
-}
-
-template <typename B, typename M>
-std::unique_ptr<queryeval::SearchIterator>
-MultiValueStringPostingAttributeT<B, M>::DocidWithWeightPostingStoreAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
-{
-    return self.get_posting_store().make_bitvector_iterator(posting_idx, doc_id_limit, match_data, strict);
 }
 
 template <typename B, typename T>

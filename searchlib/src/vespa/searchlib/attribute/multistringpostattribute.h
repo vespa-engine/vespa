@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "i_docid_with_weight_posting_store.h"
 #include "multistringattribute.h"
 #include "postinglistattribute.h"
-#include "i_docid_with_weight_posting_store.h"
+#include "string_direct_posting_store_adapter.h"
 
 namespace search {
 
@@ -30,25 +31,6 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
-    class DocidWithWeightPostingStoreAdapter final : public IDocidWithWeightPostingStore {
-    public:
-        const MultiValueStringPostingAttributeT &self;
-        bool _is_filter;
-        DocidWithWeightPostingStoreAdapter(const MultiValueStringPostingAttributeT &self_in)
-            : self(self_in), _is_filter(self_in.getIsFilter()) {}
-        vespalib::datastore::EntryRef get_dictionary_snapshot() const override;
-        LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const override;
-        void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
-        void create(vespalib::datastore::EntryRef posting_idx, std::vector<DocidWithWeightIterator> &dst) const override;
-        DocidWithWeightIterator create(vespalib::datastore::EntryRef posting_idx) const override;
-        std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
-        bool has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept override;
-        bool has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept override;
-        int64_t get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept override;
-        bool has_always_weight_iterator() const noexcept override { return !_is_filter; }
-    };
-    DocidWithWeightPostingStoreAdapter _posting_store_adapter;
-
     using LoadedVector = typename B::LoadedVector;
     using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
                                                       LoadedVector,
@@ -60,10 +42,17 @@ private:
     using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
     using Posting = typename PostingParent::Posting;
     using PostingMap = typename PostingParent::PostingMap;
+public:
+    using PostingStore = typename PostingParent::PostingStore;
+private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = MultiValueStringPostingAttributeT<B, T>;
     using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
     using generation_t = typename MultiValueStringAttributeT<B, T>::generation_t;
+
+    using DirectPostingStoreAdapterType = attribute::StringDirectPostingStoreAdapter<IDocidWithWeightPostingStore,
+                                                                                     PostingStore, EnumStore>;
+    DirectPostingStoreAdapterType _posting_store_adapter;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
@@ -78,7 +67,6 @@ private:
 public:
     using PostingParent::get_posting_store;
     using Dictionary = EnumPostingTree;
-    using PostingStore = typename PostingParent::PostingStore;
 
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
     MultiValueStringPostingAttributeT(const vespalib::string & name);
