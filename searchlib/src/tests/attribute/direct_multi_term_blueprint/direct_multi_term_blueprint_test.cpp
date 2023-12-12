@@ -49,9 +49,9 @@ concat(const Docids& a, const Docids& b)
 }
 
 std::shared_ptr<AttributeVector>
-make_attribute(bool field_is_filter)
+make_attribute(bool field_is_filter, CollectionType col_type)
 {
-    Config cfg(BasicType::INT64, CollectionType::WSET);
+    Config cfg(BasicType::INT64, col_type);
     cfg.setFastSearch(true);
     if (field_is_filter) {
         cfg.setIsFilter(field_is_filter);
@@ -78,7 +78,7 @@ make_attribute(bool field_is_filter)
 }
 
 void
-expect_has_weight_iterator(const IDocidWithWeightPostingStore& store, int64_t term_value)
+expect_has_weight_iterator(const IDirectPostingStore& store, int64_t term_value)
 {
     auto snapshot = store.get_dictionary_snapshot();
     auto res = store.lookup(IntegerKey(term_value), snapshot);
@@ -86,7 +86,7 @@ expect_has_weight_iterator(const IDocidWithWeightPostingStore& store, int64_t te
 }
 
 void
-expect_has_bitvector_iterator(const IDocidWithWeightPostingStore& store, int64_t term_value)
+expect_has_bitvector_iterator(const IDirectPostingStore& store, int64_t term_value)
 {
     auto snapshot = store.get_dictionary_snapshot();
     auto res = store.lookup(IntegerKey(term_value), snapshot);
@@ -106,18 +106,28 @@ validate_posting_lists(const IDocidWithWeightPostingStore& store)
     expect_has_bitvector_iterator(store, 300);
 }
 
-class DirectMultiTermBlueprintTest : public ::testing::Test {
+struct TestParam {
+    CollectionType col_type;
+    TestParam(CollectionType col_type_in) : col_type(col_type_in) {}
+    ~TestParam() = default;
+};
+
+std::ostream& operator<<(std::ostream& os, const TestParam& param)
+{
+    os << param.col_type.asString();
+    return os;
+}
+
+class DirectMultiTermBlueprintTest : public ::testing::TestWithParam<TestParam> {
 public:
     using BlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
     std::shared_ptr<AttributeVector> attr;
-    const IDocidWithWeightPostingStore* store;
     std::shared_ptr<BlueprintType> blueprint;
     Blueprint::HitEstimate estimate;
     fef::TermFieldMatchData tfmd;
     fef::TermFieldMatchDataArray tfmda;
     DirectMultiTermBlueprintTest()
         : attr(),
-          store(),
           blueprint(),
           tfmd(),
           tfmda()
@@ -125,8 +135,8 @@ public:
         tfmda.add(&tfmd);
     }
     void setup(bool field_is_filter, bool need_term_field_match_data) {
-        attr = make_attribute(field_is_filter);
-        store = attr->as_docid_with_weight_posting_store();
+        attr = make_attribute(field_is_filter, GetParam().col_type);
+        const auto* store = attr->as_docid_with_weight_posting_store();
         ASSERT_TRUE(store);
         validate_posting_lists(*store);
         blueprint = std::make_shared<BlueprintType>(FieldSpec(field_name, field_id, fef::TermFieldHandle(), field_is_filter), *attr, *store, 2);
@@ -168,7 +178,12 @@ expect_or_child(SearchIterator& itr, size_t child, const vespalib::string& exp_c
     EXPECT_THAT(real.getChildren()[child]->asString(), StartsWith(exp_child_itr));
 }
 
-TEST_F(DirectMultiTermBlueprintTest, weight_iterators_used_for_none_filter_field)
+INSTANTIATE_TEST_SUITE_P(DefaultInstantiation,
+                         DirectMultiTermBlueprintTest,
+                         testing::Values(CollectionType::WSET),
+                         testing::PrintToStringParamName());
+
+TEST_P(DirectMultiTermBlueprintTest, weight_iterators_used_for_none_filter_field)
 {
     setup(false, true);
     add_term(1);
@@ -178,7 +193,7 @@ TEST_F(DirectMultiTermBlueprintTest, weight_iterators_used_for_none_filter_field
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, weight_iterators_used_instead_of_bitvectors_for_none_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, weight_iterators_used_instead_of_bitvectors_for_none_filter_field)
 {
     setup(false, true);
     add_term(1);
@@ -188,7 +203,7 @@ TEST_F(DirectMultiTermBlueprintTest, weight_iterators_used_instead_of_bitvectors
     expect_hits(concat({10}, range(100, 128)), *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, bitvectors_and_weight_iterators_used_for_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_weight_iterators_used_for_filter_field)
 {
     setup(true, true);
     add_term(1);
@@ -203,7 +218,7 @@ TEST_F(DirectMultiTermBlueprintTest, bitvectors_and_weight_iterators_used_for_fi
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
 {
     setup(true, true);
     add_term(100);
@@ -215,7 +230,7 @@ TEST_F(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, filter_iterator_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, filter_iterator_used_for_filter_field_and_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
@@ -225,7 +240,7 @@ TEST_F(DirectMultiTermBlueprintTest, filter_iterator_used_for_filter_field_and_r
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_filter_field_and_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
@@ -240,7 +255,7 @@ TEST_F(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_fil
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
-TEST_F(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_and_ranking_not_needed)
 {
     setup(true, false);
     add_term(100);
