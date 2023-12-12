@@ -64,7 +64,7 @@ struct ThreadBundle {
     /**
      * Empty virtual destructor to enable subclassing.
      **/
-    virtual ~ThreadBundle() {}
+    virtual ~ThreadBundle() = default;
 
     // a thread bundle that can only run things in the current thread.
     static ThreadBundle &trivial();

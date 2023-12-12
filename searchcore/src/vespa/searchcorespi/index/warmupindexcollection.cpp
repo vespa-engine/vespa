@@ -35,9 +35,10 @@ class WarmupRequestContext : public IRequestContext {
     using IAttributeVector = search::attribute::IAttributeVector;
     using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
 public:
-    WarmupRequestContext(const vespalib::Clock & clock);
+    explicit WarmupRequestContext(const vespalib::Clock & clock);
     ~WarmupRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
+    vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
     const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
     const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
     const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
@@ -182,7 +183,7 @@ WarmupIndexCollection::fireWarmup(Task::UP task)
 bool
 WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 {
-    const StringBase * sb(dynamic_cast<const StringBase *>(&term));
+    const auto * sb(dynamic_cast<const StringBase *>(&term));
     if (sb != nullptr) {
         const vespalib::string & s = sb->getTerm();
         std::lock_guard<std::mutex> guard(_lock);

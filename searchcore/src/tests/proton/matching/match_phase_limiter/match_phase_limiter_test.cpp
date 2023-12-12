@@ -69,7 +69,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     FieldSpec spec;
     vespalib::string term;
     bool postings_fetched = false;
-    search::queryeval::ExecuteInfo postings_strict = search::queryeval::ExecuteInfo::FALSE;
+    bool postings_strict = false;
     MockBlueprint(const FieldSpec &spec_in, const vespalib::string &term_in)
         : SimpleLeafBlueprint(spec_in), spec(spec_in), term(term_in)
     {
@@ -78,7 +78,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         if (postings_fetched) {
-            EXPECT_EQUAL(postings_strict.isStrict(), strict);
+            EXPECT_EQUAL(postings_strict, strict);
         }
         return std::make_unique<MockSearch>(spec, term, strict, tfmda, postings_fetched);
     }
@@ -86,7 +86,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
         return create_default_filter(strict, constraint);
     }
     void fetchPostings(const search::queryeval::ExecuteInfo &execInfo) override {
-        postings_strict = execInfo;
+        postings_strict = execInfo.is_strict();
         postings_fetched = true;
     }
 };

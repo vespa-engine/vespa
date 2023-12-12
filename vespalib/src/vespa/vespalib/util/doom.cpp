@@ -5,7 +5,7 @@
 namespace vespalib {
 
 Doom::Doom(const Clock &clock, steady_time softDoom,
-           steady_time hardDoom, bool explicitSoftDoom)
+           steady_time hardDoom, bool explicitSoftDoom) noexcept
     : _clock(clock),
       _softDoom(softDoom),
       _hardDoom(hardDoom),

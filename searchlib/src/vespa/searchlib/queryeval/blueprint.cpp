@@ -628,10 +628,10 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    double nextHitRate = execInfo.hitRate();
+    double nextHitRate = execInfo.hit_rate();
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
-        child.fetchPostings(ExecuteInfo::create(execInfo.isStrict() && inheritStrict(i), nextHitRate, execInfo));
+        child.fetchPostings(ExecuteInfo::create(execInfo.is_strict() && inheritStrict(i), nextHitRate, execInfo));
         nextHitRate = computeNextHitRate(child, nextHitRate, execInfo.use_estimate_for_fetch_postings());
     }
 }

@@ -24,14 +24,16 @@ private:
     using Blueprint = search::queryeval::Blueprint;
     using GlobalFilter = search::queryeval::GlobalFilter;
     using ExecuteInfo = search::queryeval::ExecuteInfo;
-    search::query::Node::UP _query_tree;
-    Blueprint::UP           _blueprint;
-    Blueprint::UP           _whiteListBlueprint;
-    std::vector<search::common::GeoLocationSpec> _locations;
+    using IRequestContext = search::queryeval::IRequestContext;
+    using GeoLocationSpec = search::common::GeoLocationSpec;
+    search::query::Node::UP      _query_tree;
+    Blueprint::UP                _blueprint;
+    Blueprint::UP                _whiteListBlueprint;
+    std::vector<GeoLocationSpec> _locations;
 
 public:
     /** Convenience typedef. */
-    using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
+    using GeoLocationSpecPtrs = std::vector<const GeoLocationSpec *>;
 
     Query();
     ~Query();
@@ -89,7 +91,7 @@ public:
      * @param context search context
      * @param mdl match data layout
      **/
-    void reserveHandles(const search::queryeval::IRequestContext & requestContext,
+    void reserveHandles(const IRequestContext & requestContext,
                         ISearchContext &context,
                         search::fef::MatchDataLayout &mdl);
 
@@ -104,9 +106,9 @@ public:
     void optimize();
     void fetchPostings(const ExecuteInfo & executeInfo) ;
 
-    void handle_global_filter(const vespalib::Doom & doom, uint32_t docid_limit,
+    void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              vespalib::ThreadBundle &thread_bundle, search::engine::Trace& trace,
+                              search::engine::Trace& trace,
                               bool create_postinglist_when_non_strict, bool use_estimate_for_fetch_postings);
 
     /**

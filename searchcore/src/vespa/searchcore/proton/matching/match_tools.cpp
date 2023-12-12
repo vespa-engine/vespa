@@ -182,7 +182,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
-      _requestContext(doom, attributeContext, _queryEnv, _queryEnv.getObjectStore(), _attribute_blueprint_params, metaStoreReadGuard),
+      _requestContext(doom, thread_bundle, attributeContext, _queryEnv, _queryEnv.getObjectStore(),
+                      _attribute_blueprint_params, metaStoreReadGuard),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
@@ -207,14 +208,13 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
         bool use_estimate_for_fetch_postings = UseEstimateForFetchPostings::check(_queryEnv.getProperties(), rankSetup.use_estimate_for_fetch_postings());
-        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),
+        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(), thread_bundle,
                                                  create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
         if (is_search) {
-            _query.handle_global_filter(_requestContext.getDoom(), searchContext.getDocIdLimit(),
+            _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,
                                         _attribute_blueprint_params.global_filter_upper_limit,
-                                        thread_bundle, trace, create_postinglist_when_non_strict,
-                                        use_estimate_for_fetch_postings);
+                                        trace, create_postinglist_when_non_strict, use_estimate_for_fetch_postings);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

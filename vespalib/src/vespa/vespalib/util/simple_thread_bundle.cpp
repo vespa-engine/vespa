@@ -14,33 +14,33 @@ namespace {
 
 struct SignalHook : Runnable {
     Signal &signal;
-    SignalHook(Signal &s) : signal(s) {}
+    explicit SignalHook(Signal &s) noexcept : signal(s) {}
     void run() override { signal.send(); }
 };
 
 struct BroadcastHook : Runnable {
     Signal &signal;
-    BroadcastHook(Signal &s) : signal(s) {}
+    explicit BroadcastHook(Signal &s) noexcept : signal(s) {}
     void run() override { signal.broadcast(); }
 };
 
 struct PartHook : Runnable {
     Part part;
-    PartHook(const Part &p) : part(p) {}
+    explicit PartHook(const Part &p) noexcept : part(p) {}
     void run() override { part.perform(); }
 };
 
 struct HookPair : Runnable {
     Runnable::UP first;
     Runnable::UP second;
-    HookPair(Runnable::UP f, Runnable::UP s) : first(std::move(f)), second(std::move(s)) {}
+    HookPair(Runnable::UP f, Runnable::UP s) noexcept : first(std::move(f)), second(std::move(s)) {}
     void run() override {
         first->run();
         second->run();
     }
 };
 
-Runnable::UP wrap(Runnable *runnable) {
+Runnable::UP wrap(Runnable *runnable) noexcept {
     return Runnable::UP(runnable);
 }
 

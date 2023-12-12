@@ -23,6 +23,7 @@ public:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using Doom = vespalib::Doom;
     RequestContext(const Doom& softDoom,
+                   vespalib::ThreadBundle & threadBundle,
                    IAttributeContext& attributeContext,
                    const search::fef::IQueryEnvironment& query_env,
                    search::fef::IObjectStore& shared_store,
@@ -30,6 +31,7 @@ public:
                    const MetaStoreReadGuardSP * metaStoreReadGuard);
 
     const Doom & getDoom() const override { return _doom; }
+    vespalib::ThreadBundle & thread_bundle() const override { return _thread_bundle; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
@@ -47,6 +49,7 @@ public:
 
 private:
     const Doom                                    _doom;
+    vespalib::ThreadBundle                      & _thread_bundle;
     IAttributeContext                           & _attributeContext;
     const search::fef::IQueryEnvironment        & _query_env;
     search::fef::IObjectStore                   & _shared_store;

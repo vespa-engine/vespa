@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/vespalib/util/testclock.h>
+#include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -34,13 +35,14 @@ public:
 
 class RequestContextTest : public ::testing::Test {
 private:
-    vespalib::TestClock    _clock;
-    vespalib::Doom         _doom;
-    MyAttributeContext     _attr_ctx;
-    IndexEnvironment       _index_env;
-    QueryEnvironment       _query_env;
-    RequestContext         _request_ctx;
-    Value::UP              _query_tensor;
+    vespalib::TestClock          _clock;
+    vespalib::Doom               _doom;
+    vespalib::SimpleThreadBundle _thread_bundle;
+    MyAttributeContext           _attr_ctx;
+    IndexEnvironment             _index_env;
+    QueryEnvironment             _query_env;
+    RequestContext               _request_ctx;
+    Value::UP                    _query_tensor;
 
     void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
@@ -52,10 +54,11 @@ public:
     RequestContextTest()
         : _clock(),
           _doom(_clock.clock(), vespalib::steady_time(), vespalib::steady_time(), false),
+          _thread_bundle(1),
           _attr_ctx(),
           _index_env(),
           _query_env(&_index_env),
-          _request_ctx(_doom, _attr_ctx, _query_env, _query_env.getObjectStore(), AttributeBlueprintParams(), nullptr),
+          _request_ctx(_doom, _thread_bundle, _attr_ctx, _query_env, _query_env.getObjectStore(), AttributeBlueprintParams(), nullptr),
           _query_tensor(SimpleValue::from_spec(TensorSpec("tensor(x[2])")
                                                .add({{"x", 0}}, 3).add({{"x", 1}}, 5)))
     {

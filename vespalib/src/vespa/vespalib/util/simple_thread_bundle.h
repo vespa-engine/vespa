@@ -21,7 +21,7 @@ struct Work {
     Runnable* const* targets;
     size_t cnt;
     CountDownLatch *latch;
-    Work() : targets(nullptr), cnt(0), latch(nullptr) {}
+    Work() noexcept : targets(nullptr), cnt(0), latch(nullptr) {}
 };
 
 /**
@@ -30,9 +30,9 @@ struct Work {
 struct Part {
     const Work &work;
     size_t offset;
-    Part(const Work &w, size_t o) : work(w), offset(o) {}
+    Part(const Work &w, size_t o) noexcept : work(w), offset(o) {}
     bool valid() const noexcept { return (offset < work.cnt); }
-    void perform() {
+    void perform() const {
         if (valid()) {
             work.targets[offset]->run();
         }
