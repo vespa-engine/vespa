@@ -157,9 +157,9 @@ TEST("test Or propagates updated histestimate") {
         EXPECT_TRUE(child.executeInfo.isStrict());
     }
     EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
-    EXPECT_EQUAL(3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate());
+    EXPECT_APPROX(0.5f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0f/5.0f, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate(), 1e-6);
+    EXPECT_APPROX(0.5*3.0f*42.0f/(5.0f*50.0f), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).executeInfo.hitRate(), 1e-6);
 }
 
 TEST("test And Blueprint") {
@@ -644,7 +644,11 @@ struct make {
             child->setSourceId(source_tag);
             source_tag = invalid_source;
         }
-        making->addChild(std::move(child));
+        if (auto *weak_and = making->asWeakAnd()) {
+            weak_and->addTerm(std::move(child), 1);
+        } else {
+            making->addChild(std::move(child));
+        }
         return std::move(*this);
     }
     make &&leaf(uint32_t estimate) && {
@@ -661,6 +665,9 @@ struct make {
     static make RANK() { return make(std::make_unique<RankBlueprint>()); }
     static make ANDNOT() { return make(std::make_unique<AndNotBlueprint>()); }
     static make SB(ISourceSelector &selector) { return make(std::make_unique<SourceBlenderBlueprint>(selector)); }
+    static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window)); }
+    static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
+    static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
 };
 
 TEST("AND AND collapsing") {
@@ -1179,6 +1186,47 @@ TEST("require that OR blueprint use saturated sum as estimate") {
     TEST_DO(verify_or_est({{4, false},{6, false},{5, false}}, {15, false}));
     TEST_DO(verify_or_est({{5, false},{20, false},{10, false}}, {32, false}));
     TEST_DO(verify_or_est({{100, false},{300, false},{200, false}}, {300, false}));
+}
+
+void verify_relative_estimate(make &&mk, double expect) {
+    EXPECT_EQUAL(mk.making->estimate(), 0.0);
+    Blueprint::UP bp = std::move(mk).leafs({200,300,950});
+    bp->setDocIdLimit(1000);
+    EXPECT_EQUAL(bp->estimate(), expect);
+}
+
+TEST("relative estimate for OR") {
+    verify_relative_estimate(make::OR(), 1.0-0.8*0.7*0.5);
+}
+
+TEST("relative estimate for AND") {
+    verify_relative_estimate(make::AND(), 0.2*0.3*0.5);
+}
+
+TEST("relative estimate for RANK") {
+    verify_relative_estimate(make::RANK(), 0.2);
+}
+
+TEST("relative estimate for ANDNOT") {
+    verify_relative_estimate(make::ANDNOT(), 0.2);
+}
+
+TEST("relative estimate for SB") {
+    InvalidSelector sel;
+    verify_relative_estimate(make::SB(sel), 1.0-0.8*0.7*0.5);
+}
+
+TEST("relative estimate for NEAR") {
+    verify_relative_estimate(make::NEAR(1), 0.2*0.3*0.5);
+}
+
+TEST("relative estimate for ONEAR") {
+    verify_relative_estimate(make::ONEAR(1), 0.2*0.3*0.5);
+}
+
+TEST("relative estimate for WEAKAND") {
+    verify_relative_estimate(make::WEAKAND(1000), 1.0-0.8*0.7*0.5);
+    verify_relative_estimate(make::WEAKAND(50), 0.05);
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }
