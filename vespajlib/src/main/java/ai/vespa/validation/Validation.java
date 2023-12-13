@@ -3,6 +3,7 @@ package ai.vespa.validation;
 
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -67,6 +68,13 @@ public class Validation {
     public static <T> T require(boolean condition, T value, String description) {
         if (condition) return value;
         throw new IllegalArgumentException(description + ", but got: '" + value + "'");
+    }
+
+    public static void requireNonNulls(Object... objs) {
+        for (int i = 0; i < objs.length; i++) {
+            int effectivelyFinal = i;
+            Objects.requireNonNull(objs[i], () -> "Argument at index %d is null".formatted(effectivelyFinal));
+        }
     }
 
 }

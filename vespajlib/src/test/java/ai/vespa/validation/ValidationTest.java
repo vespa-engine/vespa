@@ -3,11 +3,14 @@ package ai.vespa.validation;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static ai.vespa.validation.Validation.parse;
 import static ai.vespa.validation.Validation.requireAtLeast;
 import static ai.vespa.validation.Validation.requireAtMost;
 import static ai.vespa.validation.Validation.requireInRange;
 import static ai.vespa.validation.Validation.requireNonBlank;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -67,5 +70,13 @@ class ValidationTest {
                                   () -> requireInRange("hei", "word", "hoi", "hai"))
                              .getMessage());
     }
+
+    @Test
+    void testNonNulls() {
+        assertDoesNotThrow(() -> Validation.requireNonNulls("hei", 123L, List.of("hoi")));
+        var exception = assertThrows(NullPointerException.class, () -> Validation.requireNonNulls("hei", null, List.of("hoi")));
+        assertEquals("Argument at index 1 is null", exception.getMessage());
+    }
+
 
 }
