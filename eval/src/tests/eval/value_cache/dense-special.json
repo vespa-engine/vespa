@@ -1,8 +1,0 @@
-[
-    "Infinity", "+Infinity",
-    "INF", "+INF",
-    "-Infinity", "-INF",
-    "NAN", "+NAN",
-    null,
-    "-nan", "-NAN"
-]
