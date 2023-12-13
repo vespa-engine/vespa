@@ -9,6 +9,29 @@ namespace search::attribute {
 
 using vespalib::btree::BTreeNode;
 
+void
+MergeBitVectors::merge(vespalib::ThreadBundle &thread_bundle, const std::vector<BitVector *> &toMerge) {
+    std::vector<MergeBitVectors> pairs;
+    pairs.reserve(toMerge.size() / 2);
+    size_t i = 0;
+    for (; i + 1 < toMerge.size(); i += 2) {
+        pairs.emplace_back(toMerge[i], toMerge[i + 1]);
+    }
+    thread_bundle.run(pairs);
+    size_t remaining = (toMerge.size() + 1) / 2;
+    if (remaining > 1) {
+        std::vector<BitVector *> nextToMerge;
+        nextToMerge.reserve((toMerge.size() + 1) / 2);
+        for (const auto &merged: pairs) {
+            nextToMerge.push_back(merged._a);
+        }
+        for (; i < toMerge.size(); i++) {
+            nextToMerge.push_back(toMerge[i]);
+        }
+        merge(thread_bundle, nextToMerge);
+    }
+}
+
 PostingListSearchContext::
 PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
                          uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx)
