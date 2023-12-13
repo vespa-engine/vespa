@@ -492,7 +492,7 @@ insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, ch
         inserter.insertLong(val);
     } else {
         double val = locale::c::strtod_au(value.c_str(), endp);
-        errorCode = (errno == ERANGE ? 0 : errno);
+        errorCode = errno;
         inserter.insertDouble(val);
     }
     assert(errorCode == 0 || errorCode == ERANGE || errorCode == EINVAL);

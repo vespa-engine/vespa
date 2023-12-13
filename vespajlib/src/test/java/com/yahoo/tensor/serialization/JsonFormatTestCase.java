@@ -669,53 +669,6 @@ public class JsonFormatTestCase {
                               "{\"type\":\"tensor<float>(x[1])\",\"values\":[0.3333333432674408]}");
     }
 
-    @Test
-    public void testSpecialNumberStrings() {
-        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("Infinity"), 0.0);
-        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("+Infinity"), 0.0);
-        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("Inf"), 0.0);
-        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("+Inf"), 0.0);
-        assertEquals(Double.POSITIVE_INFINITY, JsonFormat.decodeNumberString("infinity"), 0.0);
-        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-Infinity"), 0.0);
-        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-Inf"), 0.0);
-        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-infinity"), 0.0);
-        assertEquals(Double.NEGATIVE_INFINITY, JsonFormat.decodeNumberString("-inf"), 0.0);
-        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("nan")));
-        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("NaN")));
-        assertEquals(0x7FF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("+NaN")));
-        assertEquals(0xFFF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("-nan")));
-        assertEquals(0xFFF8000000000000L, Double.doubleToRawLongBits(JsonFormat.decodeNumberString("-NaN")));
-    }
-
-    @Test
-    public void testWithNanVariants() {
-        TensorType x3 = TensorType.fromSpec("tensor(x[3])");
-        String json = "{\"cells\":[" +
-                      "{\"address\":{\"x\":\"0\"},\"value\":\"nan\"}," +
-                      "{\"address\":{\"x\":\"1\"},\"value\":null}," +
-                      "{\"address\":{\"x\":\"2\"},\"value\":\"+NaN\"}" +
-                      "]}";
-        var t = JsonFormat.decode(x3, json.getBytes(StandardCharsets.UTF_8));
-        checkThreeNans(t);
-        json = "['nan', null, '+NaN']";
-        t = JsonFormat.decode(x3, json.getBytes(StandardCharsets.UTF_8));
-        checkThreeNans(t);
-        json = "{'type':'tensor(x[3])','values':['nan', null, '+NaN']}";
-        t = JsonFormat.decode(x3, json.getBytes(StandardCharsets.UTF_8));
-        checkThreeNans(t);
-    }
-
-    private void checkThreeNans(Tensor t) {
-        final Double nan = Double.NaN;
-        int cnt = 0;
-        for (var iter = t.cellIterator(); iter.hasNext(); ) {
-            var cell = iter.next();
-            assertEquals(nan, cell.getValue());
-            ++cnt;
-        }
-        assertEquals(3, cnt);
-    }
-
     private void assertEncodeShortForm(String tensor, String expected) {
         assertEncodeShortForm(Tensor.from(tensor), expected);
     }

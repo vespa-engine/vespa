@@ -3,11 +3,10 @@
 #include "constant_tensor_loader.h"
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/io/mapped_file_input.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
@@ -20,34 +19,6 @@ using Inspector = slime::Inspector;
 using ObjectTraverser = slime::ObjectTraverser;
 
 namespace {
-
-double decodeDouble(const Inspector &inspector) {
-    if (inspector.type().getId() == vespalib::slime::STRING::ID) {
-        auto orig = inspector.asString().make_stringref();
-        auto lower = vespalib::LowerCase::convert(orig);
-        if (lower == "infinity" || lower == "+infinity" || lower == "inf" || lower == "+inf") {
-            double d = std::numeric_limits<double>::infinity();
-            return d;
-        }
-        if (lower == "-infinity" || lower == "-inf") {
-            double d = -std::numeric_limits<double>::infinity();
-            return d;
-        }
-        if (lower == "nan" || lower == "+nan") {
-            double d = std::numeric_limits<double>::quiet_NaN();
-            return d;
-        }
-        if (lower == "-nan") {
-            double d = -std::numeric_limits<double>::quiet_NaN();
-            return d;
-        }
-        LOG(warning, "bad string-encoded numeric value '%.*s'", (int)orig.size(), orig.data());
-    }
-    if (inspector.valid() && inspector.type().getId() == vespalib::slime::NIX::ID) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    return inspector.asDouble();
-}
 
 struct Target {
     const ValueType tensor_type;
@@ -139,7 +110,7 @@ struct SingleMappedExtractor : ObjectTraverser {
     {}
     void field(const Memory &symbol, const Inspector &inspector) override {
         vespalib::string label = symbol.make_string();
-        double value = decodeDouble(inspector);
+        double value = inspector.asDouble();
         TensorSpec::Address address;
         address.emplace(dimension, label);
         target.check_add(address, value);
@@ -157,7 +128,7 @@ void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type,
     for (size_t i = 0; i < values.entries(); ++i) {
         TensorSpec::Address address;
         address.emplace(dimension, TensorSpec::Label(i));
-        target.check_add(address, decodeDouble(values[i]));
+        target.check_add(address, values[i].asDouble());
     }
 }
 
@@ -166,7 +137,7 @@ struct DenseValuesDecoder {
     Target &_target;
     void decode(const Inspector &input, const TensorSpec::Address &address, size_t dim_idx) {
         if (dim_idx == _idims.size()) {
-            _target.check_add(address, decodeDouble(input));
+            _target.check_add(address, input.asDouble());
         } else {
             const auto &dimension = _idims[dim_idx];
             if (input.entries() != dimension.size) {
@@ -238,7 +209,7 @@ void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, Targ
         TensorSpec::Address address;
         AddressExtractor extractor(indexed, address);
         cells[i]["address"].traverse(extractor);
-        target.check_add(address, decodeDouble(cells[i]["value"]));
+        target.check_add(address, cells[i]["value"].asDouble());
     }
 }
 

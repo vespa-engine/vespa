@@ -1462,14 +1462,14 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 0).label("y", 0).value(2.0);
         builder.cell().label("x", 0).label("y", 1).value(3.0);
         builder.cell().label("x", 0).label("y", 2).value(4.0);
-        builder.cell().label("x", 1).label("y", 0).value(Double.POSITIVE_INFINITY);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
         builder.cell().label("x", 1).label("y", 1).value(6.0);
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
 
         Tensor tensor = assertTensorField(expected,
                                           createPutWithTensor(inputJson("{",
-                                                                        "  'values': [2.0, 3.0, 4.0, 'inf', 6.0, 7.0]",
+                                                                        "  'values': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]",
                                                                         "}"), "dense_tensor"), "dense_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
