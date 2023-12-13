@@ -101,15 +101,19 @@ void
 PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_bundle)
 {
     size_t num_iter = _upperDictItr - _lowerDictItr;
-    size_t num_per_thread = (num_iter + (thread_bundle.size() - 1))/ thread_bundle.size();
+    size_t num_threads = std::min(thread_bundle.size(), num_iter);
+
+    uint32_t per_thread = num_iter / num_threads;
+    uint32_t rest_docs = num_iter % num_threads;
     std::vector<FillPart> parts;
-    parts.reserve(thread_bundle.size());
+    parts.reserve(num_threads);
     BitVector & master = *_merger.getBitVector();
     std::vector<std::unique_ptr<BitVector>> scratch_bvs;
-    parts.emplace_back(_posting_store, _lowerDictItr, num_per_thread, master, _merger.getDocIdLimit());
-    for (size_t i(1); i < thread_bundle.size(); i++) {
+    scratch_bvs.reserve(num_threads - 1);
+    parts.emplace_back(_posting_store, _lowerDictItr, per_thread + (rest_docs > 0), master, _merger.getDocIdLimit());
+    for (size_t i(1); i < num_threads; i++) {
         scratch_bvs.push_back(BitVector::create(master.size()));
-        size_t num_this_thread = std::min(num_per_thread, num_iter - num_per_thread*i);
+        size_t num_this_thread = per_thread + (i < rest_docs);
         parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, *scratch_bvs.back(), _merger.getDocIdLimit());
     }
     thread_bundle.run(parts);
