@@ -68,9 +68,12 @@ PostingListSearchContextT<DataT>::fillArray()
 
 template <typename DataT>
 struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
-    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count,
-             BitVector & bv, uint32_t limit)
-        : _posting_store(posting_store), _bv(bv),
+    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count, uint32_t limit)
+        : FillPart(posting_store, from, count, nullptr, limit)
+    { }
+    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count, BitVector * bv, uint32_t limit)
+        : _posting_store(posting_store),
+          _bv(bv),
           _docIdLimit(limit),
           _from(from),
           _to(from)
@@ -78,21 +81,25 @@ struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
         _to += count;
     }
     void run() override {
+        if (_bv == nullptr) {
+            _owned_bv = BitVector::create(_docIdLimit);
+            _bv = _owned_bv.get();
+        }
         for (;_from != _to;++_from) {
             addToBitVector(PostingListTraverser<PostingStore>(_posting_store, _from.getData().load_acquire()));
         }
     }
-    void addToBitVector(const PostingListTraverser<PostingStore> & postingList)
-    {
+    void addToBitVector(const PostingListTraverser<PostingStore> & postingList) {
         postingList.foreach_key([this](uint32_t key) {
-            if (__builtin_expect(key < _docIdLimit, true)) { _bv.setBit(key); }
+            if (__builtin_expect(key < _docIdLimit, true)) { _bv->setBit(key); }
         });
     }
-    const PostingStore      &_posting_store;
-    BitVector               &_bv;
-    uint32_t                 _docIdLimit;
-    DictionaryConstIterator  _from;
-    DictionaryConstIterator  _to;
+    const PostingStore        &_posting_store;
+    BitVector                 *_bv;
+    uint32_t                   _docIdLimit;
+    DictionaryConstIterator    _from;
+    DictionaryConstIterator    _to;
+    std::unique_ptr<BitVector> _owned_bv;
 };
 
 template <typename DataT>
@@ -106,18 +113,15 @@ PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_
     uint32_t rest_docs = num_iter % num_threads;
     std::vector<FillPart> parts;
     parts.reserve(num_threads);
-    BitVector & master = *_merger.getBitVector();
-    std::vector<std::unique_ptr<BitVector>> scratch_bvs;
-    scratch_bvs.reserve(num_threads - 1);
+    BitVector * master = _merger.getBitVector();
     parts.emplace_back(_posting_store, _lowerDictItr, per_thread + (rest_docs > 0), master, _merger.getDocIdLimit());
     for (size_t i(1); i < num_threads; i++) {
-        scratch_bvs.push_back(BitVector::create(master.size()));
         size_t num_this_thread = per_thread + (i < rest_docs);
-        parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, *scratch_bvs.back(), _merger.getDocIdLimit());
+        parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, _merger.getDocIdLimit());
     }
     thread_bundle.run(parts);
-    for (const auto & bv : scratch_bvs) {
-        master.orWith(*bv);
+    for (size_t i(1); i < parts.size(); i++) {
+        master->orWith(*parts[i]._bv);
     }
 }
 
