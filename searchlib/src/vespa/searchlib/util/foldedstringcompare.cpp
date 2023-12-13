@@ -49,7 +49,7 @@ using Reader = typename foldedstringcompare::FoldableStringHelper<KeyType>::Read
 
 size_t
 FoldedStringCompare::
-size(const char *key)
+size(const char *key) noexcept
 {
     return Utf8ReaderForZTS::countChars(key);
 }
@@ -57,7 +57,7 @@ size(const char *key)
 template <bool fold_lhs, bool fold_rhs, detail::FoldableString KeyType, detail::FoldableString OKeyType>
 int
 FoldedStringCompare::
-compareFolded(KeyType key, OKeyType okey)
+compareFolded(KeyType key, OKeyType okey) noexcept
 {
     Reader<KeyType> kreader(key);
     Reader<OKeyType> oreader(okey);
@@ -84,7 +84,7 @@ compareFolded(KeyType key, OKeyType okey)
 template <bool fold_lhs, bool fold_rhs>
 int
 FoldedStringCompare::
-compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen)
+compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen) noexcept
 {
     Utf8ReaderForZTS kreader(key);
     Utf8ReaderForZTS oreader(okey);
@@ -110,7 +110,7 @@ compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen)
 
 int
 FoldedStringCompare::
-comparePrefix(const char *key, const char *okey, size_t prefixLen)
+comparePrefix(const char *key, const char *okey, size_t prefixLen) noexcept
 {
     int res = compareFoldedPrefix<true, true>(key, okey, prefixLen);
     if (res != 0) {
@@ -122,7 +122,7 @@ comparePrefix(const char *key, const char *okey, size_t prefixLen)
 
 int
 FoldedStringCompare::
-compare(const char *key, const char *okey)
+compare(const char *key, const char *okey) noexcept
 {
     int res = compareFolded<true, true>(key, okey);
     if (res != 0) {

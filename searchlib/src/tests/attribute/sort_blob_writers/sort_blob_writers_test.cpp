@@ -122,11 +122,12 @@ sort_data(std::vector<T> values, bool asc)
 {
     if constexpr (std::is_same_v<T, const char*>) {
         return sort_data_string(values, asc);
+    } else {
+        if (asc) {
+            return sort_data_numeric<T, true>(std::move(values));
+        }
+        return sort_data_numeric<T, false>(std::move(values));
     }
-    if (asc) {
-        return sort_data_numeric<T, true>(std::move(values));
-    }
-    return sort_data_numeric<T, false>(std::move(values));
 }
 
 SortData

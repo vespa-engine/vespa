@@ -23,7 +23,7 @@ protected:
     const DataStoreType &_store;
     const char *_lookup_value;
 
-    const char *get(EntryRef ref) const {
+    const char *get(EntryRef ref) const noexcept {
         if (ref.valid()) {
             RefType iRef(ref);
             const auto &meta = _store.getBufferMeta(iRef.bufferId());
@@ -37,33 +37,33 @@ protected:
             return _lookup_value;
         }
     }
-    UniqueStoreStringComparator(const DataStoreType &store, const char *lookup_value)
+    UniqueStoreStringComparator(const DataStoreType &store, const char *lookup_value) noexcept
         : _store(store),
           _lookup_value(lookup_value)
     {
     }
 public:
-    UniqueStoreStringComparator(const DataStoreType &store)
+    UniqueStoreStringComparator(const DataStoreType &store) noexcept
         : _store(store),
           _lookup_value(nullptr)
     {
     }
-    bool less(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         const char *lhs_value = get(lhs);
         const char *rhs_value = get(rhs);
         return (strcmp(lhs_value, rhs_value) < 0);
     }
-    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+    bool equal(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         const char *lhs_value = get(lhs);
         const char *rhs_value = get(rhs);
         return (strcmp(lhs_value, rhs_value) == 0);
     }
-    size_t hash(const EntryRef rhs) const override {
+    size_t hash(const EntryRef rhs) const noexcept override {
         const char *rhs_value = get(rhs);
         vespalib::hash<const char *> hasher;
         return hasher(rhs_value);
     }
-    UniqueStoreStringComparator<RefT> make_for_lookup(const char* lookup_value) const {
+    UniqueStoreStringComparator<RefT> make_for_lookup(const char* lookup_value) const noexcept {
         return UniqueStoreStringComparator<RefT>(_store, lookup_value);
     }
 };

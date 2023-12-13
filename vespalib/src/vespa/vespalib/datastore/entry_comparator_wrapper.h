@@ -12,10 +12,10 @@ namespace vespalib::datastore {
 class EntryComparatorWrapper {
     const EntryComparator &_comp;
 public:
-    EntryComparatorWrapper(const EntryComparator &comp)
+    EntryComparatorWrapper(const EntryComparator &comp) noexcept
         : _comp(comp)
     { }
-    bool operator()(const AtomicEntryRef &lhs, const AtomicEntryRef &rhs) const {
+    bool operator()(const AtomicEntryRef &lhs, const AtomicEntryRef &rhs) const noexcept {
         return _comp.less(lhs.load_acquire(), rhs.load_acquire());
     }
 };

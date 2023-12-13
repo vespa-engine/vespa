@@ -4,14 +4,10 @@
 
 namespace vespalib::btree {
 
-template class BTreeRootBase<uint32_t, uint32_t, NoAggregated,
-                             BTreeDefaultTraits::INTERNAL_SLOTS,
-                             BTreeDefaultTraits::LEAF_SLOTS>;
-template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated,
-                             BTreeDefaultTraits::INTERNAL_SLOTS,
-                             BTreeDefaultTraits::LEAF_SLOTS>;
-template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated,
-                             BTreeDefaultTraits::INTERNAL_SLOTS,
-                             BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
 }

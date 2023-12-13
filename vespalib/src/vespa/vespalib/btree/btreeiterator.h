@@ -5,6 +5,7 @@
 #include "btreenode.h"
 #include "btreenodeallocator.h"
 #include "btreetraits.h"
+#include <vespa/vespalib/datastore/entry_comparator_wrapper.h>
 #include <cassert>
 
 namespace vespalib::btree {
@@ -255,7 +256,7 @@ protected:
      *
      * @param pathSize     New tree height (number of levels of internal nodes)
      */
-    VESPA_DLL_LOCAL void clearPath(uint32_t pathSize);
+    void clearPath(uint32_t pathSize);
 
     /**
      * Call func with leaf entry key value as argument for all leaf entries in subtree
@@ -366,7 +367,11 @@ public:
     /**
      * Setup iterator to be empty and not be associated with any tree.
      */
-    VESPA_DLL_LOCAL void setupEmpty();
+    void setupEmpty() {
+        clearPath(0u);
+        _leaf.invalidate();
+        _leafRoot = nullptr;
+    }
 
     /**
      * Move iterator to beyond last element in the current tree.
@@ -845,10 +850,13 @@ private:
 
 extern template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>;
+extern template class BTreeIteratorBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated>;
+extern template class BTreeIteratorBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated>;
 extern template class BTreeIteratorBase<uint32_t, int32_t, MinMaxAggregated>;
 extern template class BTreeConstIterator<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeConstIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeConstIterator<uint32_t, int32_t, MinMaxAggregated>;
+extern template class BTreeConstIterator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, const datastore::EntryComparatorWrapper>;
 extern template class BTreeIterator<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeIterator<uint32_t, int32_t, MinMaxAggregated>;

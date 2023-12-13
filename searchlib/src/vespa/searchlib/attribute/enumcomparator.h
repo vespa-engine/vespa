@@ -18,22 +18,22 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    explicit EnumStoreComparator(const DataStoreType& data_store)
+    explicit EnumStoreComparator(const DataStoreType& data_store) noexcept
         : ParentType(data_store)
     {}
 
 private:
-    EnumStoreComparator(const DataStoreType& data_store, const EntryT& lookup_value)
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& lookup_value) noexcept
         : ParentType(data_store, lookup_value)
     {}
 
 public:
-    static bool equal_helper(const EntryT& lhs, const EntryT& rhs);
+    static bool equal_helper(const EntryT& lhs, const EntryT& rhs) noexcept;
 
-    EnumStoreComparator<EntryT> make_folded() const {
+    EnumStoreComparator<EntryT> make_folded() const noexcept {
         return *this;
     }
-    EnumStoreComparator<EntryT> make_for_lookup(const EntryT& lookup_value) const {
+    EnumStoreComparator<EntryT> make_for_lookup(const EntryT& lookup_value) const noexcept {
         return {this->_store, lookup_value};
     }
 };
@@ -76,36 +76,36 @@ private:
     };
 
 public:
-    explicit EnumStoreStringComparator(const DataStoreType& data_store)
+    explicit EnumStoreStringComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED)
     {}
-    EnumStoreStringComparator(const DataStoreType& data_store, bool cased)
+    EnumStoreStringComparator(const DataStoreType& data_store, bool cased) noexcept
         : EnumStoreStringComparator(data_store, cased ? CompareStrategy::CASED : CompareStrategy::UNCASED_THEN_CASED)
     {}
 
 private:
-    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy);
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy) noexcept;
 
     /**
      * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
      */
-    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value);
-    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix);
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value) noexcept;
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix) noexcept;
 
 public:
-    bool less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const override;
-    EnumStoreStringComparator make_folded() const {
+    bool less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const noexcept override;
+    EnumStoreStringComparator make_folded() const noexcept {
         return {_store, _compare_strategy == CompareStrategy::UNCASED_THEN_CASED ? CompareStrategy::UNCASED : _compare_strategy};
     }
-    EnumStoreStringComparator make_for_lookup(const char* lookup_value) const {
+    EnumStoreStringComparator make_for_lookup(const char* lookup_value) const noexcept {
         return {_store, _compare_strategy, lookup_value};
     }
-    EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const {
+    EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const noexcept {
         return {_store, _compare_strategy, lookup_value, true};
     }
 private:
-    inline bool use_prefix() const noexcept { return _prefix; }
+    bool use_prefix() const noexcept { return _prefix; }
     const CompareStrategy _compare_strategy;
     const bool _prefix;
     uint32_t   _prefix_len;

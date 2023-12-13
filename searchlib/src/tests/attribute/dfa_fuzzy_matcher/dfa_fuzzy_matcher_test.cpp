@@ -3,7 +3,6 @@
 #include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/searchlib/attribute/dfa_fuzzy_matcher.h>
 #include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/levenshtein_dfa.h>
 #include <vespa/vespalib/gtest/gtest.h>
