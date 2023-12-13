@@ -489,6 +489,7 @@ extern template class BTreeNodeT<uint32_t, 16>;
 extern template class BTreeNodeTT<uint32_t, uint32_t, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 extern template class BTreeNodeTT<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, 16>;
+extern template class BTreeNodeTT<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, datastore::EntryRef, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, NoAggregated, 16>;

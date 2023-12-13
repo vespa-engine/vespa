@@ -328,7 +328,7 @@ public:
      */
     const KeyType & getKey() const noexcept { return _leaf.getKey(); }
 
-    /**stringatt
+    /**
      * Get data at current iterator location.
      */
     const DataType & getData() const noexcept { return _leaf.getData(); }
