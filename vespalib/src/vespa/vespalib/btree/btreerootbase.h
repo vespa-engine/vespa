@@ -85,14 +85,10 @@ protected:
     void recursiveDelete(BTreeNode::Ref node, NodeAllocatorType &allocator);
 };
 
-extern template class BTreeRootBase<uint32_t, uint32_t, NoAggregated,
-                                    BTreeDefaultTraits::INTERNAL_SLOTS,
-                                    BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated,
-                                    BTreeDefaultTraits::INTERNAL_SLOTS,
-                                    BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated,
-                                    BTreeDefaultTraits::INTERNAL_SLOTS,
-                                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
 }

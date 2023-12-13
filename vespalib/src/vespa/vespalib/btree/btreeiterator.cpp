@@ -8,9 +8,12 @@ namespace vespalib::btree {
 template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;
 template class BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>;
 template class BTreeIteratorBase<uint32_t, int32_t, MinMaxAggregated>;
+template class BTreeIteratorBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated>;
+template class BTreeIteratorBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated>;
 template class BTreeConstIterator<uint32_t, uint32_t, NoAggregated>;
 template class BTreeConstIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
 template class BTreeConstIterator<uint32_t, int32_t, MinMaxAggregated>;
+template class BTreeConstIterator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, const datastore::EntryComparatorWrapper>;
 template class BTreeIterator<uint32_t, uint32_t, NoAggregated>;
 template class BTreeIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
 template class BTreeIterator<uint32_t, int32_t, MinMaxAggregated>;

@@ -29,9 +29,9 @@ private:
     bool _cased;
 
 public:
-    DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased);
+    DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased) noexcept;
 
-    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
+    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const noexcept override;
 };
 
 }

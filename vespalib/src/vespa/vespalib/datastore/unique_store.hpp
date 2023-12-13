@@ -29,7 +29,7 @@ using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 UniqueStore<EntryT, RefT, Comparator, Allocator>::UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
-    : UniqueStore(std::move(memory_allocator),  [](const auto& data_store) { return ComparatorType(data_store);})
+    : UniqueStore(std::move(memory_allocator),  [](const auto& data_store) noexcept { return ComparatorType(data_store);})
 {}
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>

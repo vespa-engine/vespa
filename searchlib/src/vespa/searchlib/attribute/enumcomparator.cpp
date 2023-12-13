@@ -7,12 +7,12 @@ namespace search {
 
 template <typename EntryT>
 bool
-EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs)
+EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs) noexcept
 {
     return vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::equal(lhs, rhs);
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy) noexcept
     : ParentType(data_store, nullptr),
       _compare_strategy(compare_strategy),
       _prefix(false),
@@ -20,7 +20,7 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value) noexcept
     : ParentType(data_store, lookup_value),
       _compare_strategy(compare_strategy),
       _prefix(false),
@@ -28,7 +28,7 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy, const char* lookup_value, bool prefix) noexcept
     : ParentType(data_store, lookup_value),
       _compare_strategy(compare_strategy),
       _prefix(prefix),
@@ -40,7 +40,7 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 }
 
 bool
-EnumStoreStringComparator::less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const {
+EnumStoreStringComparator::less(vespalib::datastore::EntryRef lhs, vespalib::datastore::EntryRef rhs) const noexcept {
     switch (_compare_strategy) {
     case CompareStrategy::UNCASED:
         return (use_prefix()

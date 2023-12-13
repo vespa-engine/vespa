@@ -5,7 +5,7 @@
 
 namespace search::attribute {
 
-DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased)
+DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased) noexcept
     : ParentType(data_store),
       _candidate(std::cref(candidate)),
       _cased(cased)
@@ -13,7 +13,7 @@ DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const 
 }
 
 bool
-DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const
+DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const noexcept
 {
     if (lhs.valid()) {
         if (rhs.valid()) {

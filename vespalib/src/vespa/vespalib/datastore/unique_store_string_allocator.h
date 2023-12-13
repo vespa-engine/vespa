@@ -32,12 +32,12 @@ uint32_t get_type_id(size_t string_len);
 class UniqueStoreSmallStringEntry : public UniqueStoreEntryBase {
     char _value[0];
 public:
-    constexpr UniqueStoreSmallStringEntry()
+    constexpr UniqueStoreSmallStringEntry() noexcept
         : UniqueStoreEntryBase(),
           _value()
     { }
 
-    UniqueStoreSmallStringEntry(const char *value, size_t value_len, size_t array_size)
+    UniqueStoreSmallStringEntry(const char *value, size_t value_len, size_t array_size) noexcept
         : UniqueStoreEntryBase()
     {
         assert(value_offset() + value_len < array_size);
@@ -45,12 +45,12 @@ public:
         memset(&_value[0] + value_len, 0, array_size - value_len - value_offset());
     }
 
-    void clean_hold(size_t array_size) {
+    void clean_hold(size_t array_size) noexcept {
         memset(&_value[0], 0, array_size - value_offset());
     }
 
-    const char *value() const { return &_value[0]; }
-    size_t value_offset() const { return &_value[0] - reinterpret_cast<const char *>(this); }
+    const char *value() const noexcept { return &_value[0]; }
+    size_t value_offset() const noexcept { return &_value[0] - reinterpret_cast<const char *>(this); }
 };
 
 /*

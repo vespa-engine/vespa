@@ -16,7 +16,7 @@ class Comparator : public EntryComparator {
 private:
     EntryRef _to_find;
 
-    EntryRef resolve(EntryRef ref) const {
+    EntryRef resolve(EntryRef ref) const noexcept {
         if (ref == EntryRef()) {
             return _to_find;
         }
@@ -24,16 +24,16 @@ private:
     }
 
 public:
-    explicit Comparator(uint32_t to_find)
+    explicit Comparator(uint32_t to_find) noexcept
         : _to_find(to_find)
     {}
-    bool less(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         return resolve(lhs).ref() < resolve(rhs).ref();
     }
-    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+    bool equal(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         return resolve(lhs).ref() == resolve(rhs).ref();
     }
-    size_t hash(const EntryRef rhs) const override {
+    size_t hash(const EntryRef rhs) const noexcept override {
         return rhs.valid() ? rhs.ref() : _to_find.ref();
     }
 };

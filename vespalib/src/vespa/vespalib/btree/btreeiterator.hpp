@@ -95,18 +95,6 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-setupEmpty()
-{
-    clearPath(0u);
-    _leaf.invalidate();
-    _leafRoot = nullptr;
-}
-
-
-template <typename KeyT, typename DataT, typename AggrT,
-          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
-void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 end()
 {
     if (_pathSize == 0) {
