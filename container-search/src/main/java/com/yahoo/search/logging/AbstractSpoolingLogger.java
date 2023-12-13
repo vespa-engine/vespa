@@ -8,6 +8,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -22,6 +23,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     protected static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Spooler.class.getName());
 
     private final ScheduledExecutorService executorService;
+    private final AtomicBoolean executorStarted = new AtomicBoolean(false);
     protected final Spooler spooler;
 
     @SuppressWarnings("unused") // Used by subclasses
@@ -32,11 +34,16 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     public AbstractSpoolingLogger(Spooler spooler) {
         this.spooler = spooler;
         this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
+        start();
     }
 
     /** Start processing files, must be called by subclasses */
     public void start() {
-        this.executorService.scheduleWithFixedDelay(this, 0, 1L, TimeUnit.SECONDS);
+        // TODO: Remove guard and always start executor when we are sure all subclasses call this method (also reduce initialDelay)
+        if ( ! executorStarted.get()) {
+            this.executorService.scheduleWithFixedDelay(this, 10, 1L, TimeUnit.SECONDS);
+            executorStarted.set(true);
+        }
     }
 
     public void run() {
