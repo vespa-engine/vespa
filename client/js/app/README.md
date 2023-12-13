@@ -1,8 +1,13 @@
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-![Vespa logo](https://vespa.ai/assets/vespa-logo-color.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://vespa.ai/assets/vespa-ai-logo-heather.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://vespa.ai/assets/vespa-ai-logo-rock.svg">
+  <img alt="#Vespa" width="200" src="https://vespa.ai/assets/vespa-ai-logo-rock.svg" style="margin-bottom: 25px;">
+</picture>
 
 # Vespa client
+
 This app contains the **Query Builder** and the **Trace Visualizer**.
 
 Install and start:
@@ -17,12 +22,11 @@ Alternatively, use Docker to start it without installing node:
 
 When started, open [http://127.0.0.1:3000/](http://127.0.0.1:3000/).
 
-*Troubleshooting:* Remove the generated `node_modules` directory and try again.
+_Troubleshooting:_ Remove the generated `node_modules` directory and try again.
 This is also relevant when switching between running local and in the container.
 
-
-
 ## Query Builder
+
 The Query Builder is a tool for creating Vespa queries to send to a local Vespa application.
 The tool provides all of the options for query parameters from dropdowns.
 The input fields provide hints to what is the expected type of value.
@@ -32,6 +36,7 @@ The input fields provide hints to what is the expected type of value.
 To access a Vespa endpoint from the Query Builder,
 deploy with [CORS filters](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
 To the query-serving container, add an `http` element in _services.xml_ like:
+
 ```
     <container id="default" version="1.0">
 
@@ -68,9 +73,8 @@ To the query-serving container, add an `http` element in _services.xml_ like:
 
 Deploy again, and (possibly) restart Vespa (internal port changes can be triggered by this).
 
-
-
 ## Trace Visualizer
+
 The Trace Visualizer is a tool for converting and visualizing traces from Vespa in a flame graph.
 To use the visualizer, a [Jaeger](https://www.jaegertracing.io/) instance must be run locally with Docker:
 
@@ -91,7 +95,7 @@ see [query tracing](https://docs.vespa.ai/en/query-api.html#query-tracing):
 
 ![Trace Converter](img/TraceConverter.png)
 
-After downloading the converted trace, it can be used with the Jaeger UI. 
+After downloading the converted trace, it can be used with the Jaeger UI.
 Press the _JSON File_ button as shown in the image, and drag and drop the trace you just downloaded:
 
 ![Jaeger Image](img/JaegerExample.png)
