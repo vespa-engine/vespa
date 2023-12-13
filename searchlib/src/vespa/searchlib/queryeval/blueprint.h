@@ -144,6 +144,22 @@ public:
         return (total_docs == 0) ? 0.0 : double(est) / double(total_docs);
     }
 
+    static double cost_of(const Children &children, auto flow) {
+        double cost = 0.0;
+        for (const auto &child: children) {
+            cost += flow.flow() * child->cost();
+            flow.add(child->estimate());
+        }
+        return cost;
+    }
+
+    static double estimate_of(const Children &children, auto flow) {
+        for (const auto &child: children) {
+            flow.add(child->estimate());
+        }
+        return flow.estimate();
+    }
+
     // utility that just takes maximum estimate
     static HitEstimate max(const std::vector<HitEstimate> &data);
 
@@ -182,6 +198,7 @@ public:
 
 private:
     Blueprint *_parent;
+    double     _cost;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
     bool       _frozen;
@@ -197,6 +214,8 @@ protected:
         _frozen = true;
     }
 
+    void set_cost(double value) noexcept { _cost = value; }
+    
 public:
     class IPredicate {
     public:
@@ -219,6 +238,8 @@ public:
     Blueprint *getParent() const noexcept { return _parent; }
     bool has_parent() const { return (_parent != nullptr); }
 
+    double cost() const noexcept { return _cost; }
+    
     Blueprint &setSourceId(uint32_t sourceId) noexcept { _sourceId = sourceId; return *this; }
     uint32_t getSourceId() const noexcept { return _sourceId; }
 
@@ -369,6 +390,7 @@ public:
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     
+    virtual double calculate_cost() const = 0;
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children) const = 0;
@@ -426,6 +448,7 @@ public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
     void setDocIdLimit(uint32_t limit) noexcept final;
+    using Blueprint::set_cost;
     double calculate_relative_estimate() const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;

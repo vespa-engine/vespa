@@ -22,6 +22,7 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
+    double calculate_cost() const final { return 1.0; }
     double calculate_relative_estimate() const final { return 0.5; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
@@ -773,8 +774,8 @@ TEST("requireThatDocIdLimitInjectionWorks")
 
 TEST("Control object sizes") {
     EXPECT_EQUAL(40u, sizeof(Blueprint::State));
-    EXPECT_EQUAL(32u, sizeof(Blueprint));
-    EXPECT_EQUAL(72u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(40u, sizeof(Blueprint));
+    EXPECT_EQUAL(80u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {

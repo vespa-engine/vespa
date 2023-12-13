@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
@@ -633,11 +634,17 @@ TEST("and with one empty child is optimized away") {
 struct make {
     make(make &&) = delete;
     make &operator=(make &&) = delete;
+    static constexpr double invalid_cost = -1.0;
     static constexpr uint32_t invalid_source = -1;
+    double cost_tag = invalid_cost;
     uint32_t source_tag = invalid_source;
     std::unique_ptr<IntermediateBlueprint> making;
     make(std::unique_ptr<IntermediateBlueprint> making_in) : making(std::move(making_in)) {}
     operator std::unique_ptr<Blueprint>() && noexcept { return std::move(making); }
+    make &&cost(double leaf_cost) && {
+        cost_tag = leaf_cost;
+        return std::move(*this);
+    }
     make &&source(uint32_t source_id) && {
         source_tag = source_id;
         return std::move(*this);
@@ -655,7 +662,12 @@ struct make {
         return std::move(*this);
     }
     make &&leaf(uint32_t estimate) && {
-        return std::move(*this).add(ap(MyLeafSpec(estimate).create()));
+        std::unique_ptr<LeafBlueprint> bp(MyLeafSpec(estimate).create());
+        if (cost_tag != invalid_cost) {
+            bp->set_cost(cost_tag);
+            cost_tag = invalid_cost;
+        }
+        return std::move(*this).add(std::move(bp));
     }
     make &&leafs(std::initializer_list<uint32_t> estimates) && {
         for (uint32_t estimate: estimates) {
@@ -1211,7 +1223,7 @@ TEST("relative estimate for RANK") {
 }
 
 TEST("relative estimate for ANDNOT") {
-    verify_relative_estimate(make::ANDNOT(), 0.2);
+    verify_relative_estimate(make::ANDNOT(), 0.2*0.7*0.5);
 }
 
 TEST("relative estimate for SB") {
@@ -1230,6 +1242,60 @@ TEST("relative estimate for ONEAR") {
 TEST("relative estimate for WEAKAND") {
     verify_relative_estimate(make::WEAKAND(1000), 1.0-0.8*0.7*0.5);
     verify_relative_estimate(make::WEAKAND(50), 0.05);
+}
+
+void verify_cost(make &&mk, double expect) {
+    EXPECT_EQUAL(mk.making->cost(), 1.0);
+    Blueprint::UP bp = std::move(mk)
+        .cost(1.1).leaf(200)
+        .cost(1.2).leaf(300)
+        .cost(1.3).leaf(500);
+    bp->setDocIdLimit(1000);
+    bp = Blueprint::optimize(std::move(bp));
+    EXPECT_EQUAL(bp->cost(), expect);
+}
+
+double calc_cost(std::vector<std::pair<double,double>> list) {
+    double flow = 1.0;
+    double cost = 0.0;
+    for (auto [sub_cost,pass_through]: list) {
+        cost += flow * sub_cost;
+        flow *= pass_through;
+    }
+    return cost;
+}
+
+TEST("cost for OR") {
+    verify_cost(make::OR(), calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}));
+}
+
+TEST("cost for AND") {
+    verify_cost(make::AND(), calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+}
+
+TEST("cost for RANK") {
+    verify_cost(make::RANK(), 1.1); // first
+}
+
+TEST("cost for ANDNOT") {
+    verify_cost(make::ANDNOT(), calc_cost({{1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}));
+}
+
+TEST("cost for SB") {
+    InvalidSelector sel;
+    verify_cost(make::SB(sel), 1.3); // max
+}
+
+TEST("cost for NEAR") {
+    verify_cost(make::NEAR(1), 3.0 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+}
+
+TEST("cost for ONEAR") {
+    verify_cost(make::ONEAR(1), 3.0 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+}
+
+TEST("cost for WEAKAND") {
+    verify_cost(make::WEAKAND(1000), calc_cost({{1.1, 0.8},{1.2, 0.7},{1.3, 0.5}}));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }
