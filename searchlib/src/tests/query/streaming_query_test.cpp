@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
@@ -895,6 +896,37 @@ TEST(StreamingQueryTest, test_in_term)
     EXPECT_NE(23, tmd0->getDocId());
     auto tmd2 = md.resolveTermField(1);
     EXPECT_EQ(23, tmd2->getDocId());
+}
+
+TEST(StreamingQueryTest, dot_product_term)
+{
+    search::streaming::DotProductTerm term({}, "index", 2);
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "7", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(27));
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "9", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(2));
+    EXPECT_EQ(2, term.get_terms().size());
+    SimpleTermData td;
+    td.addField(10);
+    td.addField(11);
+    td.addField(12);
+    td.lookupField(10)->setHandle(0);
+    td.lookupField(12)->setHandle(1);
+    EXPECT_FALSE(term.evaluate());
+    auto& q0 = *term.get_terms()[0];
+    q0.add(0, 11, 0, -13);
+    q0.add(0, 12, 0, -17);
+    auto& q1 = *term.get_terms()[1];
+    q1.add(0, 11, 0, 4);
+    q1.add(0, 12, 0, 9);
+    EXPECT_TRUE(term.evaluate());
+    MatchData md(MatchData::params().numTermFields(2));
+    term.unpack_match_data(23, td, md);
+    auto tmd0 = md.resolveTermField(0);
+    EXPECT_NE(23, tmd0->getDocId());
+    auto tmd1 = md.resolveTermField(1);
+    EXPECT_EQ(23, tmd1->getDocId());
+    EXPECT_EQ(-17 * 27 + 9 * 2, tmd1->getRawScore());
 }
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)

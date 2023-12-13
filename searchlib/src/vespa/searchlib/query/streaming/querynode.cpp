@@ -3,6 +3,7 @@
 #include "query.h"
 #include "nearest_neighbor_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
 #include <charconv>
@@ -33,7 +34,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_EQUIV:
     case ParseItem::ITEM_WEIGHTED_SET:
-    case ParseItem::ITEM_DOT_PRODUCT:
     case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_PHRASE:
@@ -184,14 +184,12 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_NUMERIC_IN:
         qn = std::make_unique<InTerm>(factory.create(), queryRep.getIndexName(), queryRep.get_terms());
         break;
+    case ParseItem::ITEM_DOT_PRODUCT:
+        qn = build_dot_product_term(factory, queryRep);
+        break;
     default:
-    {
-        for (uint32_t skipCount = arity; (skipCount > 0) && queryRep.next(); skipCount--) {
-            skipCount += queryRep.getArity();
-            LOG(warning, "Does not understand anything,.... skipping %d", type);
-        }
-    }
-    break;
+        skip_unknown(queryRep);
+        break;
     }
     return qn;
 }
@@ -217,6 +215,56 @@ QueryNode::build_nearest_neighbor_query_node(const QueryNodeResultFactory& facto
                                                       distance_threshold,
                                                       unique_id,
                                                       weight);
+}
+
+void
+QueryNode::populate_multi_term(MultiTerm& mt, SimpleQueryStackDumpIterator& queryRep)
+{
+    char buf[24];
+    vespalib::string subterm;
+    auto arity = queryRep.getArity();
+    for (size_t i = 0; i < arity && queryRep.next(); i++) {
+        std::unique_ptr<QueryTerm> term;
+        switch (queryRep.getType()) {
+        case ParseItem::ITEM_PURE_WEIGHTED_STRING:
+            term = std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), queryRep.getTerm(), "", QueryTermSimple::Type::WORD);
+            break;
+        case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+        {
+            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntergerTerm(), 10);
+            subterm.assign(buf, res.ptr - buf);
+            term = std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), subterm, "", QueryTermSimple::Type::WORD);
+        }
+        break;
+        default:
+            skip_unknown(queryRep);
+            break;
+        }
+        if (term) {
+            term->setWeight(queryRep.GetWeight());
+            mt.add_term(std::move(term));
+        }
+    }
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_dot_product_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+{
+    auto dp =std::make_unique<DotProductTerm>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    dp->setWeight(queryRep.GetWeight());
+    dp->setUniqueId(queryRep.getUniqueId());
+    populate_multi_term(*dp, queryRep);
+    return dp;
+}
+
+void
+QueryNode::skip_unknown(SimpleQueryStackDumpIterator& queryRep)
+{
+    auto type = queryRep.getType();
+    for (uint32_t skipCount = queryRep.getArity(); (skipCount > 0) && queryRep.next(); skipCount--) {
+        skipCount += queryRep.getArity();
+        LOG(warning, "Does not understand anything,.... skipping %d", type);
+    }
 }
 
 }
