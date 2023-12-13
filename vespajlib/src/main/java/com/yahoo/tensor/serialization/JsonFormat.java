@@ -234,10 +234,11 @@ public class JsonFormat {
         TensorAddress address = decodeAddress(cell.field("address"), builder.type());
 
         Inspector value = cell.field("value");
-        if (value.type() != Type.LONG && value.type() != Type.DOUBLE)
+        if (value.valid()) {
+            builder.cell(address, decodeNumeric(value));
+        } else {
             throw new IllegalArgumentException("Excepted a cell to contain a numeric value called 'value'");
-
-        builder.cell(address, value.asDouble());
+        }
     }
 
     private static void decodeSingleDimensionCell(String key, Inspector value, Tensor.Builder builder) {
@@ -268,8 +269,8 @@ public class JsonFormat {
         values.traverse((ArrayTraverser) (__, value) -> {
             if (value.type() == Type.ARRAY)
                 decodeNestedValues(value, builder, index);
-            else if (value.type() == Type.LONG || value.type() == Type.DOUBLE)
-                indexedBuilder.cellByDirectIndex(index.next(), value.asDouble());
+            else if (value.type() == Type.LONG || value.type() == Type.DOUBLE || value.type() == Type.STRING || value.type() == Type.NIX)
+                indexedBuilder.cellByDirectIndex(index.next(), decodeNumeric(value));
             else
                 throw new IllegalArgumentException("Excepted the values array to contain numbers or nested arrays, not " + value.type());
         });
@@ -446,9 +447,33 @@ public class JsonFormat {
     }
 
     private static double decodeNumeric(Inspector numericField) {
-        if (numericField.type() != Type.LONG && numericField.type() != Type.DOUBLE)
-            throw new IllegalArgumentException("Excepted a number, not " + numericField.type());
-        return numericField.asDouble();
+        if (numericField.type() == Type.DOUBLE || numericField.type() == Type.LONG) {
+            return numericField.asDouble();
+        }
+        if (numericField.type() == Type.STRING) {
+            return decodeNumberString(numericField.asString());
+        }
+        if (numericField.type() == Type.NIX) {
+            return Double.NaN;
+        }
+        throw new IllegalArgumentException("Excepted a number, not " + numericField.type());
+    }
+
+    public static double decodeNumberString(String input) {
+        String s = input.toLowerCase();
+        if (s.equals("infinity") || s.equals("+infinity") || s.equals("inf") || s.equals("+inf")) {
+            return Double.POSITIVE_INFINITY;
+        }
+        if (s.equals("-infinity") || s.equals("-inf")) {
+            return Double.NEGATIVE_INFINITY;
+        }
+        if (s.equals("nan") || s.equals("+nan")) {
+            return Double.NaN;
+        }
+        if (s.equals("-nan")) {
+            return Math.copySign(Double.NaN, -1.0); // or Double.longBitsToDouble(0xfff8000000000000L);
+        }
+        throw new NumberFormatException("Excepted a number, got string '" + input + "'");
     }
 
 }
