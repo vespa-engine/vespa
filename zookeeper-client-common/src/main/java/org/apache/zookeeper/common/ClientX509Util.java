@@ -18,6 +18,8 @@
 
 package org.apache.zookeeper.common;
 
+import com.yahoo.security.tls.MixedMode;
+import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.zookeeper.VespaZookeeperTlsContextUtils;
 import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
@@ -70,7 +72,8 @@ public class ClientX509Util extends X509Util {
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
         KeyManager km;
         TrustManager tm;
-        if (VespaZookeeperTlsContextUtils.tlsContext().isPresent()) {
+        if (   TransportSecurityUtils.getInsecureMixedMode() != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER
+            && VespaZookeeperTlsContextUtils.tlsContext().isPresent()) {
             km = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().keyManager();
             tm = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().trustManager();
         }
