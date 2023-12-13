@@ -96,12 +96,18 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>zookeeper-client-common</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
-        </dependency>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+            </exclusion>
+        </dependency-->
         <dependency>
             <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.
                  Provided scoped here to avoid dependents getting it transitively. -->

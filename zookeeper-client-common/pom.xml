@@ -20,13 +20,24 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+
+    <!-- compile scope -->
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <exclusions>
+        <!--
+          Container provides wiring for all common log libraries
+          Duplicate embedding results in various warnings being printed to stderr
+        -->
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
-    <!-- compile scope -->
     <!-- test scope -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

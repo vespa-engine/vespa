@@ -26,7 +26,7 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <!-- Don't use ZK version from zookeeper-client-common -->
+          <!-- Don't embed ZK from zookeeper-client-common -->
           <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
         </exclusion>
