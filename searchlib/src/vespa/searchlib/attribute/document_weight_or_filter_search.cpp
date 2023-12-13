@@ -85,17 +85,34 @@ DocumentWeightOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
     setDocId(min_doc_id);
 }
 
+namespace {
+
+template <typename IteratorType, typename IteratorPackType>
 std::unique_ptr<queryeval::SearchIterator>
-DocumentWeightOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
+create_helper(std::vector<IteratorType>&& children)
 {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     } else {
         std::sort(children.begin(), children.end(),
                   [](const auto & a, const auto & b) { return a.size() > b.size(); });
-        using OrFilter = DocumentWeightOrFilterSearchImpl<DocidWithWeightIteratorPack>;
-        return std::make_unique<OrFilter>(DocidWithWeightIteratorPack(std::move(children)));
+        using OrFilter = DocumentWeightOrFilterSearchImpl<IteratorPackType>;
+        return std::make_unique<OrFilter>(IteratorPackType(std::move(children)));
     }
+}
+
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+DocumentWeightOrFilterSearch::create(std::vector<DocidIterator>&& children)
+{
+    return create_helper<DocidIterator, DocidIteratorPack>(std::move(children));
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+DocumentWeightOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
+{
+    return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(std::move(children));
 }
 
 std::unique_ptr<queryeval::SearchIterator>

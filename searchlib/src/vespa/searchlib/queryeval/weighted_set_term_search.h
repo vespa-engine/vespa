@@ -34,6 +34,11 @@ public:
                                      const std::vector<int32_t> &weights,
                                      fef::MatchData::UP match_data);
 
+    static SearchIterator::UP create(search::fef::TermFieldMatchData& tmd,
+                                     bool field_is_filter,
+                                     std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
+                                     std::vector<DocidIterator>&& iterators);
+
     static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
                                      bool field_is_filter,
                                      std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,

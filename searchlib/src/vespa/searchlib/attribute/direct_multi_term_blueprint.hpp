@@ -40,7 +40,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::~DirectMultiTermBlueprin
 
 template <typename PostingStoreType, typename SearchType>
 typename DirectMultiTermBlueprint<PostingStoreType, SearchType>::IteratorWeights
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::vector<DocidWithWeightIterator>& weight_iterators,
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::vector<IteratorType>& btree_iterators,
                                                                          std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
                                                                          bool use_bitvector_when_available,
                                                                          fef::TermFieldMatchData& tfmd, bool strict) const
@@ -58,7 +58,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::ve
             }
             bitvectors.push_back(_attr.make_bitvector_iterator(r.posting_idx, get_docid_limit(), tfmd, strict));
         } else {
-            _attr.create(r.posting_idx, weight_iterators);
+            _attr.create(r.posting_idx, btree_iterators);
             if (!bitvectors.empty()) {
                 result_weights.push_back(_weights[i]);
             }
@@ -94,27 +94,27 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
     if (_terms.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
-    std::vector<DocidWithWeightIterator> weight_iterators;
+    std::vector<IteratorType> btree_iterators;
     std::vector<queryeval::SearchIterator::UP> bitvectors;
     const size_t num_children = _terms.size();
-    weight_iterators.reserve(num_children);
-    bool use_bit_vector_when_available = is_filter_search || !_attr.has_always_weight_iterator();
-    auto weights = create_iterators(weight_iterators, bitvectors, use_bit_vector_when_available, *tfmda[0], strict);
+    btree_iterators.reserve(num_children);
+    bool use_bit_vector_when_available = is_filter_search || !_attr.has_always_btree_iterator();
+    auto weights = create_iterators(btree_iterators, bitvectors, use_bit_vector_when_available, *tfmda[0], strict);
     if (is_filter_search) {
-        auto filter = !weight_iterators.empty() ? attribute::DocumentWeightOrFilterSearch::create(std::move(weight_iterators)) : std::unique_ptr<SearchIterator>();
+        auto filter = !btree_iterators.empty() ? attribute::DocumentWeightOrFilterSearch::create(std::move(btree_iterators)) : std::unique_ptr<SearchIterator>();
         return combine_iterators(std::move(filter), std::move(bitvectors), strict);
     }
     bool field_is_filter = getState().fields()[0].isFilter();
     if constexpr (std::is_same_v<SearchType, queryeval::WeightedSetTermSearch>) {
-        auto multi_term = !weight_iterators.empty() ?
-                SearchType::create(*tfmda[0], field_is_filter, std::move(weights), std::move(weight_iterators))
+        auto multi_term = !btree_iterators.empty() ?
+                SearchType::create(*tfmda[0], field_is_filter, std::move(weights), std::move(btree_iterators))
                 : std::unique_ptr<SearchIterator>();
         return combine_iterators(std::move(multi_term), std::move(bitvectors), strict);
     } else {
         // In this case we should only have weight iterators.
-        assert(weight_iterators.size() == _terms.size());
+        assert(btree_iterators.size() == _terms.size());
         assert(weights.index() == 0);
-        return SearchType::create(*tfmda[0], field_is_filter, std::get<0>(weights).get(), std::move(weight_iterators));
+        return SearchType::create(*tfmda[0], field_is_filter, std::get<0>(weights).get(), std::move(btree_iterators));
     }
 }
 

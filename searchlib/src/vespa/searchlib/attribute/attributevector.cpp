@@ -445,6 +445,7 @@ AttributeVector::set_reserved_doc_values()
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }
 const attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() const { return nullptr; }
+const IDocidPostingStore* AttributeVector::as_docid_posting_store() const { return nullptr; }
 const IDocidWithWeightPostingStore * AttributeVector::as_docid_with_weight_posting_store() const { return nullptr; }
 const tensor::ITensorAttribute *AttributeVector::asTensorAttribute() const { return nullptr; }
 const attribute::IMultiValueAttribute* AttributeVector::as_multi_value_attribute() const { return nullptr; }

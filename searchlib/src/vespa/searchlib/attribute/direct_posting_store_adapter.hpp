@@ -40,7 +40,7 @@ make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
 bool
 DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
-has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept
+has_btree_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept
 {
     return _posting_store.has_btree(posting_idx);
 }

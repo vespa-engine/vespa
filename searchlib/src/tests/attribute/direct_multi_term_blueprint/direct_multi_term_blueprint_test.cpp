@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/direct_multi_term_blueprint.h>
+#include <vespa/searchlib/attribute/i_docid_posting_store.h>
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
@@ -61,28 +63,28 @@ make_attribute(bool field_is_filter, CollectionType col_type)
     IntegerAttribute& real = dynamic_cast<IntegerAttribute&>(*attr);
 
     // Values 1 and 3 have btree (short) posting lists with weights.
-    real.append(10, 1, 1);
-    real.append(30, 3, 1);
-    real.append(31, 3, 1);
+    real.update(10, 1);
+    real.update(30, 3);
+    real.update(31, 3);
 
     // Values 100 and 300 have bitvector posting lists.
     // We need at least 128 documents to get bitvector posting list (see PostingStoreBase2::resizeBitVectors())
     for (auto docid : range(100, 128)) {
-        real.append(docid, 100, 1);
+        real.update(docid, 100);
     }
     for (auto docid : range(300, 128)) {
-        real.append(docid, 300, 1);
+        real.update(docid, 300);
     }
     attr->commit(true);
     return attr;
 }
 
 void
-expect_has_weight_iterator(const IDirectPostingStore& store, int64_t term_value)
+expect_has_btree_iterator(const IDirectPostingStore& store, int64_t term_value)
 {
     auto snapshot = store.get_dictionary_snapshot();
     auto res = store.lookup(IntegerKey(term_value), snapshot);
-    EXPECT_TRUE(store.has_weight_iterator(res.posting_idx));
+    EXPECT_TRUE(store.has_btree_iterator(res.posting_idx));
 }
 
 void
@@ -94,13 +96,13 @@ expect_has_bitvector_iterator(const IDirectPostingStore& store, int64_t term_val
 }
 
 void
-validate_posting_lists(const IDocidWithWeightPostingStore& store)
+validate_posting_lists(const IDirectPostingStore& store)
 {
-    expect_has_weight_iterator(store, 1);
-    expect_has_weight_iterator(store, 3);
-    if (store.has_always_weight_iterator()) {
-        expect_has_weight_iterator(store, 100);
-        expect_has_weight_iterator(store, 300);
+    expect_has_btree_iterator(store, 1);
+    expect_has_btree_iterator(store, 3);
+    if (store.has_always_btree_iterator()) {
+        expect_has_btree_iterator(store, 100);
+        expect_has_btree_iterator(store, 300);
     }
     expect_has_bitvector_iterator(store, 100);
     expect_has_bitvector_iterator(store, 300);
@@ -120,14 +122,19 @@ std::ostream& operator<<(std::ostream& os, const TestParam& param)
 
 class DirectMultiTermBlueprintTest : public ::testing::TestWithParam<TestParam> {
 public:
-    using BlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
+    using SingleValueBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, WeightedSetTermSearch>;
+    using MultiValueBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
     std::shared_ptr<AttributeVector> attr;
-    std::shared_ptr<BlueprintType> blueprint;
+    std::shared_ptr<SingleValueBlueprintType> single_blueprint;
+    std::shared_ptr<MultiValueBlueprintType> multi_blueprint;
+    queryeval::ComplexLeafBlueprint* blueprint;
     Blueprint::HitEstimate estimate;
     fef::TermFieldMatchData tfmd;
     fef::TermFieldMatchDataArray tfmda;
     DirectMultiTermBlueprintTest()
         : attr(),
+          single_blueprint(),
+          multi_blueprint(),
           blueprint(),
           tfmd(),
           tfmda()
@@ -136,10 +143,20 @@ public:
     }
     void setup(bool field_is_filter, bool need_term_field_match_data) {
         attr = make_attribute(field_is_filter, GetParam().col_type);
-        const auto* store = attr->as_docid_with_weight_posting_store();
-        ASSERT_TRUE(store);
-        validate_posting_lists(*store);
-        blueprint = std::make_shared<BlueprintType>(FieldSpec(field_name, field_id, fef::TermFieldHandle(), field_is_filter), *attr, *store, 2);
+        FieldSpec spec(field_name, field_id, fef::TermFieldHandle(), field_is_filter);
+        if (GetParam().col_type == CollectionType::SINGLE) {
+            const auto* store = attr->as_docid_posting_store();
+            ASSERT_TRUE(store);
+            validate_posting_lists(*store);
+            single_blueprint = std::make_shared<SingleValueBlueprintType>(spec, *attr, *store, 2);
+            blueprint = single_blueprint.get();
+        } else {
+            const auto* store = attr->as_docid_with_weight_posting_store();
+            ASSERT_TRUE(store);
+            validate_posting_lists(*store);
+            multi_blueprint = std::make_shared<MultiValueBlueprintType>(spec, *attr, *store, 2);
+            blueprint = multi_blueprint.get();
+        }
         blueprint->setDocIdLimit(doc_id_limit);
         if (need_term_field_match_data) {
             tfmd.needs_normal_features();
@@ -148,7 +165,11 @@ public:
         }
     }
     void add_term(int64_t term_value) {
-        blueprint->addTerm(IntegerKey(term_value), 1, estimate);
+        if (single_blueprint) {
+            single_blueprint->addTerm(IntegerKey(term_value), 1, estimate);
+        } else {
+            multi_blueprint->addTerm(IntegerKey(term_value), 1, estimate);
+        }
     }
     std::unique_ptr<SearchIterator> create_leaf_search() const {
         return blueprint->createLeafSearch(tfmda, true);
@@ -180,7 +201,7 @@ expect_or_child(SearchIterator& itr, size_t child, const vespalib::string& exp_c
 
 INSTANTIATE_TEST_SUITE_P(DefaultInstantiation,
                          DirectMultiTermBlueprintTest,
-                         testing::Values(CollectionType::WSET),
+                         testing::Values(CollectionType::SINGLE, CollectionType::WSET),
                          testing::PrintToStringParamName());
 
 TEST_P(DirectMultiTermBlueprintTest, weight_iterators_used_for_none_filter_field)

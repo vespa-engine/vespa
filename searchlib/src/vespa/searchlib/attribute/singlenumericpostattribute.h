@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "singlenumericenumattribute.h"
+#include "i_docid_posting_store.h"
+#include "numeric_direct_posting_store_adapter.h"
 #include "postinglistattribute.h"
 #include "postinglistsearchcontext.h"
+#include "singlenumericenumattribute.h"
 
 namespace search {
 
@@ -44,10 +46,15 @@ private:
     using DocId = typename B::BaseClass::DocId;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
     using PostingMap = typename PostingParent::PostingMap;
+    using PostingStore = typename PostingParent::PostingStore;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueNumericPostingAttribute<B>;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
+
+    using DirectPostingStoreAdapterType = attribute::NumericDirectPostingStoreAdapter<IDocidPostingStore,
+                                                                                      PostingStore, EnumStore>;
+    DirectPostingStoreAdapterType _posting_store_adapter;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
@@ -74,6 +81,8 @@ public:
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+
+    const IDocidPostingStore* as_docid_posting_store() const override;
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());

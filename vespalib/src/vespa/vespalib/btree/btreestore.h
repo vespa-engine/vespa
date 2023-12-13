@@ -24,6 +24,7 @@ public:
     using KeyType = KeyT;
     using DataType = DataT;
     using AggregatedType = AggrT;
+    using AggrCalcType = AggrCalcT;
     using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22> >;
     using RefType = DataStoreType::RefType;
     using KeyDataType = BTreeKeyData<KeyT, DataT>;
