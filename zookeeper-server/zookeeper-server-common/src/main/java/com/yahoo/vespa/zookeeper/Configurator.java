@@ -3,7 +3,6 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig.Server;
-import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
@@ -47,9 +46,8 @@ public class Configurator {
         // Doc says that it is max size of data in a zookeeper node, but it goes for everything that
         // needs to be serialized, see https://issues.apache.org/jira/browse/ZOOKEEPER-1162 for details
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
-        // Need to set these as a system properties instead of config, config does not work
+        // Need to set this as a system properties instead of config, config does not work
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
-        System.setProperty("zookeeper.ssl.authProvider", "x509");
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
         System.setProperty("zookeeper.globalOutstandingLimit", "1000");
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
@@ -60,13 +58,9 @@ public class Configurator {
     }
 
     void writeConfigToDisk() {
-        VespaTlsConfig config;
-        String cfgFile = zookeeperServerConfig.vespaTlsConfigFile();
-        if (cfgFile.isBlank()) {
-            config = VespaTlsConfig.fromSystem();
-        } else {
-            config = VespaTlsConfig.fromConfig(Paths.get(cfgFile));
-        }
+        VespaTlsConfig config = VespaZookeeperTlsContextUtils.tlsContext()
+                                                             .map(ctx -> new VespaTlsConfig(ctx, TransportSecurityUtils.getInsecureMixedMode()))
+                                                             .orElse(VespaTlsConfig.tlsDisabled());
         writeConfigToDisk(config);
     }
 
@@ -90,7 +84,7 @@ public class Configurator {
         }
     }
 
-    private String transformConfigToString(ZookeeperServerConfig config, VespaTlsConfig vespaTlsConfig, Map<String, String> dynamicConfig) {
+    private static String transformConfigToString(ZookeeperServerConfig config, VespaTlsConfig vespaTlsConfig, Map<String, String> dynamicConfig) {
         Map<String, String> configEntries = new LinkedHashMap<>();
         configEntries.put("tickTime", Integer.toString(config.tickTime()));
         configEntries.put("initLimit", Integer.toString(config.initLimit()));
@@ -118,7 +112,7 @@ public class Configurator {
         return transformConfigToString(configEntries);
     }
 
-    void addServerSpecs(Map<String, String> configEntries, ZookeeperServerConfig config, Map<String, String> dynamicConfig) {
+    static void addServerSpecs(Map<String, String> configEntries, ZookeeperServerConfig config, Map<String, String> dynamicConfig) {
         int myIndex = ensureThisServerIsRepresented(config.myid(), config.server());
 
         // If dynamic config refers to servers that are not in the current config, we must ignore it.
@@ -210,7 +204,7 @@ public class Configurator {
                                     .toList();
     }
 
-    Path makeAbsolutePath(String filename) {
+    static Path makeAbsolutePath(String filename) {
         Path path = Paths.get(filename);
         return path.isAbsolute() ? path : Paths.get(getDefaults().underVespaHome(filename));
     }
@@ -220,8 +214,6 @@ public class Configurator {
 
         default void appendSharedTlsConfig(Map<String, String> configEntries, VespaTlsConfig vespaTlsConfig) {
             vespaTlsConfig.context().ifPresent(ctx -> {
-                VespaSslContextProvider.set(ctx);
-                configEntries.put(configFieldPrefix() + ".context.supplier.class", VespaSslContextProvider.class.getName());
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
                 configEntries.put(configFieldPrefix() + ".ciphersuites", enabledCiphers);
                 String enabledProtocols = Arrays.stream(ctx.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
@@ -275,19 +267,6 @@ public class Configurator {
             this.context = context;
             this.mixedMode = mixedMode;
         }
-
-        static VespaTlsConfig fromSystem() {
-            return new VespaTlsConfig(
-                    TransportSecurityUtils.getSystemTlsContext().orElse(null),
-                    TransportSecurityUtils.getInsecureMixedMode());
-        }
-
-        static VespaTlsConfig fromConfig(Path file) {
-            return new VespaTlsConfig(
-                    new ConfigFileBasedTlsContext(file, TransportSecurityUtils.getInsecureAuthorizationMode()),
-                    TransportSecurityUtils.getInsecureMixedMode());
-        }
-
 
         static VespaTlsConfig tlsDisabled() { return new VespaTlsConfig(null, MixedMode.defaultValue()); }
 
