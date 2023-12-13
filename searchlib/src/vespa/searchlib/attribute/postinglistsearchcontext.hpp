@@ -68,11 +68,57 @@ PostingListSearchContextT<DataT>::fillArray()
 }
 
 template <typename DataT>
+struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
+    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count,
+             BitVector & bv, uint32_t limit)
+        : _posting_store(posting_store), _bv(bv),
+          _docIdLimit(limit),
+          _from(from),
+          _to(from)
+    {
+        _to += count;
+    }
+    void run() override {
+        for (;_from != _to;++_from) {
+            addToBitVector(PostingListTraverser<PostingStore>(_posting_store, _from.getData().load_acquire()));
+        }
+    }
+    void addToBitVector(const PostingListTraverser<PostingStore> & postingList)
+    {
+        postingList.foreach_key([this](uint32_t key) {
+            if (__builtin_expect(key < _docIdLimit, true)) { _bv.setBit(key); }
+        });
+    }
+    const PostingStore      &_posting_store;
+    BitVector               &_bv;
+    uint32_t                 _docIdLimit;
+    DictionaryConstIterator  _from;
+    DictionaryConstIterator  _to;
+};
+
+template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fillBitVector()
+PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_bundle)
 {
-    for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
-        _merger.addToBitVector(PostingListTraverser<PostingStore>(_posting_store, it.getData().load_acquire()));
+    size_t num_iter = _upperDictItr - _lowerDictItr;
+    size_t num_threads = std::min(thread_bundle.size(), num_iter);
+
+    uint32_t per_thread = num_iter / num_threads;
+    uint32_t rest_docs = num_iter % num_threads;
+    std::vector<FillPart> parts;
+    parts.reserve(num_threads);
+    BitVector & master = *_merger.getBitVector();
+    std::vector<std::unique_ptr<BitVector>> scratch_bvs;
+    scratch_bvs.reserve(num_threads - 1);
+    parts.emplace_back(_posting_store, _lowerDictItr, per_thread + (rest_docs > 0), master, _merger.getDocIdLimit());
+    for (size_t i(1); i < num_threads; i++) {
+        scratch_bvs.push_back(BitVector::create(master.size()));
+        size_t num_this_thread = per_thread + (i < rest_docs);
+        parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, *scratch_bvs.back(), _merger.getDocIdLimit());
+    }
+    thread_bundle.run(parts);
+    for (const auto & bv : scratch_bvs) {
+        master.orWith(*bv);
     }
 }
 
@@ -116,7 +162,7 @@ PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & e
                 fillArray();
             } else {
                 _merger.allocBitVector();
-                fillBitVector();
+                fillBitVector(execInfo.thread_bundle());
             }
             _merger.merge();
         }
@@ -367,8 +413,9 @@ PostingListFoldedSearchContextT<DataT>::fillArray()
 
 template <typename DataT>
 void
-PostingListFoldedSearchContextT<DataT>::fillBitVector()
+PostingListFoldedSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_bundle)
 {
+    (void) thread_bundle;
     fill_array_or_bitvector<false>();
 }
 

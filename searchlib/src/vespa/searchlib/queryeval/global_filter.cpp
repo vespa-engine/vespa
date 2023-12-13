@@ -32,7 +32,7 @@ struct Inactive : GlobalFilter {
 
 struct EmptyFilter : GlobalFilter {
     uint32_t docid_limit;
-    EmptyFilter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+    explicit EmptyFilter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
     ~EmptyFilter() override;
     bool is_active() const override { return true; }
     uint32_t size() const override { return docid_limit; }
@@ -44,7 +44,7 @@ EmptyFilter::~EmptyFilter() = default;
 
 struct BitVectorFilter : public GlobalFilter {
     std::unique_ptr<BitVector> vector;
-    BitVectorFilter(std::unique_ptr<BitVector> vector_in) noexcept
+    explicit BitVectorFilter(std::unique_ptr<BitVector> vector_in) noexcept
       : vector(std::move(vector_in)) {}
     bool is_active() const override { return true; }
     uint32_t size() const override { return vector->size(); }
@@ -82,9 +82,9 @@ struct PartResult {
     std::unique_ptr<BitVector> bits;
     PartResult()
       : matches_any(Trinary::False), bits() {}
-    PartResult(Trinary matches_any_in)
+    explicit PartResult(Trinary matches_any_in)
       : matches_any(matches_any_in), bits() {}
-    PartResult(std::unique_ptr<BitVector> &&bits_in)
+    explicit PartResult(std::unique_ptr<BitVector> &&bits_in)
       : matches_any(Trinary::Undefined), bits(std::move(bits_in)) {}
 };
 
@@ -133,7 +133,7 @@ struct MakePart : Runnable {
             profiler->report(trace->createCursor("global_filter_profiling"));
         }
     }
-    ~MakePart();
+    ~MakePart() override;
 };
 MakePart::~MakePart() = default;
 
@@ -159,7 +159,7 @@ GlobalFilter::create() {
 }
 
 std::shared_ptr<GlobalFilter>
-GlobalFilter::create(std::vector<uint32_t> docids, uint32_t size)
+GlobalFilter::create(const std::vector<uint32_t> & docids, uint32_t size)
 {
     uint32_t prev = 0;
     auto bits = BitVector::create(1, size);

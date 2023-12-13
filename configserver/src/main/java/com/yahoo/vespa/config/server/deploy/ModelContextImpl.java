@@ -204,6 +204,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean alwaysMarkPhraseExpensive;
         private final boolean createPostinglistWhenNonStrict;
         private final boolean useEstimateForFetchPostings;
+        private final boolean useThreadBundleForFetchPostings;
         private final int contentLayerMetadataFeatureLevel;
         private final boolean dynamicHeapSize;
         private final String unknownConfigDefinition;
@@ -257,6 +258,7 @@ public class ModelContextImpl implements ModelContext {
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
             this.createPostinglistWhenNonStrict = flagValue(source, appId, version, Flags.CREATE_POSTINGLIST_WHEN_NON_STRICT);
             this.useEstimateForFetchPostings = flagValue(source, appId, version, Flags.USE_ESTIMATE_FOR_FETCH_POSTINGS);
+            this.useThreadBundleForFetchPostings = flagValue(source, appId, version, Flags.USE_THREAD_BUNDLE_FOR_FETCH_POSTINGS);
             this.restartOnDeployWhenOnnxModelChanges = flagValue(source, appId, version, Flags.RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES);
         }
 
@@ -306,6 +308,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public boolean createPostinglistWhenNonStrict() { return createPostinglistWhenNonStrict; }
         @Override public boolean useEstimateForFetchPostings() { return useEstimateForFetchPostings; }
+        @Override public boolean useThreadBundleForFetchPostings() { return useThreadBundleForFetchPostings; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }

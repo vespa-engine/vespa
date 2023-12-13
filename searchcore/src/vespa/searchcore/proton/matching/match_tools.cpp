@@ -208,7 +208,9 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
         bool use_estimate_for_fetch_postings = UseEstimateForFetchPostings::check(_queryEnv.getProperties(), rankSetup.use_estimate_for_fetch_postings());
-        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(), thread_bundle,
+        bool use_thread_bundle_for_fetch_postings = UseThreadBundleForFetchPostings::check(_queryEnv.getProperties(), rankSetup.use_thread_bundle_for_fetch_postings());
+        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, &_requestContext.getDoom(),
+                                                 use_thread_bundle_for_fetch_postings ? thread_bundle : vespalib::ThreadBundle::trivial(),
                                                  create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
         if (is_search) {
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
