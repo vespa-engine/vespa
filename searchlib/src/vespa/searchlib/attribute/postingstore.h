@@ -78,6 +78,7 @@ public:
     using ConstIterator = typename Parent::ConstIterator;
     using KeyDataType = typename Parent::KeyDataType;
     using AggregatedType = typename Parent::AggregatedType;
+    using AggrCalcType = typename Parent::AggrCalcType;
     using BTreeTypeRefPair = typename Parent::BTreeTypeRefPair;
     using Builder = typename Parent::Builder;
     using CompactionSpec = vespalib::datastore::CompactionSpec;

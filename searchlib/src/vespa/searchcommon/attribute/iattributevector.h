@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace search {
+    class IDocidPostingStore;
     class IDocidWithWeightPostingStore;
     class QueryTermSimple;
 }
@@ -293,9 +294,16 @@ public:
                                                                 const SearchContextParams &params) const = 0;
 
     /**
-     * Type-safe down-cast to an attribute supporting direct access to posting lists with docid and weight.
+     * Type-safe down-cast to an interface supporting direct access to posting lists with docids.
      *
-     * @return document weight attribute or nullptr if not supported.
+     * @return posting store or nullptr if not supported.
+     */
+    virtual const IDocidPostingStore* as_docid_posting_store() const = 0;
+
+    /**
+     * Type-safe down-cast to an interface supporting direct access to posting lists with {docid, weight} tuples.
+     *
+     * @return posting store or nullptr if not supported.
      */
     virtual const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const = 0;
 

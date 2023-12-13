@@ -54,10 +54,17 @@ public:
      * (e.g. lowercased) value equals the folded value for enum_idx.
      */
     virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
-    virtual bool has_weight_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept = 0;
+    virtual bool has_btree_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const = 0;
     virtual bool has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept = 0;
     virtual int64_t get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept = 0;
+
+    /**
+     * Returns true when btree posting list iterators are present for all terms.
+     *
+     * This means btree posting lists exist in addition to eventual bitvector posting lists.
+     */
+    virtual bool has_always_btree_iterator() const noexcept = 0;
     virtual ~IDirectPostingStore() = default;
 };
 

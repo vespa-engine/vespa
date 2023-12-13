@@ -3,7 +3,7 @@
 #pragma once
 
 #include "attribute_object_visitor.h"
-#include "i_docid_with_weight_posting_store.h"
+#include "i_direct_posting_store.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -32,9 +32,10 @@ private:
     const PostingStoreType                        &_attr;
     vespalib::datastore::EntryRef                  _dictionary_snapshot;
 
+    using IteratorType = typename PostingStoreType::IteratorType;
     using IteratorWeights = std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>>;
 
-    IteratorWeights create_iterators(std::vector<DocidWithWeightIterator>& weight_iterators,
+    IteratorWeights create_iterators(std::vector<IteratorType>& btree_iterators,
                                      std::vector<std::unique_ptr<queryeval::SearchIterator>>& bitvectors,
                                      bool use_bitvector_when_available,
                                      fef::TermFieldMatchData& tfmd, bool strict) const;

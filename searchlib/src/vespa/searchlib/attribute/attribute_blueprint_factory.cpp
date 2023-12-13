@@ -527,7 +527,7 @@ public:
                 return bitvector_iterator;
             }
         }
-        if (_attr.has_weight_iterator(_dict_entry.posting_idx)) {
+        if (_attr.has_btree_iterator(_dict_entry.posting_idx)) {
             return std::make_unique<queryeval::DocumentWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
         } else {
             return _attr.make_bitvector_iterator(_dict_entry.posting_idx, get_docid_limit(), *tfmda[0], strict);
@@ -579,7 +579,7 @@ private:
 
     bool use_docid_with_weight_posting_store() const {
         // TODO: Relax requirement on always having weight iterator for query operators where that makes sense.
-        return (_dww != nullptr) && (_dww->has_always_weight_iterator());
+        return (_dww != nullptr) && (_dww->has_always_btree_iterator());
     }
 
 public:

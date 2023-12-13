@@ -30,8 +30,12 @@ lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) 
     if (find_result.first.valid()) {
         auto pidx = find_result.second;
         if (pidx.valid()) {
-            auto minmax = this->_posting_store.getAggregated(pidx);
-            return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
+            if constexpr (PostingStoreType::AggrCalcType::hasAggregated()) {
+                auto minmax = this->_posting_store.getAggregated(pidx);
+                return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
+            } else {
+                return LookupResult(pidx, this->_posting_store.frozenSize(pidx), 1, 1, find_result.first);
+            }
         }
     }
     return LookupResult();

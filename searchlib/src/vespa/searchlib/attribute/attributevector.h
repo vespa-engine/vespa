@@ -384,6 +384,7 @@ public:
 
 ////// Search API
 
+    const IDocidPostingStore* as_docid_posting_store() const override;
     const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const override;
 
     const tensor::ITensorAttribute *asTensorAttribute() const override;

@@ -186,19 +186,42 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
 
 //-----------------------------------------------------------------------------
 
+namespace {
+
+template <typename IteratorType, typename IteratorPackType>
+SearchIterator::UP
+create_helper(fef::TermFieldMatchData& tmd,
+              bool field_is_filter,
+              std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
+              std::vector<IteratorType>&& iterators)
+{
+    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, IteratorPackType>;
+    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, IteratorPackType>;
+
+    if (iterators.size() < 128) {
+        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, std::move(weights), IteratorPackType(std::move(iterators))));
+    }
+    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, std::move(weights), IteratorPackType(std::move(iterators))));
+}
+
+}
+
+SearchIterator::UP
+WeightedSetTermSearch::create(fef::TermFieldMatchData& tmd,
+                              bool field_is_filter,
+                              std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
+                              std::vector<DocidIterator>&& iterators)
+{
+    return create_helper<DocidIterator, DocidIteratorPack>(tmd, field_is_filter, std::move(weights), std::move(iterators));
+}
+
 SearchIterator::UP
 WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               bool field_is_filter,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                               std::vector<DocidWithWeightIterator> &&iterators)
 {
-    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, DocidWithWeightIteratorPack>;
-    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, DocidWithWeightIteratorPack>;
-
-    if (iterators.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators))));
-    }
-    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators))));
+    return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(tmd, field_is_filter, std::move(weights), std::move(iterators));
 }
 
 //-----------------------------------------------------------------------------
