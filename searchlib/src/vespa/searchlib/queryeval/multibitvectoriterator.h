@@ -44,6 +44,8 @@ private:
         return false;
     }
     VESPA_DLL_LOCAL bool updateLastValueCold(uint32_t docId) noexcept __attribute__((noinline));
+    VESPA_DLL_LOCAL void fetchChunk(uint32_t docId) noexcept __attribute__((noinline));
+
     using IAccelrated = vespalib::hwaccelrated::IAccelrated;
 
     Update              _update;
