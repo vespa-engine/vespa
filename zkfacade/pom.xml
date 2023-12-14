@@ -58,9 +58,8 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>${zookeeper.client.artifactId}</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
       <scope>compile</scope>
       <exclusions>
         <!--
