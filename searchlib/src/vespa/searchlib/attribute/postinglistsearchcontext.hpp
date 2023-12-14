@@ -76,7 +76,8 @@ struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
           _bv(bv),
           _docIdLimit(limit),
           _from(from),
-          _to(from)
+          _to(from),
+          _owned_bv()
     {
         _to += count;
     }
