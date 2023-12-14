@@ -92,10 +92,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         log.log(FINE, "Checking if model has changed (%s) -> (%s)".formatted(a, b));
         if (a.estimatedCost() != b.estimatedCost()) return Optional.of("estimated cost");
         if (a.hash() != b.hash()) return Optional.of("model hash");
-        if (a.onnxModelOptions().isPresent() && b.onnxModelOptions().isEmpty()) return Optional.of("model option(s)");
-        if (a.onnxModelOptions().isEmpty() && b.onnxModelOptions().isPresent()) return Optional.of("model option(s)");
-        if (a.onnxModelOptions().isPresent() && ! a.onnxModelOptions().get().equals(b.onnxModelOptions().get()))
-            return Optional.of("model option(s)");
+        if (! a.onnxModelOptions().equals(b.onnxModelOptions())) return Optional.of("model option(s)");
         return Optional.empty();
     }
 
