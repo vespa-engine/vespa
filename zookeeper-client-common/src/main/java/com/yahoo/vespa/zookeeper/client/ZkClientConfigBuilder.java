@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper.client;
 
-import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
@@ -14,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -31,7 +29,7 @@ public class ZkClientConfigBuilder {
     public static final String SSL_CLIENTAUTH_PROPERTY = "zookeeper.ssl.clientAuth";
     public static final String CLIENT_CONNECTION_SOCKET = "zookeeper.clientCnxnSocket";
 
-    private static final TlsContext defaultTlsContext = getTlsContext().orElse(null);
+    private static final TlsContext defaultTlsContext = VespaZookeeperTlsContextUtils.tlsContext().orElse(null);
 
     private final TlsContext tlsContext;
 
@@ -71,7 +69,6 @@ public class ZkClientConfigBuilder {
         builder.put(CLIENT_SECURE_PROPERTY, Boolean.toString(tlsContext != null));
         builder.put(CLIENT_CONNECTION_SOCKET, "org.apache.zookeeper.ClientCnxnSocketNetty");
         if (tlsContext != null) {
-            builder.put(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY, VespaSslContextProvider.class.getName());
             String protocolsConfigValue = Arrays.stream(tlsContext.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
             builder.put(SSL_ENABLED_PROTOCOLS_PROPERTY, protocolsConfigValue);
             String ciphersConfigValue = Arrays.stream(tlsContext.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
@@ -81,8 +78,4 @@ public class ZkClientConfigBuilder {
         return Map.copyOf(builder);
     }
 
-    private static Optional<TlsContext> getTlsContext() {
-        if (TransportSecurityUtils.getInsecureMixedMode() == MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) return Optional.empty();
-        return TransportSecurityUtils.getSystemTlsContext();
-    }
 }
