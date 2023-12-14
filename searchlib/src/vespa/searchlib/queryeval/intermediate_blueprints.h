@@ -15,6 +15,7 @@ class AndNotBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -42,6 +43,7 @@ class AndBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -67,6 +69,7 @@ class OrBlueprint : public IntermediateBlueprint
 public:
     ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -94,6 +97,7 @@ private:
     std::vector<uint32_t> _weights;
 
 public:
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -124,6 +128,7 @@ private:
     uint32_t _window;
 
 public:
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -147,6 +152,7 @@ private:
     uint32_t _window;
 
 public:
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -167,6 +173,7 @@ public:
 class RankBlueprint final : public IntermediateBlueprint
 {
 public:
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -195,6 +202,7 @@ private:
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
+    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;

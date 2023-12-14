@@ -120,6 +120,7 @@ Blueprint::State::~State() = default;
 
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
+      _cost(1.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
       _frozen(false)
@@ -560,6 +561,7 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     optimize_self(pass);
     if (pass == OptimizePass::LAST) {
         sort(_children);
+        set_cost(calculate_cost());
     }
     maybe_eliminate_self(self, get_replacement());
 }
