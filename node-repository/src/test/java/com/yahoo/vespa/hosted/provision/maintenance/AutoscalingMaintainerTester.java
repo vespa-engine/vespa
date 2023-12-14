@@ -77,7 +77,7 @@ public class AutoscalingMaintainerTester {
             for (Node node : nodes)
                 nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                                new NodeMetricSnapshot(clock().instant(),
-                                                                                                      new Load(cpu, mem, disk),
+                                                                                                      new Load(cpu, mem, disk, 0, 0),
                                                                                                       generation,
                                                                                                       true,
                                                                                                       true,

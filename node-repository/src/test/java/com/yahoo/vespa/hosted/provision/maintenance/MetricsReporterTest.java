@@ -270,7 +270,7 @@ public class MetricsReporterTest {
                                                                                              Optional.empty(),
                                                                                              tester.clock().instant(),
                                                                                              Load.zero(),
-                                                                                             new Load(0.1, 0.2, 0.3),
+                                                                                             new Load(0.1, 0.2, 0.3, 0, 0),
                                                                                              Autoscaling.Metrics.zero()));
         tester.nodeRepository().applications().put(application.with(cluster), tester.nodeRepository().applications().lock(applicationId));
 
