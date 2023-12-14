@@ -473,7 +473,7 @@ public class JsonFormat {
         if (s.equals("-nan")) {
             return Math.copySign(Double.NaN, -1.0); // or Double.longBitsToDouble(0xfff8000000000000L);
         }
-        throw new NumberFormatException("Excepted a number, got string '" + input + "'");
+        return Double.parseDouble(input);
     }
 
 }

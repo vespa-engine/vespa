@@ -293,7 +293,7 @@ public class ConstantTensorJsonValidator {
                 double d = decodeNumberString(input);
                 return;
             } catch (NumberFormatException e) {
-                throw new InvalidConstantTensorException(parser, String.format("Inside '%s': %s", where, e.getMessage()));
+                throw new InvalidConstantTensorException(parser, String.format("Inside '%s': cell value '%s' is not a number", where, input));
             }
         }
         throw new InvalidConstantTensorException(parser, String.format("Inside '%s': cell value is not a number (%s)", where, token.toString()));

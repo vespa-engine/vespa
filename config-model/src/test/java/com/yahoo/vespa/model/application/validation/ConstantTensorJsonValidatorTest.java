@@ -208,7 +208,7 @@ public class ConstantTensorJsonValidatorTest {
                             "   ]",
                             "}"));
             });
-        assertTrue(exception.getMessage().contains("Inside 'value': Excepted a number, got string 'fruit'"));
+        assertTrue(exception.getMessage().contains("Inside 'value': cell value 'fruit' is not a number"));
     }
 
     @Test
