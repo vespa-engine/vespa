@@ -67,7 +67,8 @@ public class ClusterNodesTimeseries {
      * the average of the highest reading for that dimension on each node.
      */
     public Load peakLoad() {
-        return new Load(peakLoad(Load.Dimension.cpu), peakLoad(Load.Dimension.memory), peakLoad(Load.Dimension.disk));
+        return new Load(peakLoad(Load.Dimension.cpu), peakLoad(Load.Dimension.memory), peakLoad(Load.Dimension.disk),
+                        peakLoad(Load.Dimension.gpu), peakLoad(Load.Dimension.gpuMemory));
     }
 
     private double peakLoad(Load.Dimension dimension) {
