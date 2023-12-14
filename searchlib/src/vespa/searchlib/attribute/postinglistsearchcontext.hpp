@@ -121,9 +121,12 @@ PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_
         parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, _merger.getDocIdLimit());
     }
     thread_bundle.run(parts);
-    for (size_t i(1); i < parts.size(); i++) {
-        master->orWith(*parts[i]._bv);
+    std::vector<BitVector *> vectors;
+    vectors.reserve(parts.size());
+    for (const auto & part : parts) {
+        vectors.push_back(part._bv);
     }
+    BitVector::parallellOr(thread_bundle, vectors);
 }
 
 template <typename DataT>
@@ -161,6 +164,7 @@ PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & e
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
         if (execInfo.is_strict() || use_posting_lists_when_non_strict(execInfo)) {
             size_t sum = estimated_hits_in_range();
+            //TODO Honour soft_doom and forward it to merge code
             if (sum < (_docIdLimit * threshold_for_using_array)) {
                 _merger.reserveArray(_uniqueValues, sum);
                 fillArray();
