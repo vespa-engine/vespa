@@ -52,15 +52,15 @@ private:
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
 
-    using DirectPostingStoreAdapterType = attribute::NumericDirectPostingStoreAdapter<IDocidPostingStore,
-                                                                                      PostingStore, EnumStore>;
-    DirectPostingStoreAdapterType _posting_store_adapter;
-
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
     using PostingParent::forwardedOnAddDoc;
+
+    using DirectPostingStoreAdapterType = attribute::NumericDirectPostingStoreAdapter<IDocidPostingStore,
+                                                                                      PostingStore, EnumStore>;
+    DirectPostingStoreAdapterType _posting_store_adapter;
 
     void freezeEnumDictionary() override;
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
