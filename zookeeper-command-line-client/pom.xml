@@ -12,8 +12,19 @@
   <version>8-SNAPSHOT</version>
   <dependencies>
     <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>zookeeper-client-common</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>defaults</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
