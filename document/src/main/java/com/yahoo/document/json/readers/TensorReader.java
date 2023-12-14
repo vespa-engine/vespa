@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorType;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.*;
 import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
+import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
 
 /**
  * Reads the tensor format defined at
@@ -243,6 +244,9 @@ public class TensorReader {
 
     private static double readDouble(TokenBuffer buffer) {
         try {
+            if (buffer.current() == JsonToken.VALUE_STRING) {
+                return decodeNumberString(buffer.currentText());
+            }
             return Double.parseDouble(buffer.currentText());
         }
         catch (NumberFormatException e) {
