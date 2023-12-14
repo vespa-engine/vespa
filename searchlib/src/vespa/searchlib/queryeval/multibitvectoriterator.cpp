@@ -63,23 +63,23 @@ MultiBitVector<Update>::MultiBitVector(size_t reserved)
 
 template<typename Update>
 bool
-MultiBitVector<Update>::updateLastValue(uint32_t docId) noexcept
+MultiBitVector<Update>::updateLastValueCold(uint32_t docId) noexcept
 {
-    if (docId >= _lastMaxDocIdLimit) {
-        if (__builtin_expect(isAtEnd(docId), false)) {
-            return true;
-        }
-        const uint32_t index(BitWord::wordNum(docId));
-        if (docId >= _lastMaxDocIdLimitRequireFetch) {
-            uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
-            _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
-            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
-        }
-        _lastValue = _lastWords[index % NumWordsInBatch];
-        _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
+    if (__builtin_expect(isAtEnd(docId), false)) {
+        return true;
     }
+    const uint32_t index(BitWord::wordNum(docId));
+    if (docId >= _lastMaxDocIdLimitRequireFetch) {
+        uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
+        _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
+        _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
+    }
+    _lastValue = _lastWords[index % NumWordsInBatch];
+    _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     return false;
 }
+
+
 
 template<typename Update>
 uint32_t
