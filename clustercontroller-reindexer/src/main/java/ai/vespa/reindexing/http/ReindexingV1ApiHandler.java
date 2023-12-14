@@ -20,7 +20,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
 
 import java.util.Collection;
 import java.util.List;

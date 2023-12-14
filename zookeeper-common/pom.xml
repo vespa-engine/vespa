@@ -8,39 +8,26 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-client-common</artifactId>
+  <artifactId>zookeeper-common</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
 
   <dependencies>
-    <!-- provided -->
+
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>defaults</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.zookeeper</groupId>
-      <artifactId>zookeeper</artifactId>
-      <scope>provided</scope>
-    </dependency>
 
-    <!-- compile scope -->
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>zookeeper-common</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <!-- test scope -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
