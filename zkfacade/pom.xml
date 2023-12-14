@@ -62,35 +62,6 @@
       <artifactId>${zookeeper.client.artifactId}</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
-      <exclusions>
-        <!--
-          Container provides wiring for all common log libraries
-          Duplicate embedding results in various warnings being printed to stderr
-        -->
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!-- snappy-java and metrics-core are included here
-     to be able to work with ZooKeeper >= 3.6.2 due to
-     class loading issues -->
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.xerial.snappy</groupId>
-      <artifactId>snappy-java</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
