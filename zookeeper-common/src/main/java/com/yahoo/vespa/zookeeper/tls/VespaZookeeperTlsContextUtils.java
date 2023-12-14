@@ -1,4 +1,4 @@
-package com.yahoo.vespa.zookeeper;
+package com.yahoo.vespa.zookeeper.tls;
 
 import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.TlsContext;

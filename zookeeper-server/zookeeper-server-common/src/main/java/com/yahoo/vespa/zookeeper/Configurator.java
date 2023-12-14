@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig.Server;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;

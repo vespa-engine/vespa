@@ -2,7 +2,7 @@
 package com.yahoo.vespa.zookeeper.client;
 
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.vespa.zookeeper.VespaZookeeperTlsContextUtils;
+import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 

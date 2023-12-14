@@ -20,7 +20,7 @@ package org.apache.zookeeper.common;
 
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.vespa.zookeeper.VespaZookeeperTlsContextUtils;
+import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;

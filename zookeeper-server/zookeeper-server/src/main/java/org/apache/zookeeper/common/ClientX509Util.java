@@ -18,7 +18,7 @@
 
 package org.apache.zookeeper.common;
 
-import com.yahoo.vespa.zookeeper.VespaZookeeperTlsContextUtils;
+import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
