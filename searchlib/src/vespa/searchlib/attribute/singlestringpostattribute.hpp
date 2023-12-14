@@ -154,12 +154,5 @@ SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                 *this);
 }
 
-template <typename B>
-const IDocidPostingStore*
-SingleValueStringPostingAttributeT<B>::as_docid_posting_store() const
-{
-    return &_posting_store_adapter;
-}
-
 }
 

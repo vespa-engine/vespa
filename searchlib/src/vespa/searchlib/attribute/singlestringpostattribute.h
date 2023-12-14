@@ -84,7 +84,7 @@ public:
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
-    const IDocidPostingStore* as_docid_posting_store() const override;
+    const IDocidPostingStore* as_docid_posting_store() const override { return &_posting_store_adapter; }
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());

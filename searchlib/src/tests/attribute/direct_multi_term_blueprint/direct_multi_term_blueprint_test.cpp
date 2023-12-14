@@ -29,7 +29,7 @@ struct IntegerKey : public LookupKey {
     bool asInteger(int64_t& value) const override { value = _value; return true; }
 };
 
-struct StringKey : public IDirectPostingStore::LookupKey {
+struct StringKey : public LookupKey {
     vespalib::string _value;
     StringKey(int64_t value_in) : _value(std::to_string(value_in)) {}
     vespalib::stringref asString() const override { return _value; }
