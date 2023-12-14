@@ -48,7 +48,7 @@ private:
 
     Update              _update;
     const IAccelrated & _accel;
-    alignas(64) Word    _lastWords[8];
+    alignas(64) Word    _lastWords[32];
     static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
 };
 

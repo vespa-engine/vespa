@@ -26,13 +26,13 @@ Avx2Accelrator::squaredEuclideanDistance(const double * a, const double * b, siz
 }
 
 void
-Avx2Accelrator::and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::andChunks<32u, 2u>(offset, src, dest);
+Avx2Accelrator::and256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::andChunks<32u, 8u>(offset, src, dest);
 }
 
 void
-Avx2Accelrator::or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::orChunks<32u, 2u>(offset, src, dest);
+Avx2Accelrator::or256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::orChunks<32u, 8u>(offset, src, dest);
 }
 
 }
