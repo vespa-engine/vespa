@@ -208,7 +208,7 @@ public class ConstantTensorJsonValidatorTest {
                             "   ]",
                             "}"));
             });
-        assertTrue(exception.getMessage().contains("Inside 'value': cell value is not a number (VALUE_STRING)"));
+        assertTrue(exception.getMessage().contains("Inside 'value': Excepted a number, got string 'fruit'"));
     }
 
     @Test
@@ -292,6 +292,13 @@ public class ConstantTensorJsonValidatorTest {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[5])"),
                 inputJsonToReader("{'values':[5,4.0,3.1,-2,-1.0]}"));
+    }
+
+    @Test
+    void ensure_that_values_can_contain_special_values() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[5])"),
+                inputJsonToReader("['Infinity','+inf','NaN','-infinity','-nan']"));
     }
 
     @Test
