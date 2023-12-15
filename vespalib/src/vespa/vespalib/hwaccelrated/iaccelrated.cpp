@@ -153,8 +153,8 @@ verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> &
         simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
     }
 
-    uint64_t dest[32] __attribute((aligned(64)));
-    accel.or256(offset * sizeof(uint64_t), vRefs, dest);
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.or64(offset*sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 64 bytes OR");
@@ -174,8 +174,8 @@ verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> 
         simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
     }
 
-    uint64_t dest[32] __attribute((aligned(64)));
-    accel.and256(offset * sizeof(uint64_t), vRefs, dest);
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.and64(offset*sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 64 bytes AND");
@@ -186,9 +186,9 @@ void
 verifyOr64(const IAccelrated & accel) {
     std::vector<std::vector<uint64_t>> vectors(3) ;
     for (auto & v : vectors) {
-        fill(v, 64);
+        fill(v, 16);
     }
-    for (size_t offset = 0; offset < 32; offset++) {
+    for (size_t offset = 0; offset < 8; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
             verifyOr64(accel, vectors, offset, i, false);
             verifyOr64(accel, vectors, offset, i, true);
@@ -200,9 +200,9 @@ void
 verifyAnd64(const IAccelrated & accel) {
     std::vector<std::vector<uint64_t>> vectors(3);
     for (auto & v : vectors) {
-        fill(v, 64);
+        fill(v, 16);
     }
-    for (size_t offset = 0; offset < 32; offset++) {
+    for (size_t offset = 0; offset < 8; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
             verifyAnd64(accel, vectors, offset, i, false);
             verifyAnd64(accel, vectors, offset, i, true);

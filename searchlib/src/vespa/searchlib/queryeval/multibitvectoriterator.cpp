@@ -4,6 +4,7 @@
 #include "andsearch.h"
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::queryeval {
@@ -17,17 +18,17 @@ namespace {
 struct And {
     using Word = BitWord::Word;
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
-        accel.and256(offset, src, dest);
+        accel.and64(offset, src, dest);
     }
-    static constexpr bool isAnd() noexcept { return true; }
+    static bool isAnd() noexcept { return true; }
 };
 
 struct Or {
     using Word = BitWord::Word;
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
-        accel.or256(offset, src, dest);
+        accel.or64(offset, src, dest);
     }
-    static constexpr bool isAnd() noexcept { return false; }
+    static bool isAnd() noexcept { return false; }
 };
 
 }
@@ -55,34 +56,29 @@ MultiBitVector<Update>::MultiBitVector(size_t reserved)
       _accel(IAccelrated::getAccelerator()),
       _lastWords()
 {
-    static_assert(sizeof(_lastWords) == 256, "Lastwords should have 256 byte size");
-    static_assert(NumWordsInBatch == 32, "Batch size should be 32 words.");
+    static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
+    static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
     memset(_lastWords, 0, sizeof(_lastWords));
 }
 
 template<typename Update>
 bool
-MultiBitVector<Update>::updateLastValueCold(uint32_t docId) noexcept
+MultiBitVector<Update>::updateLastValue(uint32_t docId) noexcept
 {
-    if (__builtin_expect(isAtEnd(docId), false)) {
-        return true;
+    if (docId >= _lastMaxDocIdLimit) {
+        if (__builtin_expect(isAtEnd(docId), false)) {
+            return true;
+        }
+        const uint32_t index(BitWord::wordNum(docId));
+        if (docId >= _lastMaxDocIdLimitRequireFetch) {
+            uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
+            _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
+            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
+        }
+        _lastValue = _lastWords[index % NumWordsInBatch];
+        _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     }
-    const uint32_t index(BitWord::wordNum(docId));
-    if (docId >= _lastMaxDocIdLimitRequireFetch) {
-        fetchChunk(index);
-    }
-    _lastValue = _lastWords[index % NumWordsInBatch];
-    _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     return false;
-}
-
-template<typename Update>
-void
-MultiBitVector<Update>::fetchChunk(uint32_t index) noexcept
-{
-    uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
-    _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
-    _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
 }
 
 template<typename Update>
@@ -91,11 +87,12 @@ MultiBitVector<Update>::strictSeek(uint32_t docId) noexcept
 {
     bool atEnd;
     for (atEnd = updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
-         __builtin_expect(_lastValue == 0, Update::isAnd()) && __builtin_expect(! atEnd, true); // And is likely to have few bits, while Or has many.
+         (_lastValue == 0) && __builtin_expect(! atEnd, true);
          atEnd = updateLastValue(_lastMaxDocIdLimit));
-    return (__builtin_expect(!atEnd, true))
-        ? _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue)
-        : _numDocs;
+    if (__builtin_expect(!atEnd, true)) {
+        return _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue);
+    }
+    return _numDocs;
 }
 
 template<typename Update>
@@ -103,8 +100,12 @@ bool
 MultiBitVector<Update>::seek(uint32_t docId) noexcept
 {
     bool atEnd = updateLastValue(docId);
-    return __builtin_expect( ! atEnd, true) &&
-           __builtin_expect(_lastValue & BitWord::mask(docId), false);
+    if (__builtin_expect( ! atEnd, true)) {
+        if (_lastValue & BitWord::mask(docId)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 namespace {
@@ -159,7 +160,7 @@ template<typename Update>
 void
 MultiBitVectorIterator<Update>::doSeek(uint32_t docId)
 {
-    if (_mbv.seek(docId)) [[unlikely]] {
+    if (_mbv.seek(docId)) {
         setDocId(docId);
     }
 }
