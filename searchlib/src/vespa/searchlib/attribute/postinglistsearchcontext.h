@@ -72,8 +72,6 @@ protected:
      * by looking at the posting lists in the range [lower, upper>.
      */
     virtual size_t calc_estimated_hits_in_range() const = 0;
-    virtual void fillArray() = 0;
-    virtual void fillBitVector(vespalib::ThreadBundle & thread_bundle) = 0;
 };
 
 
@@ -88,6 +86,7 @@ protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using FrozenView = typename PostingStore::BTreeType::FrozenView;
+    using ExecuteInfo = queryeval::ExecuteInfo;
 
     const PostingStore& _posting_store;
     /*
@@ -101,10 +100,10 @@ protected:
     ~PostingListSearchContextT() override;
 
     void lookupSingle();
-    void fillArray() override;
-    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
+    virtual void fillArray();
+    virtual void fillBitVector(const ExecuteInfo &);
 
-    void fetchPostings(const queryeval::ExecuteInfo & strict) override;
+    void fetchPostings(const ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
     void diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                    size_t max_per_group, size_t cutoff_groups, bool cutoff_strict);
@@ -131,6 +130,7 @@ protected:
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using EntryRef = vespalib::datastore::EntryRef;
     using PostingStore = typename Parent::PostingStore;
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent::_docIdLimit;
     using Parent::_lowerDictItr;
     using Parent::_merger;
@@ -154,7 +154,7 @@ protected:
     template <bool fill_array>
     void fill_array_or_bitvector();
     void fillArray() override;
-    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
+    void fillBitVector(const ExecuteInfo &) override;
 };
 
 
@@ -177,6 +177,7 @@ class StringPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
 {
 private:
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
@@ -186,7 +187,7 @@ private:
     bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
         return use_dictionary_entry(it);
     }
-    bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const override;
+    bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
 public:
     StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -196,6 +197,7 @@ class NumericPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>
 {
 private:
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
     using BaseType = typename AttrT::T;
     using Params = attribute::SearchContextParams;
@@ -215,7 +217,7 @@ private:
             ? limit
             : estimate;
     }
-    void fetchPostings(const queryeval::ExecuteInfo & execInfo) override {
+    void fetchPostings(const ExecuteInfo & execInfo) override {
         if (params().diversityAttribute() != nullptr) {
             bool forward = (this->getRangeLimit() > 0);
             size_t wanted_hits = std::abs(this->getRangeLimit());
@@ -227,7 +229,7 @@ private:
         }
     }
 
-    bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const override;
+    bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
     size_t calc_estimated_hits_in_range() const override;
 
 public:

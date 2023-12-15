@@ -68,11 +68,14 @@ PostingListSearchContextT<DataT>::fillArray()
 
 template <typename DataT>
 struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
-    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count, uint32_t limit)
-        : FillPart(posting_store, from, count, nullptr, limit)
+    FillPart(const vespalib::Doom & doom, const PostingStore& posting_store, const DictionaryConstIterator & from,
+             size_t count, uint32_t limit)
+        : FillPart(doom, posting_store, from, count, nullptr, limit)
     { }
-    FillPart(const PostingStore& posting_store, const DictionaryConstIterator & from, size_t count, BitVector * bv, uint32_t limit)
-        : _posting_store(posting_store),
+    FillPart(const vespalib::Doom & doom, const PostingStore& posting_store, const DictionaryConstIterator & from,
+             size_t count, BitVector * bv, uint32_t limit)
+        : _doom(doom),
+          _posting_store(posting_store),
           _bv(bv),
           _docIdLimit(limit),
           _from(from),
@@ -86,7 +89,8 @@ struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
             _owned_bv = BitVector::create(_docIdLimit);
             _bv = _owned_bv.get();
         }
-        for (;_from != _to;++_from) {
+        //TODO Add  && !_doom.soft_doom() to loop
+        for ( ;_from != _to; ++_from) {
             addToBitVector(PostingListTraverser<PostingStore>(_posting_store, _from.getData().load_acquire()));
         }
     }
@@ -95,6 +99,7 @@ struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
             if (__builtin_expect(key < _docIdLimit, true)) { _bv->setBit(key); }
         });
     }
+    const vespalib::Doom       _doom;
     const PostingStore        &_posting_store;
     BitVector                 *_bv;
     uint32_t                   _docIdLimit;
@@ -105,8 +110,9 @@ struct PostingListSearchContextT<DataT>::FillPart : public vespalib::Runnable {
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_bundle)
+PostingListSearchContextT<DataT>::fillBitVector(const ExecuteInfo & exec_info)
 {
+    vespalib::ThreadBundle & thread_bundle = exec_info.thread_bundle();
     size_t num_iter = _upperDictItr - _lowerDictItr;
     size_t num_threads = std::min(thread_bundle.size(), num_iter);
 
@@ -115,10 +121,10 @@ PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_
     std::vector<FillPart> parts;
     parts.reserve(num_threads);
     BitVector * master = _merger.getBitVector();
-    parts.emplace_back(_posting_store, _lowerDictItr, per_thread + (rest_docs > 0), master, _merger.getDocIdLimit());
+    parts.emplace_back(exec_info.doom(), _posting_store, _lowerDictItr, per_thread + (rest_docs > 0), master, _merger.getDocIdLimit());
     for (size_t i(1); i < num_threads; i++) {
         size_t num_this_thread = per_thread + (i < rest_docs);
-        parts.emplace_back(_posting_store, parts[i-1]._to, num_this_thread, _merger.getDocIdLimit());
+        parts.emplace_back(exec_info.doom(), _posting_store, parts[i-1]._to, num_this_thread, _merger.getDocIdLimit());
     }
     thread_bundle.run(parts);
     for (size_t i(1); i < parts.size(); i++) {
@@ -128,7 +134,7 @@ PostingListSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
+PostingListSearchContextT<DataT>::fetchPostings(const ExecuteInfo & exec_info)
 {
     // The following constant is derived after running parts of
     // the range search performance test with 10M documents on an Apple M1 Pro with 32 GB memory.
@@ -159,14 +165,14 @@ PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & e
     // The threshold for when to use array merging is therefore 0.0025 (0.08 / 32).
     constexpr float threshold_for_using_array = 0.0025;
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
-        if (execInfo.is_strict() || use_posting_lists_when_non_strict(execInfo)) {
+        if (exec_info.is_strict() || use_posting_lists_when_non_strict(exec_info)) {
             size_t sum = estimated_hits_in_range();
             if (sum < (_docIdLimit * threshold_for_using_array)) {
                 _merger.reserveArray(_uniqueValues, sum);
                 fillArray();
             } else {
                 _merger.allocBitVector();
-                fillBitVector(execInfo.thread_bundle());
+                fillBitVector(exec_info);
             }
             _merger.merge();
         }
@@ -219,7 +225,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         }
         const BitVector *bv(_merger.getBitVector());
         assert(bv != nullptr);
-        return search::BitVectorIterator::create(bv, bv->size(), *matchData, strict);
+        return BitVectorIterator::create(bv, bv->size(), *matchData, strict);
     }
     if (_uniqueValues == 1) {
         if (_bv != nullptr && (!_pidx.valid() || _useBitVector || matchData->isNotNeeded())) {
@@ -417,9 +423,9 @@ PostingListFoldedSearchContextT<DataT>::fillArray()
 
 template <typename DataT>
 void
-PostingListFoldedSearchContextT<DataT>::fillBitVector(vespalib::ThreadBundle & thread_bundle)
+PostingListFoldedSearchContextT<DataT>::fillBitVector(const ExecuteInfo & exec_info)
 {
-    (void) thread_bundle;
+    (void) exec_info;
     fill_array_or_bitvector<false>();
 }
 
@@ -483,7 +489,7 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(PostingLi
 
 template <typename BaseSC, typename AttrT, typename DataT>
 bool
-StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const
+StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(const ExecuteInfo& info) const
 {
     if (this->isFuzzy()) {
         uint32_t exp_doc_hits = this->_docIdLimit * info.hit_rate();

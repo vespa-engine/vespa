@@ -226,7 +226,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
-    fetchPostings(ExecuteInfo::create(true, 1.0, &requestContext.getDoom(), requestContext.thread_bundle(),
+    fetchPostings(ExecuteInfo::create(true, 1.0, requestContext.getDoom(), requestContext.thread_bundle(),
                                       create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
 }
 

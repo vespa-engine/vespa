@@ -468,7 +468,7 @@ template <typename V, typename T>
 ResultSetPtr
 SearchContextTest::performSearch(const V & vec, const T & term)
 {
-    return performSearch(search::queryeval::ExecuteInfo::TRUE, vec, term, TermType::WORD);
+    return performSearch(queryeval::ExecuteInfo::TRUE, vec, term, TermType::WORD);
 }
 
 template <typename V, typename T>
@@ -503,7 +503,7 @@ void
 SearchContextTest::performSearch(const V & vec, const vespalib::string & term,
                                  const DocSet & expected, TermType termType)
 {
-    performSearch(search::queryeval::ExecuteInfo::TRUE, vec, term, expected, termType);
+    performSearch(queryeval::ExecuteInfo::TRUE, vec, term, expected, termType);
 }
 
 void
@@ -1113,7 +1113,7 @@ SearchContextTest::performRangeSearch(const VectorType & vec, const vespalib::st
 {
     for (size_t num_threads : {1,3}) {
         vespalib::SimpleThreadBundle thread_bundle(num_threads);
-        auto executeInfo = search::queryeval::ExecuteInfo::create(true, 1.0, nullptr, thread_bundle, true, true);
+        auto executeInfo = queryeval::ExecuteInfo::create(true, 1.0, vespalib::Doom::armageddon(), thread_bundle, true, true);
         performSearch(executeInfo, vec, term, expected, TermType::WORD);
     }
 }
