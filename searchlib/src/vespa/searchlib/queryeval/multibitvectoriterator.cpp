@@ -55,8 +55,8 @@ MultiBitVector<Update>::MultiBitVector(size_t reserved)
       _accel(IAccelrated::getAccelerator()),
       _lastWords()
 {
-    static_assert(sizeof(_lastWords) == 256, "Lastwords should have 64 byte size");
-    static_assert(NumWordsInBatch == 32, "Batch size should be 8 words.");
+    static_assert(sizeof(_lastWords) == 256, "Lastwords should have 256 byte size");
+    static_assert(NumWordsInBatch == 32, "Batch size should be 32 words.");
     memset(_lastWords, 0, sizeof(_lastWords));
 }
 
