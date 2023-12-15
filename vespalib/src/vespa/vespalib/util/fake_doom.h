@@ -15,8 +15,8 @@ class FakeDoom {
     Clock                    _clock;
     Doom                     _doom;
 public:
-    FakeDoom() : FakeDoom(1s) { }
-    FakeDoom(steady_time::duration time_to_doom);
+    FakeDoom() noexcept : FakeDoom(1s) { }
+    FakeDoom(steady_time::duration time_to_doom) noexcept;
     ~FakeDoom();
     const Doom& get_doom() const noexcept { return _doom; }
 };

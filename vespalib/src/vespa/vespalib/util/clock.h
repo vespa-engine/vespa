@@ -8,7 +8,7 @@
 namespace vespalib {
 
 /**
- * Clock is a clock that updates the time at defined intervals.
+ * TODO Remove abstraction. Can use atomic ref directly
  * It is intended used where you want to check the time with low cost, but where
  * resolution is not that important.
  */

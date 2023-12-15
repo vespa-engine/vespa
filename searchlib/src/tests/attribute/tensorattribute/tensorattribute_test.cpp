@@ -7,7 +7,6 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
-#include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
@@ -25,7 +24,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -132,7 +130,7 @@ private:
     int _index_value;
 
 public:
-    MockIndexSaver(int index_value) : _index_value(index_value) {}
+    explicit MockIndexSaver(int index_value) noexcept : _index_value(index_value) {}
     void save(search::BufferWriter& writer) const override {
         writer.write(&_index_value, sizeof(int));
         writer.flush();
@@ -158,7 +156,7 @@ public:
 class MockPrepareResult : public PrepareResult {
 public:
     uint32_t docid;
-    MockPrepareResult(uint32_t docid_in) : docid(docid_in) {}
+    explicit MockPrepareResult(uint32_t docid_in) noexcept : docid(docid_in) {}
 };
 
 class MockNearestNeighborIndex : public NearestNeighborIndex {
@@ -177,7 +175,7 @@ private:
     int _index_value;
 
 public:
-    MockNearestNeighborIndex(const DocVectorAccess& vectors)
+    explicit MockNearestNeighborIndex(const DocVectorAccess& vectors)
         : _vectors(vectors),
           _adds(),
           _removes(),
@@ -279,11 +277,11 @@ public:
     }
     vespalib::MemoryUsage update_stat(const CompactionStrategy&) override {
         ++_memory_usage_cnt;
-        return vespalib::MemoryUsage();
+        return {};
     }
     vespalib::MemoryUsage memory_usage() const override {
         ++_memory_usage_cnt;
-        return vespalib::MemoryUsage();
+        return {};
     }
     void populate_address_space_usage(AddressSpaceUsage&) const override {}
     void get_state(const vespalib::slime::Inserter&) const override {}
@@ -293,7 +291,7 @@ public:
         if (_index_value != 0) {
             return std::make_unique<MockIndexSaver>(_index_value);
         }
-        return std::unique_ptr<NearestNeighborIndexSaver>();
+        return {};
     }
     std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) override {
         (void) header;
@@ -310,7 +308,7 @@ public:
         (void) explore_k;
         (void) doom;
         (void) distance_threshold;
-        return std::vector<Neighbor>();
+        return {};
     }
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                  const search::tensor::BoundDistanceFunction &df,
@@ -324,7 +322,7 @@ public:
         (void) filter;
         (void) doom;
         (void) distance_threshold;
-        return std::vector<Neighbor>();
+        return {};
     }
 
     search::tensor::DistanceFunctionFactory &distance_function_factory() const override {
@@ -427,7 +425,7 @@ struct Fixture {
     FixtureTraits _traits;
     vespalib::string _mmap_allocator_base_dir;
 
-    Fixture(const vespalib::string &typeSpec, FixtureTraits traits = FixtureTraits());
+    explicit Fixture(const vespalib::string &typeSpec, FixtureTraits traits = FixtureTraits());
 
     ~Fixture();
 
@@ -589,7 +587,7 @@ struct Fixture {
     }
 
     TensorSpec expEmptyDenseTensor() const {
-        return TensorSpec(denseSpec);
+        return {denseSpec};
     }
 
     vespalib::string expEmptyDenseTensorSpec() const {
@@ -1296,12 +1294,10 @@ template <typename ParentT>
 class NearestNeighborBlueprintFixtureBase : public ParentT {
 private:
     std::unique_ptr<Value> _query_tensor;
-    vespalib::FakeDoom     _no_doom;
 
 public:
     NearestNeighborBlueprintFixtureBase()
-        : _query_tensor(),
-          _no_doom()
+        : _query_tensor()
     {
         this->set_tensor(1, vec_2d(1, 1));
         this->set_tensor(2, vec_2d(2, 2));
@@ -1329,7 +1325,7 @@ public:
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
             3, approximate, 5, 100100.25,
-            global_filter_lower_limit, 1.0, target_hits_max_adjustment_factor, _no_doom.get_doom());
+            global_filter_lower_limit, 1.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
         EXPECT_EQUAL(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;

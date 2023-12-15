@@ -106,7 +106,7 @@ public:
                .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
     }
 
-    ~HnswIndexTest() {}
+    ~HnswIndexTest() override {}
 
     auto dff() {
         return search::tensor::make_distance_function_factory(
@@ -135,7 +135,7 @@ public:
         gen_handler.incGeneration();
         index->reclaim_memory(gen_handler.get_oldest_used_generation());
     }
-    void set_filter(std::vector<uint32_t> docids) {
+    void set_filter(const std::vector<uint32_t>& docids) {
         uint32_t sz = 10;
         global_filter = GlobalFilter::create(docids, sz);
     }
@@ -168,7 +168,7 @@ public:
         ASSERT_EQ(exp_levels.size(), act_node.size());
         EXPECT_EQ(exp_levels, act_node.levels());
     }
-    void expect_top_3_by_docid(const vespalib::string& label, std::vector<float> qv, std::vector<uint32_t> exp) {
+    void expect_top_3_by_docid(const vespalib::string& label, std::vector<float> qv, const std::vector<uint32_t>& exp) {
         SCOPED_TRACE(label);
         uint32_t k = 3;
         uint32_t explore_k = 100;
@@ -794,7 +794,7 @@ class MyGlobalFilter : public GlobalFilter {
     std::shared_ptr<GlobalFilter> _filter;
     mutable uint32_t              _max_docid;
 public:
-    MyGlobalFilter(std::shared_ptr<GlobalFilter> filter) noexcept
+    explicit MyGlobalFilter(std::shared_ptr<GlobalFilter> filter) noexcept
         : _filter(std::move(filter)),
           _max_docid(0)
     {
@@ -845,7 +845,7 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     global_filter = filter;
     this->expect_top_3_by_docid("{2,2}", {2, 2}, {1, 2});
     EXPECT_EQ(2, filter->max_docid());
-};
+}
 
 TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed)
 {
@@ -904,10 +904,10 @@ TEST(LevelGeneratorTest, gives_various_levels)
         }
         hist[l]++;
     }
-    for (uint32_t l = 0; l < hist.size(); ++l) {
+    for (unsigned int l : hist) {
         double expected = left * 0.75;
-        EXPECT_TRUE(hist[l] < expected*1.01 + 100);
-        EXPECT_TRUE(hist[l] > expected*0.99 - 100);
+        EXPECT_TRUE(l < expected*1.01 + 100);
+        EXPECT_TRUE(l > expected*0.99 - 100);
         left *= 0.25;
     }
     EXPECT_TRUE(hist.size() < 14);

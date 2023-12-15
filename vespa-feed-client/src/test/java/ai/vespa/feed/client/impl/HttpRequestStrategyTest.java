@@ -220,7 +220,7 @@ class HttpRequestStrategyTest {
             if (req == blocking) {
                 phaser.arriveAndAwaitAdvance();  // Synchronise with test main thread, and then ...
                 blocker.arriveAndAwaitAdvance(); // ... block dispatch thread, so we get something in the queue.
-                throw new RuntimeException("armageddon"); // Dispatch thread should die, tearing down everything.
+                throw new RuntimeException("never"); // Dispatch thread should die, tearing down everything.
             }
             else if (req == partial) {
                 phaser.arriveAndAwaitAdvance();  // Let test thread enqueue more ops before failing (and retrying) this.
