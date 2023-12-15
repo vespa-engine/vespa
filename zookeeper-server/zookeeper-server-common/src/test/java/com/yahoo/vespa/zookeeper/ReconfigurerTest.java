@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
