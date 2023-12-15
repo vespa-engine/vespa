@@ -19,7 +19,7 @@ public:
     duration soft_left() const noexcept { return _softDoom - _clock.getTimeNS(); }
     duration hard_left() const noexcept { return _hardDoom - _clock.getTimeNS(); }
     bool isExplicitSoftDoom() const noexcept { return _isExplicitSoftDoom; }
-    static const Doom & armageddon() noexcept;
+    static const Doom & never() noexcept;
 private:
     const Clock   &_clock;
     steady_time    _softDoom;

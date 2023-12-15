@@ -5,10 +5,6 @@
 
 namespace vespalib {
 
-namespace {
-    vespalib::FakeDoom practicallyNeverExpire(std::chrono::hours(24*365*100)); // doom in 100 years
-}
-
 Doom::Doom(const Clock &clock, steady_time softDoom,
            steady_time hardDoom, bool explicitSoftDoom) noexcept
     : _clock(clock),
@@ -17,6 +13,10 @@ Doom::Doom(const Clock &clock, steady_time softDoom,
       _isExplicitSoftDoom(explicitSoftDoom)
 { }
 
-const Doom & Doom::armageddon() noexcept { return practicallyNeverExpire.get_doom(); }
+const Doom &
+Doom::never() noexcept {
+    static vespalib::FakeDoom neverExpire;
+    return neverExpire.get_doom();
+}
 
 }
