@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
-import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.time.Duration;
 import java.util.Map;

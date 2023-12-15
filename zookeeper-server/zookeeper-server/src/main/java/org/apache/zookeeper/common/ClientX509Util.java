@@ -18,7 +18,6 @@
 
 package org.apache.zookeeper.common;
 
-import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -29,16 +28,21 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
+
+import org.apache.zookeeper.common.X509Exception.KeyManagerException;
+import org.apache.zookeeper.common.X509Exception.SSLContextException;
+import org.apache.zookeeper.server.auth.ProviderRegistry;
+import org.apache.zookeeper.server.auth.X509AuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * X509 utilities specific for client-server communication framework.
- * <p>
- * <em>Modified to use Vespa's TLS context, whenever it is available, instead of the file-based key and trust stores of ZK 3.9.
- * Based on https://github.com/apache/zookeeper/blob/branch-3.9/zookeeper-server/src/main/java/org/apache/zookeeper/common/ClientX509Util.java</em>
  *
- * @author jonmv
+ * <em>NOTE: Overridden because ZK 3.9 completely broke the SSL setup APIs; for clients, key and trust stores are
+ * now mandatory, unlike for servers, where it's still possible to provide a custom authProvider. This patch fixes that.
+ * Based on https://github.com/apache/zookeeper/blob/branch-3.9/zookeeper-server/src/main/java/org/apache/zookeeper/common/ClientX509Util.java</em>
+ * <p>
+ * X509 utilities specific for client-server communication framework.
  */
 public class ClientX509Util extends X509Util {
 
@@ -66,31 +70,37 @@ public class ClientX509Util extends X509Util {
     }
 
     public SslContext createNettySslContextForClient(ZKConfig config)
-            throws X509Exception.KeyManagerException, X509Exception.TrustManagerException, SSLException {
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+        throws X509Exception.KeyManagerException, X509Exception.TrustManagerException, SSLException {
+
         KeyManager km;
         TrustManager tm;
-        if (VespaZookeeperTlsContextUtils.tlsContext().isPresent()) {
-            km = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().keyManager();
-            tm = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().trustManager();
-        }
-        else {
+        String authProviderProp = System.getProperty(getSslAuthProviderProperty());
+        if (authProviderProp == null) {
             String keyStoreLocation = config.getProperty(getSslKeystoreLocationProperty(), "");
             String keyStorePassword = getPasswordFromConfigPropertyOrFile(config, getSslKeystorePasswdProperty(),
                                                                           getSslKeystorePasswdPathProperty());
             String keyStoreType = config.getProperty(getSslKeystoreTypeProperty());
-
             if (keyStoreLocation.isEmpty()) {
                 LOG.warn("{} not specified", getSslKeystoreLocationProperty());
                 km = null;
-            }
-            else {
+            } else {
                 km = createKeyManager(keyStoreLocation, keyStorePassword, keyStoreType);
             }
-
             tm = getTrustManager(config);
+        } else {
+            X509AuthenticationProvider authProvider = (X509AuthenticationProvider) ProviderRegistry.getProvider(
+                    System.getProperty(getSslAuthProviderProperty(), "x509"));
+
+            if (authProvider == null) {
+                LOG.error("Auth provider not found: {}", authProviderProp);
+                throw new SSLException("Could not create SSLContext with specified auth provider: " + authProviderProp);
+            }
+            LOG.info("Using auth provider for client: {}", authProviderProp);
+            km = authProvider.getKeyManager();
+            tm = authProvider.getTrustManager();
         }
 
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
         if (km != null) {
             sslContextBuilder.keyManager(km);
         }
@@ -98,54 +108,36 @@ public class ClientX509Util extends X509Util {
             sslContextBuilder.trustManager(tm);
         }
 
-        sslContextBuilder.enableOcsp(config.getBoolean(getSslOcspEnabledProperty()));
-        sslContextBuilder.protocols(getEnabledProtocols(config));
-        Iterable<String> enabledCiphers = getCipherSuites(config);
-        if (enabledCiphers != null) {
-            sslContextBuilder.ciphers(enabledCiphers);
-        }
-        sslContextBuilder.sslProvider(getSslProvider(config));
-
-        SslContext sslContext1 = sslContextBuilder.build();
-
-        if (getFipsMode(config) && isServerHostnameVerificationEnabled(config)) {
-            return addHostnameVerification(sslContext1, "Server");
-        } else {
-            return sslContext1;
-        }
+        return createNettySslContext(config, sslContextBuilder, "Server");
     }
 
     public SslContext createNettySslContextForServer(ZKConfig config)
-            throws X509Exception.SSLContextException, X509Exception.KeyManagerException, X509Exception.TrustManagerException, SSLException {
-        KeyManager km;
-        TrustManager tm;
-        if (VespaZookeeperTlsContextUtils.tlsContext().isPresent()) {
-            km = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().keyManager();
-            tm = VespaZookeeperTlsContextUtils.tlsContext().get().sslContext().trustManager();
-        }
-        else {
-            String keyStoreLocation = config.getProperty(getSslKeystoreLocationProperty(), "");
-            String keyStorePassword = getPasswordFromConfigPropertyOrFile(config, getSslKeystorePasswdProperty(),
-                                                                          getSslKeystorePasswdPathProperty());
-            String keyStoreType = config.getProperty(getSslKeystoreTypeProperty());
+        throws X509Exception.SSLContextException, X509Exception.KeyManagerException, X509Exception.TrustManagerException, SSLException {
+        String keyStoreLocation = config.getProperty(getSslKeystoreLocationProperty(), "");
+        String keyStorePassword = getPasswordFromConfigPropertyOrFile(config, getSslKeystorePasswdProperty(),
+            getSslKeystorePasswdPathProperty());
+        String keyStoreType = config.getProperty(getSslKeystoreTypeProperty());
 
-            if (keyStoreLocation.isEmpty()) {
-                throw new X509Exception.SSLContextException(
-                        "Keystore is required for SSL server: " + getSslKeystoreLocationProperty());
-            }
-            km = createKeyManager(keyStoreLocation, keyStorePassword, keyStoreType);
-            tm = getTrustManager(config);
+        if (keyStoreLocation.isEmpty()) {
+            throw new X509Exception.SSLContextException(
+                "Keystore is required for SSL server: " + getSslKeystoreLocationProperty());
         }
-        return createNettySslContextForServer(config, km, tm);
+
+        KeyManager km = createKeyManager(keyStoreLocation, keyStorePassword, keyStoreType);
+        TrustManager trustManager = getTrustManager(config);
+
+        return createNettySslContextForServer(config, km, trustManager);
     }
 
-    public SslContext createNettySslContextForServer(ZKConfig config, KeyManager keyManager, TrustManager trustManager) throws SSLException {
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(keyManager);
-
-        if (trustManager != null) {
-            sslContextBuilder.trustManager(trustManager);
+    public SslContext createNettySslContextForServer(ZKConfig config, KeyManager km, TrustManager tm) throws SSLException {
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(km);
+        if (tm != null) {
+            sslContextBuilder.trustManager(tm);
         }
+        return createNettySslContext(config, sslContextBuilder, "Client");
+    }
 
+    SslContext createNettySslContext(ZKConfig config, SslContextBuilder sslContextBuilder, String clientOrServer) throws SSLException {
         sslContextBuilder.enableOcsp(config.getBoolean(getSslOcspEnabledProperty()));
         sslContextBuilder.protocols(getEnabledProtocols(config));
         sslContextBuilder.clientAuth(getClientAuth(config).toNettyClientAuth());
@@ -155,12 +147,12 @@ public class ClientX509Util extends X509Util {
         }
         sslContextBuilder.sslProvider(getSslProvider(config));
 
-        SslContext sslContext1 = sslContextBuilder.build();
+        SslContext sslContext = sslContextBuilder.build();
 
         if (getFipsMode(config) && isClientHostnameVerificationEnabled(config)) {
-            return addHostnameVerification(sslContext1, "Client");
+            return addHostnameVerification(sslContext, clientOrServer);
         } else {
-            return sslContext1;
+            return sslContext;
         }
     }
 
@@ -209,7 +201,7 @@ public class ClientX509Util extends X509Util {
     private TrustManager getTrustManager(ZKConfig config) throws X509Exception.TrustManagerException {
         String trustStoreLocation = config.getProperty(getSslTruststoreLocationProperty(), "");
         String trustStorePassword = getPasswordFromConfigPropertyOrFile(config, getSslTruststorePasswdProperty(),
-                                                                        getSslTruststorePasswdPathProperty());
+            getSslTruststorePasswdPathProperty());
         String trustStoreType = config.getProperty(getSslTruststoreTypeProperty());
 
         boolean sslCrlEnabled = config.getBoolean(getSslCrlEnabledProperty());
@@ -222,8 +214,8 @@ public class ClientX509Util extends X509Util {
             return null;
         } else {
             return createTrustManager(trustStoreLocation, trustStorePassword, trustStoreType,
-                                      sslCrlEnabled, sslOcspEnabled, sslServerHostnameVerificationEnabled,
-                                      sslClientHostnameVerificationEnabled, getFipsMode(config));
+                sslCrlEnabled, sslOcspEnabled, sslServerHostnameVerificationEnabled,
+                sslClientHostnameVerificationEnabled, getFipsMode(config));
         }
     }
 }
