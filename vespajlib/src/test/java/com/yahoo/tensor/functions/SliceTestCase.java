@@ -135,4 +135,13 @@ public class SliceTestCase {
                      .toString());
     }
 
+    @Test
+    public void testLabelsWithSpaceToString() {
+        Tensor input = Tensor.from("tensor(key{}):{a:1, 'b c':2}");
+        assertEquals("tensor(key{}):{a:1.0, 'b c':2.0}{key:'b c'}",
+                new Slice<>(new ConstantTensor<>(input),
+                        List.of(new Slice.DimensionValue<>("key", "b c")))
+                        .toString());
+    }
+
 }
