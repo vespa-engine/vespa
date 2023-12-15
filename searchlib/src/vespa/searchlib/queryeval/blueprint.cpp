@@ -358,6 +358,7 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.visitInt("tree_size", state.tree_size());
     visitor.visitBool("allow_termwise_eval", state.allow_termwise_eval());
     visitor.closeStruct();
+    visitor.visitFloat("cost", _cost);
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
 }

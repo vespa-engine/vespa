@@ -162,6 +162,7 @@ vespa_define_module(
     src/tests/simple_thread_bundle
     src/tests/singleexecutor
     src/tests/slime
+    src/tests/slime/are_equal
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
     src/tests/small_vector
