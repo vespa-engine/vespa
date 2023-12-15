@@ -5,6 +5,8 @@ import ai.vespa.validation.Validation;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
+
 import java.nio.file.Path;
 import java.time.Duration;
 
