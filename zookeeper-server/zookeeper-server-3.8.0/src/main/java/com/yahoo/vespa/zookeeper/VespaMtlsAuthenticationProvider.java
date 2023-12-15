@@ -2,24 +2,19 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.security.X509SslContext;
-import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.TransportSecurityUtils;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.common.ClientX509Util;
-import org.apache.zookeeper.common.X509Exception;
 import org.apache.zookeeper.data.Id;
 import org.apache.zookeeper.server.ServerCnxn;
 import org.apache.zookeeper.server.auth.AuthenticationProvider;
 import org.apache.zookeeper.server.auth.X509AuthenticationProvider;
 
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
- * A {@link AuthenticationProvider} to be used in combination with Vespa mTLS.
+ * A {@link AuthenticationProvider} to be used in combination with Vespa mTLS
  *
  * @author bjorncs
  */
@@ -28,7 +23,15 @@ public class VespaMtlsAuthenticationProvider extends X509AuthenticationProvider 
     private static final Logger log = Logger.getLogger(VespaMtlsAuthenticationProvider.class.getName());
 
     public VespaMtlsAuthenticationProvider() {
-        super(null, null);
+        super(trustManager(), keyManager());
+    }
+
+    private static X509KeyManager keyManager() {
+        return new VespaSslContextProvider().tlsContext().map(X509SslContext::keyManager).orElse(null);
+    }
+
+    private static X509TrustManager trustManager() {
+        return new VespaSslContextProvider().tlsContext().map(X509SslContext::trustManager).orElse(null);
     }
 
     @Override

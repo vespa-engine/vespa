@@ -139,7 +139,6 @@
         <module>zkfacade</module>
         <module>zookeeper-client-common</module>
         <module>zookeeper-command-line-client</module>
-        <module>zookeeper-common</module>
         <module>zookeeper-server</module>
     </modules>
 

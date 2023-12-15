@@ -3,7 +3,6 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
 
 import java.nio.file.Path;
 
