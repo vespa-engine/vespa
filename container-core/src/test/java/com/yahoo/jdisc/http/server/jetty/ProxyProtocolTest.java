@@ -221,7 +221,7 @@ class ProxyProtocolTest {
             JettyTestDriver driver, InMemoryRequestLog reqLog, int expectedReqLogSize, InMemoryConnectionLog connLog,
             int expectedConnLogSize) {
         Predicate<Void> waitCondition = __ ->
-                reqLog.entries().size() < expectedConnLogSize && connLog.logEntries().size() < expectedReqLogSize;
+                reqLog.entries().size() < expectedReqLogSize && connLog.logEntries().size() < expectedConnLogSize;
         await(waitCondition);
         assertTrue(driver.close());
         if (waitCondition.test(null)) await(waitCondition);
