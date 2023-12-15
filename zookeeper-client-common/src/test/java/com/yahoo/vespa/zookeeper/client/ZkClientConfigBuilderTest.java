@@ -31,6 +31,7 @@ public class ZkClientConfigBuilderTest {
         assertEquals("org.apache.zookeeper.ClientCnxnSocketNetty", config.getProperty(CLIENT_CONNECTION_SOCKET));
         assertNull(config.getProperty(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY));
         assertNull(config.getProperty(SSL_CLIENTAUTH_PROPERTY));
+        assertNull(config.getProperty(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY));
     }
 
     @Test
@@ -42,6 +43,7 @@ public class ZkClientConfigBuilderTest {
         assertEquals("TLSv1.3", config.getProperty(SSL_ENABLED_PROTOCOLS_PROPERTY));
         assertEquals("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", config.getProperty(SSL_ENABLED_CIPHERSUITES_PROPERTY));
         assertEquals("NEED", config.getProperty(SSL_CLIENTAUTH_PROPERTY));
+        assertEquals(VespaSslContextProvider.class.getName(), config.getProperty(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY));
     }
 
     private static class MockTlsContext implements TlsContext {

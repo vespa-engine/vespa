@@ -70,6 +70,7 @@ public class ZkClientConfigBuilder {
         builder.put(CLIENT_CONNECTION_SOCKET, "org.apache.zookeeper.ClientCnxnSocketNetty");
         if (tlsContext != null) {
             String protocolsConfigValue = Arrays.stream(tlsContext.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
+            builder.put(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY, VespaSslContextProvider.class.getName());
             builder.put(SSL_ENABLED_PROTOCOLS_PROPERTY, protocolsConfigValue);
             String ciphersConfigValue = Arrays.stream(tlsContext.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
             builder.put(SSL_ENABLED_CIPHERSUITES_PROPERTY, ciphersConfigValue);

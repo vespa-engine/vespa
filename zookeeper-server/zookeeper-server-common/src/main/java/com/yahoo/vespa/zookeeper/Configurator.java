@@ -216,6 +216,7 @@ public class Configurator {
         default void appendSharedTlsConfig(Map<String, String> configEntries, VespaTlsConfig vespaTlsConfig) {
             vespaTlsConfig.context().ifPresent(ctx -> {
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
+                configEntries.put(configFieldPrefix() + ".context.supplier.class", VespaSslContextProvider.class.getName());
                 configEntries.put(configFieldPrefix() + ".ciphersuites", enabledCiphers);
                 String enabledProtocols = Arrays.stream(ctx.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
                 configEntries.put(configFieldPrefix() + ".enabledProtocols", enabledProtocols);
