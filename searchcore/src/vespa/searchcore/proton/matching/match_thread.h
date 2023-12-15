@@ -88,7 +88,7 @@ private:
         LazyValue       _score_feature;
         double          _rankDropLimit;
         HitCollector   &_hits;
-        const Doom     &_doom;
+        const Doom      _doom;
     public:
         std::vector<uint32_t> dropped;
     };

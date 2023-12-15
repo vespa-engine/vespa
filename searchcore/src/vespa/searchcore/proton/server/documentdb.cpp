@@ -37,7 +37,6 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/clock.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -219,7 +218,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
               _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
-              metricsWireService, getMetrics(), queryLimiter, shared_service.clock().nowRef(),
+              metricsWireService, getMetrics(), queryLimiter, shared_service.nowRef(),
               _configMutex, _baseDir, hwInfo),
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),

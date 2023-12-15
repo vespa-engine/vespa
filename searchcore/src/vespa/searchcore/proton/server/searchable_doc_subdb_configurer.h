@@ -17,7 +17,6 @@ namespace searchcorespi { class IndexSearchable; }
 namespace proton::matching { class QueryLimiter; }
 
 namespace vespalib::eval { struct ConstantValueFactory; }
-namespace vespalib { class Clock; }
 
 namespace proton {
 

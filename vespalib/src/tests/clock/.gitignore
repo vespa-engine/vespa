@@ -1,5 +1,0 @@
-.depend
-Makefile
-clock_test
-vespalib_clock_test_app
-vespalib_clock_benchmark_app

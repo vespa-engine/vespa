@@ -7,7 +7,6 @@ class FNET_Transport;
 
 namespace vespalib {
     class ISequencedTaskExecutor;
-    class Clock;
 }
 namespace searchcorespi::index {
 
