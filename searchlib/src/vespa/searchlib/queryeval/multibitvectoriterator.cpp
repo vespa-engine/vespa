@@ -20,7 +20,7 @@ struct And {
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.and64(offset, src, dest);
     }
-    static bool isAnd() noexcept { return true; }
+    static constexpr bool isAnd() noexcept { return true; }
 };
 
 struct Or {
@@ -28,7 +28,7 @@ struct Or {
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.or64(offset, src, dest);
     }
-    static bool isAnd() noexcept { return false; }
+    static constexpr bool isAnd() noexcept { return false; }
 };
 
 }
@@ -63,22 +63,27 @@ MultiBitVector<Update>::MultiBitVector(size_t reserved)
 
 template<typename Update>
 bool
-MultiBitVector<Update>::updateLastValue(uint32_t docId) noexcept
+MultiBitVector<Update>::updateLastValueCold(uint32_t docId) noexcept
 {
-    if (docId >= _lastMaxDocIdLimit) {
-        if (__builtin_expect(isAtEnd(docId), false)) {
-            return true;
-        }
-        const uint32_t index(BitWord::wordNum(docId));
-        if (docId >= _lastMaxDocIdLimitRequireFetch) {
-            uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
-            _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
-            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
-        }
-        _lastValue = _lastWords[index % NumWordsInBatch];
-        _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
+    if (__builtin_expect(isAtEnd(docId), false)) {
+        return true;
     }
+    const uint32_t index(BitWord::wordNum(docId));
+    if (docId >= _lastMaxDocIdLimitRequireFetch) {
+        fetchChunk(index);
+    }
+    _lastValue = _lastWords[index % NumWordsInBatch];
+    _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     return false;
+}
+
+template<typename Update>
+void
+MultiBitVector<Update>::fetchChunk(uint32_t index) noexcept
+{
+    uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
+    _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
+    _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
 }
 
 template<typename Update>
@@ -87,12 +92,11 @@ MultiBitVector<Update>::strictSeek(uint32_t docId) noexcept
 {
     bool atEnd;
     for (atEnd = updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
-         (_lastValue == 0) && __builtin_expect(! atEnd, true);
+         __builtin_expect(_lastValue == 0, Update::isAnd()) && __builtin_expect(! atEnd, true); // And is likely to have few bits, while Or has many.
          atEnd = updateLastValue(_lastMaxDocIdLimit));
-    if (__builtin_expect(!atEnd, true)) {
-        return _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue);
-    }
-    return _numDocs;
+    return (__builtin_expect(!atEnd, true))
+        ? _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue)
+        : _numDocs;
 }
 
 template<typename Update>
@@ -100,12 +104,8 @@ bool
 MultiBitVector<Update>::seek(uint32_t docId) noexcept
 {
     bool atEnd = updateLastValue(docId);
-    if (__builtin_expect( ! atEnd, true)) {
-        if (_lastValue & BitWord::mask(docId)) {
-            return true;
-        }
-    }
-    return false;
+    return __builtin_expect( ! atEnd, true) &&
+           __builtin_expect(_lastValue & BitWord::mask(docId), false);
 }
 
 namespace {
@@ -160,7 +160,7 @@ template<typename Update>
 void
 MultiBitVectorIterator<Update>::doSeek(uint32_t docId)
 {
-    if (_mbv.seek(docId)) {
+    if (_mbv.seek(docId)) [[unlikely]] {
         setDocId(docId);
     }
 }
