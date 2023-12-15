@@ -31,10 +31,10 @@ public:
     virtual double squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept = 0;
     virtual double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept = 0;
     virtual double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept = 0;
-    // AND 64 bytes from multiple, optionally inverted sources
-    virtual void and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
-    // OR 64 bytes from multiple, optionally inverted sources
-    virtual void or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
+    // AND 256 bytes from multiple, optionally inverted sources
+    virtual void and256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
+    // OR 256 bytes from multiple, optionally inverted sources
+    virtual void or256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
 
     static const IAccelrated & getAccelerator() __attribute__((noinline));
 };

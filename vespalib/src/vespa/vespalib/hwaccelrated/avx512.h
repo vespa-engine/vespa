@@ -18,8 +18,8 @@ public:
     double squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept override;
     double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept override;
     double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept override;
-    void and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
-    void or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
+    void and256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
+    void or256(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
 };
 
 }
