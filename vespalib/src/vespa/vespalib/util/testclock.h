@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "clock.h"
+#include "time.h"
+#include <atomic>
 
 namespace vespalib {
 
@@ -15,7 +16,6 @@ class TestClock
 {
 private:
     std::unique_ptr<InvokeServiceImpl> _ticker;
-    Clock _clock;
 public:
     TestClock();
     TestClock(const TestClock &) = delete;
@@ -23,7 +23,7 @@ public:
     TestClock(TestClock &&) = delete;
     TestClock & operator =(TestClock &&) = delete;
     ~TestClock();
-    const Clock & clock() { return _clock; }
+    const std::atomic<steady_time> & nowRef() const;
 };
 
 }

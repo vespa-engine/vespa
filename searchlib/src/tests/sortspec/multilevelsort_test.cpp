@@ -8,7 +8,6 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <type_traits>
 #include <cinttypes>
@@ -242,10 +241,8 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &specs, uint32_t num,
         hits.emplace_back(i,  getRandomValue<uint32_t>());
     }
 
-    vespalib::TestClock clock;
-    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec sorter("no-metastore", 7, doom, ucaFactory);
+    FastS_SortSpec sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
     // init sorter with sort data
     for (const auto & spec : specs) {
         AttributeGuard ag;
@@ -384,10 +381,8 @@ TEST("require that all sort methods behave the same")
 }
 
 TEST("test that [docid] translates to [lid][paritionid]") {
-    vespalib::TestClock clock;
-    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec asc("no-metastore", 7, doom, ucaFactory);
+    FastS_SortSpec asc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
     search::AttributeManager mgr;
     search::AttributeContext ac(mgr);
@@ -404,7 +399,7 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     EXPECT_EQUAL(6u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
 
-    FastS_SortSpec desc("no-metastore", 7, doom, ucaFactory);
+    FastS_SortSpec desc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
     desc.Init("-[docid]", ac);
     desc.initWithoutSorting(hits, 2);
     sr1 = desc.getSortRef(0);
@@ -416,10 +411,8 @@ TEST("test that [docid] translates to [lid][paritionid]") {
 }
 
 TEST("test that [docid] uses attribute when one exists") {
-    vespalib::TestClock clock;
-    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec asc("metastore", 7, doom, ucaFactory);
+    FastS_SortSpec asc("metastore", 7, vespalib::Doom::never(), ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
     Config cfg(BasicType::INT64, CollectionType::SINGLE);
     auto metastore = AttributeFactory::createAttribute("metastore", cfg);
@@ -445,7 +438,7 @@ TEST("test that [docid] uses attribute when one exists") {
     EXPECT_EQUAL(8u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 8));
 
-    FastS_SortSpec desc("metastore", 7, doom, ucaFactory);
+    FastS_SortSpec desc("metastore", 7, vespalib::Doom::never(), ucaFactory);
     desc.Init("-[docid]", ac);
     desc.initWithoutSorting(hits, 2);
     sr1 = desc.getSortRef(0);

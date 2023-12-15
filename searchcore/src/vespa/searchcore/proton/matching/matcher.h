@@ -16,7 +16,6 @@
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <mutex>
@@ -59,16 +58,17 @@ private:
     using my_clock = std::chrono::steady_clock;
     using MatchingElements = search::MatchingElements;
     using MatchingElementsFields = search::MatchingElementsFields;
-    IndexEnvironment              _indexEnv;
-    search::fef::BlueprintFactory _blueprintFactory;
-    std::shared_ptr<RankSetup>    _rankSetup;
-    ViewResolver                  _viewResolver;
-    std::mutex                    _statsLock;
-    MatchingStats                 _stats;
-    my_clock::time_point          _startTime;
-    const vespalib::Clock        &_clock;
-    QueryLimiter                 &_queryLimiter;
-    uint32_t                      _distributionKey;
+    using steady_time = vespalib::steady_time;
+    IndexEnvironment                _indexEnv;
+    search::fef::BlueprintFactory   _blueprintFactory;
+    std::shared_ptr<RankSetup>      _rankSetup;
+    ViewResolver                    _viewResolver;
+    std::mutex                      _statsLock;
+    MatchingStats                   _stats;
+    my_clock::time_point            _startTime;
+    const std::atomic<steady_time> &_now_ref;
+    QueryLimiter                   &_queryLimiter;
+    uint32_t                        _distributionKey;
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
                                       const Properties & rankProperties) const;
@@ -91,7 +91,7 @@ public:
      * @param clock used for timeout handling
      **/
     Matcher(const search::index::Schema &schema, Properties props,
-            const vespalib::Clock &clock, QueryLimiter &queryLimiter,
+            const std::atomic<steady_time> & now_ref, QueryLimiter &queryLimiter,
             const search::fef::IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }

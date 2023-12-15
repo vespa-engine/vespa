@@ -202,7 +202,7 @@ Fixture::Fixture()
     std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                               _constantValueFactory, _clock.clock(), "test", 0);
+                                               _constantValueFactory, _clock.nowRef(), "test", 0);
 }
 Fixture::~Fixture() = default;
 
@@ -212,7 +212,7 @@ Fixture::initViewSet(ViewSet &views)
     using IndexManager = proton::index::IndexManager;
     using IndexConfig = proton::index::IndexConfig;
     RankingAssetsRepo ranking_assets_repo_source(_constantValueFactory, {}, {}, {});
-    auto matchers = std::make_shared<Matchers>(_clock.clock(), _queryLimiter, ranking_assets_repo_source);
+    auto matchers = std::make_shared<Matchers>(_clock.nowRef(), _queryLimiter, ranking_assets_repo_source);
     auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);

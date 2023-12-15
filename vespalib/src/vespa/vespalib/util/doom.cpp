@@ -5,9 +5,9 @@
 
 namespace vespalib {
 
-Doom::Doom(const Clock &clock, steady_time softDoom,
+Doom::Doom(const std::atomic<steady_time> & now_ref, steady_time softDoom,
            steady_time hardDoom, bool explicitSoftDoom) noexcept
-    : _clock(clock),
+    : _now(now_ref),
       _softDoom(softDoom),
       _hardDoom(hardDoom),
       _isExplicitSoftDoom(explicitSoftDoom)

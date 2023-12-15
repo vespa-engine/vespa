@@ -16,7 +16,6 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
-#include <vespa/vespalib/util/clock.h>
 
 namespace vespalib { class ExecutionProfiler; }
 namespace vespalib { struct ThreadBundle; }

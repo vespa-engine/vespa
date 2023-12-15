@@ -53,7 +53,7 @@ private:
 public:
     RequestContextTest()
         : _clock(),
-          _doom(_clock.clock(), vespalib::steady_time(), vespalib::steady_time(), false),
+          _doom(_clock.nowRef(), vespalib::steady_time(), vespalib::steady_time(), false),
           _thread_bundle(1),
           _attr_ctx(),
           _index_env(),

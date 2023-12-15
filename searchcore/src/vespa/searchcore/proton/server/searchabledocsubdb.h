@@ -41,18 +41,19 @@ SearchableDocSubDB : public FastAccessDocSubDB,
 public:
 
     struct Context {
+        using steady_time = vespalib::steady_time;
         const FastAccessDocSubDB::Context  _fastUpdCtx;
         matching::QueryLimiter            &_queryLimiter;
-        const vespalib::Clock             &_clock;
+        const std::atomic<steady_time>    &_now_ref;
         vespalib::Executor                &_warmupExecutor;
 
         Context(const FastAccessDocSubDB::Context &fastUpdCtx,
                 matching::QueryLimiter &queryLimiter,
-                const vespalib::Clock &clock,
+                const std::atomic<steady_time> & now_ref,
                 vespalib:: Executor &warmupExecutor)
             : _fastUpdCtx(fastUpdCtx),
               _queryLimiter(queryLimiter),
-              _clock(clock),
+              _now_ref(now_ref),
               _warmupExecutor(warmupExecutor)
         { }
     };

@@ -41,12 +41,13 @@ class SearchableDocSubDBConfigurer
 private:
     using SearchViewHolder = vespalib::VarHolder<std::shared_ptr<SearchView>>;
     using FeedViewHolder = vespalib::VarHolder<std::shared_ptr<SearchableFeedView>>;
+    using steady_time = vespalib::steady_time;
     const std::shared_ptr<ISummaryManager>& _summaryMgr;
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;
     matching::QueryLimiter      &_queryLimiter;
     const vespalib::eval::ConstantValueFactory& _constant_value_factory;
-    const vespalib::Clock       &_clock;
+    const std::atomic<steady_time> & _now_ref;
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
 
@@ -72,7 +73,7 @@ public:
                                  FeedViewHolder &feedView,
                                  matching::QueryLimiter &queryLimiter,
                                  const vespalib::eval::ConstantValueFactory& constant_value_factory,
-                                 const vespalib::Clock &clock,
+                                 const std::atomic<steady_time> & now_ref,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);
     ~SearchableDocSubDBConfigurer();
