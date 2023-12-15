@@ -178,7 +178,7 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
     baseRequest.serialize(nos);
 
     AllocatedBitVector bv(1);
-    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom, os.data(), os.size());
+    GroupingContext context(bv, f1.clock.nowRef(), f1.timeOfDoom, os.data(), os.size());
     ASSERT_TRUE(!context.empty());
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
@@ -209,7 +209,7 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
     auto r1 = std::make_shared<Grouping>(request1);
     auto r2 = std::make_shared<Grouping>(request2);
     AllocatedBitVector bv(1);
-    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext context(bv, f1.clock.nowRef(), f1.timeOfDoom);
     ASSERT_TRUE(context.empty());
     context.addGrouping(r1);
     ASSERT_TRUE(context.getGroupingList().size() == 1);
@@ -232,7 +232,7 @@ TEST_F("testGroupingContextSerializing", DoomFixture()) {
     baseRequest.serialize(nos);
 
     AllocatedBitVector bv(1);
-    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext context(bv, f1.clock.nowRef(), f1.timeOfDoom);
     auto bp = std::make_shared<Grouping>(baseRequest);
     context.addGrouping(bp);
     context.serialize();
@@ -251,7 +251,7 @@ TEST_F("testGroupingManager", DoomFixture()) {
             .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
     AllocatedBitVector bv(1);
-    GroupingContext context(bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext context(bv, f1.clock.nowRef(), f1.timeOfDoom);
     auto bp = std::make_shared<Grouping>(request1);
     context.addGrouping(bp);
     GroupingManager manager(context);
@@ -285,7 +285,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
 
     auto r1 = std::make_shared<Grouping>(request1);
     auto r2 = std::make_shared<Grouping>(request2);
-    GroupingContext initContext(world.bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     initContext.addGrouping(r1);
     initContext.addGrouping(r2);
     SessionId id("foo");
@@ -317,7 +317,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     }
     // Test second pass
     {
-        GroupingContext context(world.bv, f1.clock.clock(), f1.timeOfDoom);
+        GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
         auto r = std::make_shared<Grouping>(request1);
         r->setFirstLevel(1);
         r->setLastLevel(1);
@@ -328,7 +328,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     }
     // Test last pass. Session should be marked as finished
     {
-        GroupingContext context(world.bv, f1.clock.clock(), f1.timeOfDoom);
+        GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
         auto r = std::make_shared<Grouping>(request1);
         r->setFirstLevel(2);
         r->setLastLevel(2);
@@ -351,7 +351,7 @@ TEST_F("testEmptySessionId", DoomFixture()) {
             .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
     auto r1 = std::make_shared<Grouping>(request1);
-    GroupingContext initContext(world.bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     initContext.addGrouping(r1);
     SessionId id;
 
@@ -383,7 +383,7 @@ TEST_F("testSessionManager", DoomFixture()) {
                                                .setResult(Int64ResultNode(0))));
 
     auto r1 = std::make_shared<Grouping>(request1);
-    GroupingContext initContext(world.bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     initContext.addGrouping(r1);
 
     SessionManager mgr(2);
@@ -440,7 +440,7 @@ TEST_F("test grouping fork/join", DoomFixture()) {
            .setLastLevel(1);
 
     auto g1 = std::make_shared<Grouping>(request);
-    GroupingContext context(world.bv, f1.clock.clock(), f1.timeOfDoom);
+    GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     context.addGrouping(g1);
     GroupingSession session(SessionId(), context, world.attributeContext);
     session.prepareThreadContextCreation(4);
@@ -481,8 +481,8 @@ TEST_F("test session timeout", DoomFixture()) {
     SessionId id1("foo");
     SessionId id2("bar");
 
-    GroupingContext initContext1(world.bv, f1.clock.clock(), steady_time(duration(10)));
-    GroupingContext initContext2(world.bv, f1.clock.clock(), steady_time(duration(20)));
+    GroupingContext initContext1(world.bv, f1.clock.nowRef(), steady_time(duration(10)));
+    GroupingContext initContext2(world.bv, f1.clock.nowRef(), steady_time(duration(20)));
     auto s1 = std::make_unique<GroupingSession>(id1, initContext1, world.attributeContext);
     auto s2 = std::make_unique<GroupingSession>(id2, initContext2, world.attributeContext);
     mgr.insert(std::move(s1));

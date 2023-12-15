@@ -256,7 +256,7 @@ MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
     : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
-      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.clock(), writeService.shared())
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.nowRef(), writeService.shared())
 {}
 MySearchableContext::~MySearchableContext() = default;
 

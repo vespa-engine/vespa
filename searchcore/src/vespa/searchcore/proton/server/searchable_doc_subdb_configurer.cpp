@@ -95,7 +95,7 @@ SearchableDocSubDBConfigurer(const std::shared_ptr<ISummaryManager>& summaryMgr,
                              FeedViewHolder &feedView,
                              matching::QueryLimiter &queryLimiter,
                              const vespalib::eval::ConstantValueFactory& constant_value_factory,
-                             const vespalib::Clock &clock,
+                             const std::atomic<steady_time> & now_ref,
                              const vespalib::string &subDbName,
                              uint32_t distributionKey) :
     _summaryMgr(summaryMgr),
@@ -103,7 +103,7 @@ SearchableDocSubDBConfigurer(const std::shared_ptr<ISummaryManager>& summaryMgr,
     _feedView(feedView),
     _queryLimiter(queryLimiter),
     _constant_value_factory(constant_value_factory),
-    _clock(clock),
+    _now_ref(now_ref),
     _subDbName(subDbName),
     _distributionKey(distributionKey)
 { }
@@ -119,7 +119,7 @@ SearchableDocSubDBConfigurer::createMatchers(const DocumentDBConfig& new_config_
                                                               new_config_snapshot.getRankingConstantsSP(),
                                                               new_config_snapshot.getRankingExpressionsSP(),
                                                               new_config_snapshot.getOnnxModelsSP());
-    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, ranking_assets_repo_source);
+    auto newMatchers = std::make_shared<Matchers>(_now_ref, _queryLimiter, ranking_assets_repo_source);
     auto& ranking_assets_repo = newMatchers->get_ranking_assets_repo();
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
@@ -128,7 +128,7 @@ SearchableDocSubDBConfigurer::createMatchers(const DocumentDBConfig& new_config_
             properties.add(property.name, property.value);
         }
         // schema instance only used during call.
-        auto profptr = std::make_shared<Matcher>(*schema, std::move(properties), _clock, _queryLimiter,
+        auto profptr = std::make_shared<Matcher>(*schema, std::move(properties), _now_ref, _queryLimiter,
                                                  ranking_assets_repo, _distributionKey);
         newMatchers->add(name, std::move(profptr));
     }

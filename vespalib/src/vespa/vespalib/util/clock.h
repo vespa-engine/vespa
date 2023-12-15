@@ -28,6 +28,7 @@ public:
     vespalib::steady_time getTimeNS() const noexcept {
         return vespalib::steady_time(_timeNS.load(std::memory_order_relaxed));
     }
+    const std::atomic<steady_time> & nowRef() const { return _timeNS; }
 };
 
 }

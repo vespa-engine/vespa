@@ -12,7 +12,6 @@ namespace vespalib {
  */
 class FakeDoom {
     std::atomic<steady_time> _time;
-    Clock                    _clock;
     Doom                     _doom;
 public:
     FakeDoom() noexcept : FakeDoom(1s) { }

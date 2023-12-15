@@ -6,11 +6,15 @@
 namespace vespalib {
 
 TestClock::TestClock()
-    : _ticker(std::make_unique<InvokeServiceImpl>(10ms)),
-      _clock(_ticker->nowRef())
+    : _ticker(std::make_unique<InvokeServiceImpl>(10ms))
 {
 }
 
 TestClock::~TestClock() = default;
+
+const std::atomic<steady_time> &
+TestClock::nowRef() const {
+    return _ticker->nowRef();
+}
 
 }

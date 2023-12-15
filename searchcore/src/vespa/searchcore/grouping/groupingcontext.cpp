@@ -51,10 +51,10 @@ GroupingContext::setDistributionKey(uint32_t distributionKey)
     }
 }
 
-GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+GroupingContext::GroupingContext(const BitVector & validLids, const std::atomic<steady_time> & now_ref, vespalib::steady_time timeOfDoom,
                                  const char *groupSpec, uint32_t groupSpecLen)
     : _validLids(validLids),
-      _clock(clock),
+      _now_ref(now_ref),
       _timeOfDoom(timeOfDoom),
       _os(),
       _groupingList()
@@ -62,9 +62,9 @@ GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Cl
     deserialize(groupSpec, groupSpecLen);
 }
 
-GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom)
+GroupingContext::GroupingContext(const BitVector & validLids, const std::atomic<steady_time> & now_ref, vespalib::steady_time timeOfDoom)
     : _validLids(validLids),
-      _clock(clock),
+      _now_ref(now_ref),
       _timeOfDoom(timeOfDoom),
       _os(),
       _groupingList()
@@ -72,7 +72,7 @@ GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Cl
 
 GroupingContext::GroupingContext(const GroupingContext & rhs)
     : _validLids(rhs._validLids),
-      _clock(rhs._clock),
+      _now_ref(rhs._now_ref),
       _timeOfDoom(rhs._timeOfDoom),
       _os(),
       _groupingList()
