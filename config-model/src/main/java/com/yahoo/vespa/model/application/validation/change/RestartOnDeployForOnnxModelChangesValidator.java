@@ -109,7 +109,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         double nextModelCostInGb = onnxModelCostInGb(cluster);
 
         double totalMemory = cluster.getContainers().get(0).getHostResource().realResources().memoryGb();
-        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - currentModelCostInGb - currentModelCostInGb);
+        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - currentModelCostInGb - nextModelCostInGb);
         if (availableMemory <= 0.0)
             return false;
 
