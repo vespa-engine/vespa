@@ -216,12 +216,13 @@ class ProxyProtocolTest {
         }
     }
 
+
     /* Don't close Jetty to early ensuring that the request log is written */
     private static void assertLogSizeAndCloseDriver(
             JettyTestDriver driver, InMemoryRequestLog reqLog, int expectedReqLogSize, InMemoryConnectionLog connLog,
             int expectedConnLogSize) {
         Predicate<Void> waitCondition = __ ->
-                reqLog.entries().size() < expectedReqLogSize && connLog.logEntries().size() < expectedConnLogSize;
+                reqLog.entries().size() < expectedConnLogSize && connLog.logEntries().size() < expectedConnLogSize;
         await(waitCondition);
         assertTrue(driver.close());
         if (waitCondition.test(null)) await(waitCondition);
