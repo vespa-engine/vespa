@@ -16,7 +16,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.time.Clock;
 import java.time.Duration;

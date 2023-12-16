@@ -604,8 +604,8 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
-      "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
       "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
+      "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
       "public com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)",
       "public final boolean cancel(boolean)",
       "public final boolean isCancelled()"
