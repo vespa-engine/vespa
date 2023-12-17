@@ -100,7 +100,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>zookeeper-client-common</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.

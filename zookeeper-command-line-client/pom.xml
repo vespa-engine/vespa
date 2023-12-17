@@ -12,12 +12,20 @@
   <version>8-SNAPSHOT</version>
   <dependencies>
     <dependency>
-      <groupId>org.apache.zookeeper</groupId>
-      <artifactId>zookeeper</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>${zookeeper.client.artifactId}</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>zookeeper-client-common</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>defaults</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
@@ -47,11 +55,6 @@
       <!-- slf4j's replacement for log4j. See http://www.slf4j.org/legacy.html#log4j-over-slf4j -->
       <groupId>org.slf4j</groupId>
       <artifactId>log4j-over-slf4j</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.xerial.snappy</groupId>
-      <artifactId>snappy-java</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
