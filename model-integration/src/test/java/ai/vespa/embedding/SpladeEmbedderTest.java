@@ -9,10 +9,9 @@ import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import org.junit.Test;
-
 import java.util.List;
 
+import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +67,6 @@ public class SpladeEmbedderTest {
         SpladeEmbedderConfig.Builder builder = new SpladeEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
-        builder.transformerOutput("logits");
         builder.termScoreThreshold(scoreThreshold);
         builder.transformerGpuDevice(-1);
         return  new SpladeEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());

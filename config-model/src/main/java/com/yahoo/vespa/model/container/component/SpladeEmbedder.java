@@ -13,7 +13,6 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
 public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConfig.Producer {
 
     private final OnnxModelOptions onnxModelOptions;
-
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
     private final Integer maxTokens;
@@ -21,7 +20,6 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
     private final String transformerAttentionMask;
     private final String transformerTokenTypeIds;
     private final String transformerOutput;
-
     private final Double termScoreThreshold;
 
     public SpladeEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -52,8 +50,6 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         }
         throw new IllegalArgumentException("'tokenizer-model' must be specified");
     }
-
-
     @Override
     public void getConfig(SpladeEmbedderConfig.Builder b) {
         b.transformerModel(modelRef).tokenizerPath(vocabRef);

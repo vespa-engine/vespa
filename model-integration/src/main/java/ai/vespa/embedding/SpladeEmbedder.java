@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
@@ -9,12 +10,13 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.tensor.*;
+import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Reduce;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
@@ -137,16 +139,17 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         Tensor logOfRelu = modelOutput.map((x) -> Math.log(1 + Math.max(0, x)));
         Tensor maxReduced = logOfRelu.reduce(Reduce.Aggregator.max, "d1");
         IndexedTensor vocab = (IndexedTensor) maxReduced;
-        Tensor.Builder sparseTensor = MappedTensor.Builder.of(tensorType);
+        var builder = Tensor.Builder.of(tensorType);
         for(int i = 0; i < vocab.size(); i++) {
-            var value =  vocab.get(i);
-            if (value > termScoreThreshold) {
-                String t = tokenizer.decode(List.of((long) i));
-                TensorAddress label = TensorAddress.of(List.of(t).toArray(new String[0]));
-                sparseTensor.cell(label, value);
+            var score =  vocab.get(i);
+            if (score > termScoreThreshold) {
+                String term = tokenizer.decode(List.of((long) i));
+                builder.cell().
+                        label(tensorType.dimensions().get(0).name(), term)
+                        .value(score);
             }
         }
-        return sparseTensor.build();
+        return builder.build();
     }
 
 
@@ -159,7 +162,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         }
         return builder.build();
     }
-
     @Override
     public void deconstruct() {
         evaluator.close();
