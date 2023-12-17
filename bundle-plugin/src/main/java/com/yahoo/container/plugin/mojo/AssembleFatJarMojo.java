@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -104,7 +104,7 @@ public class AssembleFatJarMojo extends AbstractMojo {
         var jarsToShade = projectDependencies.stream()
                 .filter(d -> !installedDependencies.contains(d) && !d.getType().equals("pom") && d.getScope().equals("compile"))
                 .map(Artifact::getFile)
-                .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.<File>reverseOrder())));
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         jarsToShade.add(project.getArtifact().getFile());
         try {
             var classpath = generateClasspath(installedDependencies, projectDependencies);
