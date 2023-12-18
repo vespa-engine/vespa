@@ -116,9 +116,9 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default long mergingMaxMemoryUsagePerNode() { return -1; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean usePerDocumentThrottledDeleteBucket() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean createPostinglistWhenNonStrict() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useEstimateForFetchPostings() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useThreadBundleForFetchPostings() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean createPostinglistWhenNonStrict() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean useEstimateForFetchPostings() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean useThreadBundleForFetchPostings() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
     }

@@ -172,9 +172,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final double rankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
         private final boolean alwaysMarkPhraseExpensive;
-        private final boolean createPostinglistWhenNonStrict;
-        private final boolean useEstimateForFetchPostings;
-        private final boolean useThreadBundleForFetchPostings;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -218,9 +215,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
             sortBlueprintsByCost = deployProperties.featureFlags().sortBlueprintsByCost();
             alwaysMarkPhraseExpensive = deployProperties.featureFlags().alwaysMarkPhraseExpensive();
-            createPostinglistWhenNonStrict = deployProperties.featureFlags().createPostinglistWhenNonStrict();
-            useEstimateForFetchPostings = deployProperties.featureFlags().useEstimateForFetchPostings();
-            useThreadBundleForFetchPostings = deployProperties.featureFlags().useThreadBundleForFetchPostings();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
@@ -476,15 +470,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (alwaysMarkPhraseExpensive) {
                 properties.add(new Pair<>("vespa.matching.always_mark_phrase_expensive", String.valueOf(alwaysMarkPhraseExpensive)));
-            }
-            if ( ! createPostinglistWhenNonStrict) {
-                properties.add(new Pair<>("vespa.matching.create_postinglist_when_non_strict", String.valueOf(createPostinglistWhenNonStrict)));
-            }
-            if (useEstimateForFetchPostings) {
-                properties.add(new Pair<>("vespa.matching.use_estimate_for_fetch_postings", String.valueOf(useEstimateForFetchPostings)));
-            }
-            if (useThreadBundleForFetchPostings) {
-                properties.add(new Pair<>("vespa.matching.use_thread_bundle_for_fetch_postings", String.valueOf(useThreadBundleForFetchPostings)));
             }
             if (postFilterThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold.getAsDouble())));

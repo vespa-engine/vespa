@@ -334,29 +334,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2023-12-31",
+            List.of("baldersheim"), "2023-11-20", "2024-02-29",
             "If true all phrases will be marked expensive, independent of parents",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag CREATE_POSTINGLIST_WHEN_NON_STRICT = defineFeatureFlag(
-            "create-postinglist-when-non-strict", true,
-            List.of("baldersheim"), "2023-12-04", "2024-01-31",
-            "If true posting list can be created on the fly also for non-strict iterators",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_ESTIMATE_FOR_FETCH_POSTINGS = defineFeatureFlag(
-            "use-estimate-for-fetch-postings", true,
-            List.of("baldersheim"), "2023-12-06", "2024-01-31",
-            "If true an estimate assuming uncorrelated query terms is used in Blueprint::fetchPostings",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_THREAD_BUNDLE_FOR_FETCH_POSTINGS = defineFeatureFlag(
-            "use-thread-bundle-for-fetch-postings", true,
-            List.of("baldersheim"), "2023-12-06", "2024-01-31",
-            "If true the query thread bundle is used for Blueprint::fetchPostings",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
