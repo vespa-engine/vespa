@@ -22,6 +22,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class IndexingModeChangeValidatorTest {
 
     @Test
+    void testChangingIndexModeFromIndexedToStreamingWhenDisallowedButInDev() {
+        ValidationTester tester = new ValidationTester();
+
+        VespaModel oldModel =
+                tester.deploy(null, getServices("index"), Environment.dev, "<validation-overrides />").getFirst();
+        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), Environment.dev, "<calidation-overrides />").getSecond();
+        assertReindexingChange("Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'", actions);
+    }
+
+    @Test
     void testChangingIndexModeFromIndexedToStreamingWhenDisallowed() {
         ValidationTester tester = new ValidationTester();
 
