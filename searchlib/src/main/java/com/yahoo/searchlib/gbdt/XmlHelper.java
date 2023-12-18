@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.gbdt;
 
+import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -8,7 +9,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -27,36 +27,23 @@ abstract class XmlHelper {
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     public static Element parseXml(String xml)
-            throws ParserConfigurationException, IOException, SAXException
+            throws IOException, SAXException
     {
         return parseXmlStream(new ByteArrayInputStream(xml.getBytes(UTF8)));
     }
 
     public static Element parseXmlFile(String fileName)
-            throws ParserConfigurationException, IOException, SAXException
+            throws IOException, SAXException
     {
         return parseXmlStream(new FileInputStream(fileName));
     }
 
     public static Element parseXmlStream(InputStream in)
-            throws ParserConfigurationException, IOException, SAXException
+            throws IOException, SAXException
     {
-        DocumentBuilderFactory factory = createDocumentBuilderFactory();
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        DocumentBuilder builder = XML.getDocumentBuilder();
         Document doc = builder.parse(in);
         return doc.getDocumentElement();
-    }
-
-    private static DocumentBuilderFactory createDocumentBuilderFactory() throws ParserConfigurationException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
-
-        // XXE prevention
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        return factory;
     }
 
     public static String getAttributeText(Node node, String name) {
