@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/attribute/i_direct_posting_store.h>
-#include <vespa/searchlib/attribute/document_weight_or_filter_search.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/attribute/multi_term_or_filter_search.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 
@@ -12,19 +12,19 @@ using PostingList = search::attribute::PostingListTraits<int32_t>::PostingStoreB
 using Iterator = search::attribute::PostingListTraits<int32_t>::const_iterator;
 using KeyData = PostingList::KeyDataType;
 using search::BitVector;
-using search::attribute::DocumentWeightOrFilterSearch;
+using search::attribute::MultiTermOrFilterSearch;
 using search::queryeval::SearchIterator;
 using vespalib::datastore::EntryRef;
 
-class DocumentWeightOrFilterSearchTest : public ::testing::Test {
+class MultiTermOrFilterSearchTest : public ::testing::Test {
     PostingList _postings;
     vespalib::GenerationHandler _gens;
     std::vector<EntryRef> _trees;
     uint32_t _range_start;
     uint32_t _range_end;
 public:
-    DocumentWeightOrFilterSearchTest();
-    ~DocumentWeightOrFilterSearchTest() override;
+    MultiTermOrFilterSearchTest();
+    ~MultiTermOrFilterSearchTest() override;
     void inc_generation();
     size_t num_trees() const { return _trees.size(); }
     Iterator get_tree(size_t idx) const {
@@ -62,7 +62,7 @@ public:
         for (size_t i = 0; i < num_trees(); ++i) {
             iterators.emplace_back(get_tree(i));
         }
-        auto result = DocumentWeightOrFilterSearch::create(std::move(iterators));
+        auto result = MultiTermOrFilterSearch::create(std::move(iterators));
         result->initRange(_range_start, _range_end);
         return result;
     };
@@ -121,7 +121,7 @@ public:
     }
 };
 
-DocumentWeightOrFilterSearchTest::DocumentWeightOrFilterSearchTest()
+MultiTermOrFilterSearchTest::MultiTermOrFilterSearchTest()
     : _postings(true),
       _gens(),
       _range_start(1),
@@ -129,7 +129,7 @@ DocumentWeightOrFilterSearchTest::DocumentWeightOrFilterSearchTest()
 {
 }
 
-DocumentWeightOrFilterSearchTest::~DocumentWeightOrFilterSearchTest()
+MultiTermOrFilterSearchTest::~MultiTermOrFilterSearchTest()
 {
     for (auto& tree : _trees) {
         _postings.clear(tree);
@@ -140,7 +140,7 @@ DocumentWeightOrFilterSearchTest::~DocumentWeightOrFilterSearchTest()
 }
 
 void
-DocumentWeightOrFilterSearchTest::inc_generation()
+MultiTermOrFilterSearchTest::inc_generation()
 {
     _postings.freeze();
     _postings.assign_generation(_gens.getCurrentGeneration());
@@ -148,19 +148,19 @@ DocumentWeightOrFilterSearchTest::inc_generation()
     _postings.reclaim_memory(_gens.get_oldest_used_generation());
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, daat_or)
+TEST_F(MultiTermOrFilterSearchTest, daat_or)
 {
     make_sample_data();
     expect_result(eval_daat(*make_iterator()), { 3, 10, 11, 14, 17, 20 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_get_hits)
+TEST_F(MultiTermOrFilterSearchTest, taat_get_hits)
 {
     make_sample_data();
     expect_result(frombv(*make_iterator()->get_hits(get_range_start())), { 3, 10, 11, 14, 17, 20 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_or_hits_into)
+TEST_F(MultiTermOrFilterSearchTest, taat_or_hits_into)
 {
     make_sample_data();
     auto bv = tobv({13, 14});
@@ -168,7 +168,7 @@ TEST_F(DocumentWeightOrFilterSearchTest, taat_or_hits_into)
     expect_result(frombv(*bv), { 3, 10, 11, 13, 14, 17, 20 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_and_hits_into)
+TEST_F(MultiTermOrFilterSearchTest, taat_and_hits_into)
 {
     make_sample_data();
     auto bv = tobv({13, 14});
@@ -176,21 +176,21 @@ TEST_F(DocumentWeightOrFilterSearchTest, taat_and_hits_into)
     expect_result(frombv(*bv), { 14 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, daat_or_ranged)
+TEST_F(MultiTermOrFilterSearchTest, daat_or_ranged)
 {
     make_sample_data();
     set_range(4, 15);
     expect_result(eval_daat(*make_iterator()), {10, 11, 14 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_get_hits_ranged)
+TEST_F(MultiTermOrFilterSearchTest, taat_get_hits_ranged)
 {
     make_sample_data();
     set_range(4, 15);
     expect_result(frombv(*make_iterator()->get_hits(get_range_start())), { 10, 11, 14 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_or_hits_into_ranged)
+TEST_F(MultiTermOrFilterSearchTest, taat_or_hits_into_ranged)
 {
     make_sample_data();
     set_range(4, 15);
@@ -199,7 +199,7 @@ TEST_F(DocumentWeightOrFilterSearchTest, taat_or_hits_into_ranged)
     expect_result(frombv(*bv), { 10, 11, 13, 14 });
 }
 
-TEST_F(DocumentWeightOrFilterSearchTest, taat_and_hits_into_ranged)
+TEST_F(MultiTermOrFilterSearchTest, taat_and_hits_into_ranged)
 {
     make_sample_data();
     set_range(4, 15);
@@ -211,9 +211,9 @@ TEST_F(DocumentWeightOrFilterSearchTest, taat_and_hits_into_ranged)
 namespace {
 
 class Verifier : public search::test::SearchIteratorVerifier {
-    DocumentWeightOrFilterSearchTest &_test;
+    MultiTermOrFilterSearchTest &_test;
 public:
-    Verifier(DocumentWeightOrFilterSearchTest &test, int num_trees)
+    Verifier(MultiTermOrFilterSearchTest &test, int num_trees)
         : _test(test)
     {
         std::vector<std::vector<uint32_t>> trees(num_trees);
@@ -239,7 +239,7 @@ public:
 
 };
 
-TEST_F(DocumentWeightOrFilterSearchTest, iterator_conformance)
+TEST_F(MultiTermOrFilterSearchTest, iterator_conformance)
 {
     {
         Verifier verifier(*this, 1);

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "direct_multi_term_blueprint.h"
-#include "document_weight_or_filter_search.h"
+#include "multi_term_or_filter_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
@@ -101,7 +101,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
     bool use_bit_vector_when_available = is_filter_search || !_attr.has_always_btree_iterator();
     auto weights = create_iterators(btree_iterators, bitvectors, use_bit_vector_when_available, *tfmda[0], strict);
     if (is_filter_search) {
-        auto filter = !btree_iterators.empty() ? attribute::DocumentWeightOrFilterSearch::create(std::move(btree_iterators)) : std::unique_ptr<SearchIterator>();
+        auto filter = !btree_iterators.empty() ? attribute::MultiTermOrFilterSearch::create(std::move(btree_iterators)) : std::unique_ptr<SearchIterator>();
         return combine_iterators(std::move(filter), std::move(bitvectors), strict);
     }
     bool field_is_filter = getState().fields()[0].isFilter();

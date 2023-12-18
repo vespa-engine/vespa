@@ -7,13 +7,15 @@ namespace search::fef { class MatchData; }
 namespace search::attribute {
 
 /**
- * Filter iterator on top of document weight iterators with OR semantics used during
- * calculation of global filter for weighted set terms, wand terms and dot product terms.
+ * Filter iterator on top of low-level posting list iterators or regular search iterators with OR semantics.
+ *
+ * Used during calculation of global filter for InTerm, WeightedSetTerm, DotProduct and WandTerm,
+ * or when ranking is not needed for InTerm and WeightedSetTerm.
  */
-class DocumentWeightOrFilterSearch : public queryeval::SearchIterator
+class MultiTermOrFilterSearch : public queryeval::SearchIterator
 {
 protected:
-    DocumentWeightOrFilterSearch() = default;
+    MultiTermOrFilterSearch() = default;
 public:
     static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children);
     static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children);
