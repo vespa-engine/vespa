@@ -196,6 +196,7 @@ vespa_define_module(
     src/tests/queryeval/equiv
     src/tests/queryeval/fake_searchable
     src/tests/queryeval/filter_search
+    src/tests/queryeval/flow
     src/tests/queryeval/getnodeweight
     src/tests/queryeval/global_filter
     src/tests/queryeval/matching_elements_search
