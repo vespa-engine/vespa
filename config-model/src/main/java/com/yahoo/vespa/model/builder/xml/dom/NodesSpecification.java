@@ -482,7 +482,7 @@ public class NodesSpecification {
     }
 
     /** Parses a value ("value") or value range ("[min-value, max-value]") */
-    private static  Pair<Double, Double> toRange(String name, ModelElement element, double defaultValue, ToDoubleFunction<String> valueParser) {
+    private static Pair<Double, Double> toRange(String name, ModelElement element, double defaultValue, ToDoubleFunction<String> valueParser) {
         String s = element.stringAttribute(name);
         try {
             Pair<Double, Double> pair;
@@ -493,7 +493,7 @@ public class NodesSpecification {
                 if (numbers.length != 2) throw new IllegalArgumentException();
                 pair = new Pair<>(valueParser.applyAsDouble(numbers[0].trim()), valueParser.applyAsDouble(numbers[1].trim()));
                 if (pair.getFirst() > pair.getSecond())
-                    throw new IllegalArgumentException("first value must be less than or equal to second value");
+                    throw new IllegalArgumentException("first value cannot be larger than second value");
             } else {
                 pair = new Pair<>(valueParser.applyAsDouble(s), valueParser.applyAsDouble(s));
             }
