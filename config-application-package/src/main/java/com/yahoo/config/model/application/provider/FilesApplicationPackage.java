@@ -27,6 +27,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -36,6 +37,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -166,7 +168,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         configDefsDir = applicationFile(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
-        transformerFactory = TransformerFactory.newInstance();
+        this.transformerFactory = XML.createTransformerFactory();
     }
 
     @Override
