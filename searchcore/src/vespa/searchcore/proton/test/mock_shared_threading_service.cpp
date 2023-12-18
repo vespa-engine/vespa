@@ -12,8 +12,7 @@ MockSharedThreadingService::MockSharedThreadingService(ThreadExecutor& shared_in
       _field_writer(vespalib::SequencedTaskExecutor::create(mock_field_writer_executor, 1)),
       _invokeService(10ms),
       _transport(),
-      _bucket_executor(num_bucket_executors),
-      _clock(_invokeService.nowRef())
+      _bucket_executor(num_bucket_executors)
 {
 }
 

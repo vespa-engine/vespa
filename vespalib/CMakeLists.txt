@@ -42,7 +42,6 @@ vespa_define_module(
     src/tests/btree/btree-scan-speed
     src/tests/btree/btree-stress
     src/tests/btree/btree_store
-    src/tests/clock
     src/tests/component
     src/tests/compress
     src/tests/compression

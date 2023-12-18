@@ -41,7 +41,7 @@ private:
     using RankSetup = search::fef::RankSetup;
     using ExecutionProfiler = vespalib::ExecutionProfiler;
     QueryLimiter                    &_queryLimiter;
-    const vespalib::Doom            &_doom;
+    const vespalib::Doom             _doom;
     const Query                     &_query;
     MaybeMatchPhaseLimiter          &_match_limiter;
     const QueryEnvironment          &_queryEnv;

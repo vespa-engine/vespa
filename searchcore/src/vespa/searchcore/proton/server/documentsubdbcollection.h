@@ -12,7 +12,6 @@
 #include <optional>
 
 namespace vespalib {
-    class Clock;
     class Executor;
     class HwInfo;
     class ThreadStackExecutorBase;
