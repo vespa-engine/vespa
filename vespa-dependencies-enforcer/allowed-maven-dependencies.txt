@@ -65,9 +65,7 @@ io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:osx-aar
 io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:osx-x86_64
 io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:windows-x86_64
 io.netty:netty-tcnative-classes:${netty-tcnative.vespa.version}
-io.netty:netty-tcnative:${netty-tcnative.vespa.version}
 io.netty:netty-transport-classes-epoll:${netty.vespa.version}
-io.netty:netty-transport-native-epoll:${netty.vespa.version}
 io.netty:netty-transport-native-epoll:${netty.vespa.version}:linux-x86_64
 io.netty:netty-transport-native-unix-common:${netty.vespa.version}
 io.netty:netty-transport:${netty.vespa.version}
@@ -128,10 +126,8 @@ org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
 org.apache.zookeeper:zookeeper-jute:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper-jute:3.8.0
 org.apache.zookeeper:zookeeper-jute:3.9.1
 org.apache.zookeeper:zookeeper:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper:3.8.0
 org.apache.zookeeper:zookeeper:3.9.1
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
