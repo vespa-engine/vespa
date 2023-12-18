@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
 
 /**
@@ -313,10 +314,10 @@ public class NodesSpecification {
     }
 
     private static Pair<NodeResources, NodeResources> nodeResourcesFromResourcesElement(ModelElement element) {
-        Pair<Double, Double> vcpu       = toRange(element.stringAttribute("vcpu"),   .0, Double::parseDouble);
-        Pair<Double, Double> memory     = toRange(element.stringAttribute("memory"), .0, s -> parseGbAmount(s, "B"));
-        Pair<Double, Double> disk       = toRange(element.stringAttribute("disk"),   .0, s -> parseGbAmount(s, "B"));
-        Pair<Double, Double> bandwith   = toRange(element.stringAttribute("bandwidth"),      .3, s -> parseGbAmount(s, "BPS"));
+        Pair<Double, Double> vcpu       = toRange("vcpu", element,      .0, Double::parseDouble);
+        Pair<Double, Double> memory     = toRange("memory", element,    .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> disk       = toRange("disk", element,      .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> bandwith   = toRange("bandwidth", element, .3, s -> parseGbAmount(s, "BPS"));
         NodeResources.DiskSpeed   diskSpeed     = parseOptionalDiskSpeed(element.stringAttribute("disk-speed"));
         NodeResources.StorageType storageType   = parseOptionalStorageType(element.stringAttribute("storage-type"));
         NodeResources.Architecture architecture = parseOptionalArchitecture(element.stringAttribute("architecture"));
@@ -342,7 +343,7 @@ public class NodesSpecification {
         if (byteAmount.endsWith(unit))
             byteAmount = byteAmount.substring(0, byteAmount.length() - unit.length());
 
-        double multiplier = Math.pow(1000, -3);
+        double multiplier = -1;
         if (byteAmount.endsWith("K"))
             multiplier = Math.pow(1000, -2);
         else if (byteAmount.endsWith("M"))
@@ -360,7 +361,11 @@ public class NodesSpecification {
         else if (byteAmount.endsWith("Y"))
             multiplier = Math.pow(1000, 5);
 
-        byteAmount = byteAmount.substring(0, byteAmount.length() -1 ).strip();
+        if (multiplier == -1)
+            multiplier = Math.pow(1000, -3);
+        else
+            byteAmount = byteAmount.substring(0, byteAmount.length() -1).strip();
+
         try {
             return Double.parseDouble(byteAmount) * multiplier;
         }
@@ -477,20 +482,27 @@ public class NodesSpecification {
     }
 
     /** Parses a value ("value") or value range ("[min-value, max-value]") */
-    private static <T> Pair<T, T> toRange(String s, T defaultValue, Function<String, T> valueParser) {
+    private static  Pair<Double, Double> toRange(String name, ModelElement element, double defaultValue, ToDoubleFunction<String> valueParser) {
+        String s = element.stringAttribute(name);
         try {
+            Pair<Double, Double> pair;
             if (s == null) return new Pair<>(defaultValue, defaultValue);
             s = s.trim();
             if (s.startsWith("[") && s.endsWith("]")) {
                 String[] numbers = s.substring(1, s.length() - 1).split(",");
                 if (numbers.length != 2) throw new IllegalArgumentException();
-                return new Pair<>(valueParser.apply(numbers[0].trim()), valueParser.apply(numbers[1].trim()));
+                pair = new Pair<>(valueParser.applyAsDouble(numbers[0].trim()), valueParser.applyAsDouble(numbers[1].trim()));
+                if (pair.getFirst() > pair.getSecond())
+                    throw new IllegalArgumentException("first value must be less than or equal to second value");
             } else {
-                return new Pair<>(valueParser.apply(s), valueParser.apply(s));
+                pair = new Pair<>(valueParser.applyAsDouble(s), valueParser.applyAsDouble(s));
             }
+            if (pair.getFirst() < 0 || pair.getSecond() < 0)
+                throw new IllegalArgumentException("values cannot be negative");
+            return pair;
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Expected a number or range on the form [min, max], but got '" + s + "'", e);
+            throw new IllegalArgumentException("Expected a number or range on the form [min, max] for node resource '" + name + "', but got '" + s + "'", e);
         }
     }
 
