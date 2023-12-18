@@ -78,7 +78,6 @@ vespa_define_module(
     src/tests/attribute/dfa_fuzzy_matcher
     src/tests/attribute/direct_multi_term_blueprint
     src/tests/attribute/document_weight_iterator
-    src/tests/attribute/document_weight_or_filter_search
     src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/enum_comparator
     src/tests/attribute/enumeratedsave
@@ -87,6 +86,7 @@ vespa_define_module(
     src/tests/attribute/guard
     src/tests/attribute/imported_attribute_vector
     src/tests/attribute/imported_search_context
+    src/tests/attribute/multi_term_or_filter_search
     src/tests/attribute/multi_value_mapping
     src/tests/attribute/multi_value_read_view
     src/tests/attribute/posting_list_merger

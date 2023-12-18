@@ -5,9 +5,8 @@
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_multi_term_blueprint.h"
-#include "document_weight_or_filter_search.h"
 #include "i_direct_posting_store.h"
-#include "posting_iterator_pack.h"
+#include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/common/location.h>
@@ -468,7 +467,7 @@ DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const
         for (const IDirectPostingStore::LookupResult &r : _terms) {
             _attr.create(r.posting_idx, iterators);
         }
-        return attribute::DocumentWeightOrFilterSearch::create(std::move(iterators));
+        return attribute::MultiTermOrFilterSearch::create(std::move(iterators));
     } else {
         return std::make_unique<queryeval::EmptySearch>();
     }

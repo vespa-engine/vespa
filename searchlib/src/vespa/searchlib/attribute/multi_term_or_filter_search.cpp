@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "document_weight_or_filter_search.h"
+#include "multi_term_or_filter_search.h"
 #include "posting_iterator_pack.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
@@ -12,13 +12,13 @@ using search::queryeval::SearchIteratorPack;
 namespace search::attribute {
 
 template<typename IteratorPack>
-class DocumentWeightOrFilterSearchImpl : public DocumentWeightOrFilterSearch
+class MultiTermOrFilterSearchImpl : public MultiTermOrFilterSearch
 {
     IteratorPack _children;
     void seek_all(uint32_t docId);
 public:
-    explicit DocumentWeightOrFilterSearchImpl(IteratorPack&& children);
-    ~DocumentWeightOrFilterSearchImpl() override;
+    explicit MultiTermOrFilterSearchImpl(IteratorPack&& children);
+    ~MultiTermOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
     
@@ -46,18 +46,18 @@ public:
 };
 
 template<typename IteratorPack>
-DocumentWeightOrFilterSearchImpl<IteratorPack>::DocumentWeightOrFilterSearchImpl(IteratorPack&& children)
-    : DocumentWeightOrFilterSearch(),
+MultiTermOrFilterSearchImpl<IteratorPack>::MultiTermOrFilterSearchImpl(IteratorPack&& children)
+    : MultiTermOrFilterSearch(),
       _children(std::move(children))
 {
 }
 
 template<typename IteratorPack>
-DocumentWeightOrFilterSearchImpl<IteratorPack>::~DocumentWeightOrFilterSearchImpl() = default;
+MultiTermOrFilterSearchImpl<IteratorPack>::~MultiTermOrFilterSearchImpl() = default;
 
 template<typename IteratorPack>
 void
-DocumentWeightOrFilterSearchImpl<IteratorPack>::seek_all(uint32_t docId) {
+MultiTermOrFilterSearchImpl<IteratorPack>::seek_all(uint32_t docId) {
     for (uint16_t i = 0; i < _children.size(); ++i) {
         uint32_t next = _children.get_docid(i);
         if (next < docId) {
@@ -68,7 +68,7 @@ DocumentWeightOrFilterSearchImpl<IteratorPack>::seek_all(uint32_t docId) {
 
 template<typename IteratorPack>
 void
-DocumentWeightOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
+MultiTermOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
 {
     uint32_t min_doc_id = endDocId;
     for (uint16_t i = 0; i < _children.size(); ++i) {
@@ -96,7 +96,7 @@ create_helper(std::vector<IteratorType>&& children)
     } else {
         std::sort(children.begin(), children.end(),
                   [](const auto & a, const auto & b) { return a.size() > b.size(); });
-        using OrFilter = DocumentWeightOrFilterSearchImpl<IteratorPackType>;
+        using OrFilter = MultiTermOrFilterSearchImpl<IteratorPackType>;
         return std::make_unique<OrFilter>(IteratorPackType(std::move(children)));
     }
 }
@@ -104,25 +104,25 @@ create_helper(std::vector<IteratorType>&& children)
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-DocumentWeightOrFilterSearch::create(std::vector<DocidIterator>&& children)
+MultiTermOrFilterSearch::create(std::vector<DocidIterator>&& children)
 {
     return create_helper<DocidIterator, DocidIteratorPack>(std::move(children));
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-DocumentWeightOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
+MultiTermOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
 {
     return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(std::move(children));
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-DocumentWeightOrFilterSearch::create(const std::vector<SearchIterator *>& children,
+MultiTermOrFilterSearch::create(const std::vector<SearchIterator *>& children,
                                      std::unique_ptr<fef::MatchData> md)
 {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     } else {
-        using OrFilter = DocumentWeightOrFilterSearchImpl<SearchIteratorPack>;
+        using OrFilter = MultiTermOrFilterSearchImpl<SearchIteratorPack>;
         return std::make_unique<OrFilter>(SearchIteratorPack(children, std::move(md)));
     }
 }

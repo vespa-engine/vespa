@@ -300,7 +300,7 @@ TEST_P(DirectMultiTermBlueprintTest, filter_iterator_used_for_filter_field_and_r
     add_term(1);
     add_term(3);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::DocumentWeightOrFilterSearchImpl"));
+    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermOrFilterSearchImpl"));
     expect_hits({10, 30, 31}, *itr);
 }
 
@@ -315,7 +315,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_fil
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 2, "search::attribute::DocumentWeightOrFilterSearchImpl");
+    expect_or_child(*itr, 2, "search::attribute::MultiTermOrFilterSearchImpl");
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
