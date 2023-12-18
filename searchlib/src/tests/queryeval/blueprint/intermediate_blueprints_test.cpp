@@ -14,6 +14,10 @@
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -24,6 +28,11 @@ using namespace search::fef;
 using namespace search::query;
 using search::BitVector;
 using BlueprintVector = std::vector<std::unique_ptr<Blueprint>>;
+using vespalib::Slime;
+using vespalib::slime::Inspector;
+using vespalib::slime::SlimeInserter;
+using vespalib::make_string_short::fmt;
+using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
 
 struct InvalidSelector : ISourceSelector {
     InvalidSelector() : ISourceSelector(Source()) {}
@@ -480,13 +489,62 @@ struct SourceBlenderTestFixture {
     void addChildrenForSimpleSBTest(IntermediateBlueprint & parent);
 };
 
+vespalib::string path_to_str(const Path &path) {
+    size_t cnt = 0;
+    vespalib::string str("[");
+    for (const auto &item: path) {
+        if (cnt++ > 0) {
+            str.append(",");
+        }
+        std::visit(vespalib::overload{
+                [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
+                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+    }
+    str.append("]");
+    return str;
+}
+
+vespalib::string to_str(const Inspector &value) {
+    if (!value.valid()) {
+        return "<missing>";
+    }
+    vespalib::SimpleBuffer buf;
+    vespalib::slime::JsonFormat::encode(value, buf, true);
+    return buf.get().make_string();
+}
+
+void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
+    auto ignore_cost = [expect_eq](const auto &path, const auto &a, const auto &b) {
+                           if (!path.empty() && std::holds_alternative<vespalib::stringref>(path.back())) {
+                               vespalib::stringref field = std::get<vespalib::stringref>(path.back());
+                               if (field == "cost") {
+                                   return true;
+                               }
+                           }
+                           if (expect_eq) {
+                               fprintf(stderr, "  mismatch at %s: %s vs %s\n", path_to_str(path).c_str(),
+                                       to_str(a).c_str(), to_str(b).c_str());
+                           }
+                           return false;
+                       };
+    Slime a;
+    Slime b;
+    bp1.asSlime(SlimeInserter(a));
+    bp2.asSlime(SlimeInserter(b));
+    if (expect_eq) {
+        EXPECT_TRUE(vespalib::slime::are_equal(a.get(), b.get(), ignore_cost));
+    } else {
+        EXPECT_FALSE(vespalib::slime::are_equal(a.get(), b.get(), ignore_cost));
+    }
+}
+
 void
 optimize_and_compare(Blueprint::UP top, Blueprint::UP expect) {
-    EXPECT_NOT_EQUAL(expect->asString(), top->asString());
+    TEST_DO(compare(*top, *expect, false));
     top = Blueprint::optimize(std::move(top));
-    EXPECT_EQUAL(expect->asString(), top->asString());
+    TEST_DO(compare(*top, *expect, true));
     expect = Blueprint::optimize(std::move(expect));
-    EXPECT_EQUAL(expect->asString(), top->asString());
+    TEST_DO(compare(*expect, *top, true));
 }
 
 void SourceBlenderTestFixture::addChildrenForSBTest(IntermediateBlueprint & parent) {
@@ -1120,7 +1178,7 @@ TEST("require that children of near are not optimized") {
             addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
             addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
     top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    TEST_DO(compare(*top_up, *expect_up, true));
 }
 
 TEST("require that children of onear are not optimized") {
@@ -1131,7 +1189,7 @@ TEST("require that children of onear are not optimized") {
             addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
             addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
     top_up = Blueprint::optimize(std::move(top_up));
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    TEST_DO(compare(*top_up, *expect_up, true));
 }
 
 TEST("require that ANDNOT without children is optimized to empty search") {

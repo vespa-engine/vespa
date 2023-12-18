@@ -5,6 +5,8 @@
 #include "type.h"
 #include "symbol.h"
 #include <vespa/vespalib/data/memory.h>
+#include <functional>
+#include <variant>
 
 namespace vespalib::slime {
 
@@ -38,8 +40,13 @@ struct Inspector {
     virtual ~Inspector() {}
 };
 
-bool operator == (const Inspector & a, const Inspector & b);
-std::ostream & operator << (std::ostream & os, const Inspector & inspector);
+bool operator==(const Inspector &a, const Inspector &b);
+std::ostream &operator<<(std::ostream &os, const Inspector &inspector);
 
+// check if two inspectors are equal
+// has support for allowing specific mismatches
+bool are_equal(const Inspector &a, const Inspector &b,
+               std::function<bool(const std::vector<std::variant<size_t,vespalib::stringref>> &path,
+                                  const Inspector &sub_a, const Inspector &sub_b)> allow_mismatch);
 
 } // namespace vespalib::slime
