@@ -716,6 +716,22 @@ TEST("AND_NOT AND AND_NOT collapsing") {
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
+TEST("AND_NOT AND AND_NOT AND nested collapsing") {
+    Blueprint::UP top = make::ANDNOT()
+        .add(make::AND()
+             .add(make::ANDNOT()
+                  .add(make::AND().leafs({1,2}))
+                  .leafs({5,6}))
+             .add(make::ANDNOT()
+                  .add(make::AND().leafs({3,4}))
+                  .leafs({8,9})))
+        .leaf(7);
+    Blueprint::UP expect = make::ANDNOT()
+        .add(make::AND().leafs({1,2,3,4}))
+        .leafs({9,8,7,6,5});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
 TEST("AND_NOT AND AND_NOT collapsing into full source blender optimization") {
     InvalidSelector sel;
     Blueprint::UP top =

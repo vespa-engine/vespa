@@ -133,7 +133,14 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
                     while (grand_child->childCnt() > 1) {
                         addChild(grand_child->removeLastChild());
                     }
-                    child->addChild(grand_child->removeChild(0));
+                    auto orphan = grand_child->removeChild(0);
+                    if (auto *orphan_and = orphan->asAnd()) {
+                        while (orphan_and->childCnt() > 0) {
+                            child->addChild(orphan_and->removeLastChild());
+                        }
+                    } else {
+                        child->addChild(std::move(orphan));
+                    }
                     child->removeChild(i--);
                 }
             }
