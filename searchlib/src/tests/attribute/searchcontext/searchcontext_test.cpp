@@ -1113,7 +1113,7 @@ SearchContextTest::performRangeSearch(const VectorType & vec, const vespalib::st
 {
     for (size_t num_threads : {1,3}) {
         vespalib::SimpleThreadBundle thread_bundle(num_threads);
-        auto executeInfo = queryeval::ExecuteInfo::create(true, 1.0, vespalib::Doom::never(), thread_bundle, true, true);
+        auto executeInfo = queryeval::ExecuteInfo::create(true, 1.0, vespalib::Doom::never(), thread_bundle);
         performSearch(executeInfo, vec, term, expected, TermType::WORD);
     }
 }

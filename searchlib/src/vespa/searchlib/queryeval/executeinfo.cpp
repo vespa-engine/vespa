@@ -5,11 +5,11 @@
 using vespalib::Doom;
 namespace search::queryeval {
 
-const ExecuteInfo ExecuteInfo::TRUE(true, 1.0, Doom::never(), vespalib::ThreadBundle::trivial(), true, true);
-const ExecuteInfo ExecuteInfo::FALSE(false, 1.0, Doom::never(), vespalib::ThreadBundle::trivial(), true, true);
+const ExecuteInfo ExecuteInfo::TRUE(true, 1.0, Doom::never(), vespalib::ThreadBundle::trivial());
+const ExecuteInfo ExecuteInfo::FALSE(false, 1.0, Doom::never(), vespalib::ThreadBundle::trivial());
 
 ExecuteInfo::ExecuteInfo() noexcept
-    : ExecuteInfo(false, 1.0, Doom::never(), vespalib::ThreadBundle::trivial(), true, true)
+    : ExecuteInfo(false, 1.0, Doom::never(), vespalib::ThreadBundle::trivial())
 { }
 
 ExecuteInfo

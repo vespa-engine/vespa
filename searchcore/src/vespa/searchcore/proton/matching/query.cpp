@@ -213,8 +213,7 @@ Query::fetchPostings(const ExecuteInfo & executeInfo)
 void
 Query::handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace& trace,
-                            bool create_postinglist_when_non_strict, bool use_estimate_for_fetch_postings)
+                            search::engine::Trace& trace)
 {
     if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
                               requestContext.thread_bundle(), &trace))
@@ -226,8 +225,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
-    fetchPostings(ExecuteInfo::create(true, 1.0, requestContext.getDoom(), requestContext.thread_bundle(),
-                                      create_postinglist_when_non_strict, use_estimate_for_fetch_postings));
+    fetchPostings(ExecuteInfo::create(true, 1.0, requestContext.getDoom(), requestContext.thread_bundle()));
 }
 
 bool

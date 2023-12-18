@@ -300,19 +300,17 @@ AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 }
 
 double
-AndBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate, bool use_estimate) const {
-    double estimate = use_estimate ? child.estimate() : child.hit_ratio();
-    return hit_rate * estimate;
+AndBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const {
+    return hit_rate * child.estimate();
 }
 
 double
-OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate, bool use_estimate) const {
+OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const {
     // Avoid dropping hitRate to zero when meeting a conservatively high hitrate in a child.
     // Happens at least when using non fast-search attributes, and with AND nodes.
     constexpr double MIN_INVERSE_HIT_RATIO = 0.10;
-    double estimate = use_estimate ? child.estimate() : child.hit_ratio();
-    double inverse_child_estimate = 1.0 - estimate;
-    return (use_estimate || (inverse_child_estimate > MIN_INVERSE_HIT_RATIO))
+    double inverse_child_estimate = 1.0 - child.estimate();
+    return (inverse_child_estimate > MIN_INVERSE_HIT_RATIO)
         ? hit_rate * inverse_child_estimate
         : hit_rate;
 }
