@@ -502,8 +502,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         object.setDouble("cpu", load.cpu());
         object.setDouble("memory", load.memory());
         object.setDouble("disk", load.disk());
-        object.setDouble("gpu", load.gpu());
-        object.setDouble("gpuMemory", load.gpuMemory());
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */

@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -98,7 +99,7 @@ public class NodeRepoStatsTest {
             else {
                 loadFactor = loadApp3;
             }
-            var snapshot = new NodeMetricSnapshot(now, new Load(1.0, 0.9, 0.8, 0, 0).multiply(loadFactor), 1, true, true, 1.0 );
+            var snapshot = new NodeMetricSnapshot(now, new Load(1.0, 0.9, 0.8).multiply(loadFactor), 1, true, true, 1.0 );
             tester.nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(), snapshot)));
         }
 
@@ -107,8 +108,8 @@ public class NodeRepoStatsTest {
         assertEquals(26, stats.totalCost(), delta);
         assertEquals(8.319999999999999, stats.totalAllocatedCost(), delta);
 
-        assertLoad(new Load(0.6180,0.5562,0.4944, 0, 0), stats.load());
-        assertLoad(new Load(0.4682,0.4214,0.3745, 0, 0), stats.activeLoad());
+        assertLoad(new Load(0.6180,0.5562,0.4944), stats.load());
+        assertLoad(new Load(0.4682,0.4214,0.3745), stats.activeLoad());
 
         var app1Stats = stats.applicationStats().get(0);
         var app2Stats = stats.applicationStats().get(2);
@@ -118,27 +119,25 @@ public class NodeRepoStatsTest {
         assertEquals(3.6400, app1Stats.cost(), delta);
         assertEquals(0.8676, app1Stats.utilizedCost(), delta);
         assertEquals(2.7724, app1Stats.unutilizedCost(), delta);
-        assertLoad(new Load(0.2571, 0.2314, 0.2057, 0, 0), app1Stats.load());
+        assertLoad(new Load(0.2571, 0.2314, 0.2057), app1Stats.load());
 
         assertEquals(app2, app2Stats.id());
         assertEquals(2.0799, app2Stats.cost(), delta);
         assertEquals(0.7712, app2Stats.utilizedCost(), delta);
         assertEquals(1.3087, app2Stats.unutilizedCost(), delta);
-        assertLoad(new Load(.40, 0.36, 0.32, 0, 0), app2Stats.load());
+        assertLoad(new Load(.40, 0.36, 0.32), app2Stats.load());
 
         assertEquals(app3, app3Stats.id());
         assertEquals(2.6000, app3Stats.cost(), delta);
         assertEquals(1.2049, app3Stats.utilizedCost(), delta);
         assertEquals(1.3950, app3Stats.unutilizedCost(), delta);
-        assertLoad(new Load(0.5, 0.45, 0.40, 0, 0), app3Stats.load());
+        assertLoad(new Load(0.5, 0.45, 0.40), app3Stats.load());
     }
 
     private static void assertLoad(Load expected, Load actual) {
-        assertEquals("cpu",       expected.cpu(), actual.cpu(), delta);
-        assertEquals("memory",    expected.memory(), actual.memory(), delta);
-        assertEquals("disk",      expected.disk(), actual.disk(), delta);
-        assertEquals("gpu",       expected.gpu(), actual.gpu(), delta);
-        assertEquals("gpuMemory", expected.gpuMemory(), actual.gpuMemory(), delta);
+        assertEquals("cpu",    expected.cpu(), actual.cpu(), delta);
+        assertEquals("memory", expected.memory(), actual.memory(), delta);
+        assertEquals("disk",   expected.disk(), actual.disk(), delta);
     }
 
 }

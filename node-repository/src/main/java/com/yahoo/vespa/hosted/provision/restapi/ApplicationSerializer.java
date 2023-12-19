@@ -98,8 +98,6 @@ public class ApplicationSerializer {
         loadObject.setDouble("cpu", load.cpu());
         loadObject.setDouble("memory", load.memory());
         loadObject.setDouble("disk", load.disk());
-        loadObject.setDouble("gpu", load.gpu());
-        loadObject.setDouble("gpuMemory", load.gpuMemory());
     }
 
     private static void toSlime(Autoscaling.Metrics metrics, Cursor metricsObject) {

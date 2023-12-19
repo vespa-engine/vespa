@@ -233,13 +233,11 @@ public class ClusterModel {
             double queryCpu = queryCpuPerGroup * groupCount() / groups;
             double writeCpu = (double)groupSize() / groupSize;
             return new Load(cpu.queryFraction() * queryCpu + (1 - cpu.queryFraction()) * writeCpu,
-                            (1 - memory.fixedFraction()) * (double) groupSize() / groupSize + memory.fixedFraction() * 1,
-                            (double)groupSize() / groupSize,
-                            1,
-                            1);
+                            (1 - memory.fixedFraction()) * (double)groupSize() / groupSize + memory.fixedFraction() * 1,
+                            (double)groupSize() / groupSize);
         }
         else {
-            return new Load((double) nodeCount() / nodes, 1, 1, 1, 1);
+            return new Load((double)nodeCount() / nodes, 1, 1);
         }
     }
 
@@ -248,7 +246,7 @@ public class ClusterModel {
      * if one of the nodes go down.
      */
     public Load idealLoad() {
-        var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad(), cpu.idealLoad(), memory.idealLoad()).divide(redundancyAdjustment());
+        var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
@@ -394,7 +392,7 @@ public class ClusterModel {
             if (averageQueryRate().isEmpty() || averageQueryRate().getAsDouble() == 0.0) return OptionalDouble.empty();
             // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
             int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
-            return OptionalDouble.of(peakLoad().cpu() * cpu.queryFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
+            return OptionalDouble.of(peakLoad().cpu()  * cpu.queryFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
                                      / averageQueryRate().getAsDouble() / groupCount());
         }
 

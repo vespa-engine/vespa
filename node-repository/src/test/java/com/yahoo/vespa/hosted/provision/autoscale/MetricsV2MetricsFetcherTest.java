@@ -99,8 +99,6 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals("host-3.yahoo.com", values.get(0).getFirst());
             assertEquals(0.13, values.get(0).getSecond().load().cpu(), delta);
             assertEquals(0.9375, values.get(0).getSecond().load().memory(), delta);
-            assertEquals(0.13, values.get(0).getSecond().load().gpu(), delta);
-            assertEquals(0.9375, values.get(0).getSecond().load().gpuMemory(), delta);
             assertFalse("Unstable because buckets are being merged", values.get(0).getSecond().stable());
         }
 
