@@ -3413,6 +3413,7 @@
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(java.lang.String, java.lang.ClassLoader)",
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(boolean)",
       "public static javax.xml.parsers.DocumentBuilder getDocumentBuilder(java.lang.String, java.lang.ClassLoader, boolean)",
+      "public static javax.xml.parsers.DocumentBuilderFactory createDocumentBuilderFactory()",
       "public static java.util.List getChildren(org.w3c.dom.Element)",
       "public static java.util.List getChildren(org.w3c.dom.Element, java.lang.String)",
       "public static java.util.Optional attribute(java.lang.String, org.w3c.dom.Element)",
@@ -3420,7 +3421,8 @@
       "public static org.w3c.dom.Element getChild(org.w3c.dom.Element, java.lang.String)",
       "public static java.util.Optional getChildValue(org.w3c.dom.Element, java.lang.String)",
       "public static java.lang.String getNodePath(org.w3c.dom.Node, java.lang.String)",
-      "public static boolean isName(java.lang.CharSequence)"
+      "public static boolean isName(java.lang.CharSequence)",
+      "public static javax.xml.transform.TransformerFactory createTransformerFactory()"
     ],
     "fields" : [ ]
   },
