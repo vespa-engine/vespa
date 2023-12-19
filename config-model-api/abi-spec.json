@@ -1293,7 +1293,8 @@
       "public boolean createPostinglistWhenNonStrict()",
       "public boolean useEstimateForFetchPostings()",
       "public boolean useThreadBundleForFetchPostings()",
-      "public boolean restartOnDeployWhenOnnxModelChanges()"
+      "public boolean restartOnDeployWhenOnnxModelChanges()",
+      "public boolean sortBlueprintsByEstimate()"
     ],
     "fields" : [ ]
   },

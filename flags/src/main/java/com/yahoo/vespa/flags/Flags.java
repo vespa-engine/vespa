@@ -325,6 +325,13 @@ public class Flags {
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
+    public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_ESTIMATE = defineFeatureFlag(
+            "sort-blueprints-by-estimate", false,
+            List.of("baldersheim"), "2023-12-19", "2024-02-29",
+            "If true blueprints are sorted based on cost estimate, rather that est_hits",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
             List.of("baldersheim"), "2023-11-20", "2023-12-31",
