@@ -77,7 +77,7 @@ vespa_define_module(
     src/tests/attribute/compaction
     src/tests/attribute/dfa_fuzzy_matcher
     src/tests/attribute/direct_multi_term_blueprint
-    src/tests/attribute/document_weight_iterator
+    src/tests/attribute/direct_posting_store
     src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/enum_comparator
     src/tests/attribute/enumeratedsave
