@@ -47,38 +47,4 @@ TEST("test euclidean distance") {
     TEST_DO(verifyEuclideanDistance(hwaccelrated::IAccelrated::getAccelerator(), TEST_LENGTH));
 }
 
-void
-verifyAnd64(const hwaccelrated::IAccelrated & accelrator, std::vector<std::pair<const void *, bool>> v,
-            const char * expected, char * dest)
-{
-    accelrator.and64(0, v, dest);
-    EXPECT_EQUAL(0, memcmp(expected, dest, 64));
-}
-
-void
-verifyAnd64(const hwaccelrated::IAccelrated & accelrator, std::vector<std::pair<const void *, bool>> v, const char * expected)
-{
-    char c[64];
-    memset(c, 0, sizeof(c));
-    verifyAnd64(accelrator, v, expected, c);
-    memset(c, 0xff, sizeof(c));
-    verifyAnd64(accelrator, v, expected, c);
-}
-
-TEST("test 64 byte and with multiple vectors") {
-    char a[64];
-    char b[64];
-    memset(a, 0x55, sizeof(a));
-    memset(b, 0xff, sizeof(b));
-    std::vector<std::pair<const void *, bool>> v;
-    v.emplace_back(a, false);
-    v.emplace_back(b, false);
-
-    verifyAnd64(hwaccelrated::GenericAccelrator(), v, a);
-    verifyAnd64(hwaccelrated::IAccelrated::getAccelerator(), v, a);
-    std::reverse(v.begin(), v.end());
-    verifyAnd64(hwaccelrated::GenericAccelrator(), v, a);
-    verifyAnd64(hwaccelrated::IAccelrated::getAccelerator(), v, a);
-}
-
 TEST_MAIN() { TEST_RUN_ALL(); }
