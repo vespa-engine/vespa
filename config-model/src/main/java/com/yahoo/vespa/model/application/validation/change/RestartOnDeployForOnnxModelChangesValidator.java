@@ -109,21 +109,26 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         double nextModelCostInGb = onnxModelCostInGb(cluster);
 
         double totalMemory = cluster.getContainers().get(0).getHostResource().realResources().memoryGb();
-        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - currentModelCostInGb - nextModelCostInGb);
-        if (availableMemory <= 0.0)
-            return false;
+        double memoryUsedByModels = currentModelCostInGb + nextModelCostInGb;
+        double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - memoryUsedByModels);
 
         var availableMemoryPercentage = cluster.availableMemoryPercentage();
         int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
 
-        if (memoryPercentage < percentLimit || availableMemory < gbLimit) {
-            deployLogger.log(INFO, "Validating %s, not enough memory (%s) to avoid restart (models require %s), consider a flavor with more memory to avoid this"
-                    .formatted(cluster, availableMemory, currentModelCostInGb + nextModelCostInGb));
+        if (memoryPercentage < percentLimit) {
+            deployLogger.log(INFO, "Validating %s, percentage of available memory too low (%d < %d) to avoid restart, consider a flavor with more memory to avoid this"
+                    .formatted(cluster, memoryPercentage, percentLimit));
             return false;
         }
 
-        log.log(FINE, "Validating " + cluster + ", enough memory (%s) to avoid restart (models require %s)"
-                .formatted(availableMemory, currentModelCostInGb + nextModelCostInGb));
+        if (availableMemory < gbLimit) {
+            deployLogger.log(INFO, "Validating %s, available memory too low (%.2f Gb < %.2f Gb) to avoid restart, consider a flavor with more memory to avoid this"
+                    .formatted(cluster, availableMemory, gbLimit));
+            return false;
+        }
+
+        log.log(FINE, "Validating %s, enough available memory (%.2f Gb) to avoid restart (models use %.2f Gb)"
+                .formatted(cluster, availableMemory, memoryUsedByModels));
         return true;
     }
 
