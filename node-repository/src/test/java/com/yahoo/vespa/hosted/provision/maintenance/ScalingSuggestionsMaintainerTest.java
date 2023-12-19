@@ -139,7 +139,7 @@ public class ScalingSuggestionsMaintainerTest {
             for (Node node : nodes)
                 nodeRepository.metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                              new NodeMetricSnapshot(nodeRepository.clock().instant(),
-                                                                                                    new Load(cpu, memory, disk),
+                                                                                                    new Load(cpu, memory, disk, 0, 0),
                                                                                                     generation,
                                                                                                     true,
                                                                                                     true,
