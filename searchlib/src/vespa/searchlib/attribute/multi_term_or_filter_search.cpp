@@ -15,14 +15,19 @@ template<typename IteratorPack>
 class MultiTermOrFilterSearchImpl : public MultiTermOrFilterSearch
 {
     IteratorPack _children;
+    fef::TermFieldMatchData* _tfmd;
     void seek_all(uint32_t docId);
 public:
-    explicit MultiTermOrFilterSearchImpl(IteratorPack&& children);
+    explicit MultiTermOrFilterSearchImpl(IteratorPack&& children, fef::TermFieldMatchData* tfmd);
     ~MultiTermOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
     
-    void doUnpack(uint32_t) override { }
+    void doUnpack(uint32_t docid) override {
+        if (_tfmd != nullptr) {
+            _tfmd->resetOnlyDocId(docid);
+        }
+    }
 
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
@@ -46,9 +51,10 @@ public:
 };
 
 template<typename IteratorPack>
-MultiTermOrFilterSearchImpl<IteratorPack>::MultiTermOrFilterSearchImpl(IteratorPack&& children)
+MultiTermOrFilterSearchImpl<IteratorPack>::MultiTermOrFilterSearchImpl(IteratorPack&& children, fef::TermFieldMatchData* tfmd)
     : MultiTermOrFilterSearch(),
-      _children(std::move(children))
+      _children(std::move(children)),
+      _tfmd(tfmd)
 {
 }
 
@@ -89,7 +95,7 @@ namespace {
 
 template <typename IteratorType, typename IteratorPackType>
 std::unique_ptr<queryeval::SearchIterator>
-create_helper(std::vector<IteratorType>&& children)
+create_helper(std::vector<IteratorType>&& children, fef::TermFieldMatchData* tfmd)
 {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
@@ -97,7 +103,7 @@ create_helper(std::vector<IteratorType>&& children)
         std::sort(children.begin(), children.end(),
                   [](const auto & a, const auto & b) { return a.size() > b.size(); });
         using OrFilter = MultiTermOrFilterSearchImpl<IteratorPackType>;
-        return std::make_unique<OrFilter>(IteratorPackType(std::move(children)));
+        return std::make_unique<OrFilter>(IteratorPackType(std::move(children)), tfmd);
     }
 }
 
@@ -106,13 +112,25 @@ create_helper(std::vector<IteratorType>&& children)
 std::unique_ptr<queryeval::SearchIterator>
 MultiTermOrFilterSearch::create(std::vector<DocidIterator>&& children)
 {
-    return create_helper<DocidIterator, DocidIteratorPack>(std::move(children));
+    return create_helper<DocidIterator, DocidIteratorPack>(std::move(children), nullptr);
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+MultiTermOrFilterSearch::create(std::vector<DocidIterator>&& children, fef::TermFieldMatchData& tfmd)
+{
+    return create_helper<DocidIterator, DocidIteratorPack>(std::move(children), &tfmd);
 }
 
 std::unique_ptr<queryeval::SearchIterator>
 MultiTermOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children)
 {
-    return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(std::move(children));
+    return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(std::move(children), nullptr);
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+MultiTermOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children, fef::TermFieldMatchData& tfmd)
+{
+    return create_helper<DocidWithWeightIterator, DocidWithWeightIteratorPack>(std::move(children), &tfmd);
 }
 
 std::unique_ptr<queryeval::SearchIterator>
@@ -123,7 +141,7 @@ MultiTermOrFilterSearch::create(const std::vector<SearchIterator *>& children,
         return std::make_unique<queryeval::EmptySearch>();
     } else {
         using OrFilter = MultiTermOrFilterSearchImpl<SearchIteratorPack>;
-        return std::make_unique<OrFilter>(SearchIteratorPack(children, std::move(md)));
+        return std::make_unique<OrFilter>(SearchIteratorPack(children, std::move(md)), nullptr);
     }
 }
 

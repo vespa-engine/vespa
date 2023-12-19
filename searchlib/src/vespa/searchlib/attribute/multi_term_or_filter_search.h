@@ -18,7 +18,9 @@ protected:
     MultiTermOrFilterSearch() = default;
 public:
     static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children, fef::TermFieldMatchData& tfmd);
     static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children, fef::TermFieldMatchData& tfmd);
     static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
                                                   std::unique_ptr<fef::MatchData> md);
 };
