@@ -203,7 +203,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Build query execution plan");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         trace.addEvent(5, "Optimize query execution plan");
-        _query.optimize();
+        _query.optimize(SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost()));
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());

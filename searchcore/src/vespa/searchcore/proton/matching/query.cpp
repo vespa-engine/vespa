@@ -198,8 +198,9 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 }
 
 void
-Query::optimize()
+Query::optimize(bool sort_by_cost)
 {
+    (void) sort_by_cost;
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
