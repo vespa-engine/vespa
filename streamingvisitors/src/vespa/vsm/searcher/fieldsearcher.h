@@ -14,12 +14,6 @@ namespace vsm {
 using termcount_t = size_t;
 using termsize_t = size_t;
 
-#if defined(COLLECT_CHAR_STAT)
-  #define NEED_CHAR_STAT(a) { a; }
-#else
-  #define NEED_CHAR_STAT(a)
-#endif
-
 using ucs4_t = uint32_t;
 using cmptype_t = ucs4_t;
 using SearcherBuf = vespalib::Array<cmptype_t>;
@@ -33,9 +27,9 @@ protected:
 private:
     CharVector    _qtlFastBuffer;
 protected:
-    FieldSearcherBase();
+    FieldSearcherBase() noexcept;
     FieldSearcherBase(const FieldSearcherBase & org);
-    virtual ~FieldSearcherBase(void);
+    virtual ~FieldSearcherBase();
     FieldSearcherBase & operator = (const FieldSearcherBase & org);
     void prepare(const search::streaming::QueryTermList & qtl);
     size_t          _qtlFastSize;
@@ -53,7 +47,8 @@ public:
         EXACT
     };
 
-    FieldSearcher(FieldIdT fId, bool defaultPrefix=false);
+    explicit FieldSearcher(FieldIdT fId) noexcept : FieldSearcher(fId, false) {}
+    FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept;
     ~FieldSearcher() override;
     virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
@@ -74,16 +69,7 @@ public:
     static search::byte iswordchar(search::byte c)         { return _wordChar[c]; }
     static search::byte isspace(search::byte c)            { return ! iswordchar(c); }
     static size_t countWords(const FieldRef & f);
-    unsigned pureUsAsciiCount()      const { return _pureUsAsciiCount; }
-    unsigned pureUsAsciiFieldCount() const { return _pureUsAsciiFieldCount; }
-    unsigned anyUtf8Count()          const { return _anyUtf8Count; }
-    unsigned anyUtf8FieldCount()     const { return _anyUtf8FieldCount; }
-    unsigned badUtf8Count()          const { return _badUtf8Count; }
-    unsigned zeroCount()             const { return _zeroCount; }
-    unsigned utf8Count(size_t sz)    const { return _utf8Count[1+sz]; }
-    const unsigned * utf8Count()     const { return _utf8Count; }
     int32_t getCurrentWeight()       const { return _currentElementWeight; }
-    void addStat(const FieldSearcher & toAdd);
     void zeroStat();
     FieldSearcher & maxFieldLength(uint32_t maxFieldLength_) { _maxFieldLength = maxFieldLength_; return *this; }
     size_t maxFieldLength() const { return _maxFieldLength; }
@@ -98,7 +84,7 @@ private:
         void onStructStart(const Content & c) override;
 
     public:
-        IteratorHandler(FieldSearcher & searcher) : _searcher(searcher) {}
+        explicit IteratorHandler(FieldSearcher & searcher) : _searcher(searcher) {}
     };
     friend class IteratorHandler; // to allow calls to onValue();
 
@@ -113,24 +99,13 @@ private:
     unsigned      _maxFieldLength;
     uint32_t      _currentElementId;
     int32_t       _currentElementWeight; // Contains the weight of the current item being evaluated.
-    /// Number of bytes in blocks containing pure us-ascii
-    unsigned _pureUsAsciiCount;
-    /// Number of blocks containing pure us-ascii
-    unsigned _pureUsAsciiFieldCount;
-    /// Number of bytes in blocks containing any non us-ascii
-    unsigned _anyUtf8Count;
-    /// Number of blocks containing any non us-ascii
-    unsigned _anyUtf8FieldCount;
 protected:
     /// Number of terms searched.
     unsigned _words;
     /// Number of utf8 bytes by utf8 size.
-    unsigned _utf8Count[6];
     unsigned _badUtf8Count;
     unsigned _zeroCount;
 protected:
-    void addPureUsAsciiField(size_t sz) { _pureUsAsciiCount += sz; _pureUsAsciiFieldCount++;; }
-    void addAnyUtf8Field(size_t sz)     { _anyUtf8Count += sz; _anyUtf8FieldCount++; }
     /**
      * Adds a hit to the given query term.
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.

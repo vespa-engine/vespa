@@ -47,7 +47,7 @@ class String
 private:
     const std::string & _str;
 public:
-    String(const std::string & str) : _str(str) {}
+    explicit String(const std::string & str) : _str(str) {}
     bool operator==(const String & rhs) const {
         return _str == rhs._str;
     }
@@ -57,13 +57,13 @@ class Query
 {
 private:
     void setupQuery(const StringList & terms) {
-        for (size_t i = 0; i < terms.size(); ++i) {
-            ParsedQueryTerm pqt = parseQueryTerm(terms[i]);
+        for (const auto & term : terms) {
+            ParsedQueryTerm pqt = parseQueryTerm(term);
             ParsedTerm pt = parseTerm(pqt.second);
             qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
         }
-        for (size_t i = 0; i < qtv.size(); ++i) {
-            qtl.push_back(qtv[i].get());
+        for (const auto & i : qtv) {
+            qtl.push_back(i.get());
         }
     }
 public:
@@ -72,14 +72,14 @@ public:
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;
-    Query(const StringList & terms);
+    explicit Query(const StringList & terms);
     ~Query();
     static ParsedQueryTerm parseQueryTerm(const std::string & queryTerm) {
         size_t i = queryTerm.find(':');
         if (i != std::string::npos) {
-            return ParsedQueryTerm(queryTerm.substr(0, i), queryTerm.substr(i + 1));
+            return {queryTerm.substr(0, i), queryTerm.substr(i + 1)};
         }
-        return ParsedQueryTerm(std::string(), queryTerm);
+        return {std::string(), queryTerm};
     }
     static ParsedTerm parseTerm(const std::string & term) {
         if (term[0] == '*' && term[term.size() - 1] == '*') {
@@ -254,8 +254,8 @@ getFieldValue(const StringList & fv)
 
     static ArrayDataType type(*DataType::STRING);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(StringFieldValue(fv[i]));
+    for (const auto & v : fv) {
+        afv.add(StringFieldValue(v));
     }
     return afv;
 }
@@ -265,8 +265,8 @@ getFieldValue(const LongList & fv)
 {
     static ArrayDataType type(*DataType::LONG);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(LongFieldValue(fv[i]));
+    for (long v : fv) {
+        afv.add(LongFieldValue(v));
     }
     return afv;
 }
@@ -276,8 +276,8 @@ getFieldValue(const FloatList & fv)
 {
     static ArrayDataType type(*DataType::FLOAT);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(FloatFieldValue(fv[i]));
+    for (float v : fv) {
+        afv.add(FloatFieldValue(v));
     }
     return afv;
 }
@@ -299,8 +299,8 @@ void
 assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
 {
     HitsList hl;
-    for (size_t i = 0; i < exp.size(); ++i) {
-        hl.push_back(exp[i] ? Hits().add(0) : Hits());
+    for (bool v : exp) {
+        hl.push_back(v ? Hits().add(0) : Hits());
     }
     assertSearch(fs, query, fv, hl);
 }
@@ -316,7 +316,7 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
 
     // setup document
     SharedFieldPathMap sfim(new FieldPathMapT());
-    sfim->push_back(FieldPath());
+    sfim->emplace_back();
     StorageDocument doc(std::make_unique<document::Document>(), sfim, 1);
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
@@ -369,7 +369,7 @@ assertSnippetModifier(const StringList & query, const std::string & fv, const st
 void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, const std::string & exp)
 {
     FieldValue::UP mfv = setup.modifier.modify(fv);
-    const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(*mfv.get());
+    const auto & lfv = static_cast<const document::LiteralFieldValueB &>(*mfv.get());
     const std::string & actual = lfv.getValue();
     EXPECT_EQUAL(actual.size(), exp.size());
     EXPECT_EQUAL(actual, exp);
@@ -377,11 +377,11 @@ void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, 
 
 void assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId, const StringList & terms)
 {
-    if (terms.size() == 0) {
-        ASSERT_TRUE(man.getModifiers().getModifier(fId) == NULL);
+    if (terms.empty()) {
+        ASSERT_TRUE(man.getModifiers().getModifier(fId) == nullptr);
         return;
     }
-    ASSERT_TRUE(man.getModifiers().getModifier(fId) != NULL);
+    ASSERT_TRUE(man.getModifiers().getModifier(fId) != nullptr);
     UTF8SubstringSnippetModifier * searcher =
         (static_cast<SnippetModifier *>(man.getModifiers().getModifier(fId)))->getSearcher().get();
     EXPECT_EQUAL(searcher->getQueryTerms().size(), terms.size());
@@ -466,7 +466,7 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     TEST("verify correct term parsing") {
         ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
         ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
-        ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
+        ASSERT_TRUE(Query::parseQueryTerm("term").first.empty());
         ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
         ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
         ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
@@ -822,13 +822,13 @@ TEST("snippet modifier manager") {
         Query query(StringList().add("i2:foo").add("i2:*bar*"));
         man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         {
-            SnippetModifier * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(0));
+            auto * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(0));
             UTF8SubstringSnippetModifier * searcher = sm->getSearcher().get();
             EXPECT_EQUAL(sm->getValueBuf().getLength(), 128u);
             EXPECT_EQUAL(searcher->getModifiedBuf().getLength(), 64u);
         }
         {
-            SnippetModifier * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(1));
+            auto * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(1));
             UTF8SubstringSnippetModifier * searcher = sm->getSearcher().get();
             EXPECT_EQUAL(sm->getValueBuf().getLength(), 128u);
             EXPECT_EQUAL(searcher->getModifiedBuf().getLength(), 64u);

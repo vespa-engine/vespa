@@ -104,20 +104,16 @@ public:
             switch(testchar) {
             case 0xc4:
             case 0xe4: // A/a with diaeresis
+            case 0xc6:
+            case 0xe6: // Letter/ligature AE/ae
                 return "ae";
 
             case 0xc5:
             case 0xe5: // A/a with ring
                 return "aa";
 
-            case 0xc6:
-            case 0xe6: // Letter/ligature AE/ae
-                return "ae";
-
             case 0xd6:
             case 0xf6: // O/o with diaeresis
-                return "oe";
-
             case 0xd8:
             case 0xf8: // O/o with stroke
                 return "oe";
@@ -133,10 +129,6 @@ public:
             case 0xde:
             case 0xfe: // norse "thorn"
                 return "th";
-
-            default:
-                return nullptr;
-
             }
 
         }

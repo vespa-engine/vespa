@@ -74,7 +74,6 @@ Fast_NormalizeWordFolder::Initialize()
                 _foldCase[0xda] = 'u';
                 _foldCase[0xdb] = 'u';
                 _foldCase[0xdd] = 'y';
-
                 _foldCase[0xe0] = 'a';
                 _foldCase[0xe1] = 'a';
                 _foldCase[0xe2] = 'a';

@@ -9,7 +9,7 @@ namespace {
 class CharInfo {
 public:
     CharInfo();
-    uint8_t get(uint8_t c) const { return _charInfo[c]; }
+    uint8_t get(uint8_t c) const noexcept { return _charInfo[c]; }
 private:
     uint8_t _charInfo[256];
 };
