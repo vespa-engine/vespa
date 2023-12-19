@@ -1294,7 +1294,7 @@
       "public boolean useEstimateForFetchPostings()",
       "public boolean useThreadBundleForFetchPostings()",
       "public boolean restartOnDeployWhenOnnxModelChanges()",
-      "public boolean sortBlueprintsByEstimate()"
+      "public boolean sortBlueprintsByCost()"
     ],
     "fields" : [ ]
   },

@@ -120,7 +120,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useEstimateForFetchPostings() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useThreadBundleForFetchPostings() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByEstimate() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

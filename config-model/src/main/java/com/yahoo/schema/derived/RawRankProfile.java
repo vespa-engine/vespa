@@ -170,7 +170,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final double rankScoreDropLimit;
-        private final boolean sortBlueprintsByEstimate;
+        private final boolean sortBlueprintsByCost;
         private final boolean alwaysMarkPhraseExpensive;
         private final boolean createPostinglistWhenNonStrict;
         private final boolean useEstimateForFetchPostings;
@@ -216,7 +216,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             minHitsPerThread = compiled.getMinHitsPerThread();
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
-            sortBlueprintsByEstimate = deployProperties.featureFlags().sortBlueprintsByEstimate();
+            sortBlueprintsByCost = deployProperties.featureFlags().sortBlueprintsByCost();
             alwaysMarkPhraseExpensive = deployProperties.featureFlags().alwaysMarkPhraseExpensive();
             createPostinglistWhenNonStrict = deployProperties.featureFlags().createPostinglistWhenNonStrict();
             useEstimateForFetchPostings = deployProperties.featureFlags().useEstimateForFetchPostings();
@@ -471,8 +471,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (termwiseLimit < 1.0) {
                 properties.add(new Pair<>("vespa.matching.termwise_limit", termwiseLimit + ""));
             }
-            if (sortBlueprintsByEstimate) {
-                properties.add(new Pair<>("vespa.matching.sort_blueprints_by_estimate", String.valueOf(sortBlueprintsByEstimate)));
+            if (sortBlueprintsByCost) {
+                properties.add(new Pair<>("vespa.matching.sort_blueprints_by_cost", String.valueOf(sortBlueprintsByCost)));
             }
             if (alwaysMarkPhraseExpensive) {
                 properties.add(new Pair<>("vespa.matching.always_mark_phrase_expensive", String.valueOf(alwaysMarkPhraseExpensive)));
