@@ -8,14 +8,14 @@
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("document_weight_iterator_test");
+LOG_SETUP("direct_posting_store_test");
 
 using namespace search;
 using namespace search::attribute;
@@ -80,12 +80,12 @@ struct StringFixture {
     }
 };
 
-TEST("require that appropriate attributes support the document weight attribute interface") {
+TEST("require that appropriate attributes support the IDocidWithWeightPostingStore interface") {
     EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::WSET, true)->as_docid_with_weight_posting_store() != nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, true)->as_docid_with_weight_posting_store() != nullptr);
 }
 
-TEST("require that inappropriate attributes do not support the document weight attribute interface") {
+TEST("require that inappropriate attributes do not support the IDocidWithWeightPostingStore interface") {
     EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::SINGLE, false)->as_docid_with_weight_posting_store() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::ARRAY, false)->as_docid_with_weight_posting_store() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64, CollectionType::WSET, false)->as_docid_with_weight_posting_store() == nullptr);
@@ -199,7 +199,7 @@ public:
         ASSERT_TRUE(api != nullptr);
         auto dict_entry = api->lookup("123", api->get_dictionary_snapshot());
         ASSERT_TRUE(dict_entry.posting_idx.valid());
-        return std::make_unique<queryeval::DocumentWeightSearchIterator>(_tfmd, *api, dict_entry);
+        return std::make_unique<queryeval::DocidWithWeightSearchIterator>(_tfmd, *api, dict_entry);
     }
 private:
     mutable fef::TermFieldMatchData _tfmd;

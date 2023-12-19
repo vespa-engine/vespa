@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -661,7 +661,7 @@ SearchIterator::UP create_wand(bool use_dww,
     assert(childrenMatchData->getNumTermFields() == dict_entries.size());
     wand::Terms terms;
     for (size_t i = 0; i < dict_entries.size(); ++i) {
-        terms.push_back(wand::Term(new DocumentWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
+        terms.push_back(wand::Term(new DocidWithWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
                                    weights[i],
                                    dict_entries[i].posting_size,
                                    childrenMatchData->resolveTermField(handles[i])));

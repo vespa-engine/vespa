@@ -488,11 +488,11 @@ TEST("require that direct attribute iterators work") {
             EXPECT_TRUE(result.has_minmax);
             EXPECT_EQUAL(100, result.min_weight);
             EXPECT_EQUAL(1000, result.max_weight);
-            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") != vespalib::string::npos);
+            EXPECT_TRUE(result.iterator_dump.find("DocidWithWeightSearchIterator") != vespalib::string::npos);
         } else {
             EXPECT_EQUAL(num_docs, result.est_hits);
             EXPECT_FALSE(result.has_minmax);
-            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") == vespalib::string::npos);
+            EXPECT_TRUE(result.iterator_dump.find("DocidWithWeightSearchIterator") == vespalib::string::npos);
         }
         ASSERT_EQUAL(3u, result.hits.size());
         EXPECT_FALSE(result.est_empty);
@@ -513,7 +513,7 @@ TEST("require that single weighted set turns filter on filter fields") {
         SimpleStringTerm node("foo", "", 0, Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_EQUAL(3u, result.est_hits);
-        EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") == vespalib::string::npos);
+        EXPECT_TRUE(result.iterator_dump.find("DocidWithWeightSearchIterator") == vespalib::string::npos);
         EXPECT_TRUE(result.iterator_dump.find("FilterAttributePostingListIteratorT") != vespalib::string::npos);
         ASSERT_EQUAL(3u, result.hits.size());
         EXPECT_FALSE(result.est_empty);
