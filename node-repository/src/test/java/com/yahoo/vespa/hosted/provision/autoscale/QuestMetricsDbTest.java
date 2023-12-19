@@ -57,8 +57,6 @@ public class QuestMetricsDbTest {
         assertEquals(0.1, snapshot.load().cpu(), delta);
         assertEquals(0.2, snapshot.load().memory(), delta);
         assertEquals(0.4, snapshot.load().disk(), delta);
-        assertEquals(0.5, snapshot.load().gpu(), delta);
-        assertEquals(0.6, snapshot.load().gpuMemory(), delta);
         assertEquals(1, snapshot.generation(), delta);
         assertEquals(30, snapshot.queryRate(), delta);
 
@@ -232,7 +230,7 @@ public class QuestMetricsDbTest {
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
                 timeseries.add(new Pair<>(host, new NodeMetricSnapshot(clock.instant(),
-                                                                       new Load(i * 0.1, i * 0.2, i * 0.4, i * 0.5, i * 0.6),
+                                                                       new Load(i * 0.1, i * 0.2, i * 0.4),
                                                                        i % 100,
                                                                        true,
                                                                        true,
@@ -246,7 +244,7 @@ public class QuestMetricsDbTest {
         Collection<Pair<String, NodeMetricSnapshot>> timeseries = new ArrayList<>();
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
-                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at, new Load(i * 0.1, i * 0.2, i * 0.4, i * 0.5, i * 0.6),
+                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at, new Load(i * 0.1, i * 0.2, i * 0.4),
                                                                        i % 100,
                                                                        true,
                                                                        false,

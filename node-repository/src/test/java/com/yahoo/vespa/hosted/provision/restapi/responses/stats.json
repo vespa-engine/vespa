@@ -4,16 +4,12 @@
   "load": {
     "cpu": 0.0,
     "memory": 0.0,
-    "disk": 0.0,
-    "gpu": 0.0,
-    "gpuMemory": 0.0
+    "disk": 0.0
   },
   "activeLoad": {
     "cpu": 0.0,
     "memory": 0.0,
-    "disk": 0.0,
-    "gpu": 0.0,
-    "gpuMemory": 0.0
+    "disk": 0.0
   },
   "applications": [
     {
@@ -21,9 +17,7 @@
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
-        "disk": 0.0,
-        "gpu": 0.0,
-        "gpuMemory": 0.0
+        "disk": 0.0
       },
       "cost": 0.0,
       "unutilizedCost": 0.0
@@ -33,9 +27,7 @@
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
-        "disk": 0.0,
-        "gpu": 0.0,
-        "gpuMemory": 0.0
+        "disk": 0.0
       },
       "cost": 0.0,
       "unutilizedCost": 0.0
@@ -45,9 +37,7 @@
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
-        "disk": 0.0,
-        "gpu": 0.0,
-        "gpuMemory": 0.0
+        "disk": 0.0
       },
       "cost": 0.0,
       "unutilizedCost": 0.0
@@ -57,9 +47,7 @@
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
-        "disk": 0.0,
-        "gpu": 0.0,
-        "gpuMemory": 0.0
+        "disk": 0.0
       },
       "cost": 0.0,
       "unutilizedCost": 0.0
