@@ -4,7 +4,6 @@
 #include "andsearch.h"
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
-#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::queryeval {
@@ -18,7 +17,7 @@ namespace {
 struct And {
     using Word = BitWord::Word;
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
-        accel.and64(offset, src, dest);
+        accel.and128(offset, src, dest);
     }
     static constexpr bool isAnd() noexcept { return true; }
 };
@@ -26,7 +25,7 @@ struct And {
 struct Or {
     using Word = BitWord::Word;
     void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
-        accel.or64(offset, src, dest);
+        accel.or128(offset, src, dest);
     }
     static constexpr bool isAnd() noexcept { return false; }
 };
@@ -56,8 +55,8 @@ MultiBitVector<Update>::MultiBitVector(size_t reserved)
       _accel(IAccelrated::getAccelerator()),
       _lastWords()
 {
-    static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
-    static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
+    static_assert(sizeof(_lastWords) == 128, "Lastwords should have 128 byte size");
+    static_assert(NumWordsInBatch == 16, "Batch size should be 16 words.");
     memset(_lastWords, 0, sizeof(_lastWords));
 }
 

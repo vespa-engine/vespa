@@ -173,13 +173,13 @@ GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, 
 }
 
 void
-GenericAccelrator::and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::andChunks<16, 4>(offset, src, dest);
+GenericAccelrator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::andChunks<16, 8>(offset, src, dest);
 }
 
 void
-GenericAccelrator::or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::orChunks<16,4>(offset, src, dest);
+GenericAccelrator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::orChunks<16, 8>(offset, src, dest);
 }
 
 }
