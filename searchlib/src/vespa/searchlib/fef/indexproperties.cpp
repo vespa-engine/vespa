@@ -455,9 +455,9 @@ FuzzyAlgorithm::lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm
     return vespalib::fuzzy_matching_algorithm_from_string(value, default_value);
 }
 
-const vespalib::string SortBlueprintsByEstimate::NAME("vespa.matching.sort_blueprints_by_estimate");
-const bool SortBlueprintsByEstimate::DEFAULT_VALUE(false);
-bool SortBlueprintsByEstimate::check(const Properties &props, bool fallback) {
+const vespalib::string SortBlueprintsByCost::NAME("vespa.matching.sort_blueprints_by_cost");
+const bool SortBlueprintsByCost::DEFAULT_VALUE(false);
+bool SortBlueprintsByCost::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 

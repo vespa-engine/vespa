@@ -103,7 +103,7 @@ public:
      * testing becomes harder. Not calling this function enables the
      * test to verify the original query without optimization.
      **/
-    void optimize(bool sort_by_estimate);
+    void optimize(bool sort_by_cost);
     void fetchPostings(const ExecuteInfo & executeInfo) ;
 
     void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,

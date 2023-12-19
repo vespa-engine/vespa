@@ -339,7 +339,7 @@ namespace matching {
     /**
      * Sort blueprints based on relative cost estimate rather than est_hits
      **/
-    struct SortBlueprintsByEstimate {
+    struct SortBlueprintsByCost {
         static const vespalib::string NAME;
         static const bool DEFAULT_VALUE;
         static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
