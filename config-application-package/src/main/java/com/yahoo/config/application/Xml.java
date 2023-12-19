@@ -3,6 +3,10 @@ package com.yahoo.config.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.reader.NamedReader;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
@@ -18,7 +22,6 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import java.io.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -36,30 +39,13 @@ public class Xml {
     private static final Logger log = Logger.getLogger(Xml.class.getPackage().toString());
 
     // Access to this needs to be synchronized (as it is in getDocumentBuilder() below)
-    private static final DocumentBuilderFactory factory = createDocumentBuilderFactory();
+    private static final DocumentBuilderFactory factory = XML.createDocumentBuilderFactory();
 
     public static Document getDocument(Reader reader) {
         try {
             return getDocumentBuilder().parse(new InputSource(reader));
         } catch (SAXException | IOException e) {
             throw new IllegalArgumentException(e);
-        }
-    }
-
-    private static DocumentBuilderFactory createDocumentBuilderFactory() {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
-
-        try {
-            // XXE prevention
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            return factory;
-        } catch (ParserConfigurationException e) {
-            log.log(Level.SEVERE, "Could not initialize XML parser", e);
-            throw new RuntimeException(e);
         }
     }
 
@@ -78,7 +64,7 @@ public class Xml {
     }
 
     static DocumentBuilder getPreprocessDocumentBuilder() throws ParserConfigurationException {
-        DocumentBuilderFactory factory = createDocumentBuilderFactory();
+        DocumentBuilderFactory factory = XML.createDocumentBuilderFactory();
         factory.setValidating(false);
         return factory.newDocumentBuilder();
     }

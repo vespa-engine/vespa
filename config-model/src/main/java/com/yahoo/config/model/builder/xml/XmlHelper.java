@@ -36,7 +36,7 @@ public final class XmlHelper {
 
     private static final String idReference = "idref";
     // Access to this needs to be synchronized (as it is in getDocumentBuilder() below)
-    public static final DocumentBuilderFactory factory = createDocumentBuilderFactory();
+    public static final DocumentBuilderFactory factory = XML.createDocumentBuilderFactory();
 
     private XmlHelper() {}
 
@@ -176,22 +176,5 @@ public final class XmlHelper {
                     " [" + e.getLineNumber() + ":" + e.getColumnNumber() + "]";
         }
 
-    }
-
-    private static DocumentBuilderFactory createDocumentBuilderFactory() {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
-
-        try {
-            // XXE prevention
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            return factory;
-        } catch (ParserConfigurationException e) {
-            log.log(Level.SEVERE, "Could not initialize XML parser", e);
-            throw new RuntimeException(e);
-        }
     }
 }

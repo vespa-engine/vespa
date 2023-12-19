@@ -32,6 +32,7 @@ import java.util.Optional;
  */
 public class XML {
 
+    private static final String DEFAULT_DOCUMENT_BUILDER_FACTORY_IMPLEMENTATION = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
     private static final Scan scanner = new Scan();
 
     /** Replaces the characters that need to be escaped with their corresponding character entities. */
@@ -210,7 +211,7 @@ public class XML {
      * @throws RuntimeException if we fail to create one
      */
     public static DocumentBuilder getDocumentBuilder() {
-        return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null, true);
+        return getDocumentBuilder(DEFAULT_DOCUMENT_BUILDER_FACTORY_IMPLEMENTATION, null, true);
     }
 
     /**
@@ -233,7 +234,7 @@ public class XML {
          * @param namespaceAware Whether the parser should be aware of xml namespaces
          */
     public static DocumentBuilder getDocumentBuilder(boolean namespaceAware) {
-        return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null, namespaceAware);
+        return getDocumentBuilder(DEFAULT_DOCUMENT_BUILDER_FACTORY_IMPLEMENTATION, null, namespaceAware);
     }
 
     /**
@@ -247,6 +248,24 @@ public class XML {
      */
     public static DocumentBuilder getDocumentBuilder(String implementation, ClassLoader classLoader, boolean namespaceAware) {
         try {
+            DocumentBuilderFactory factory = createDocumentBuilderFactory(implementation, classLoader, namespaceAware);
+            return factory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException("Could not create an XML builder", e);
+        }
+    }
+
+    /**
+     * Creates a new DocumentBuilderFactory
+     *
+     * @return a DocumentBuilderFactory
+     */
+    public static DocumentBuilderFactory createDocumentBuilderFactory() {
+        return createDocumentBuilderFactory(DEFAULT_DOCUMENT_BUILDER_FACTORY_IMPLEMENTATION, null, true);
+    }
+
+    private static DocumentBuilderFactory createDocumentBuilderFactory(String implementation, ClassLoader classLoader, boolean namespaceAware) {
+        try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(implementation, classLoader);
             factory.setNamespaceAware(namespaceAware);
             // Disable include directives. If enabled this allows inclusion of any resource, such as file:/// and
@@ -259,7 +278,7 @@ public class XML {
             // https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            return factory.newDocumentBuilder();
+            return factory;
         } catch (ParserConfigurationException e) {
             throw new RuntimeException("Could not create an XML builder", e);
         }
