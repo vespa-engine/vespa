@@ -99,6 +99,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     private static void setRestartOnDeployAndAddRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
         log.log(INFO, message);
         cluster.onnxModelCostCalculator().setRestartOnDeploy();
+        cluster.onnxModelCostCalculator().store();
         actions.add(new VespaRestartAction(cluster.id(), message));
     }
 

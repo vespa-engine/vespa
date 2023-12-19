@@ -1465,7 +1465,8 @@
       "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public abstract java.util.Map models()",
       "public abstract void setRestartOnDeploy()",
-      "public abstract boolean restartOnDeploy()"
+      "public abstract boolean restartOnDeploy()",
+      "public abstract void store()"
     ],
     "fields" : [ ]
   },
@@ -1488,7 +1489,8 @@
       "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public java.util.Map models()",
       "public void setRestartOnDeploy()",
-      "public boolean restartOnDeploy()"
+      "public boolean restartOnDeploy()",
+      "public void store()"
     ],
     "fields" : [ ]
   },

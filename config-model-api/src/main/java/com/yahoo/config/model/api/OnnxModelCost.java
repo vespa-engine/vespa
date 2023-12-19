@@ -25,6 +25,7 @@ public interface OnnxModelCost {
         Map<String, ModelInfo> models();
         void setRestartOnDeploy();
         boolean restartOnDeploy();
+        void store();
     }
 
     record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {}
@@ -41,6 +42,7 @@ public interface OnnxModelCost {
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}
         @Override public boolean restartOnDeploy() { return false; }
+        @Override public void store() {}
     }
 
 }
