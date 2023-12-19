@@ -336,6 +336,15 @@ namespace matching {
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props);
         static vespalib::FuzzyMatchingAlgorithm lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm default_value);
     };
+    /**
+     * Sort blueprints based on relative cost estimate rather than est_hits
+     **/
+    struct SortBlueprintsByEstimate {
+        static const vespalib::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
+        static bool check(const Properties &props, bool fallback);
+    };
 
     /**
      * When enabled, the unpacking part of the phrase iterator will be tagged as expensive

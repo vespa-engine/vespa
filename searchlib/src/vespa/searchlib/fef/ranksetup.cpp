@@ -56,6 +56,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _dumpFeatures(),
       _warnings(),
       _feature_rename_map(),
+      _sort_blueprints_by_estimate(false),
       _ignoreDefaultRankFeatures(false),
       _compiled(false),
       _compileError(false),
@@ -137,6 +138,7 @@ RankSetup::configure()
     _mutateOnSummary._attribute = mutate::on_summary::Attribute::lookup(_indexEnv.getProperties());
     _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
     _mutateAllowQueryOverride = mutate::AllowQueryOverride::check(_indexEnv.getProperties());
+    _sort_blueprints_by_estimate = matching::SortBlueprintsByEstimate::check(_indexEnv.getProperties());
     _always_mark_phrase_expensive = matching::AlwaysMarkPhraseExpensive::check(_indexEnv.getProperties());
     _create_postinglist_when_non_strict = matching::CreatePostingListWhenNonStrict::check(_indexEnv.getProperties());
     _use_estimate_for_fetch_postings = matching::UseEstimateForFetchPostings::check(_indexEnv.getProperties());
