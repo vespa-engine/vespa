@@ -110,6 +110,9 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
 
             @Override
             public boolean restartOnDeploy() { return restartOnDeploy; }
+
+            @Override
+            public void store() {}
         };
     }
 

@@ -124,6 +124,7 @@ class JvmHeapSizeValidatorTest {
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}
         @Override public boolean restartOnDeploy() { return false;}
+        @Override public void store() {}
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
         @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
