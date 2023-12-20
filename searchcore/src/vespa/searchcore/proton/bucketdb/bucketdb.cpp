@@ -62,7 +62,6 @@ BucketDB::checkActiveCount() const {
 void
 BucketDB::unloadBucket(BucketId bucket, const BucketState &delta)
 {
-    checkActiveCount();
     BucketState *state = getBucketStatePtr(bucket);
     assert(state);
     *state -= delta;
