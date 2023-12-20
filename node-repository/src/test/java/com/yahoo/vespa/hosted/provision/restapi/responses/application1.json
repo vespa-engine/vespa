@@ -63,12 +63,16 @@
         "peak" : {
           "cpu" : 0.0,
           "memory" : 0.0,
-          "disk" : 0.0
+          "disk" : 0.0,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "ideal" : {
           "cpu" : 0.0,
           "memory" : 0.0,
-          "disk" : 0.0
+          "disk" : 0.0,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "metrics" : {
           "queryRate" : 0.0,
@@ -96,12 +100,16 @@
         "peak" : {
           "cpu" : 0.1,
           "memory" : 0.2,
-          "disk" : 0.3
+          "disk" : 0.3,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "ideal" : {
           "cpu" : 0.4,
           "memory" : 0.5,
-          "disk" : 0.6
+          "disk" : 0.6,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "metrics" : {
           "queryRate" : 0.7,
