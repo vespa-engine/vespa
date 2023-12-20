@@ -36,7 +36,7 @@ const (
 	AnyDeployment int64 = -2
 )
 
-var errWaitTimeout = errors.New("wait timed out")
+var errWaitTimeout = errors.New("giving up")
 var errAuth = errors.New("auth failed")
 
 // Authenticator authenticates the given HTTP request.
@@ -255,7 +255,7 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 	deadline := time.Now().Add(timeout)
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
-		response, err = service.Do(reqFn(), 10*time.Second)
+		response, err = service.Do(reqFn(), 20*time.Second)
 		if errors.Is(err, errAuth) {
 			return status, fmt.Errorf("aborting wait: %w", err)
 		} else if err == nil {
