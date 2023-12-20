@@ -69,6 +69,7 @@ type CLI struct {
 // the error.
 type ErrCLI struct {
 	Status int
+	warn   bool
 	quiet  bool
 	hints  []string
 	error
@@ -599,7 +600,11 @@ func (c *CLI) Run(args ...string) error {
 	if err != nil {
 		if cliErr, ok := err.(ErrCLI); ok {
 			if !cliErr.quiet {
-				c.printErr(cliErr, cliErr.hints...)
+				if cliErr.warn {
+					c.printWarning(cliErr, cliErr.hints...)
+				} else {
+					c.printErr(cliErr, cliErr.hints...)
+				}
 			}
 		} else {
 			c.printErr(err)

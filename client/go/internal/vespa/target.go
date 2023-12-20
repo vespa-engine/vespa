@@ -36,7 +36,7 @@ const (
 	AnyDeployment int64 = -2
 )
 
-var errWaitTimeout = errors.New("wait timed out")
+var errWaitTimeout = errors.New("giving up")
 var errAuth = errors.New("auth failed")
 
 // Authenticator authenticates the given HTTP request.
