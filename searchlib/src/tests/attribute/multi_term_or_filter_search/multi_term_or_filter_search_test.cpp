@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/i_direct_posting_store.h>
 #include <vespa/searchlib/attribute/multi_term_or_filter_search.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #define ENABLE_GTEST_MIGRATION
@@ -11,13 +12,16 @@
 using PostingList = search::attribute::PostingListTraits<int32_t>::PostingStoreBase;
 using Iterator = search::attribute::PostingListTraits<int32_t>::const_iterator;
 using KeyData = PostingList::KeyDataType;
+
 using search::BitVector;
 using search::attribute::MultiTermOrFilterSearch;
+using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
 using vespalib::datastore::EntryRef;
 
 class MultiTermOrFilterSearchTest : public ::testing::Test {
     PostingList _postings;
+    mutable TermFieldMatchData _tfmd;
     vespalib::GenerationHandler _gens;
     std::vector<EntryRef> _trees;
     uint32_t _range_start;
@@ -62,7 +66,7 @@ public:
         for (size_t i = 0; i < num_trees(); ++i) {
             iterators.emplace_back(get_tree(i));
         }
-        auto result = MultiTermOrFilterSearch::create(std::move(iterators));
+        auto result = MultiTermOrFilterSearch::create(std::move(iterators), _tfmd);
         result->initRange(_range_start, _range_end);
         return result;
     };
@@ -73,6 +77,8 @@ public:
         while (doc_id < _range_end) {
             if (iterator.seek(doc_id)) {
                 result.emplace_back(doc_id);
+                iterator.unpack(doc_id);
+                EXPECT_EQ(doc_id, _tfmd.getDocId());
                 ++doc_id;
             } else {
                 doc_id = std::max(doc_id + 1, iterator.getDocId());

@@ -201,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_events_before_wakeup;
         private final int heapPercentage;
         private final String summaryDecodePolicy;
+        private boolean sortBlueprintsByCost;
         private final boolean alwaysMarkPhraseExpensive;
         private final boolean createPostinglistWhenNonStrict;
         private final boolean useEstimateForFetchPostings;
@@ -260,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.useEstimateForFetchPostings = flagValue(source, appId, version, Flags.USE_ESTIMATE_FOR_FETCH_POSTINGS);
             this.useThreadBundleForFetchPostings = flagValue(source, appId, version, Flags.USE_THREAD_BUNDLE_FOR_FETCH_POSTINGS);
             this.restartOnDeployWhenOnnxModelChanges = flagValue(source, appId, version, Flags.RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES);
+            this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -316,6 +318,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
         @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
         @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
+        @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

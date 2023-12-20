@@ -8,7 +8,12 @@
 
 namespace search::queryeval {
 
-class DocumentWeightSearchIterator : public SearchIterator
+/**
+ * SearchIterator implementation over a low-level posting list with {docid, weight} tuples.
+ *
+ * This is used by the parallel weak AND search iterator.
+ */
+class DocidWithWeightSearchIterator : public SearchIterator
 {
 private:
     fef::TermFieldMatchData          &_tfmd;
@@ -17,9 +22,9 @@ private:
     queryeval::MinMaxPostingInfo      _postingInfo;
 
 public:
-    DocumentWeightSearchIterator(fef::TermFieldMatchData &tfmd,
-                                 const IDocidWithWeightPostingStore &attr,
-                                 IDirectPostingStore::LookupResult dict_entry)
+    DocidWithWeightSearchIterator(fef::TermFieldMatchData &tfmd,
+                                  const IDocidWithWeightPostingStore &attr,
+                                  IDirectPostingStore::LookupResult dict_entry)
         : _tfmd(tfmd),
           _matchPosition(_tfmd.populate_fixed()),
           _iterator(attr.create(dict_entry.posting_idx)),

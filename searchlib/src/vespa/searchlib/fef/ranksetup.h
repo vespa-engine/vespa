@@ -65,6 +65,7 @@ private:
     std::vector<vespalib::string> _dumpFeatures;
     Warnings                 _warnings;
     StringStringMap          _feature_rename_map;
+    bool                     _sort_blueprints_by_cost;
     bool                     _ignoreDefaultRankFeatures;
     bool                     _compiled;
     bool                     _compileError;
@@ -459,6 +460,7 @@ public:
     const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
 
     bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
+    bool sort_blueprints_by_cost() const noexcept { return _sort_blueprints_by_cost; }
 };
 
 }

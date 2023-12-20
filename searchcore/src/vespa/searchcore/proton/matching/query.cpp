@@ -198,9 +198,10 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 }
 
 void
-Query::optimize()
+Query::optimize(bool sort_by_cost)
 {
-    _blueprint = Blueprint::optimize(std::move(_blueprint));
+    (void) sort_by_cost;
+    _blueprint = Blueprint::optimize(std::move(_blueprint), sort_by_cost);
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
 
@@ -213,7 +214,7 @@ Query::fetchPostings(const ExecuteInfo & executeInfo)
 void
 Query::handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace& trace)
+                            search::engine::Trace& trace, bool sort_by_cost)
 {
     if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
                               requestContext.thread_bundle(), &trace))
@@ -222,7 +223,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
     }
     // optimized order may change after accounting for global filter:
     trace.addEvent(5, "Optimize query execution plan to account for global filter");
-    _blueprint = Blueprint::optimize(std::move(_blueprint));
+    _blueprint = Blueprint::optimize(std::move(_blueprint), sort_by_cost);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
     fetchPostings(ExecuteInfo::create(true, 1.0, requestContext.getDoom(), requestContext.thread_bundle()));

@@ -7,6 +7,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -15,21 +16,21 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
  */
 abstract class XmlHelper {
-
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
     public static Element parseXml(String xml)
             throws ParserConfigurationException, IOException, SAXException
     {
-        return parseXmlStream(new ByteArrayInputStream(xml.getBytes(UTF8)));
+        return parseXmlStream(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     public static Element parseXmlFile(String fileName)
@@ -41,22 +42,27 @@ abstract class XmlHelper {
     public static Element parseXmlStream(InputStream in)
             throws ParserConfigurationException, IOException, SAXException
     {
-        DocumentBuilderFactory factory = createDocumentBuilderFactory();
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        DocumentBuilder builder = createDocumentBuilderFactory().newDocumentBuilder();
         Document doc = builder.parse(in);
         return doc.getDocumentElement();
     }
 
-    private static DocumentBuilderFactory createDocumentBuilderFactory() throws ParserConfigurationException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
+    private static DocumentBuilderFactory createDocumentBuilderFactory() {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 
-        // XXE prevention
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        return factory;
+            // XXE prevention
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            return factory;
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException("Failed to initialize XML parser", e);
+        }
     }
 
     public static String getAttributeText(Node node, String name) {

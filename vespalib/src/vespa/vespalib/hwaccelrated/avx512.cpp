@@ -36,13 +36,13 @@ Avx512Accelrator::squaredEuclideanDistance(const double * a, const double * b, s
 }
 
 void
-Avx512Accelrator::and64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::andChunks<64, 1>(offset, src, dest);
+Avx512Accelrator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::andChunks<64, 2>(offset, src, dest);
 }
 
 void
-Avx512Accelrator::or64(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::orChunks<64, 1>(offset, src, dest);
+Avx512Accelrator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+    helper::orChunks<64, 2>(offset, src, dest);
 }
 
 }

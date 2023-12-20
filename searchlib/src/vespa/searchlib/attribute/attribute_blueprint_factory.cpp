@@ -17,7 +17,7 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -527,7 +527,7 @@ public:
             }
         }
         if (_attr.has_btree_iterator(_dict_entry.posting_idx)) {
-            return std::make_unique<queryeval::DocumentWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
+            return std::make_unique<queryeval::DocidWithWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
         } else {
             return _attr.make_bitvector_iterator(_dict_entry.posting_idx, get_docid_limit(), *tfmda[0], strict);
         }

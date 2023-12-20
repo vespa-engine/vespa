@@ -33,7 +33,7 @@ size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources,
 }
 
 template <typename CombineType>
-void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
+void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx, bool sort_by_cost) {
     std::vector<size_t> source_blenders;
     const SourceBlenderBlueprint * reference = nullptr;
     for (size_t i = begin_idx; i < self.childCnt(); ++i) {
@@ -63,7 +63,7 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
             top->addChild(std::move(sources.back()));
             sources.pop_back();
         }
-        blender_up = Blueprint::optimize(std::move(blender_up));
+        blender_up = Blueprint::optimize(std::move(blender_up), sort_by_cost);
         self.addChild(std::move(blender_up));
     }
 }
@@ -114,7 +114,7 @@ AndNotBlueprint::exposeFields() const
 }
 
 void
-AndNotBlueprint::optimize_self(OptimizePass pass)
+AndNotBlueprint::optimize_self(OptimizePass pass, bool sort_by_cost)
 {
     if (childCnt() == 0) {
         return;
@@ -152,7 +152,7 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
         }
     }
     if (pass == OptimizePass::LAST) {
-        optimize_source_blenders<OrBlueprint>(*this, 1);
+        optimize_source_blenders<OrBlueprint>(*this, 1, sort_by_cost);
     }
 }
 
@@ -166,10 +166,14 @@ AndNotBlueprint::get_replacement()
 }
 
 void
-AndNotBlueprint::sort(Children &children) const
+AndNotBlueprint::sort(Children &children, bool sort_by_cost) const
 {
     if (children.size() > 2) {
-        std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
+        if (sort_by_cost) {
+            std::sort(children.begin() + 1, children.end(), MinimalOrCost());
+        } else {
+            std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
+        }
     }
 }
 
@@ -231,7 +235,7 @@ AndBlueprint::exposeFields() const
 }
 
 void
-AndBlueprint::optimize_self(OptimizePass pass)
+AndBlueprint::optimize_self(OptimizePass pass, bool sort_by_cost)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; i < childCnt(); ++i) {
@@ -244,7 +248,7 @@ AndBlueprint::optimize_self(OptimizePass pass)
         }
     }
     if (pass == OptimizePass::LAST) {
-        optimize_source_blenders<AndBlueprint>(*this, 0);
+        optimize_source_blenders<AndBlueprint>(*this, 0, sort_by_cost);
     }
 }
 
@@ -258,9 +262,13 @@ AndBlueprint::get_replacement()
 }
 
 void
-AndBlueprint::sort(Children &children) const
+AndBlueprint::sort(Children &children, bool sort_by_cost) const
 {
-    std::sort(children.begin(), children.end(), TieredLessEstimate());
+    if (sort_by_cost) {
+        std::sort(children.begin(), children.end(), MinimalAndCost());
+    } else {
+        std::sort(children.begin(), children.end(), TieredLessEstimate());
+    }
 }
 
 bool
@@ -336,7 +344,7 @@ OrBlueprint::exposeFields() const
 }
 
 void
-OrBlueprint::optimize_self(OptimizePass pass)
+OrBlueprint::optimize_self(OptimizePass pass, bool sort_by_cost)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
@@ -351,7 +359,7 @@ OrBlueprint::optimize_self(OptimizePass pass)
         }
     }
     if (pass == OptimizePass::LAST) {
-        optimize_source_blenders<OrBlueprint>(*this, 0);
+        optimize_source_blenders<OrBlueprint>(*this, 0, sort_by_cost);
     }
 }
 
@@ -365,9 +373,13 @@ OrBlueprint::get_replacement()
 }
 
 void
-OrBlueprint::sort(Children &children) const
+OrBlueprint::sort(Children &children, bool sort_by_cost) const
 {
-    std::sort(children.begin(), children.end(), TieredGreaterEstimate());
+    if (sort_by_cost) {
+        std::sort(children.begin(), children.end(), MinimalOrCost());
+    } else {
+        std::sort(children.begin(), children.end(), TieredGreaterEstimate());
+    }
 }
 
 bool
@@ -444,7 +456,7 @@ WeakAndBlueprint::exposeFields() const
 }
 
 void
-WeakAndBlueprint::sort(Children &) const
+WeakAndBlueprint::sort(Children &, bool) const
 {
     // order needs to stay the same as _weights
 }
@@ -508,9 +520,13 @@ NearBlueprint::exposeFields() const
 }
 
 void
-NearBlueprint::sort(Children &children) const
+NearBlueprint::sort(Children &children, bool sort_by_cost) const
 {
-    std::sort(children.begin(), children.end(), TieredLessEstimate());
+    if (sort_by_cost) {
+        std::sort(children.begin(), children.end(), MinimalAndCost());
+    } else {
+        std::sort(children.begin(), children.end(), TieredLessEstimate());
+    }
 }
 
 bool
@@ -571,10 +587,9 @@ ONearBlueprint::exposeFields() const
 }
 
 void
-ONearBlueprint::sort(Children &children) const
+ONearBlueprint::sort(Children &, bool) const
 {
     // ordered near cannot sort children here
-    (void)children;
 }
 
 bool
@@ -640,7 +655,7 @@ RankBlueprint::exposeFields() const
 }
 
 void
-RankBlueprint::optimize_self(OptimizePass pass)
+RankBlueprint::optimize_self(OptimizePass pass, bool sort_by_cost)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 1; i < childCnt(); ++i) {
@@ -650,7 +665,7 @@ RankBlueprint::optimize_self(OptimizePass pass)
         }
     }
     if (pass == OptimizePass::LAST) {
-        optimize_source_blenders<OrBlueprint>(*this, 1);
+        optimize_source_blenders<OrBlueprint>(*this, 1, sort_by_cost);
     }
 }
 
@@ -664,9 +679,8 @@ RankBlueprint::get_replacement()
 }
 
 void
-RankBlueprint::sort(Children &children) const
+RankBlueprint::sort(Children &, bool) const
 {
-    (void)children;
 }
 
 bool
@@ -743,7 +757,7 @@ SourceBlenderBlueprint::exposeFields() const
 }
 
 void
-SourceBlenderBlueprint::sort(Children &) const
+SourceBlenderBlueprint::sort(Children &, bool) const
 {
 }
 

@@ -172,6 +172,20 @@ public:
     // lower limit for docid_limit: max child estimate
     static HitEstimate sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit);
 
+    // sort children to minimize total cost of OR flow
+    struct MinimalOrCost {
+        bool operator () (const auto &a, const auto &b) const noexcept {
+            return a->estimate() / a->cost() > b->estimate() / b->cost();
+        }
+    };
+
+    // sort children to minimize total cost of AND flow
+    struct MinimalAndCost {
+        bool operator () (const auto &a, const auto &b) const noexcept {
+            return (1.0 - a->estimate()) / a->cost() > (1.0 - b->estimate()) / b->cost();
+        }
+    };
+
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {
         bool operator () (const auto &a, const auto &b) const noexcept {
@@ -246,9 +260,9 @@ public:
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
-    static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
-    virtual void optimize_self(OptimizePass pass);
+    static Blueprint::UP optimize(Blueprint::UP bp, bool sort_by_cost);
+    virtual void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) = 0;
+    virtual void optimize_self(OptimizePass pass, bool sort_by_cost);
     virtual Blueprint::UP get_replacement();
     virtual bool should_optimize_children() const { return true; }
 
@@ -376,7 +390,7 @@ public:
 
     void setDocIdLimit(uint32_t limit) noexcept final;
 
-    void optimize(Blueprint* &self, OptimizePass pass) final;
+    void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) final;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -393,7 +407,7 @@ public:
     virtual double calculate_cost() const = 0;
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
-    virtual void sort(Children &children) const = 0;
+    virtual void sort(Children &children, bool sort_by_cost) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -413,7 +427,7 @@ class LeafBlueprint : public Blueprint
 private:
     State _state;
 protected:
-    void optimize(Blueprint* &self, OptimizePass pass) final;
+    void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) final;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
         _state.relative_estimate(calculate_relative_estimate());
