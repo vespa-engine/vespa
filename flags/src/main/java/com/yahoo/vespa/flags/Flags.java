@@ -441,7 +441,7 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag CENTRALIZED_AUTHZ = defineFeatureFlag(
-            "centralized-authz", false,
+            "centralized-authz", true,
             List.of("mortent"), "2023-11-27", "2024-02-01",
             "Use centralized authorization checks",
             "Takes effect immediately",
