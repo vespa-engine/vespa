@@ -319,8 +319,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                                                              new Load(record.getFloat(2),
                                                                       record.getFloat(3),
                                                                       record.getFloat(4),
-                                                                      record.getFloat(9),
-                                                                      record.getFloat(10)),
+                                                                      getFloatOrDefault(record, 9, 0),
+                                                                      getFloatOrDefault(record, 10, 0)),
                                                              record.getLong(5),
                                                              record.getBool(6),
                                                              record.getBool(7),
@@ -330,6 +330,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             }
             return snapshots;
         }
+    }
+
+    private float getFloatOrDefault(Record record, int col, float defaultValue) {
+        float value = record.getFloat(col);
+        return Float.isNaN(value) ? defaultValue : value;
     }
 
     private ClusterTimeseries getClusterSnapshots(ApplicationId application, ClusterSpec.Id cluster) throws SqlException {
