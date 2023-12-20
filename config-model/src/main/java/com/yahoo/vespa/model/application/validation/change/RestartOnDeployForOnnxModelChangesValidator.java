@@ -50,7 +50,8 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
             if (enoughMemoryToAvoidRestart(clusterInCurrentModel, cluster, deployState.getDeployLogger()))
                 continue;
 
-            log.log(FINE, "Validating " + cluster + ", current models=" + currentModels + ", next models=" + nextModels);
+            log.log(FINE, "Validating %s, current Onnx models:%s, next Onnx models:%s"
+                    .formatted(cluster, currentModels, nextModels));
             actions.addAll(validateModelChanges(cluster, currentModels, nextModels));
             actions.addAll(validateSetOfModels(cluster, currentModels, nextModels));
         }
@@ -79,7 +80,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         List<ConfigChangeAction> actions = new ArrayList<>();
         Set<String> currentModelIds = currentModels.keySet();
         Set<String> nextModelIds = nextModels.keySet();
-        log.log(FINE, "Checking if model set has changed (%s) -> (%s)".formatted(currentModelIds, nextModelIds));
+        log.log(FINE, "Checking if Onnx model set has changed (%s) -> (%s)".formatted(currentModelIds, nextModelIds));
         if (! currentModelIds.equals(nextModelIds)) {
             String message = "Onnx model set has changed from %s to %s, need to restart services in %s"
                     .formatted(currentModelIds, nextModelIds, cluster);
@@ -116,20 +117,23 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         var availableMemoryPercentage = cluster.availableMemoryPercentage();
         int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
 
+        var prefix = "Validating Onnx models memory usage for %s".formatted(cluster);
         if (memoryPercentage < percentLimit) {
-            deployLogger.log(INFO, "Validating %s, percentage of available memory too low (%d < %d) to avoid restart, consider a flavor with more memory to avoid this"
-                    .formatted(cluster, memoryPercentage, percentLimit));
+            deployLogger.log(INFO, ("%s, percentage of available memory " +
+                    "too low (%d < %d) to avoid restart, consider a flavor with more memory to avoid this")
+                    .formatted(prefix, memoryPercentage, percentLimit));
             return false;
         }
 
         if (availableMemory < gbLimit) {
-            deployLogger.log(INFO, "Validating %s, available memory too low (%.2f Gb < %.2f Gb) to avoid restart, consider a flavor with more memory to avoid this"
-                    .formatted(cluster, availableMemory, gbLimit));
+            deployLogger.log(INFO, ("%s, available memory too low "
+                             + "(%.2f Gb < %.2f Gb) to avoid restart, consider a flavor with more memory to avoid this")
+                    .formatted(prefix, availableMemory, gbLimit));
             return false;
         }
 
-        log.log(FINE, "Validating %s, enough available memory (%.2f Gb) to avoid restart (models use %.2f Gb)"
-                .formatted(cluster, availableMemory, memoryUsedByModels));
+        log.log(FINE, "%s, enough available memory (%.2f Gb) to avoid restart (models use %.2f Gb)"
+                .formatted(prefix, availableMemory, memoryUsedByModels));
         return true;
     }
 
