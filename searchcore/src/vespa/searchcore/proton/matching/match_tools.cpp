@@ -203,7 +203,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(5, "Build query execution plan");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         trace.addEvent(5, "Optimize query execution plan");
-        _query.optimize(SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost()));
+        bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
+        _query.optimize(sort_by_cost);
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         bool create_postinglist_when_non_strict = CreatePostingListWhenNonStrict::check(_queryEnv.getProperties(), rankSetup.create_postinglist_when_non_strict());
@@ -216,7 +217,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,
                                         _attribute_blueprint_params.global_filter_upper_limit,
-                                        trace, create_postinglist_when_non_strict, use_estimate_for_fetch_postings);
+                                        trace, create_postinglist_when_non_strict, use_estimate_for_fetch_postings,
+                                        sort_by_cost);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
