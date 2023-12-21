@@ -120,7 +120,7 @@ public class NormalizingSearcher extends Searcher {
         List<Alternative> terms = block.getAlternatives();
         for (Alternative term : terms) {
             String accentDropped = linguistics.getTransformer().accentDrop(term.word, language);
-            if ( ! term.word.equals(accentDropped) && accentDropped.length() > 0)
+            if ( ! term.word.equals(accentDropped) && !accentDropped.isEmpty())
                 block.addTerm(accentDropped, term.exactness * .7d);
         }
     }
@@ -144,15 +144,14 @@ public class NormalizingSearcher extends Searcher {
     }
 
     private void normalizeWord(Language language, IndexFacts.Session indexFacts, TermItem term, ListIterator<Item> i) {
-        if ( ! (term instanceof WordItem)) return;
+        if ( ! (term instanceof WordItem word)) return;
         if ( ! term.isNormalizable()) return;
         Index index = indexFacts.getIndex(term.getIndexName());
         if (index.isAttribute()) return;
         if ( ! index.getNormalize()) return;
 
-        WordItem word = (WordItem) term;
         String accentDropped = linguistics.getTransformer().accentDrop(word.getWord(), language);
-        if (accentDropped.length() == 0)
+        if (accentDropped.isEmpty())
             i.remove();
         else
             word.setWord(accentDropped);
