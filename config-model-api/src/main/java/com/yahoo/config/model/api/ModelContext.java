@@ -72,7 +72,7 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2023") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2024") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String queryDispatchPolicy() { return "adaptive"; }
@@ -116,9 +116,9 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default long mergingMaxMemoryUsagePerNode() { return -1; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean usePerDocumentThrottledDeleteBucket() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean createPostinglistWhenNonStrict() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean useEstimateForFetchPostings() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.276") default boolean useThreadBundleForFetchPostings() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean createPostinglistWhenNonStrict() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean useEstimateForFetchPostings() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean useThreadBundleForFetchPostings() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
     }
