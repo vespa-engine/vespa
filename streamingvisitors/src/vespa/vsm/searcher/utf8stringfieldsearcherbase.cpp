@@ -25,8 +25,8 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
         if (c < 128) {
             if (!c) { break; }
             p++;
-            if (__builtin_expect(Fast_NormalizeWordFolder::_isWord[c], false)) {
-                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
+            if (__builtin_expect(Fast_NormalizeWordFolder::is_wordchar_ascii7bit(c), false)) {
+                *q++ = Fast_NormalizeWordFolder::lowercase_and_fold_ascii(c);
                 c = 0;
             } else {
                 c = *p;
@@ -37,13 +37,13 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             if (Fast_UnicodeUtil::IsWordChar(c)) {
                 _utf8Count[p-oldP-1]++;
                 const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-                if (repl != NULL) {
+                if (repl != nullptr) {
                     size_t repllen = strlen(repl);
                     if (repllen > 0) {
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                     }
                 } else {
-                    c = Fast_NormalizeWordFolder::ToFold(c);
+                    c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
                     *q++ = c;
                 }
                 break;
@@ -63,10 +63,10 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
         if (c < 128) {             // Common case, ASCII
             if (!c) { break; }
             p++;
-            if (__builtin_expect(!Fast_NormalizeWordFolder::_isWord[c], false)) {
+            if (__builtin_expect(!Fast_NormalizeWordFolder::is_wordchar_ascii7bit(c), false)) {
                 c = 0;
             } else {
-                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
+                *q++ = Fast_NormalizeWordFolder::lowercase_and_fold_ascii(c);
                 c = *p;
             }
         } else {
@@ -75,13 +75,13 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             if (__builtin_expect(Fast_UnicodeUtil::IsWordChar(c), false)) {
                 _utf8Count[p-oldP-1]++;
                 const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-                if (repl != NULL) {
+                if (repl != nullptr) {
                     size_t repllen = strlen(repl);
                     if (repllen > 0) {
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                     }
                 } else {
-                    c = Fast_NormalizeWordFolder::ToFold(c);
+                    c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
                     *q++ = c;
                 }
 
@@ -144,9 +144,9 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
         bool equal(true);
         for (; equal && (n < e) && (term < eterm); term++) {
             if (*term < 0x80) {
-                equal = (*term == Fast_NormalizeWordFolder::_foldCase[*n++]);
+                equal = (*term == Fast_NormalizeWordFolder::lowercase_ascii(*n++));
             } else {
-                cmptype_t c = Fast_NormalizeWordFolder::ToFold(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
+                cmptype_t c = Fast_NormalizeWordFolder::lowercase(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
                 equal = (*term == c);
             }
         }
@@ -280,12 +280,12 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
         if (c < 128) {
             p++;
             if (!isSeparatorCharacter(c)) {
-                dstbuf.onCharacter(Fast_NormalizeWordFolder::_foldCase[c], (oldP - b));
+                dstbuf.onCharacter(Fast_NormalizeWordFolder::lowercase_and_fold_ascii(c), (oldP - b));
             }
         } else {
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-            if (repl != NULL) {
+            if (repl != nullptr) {
                 size_t repllen = strlen(repl);
                 if (repllen > 0) {
                     ucs4_t * buf = dstbuf.getBuf();
@@ -300,7 +300,7 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
                     }
                 }
             } else {
-                c = Fast_NormalizeWordFolder::ToFold(c);
+                c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
                 dstbuf.onCharacter(c, (oldP - b));
             }
             if (c == Fast_UnicodeUtil::_BadUTF8Char) {

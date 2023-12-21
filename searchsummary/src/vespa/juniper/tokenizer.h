@@ -12,8 +12,8 @@ class JuniperTokenizer
 {
 public:
     JuniperTokenizer(const Fast_WordFolder* wordfolder,
-                     const char* text, size_t len, ITokenProcessor* = NULL,
-                     const juniper::SpecialTokenRegistry * registry = NULL);
+                     const char* text, size_t len, ITokenProcessor* = nullptr,
+                     const juniper::SpecialTokenRegistry * registry = nullptr);
     inline void SetSuccessor(ITokenProcessor* successor) { _successor = successor; }
     void setRegistry(const juniper::SpecialTokenRegistry * registry) { _registry = registry; }
 
@@ -23,13 +23,13 @@ public:
     void scan();
 private:
     const Fast_WordFolder* _wordfolder;
-    const char* _text;  // The current input text
-    size_t _len;        // Length of the text input
-    ITokenProcessor* _successor;
+    const char*            _text;  // The current input text
+    size_t                 _len;        // Length of the text input
+    ITokenProcessor*       _successor;
     const juniper::SpecialTokenRegistry * _registry;
-    off_t _charpos;  // Last utf8 character position
-    off_t _wordpos;  // Offset in numbering of words compared to input (as result of splits)
-    ucs4_t _buffer[TOKEN_DSTLEN];  // Temp. buffer to store folding result
+    off_t                  _charpos;  // Last utf8 character position
+    off_t                  _wordpos;  // Offset in numbering of words compared to input (as result of splits)
+    ucs4_t                 _buffer[TOKEN_DSTLEN];  // Temp. buffer to store folding result
 private:
     JuniperTokenizer(const JuniperTokenizer&);
     JuniperTokenizer& operator=(const JuniperTokenizer&);
