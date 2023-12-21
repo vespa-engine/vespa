@@ -23,11 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CertificateRemovalChangeValidatorTest {
 
     private static final String validationOverrides =
-            """
-            <validation-overrides>
-                <allow until='2000-01-14' comment='test override'>certificate-removal</allow>
-            </validation-overrides>
-            """;
+            "<validation-overrides>\n" +
+            "    <allow until='2000-01-14' comment='test override'>certificate-removal</allow>\n" +
+            "</validation-overrides>\n";
 
     @Test
     void validate() {
