@@ -40,7 +40,7 @@ public class IndexingScriptChangeValidator {
             String fieldName = nextField.getName();
             ImmutableSDField currentField = currentSchema.getConcreteField(fieldName);
             if (currentField != null) {
-                validateScripts(currentField, nextField).ifPresent(result::add);
+                validateScripts(currentField, nextField).ifPresent(r -> result.add(r));
             }
             else if (nextField.isExtraField()) {
                 result.add(VespaReindexAction.of(id,

@@ -22,28 +22,19 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class IndexingModeChangeValidatorTest {
 
     @Test
-    void testChangingIndexModeFromIndexedToStreamingWhenDisallowedButInDev() {
-        ValidationTester tester = new ValidationTester();
-
-        VespaModel oldModel =
-                tester.deploy(null, getServices("index"), Environment.dev, "<validation-overrides />").getFirst();
-        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), Environment.dev, "<calidation-overrides />").getSecond();
-        assertReindexingChange("Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'", actions);
-    }
-
-    @Test
     void testChangingIndexModeFromIndexedToStreamingWhenDisallowed() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
                 tester.deploy(null, getServices("index"), Environment.prod, "<validation-overrides />").getFirst();
         try {
-            tester.deploy(oldModel, getServices("streaming"), Environment.prod, "<calidation-overrides />").getSecond();
+            List<ConfigChangeAction> changeActions =
+                    tester.deploy(oldModel, getServices("streaming"), Environment.prod, "<calidation-overrides />").getSecond();
             fail("Should throw on disallowed config change action");
         }
         catch (ValidationException e) {
-            assertEquals("indexing-mode-change: " +
-                    "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'. " +
+            assertEquals("indexing-mode-change:\n" +
+                    "\tDocument type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'\n" +
                     "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
                     e.getMessage());
         }
@@ -103,10 +94,8 @@ public class IndexingModeChangeValidatorTest {
     }
 
     private static final String validationOverrides =
-            """
-            <validation-overrides>
-                <allow until='2000-01-14' comment='test override'>indexing-mode-change</allow>
-            </validation-overrides>
-            """;
+            "<validation-overrides>\n" +
+            "    <allow until='2000-01-14' comment='test override'>indexing-mode-change</allow>\n" +
+            "</validation-overrides>\n";
 
 }

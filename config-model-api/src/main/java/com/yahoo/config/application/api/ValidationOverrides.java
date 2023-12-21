@@ -15,7 +15,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +36,7 @@ public class ValidationOverrides {
 
     private final String xmlForm;
 
-    /** Creates a validation overrides which does not have an XML form */
+    /** Creates a validation overrides which does not have an xml form */
     public ValidationOverrides(List<Allow> overrides) {
         this(overrides, null);
     }
@@ -164,13 +163,10 @@ public class ValidationOverrides {
      */
     public static class ValidationException extends IllegalArgumentException {
 
-        private final Map<ValidationId, Collection<String>> messagesById = new LinkedHashMap<>();
-
         static final long serialVersionUID = 789984668;
 
         private ValidationException(ValidationId validationId, String message) {
             super(validationId + ": " + message + ". " + toAllowMessage(validationId));
-            messagesById.put(validationId, List.of(message));
         }
 
         private ValidationException(Map<ValidationId, Collection<String>> messagesById) {
@@ -179,10 +175,7 @@ public class ValidationOverrides {
                                                String.join("\n\t", messages.getValue()) + "\n" +
                                                toAllowMessage(messages.getKey()))
                               .collect(Collectors.joining("\n")));
-            messagesById.forEach((id, messages) -> this.messagesById.put(id, List.copyOf(messages)));
         }
-
-        public Map<ValidationId, Collection<String>> messagesById() { return Map.copyOf(messagesById); }
 
     }
 

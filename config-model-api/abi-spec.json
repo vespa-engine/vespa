@@ -771,9 +771,7 @@
     "attributes" : [
       "public"
     ],
-    "methods" : [
-      "public java.util.Map messagesById()"
-    ],
+    "methods" : [ ],
     "fields" : [ ]
   },
   "com.yahoo.config.application.api.ValidationOverrides" : {
