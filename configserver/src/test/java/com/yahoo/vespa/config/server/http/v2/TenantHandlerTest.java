@@ -108,7 +108,7 @@ public class TenantHandlerTest {
                        "{\"message\":\"Tenant a created.\"}");
         assertEquals(tenantRepository.getTenant(a).getName(), a);
         assertResponse(PUT, "/application/v2/tenant/a",
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"There already exists a tenant 'a'\"}");
+                       "{\"message\":\"Tenant 'a' already exists\"}");
     }
 
     @Test
