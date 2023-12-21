@@ -13,7 +13,9 @@ bool Fast_NormalizeWordFolder::_doMulticharExpansion = false;
 bool Fast_NormalizeWordFolder::_isWord[128];
 
 ucs4_t Fast_NormalizeWordFolder::_foldCase[767]; // Up to Latin Extended B (0x0250)
+ucs4_t Fast_NormalizeWordFolder::_lowerCase[767];
 ucs4_t Fast_NormalizeWordFolder::_foldCaseHighAscii[256]; // Latin Extended Additional (0x1E00 - 0x1F00)
+ucs4_t Fast_NormalizeWordFolder::_lowerCaseHighAscii[256];
 ucs4_t Fast_NormalizeWordFolder::_kanaMap[192];
 ucs4_t Fast_NormalizeWordFolder::_halfwidth_fullwidthMap[240];
 
@@ -43,11 +45,10 @@ Fast_NormalizeWordFolder::Initialize()
             for (i = 0; i < 128; i++)
                 _isWord[i] = Fast_UnicodeUtil::IsWordChar(i);
             for (i = 0; i < 767; i++) {
-                _foldCase[i] = Fast_UnicodeUtil::ToLower(i);
+                _foldCase[i] = _lowerCase[i] = Fast_UnicodeUtil::ToLower(i);
             }
-
             for (i = 0x1E00; i < 0x1F00; i++) {
-                _foldCaseHighAscii[i - 0x1E00] = Fast_UnicodeUtil::ToLower(i);
+                _foldCaseHighAscii[i - 0x1E00] = _lowerCaseHighAscii[i - 0x1E00] = Fast_UnicodeUtil::ToLower(i);
             }
 
             if (_doAccentRemoval) {
@@ -394,17 +395,11 @@ Fast_NormalizeWordFolder::Fast_NormalizeWordFolder()
 }
 
 
-Fast_NormalizeWordFolder::~Fast_NormalizeWordFolder(void)
-{
-}
+Fast_NormalizeWordFolder::~Fast_NormalizeWordFolder() = default;
 
 const char*
-Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
-                                   const char *bufend,
-                                   ucs4_t *dstbuf,
-                                   ucs4_t *dstbufend,
-                                   const char*& origstart,
-                                   size_t& tokenlen) const
+Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
+                                       ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const
 {
 
     ucs4_t c;
@@ -451,7 +446,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
             if (repllen > 0)
                 q = Fast_UnicodeUtil::ucs4copy(q,repl);
         } else {
-            c = ToFold(c);
+            c = lowercase_and_fold(c);
             *q++ = c;
         }
     }
@@ -563,7 +558,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
                     if (repllen > 0)
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                 } else {
-                    c = ToFold(c);
+                    c = lowercase_and_fold(c);
                     *q++ = c;
                 }
                 if (q >= eq) {		// Junk rest of word
