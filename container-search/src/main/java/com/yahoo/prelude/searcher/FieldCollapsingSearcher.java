@@ -10,14 +10,16 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.Properties;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
- * A searcher which does parametrized collapsing.
+ * A searcher which does parameterized collapsing.
  *
  * @author Steinar Knutsen
  */
@@ -85,11 +87,14 @@ public class FieldCollapsingSearcher extends Searcher {
      */
     @Override
     public Result search(com.yahoo.search.Query query, Execution execution) {
-        String collapseField = query.properties().getString(collapsefield);
+        String collapseFieldParam = query.properties().getString(collapsefield);
 
-        if (collapseField == null) return execution.search(query);
+        if (collapseFieldParam == null) return execution.search(query);
 
-        int collapseSize = query.properties().getInteger(collapsesize, defaultCollapseSize);
+        String[] collapseFields = collapseFieldParam.split(",");
+
+        int globalCollapseSize = query.properties().getInteger(collapsesize, defaultCollapseSize);
+
         query.properties().set(collapse, "0");
 
         int hitsToRequest = query.getHits() != 0 ? (int) Math.ceil((query.getOffset() + query.getHits() + 1) * extraFactor) : 0;
@@ -103,12 +108,29 @@ public class FieldCollapsingSearcher extends Searcher {
         String collapseSummary = query.properties().getString(collapseSummaryName);
         String summaryClass = (collapseSummary == null)
                               ? query.getPresentation().getSummary() : collapseSummary;
-        query.trace("Collapsing by '" + collapseField + "' using summary '" + collapseSummary + "'", 2);
+        query.trace("Collapsing by '" + Arrays.toString(collapseFields) + "' using summary '" + collapseSummary + "'", 2);
 
         do {
             resultSource = search(query.clone(), execution, nextOffset, hitsToRequest);
             fill(resultSource, summaryClass, execution);
-            collapse(result, knownCollapses, resultSource, collapseField, collapseSize);
+
+            // collapse by the primary field, using the query-result as the source
+            // this either fills an empty result, or extends the existing one from a previous iteration
+            collapse(result, knownCollapses, resultSource, collapseFields[0],
+                    getCollapseSize(query.properties(), collapseFields[0], globalCollapseSize)
+            );
+
+            // collapse even further, using the other fields
+            // using the result as source, we just (possibly) reduce the number of hits
+            for (int i = 1; i < collapseFields.length; i++) {
+                Result newResult = new Result(query);
+
+                collapse(newResult, knownCollapses, result, collapseFields[i],
+                        getCollapseSize(query.properties(), collapseFields[i], globalCollapseSize)
+                );
+
+                result = newResult;
+            }
 
             hitsAfterCollapse = result.getHitCount();
             if (resultSource.getTotalHitCount() < (hitsToRequest + nextOffset)) {
@@ -159,19 +181,35 @@ public class FieldCollapsingSearcher extends Searcher {
                 continue;
             }
 
-            if (knownCollapses.containsKey(collapseId)) {
-                int numHitsThisField = knownCollapses.get(collapseId);
+            // prepending the fieldname is necessary to distinguish between values in the different collapsefields
+            String collapseKey = collapseField + "_" + collapseId;
+
+            if (knownCollapses.containsKey(collapseKey)) {
+                int numHitsThisField = knownCollapses.get(collapseKey);
 
                 if (numHitsThisField < collapseSize) {
                     result.hits().add(hit);
                     ++numHitsThisField;
-                    knownCollapses.put(collapseId, numHitsThisField);
+                    knownCollapses.put(collapseKey, numHitsThisField);
                 }
             } else {
-                knownCollapses.put(collapseId, 1);
+                knownCollapses.put(collapseKey, 1);
                 result.hits().add(hit);
             }
         }
     }
 
+    private Integer getCollapseSize(Properties properties, String fieldName, Integer globalCollapseSize) {
+        Integer fieldCollapseSize = properties.getInteger(collapsesize.append(fieldName));
+
+        if (fieldCollapseSize != null) {
+            return fieldCollapseSize;
+        }
+
+        if (globalCollapseSize != null) {
+            return globalCollapseSize;
+        }
+
+        return defaultCollapseSize;
+    }
 }
