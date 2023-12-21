@@ -467,24 +467,6 @@ bool AlwaysMarkPhraseExpensive::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
-const vespalib::string CreatePostingListWhenNonStrict::NAME("vespa.matching.create_postinglist_when_non_strict");
-const bool CreatePostingListWhenNonStrict::DEFAULT_VALUE(true);
-bool CreatePostingListWhenNonStrict::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
-const vespalib::string UseEstimateForFetchPostings::NAME("vespa.matching.use_estimate_for_fetch_postings");
-const bool UseEstimateForFetchPostings::DEFAULT_VALUE(false);
-bool UseEstimateForFetchPostings::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
-const vespalib::string UseThreadBundleForFetchPostings::NAME("vespa.matching.use_thread_bundle_for_fetch_postings");
-const bool UseThreadBundleForFetchPostings::DEFAULT_VALUE(false);
-bool UseThreadBundleForFetchPostings::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
 } // namespace matching
 
 namespace softtimeout {

@@ -352,8 +352,6 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_st
     // Based on this we see that LMC = 5 * PLMC.
     // The same relationship is found with the test case range_hits_ratio=[200].
 
-    if ( ! info.create_postinglist_when_non_strict()) return false;
-
     constexpr double lookup_match_constant = 5.0;
     constexpr double posting_list_merge_constant = 1.0;
 

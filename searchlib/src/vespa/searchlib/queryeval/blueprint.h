@@ -368,7 +368,7 @@ private:
     bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
-    virtual double computeNextHitRate(const Blueprint & child, double hit_rate, bool use_estimate) const;
+    virtual double computeNextHitRate(const Blueprint & child, double hit_rate) const;
 
 protected:
     // returns an empty collection if children have empty or

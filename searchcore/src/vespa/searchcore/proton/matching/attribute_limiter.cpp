@@ -102,7 +102,7 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         //TODO use_estimate must be switched to true quite soon
         //TODO Use thread_bundle once verified(soon), _requestContext.thread_bundle()
         auto execInfo = ExecuteInfo::create(strictSearch, strictSearch ? 1.0 : hit_rate, _requestContext.getDoom(),
-                                            vespalib::ThreadBundle::trivial(), true, false);
+                                            vespalib::ThreadBundle::trivial());
         _blueprint->fetchPostings(execInfo);
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();

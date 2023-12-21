@@ -527,10 +527,9 @@ IntermediateBlueprint::calculateState() const
 }
 
 double
-IntermediateBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate, bool use_estimate) const
+IntermediateBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const
 {
     (void) child;
-    (void) use_estimate;
     return hit_rate;
 }
 
@@ -635,7 +634,7 @@ IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
         child.fetchPostings(ExecuteInfo::create(execInfo.is_strict() && inheritStrict(i), nextHitRate, execInfo));
-        nextHitRate = computeNextHitRate(child, nextHitRate, execInfo.use_estimate_for_fetch_postings());
+        nextHitRate = computeNextHitRate(child, nextHitRate);
     }
 }
 
