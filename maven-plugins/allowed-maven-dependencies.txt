@@ -49,7 +49,7 @@ org.codehaus.plexus:plexus-archiver:4.8.0
 org.codehaus.plexus:plexus-cipher:2.0
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:2.1.0
-org.codehaus.plexus:plexus-interpolation:1.26
+org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
 org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${maven-shade-plugin.vespa.version}
