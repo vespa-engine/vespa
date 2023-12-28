@@ -1,15 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Interface for an OS upgrader.
@@ -18,13 +31,23 @@ import java.time.Instant;
  */
 public abstract class OsUpgrader {
 
+    private final Logger LOG = Logger.getLogger(OsUpgrader.class.getName());
+
     private final IntFlag maxActiveUpgrades;
+    private final Optional<HostProvisioner> hostProvisioner;
+    // Supported versions is queried for each host to upgrade, so we cache the results for a while to avoid excessive
+    // API calls to the host provisioner
+    private final Cache<CloudAccount, Set<Version>> supportedVersions = CacheBuilder.newBuilder()
+                                                                                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                                                                                    .build();
 
     final NodeRepository nodeRepository;
 
-    public OsUpgrader(NodeRepository nodeRepository) {
-        this.nodeRepository = nodeRepository;
+
+    public OsUpgrader(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
+        this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.maxActiveUpgrades = PermanentFlags.MAX_OS_UPGRADES.bindTo(nodeRepository.flagSource());
+        this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
     }
 
     /** Trigger upgrade to given target */
@@ -43,10 +66,31 @@ public abstract class OsUpgrader {
         return Math.max(0, max - upgrading);
     }
 
-    /** Returns whether node can change version at given instant */
-    final boolean canUpgradeAt(Instant instant, Node node) {
-        return node.status().osVersion().downgrading() || // Fast-track downgrades
-               node.history().age(instant).compareTo(gracePeriod()) > 0;
+    /** Returns whether node can upgrade to version at given instant */
+    final boolean canUpgradeTo(Version version, Instant instant, Node node) {
+        Set<Version> versions = supportedVersions(node, version);
+        boolean versionAvailable = versions.contains(version);
+        if (!versionAvailable) {
+            LOG.log(Level.WARNING, "Want to upgrade host " + node.hostname() + " to OS version " +
+                                   version.toFullString() + ", but this version does not exist in " +
+                                   node.cloudAccount() + ". Found " + versions.stream().sorted().toList());
+        }
+        return versionAvailable &&
+               (node.status().osVersion().downgrading() || // Fast-track downgrades
+                node.history().age(instant).compareTo(gracePeriod()) > 0);
+    }
+
+    private Set<Version> supportedVersions(Node host, Version requestedVersion) {
+        if (hostProvisioner.isEmpty()) {
+            return Set.of(requestedVersion);
+        }
+        try {
+            return supportedVersions.get(host.cloudAccount(),
+                                         () -> hostProvisioner.get().osVersions(host, requestedVersion.getMajor()));
+        } catch (ExecutionException e) {
+            LOG.log(Level.WARNING, "Failed to list supported OS versions in " + host.cloudAccount() + ": " + Exceptions.toMessageString(e));
+            return Set.of();
+        }
     }
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */

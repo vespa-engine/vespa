@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -23,8 +24,8 @@ public class DelegatingOsUpgrader extends OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(DelegatingOsUpgrader.class.getName());
 
-    public DelegatingOsUpgrader(NodeRepository nodeRepository) {
-        super(nodeRepository);
+    public DelegatingOsUpgrader(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
+        super(nodeRepository, hostProvisioner);
     }
 
     @Override
@@ -35,7 +36,7 @@ public class DelegatingOsUpgrader extends OsUpgrader {
                                              // This upgrader cannot downgrade nodes. We therefore consider only nodes
                                              // on a lower version than the target
                                              .osVersionIsBefore(target.version())
-                                             .matching(node -> canUpgradeAt(now, node))
+                                             .matching(node -> canUpgradeTo(target.version(), now, node))
                                              .byIncreasingOsVersion()
                                              .first(upgradeSlots(target, activeNodes));
         if (nodesToUpgrade.size() == 0) return;

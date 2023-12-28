@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,15 +36,17 @@ public class OsVersions {
     private final NodeRepository nodeRepository;
     private final CuratorDb db;
     private final Cloud cloud;
+    private final Optional<HostProvisioner> hostProvisioner;
 
-    public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().cloud());
+    public OsVersions(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
+        this(nodeRepository, nodeRepository.zone().cloud(), hostProvisioner);
     }
 
-    OsVersions(NodeRepository nodeRepository, Cloud cloud) {
+    OsVersions(NodeRepository nodeRepository, Cloud cloud, Optional<HostProvisioner> hostProvisioner) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
         this.cloud = Objects.requireNonNull(cloud);
+        this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -126,19 +129,24 @@ public class OsVersions {
 
     /** Returns whether node can be upgraded now */
     public boolean canUpgrade(Node node) {
-        return chooseUpgrader(node.type(), Optional.empty()).canUpgradeAt(nodeRepository.clock().instant(), node);
+        Optional<Version> wantedVersion = node.status().osVersion().wanted();
+        if (wantedVersion.isEmpty()) {
+            return false;
+        }
+        return chooseUpgrader(node.type(), Optional.empty()).canUpgradeTo(wantedVersion.get(), nodeRepository.clock().instant(), node);
     }
 
     /** Returns the upgrader to use when upgrading given node type to target */
     private OsUpgrader chooseUpgrader(NodeType nodeType, Optional<Version> target) {
         if (cloud.dynamicProvisioning()) {
             boolean canSoftRebuild = cloud.name().equals(CloudName.AWS);
-            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, canSoftRebuild);
+            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, hostProvisioner, canSoftRebuild);
             if (canSoftRebuild) {
                 // If soft rebuild is enabled, we can use RebuildingOsUpgrader for hosts with remote storage.
                 // RetiringOsUpgrader is then only used for hosts with local storage.
                 return new CompositeOsUpgrader(nodeRepository,
-                                               List.of(new RebuildingOsUpgrader(nodeRepository, canSoftRebuild),
+                                               hostProvisioner,
+                                               List.of(new RebuildingOsUpgrader(nodeRepository, hostProvisioner, canSoftRebuild),
                                                        retiringOsUpgrader));
             }
             return retiringOsUpgrader;
@@ -151,9 +159,9 @@ public class OsVersions {
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
                                                                        osVersion.current().get().getMajor() < target.get().getMajor());
         if (rebuildRequired) {
-            return new RebuildingOsUpgrader(nodeRepository, false);
+            return new RebuildingOsUpgrader(nodeRepository, hostProvisioner, false);
         }
-        return new DelegatingOsUpgrader(nodeRepository);
+        return new DelegatingOsUpgrader(nodeRepository, hostProvisioner);
     }
 
     private static void requireNonEmpty(Version version) {

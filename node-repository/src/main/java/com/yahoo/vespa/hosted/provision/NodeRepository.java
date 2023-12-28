@@ -137,7 +137,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
         this.nodeResourceLimits = new NodeResourceLimits(this);
         this.nameResolver = nameResolver;
-        this.osVersions = new OsVersions(this);
+        this.osVersions = new OsVersions(this, provisionServiceProvider.getHostProvisioner());
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.containerImages = new ContainerImages(containerImage, tenantContainerImage, tenantGpuContainerImage);
