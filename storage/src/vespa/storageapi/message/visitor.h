@@ -58,7 +58,7 @@ public:
 
     /** Create another command with similar visitor settings. */
     CreateVisitorCommand(const CreateVisitorCommand& template_);
-    ~CreateVisitorCommand();
+    ~CreateVisitorCommand() override;
 
     void setVisitorCmdId(uint32_t id) { _visitorCmdId = id; }
     void setControlDestination(vespalib::stringref d) { _controlDestination = d; }
@@ -211,7 +211,7 @@ public:
     void setErrorCode(ReturnCode && code) { _error = std::move(code); }
     void setCompleted() { _completed = true; }
     void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited) {
-        _bucketsCompleted.push_back(BucketTimestampPair(id, lastVisited));
+        _bucketsCompleted.emplace_back(id, lastVisited);
     }
     void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc) {
         _bucketsCompleted = bc;
@@ -234,7 +234,7 @@ class VisitorInfoReply : public StorageReply {
     bool _completed;
 
 public:
-    VisitorInfoReply(const VisitorInfoCommand& cmd);
+    explicit VisitorInfoReply(const VisitorInfoCommand& cmd);
     bool visitorCompleted() const { return _completed; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

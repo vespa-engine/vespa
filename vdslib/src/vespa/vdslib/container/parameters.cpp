@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <ostream>
+#include <charconv>
 
 using namespace vdslib;
 
@@ -137,13 +138,35 @@ vespalib::string Parameters::toString() const
     return ret;
 }
 
-template void vdslib::Parameters::set(vespalib::stringref , int32_t);
-template void vdslib::Parameters::set(vespalib::stringref , int64_t);
-template void vdslib::Parameters::set(vespalib::stringref , uint64_t);
-template void vdslib::Parameters::set(vespalib::stringref , double);
-template void vdslib::Parameters::set(vespalib::stringref , const char *);
-template void vdslib::Parameters::set(vespalib::stringref , vespalib::string);
-template void vdslib::Parameters::set(vespalib::stringref , std::string);
+void
+Parameters::set(KeyT id, int32_t value) {
+    char tmp[16];
+    auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
+    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+}
+
+void
+Parameters::set(KeyT id, int64_t value) {
+    char tmp[32];
+    auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
+    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+}
+
+void
+Parameters::set(KeyT id, uint64_t value) {
+    char tmp[32];
+    auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
+    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+}
+
+void
+Parameters::set(KeyT id, double value) {
+    vespalib::asciistream ost;
+    ost << value;
+    _parameters[id] = Value(ost.str());
+}
+
+
 template int32_t vdslib::Parameters::get(vespalib::stringref , int32_t) const;
 template int64_t vdslib::Parameters::get(vespalib::stringref , int64_t) const;
 template uint64_t vdslib::Parameters::get(vespalib::stringref , uint64_t) const;
