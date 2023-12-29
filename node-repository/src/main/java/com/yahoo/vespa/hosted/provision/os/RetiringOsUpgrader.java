@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -26,8 +27,8 @@ public class RetiringOsUpgrader extends OsUpgrader {
 
     private final boolean softRebuild;
 
-    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
-        super(nodeRepository);
+    public RetiringOsUpgrader(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, boolean softRebuild) {
+        super(nodeRepository, hostProvisioner);
         this.softRebuild = softRebuild;
     }
 
@@ -54,7 +55,7 @@ public class RetiringOsUpgrader extends OsUpgrader {
         }
         return nodes.not().deprovisioning()
                     .not().onOsVersion(target.version())
-                    .matching(node -> canUpgradeAt(instant, node))
+                    .matching(node -> canUpgradeTo(target.version(), instant, node))
                     .byIncreasingOsVersion()
                     .first(upgradeSlots(target, nodes.deprovisioning()));
     }

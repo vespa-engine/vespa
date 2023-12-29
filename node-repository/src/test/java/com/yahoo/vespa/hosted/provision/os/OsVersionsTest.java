@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -41,7 +42,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade() {
-        var versions = new OsVersions(tester.nodeRepository());
+        var versions = new OsVersions(tester.nodeRepository(), Optional.ofNullable(tester.hostProvisioner()));
         provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
@@ -94,7 +95,7 @@ public class OsVersionsTest {
     public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
         setMaxActiveUpgrades(maxActiveUpgrades);
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
@@ -140,7 +141,7 @@ public class OsVersionsTest {
 
     @Test
     public void newer_upgrade_aborts_upgrade_to_stale_version() {
-        var versions = new OsVersions(tester.nodeRepository());
+        var versions = new OsVersions(tester.nodeRepository(), Optional.ofNullable(tester.hostProvisioner()));
         provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().hosts();
 
@@ -160,7 +161,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_and_downgrade_by_retiring() {
         int maxActiveUpgrades = 2;
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Optional.ofNullable(tester.hostProvisioner()));
         setMaxActiveUpgrades(maxActiveUpgrades);
         int hostCount = 10;
         // Provision hosts and children
@@ -229,7 +230,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Optional.ofNullable(tester.hostProvisioner()));
         setMaxActiveUpgrades(Integer.MAX_VALUE);
         int hostCount = 3;
         provisionInfraApplication(hostCount, NodeType.host);
@@ -253,7 +254,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_rebuilding() {
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
         setMaxActiveUpgrades(1);
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
@@ -337,7 +338,8 @@ public class OsVersionsTest {
                                                                     .dynamicProvisioning(true)
                                                                     .name(CloudName.AWS)
                                                                     .account(CloudAccount.from("000000000000"))
-                                                                    .build());
+                                                                    .build(),
+                                      Optional.ofNullable(tester.hostProvisioner()));
 
         provisionInfraApplication(hostCount, NodeType.host, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
@@ -382,7 +384,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding_multiple_host_types() {
         setMaxActiveUpgrades(1);
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
         int hostCount = 3;
         provisionInfraApplication(hostCount, NodeType.host);
         provisionInfraApplication(hostCount, NodeType.confighost);
@@ -415,7 +417,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding_is_limited_by_stateful_clusters() {
         setMaxActiveUpgrades(3);
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
         int hostCount = 5;
         ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
         ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
@@ -493,7 +495,7 @@ public class OsVersionsTest {
     public void upgrade_by_rebuilding_limits_infrastructure_host() {
         int hostCount = 3;
         setMaxActiveUpgrades(hostCount);
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
         provisionInfraApplication(hostCount, NodeType.proxyhost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.proxyhost);
 
@@ -513,6 +515,28 @@ public class OsVersionsTest {
             assertEquals(1, hostsRebuilding.size());
             completeRebuildOf(hostsRebuilding, NodeType.proxyhost);
         }
+    }
+
+    @Test
+    public void skips_unavailable_version() {
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of());
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false).hostProvisioner(hostProvisioner).build();
+        OsVersions versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Optional.of(hostProvisioner));
+        tester.makeReadyHosts(1, new NodeResources(2,4,8,100));
+        tester.activateTenantHosts();
+        Supplier<Node> host = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host).first().get();
+        tester.clock().advance(Duration.ofDays(1));
+
+        hostProvisioner.addOsVersion(Version.fromString("7.0"));
+        Version version0 = Version.fromString("8.0");
+        versions.setTarget(NodeType.host, version0, false);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertTrue("Upgrade is not triggered to unavailable version", host.get().status().osVersion().wanted().isEmpty());
+
+        // Version becomes available
+        hostProvisioner.addOsVersion(version0);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals("Host upgrade is triggered", version0, host.get().status().osVersion().wanted().get());
     }
 
     private void setMaxActiveUpgrades(int max) {
