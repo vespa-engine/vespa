@@ -36,7 +36,7 @@ class QueryNode
  public:
   using UP = std::unique_ptr<QueryNode>;
 
-  virtual ~QueryNode() { }
+  virtual ~QueryNode() = default;
   /// This evalutes if the subtree starting here evaluates to true.
   virtual bool evaluate() const = 0;
   /// This return the hitList for this subtree. Does only give meaning in a
