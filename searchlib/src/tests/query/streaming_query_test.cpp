@@ -522,6 +522,7 @@ void assertInt64Range(const std::string &term, bool expAdjusted, int64_t expLow,
     EXPECT_EQ(expHigh, (int64_t)res.high);
 }
 
+
 TEST(StreamingQueryTest, require_that_int8_limits_are_enforced)
 {
     //std::numeric_limits<int8_t>::min() -> -128
@@ -605,6 +606,20 @@ TEST(StreamingQueryTest, require_that_we_can_take_floating_point_values_in_range
     assertInt64Range("[10.0;-10.0]", false, 10, -10);
     assertInt64Range("[1.6976931348623157E308;-1.6976931348623157E308]", false, std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::min());
     assertInt64Range("[1.7976931348623157E308;-1.7976931348623157E308]", false, std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::min());
+}
+
+void assertIllegalRangeQueries(const QueryTermSimple & qt) {
+    QueryTermSimple::RangeResult<int64_t> ires = qt.getRange<int64_t>();
+    EXPECT_EQ(false, ires.valid);
+    QueryTermSimple::RangeResult<double> fres = qt.getRange<double>();
+    EXPECT_EQ(false, fres.valid);
+}
+
+TEST(StreamingQueryTest, require_safe_parsing_of_illegal_ranges) {
+    // The 2 below are created when naively splitting numeric terms by dot.
+    // T=A.B => T EQUIV PHRASE(A, B)
+    assertIllegalRangeQueries(QueryTermSimple("[1", TermType::WORD));
+    assertIllegalRangeQueries(QueryTermSimple(".1;2.1]", TermType::WORD));
 }
 
 TEST(StreamingQueryTest, require_that_we_handle_empty_range_as_expected)
