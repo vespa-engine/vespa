@@ -539,6 +539,11 @@
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
+                <artifactId>failureaccess</artifactId>
+                <version>${failureaccess.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.vespa.version}</version>
                 <exclusions>
