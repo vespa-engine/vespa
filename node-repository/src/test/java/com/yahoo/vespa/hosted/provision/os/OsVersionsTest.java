@@ -521,7 +521,7 @@ public class OsVersionsTest {
     public void skips_unavailable_version() {
         MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of());
         ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false).hostProvisioner(hostProvisioner).build();
-        OsVersions versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Optional.of(hostProvisioner));
+        OsVersions versions = tester.nodeRepository().osVersions();
         tester.makeReadyHosts(1, new NodeResources(2,4,8,100));
         tester.activateTenantHosts();
         Supplier<Node> host = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host).first().get();
@@ -533,8 +533,11 @@ public class OsVersionsTest {
         versions.resumeUpgradeOf(NodeType.host, true);
         assertTrue("Upgrade is not triggered to unavailable version", host.get().status().osVersion().wanted().isEmpty());
 
-        // Version becomes available
+        // Version becomes available, but is not used until cache expires
         hostProvisioner.addOsVersion(version0);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertTrue(host.get().status().osVersion().wanted().isEmpty());
+        versions.invalidate();
         versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals("Host upgrade is triggered", version0, host.get().status().osVersion().wanted().get());
     }
