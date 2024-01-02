@@ -18,9 +18,15 @@ public interface OnnxModelCost {
 
     interface Calculator {
         long aggregatedModelCostInBytes();
-        void registerModel(ApplicationFile path);
+        // TODO: Unused, remove when 8.263.7 is oldest model in use
+        default void registerModel(ApplicationFile path) {
+            registerModel(path, OnnxModelOptions.empty());
+        }
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
-        void registerModel(URI uri);
+        // TODO: Unused, remove when 8.263.7 is oldest model in use
+        default void registerModel(URI uri) {
+            registerModel(uri, OnnxModelOptions.empty());
+        }
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
         Map<String, ModelInfo> models();
         void setRestartOnDeploy();
@@ -28,16 +34,24 @@ public interface OnnxModelCost {
         void store();
     }
 
-    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {}
+    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {
+
+        public ModelInfo(String modelId, long estimatedCost, long hash, OnnxModelOptions onnxModelOptions) {
+            this(modelId, estimatedCost, hash, Optional.of(onnxModelOptions));
+        }
+
+        public OnnxModelOptions options() {
+            return onnxModelOptions.orElseThrow(() -> new IllegalStateException("No onnxModelOptions exist"));
+        }
+
+    }
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
     class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
-        @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-        @Override public void registerModel(URI uri) {}
         @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}

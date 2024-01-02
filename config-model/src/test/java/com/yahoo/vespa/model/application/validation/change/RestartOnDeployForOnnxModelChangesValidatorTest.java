@@ -15,7 +15,6 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,17 +88,11 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
             public long aggregatedModelCostInBytes() { return estimatedCost; }
 
             @Override
-            public void registerModel(ApplicationFile path) {}
-
-            @Override
             public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
 
             @Override
-            public void registerModel(URI uri) {}
-
-            @Override
             public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {
-                models.put(uri.toString(), new OnnxModelCost.ModelInfo(uri.toString(), estimatedCost, hash, Optional.ofNullable(onnxModelOptions)));
+                models.put(uri.toString(), new OnnxModelCost.ModelInfo(uri.toString(), estimatedCost, hash, onnxModelOptions));
             }
 
             @Override
