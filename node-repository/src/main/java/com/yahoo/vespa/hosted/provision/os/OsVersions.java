@@ -159,13 +159,9 @@ public class OsVersions {
         }
     }
 
-    /** Returns whether node can be upgraded now */
-    public boolean canUpgrade(Node node) {
-        Optional<Version> wantedVersion = node.status().osVersion().wanted();
-        if (wantedVersion.isEmpty()) {
-            return false;
-        }
-        return chooseUpgrader(node.type(), Optional.empty()).canUpgradeTo(wantedVersion.get(), nodeRepository.clock().instant(), node);
+    /** Returns whether node is currently deferring its upgrade */
+    public boolean deferringUpgrade(Node node) {
+        return chooseUpgrader(node.type(), Optional.empty()).deferringUpgrade(node, nodeRepository.clock().instant());
     }
 
     /** Returns the upgrader to use when upgrading given node type to target */
