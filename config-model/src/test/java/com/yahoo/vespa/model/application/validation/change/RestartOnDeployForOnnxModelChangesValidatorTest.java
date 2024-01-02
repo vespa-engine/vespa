@@ -88,13 +88,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
             public long aggregatedModelCostInBytes() { return estimatedCost; }
 
             @Override
-            public void registerModel(ApplicationFile path) {}
-
-            @Override
             public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-
-            @Override
-            public void registerModel(URI uri) {}
 
             @Override
             public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {

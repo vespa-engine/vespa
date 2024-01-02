@@ -19,10 +19,14 @@ public interface OnnxModelCost {
     interface Calculator {
         long aggregatedModelCostInBytes();
         // TODO: Unused, remove when 8.263.7 is oldest model in use
-        void registerModel(ApplicationFile path);
+        default void registerModel(ApplicationFile path) {
+            registerModel(path, OnnxModelOptions.empty());
+        }
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
         // TODO: Unused, remove when 8.263.7 is oldest model in use
-        void registerModel(URI uri);
+        default void registerModel(URI uri) {
+            registerModel(uri, OnnxModelOptions.empty());
+        }
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
         Map<String, ModelInfo> models();
         void setRestartOnDeploy();
@@ -47,9 +51,7 @@ public interface OnnxModelCost {
     class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
-        @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-        @Override public void registerModel(URI uri) {}
         @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}
