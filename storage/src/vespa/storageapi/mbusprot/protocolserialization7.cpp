@@ -56,8 +56,8 @@ void set_bucket_info(protobuf::BucketInfo& dest, const api::BucketInfo& src) {
 }
 
 document::Bucket get_bucket(const protobuf::Bucket& src) {
-    return document::Bucket(document::BucketSpace(src.space_id()),
-                            document::BucketId(src.raw_bucket_id()));
+    return {document::BucketSpace(src.space_id()),
+            document::BucketId(src.raw_bucket_id())};
 }
 
 api::BucketInfo get_bucket_info(const protobuf::BucketInfo& src) {
@@ -953,11 +953,11 @@ void fill_api_apply_diff_vector(std::vector<api::ApplyBucketDiffCommand::Entry>&
         dest._docName = proto_entry.document_id();
         // TODO consider making buffers std::strings instead to avoid explicit zeroing-on-resize overhead
         dest._headerBlob.resize(proto_entry.header_blob().size());
-        if (proto_entry.header_blob().size() > 0) {
+        if (!proto_entry.header_blob().empty()) {
             memcpy(dest._headerBlob.data(), proto_entry.header_blob().data(), proto_entry.header_blob().size());
         }
         dest._bodyBlob.resize(proto_entry.body_blob().size());
-        if (proto_entry.body_blob().size() > 0) {
+        if (!proto_entry.body_blob().empty()) {
             memcpy(dest._bodyBlob.data(), proto_entry.body_blob().data(), proto_entry.body_blob().size());
         }
     }

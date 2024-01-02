@@ -13,12 +13,18 @@ LOG_SETUP(".vsm.querynode");
 namespace search::streaming {
 
 namespace {
-    vespalib::stringref DEFAULT("default");
-    bool disableRewrite(const QueryNode * qn) {
-        return dynamic_cast<const NearQueryNode *> (qn) ||
-               dynamic_cast<const PhraseQueryNode *> (qn) ||
-               dynamic_cast<const SameElementQueryNode *>(qn);
-    }
+
+vespalib::stringref DEFAULT("default");
+bool disableRewrite(const QueryNode * qn) {
+    return dynamic_cast<const NearQueryNode *> (qn) ||
+           dynamic_cast<const PhraseQueryNode *> (qn) ||
+           dynamic_cast<const SameElementQueryNode *>(qn);
+}
+
+bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
+    return !qt.encoding().isBase10Integer() && qt.encoding().isFloat() && (term.find('.') != QueryTerm::string::npos);
+}
+
 }
 
 QueryNode::UP
@@ -43,8 +49,8 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     {
         qn = QueryConnector::create(type);
         if (qn) {
-            QueryConnector * qc = dynamic_cast<QueryConnector *> (qn.get());
-            NearQueryNode * nqn = dynamic_cast<NearQueryNode *> (qc);
+            auto * qc = dynamic_cast<QueryConnector *> (qn.get());
+            auto * nqn = dynamic_cast<NearQueryNode *> (qc);
             if (nqn) {
                 nqn->distance(queryRep.getNearDistance());
             }
@@ -150,21 +156,17 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qt->setFuzzyMaxEditDistance(queryRep.getFuzzyMaxEditDistance());
                 qt->setFuzzyPrefixLength(queryRep.getFuzzyPrefixLength());
             }
-            if (qt->encoding().isBase10Integer() ||
-                ! qt->encoding().isFloat() ||
-                ! factory.getRewriteFloatTerms() ||
-                ! allowRewrite ||
-                (ssTerm.find('.') == vespalib::string::npos))
-            {
-                qn = std::move(qt);
-            } else {
+            if (possibleFloat(*qt, ssTerm) && factory.getRewriteFloatTerms() && allowRewrite) {
                 auto phrase = std::make_unique<PhraseQueryNode>();
-                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
-                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
+                auto dotPos = ssTerm.find('.');
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(dotPos + 1), ssIndex, TermType::WORD));
                 auto orqn = std::make_unique<EquivQueryNode>();
                 orqn->addChild(std::move(qt));
                 orqn->addChild(std::move(phrase));
                 qn = std::move(orqn);
+            } else {
+                qn = std::move(qt);
             }
         }
     }

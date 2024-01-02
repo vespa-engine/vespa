@@ -21,7 +21,7 @@ class QueryNodeResultFactory {
 public:
     virtual ~QueryNodeResultFactory() = default;
     virtual bool getRewriteFloatTerms() const { return false; }
-    virtual std::unique_ptr<QueryNodeResultBase> create() const { return std::unique_ptr<QueryNodeResultBase>(); }
+    virtual std::unique_ptr<QueryNodeResultBase> create() const { return {}; }
 };
 }
 

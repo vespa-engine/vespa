@@ -28,11 +28,11 @@ public:
     class Value : public vespalib::string
     {
     public:
-      Value() { }
-      Value(vespalib::stringref s) : vespalib::string(s) { }
-      Value(const vespalib::string & s) : vespalib::string(s) { }
-      Value(const void *v, size_t sz) : vespalib::string(v, sz) { }
-      size_t length() const  { return size() - 1; }
+      Value() = default;
+      explicit Value(vespalib::stringref s) noexcept : vespalib::string(s) { }
+      explicit Value(const vespalib::string & s) noexcept : vespalib::string(s) { }
+      Value(const void *v, size_t sz) noexcept : vespalib::string(v, sz) { }
+      size_t length() const noexcept { return size() - 1; }
     };
     using ValueRef = vespalib::stringref;
     using ParametersMap = vespalib::hash_map<vespalib::string, Value>;
@@ -43,8 +43,8 @@ private:
 
 public:
     Parameters();
-    Parameters(document::ByteBuffer& buffer);
-    ~Parameters();
+    explicit Parameters(document::ByteBuffer& buffer);
+    ~Parameters() override;
 
     bool operator==(const Parameters &other) const;
 
@@ -53,7 +53,9 @@ public:
     bool hasValue(KeyT id)                 const { return (_parameters.find(id) != _parameters.end()); }
     unsigned int size()                    const { return _parameters.size(); }
     bool lookup(KeyT id, ValueRef & v) const;
-    void set(KeyT id, const void * v, size_t sz) { _parameters[id] = Value(v, sz); }
+    void set(KeyT id, const void * v, size_t sz) {
+        _parameters[id] = Value(v, sz);
+    }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
     void serialize(vespalib::GrowableByteBuffer& buffer) const;
@@ -63,17 +65,15 @@ public:
     ParametersMap::const_iterator begin() const { return _parameters.begin(); }
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
-    void set(KeyT id, vespalib::stringref value) { _parameters[id] = Value(value.data(), value.size()); }
+    void set(KeyT id, vespalib::stringref value) {
+        _parameters[id] = Value(value.data(), value.size());
+    }
+    void set(KeyT id, int32_t value);
+    void set(KeyT id, int64_t value);
+    void set(KeyT id, uint64_t value);
+    void set(KeyT id, double value);
     vespalib::stringref get(KeyT id, vespalib::stringref def = "") const;
-    /**
-     * Set the value identified by the id given. This requires the type to be
-     * convertible by stringstreams.
-     *
-     * @param id The value to get.
-     * @param t The value to save. Will be converted to a string.
-     */
-    template<typename T>
-    void set(KeyT id, T t);
+
 
     /**
      * Get the value identified by the id given, as the same type as the default

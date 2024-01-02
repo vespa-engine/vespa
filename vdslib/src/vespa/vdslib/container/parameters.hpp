@@ -7,14 +7,6 @@
 namespace vdslib {
 
 template<typename T>
-void
-Parameters::set(KeyT id, T t) {
-    vespalib::asciistream ost;
-    ost << t;
-    _parameters[id] = ost.str();
-}
-
-template<typename T>
 T
 Parameters::get(KeyT id, T def) const {
     vespalib::stringref ref;
