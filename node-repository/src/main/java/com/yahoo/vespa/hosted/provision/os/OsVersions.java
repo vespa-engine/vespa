@@ -5,7 +5,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Cloud;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
@@ -47,9 +46,9 @@ public class OsVersions {
     private final Optional<HostProvisioner> hostProvisioner;
     // Version is queried for each host to upgrade, so we cache the results for a while to avoid excessive
     // API calls to the host provisioner
-    private final Cache<CloudAccount, Set<Version>> availableVersions = CacheBuilder.newBuilder()
-                                                                                    .expireAfterWrite(10, TimeUnit.MINUTES)
-                                                                                    .build();
+    private final Cache<String, Set<Version>> availableVersions = CacheBuilder.newBuilder()
+                                                                              .expireAfterWrite(10, TimeUnit.MINUTES)
+                                                                              .build();
 
     public OsVersions(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this(nodeRepository, nodeRepository.zone().cloud(), hostProvisioner);
@@ -131,7 +130,7 @@ public class OsVersions {
             return Set.of(requestedVersion);
         }
         try {
-            return availableVersions.get(host.cloudAccount(),
+            return availableVersions.get(host.cloudAccount().value(),
                                          () -> hostProvisioner.get().osVersions(host, requestedVersion.getMajor()));
         } catch (ExecutionException e) {
             LOG.log(Level.WARNING, "Failed to list supported OS versions in " + host.cloudAccount() + ": " + Exceptions.toMessageString(e));
