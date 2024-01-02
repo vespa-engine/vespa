@@ -31,18 +31,17 @@ import java.util.logging.Logger;
  */
 public abstract class OsUpgrader {
 
-    private final Logger LOG = Logger.getLogger(OsUpgrader.class.getName());
+    private static final Logger LOG = Logger.getLogger(OsUpgrader.class.getName());
+    private static final Cache<CloudAccount, Set<Version>> supportedVersions = CacheBuilder.newBuilder()
+                                                                                           .expireAfterWrite(10, TimeUnit.MINUTES)
+                                                                                           .build();
 
     private final IntFlag maxActiveUpgrades;
     private final Optional<HostProvisioner> hostProvisioner;
     // Supported versions is queried for each host to upgrade, so we cache the results for a while to avoid excessive
     // API calls to the host provisioner
-    private final Cache<CloudAccount, Set<Version>> supportedVersions = CacheBuilder.newBuilder()
-                                                                                    .expireAfterWrite(10, TimeUnit.MINUTES)
-                                                                                    .build();
 
     final NodeRepository nodeRepository;
-
 
     public OsUpgrader(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
