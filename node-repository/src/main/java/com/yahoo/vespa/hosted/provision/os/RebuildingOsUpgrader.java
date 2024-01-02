@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
-import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,8 +35,8 @@ public class RebuildingOsUpgrader extends OsUpgrader {
 
     private final boolean softRebuild;
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, boolean softRebuild) {
-        super(nodeRepository, hostProvisioner);
+    public RebuildingOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
+        super(nodeRepository);
         this.softRebuild = softRebuild;
     }
 
