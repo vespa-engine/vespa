@@ -38,7 +38,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, 7);
         EXPECT_EQ(ib, 7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, 7);
         EXPECT_EQ(db, 7);
     }
@@ -48,7 +48,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -7);
         EXPECT_EQ(ib, -7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7);
         EXPECT_EQ(db, -7);
     }
@@ -56,7 +56,7 @@ TEST(StreamingQueryTest, test_query_language)
     {
         QueryTerm q(factory.create(), "7.5", "index", TermType::WORD);
         EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, 7.5);
         EXPECT_EQ(db, 7.5);
     }
@@ -64,7 +64,7 @@ TEST(StreamingQueryTest, test_query_language)
     {
         QueryTerm q(factory.create(), "-7.5", "index", TermType::WORD);
         EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7.5);
         EXPECT_EQ(db, -7.5);
     }
@@ -74,7 +74,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, 6);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -std::numeric_limits<double>::max());
         EXPECT_LT(db, 7);
         EXPECT_GT(db, 6.99);
@@ -85,7 +85,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, 7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -std::numeric_limits<double>::max());
         EXPECT_EQ(db, 7);
     }
@@ -95,7 +95,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, 8);
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_GT(da, 7);
         EXPECT_LT(da, 7.01);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
@@ -106,7 +106,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, 7);
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, 7);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
     }
@@ -116,7 +116,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -7);
         EXPECT_EQ(ib, 7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7);
         EXPECT_EQ(db, 7);
     }
@@ -126,7 +126,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7.1);
         EXPECT_EQ(db, 7.1);
     }
@@ -136,7 +136,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, 500.0);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
     }
@@ -147,8 +147,8 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -6);
         EXPECT_EQ(ib, 7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-        EXPECT_EQ(da, std::nextafterf(minusSeven, seven));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
+        EXPECT_EQ(da, std::nextafter(minusSeven, seven));
         EXPECT_EQ(db, seven);
     }
 
@@ -157,9 +157,9 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -6);
         EXPECT_EQ(ib, 6);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-        EXPECT_EQ(da, std::nextafterf(minusSeven, seven));
-        EXPECT_EQ(db, std::nextafterf(seven, minusSeven));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
+        EXPECT_EQ(da, std::nextafter(minusSeven, seven));
+        EXPECT_EQ(db, std::nextafter(seven, minusSeven));
     }
 
     {
@@ -174,9 +174,9 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -7);
         EXPECT_EQ(ib, 6);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, minusSeven);
-        EXPECT_EQ(db, std::nextafterf(seven, minusSeven));
+        EXPECT_EQ(db, std::nextafter(seven, minusSeven));
     }
 
     {
@@ -184,7 +184,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, -8);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -std::numeric_limits<double>::max());
         EXPECT_LT(db, -7);
         EXPECT_GT(db, -7.01);
@@ -195,7 +195,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, -7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -std::numeric_limits<double>::max());
         EXPECT_EQ(db, -7);
     }
@@ -205,7 +205,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, std::numeric_limits<int64_t>::min());
         EXPECT_EQ(ib, -7);
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -std::numeric_limits<double>::max());
         EXPECT_EQ(db, -7);
     }
@@ -215,7 +215,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -6);
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_GT(da, -7);
         EXPECT_LT(da, -6.99);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
@@ -226,7 +226,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -7);
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
     }
@@ -236,7 +236,7 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
         EXPECT_EQ(ia, -7);
         EXPECT_EQ(ib, std::numeric_limits<int64_t>::max());
-        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
         EXPECT_EQ(da, -7);
         EXPECT_EQ(db, std::numeric_limits<double>::max());
     }
@@ -244,7 +244,7 @@ TEST(StreamingQueryTest, test_query_language)
     {
         QueryTerm q(factory.create(), "a", "index", TermType::WORD);
         EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-        EXPECT_TRUE(!q.getAsDoubleTerm(da, db));
+        EXPECT_TRUE(!q.getAsFloatTerm(da, db));
     }
 
     {
@@ -645,7 +645,7 @@ TEST(StreamingQueryTest, require_that_ascending_range_can_be_specified_with_limi
     QueryTerm ascending_query(eqnr.create(), "[;;500]", "index", TermType::WORD);
 
     EXPECT_TRUE(ascending_query.getAsIntegerTerm(low_integer, high_integer));
-    EXPECT_TRUE(ascending_query.getAsDoubleTerm(low_double, high_double));
+    EXPECT_TRUE(ascending_query.getAsFloatTerm(low_double, high_double));
     EXPECT_EQ(std::numeric_limits<int64_t>::min(), low_integer);
     EXPECT_EQ(std::numeric_limits<int64_t>::max(), high_integer);
     EXPECT_EQ(-std::numeric_limits<double>::max(), low_double);
@@ -664,7 +664,7 @@ TEST(StreamingQueryTest, require_that_descending_range_can_be_specified_with_lim
     QueryTerm descending_query(eqnr.create(), "[;;-500]", "index", TermType::WORD);
 
     EXPECT_TRUE(descending_query.getAsIntegerTerm(low_integer, high_integer));
-    EXPECT_TRUE(descending_query.getAsDoubleTerm(low_double, high_double));
+    EXPECT_TRUE(descending_query.getAsFloatTerm(low_double, high_double));
     EXPECT_EQ(std::numeric_limits<int64_t>::min(), low_integer);
     EXPECT_EQ(std::numeric_limits<int64_t>::max(), high_integer);
     EXPECT_EQ(-std::numeric_limits<double>::max(), low_double);

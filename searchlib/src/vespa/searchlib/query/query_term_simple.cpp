@@ -4,7 +4,6 @@
 #include "base.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
-#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <limits>
 #include <charconv>
@@ -12,10 +11,58 @@
 namespace {
 
 template <typename N>
-bool isValidInteger(int64_t value)
+constexpr bool isValidInteger(int64_t value) noexcept
 {
-    return value >= std::numeric_limits<N>::min() && value <= std::numeric_limits<N>::max();
+    return (value >= std::numeric_limits<N>::min()) &&
+           (value <= std::numeric_limits<N>::max());
 }
+
+constexpr bool isRepresentableByInt64(double d) noexcept {
+    return (d > double(std::numeric_limits<int64_t>::min())) &&
+           (d < double(std::numeric_limits<int64_t>::max()));
+}
+
+bool isFullRange(vespalib::stringref s) noexcept {
+    const size_t sz(s.size());
+    return (sz >= 3u) &&
+           (s[0] == '<' || s[0] == '[') &&
+           (s[sz-1] == '>' || s[sz-1] == ']');
+}
+
+struct IntDecoder {
+    static int64_t fromstr(const char * q, const char * qend, const char ** end) noexcept {
+        int64_t v(0);
+        for (;q < qend && isspace(*q); q++);
+        std::from_chars_result err = std::from_chars(q, qend, v, 10);
+        if (err.ec == std::errc::result_out_of_range) {
+            v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
+        }
+        *end = err.ptr;
+        return v;
+    }
+    static int64_t nearestDownwd(int64_t n, int64_t min) noexcept { return (n > min ? n - 1 : n); }
+    static int64_t nearestUpward(int64_t n, int64_t max) noexcept { return (n < max ? n + 1 : n); }
+};
+
+template <typename T>
+struct FloatDecoder {
+    static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
+        T v(0);
+        for (;q < qend && isspace(*q); q++);
+        std::from_chars_result err = std::from_chars(q, qend, v);
+        if (err.ec == std::errc::result_out_of_range) {
+            v = (*q == '-') ? std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
+        }
+        *end = err.ptr;
+        return v;
+    }
+    static T nearestDownwd(T n, T min) noexcept {
+        return std::nextafter(n, min);
+    }
+    static T nearestUpward(T n, T max) noexcept {
+        return std::nextafter(n, max);
+    }
+};
 
 }
 
@@ -30,10 +77,10 @@ QueryTermSimple::visitMembers(vespalib::ObjectVisitor & visitor) const
 
 template <typename N>
 QueryTermSimple::RangeResult<N>
-QueryTermSimple::getFloatRange() const
+QueryTermSimple::getFloatRange() const noexcept
 {
-    double lowRaw, highRaw;
-    bool valid = getAsDoubleTerm(lowRaw, highRaw);
+    N lowRaw, highRaw;
+    bool valid = getAsFloatTerm(lowRaw, highRaw);
     RangeResult<N> res;
     res.valid = valid;
     if (!valid) {
@@ -47,25 +94,16 @@ QueryTermSimple::getFloatRange() const
     return res;
 }
 
-namespace {
-
-bool isRepresentableByInt64(double d) {
-    return    (d > double(std::numeric_limits<int64_t>::min()))
-           && (d < double(std::numeric_limits<int64_t>::max()));
-}
-
-}
-
 bool
-QueryTermSimple::getRangeInternal(int64_t & low, int64_t & high) const
+QueryTermSimple::getRangeInternal(int64_t & low, int64_t & high) const noexcept
 {
     bool valid = getAsIntegerTerm(low, high);
     if ( ! valid ) {
         double l(0), h(0);
-        valid = getAsDoubleTerm(l, h);
+        valid = getAsFloatTerm(l, h);
         if (valid) {
             if ((l == h) && isRepresentableByInt64(l)) {
-                low = high = std::round(l);
+                low = high = static_cast<int64_t>(std::round(l));
             } else {
                 if (l > double(std::numeric_limits<int64_t>::min())) {
                     if (l < double(std::numeric_limits<int64_t>::max())) {
@@ -89,7 +127,7 @@ QueryTermSimple::getRangeInternal(int64_t & low, int64_t & high) const
 
 template <typename N>
 QueryTermSimple::RangeResult<N>
-QueryTermSimple::getIntegerRange() const
+QueryTermSimple::getIntegerRange() const noexcept
 {
     int64_t lowRaw, highRaw;
     bool valid = getRangeInternal(lowRaw, highRaw);
@@ -122,94 +160,72 @@ QueryTermSimple::getIntegerRange() const
 
 template <>
 QueryTermSimple::RangeResult<float>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getFloatRange<float>();
 }
 
 template <>
 QueryTermSimple::RangeResult<double>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getFloatRange<double>();
 }
 
 template <>
 QueryTermSimple::RangeResult<int8_t>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getIntegerRange<int8_t>();
 }
 
 template <>
 QueryTermSimple::RangeResult<int16_t>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getIntegerRange<int16_t>();
 }
 
 template <>
 QueryTermSimple::RangeResult<int32_t>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getIntegerRange<int32_t>();
 }
 
 template <>
 QueryTermSimple::RangeResult<int64_t>
-QueryTermSimple::getRange() const
+QueryTermSimple::getRange() const noexcept
 {
     return getIntegerRange<int64_t>();
 }
 
-struct IntDecoder {
-    static int64_t fromstr(const char * q, const char * qend, char ** end) noexcept {
-        int64_t v(0);
-        for (;q < qend && isspace(*q); q++);
-        std::from_chars_result err = std::from_chars(q, qend, v, 10);
-        if (err.ec == std::errc::result_out_of_range) {
-            v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
-        }
-        *end = const_cast<char *>(err.ptr);
-        return v;
-    }
-    static int64_t nearestDownwd(int64_t n, int64_t min) noexcept { return (n > min ? n - 1 : n); }
-    static int64_t nearestUpward(int64_t n, int64_t max) noexcept { return (n < max ? n + 1 : n); }
-};
-
-struct DoubleDecoder {
-    static double fromstr(const char * q, const char * qend, char ** end) {
-        (void) qend;
-        return vespalib::locale::c::strtod(q, end);
-    }
-    static double nearestDownwd(double n, double min) noexcept { return std::nextafterf(n, min); }
-    static double nearestUpward(double n, double max) noexcept { return std::nextafterf(n, max); }
-};
-
-bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const
+bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const noexcept
 {
     lower = std::numeric_limits<int64_t>::min();
     upper = std::numeric_limits<int64_t>::max();
     return getAsNumericTerm(lower, upper, IntDecoder());
 }
 
-bool QueryTermSimple::getAsDoubleTerm(double & lower, double & upper) const
+bool QueryTermSimple::getAsFloatTerm(double & lower, double & upper) const noexcept
 {
     lower = - std::numeric_limits<double>::max();
     upper =   std::numeric_limits<double>::max();
-    return getAsNumericTerm(lower, upper, DoubleDecoder());
+    return getAsNumericTerm(lower, upper, FloatDecoder<double>());
+}
+
+bool QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
+{
+    lower = - std::numeric_limits<float>::max();
+    upper =   std::numeric_limits<float>::max();
+    return getAsNumericTerm(lower, upper, FloatDecoder<float>());
 }
 
 QueryTermSimple::~QueryTermSimple() = default;
 
 namespace {
 
-bool isFullRange(vespalib::stringref s) {
-    const size_t sz(s.size());
-    return (sz >= 3u) &&
-           (s[0] == '<' || s[0] == '[') &&
-           (s[sz-1] == '>' || s[sz-1] == ']');
-}
+
 
 }
 
@@ -244,7 +260,7 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
         }
         _valid = (numParts >= 2) && (numParts < NELEMS(parts));
         if (_valid && numParts > 2) {
-            _rangeLimit = strtol(parts[2].data(), nullptr, 0);
+            _rangeLimit = static_cast<int32_t>(strtol(parts[2].data(), nullptr, 0));
             if (numParts > 3) {
                 _valid = (numParts >= 5);
                 if (_valid) {
@@ -269,12 +285,12 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
 
 template <typename T, typename D>
 bool
-QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const
+QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
 {
     if (empty()) return false;
 
     size_t sz(_term.size());
-    char *err(nullptr);
+    const char *err(nullptr);
     T low(lower);
     T high(upper);
     const char * q = _term.c_str();
