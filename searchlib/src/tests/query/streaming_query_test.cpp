@@ -287,7 +287,10 @@ TEST(StreamingQueryTest, test_query_language)
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    bool getRewriteFloatTerms(vespalib::stringref index) const noexcept override { (void) index; return true; }
+    explicit AllowRewrite(vespalib::stringref index) noexcept : _allowedIndex(index) {}
+    bool getRewriteFloatTerms(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
+private:
+    vespalib::string _allowedIndex;
 };
 
 const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
@@ -297,7 +300,7 @@ TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(6u, stackDump.size());
-    AllowRewrite allowRewrite;
+    AllowRewrite allowRewrite("c");
     const Query q(allowRewrite, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
@@ -313,7 +316,7 @@ TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    QueryNodeResultFactory empty;
+    AllowRewrite empty("nix");
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
@@ -329,7 +332,7 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    AllowRewrite empty;
+    AllowRewrite empty("c");
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
@@ -759,7 +762,7 @@ TEST(StreamingQueryTest, a_unhandled_sameElement_stack)
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     vespalib::stringref stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
-    AllowRewrite empty;
+    AllowRewrite empty("");
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
