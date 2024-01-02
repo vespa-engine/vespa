@@ -7,6 +7,7 @@
 #include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <limits>
+#include <charconv>
 
 namespace {
 
@@ -161,24 +162,35 @@ QueryTermSimple::getRange() const
     return getIntegerRange<int64_t>();
 }
 
-template <int B>
 struct IntDecoder {
-    static int64_t fromstr(const char * v, char ** end) { return strtoll(v, end, B); }
-    static int64_t nearestDownwd(int64_t n, int64_t min) { return (n > min ? n - 1 : n); }
-    static int64_t nearestUpward(int64_t n, int64_t max) { return (n < max ? n + 1 : n); }
+    static int64_t fromstr(const char * q, const char * qend, char ** end) noexcept {
+        int64_t v(0);
+        for (;q < qend && isspace(*q); q++);
+        std::from_chars_result err = std::from_chars(q, qend, v, 10);
+        if (err.ec == std::errc::result_out_of_range) {
+            v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
+        }
+        *end = const_cast<char *>(err.ptr);
+        return v;
+    }
+    static int64_t nearestDownwd(int64_t n, int64_t min) noexcept { return (n > min ? n - 1 : n); }
+    static int64_t nearestUpward(int64_t n, int64_t max) noexcept { return (n < max ? n + 1 : n); }
 };
 
 struct DoubleDecoder {
-    static double fromstr(const char * v, char ** end) { return vespalib::locale::c::strtod(v, end); }
-    static double nearestDownwd(double n, double min) { return std::nextafterf(n, min); }
-    static double nearestUpward(double n, double max) { return std::nextafterf(n, max); }
+    static double fromstr(const char * q, const char * qend, char ** end) {
+        (void) qend;
+        return vespalib::locale::c::strtod(q, end);
+    }
+    static double nearestDownwd(double n, double min) noexcept { return std::nextafterf(n, min); }
+    static double nearestUpward(double n, double max) noexcept { return std::nextafterf(n, max); }
 };
 
 bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const
 {
     lower = std::numeric_limits<int64_t>::min();
     upper = std::numeric_limits<int64_t>::max();
-    return getAsNumericTerm(lower, upper, IntDecoder<10>());
+    return getAsNumericTerm(lower, upper, IntDecoder());
 }
 
 bool QueryTermSimple::getAsDoubleTerm(double & lower, double & upper) const
@@ -259,45 +271,53 @@ template <typename T, typename D>
 bool
 QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const
 {
-    bool valid(empty());
+    if (empty()) return false;
+
     size_t sz(_term.size());
-    if (sz) {
-        char *err(nullptr);
-        T low(lower);
-        T high(upper);
-        const char * q = _term.c_str();
-        const char first(q[0]);
-        const char last(q[sz-1]);
-        q += ((first == '<') || (first == '>') || (first == '[')) ? 1 : 0;
-        T ll = d.fromstr(q, &err);
-        valid = isValid() && ((*err == 0) || (*err == ';'));
-        if (valid) {
-            if (first == '<' && (*err == 0)) {
-                high = d.nearestDownwd(ll, lower);
-            } else if (first == '>' && (*err == 0)) {
-                low = d.nearestUpward(ll, upper);
-            } else if ((first == '[') || (first == '<')) {
-                if (q != err) {
-                    low = (first == '[') ? ll : d.nearestUpward(ll, upper);
-                }
-                q = err + 1;
-                T hh = d.fromstr(q, &err);
-                bool hasUpperLimit(q != err);
-                if (*err == ';') {
-                    err = const_cast<char *>(_term.end() - 1);
-                }
-                valid = (*err == last) && ((last == ']') || (last == '>'));
-                if (hasUpperLimit) {
-                    high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
-                }
-            } else {
-                low = high = ll;
+    char *err(nullptr);
+    T low(lower);
+    T high(upper);
+    const char * q = _term.c_str();
+    const char * qend = q + sz;
+    const char first(q[0]);
+    const char last(q[sz-1]);
+    bool isRange = (first == '<') || (first == '>') || (first == '[');
+    q += isRange ? 1 : 0;
+    T ll = d.fromstr(q, qend, &err);
+    bool valid = isValid() && ((*err == 0) || (*err == ';'));
+    if (!valid) return false;
+
+    if (*err == 0) {
+        if (first == '<') {
+            high = d.nearestDownwd(ll, lower);
+        } else if (first == '>') {
+            low = d.nearestUpward(ll, upper);
+        } else {
+            low = high = ll;
+            valid = ! isRange;
+        }
+    } else {
+        if ((first == '[') || (first == '<')) {
+            if (q != err) {
+                low = (first == '[') ? ll : d.nearestUpward(ll, upper);
             }
+            q = err + 1;
+            T hh = d.fromstr(q, qend, &err);
+            bool hasUpperLimit(q != err);
+            if (*err == ';') {
+                err = const_cast<char *>(_term.end() - 1);
+            }
+            valid = (*err == last) && ((last == ']') || (last == '>'));
+            if (hasUpperLimit) {
+                high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
+            }
+        } else {
+            valid = false;
         }
-        if (valid) {
-            lower = low;
-            upper = high;
-        }
+    }
+    if (valid) {
+        lower = low;
+        upper = high;
     }
     return valid;
 }

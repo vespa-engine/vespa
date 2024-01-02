@@ -72,6 +72,7 @@ public class Validation {
         }
         else if (deployState.getPreviousModel().isPresent() && (deployState.getPreviousModel().get() instanceof VespaModel vespaModel)) {
             validateChanges(vespaModel, execution);
+                // TODO: Why is this done here? It won't be done on more than one config server?
             deferConfigChangesForClustersToBeRestarted(execution.actions, model);
         }
 

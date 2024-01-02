@@ -15,6 +15,7 @@ private:
 };
 
 CharInfo::CharInfo()
+    : _charInfo()
 {
     // XXX: Should refactor to reduce number of magic constants.
     memset(_charInfo, 0x01, 128); // All 7 bits are ascii7bit
@@ -33,7 +34,7 @@ CharInfo::CharInfo()
     _charInfo[uint8_t('E')] = 0x05;
 }
 
-static CharInfo _G_charTable;
+CharInfo _G_charTable;
 
 }
 
@@ -65,10 +66,10 @@ QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & te
 {
     if (!termS.empty()) {
         uint8_t enc(0xff);
-        for (size_t i(0), m(termS.size()); i < m; i++) {
-            enc &= _G_charTable.get(termS[i]);
+        for (char c : termS) {
+            enc &= _G_charTable.get(c);
         }
-        _encoding = enc;
+        _encoding = EncodingBitMap(enc);
     }
 }
 

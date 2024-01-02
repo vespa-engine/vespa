@@ -27,7 +27,7 @@ public:
     class EncodingBitMap
     {
     public:
-        EncodingBitMap(uint8_t bm=0) : _enc(bm) { }
+        explicit EncodingBitMap(uint8_t bm) : _enc(bm) { }
         bool isFloat()        const { return _enc & Float; }
         bool isBase10Integer()        const { return _enc & Base10Integer; }
         bool isAscii7Bit()            const { return _enc & Ascii7Bit; }

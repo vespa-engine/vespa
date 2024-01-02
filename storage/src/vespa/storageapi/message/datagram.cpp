@@ -5,8 +5,7 @@
 
 using document::BucketSpace;
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(MapVisitorCommand, MapVisitorReply)
 IMPLEMENT_REPLY(MapVisitorReply)
@@ -24,11 +23,9 @@ MapVisitorCommand::print(std::ostream& out, bool verbose,
 {
     out << "MapVisitor(" << _statistics.size() << " entries";
     if (verbose) {
-        for (vdslib::Parameters::ParametersMap::const_iterator it
-                = _statistics.begin(); it != _statistics.end(); ++it)
-        {
-            out << ",\n" << indent << "  " << it->first << ": "
-                << vespalib::stringref(it->second.c_str(), it->second.length());
+        for (const auto & stat : _statistics) {
+            out << ",\n" << indent << "  " << stat.first << ": "
+                << vespalib::stringref(stat.second.c_str(), stat.second.length());
         }
         out << ") : ";
         StorageCommand::print(out, verbose, indent);
@@ -66,9 +63,9 @@ EmptyBucketsCommand::print(std::ostream& out, bool verbose,
 {
     out << "EmptyBuckets(";
     if (verbose) {
-        for (uint32_t i=0; i<_buckets.size(); ++i) {
+        for (const auto & bucket : _buckets) {
             out << "\n" << indent << "  ";
-            out << _buckets[i];
+            out << bucket;
         }
     } else {
         out << _buckets.size() << " buckets";
@@ -96,5 +93,4 @@ EmptyBucketsReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+}

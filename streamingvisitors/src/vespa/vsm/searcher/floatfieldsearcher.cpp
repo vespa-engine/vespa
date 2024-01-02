@@ -37,7 +37,7 @@ void FloatFieldSearcherT<T>::prepare(search::streaming::QueryTermList& qtl,
     _floatTerm.clear();
     FieldSearcher::prepare(qtl, buf, field_paths, query_env);
     for (auto qt : qtl) {
-    size_t sz(qt->termLen());
+        size_t sz(qt->termLen());
         if (sz) {
             auto range = qt->getRange<T>();
             _floatTerm.emplace_back(range.low, range.high, range.valid);

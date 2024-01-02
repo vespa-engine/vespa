@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
@@ -11,11 +14,16 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,12 +39,17 @@ import java.util.logging.Logger;
  */
 public class OsVersions {
 
-    private static final Logger log = Logger.getLogger(OsVersions.class.getName());
+    private static final Logger LOG = Logger.getLogger(OsVersions.class.getName());
 
     private final NodeRepository nodeRepository;
     private final CuratorDb db;
     private final Cloud cloud;
     private final Optional<HostProvisioner> hostProvisioner;
+    // Version is queried for each host to upgrade, so we cache the results for a while to avoid excessive
+    // API calls to the host provisioner
+    private final Cache<CloudAccount, Set<Version>> availableVersions = CacheBuilder.newBuilder()
+                                                                                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                                                                                    .build();
 
     public OsVersions(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this(nodeRepository, nodeRepository.zone().cloud(), hostProvisioner);
@@ -107,9 +120,28 @@ public class OsVersions {
                                                    + currentTarget.get().version().toFullString());
             }
 
-            log.info("Set OS target version for " + nodeType + " nodes to " + version.toFullString());
+            LOG.info("Set OS target version for " + nodeType + " nodes to " + version.toFullString());
             return change.withTarget(version, nodeType);
         });
+    }
+
+    /** Returns the versions available to given host */
+    public Set<Version> availableTo(Node host, Version requestedVersion) {
+        if (hostProvisioner.isEmpty()) {
+            return Set.of(requestedVersion);
+        }
+        try {
+            return availableVersions.get(host.cloudAccount(),
+                                         () -> hostProvisioner.get().osVersions(host, requestedVersion.getMajor()));
+        } catch (ExecutionException e) {
+            LOG.log(Level.WARNING, "Failed to list supported OS versions in " + host.cloudAccount() + ": " + Exceptions.toMessageString(e));
+            return Set.of();
+        }
+    }
+
+    /** Invalidate cached versions. For testing purposes */
+    void invalidate() {
+        availableVersions.invalidateAll();
     }
 
     /** Resume or halt upgrade of given node type */
@@ -127,26 +159,21 @@ public class OsVersions {
         }
     }
 
-    /** Returns whether node can be upgraded now */
-    public boolean canUpgrade(Node node) {
-        Optional<Version> wantedVersion = node.status().osVersion().wanted();
-        if (wantedVersion.isEmpty()) {
-            return false;
-        }
-        return chooseUpgrader(node.type(), Optional.empty()).canUpgradeTo(wantedVersion.get(), nodeRepository.clock().instant(), node);
+    /** Returns whether node is currently deferring its upgrade */
+    public boolean deferringUpgrade(Node node) {
+        return chooseUpgrader(node.type(), Optional.empty()).deferringUpgrade(node, nodeRepository.clock().instant());
     }
 
     /** Returns the upgrader to use when upgrading given node type to target */
     private OsUpgrader chooseUpgrader(NodeType nodeType, Optional<Version> target) {
         if (cloud.dynamicProvisioning()) {
             boolean canSoftRebuild = cloud.name().equals(CloudName.AWS);
-            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, hostProvisioner, canSoftRebuild);
+            RetiringOsUpgrader retiringOsUpgrader = new RetiringOsUpgrader(nodeRepository, canSoftRebuild);
             if (canSoftRebuild) {
                 // If soft rebuild is enabled, we can use RebuildingOsUpgrader for hosts with remote storage.
                 // RetiringOsUpgrader is then only used for hosts with local storage.
                 return new CompositeOsUpgrader(nodeRepository,
-                                               hostProvisioner,
-                                               List.of(new RebuildingOsUpgrader(nodeRepository, hostProvisioner, canSoftRebuild),
+                                               List.of(new RebuildingOsUpgrader(nodeRepository, canSoftRebuild),
                                                        retiringOsUpgrader));
             }
             return retiringOsUpgrader;
@@ -159,9 +186,9 @@ public class OsVersions {
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
                                                                        osVersion.current().get().getMajor() < target.get().getMajor());
         if (rebuildRequired) {
-            return new RebuildingOsUpgrader(nodeRepository, hostProvisioner, false);
+            return new RebuildingOsUpgrader(nodeRepository, false);
         }
-        return new DelegatingOsUpgrader(nodeRepository, hostProvisioner);
+        return new DelegatingOsUpgrader(nodeRepository);
     }
 
     private static void requireNonEmpty(Version version) {

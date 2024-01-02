@@ -6,7 +6,7 @@ com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
-com.google.guava:failureaccess:1.0.1
+com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
 com.google.inject:guice:${guice.vespa.version}
 com.google.j2objc:j2objc-annotations:2.8
