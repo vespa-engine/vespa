@@ -80,7 +80,7 @@ public class Flags {
 
     public static final UnboundStringFlag NESSUS_AGENT_GROUP = defineStringFlag(
             "nessus-agent-group", ":legacy",
-            List.of("hakonhall"), "2023-11-29", "2023-12-29",
+            List.of("hakonhall"), "2023-11-29", "2024-02-29",
             "Link nessusagent to the given group, or run legacy task (\":legacy\"), or disable task (\"\").",
             "Takes effect after host admin restart",
             (String value) -> value.equals(":legacy") ||  // Run legacy task.  Is a no-op outside YAHOO cloud.
