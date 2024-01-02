@@ -8,6 +8,7 @@
 #include "rankmanager.h"
 #include "rankprocessor.h"
 #include "searchenvironment.h"
+#include "querytermdata.h"
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/documenttypemapping.h>
 #include <vespa/vsm/common/storagedocument.h>
@@ -42,7 +43,8 @@ class SearchEnvironmentSnapshot;
  * @brief Visitor that applies a search query to visitor data and
  * converts them to a QueryResultCommand.
  **/
-class SearchVisitor : public storage::Visitor {
+class SearchVisitor : public storage::Visitor,
+                      public SearchMethodInfo {
 public:
     SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv,
                   const vdslib::Parameters & params);
@@ -488,6 +490,7 @@ private:
     vsm::StringFieldIdTMapT                 _fieldsUnion;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
+    bool is_text_matching(vespalib::stringref index) const noexcept override;
 };
 
 class SearchVisitorFactory : public storage::VisitorFactory {
