@@ -14,7 +14,7 @@ public:
     Locale();  // Standard C locale, NOT default locale.
     Locale(int category, const char *locale);
     ~Locale();
-    locale_t get() const { return _locale; }
+    locale_t get() const noexcept { return _locale; }
 private:
     locale_t _locale;
 };
