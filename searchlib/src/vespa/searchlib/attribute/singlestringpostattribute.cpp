@@ -3,6 +3,11 @@
 #include "singlestringpostattribute.hpp"
 #include "postinglistsearchcontext.hpp"
 
+namespace search::attribute {
+
+template class StringPostingSearchContext<attribute::SingleStringEnumSearchContext, SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute>>, vespalib::btree::BTreeNoLeafData>;
+
+}
 
 namespace search {
 

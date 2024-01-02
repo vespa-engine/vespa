@@ -3,6 +3,14 @@
 #include "multistringpostattribute.hpp"
 #include "postinglistsearchcontext.hpp"
 
+namespace search::attribute {
+
+template class StringPostingSearchContext<MultiStringEnumSearchContext<vespalib::datastore::AtomicEntryRef>, MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>, int32_t>;
+
+template class StringPostingSearchContext<MultiStringEnumSearchContext<multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>, MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>, int32_t>;
+
+}
+
 namespace search {
 
 IEnumStore::Index
