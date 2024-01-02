@@ -287,10 +287,7 @@ TEST(StreamingQueryTest, test_query_language)
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    explicit AllowRewrite(vespalib::stringref index) noexcept : _allowedIndex(index) {}
-    bool getRewriteFloatTerms(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
-private:
-    vespalib::string _allowedIndex;
+    virtual bool getRewriteFloatTerms() const override { return true; }
 };
 
 const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
@@ -300,12 +297,12 @@ TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(6u, stackDump.size());
-    AllowRewrite allowRewrite("c");
+    AllowRewrite allowRewrite;
     const Query q(allowRewrite, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
-    const auto & qt = static_cast<const QueryTerm &>(root);
+    const QueryTerm & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQ("c", qt.index());
     EXPECT_EQ(vespalib::stringref("e"), qt.getTerm());
     EXPECT_EQ(3u, qt.uniqueId());
@@ -316,12 +313,12 @@ TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    AllowRewrite empty("nix");
+    QueryNodeResultFactory empty;
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
-    const auto & qt = static_cast<const QueryTerm &>(root);
+    const QueryTerm & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQ("c", qt.index());
     EXPECT_EQ(vespalib::stringref("1.0e"), qt.getTerm());
     EXPECT_EQ(3u, qt.uniqueId());
@@ -332,34 +329,34 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    AllowRewrite empty("c");
+    AllowRewrite empty;
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const EquivQueryNode *>(&root) != nullptr);
-    const auto & equiv = static_cast<const EquivQueryNode &>(root);
+    const EquivQueryNode & equiv = static_cast<const EquivQueryNode &>(root);
     EXPECT_EQ(2u, equiv.size());
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(equiv[0].get()) != nullptr);
     {
-        const auto & qt = static_cast<const QueryTerm &>(*equiv[0]);
+        const QueryTerm & qt = static_cast<const QueryTerm &>(*equiv[0]);
         EXPECT_EQ("c", qt.index());
         EXPECT_EQ(vespalib::stringref("1.0e"), qt.getTerm());
         EXPECT_EQ(3u, qt.uniqueId());
     }
     EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv[1].get()) != nullptr);
     {
-        const auto & phrase = static_cast<const PhraseQueryNode &>(*equiv[1]);
+        const PhraseQueryNode & phrase = static_cast<const PhraseQueryNode &>(*equiv[1]);
         EXPECT_EQ(2u, phrase.size());
         EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[0].get()) != nullptr);
         {
-            const auto & qt = static_cast<const QueryTerm &>(*phrase[0]);
+            const QueryTerm & qt = static_cast<const QueryTerm &>(*phrase[0]);
             EXPECT_EQ("c", qt.index());
             EXPECT_EQ(vespalib::stringref("1"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());
         }
         EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[1].get()) != nullptr);
         {
-            const auto & qt = static_cast<const QueryTerm &>(*phrase[1]);
+            const QueryTerm & qt = static_cast<const QueryTerm &>(*phrase[1]);
             EXPECT_EQ("c", qt.index());
             EXPECT_EQ(vespalib::stringref("0e"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());
@@ -463,7 +460,7 @@ TEST(StreamingQueryTest, test_phrase_evaluate)
     terms[1]->add(1, 5, 0, 1);
     terms[2]->add(0, 5, 0, 1);
     HitList hits;
-    auto * p = static_cast<PhraseQueryNode *>(phrases[0]);
+    PhraseQueryNode * p = static_cast<PhraseQueryNode *>(phrases[0]);
     p->evaluateHits(hits);
     ASSERT_EQ(3u, hits.size());
     EXPECT_EQ(hits[0].wordpos(), 2u);
@@ -753,7 +750,7 @@ TEST(StreamingQueryTest, require_that_incorrectly_specified_diversity_can_be_par
 
 TEST(StreamingQueryTest, require_that_we_do_not_break_the_stack_on_bad_query)
 {
-    QueryTermSimple term(R"(<form><iframe+&#09;&#10;&#11;+src=\"javascript&#58;alert(1)\"&#11;&#10;&#09;;>)", TermType::WORD);
+    QueryTermSimple term("<form><iframe+&#09;&#10;&#11;+src=\\\"javascript&#58;alert(1)\\\"&#11;&#10;&#09;;>", TermType::WORD);
     EXPECT_FALSE(term.isValid());
 }
 
@@ -762,7 +759,7 @@ TEST(StreamingQueryTest, a_unhandled_sameElement_stack)
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     vespalib::stringref stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
-    AllowRewrite empty("");
+    AllowRewrite empty;
     const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
@@ -796,7 +793,7 @@ TEST(StreamingQueryTest, test_same_element_evaluate)
     vespalib::string stackDump = StackDumpCreator::create(*node);
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
-    auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
+    SameElementQueryNode * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
     EXPECT_TRUE(sameElem != nullptr);
     EXPECT_EQ("field", sameElem->getIndex());
     EXPECT_EQ(3u, sameElem->size());
