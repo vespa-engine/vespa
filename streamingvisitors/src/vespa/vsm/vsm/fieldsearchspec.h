@@ -23,6 +23,11 @@ public:
     bool                     valid() const { return static_cast<bool>(_searcher); }
     size_t               maxLength() const { return _maxLength; }
     bool uses_nearest_neighbor_search_method() const noexcept { return _searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR; }
+    bool uses_string_search_method() const noexcept {
+        return  (_searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::UTF8) ||
+                (_searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8) ||
+                (_searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8);
+    }
     const vespalib::string& get_arg1() const noexcept { return _arg1; }
 
     /**
