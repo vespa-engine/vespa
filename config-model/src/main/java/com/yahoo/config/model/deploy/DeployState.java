@@ -172,7 +172,7 @@ public class DeployState implements ConfigDefinitionStore {
     /** Get the global rank profile registry for this application. */
     public final RankProfileRegistry rankProfileRegistry() { return rankProfileRegistry; }
 
-    /** Returns the validation overrides of this. This is never null */
+    /** Returns the validation overrides of this. This is never null. */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
     @Override
