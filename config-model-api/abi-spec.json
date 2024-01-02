@@ -1501,7 +1501,9 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(java.lang.String, long, long, com.yahoo.config.model.api.OnnxModelOptions)",
       "public void <init>(java.lang.String, long, long, java.util.Optional)",
+      "public com.yahoo.config.model.api.OnnxModelOptions options()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",

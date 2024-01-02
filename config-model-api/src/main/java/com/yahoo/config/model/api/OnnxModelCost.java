@@ -18,8 +18,10 @@ public interface OnnxModelCost {
 
     interface Calculator {
         long aggregatedModelCostInBytes();
+        // TODO: Unused, remove when 8.263.7 is oldest model in use
         void registerModel(ApplicationFile path);
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
+        // TODO: Unused, remove when 8.263.7 is oldest model in use
         void registerModel(URI uri);
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
         Map<String, ModelInfo> models();
@@ -28,7 +30,17 @@ public interface OnnxModelCost {
         void store();
     }
 
-    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {}
+    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {
+
+        public ModelInfo(String modelId, long estimatedCost, long hash, OnnxModelOptions onnxModelOptions) {
+            this(modelId, estimatedCost, hash, Optional.of(onnxModelOptions));
+        }
+
+        public OnnxModelOptions options() {
+            return onnxModelOptions.orElseThrow(() -> new IllegalStateException("No onnxModelOptions exist"));
+        }
+
+    }
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
