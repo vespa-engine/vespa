@@ -238,16 +238,14 @@ SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const H
     return {};
 }
 
-void
-SearchVisitor::HitsResultPreparator::execute(vespalib::Identifiable & obj)
+void SearchVisitor::HitsResultPreparator::execute(vespalib::Identifiable & obj)
 {
     auto & hitsAggr(static_cast<HitsAggregationResult &>(obj));
     hitsAggr.setSummaryGenerator(_summaryGenerator);
     _numHitsAggregators++;
 }
 
-bool
-SearchVisitor::HitsResultPreparator::check(const vespalib::Identifiable & obj) const
+bool SearchVisitor::HitsResultPreparator::check(const vespalib::Identifiable & obj) const
 {
     return obj.getClass().inherits(HitsAggregationResult::classId);
 }
@@ -261,8 +259,7 @@ SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping) :
 
 SearchVisitor::GroupingEntry::~GroupingEntry() = default;
 
-void
-SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, search::HitRank rank)
+void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, search::HitRank rank)
 {
     if (_count < _limit) {
         _grouping->aggregate(doc, rank);
@@ -313,15 +310,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     LOG(debug, "Created SearchVisitor");
 }
 
-bool
-SearchVisitor::is_text_matching(vespalib::stringref index) const noexcept {
-    vsm::FieldIdT fId = _fieldSearchSpecMap.nameIdMap().fieldNo(index);
-    auto found = _fieldSearchSpecMap.specMap().find(fId);
-    return (found != _fieldSearchSpecMap.specMap().end()) && found->second.uses_string_search_method();
-}
-
-void
-SearchVisitor::init(const Parameters & params)
+void SearchVisitor::init(const Parameters & params)
 {
     VISITOR_TRACE(6, "About to lazily init VSM adapter");
     _attrMan.add(_documentIdAttributeBacking);
@@ -408,12 +397,7 @@ SearchVisitor::init(const Parameters & params)
         if ( params.lookup("query", queryBlob) ) {
             LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
-
-            // Create mapping from field name to field id, from field id to search spec,
-            // and from index name to list of field ids
-            _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config());
-
-            QueryTermDataFactory addOnFactory(this);
+            QueryTermDataFactory addOnFactory;
             _query = Query(addOnFactory, vespalib::stringref(queryBlob.data(), queryBlob.size()));
             _searchBuffer->reserve(0x10000);
 
@@ -429,6 +413,7 @@ SearchVisitor::init(const Parameters & params)
 
             StringFieldIdTMap fieldsInQuery;
             setupFieldSearchers(additionalFields, fieldsInQuery);
+
 
             setupScratchDocument(fieldsInQuery);
 
@@ -769,6 +754,9 @@ void
 SearchVisitor::setupFieldSearchers(const std::vector<vespalib::string> & additionalFields,
                                    StringFieldIdTMap & fieldsInQuery)
 {
+    // Create mapping from field name to field id, from field id to search spec,
+    // and from index name to list of field ids
+    _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config());
     // Add extra elements to mapping from field name to field id
     _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
@@ -1157,8 +1145,7 @@ SearchVisitor::fillSortBuffer()
     return pos;
 }
 
-void
-SearchVisitor::completedBucket(const document::BucketId&, HitCounter&)
+void SearchVisitor::completedBucket(const document::BucketId&, HitCounter&)
 {
     LOG(debug, "Completed bucket");
 }
@@ -1170,8 +1157,7 @@ SearchVisitor::generate_query_result(HitCounter& counter)
     return std::move(_queryResult);
 }
 
-void
-SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
+void SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
 {
     if (!_init_called) {
         init(_params);

@@ -17,26 +17,15 @@ private:
     search::fef::SimpleTermData   _termData;
 public:
     QueryTermData * clone() const override { return new QueryTermData(); }
-    search::fef::SimpleTermData &getTermData() noexcept { return _termData; }
-};
-
-class SearchMethodInfo {
-public:
-    virtual ~SearchMethodInfo() = default;
-    virtual bool is_text_matching(vespalib::stringref index) const noexcept = 0;
+    search::fef::SimpleTermData &getTermData() { return _termData; }
 };
 
 class QueryTermDataFactory final : public search::streaming::QueryNodeResultFactory {
 public:
-    QueryTermDataFactory(const SearchMethodInfo * searchMethodInfo) noexcept : _searchMethodInfo(searchMethodInfo) {}
     std::unique_ptr<search::streaming::QueryNodeResultBase> create() const override {
         return std::make_unique<QueryTermData>();
     }
-    bool getRewriteFloatTerms(vespalib::stringref index ) const noexcept override {
-        return _searchMethodInfo && _searchMethodInfo->is_text_matching(index);
-    }
-private:
-    const SearchMethodInfo * _searchMethodInfo;
+    bool getRewriteFloatTerms() const override { return true; }
 };
 
 
