@@ -53,6 +53,7 @@ public abstract class OsUpgrader {
 
     /** Returns whether node can upgrade to version at given instant */
     final boolean canUpgradeTo(Version version, Instant instant, Node node) {
+        if (deferringUpgrade(node, instant)) return false;
         Set<Version> versions = nodeRepository.osVersions().availableTo(node, version);
         boolean versionAvailable = versions.contains(version);
         if (!versionAvailable) {
@@ -60,9 +61,13 @@ public abstract class OsUpgrader {
                                    version.toFullString() + ", but this version does not exist in " +
                                    node.cloudAccount() + ". Found " + versions.stream().sorted().toList());
         }
-        return versionAvailable &&
-               (node.status().osVersion().downgrading() || // Fast-track downgrades
-                node.history().age(instant).compareTo(gracePeriod()) > 0);
+        return versionAvailable;
+    }
+
+    /** Returns whether node is deferring upgrade at given instant */
+    final boolean deferringUpgrade(Node node, Instant instant) {
+        return !node.status().osVersion().downgrading() && // Never defer downgrades
+               node.history().age(instant).compareTo(gracePeriod()) <= 0;
     }
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */
