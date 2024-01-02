@@ -259,45 +259,52 @@ template <typename T, typename D>
 bool
 QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const
 {
-    bool valid(empty());
+    if (empty()) return false;
+
     size_t sz(_term.size());
-    if (sz) {
-        char *err(nullptr);
-        T low(lower);
-        T high(upper);
-        const char * q = _term.c_str();
-        const char first(q[0]);
-        const char last(q[sz-1]);
-        q += ((first == '<') || (first == '>') || (first == '[')) ? 1 : 0;
-        T ll = d.fromstr(q, &err);
-        valid = isValid() && ((*err == 0) || (*err == ';'));
-        if (valid) {
-            if (first == '<' && (*err == 0)) {
-                high = d.nearestDownwd(ll, lower);
-            } else if (first == '>' && (*err == 0)) {
-                low = d.nearestUpward(ll, upper);
-            } else if ((first == '[') || (first == '<')) {
-                if (q != err) {
-                    low = (first == '[') ? ll : d.nearestUpward(ll, upper);
-                }
-                q = err + 1;
-                T hh = d.fromstr(q, &err);
-                bool hasUpperLimit(q != err);
-                if (*err == ';') {
-                    err = const_cast<char *>(_term.end() - 1);
-                }
-                valid = (*err == last) && ((last == ']') || (last == '>'));
-                if (hasUpperLimit) {
-                    high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
-                }
-            } else {
-                low = high = ll;
+    char *err(nullptr);
+    T low(lower);
+    T high(upper);
+    const char * q = _term.c_str();
+    const char first(q[0]);
+    const char last(q[sz-1]);
+    bool isRange = (first == '<') || (first == '>') || (first == '[');
+    q += isRange ? 1 : 0;
+    T ll = d.fromstr(q, &err);
+    bool valid = isValid() && ((*err == 0) || (*err == ';'));
+    if (!valid) return false;
+
+    if (*err == 0) {
+        if (first == '<') {
+            high = d.nearestDownwd(ll, lower);
+        } else if (first == '>') {
+            low = d.nearestUpward(ll, upper);
+        } else {
+            low = high = ll;
+            valid = ! isRange;
+        }
+    } else {
+        if ((first == '[') || (first == '<')) {
+            if (q != err) {
+                low = (first == '[') ? ll : d.nearestUpward(ll, upper);
             }
+            q = err + 1;
+            T hh = d.fromstr(q, &err);
+            bool hasUpperLimit(q != err);
+            if (*err == ';') {
+                err = const_cast<char *>(_term.end() - 1);
+            }
+            valid = (*err == last) && ((last == ']') || (last == '>'));
+            if (hasUpperLimit) {
+                high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
+            }
+        } else {
+            valid = false;
         }
-        if (valid) {
-            lower = low;
-            upper = high;
-        }
+    }
+    if (valid) {
+        lower = low;
+        upper = high;
     }
     return valid;
 }
