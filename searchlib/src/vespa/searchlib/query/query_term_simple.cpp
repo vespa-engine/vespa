@@ -51,7 +51,7 @@ struct FloatDecoder {
         for (;q < qend && isspace(*q); q++);
         std::from_chars_result err = std::from_chars(q, qend, v);
         if (err.ec == std::errc::result_out_of_range) {
-            v = (*q == '-') ? std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
+            v = (*q == '-') ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();
         }
         *end = err.ptr;
         return v;
@@ -84,8 +84,8 @@ QueryTermSimple::getFloatRange() const noexcept
     RangeResult<N> res;
     res.valid = valid;
     if (!valid) {
-        res.low = std::numeric_limits<N>::max();
-        res.high = - std::numeric_limits<N>::max();
+        res.low = std::numeric_limits<N>::infinity();
+        res.high = -std::numeric_limits<N>::infinity();
         res.adjusted = true;
     } else {
         res.low = lowRaw;
@@ -209,15 +209,15 @@ bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const n
 
 bool QueryTermSimple::getAsFloatTerm(double & lower, double & upper) const noexcept
 {
-    lower = - std::numeric_limits<double>::max();
-    upper =   std::numeric_limits<double>::max();
+    lower = -std::numeric_limits<double>::infinity();
+    upper = std::numeric_limits<double>::infinity();
     return getAsNumericTerm(lower, upper, FloatDecoder<double>());
 }
 
 bool QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
 {
-    lower = - std::numeric_limits<float>::max();
-    upper =   std::numeric_limits<float>::max();
+    lower = -std::numeric_limits<float>::infinity();
+    upper = std::numeric_limits<float>::infinity();
     return getAsNumericTerm(lower, upper, FloatDecoder<float>());
 }
 
