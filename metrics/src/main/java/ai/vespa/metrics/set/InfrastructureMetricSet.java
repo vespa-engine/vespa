@@ -116,6 +116,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.THROTTLED_HOST_FAILURES.max());
         addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAIL_THROTTLING.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALED.max());
 
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());
