@@ -156,7 +156,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qt->setFuzzyMaxEditDistance(queryRep.getFuzzyMaxEditDistance());
                 qt->setFuzzyPrefixLength(queryRep.getFuzzyPrefixLength());
             }
-            if (possibleFloat(*qt, ssTerm) && factory.getRewriteFloatTerms() && allowRewrite) {
+            if (possibleFloat(*qt, ssTerm) && factory.getRewriteFloatTerms(ssIndex) && allowRewrite) {
                 auto phrase = std::make_unique<PhraseQueryNode>();
                 auto dotPos = ssTerm.find('.');
                 phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD));
