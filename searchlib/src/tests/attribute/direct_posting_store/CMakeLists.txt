@@ -5,5 +5,6 @@ vespa_add_executable(searchlib_direct_posting_store_test_app TEST
     DEPENDS
     searchlib
     searchlib_test
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_direct_posting_store_test_app COMMAND searchlib_direct_posting_store_test_app)
