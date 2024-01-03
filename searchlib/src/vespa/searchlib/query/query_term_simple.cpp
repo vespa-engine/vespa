@@ -32,7 +32,7 @@ bool isFullRange(vespalib::stringref s) noexcept {
 struct IntDecoder {
     static int64_t fromstr(const char * q, const char * qend, const char ** end) noexcept {
         int64_t v(0);
-        for (;q < qend && isspace(*q); q++);
+        for (;q < qend && (isspace(*q) || (*q == '+')); q++);
         std::from_chars_result err = std::from_chars(q, qend, v, 10);
         if (err.ec == std::errc::result_out_of_range) {
             v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
@@ -48,7 +48,7 @@ template <typename T>
 struct FloatDecoder {
     static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
         T v(0);
-        for (;q < qend && isspace(*q); q++);
+        for (;q < qend && (isspace(*q) || (*q == '+')); q++);
         std::from_chars_result err = std::from_chars(q, qend, v);
         if (err.ec == std::errc::result_out_of_range) {
             v = (*q == '-') ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();

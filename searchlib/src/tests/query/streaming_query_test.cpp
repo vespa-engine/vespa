@@ -52,6 +52,15 @@ TEST(StreamingQueryTest, test_query_language)
         EXPECT_EQ(da, -7);
         EXPECT_EQ(db, -7);
     }
+    {
+        QueryTerm q(factory.create(), "+7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQ(ia, 7);
+        EXPECT_EQ(ib, 7);
+        EXPECT_TRUE(q.getAsFloatTerm(da, db));
+        EXPECT_EQ(da, 7);
+        EXPECT_EQ(db, 7);
+    }
 
     {
         QueryTerm q(factory.create(), "7.5", "index", TermType::WORD);
