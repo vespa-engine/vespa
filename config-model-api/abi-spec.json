@@ -1457,9 +1457,7 @@
     ],
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
-      "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
-      "public void registerModel(java.net.URI)",
       "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public abstract java.util.Map models()",
       "public abstract void setRestartOnDeploy()",

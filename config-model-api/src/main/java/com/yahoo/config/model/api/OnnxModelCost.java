@@ -18,15 +18,7 @@ public interface OnnxModelCost {
 
     interface Calculator {
         long aggregatedModelCostInBytes();
-        // TODO: Unused, remove when 8.263.7 is oldest model in use
-        default void registerModel(ApplicationFile path) {
-            registerModel(path, OnnxModelOptions.empty());
-        }
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
-        // TODO: Unused, remove when 8.263.7 is oldest model in use
-        default void registerModel(URI uri) {
-            registerModel(uri, OnnxModelOptions.empty());
-        }
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
         Map<String, ModelInfo> models();
         void setRestartOnDeploy();
