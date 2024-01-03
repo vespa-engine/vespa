@@ -5,7 +5,7 @@
 #include <cstring>
 
 bool Fast_NormalizeWordFolder::_isInitialized = false;
-std::mutex _initMutex;
+
 bool Fast_NormalizeWordFolder::_doAccentRemoval = false;
 bool Fast_NormalizeWordFolder::_doSharpSSubstitution = false;
 bool Fast_NormalizeWordFolder::_doLigatureSubstitution = false;
@@ -19,12 +19,19 @@ ucs4_t Fast_NormalizeWordFolder::_lowerCaseHighAscii[256];
 ucs4_t Fast_NormalizeWordFolder::_kanaMap[192];
 ucs4_t Fast_NormalizeWordFolder::_halfwidth_fullwidthMap[240];
 
+namespace {
+
+std::mutex G_initMutex;
+Fast_NormalizeWordFolder G_forceWorldFolderInit;
+}
+
+
 void
 Fast_NormalizeWordFolder::Setup(uint32_t flags)
 {
     // Only allow setting these when not initialized or initializing...
     {
-        std::lock_guard<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(G_initMutex);
         _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
         _doSharpSSubstitution    = (DO_SHARP_S_SUBSTITUTION     & flags) != 0;
         _doLigatureSubstitution  = (DO_LIGATURE_SUBSTITUTION    & flags) != 0;
@@ -39,7 +46,7 @@ Fast_NormalizeWordFolder::Initialize()
 {
     unsigned int i;
     if (!_isInitialized) {
-        std::lock_guard<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(G_initMutex);
         if (!_isInitialized) {
 
             for (i = 0; i < 128; i++)

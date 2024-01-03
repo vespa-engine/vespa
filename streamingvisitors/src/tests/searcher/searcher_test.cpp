@@ -21,6 +21,7 @@ using namespace document;
 using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
+using search::streaming::Normalizing;
 using search::streaming::QueryTermList;
 using TermType = QueryTerm::Type;
 using namespace vsm;
@@ -56,11 +57,11 @@ public:
 class Query
 {
 private:
-    void setupQuery(const StringList & terms) {
+    void setupQuery(const StringList & terms, Normalizing normalizing) {
         for (const auto & term : terms) {
             ParsedQueryTerm pqt = parseQueryTerm(term);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
+            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second, normalizing));
         }
         for (const auto & i : qtv) {
             qtl.push_back(i.get());
@@ -72,7 +73,9 @@ public:
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;
-    explicit Query(const StringList & terms);
+
+    explicit Query(const StringList & terms) : Query(terms, Normalizing::LOWERCASE_AND_FOLD) {}
+    Query(const StringList & terms, Normalizing normalizing);
     ~Query();
     static ParsedQueryTerm parseQueryTerm(const std::string & queryTerm) {
         size_t i = queryTerm.find(':');
@@ -94,8 +97,8 @@ public:
     }
 };
 
-Query::Query(const StringList & terms) : eqnr(), qtv(), qtl() {
-    setupQuery(terms);
+Query::Query(const StringList & terms, Normalizing normalizing) : eqnr(), qtv(), qtl() {
+    setupQuery(terms, normalizing);
 }
 Query::~Query() = default;
 
@@ -286,8 +289,8 @@ bool
 assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
     QueryNodeResultFactory eqnr;
-    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD);
-    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD);
+    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD, Normalizing::LOWERCASE_AND_FOLD);
+    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD, Normalizing::LOWERCASE_AND_FOLD);
     const ucs4_t * a;
     size_t alen = qa.term(a);
     const ucs4_t * b;
@@ -308,7 +311,7 @@ assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & f
 std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
-    Query q(query);
+    Query q(query, fs.exact() ? Normalizing::LOWERCASE : Normalizing::LOWERCASE_AND_FOLD);
 
     // prepare field searcher
     test::MockFieldSearcherEnv env;

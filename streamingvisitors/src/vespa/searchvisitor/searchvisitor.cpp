@@ -326,6 +326,22 @@ SearchVisitor::is_text_matching(vespalib::stringref index) const noexcept {
     return false;
 }
 
+SearchMethodInfo::Normalizing
+SearchVisitor::normalizing_mode(vespalib::stringref index) const noexcept {
+    StringFieldIdTMap fieldIdMap;
+    _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
+    size_t num_exact = 0;
+    for (const auto & fieldId : fieldIdMap.map()) {
+        auto found = _fieldSearchSpecMap.specMap().find(fieldId.second);
+        if ((found != _fieldSearchSpecMap.specMap().end()) && found->second.searcher().exact()) {
+            num_exact++;
+        }
+    }
+    return ((num_exact == 0) || (num_exact != fieldIdMap.map().size()))
+        ? Normalizing::LOWERCASE_AND_FOLD
+        : Normalizing::LOWERCASE;
+}
+
 void
 SearchVisitor::init(const Parameters & params)
 {

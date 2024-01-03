@@ -27,6 +27,7 @@ void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weig
     EXPECT_EQ(h.weight(), weight);
 }
 
+
 TEST(StreamingQueryTest, test_query_language)
 {
     QueryNodeResultFactory factory;
@@ -297,7 +298,7 @@ class AllowRewrite : public QueryNodeResultFactory
 {
 public:
     explicit AllowRewrite(vespalib::stringref index) noexcept : _allowedIndex(index) {}
-    bool getRewriteFloatTerms(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
+    bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
 private:
     vespalib::string _allowedIndex;
 };
@@ -905,7 +906,7 @@ TEST(StreamingQueryTest, test_in_term)
 {
     auto term_vector = std::make_unique<StringTermVector>(1);
     term_vector->addTerm("7");
-    search::streaming::InTerm term({}, "index", std::move(term_vector));
+    search::streaming::InTerm term({}, "index", std::move(term_vector), Normalizing::NONE);
     SimpleTermData td;
     td.addField(10);
     td.addField(11);

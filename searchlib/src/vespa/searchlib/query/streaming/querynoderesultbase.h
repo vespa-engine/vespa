@@ -18,10 +18,23 @@ public:
     virtual QueryNodeResultBase * clone() const = 0;
 };
 
+enum class Normalizing {
+    NONE,
+    LOWERCASE,
+    LOWERCASE_AND_FOLD
+};
+
 class QueryNodeResultFactory {
 public:
     virtual ~QueryNodeResultFactory() = default;
-    virtual bool getRewriteFloatTerms(vespalib::stringref index) const noexcept { (void) index; return false; }
+    virtual bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept {
+        (void) index;
+        return false;
+    }
+    virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept {
+        (void) index;
+        return Normalizing::NONE;
+    }
     virtual std::unique_ptr<QueryNodeResultBase> create() const { return {}; }
 };
 }
