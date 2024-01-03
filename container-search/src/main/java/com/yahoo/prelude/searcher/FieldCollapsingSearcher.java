@@ -182,7 +182,8 @@ public class FieldCollapsingSearcher extends Searcher {
             }
 
             // prepending the fieldname is necessary to distinguish between values in the different collapsefields
-            String collapseKey = collapseField + "_" + collapseId;
+            // @ cannot occur in fieldnames
+            String collapseKey = collapseField + "@" + collapseId;
 
             if (knownCollapses.containsKey(collapseKey)) {
                 int numHitsThisField = knownCollapses.get(collapseKey);
