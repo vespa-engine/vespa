@@ -79,7 +79,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static OnnxModelCost onnxModelCost(long estimatedCost, long hash) {
-        return (appPkg, applicationId) -> new OnnxModelCost.Calculator() {
+        return (appPkg, applicationId, clusterId) -> new OnnxModelCost.Calculator() {
 
             private final Map<String, OnnxModelCost.ModelInfo> models = new HashMap<>();
             private boolean restartOnDeploy = false;

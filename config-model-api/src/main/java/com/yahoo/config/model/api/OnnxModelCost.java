@@ -4,6 +4,7 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.net.URI;
 import java.util.Map;
@@ -14,7 +15,11 @@ import java.util.Optional;
  */
 public interface OnnxModelCost {
 
-    Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
+    // TODO: Remove when no longer in use (oldest model version is 8.283)
+    default Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) {
+        return newCalculator(appPkg, applicationId, null);
+    }
+    Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId);
 
     interface Calculator {
         long aggregatedModelCostInBytes();
@@ -41,7 +46,7 @@ public interface OnnxModelCost {
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
     class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
-        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
         @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
