@@ -4,8 +4,6 @@ ai.djl.huggingface:tokenizers:${huggingface.vespa.version}
 ai.djl:api:${huggingface.vespa.version}
 aopalliance:aopalliance:${aopalliance.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
-ch.qos.logback:logback-classic:1.2.10
-ch.qos.logback:logback-core:1.2.10
 classworlds:classworlds:1.1-alpha-2
 com.amazonaws:aws-java-sdk-core:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-kms:${aws-sdk.vespa.version}
@@ -24,7 +22,7 @@ com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.github.spotbugs:spotbugs-annotations:${spotbugs.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
-com.google.guava:failureaccess:1.0.1
+com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
 com.google.inject:guice:${guice.vespa.version}
 com.google.j2objc:j2objc-annotations:2.8
@@ -138,7 +136,7 @@ org.codehaus.plexus:plexus-archiver:4.8.0
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
-org.codehaus.plexus:plexus-interpolation:1.26
+org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
 org.codehaus.plexus:plexus-utils:${maven-shade-plugin.vespa.version}
 org.eclipse.angus:angus-activation:${jakarta.inject.vespa.version}

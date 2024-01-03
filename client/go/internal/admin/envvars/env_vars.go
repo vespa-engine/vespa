@@ -22,6 +22,7 @@ const (
 	MALLOC_ARENA_MAX                       = "MALLOC_ARENA_MAX"
 	NO_VESPAMALLOC_LIST                    = "NO_VESPAMALLOC_LIST"
 	NUM_PROCESSES_LIMIT                    = "num_processes_limit"
+	OPENBLAS_CORETYPE                      = "OPENBLAS_CORETYPE"
 	PATH                                   = "PATH"
 	PRELOAD                                = "PRELOAD"
 	ROOT                                   = "ROOT"

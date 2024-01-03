@@ -28,7 +28,8 @@ namespace vsm {
 
 namespace {
 
-void setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
+void
+setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
     if (arg1 == "prefix") {
         searcher->setMatchType(FieldSearcher::PREFIX);
     } else if (arg1 == "substring") {
@@ -44,14 +45,14 @@ void setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
 
 }
 
-FieldSearchSpec::FieldSearchSpec() :
-    _id(0),
-    _name(),
-    _maxLength(0x100000),
-    _searcher(),
-    _searchMethod(VsmfieldsConfig::Fieldspec::Searchmethod::NONE),
-    _arg1(),
-    _reconfigured(false)
+FieldSearchSpec::FieldSearchSpec()
+    : _id(0),
+      _name(),
+      _maxLength(0x100000),
+      _searcher(),
+      _searchMethod(VsmfieldsConfig::Fieldspec::Searchmethod::NONE),
+      _arg1(),
+      _reconfigured(false)
 {
 }
 FieldSearchSpec::~FieldSearchSpec() = default;
@@ -150,7 +151,8 @@ FieldSearchSpec::reconfig(const QueryTerm & term)
     }
 }
 
-vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpec & f)
+vespalib::asciistream &
+operator <<(vespalib::asciistream & os, const FieldSearchSpec & f)
 {
     os << f._id << ' ' << f._name << ' ';
     if ( ! f._searcher) {
@@ -171,7 +173,8 @@ namespace {
     const std::regex _G_array("\\[[0-9]+\\]");
 }
 
-vespalib::string FieldSearchSpecMap::stripNonFields(const vespalib::string & rawIndex)
+vespalib::string
+FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
 {
     if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
         std::string index = std::regex_replace(std::string(rawIndex), _G_map1, _G_value);
@@ -182,44 +185,48 @@ vespalib::string FieldSearchSpecMap::stripNonFields(const vespalib::string & raw
     return rawIndex;
 }
 
-bool FieldSearchSpecMap::buildFieldsInQuery(const Query & query, StringFieldIdTMap & fieldsInQuery) const
+void
+FieldSearchSpecMap::addFieldsFromIndex(vespalib::stringref rawIndex, StringFieldIdTMap & fieldIdMap) const {
+    for (const auto & dtm : documentTypeMap()) {
+        const IndexFieldMapT & fim = dtm.second;
+        vespalib::string index(stripNonFields(rawIndex));
+        auto fIt = fim.find(index);
+        if (fIt != fim.end()) {
+            for(FieldIdT fid : fIt->second) {
+                const FieldSearchSpec & spec = specMap().find(fid)->second;
+                LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", rawIndex.data(), index.c_str());
+                if ((rawIndex != index) && (spec.name().find(index) == 0)) {
+                    vespalib::string modIndex(rawIndex);
+                    modIndex.append(spec.name().substr(index.size()));
+                    fieldIdMap.add(modIndex, spec.id());
+                } else {
+                    fieldIdMap.add(spec.name(),spec.id());
+                }
+            }
+        } else {
+            LOG(warning, "No valid indexes registered for index %s", rawIndex.data());
+        }
+    }
+}
+
+StringFieldIdTMap
+FieldSearchSpecMap::buildFieldsInQuery(const Query & query) const
 {
-    bool retval(true);
+    StringFieldIdTMap fieldsInQuery;
     ConstQueryTermList qtl;
     query.getLeaves(qtl);
 
     for (const auto & term : qtl) {
-        for (const auto & dtm : documentTypeMap()) {
-            const IndexFieldMapT & fim = dtm.second;
-            vespalib::string rawIndex(term->index());
-            vespalib::string index(stripNonFields(rawIndex));
-            auto fIt = fim.find(index);
-            if (fIt != fim.end()) {
-                for(FieldIdT fid : fIt->second) {
-                    const FieldSearchSpec & spec = specMap().find(fid)->second;
-                    LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", rawIndex.c_str(), index.c_str());
-                    if ((rawIndex != index) && (spec.name().find(index) == 0)) {
-                        vespalib::string modIndex(rawIndex);
-                        modIndex.append(spec.name().substr(index.size()));
-                        fieldsInQuery.add(modIndex, spec.id());
-                    } else {
-                        fieldsInQuery.add(spec.name(),spec.id());
-                    }
-                }
-            } else {
-                LOG(warning, "No valid indexes registered for index %s", term->index().c_str());
-                retval = false;
-            }
-        }
+        addFieldsFromIndex(term->index(), fieldsInQuery);
     }
-    return retval;
+    return fieldsInQuery;
 }
 
-void FieldSearchSpecMap::buildFromConfig(const std::vector<vespalib::string> & otherFieldsNeeded)
+void
+FieldSearchSpecMap::buildFromConfig(const std::vector<vespalib::string> & otherFieldsNeeded)
 {
-    for(size_t i(0), m(otherFieldsNeeded.size()); i < m; i++) {
-        LOG(debug, "otherFieldsNeeded[%zd] = '%s'", i, otherFieldsNeeded[i].c_str());
-        _nameIdMap.add(otherFieldsNeeded[i]);
+    for (const auto & i : otherFieldsNeeded) {
+        _nameIdMap.add(i);
     }
 }
 
@@ -253,7 +260,8 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
 
 }
 
-bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
+bool
+FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
 {
     bool retval(true);
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
@@ -297,12 +305,14 @@ FieldSearchSpecMap::reconfigFromQuery(const Query & query)
     }
 }
 
-bool lesserField(const FieldSearcherContainer & a, const FieldSearcherContainer & b)
+bool
+lesserField(const FieldSearcherContainer & a, const FieldSearcherContainer & b)
 {
     return a->field() < b->field();
 }
 
-void FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap)
+void
+FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap) const
 {
     fieldSearcherMap.clear();
     for (const auto & entry : fieldsInQuery) {
@@ -331,7 +341,8 @@ FieldSearchSpecMap::get_distance_metric(const vespalib::string& name) const
     return vsm::NearestNeighborFieldSearcher::distance_metric_from_string(itr->second.get_arg1());
 }
 
-vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & df)
+vespalib::asciistream &
+operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & df)
 {
     os << "DocumentTypeMap = \n";
     for (const auto & dtm : df.documentTypeMap()) {

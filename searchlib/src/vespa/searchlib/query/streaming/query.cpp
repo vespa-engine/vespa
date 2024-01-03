@@ -12,7 +12,7 @@ QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "Operator", _opName);
 }
 
-QueryConnector::QueryConnector(const char * opName)
+QueryConnector::QueryConnector(const char * opName) noexcept
     : QueryNode(),
       _opName(opName),
       _index(),
@@ -31,7 +31,7 @@ const HitList &
 QueryConnector::evaluateHits(HitList & hl) const
 {
     if (evaluate()) {
-        hl.push_back(Hit(1, 0, 0, 1));
+        hl.emplace_back(1, 0, 0, 1);
     }
     return hl;
 }
@@ -105,10 +105,10 @@ QueryConnector::create(ParseItem::ItemType type)
 {
     switch (type) {
         case search::ParseItem::ITEM_AND:          return std::make_unique<AndQueryNode>();
-        case search::ParseItem::ITEM_OR:           return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
+        case search::ParseItem::ITEM_WEIGHTED_SET:
         case search::ParseItem::ITEM_EQUIV:        return std::make_unique<EquivQueryNode>();
-        case search::ParseItem::ITEM_WEIGHTED_SET: return std::make_unique<EquivQueryNode>();
         case search::ParseItem::ITEM_WAND:         return std::make_unique<OrQueryNode>();
         case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
         case search::ParseItem::ITEM_PHRASE:       return std::make_unique<PhraseQueryNode>();
@@ -340,7 +340,7 @@ Query::Query(const QueryNodeResultFactory & factory, vespalib::stringref queryRe
 
 bool
 Query::evaluate() const {
-    return valid() ? _root->evaluate() : false;
+    return valid() && _root->evaluate();
 }
 
 bool

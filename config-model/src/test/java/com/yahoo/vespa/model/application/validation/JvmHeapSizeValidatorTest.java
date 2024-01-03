@@ -126,14 +126,7 @@ class JvmHeapSizeValidatorTest {
         @Override public boolean restartOnDeploy() { return false;}
         @Override public void store() {}
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
-        @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-
-        @Override
-        public void registerModel(URI uri) {
-            assertEquals("https://my/url/model.onnx", uri.toString());
-            totalCost.addAndGet(modelCost);
-        }
 
         @Override
         public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {

@@ -160,7 +160,7 @@ public class ErrorMessage implements Cloneable {
             message = getMessage(t);
             if (message == null) continue;
             if (lastMessage != null && lastMessage.equals(message)) continue;
-            if (b.length() > 0)
+            if (!b.isEmpty())
                 b.append(": ");
             b.append(message);
         }
@@ -191,9 +191,7 @@ public class ErrorMessage implements Cloneable {
      */
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ErrorMessage)) return false;
-
-        ErrorMessage other = (ErrorMessage) o;
+        if (!(o instanceof ErrorMessage other)) return false;
 
         if (this.code != other.code) return false;
 

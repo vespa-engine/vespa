@@ -29,6 +29,14 @@ public class ResourcesReductionValidatorTest {
     private final ValidationTester tester = new ValidationTester(provisioner);
 
     @Test
+    void ok_when_reduction_by_over_50_percent_in_hosted_dev() {
+        var fromResources = new NodeResources(8, 64, 800, 1);
+        var toResources = new NodeResources(8, 16, 800, 1);
+        VespaModel previous = tester.deploy(null, contentServices(6, fromResources), Environment.dev, null, CONTAINER_CLUSTER).getFirst();
+        tester.deploy(previous, contentServices(6, toResources), Environment.dev, null, CONTAINER_CLUSTER);
+    }
+
+    @Test
     void fail_when_reduction_by_over_50_percent() {
         var fromResources = new NodeResources(8, 64, 800, 1);
         var toResources = new NodeResources(8, 16, 800, 1);

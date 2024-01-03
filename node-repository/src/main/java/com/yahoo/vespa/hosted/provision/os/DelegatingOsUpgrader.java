@@ -35,7 +35,7 @@ public class DelegatingOsUpgrader extends OsUpgrader {
                                              // This upgrader cannot downgrade nodes. We therefore consider only nodes
                                              // on a lower version than the target
                                              .osVersionIsBefore(target.version())
-                                             .matching(node -> canUpgradeAt(now, node))
+                                             .matching(node -> canUpgradeTo(target.version(), now, node))
                                              .byIncreasingOsVersion()
                                              .first(upgradeSlots(target, activeNodes));
         if (nodesToUpgrade.size() == 0) return;

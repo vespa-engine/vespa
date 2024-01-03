@@ -106,9 +106,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
-        @ModelFeatureFlag(owners = {"arnej, bjorncs"}, removeAfter = "8.262") default boolean enableGlobalPhase() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.261") default boolean enableNestedMultivalueGrouping() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }

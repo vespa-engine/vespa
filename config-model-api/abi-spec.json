@@ -771,7 +771,9 @@
     "attributes" : [
       "public"
     ],
-    "methods" : [ ],
+    "methods" : [
+      "public java.util.Map messagesById()"
+    ],
     "fields" : [ ]
   },
   "com.yahoo.config.application.api.ValidationOverrides" : {
@@ -1278,9 +1280,7 @@
       "public java.util.List ignoredHttpUserAgents()",
       "public boolean enableProxyProtocolMixedMode()",
       "public java.lang.String logFileCompressionAlgorithm(java.lang.String)",
-      "public boolean enableGlobalPhase()",
       "public java.lang.String summaryDecodePolicy()",
-      "public boolean enableNestedMultivalueGrouping()",
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
       "public java.lang.String unknownConfigDefinition()",
@@ -1457,9 +1457,7 @@
     ],
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
-      "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
-      "public abstract void registerModel(java.net.URI)",
       "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public abstract java.util.Map models()",
       "public abstract void setRestartOnDeploy()",
@@ -1481,9 +1479,7 @@
       "public void <init>()",
       "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
       "public long aggregatedModelCostInBytes()",
-      "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
-      "public void registerModel(java.net.URI)",
       "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public java.util.Map models()",
       "public void setRestartOnDeploy()",
@@ -1501,7 +1497,9 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(java.lang.String, long, long, com.yahoo.config.model.api.OnnxModelOptions)",
       "public void <init>(java.lang.String, long, long, java.util.Optional)",
+      "public com.yahoo.config.model.api.OnnxModelOptions options()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",

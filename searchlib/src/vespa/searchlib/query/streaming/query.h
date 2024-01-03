@@ -13,8 +13,8 @@ namespace search::streaming {
 class QueryConnector : public QueryNode
 {
 public:
-    QueryConnector(const char * opName);
-    ~QueryConnector();
+    explicit QueryConnector(const char * opName) noexcept;
+    ~QueryConnector() override;
     const HitList & evaluateHits(HitList & hl) const override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
@@ -44,7 +44,7 @@ private:
 class TrueNode : public QueryConnector
 {
 public:
-    TrueNode() : QueryConnector("AND") { }
+    TrueNode() noexcept : QueryConnector("AND") { }
     bool evaluate() const override;
 };
 
@@ -52,7 +52,7 @@ public:
 class FalseNode : public QueryConnector
 {
 public:
-    FalseNode() : QueryConnector("AND") { }
+    FalseNode() noexcept : QueryConnector("AND") { }
     bool evaluate() const override;
 };
 
@@ -62,8 +62,8 @@ public:
 class AndQueryNode : public QueryConnector
 {
 public:
-    AndQueryNode() : QueryConnector("AND") { }
-    AndQueryNode(const char * opName) : QueryConnector(opName) { }
+    AndQueryNode() noexcept : QueryConnector("AND") { }
+    explicit AndQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
 };
@@ -74,7 +74,7 @@ public:
 class AndNotQueryNode : public QueryConnector
 {
 public:
-    AndNotQueryNode() : QueryConnector("ANDNOT") { }
+    AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
 };
@@ -85,8 +85,8 @@ public:
 class OrQueryNode : public QueryConnector
 {
 public:
-    OrQueryNode() : QueryConnector("OR") { }
-    OrQueryNode(const char * opName) : QueryConnector(opName) { }
+    OrQueryNode() noexcept : QueryConnector("OR") { }
+    explicit OrQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_OR) ||
@@ -102,7 +102,7 @@ public:
 class EquivQueryNode : public OrQueryNode
 {
 public:
-    EquivQueryNode() : OrQueryNode("EQUIV") { }
+    EquivQueryNode() noexcept : OrQueryNode("EQUIV") { }
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_EQUIV) ||
@@ -117,7 +117,7 @@ public:
 class PhraseQueryNode : public AndQueryNode
 {
 public:
-    PhraseQueryNode() : AndQueryNode("PHRASE"), _fieldInfo(32) { }
+    PhraseQueryNode() noexcept : AndQueryNode("PHRASE"), _fieldInfo(32) { }
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
     void getPhrases(QueryNodeRefList & tl) override;
@@ -138,7 +138,7 @@ private:
 class SameElementQueryNode : public AndQueryNode
 {
 public:
-    SameElementQueryNode() : AndQueryNode("SAME_ELEMENT") { }
+    SameElementQueryNode() noexcept : AndQueryNode("SAME_ELEMENT") { }
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
@@ -151,8 +151,8 @@ public:
 class NearQueryNode : public AndQueryNode
 {
 public:
-    NearQueryNode() : AndQueryNode("NEAR"), _distance(0) { }
-    NearQueryNode(const char * opName) : AndQueryNode(opName), _distance(0) { }
+    NearQueryNode() noexcept : AndQueryNode("NEAR"), _distance(0) { }
+    explicit NearQueryNode(const char * opName) noexcept : AndQueryNode(opName), _distance(0) { }
     bool evaluate() const override;
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
@@ -169,8 +169,7 @@ private:
 class ONearQueryNode : public NearQueryNode
 {
 public:
-    ONearQueryNode() : NearQueryNode("ONEAR") { }
-    ~ONearQueryNode() { }
+    ONearQueryNode() noexcept : NearQueryNode("ONEAR") { }
     bool evaluate() const override;
 };
 
