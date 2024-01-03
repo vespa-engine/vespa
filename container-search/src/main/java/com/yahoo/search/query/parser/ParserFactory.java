@@ -27,30 +27,18 @@ public final class ParserFactory {
      */
     @SuppressWarnings("deprecation")
     public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
-        switch (type) {
-            case ALL:
-                return new AllParser(environment, false);
-            case ANY:
-                return new AnyParser(environment);
-            case PHRASE:
-                return new PhraseParser(environment);
-            case ADVANCED:
-                return new AdvancedParser(environment);
-            case WEB:
-                return new WebParser(environment);
-            case PROGRAMMATIC:
-                return new ProgrammaticParser();
-            case YQL:
-                return new YqlParser(environment);
-            case SELECT:
-                return new SelectParser(environment);
-            case WEAKAND:
-                return new AllParser(environment, true);
-            case TOKENIZE:
-                return new TokenizeParser(environment);
-            default:
-                throw new UnsupportedOperationException(type.toString());
-        }
+        return switch (type) {
+            case ALL -> new AllParser(environment, false);
+            case ANY -> new AnyParser(environment);
+            case PHRASE -> new PhraseParser(environment);
+            case ADVANCED -> new AdvancedParser(environment);
+            case WEB -> new WebParser(environment);
+            case PROGRAMMATIC -> new ProgrammaticParser();
+            case YQL -> new YqlParser(environment);
+            case SELECT -> new SelectParser(environment);
+            case WEAKAND -> new AllParser(environment, true);
+            case TOKENIZE -> new TokenizeParser(environment);
+        };
     }
 
 }

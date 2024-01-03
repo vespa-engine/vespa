@@ -599,9 +599,9 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
      * per field, not per index)
      */
     public void setRankType(RankType rankType) {
-        this.rankType=rankType;
+        this.rankType = rankType;
         for (Index index : getIndices().values()) {
-            if (index.getRankType()==null)
+            if (index.getRankType() == null)
                 index.setRankType(rankType);
         }
 
