@@ -656,7 +656,8 @@ public class HttpServerTest {
                                                                                       statisticsCollector) {
         List<ResponseMetricAggregator.StatisticsEntry> entries = Collections.emptyList();
         int tries = 0;
-        while (entries.isEmpty() && tries < 10000) {
+        // Wait up to 30 seconds before giving up
+        while (entries.isEmpty() && tries < 300) {
             entries = statisticsCollector.takeStatistics();
             if (entries.isEmpty())
                 try {Thread.sleep(100); } catch (InterruptedException e) {}
