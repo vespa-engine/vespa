@@ -76,17 +76,13 @@ public:
      * Adds a [field name, field id] entry to the given mapping for each field name used in the given query.
      * This is achieved by mapping from query term index name -> list of field ids -> [field name, field id] pairs.
      **/
-    bool buildFieldsInQuery(const search::streaming::Query & query, StringFieldIdTMap & fieldsInQuery) const;
-
-    /**
-     * Adds a [field name, field id] entry to the given mapping for each field name in the given vector.
-     **/
-    void buildFieldsInQuery(const std::vector<vespalib::string> & otherFieldsNeeded, StringFieldIdTMap & fieldsInQuery) const;
+    StringFieldIdTMap buildFieldsInQuery(const search::streaming::Query & query) const;
+    void addFieldsFromIndex(vespalib::stringref index, StringFieldIdTMap & fieldIdMap) const;
 
     /**
      * Adds a FieldSearcher object to the given field searcher map for each field name in the other map.
      **/
-    void buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap);
+    void buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap) const;
 
     const FieldSearchSpecMapT & specMap()                 const { return _specMap; }
     //const IndexFieldMapT & indexMap()                     const { return _documentTypeMap.begin()->second; }
@@ -94,7 +90,7 @@ public:
     const StringFieldIdTMap & nameIdMap()                 const { return _nameIdMap; }
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & f);
 
-    static vespalib::string stripNonFields(const vespalib::string & rawIndex);
+    static vespalib::string stripNonFields(vespalib::stringref rawIndex);
     search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
 
 private:
