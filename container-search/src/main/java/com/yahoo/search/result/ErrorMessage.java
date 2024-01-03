@@ -163,6 +163,14 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
         return new ErrorMessage(INTERNAL_SERVER_ERROR.code, "Internal server error.", detailedMessage);
     }
 
+    /**
+     * Creates an error analog to HTTP internal server error. If this error is present, a
+     * HTTP layer will return 500.
+     */
+    public static ErrorMessage createInternalServerError(String detailedMessage, Throwable cause) {
+        return new ErrorMessage(INTERNAL_SERVER_ERROR.code, "Internal server error.", detailedMessage, cause);
+    }
+
     /** Wraps an error message received in a SearchReply packet */
     public static ErrorMessage createSearchReplyError(String detailedMessage) {
         return new ErrorMessage(RESULT_HAS_ERRORS.code, "Error in search reply.", detailedMessage);
