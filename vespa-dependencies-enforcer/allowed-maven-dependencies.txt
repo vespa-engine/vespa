@@ -4,8 +4,6 @@ ai.djl.huggingface:tokenizers:${huggingface.vespa.version}
 ai.djl:api:${huggingface.vespa.version}
 aopalliance:aopalliance:${aopalliance.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
-ch.qos.logback:logback-classic:${logback.vespa.version}
-ch.qos.logback:logback-core:${logback.vespa.version}
 classworlds:classworlds:1.1-alpha-2
 com.amazonaws:aws-java-sdk-core:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-kms:${aws-sdk.vespa.version}

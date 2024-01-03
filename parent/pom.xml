@@ -460,16 +460,6 @@
                 <version>${huggingface.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${aws-sdk.vespa.version}</version>
@@ -504,6 +494,14 @@
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.client.vespa.version}</version>
                 <exclusions>
+                    <!--
+                      Container provides wiring for all common log libraries
+                      Duplicate embedding results in various warnings being printed to stderr
+                     -->
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
