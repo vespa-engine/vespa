@@ -289,7 +289,7 @@ public class Flags {
 
     public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
             "tls-capabilities-enforcement-mode", "disable",
-            List.of("bjorncs", "vekterli"), "2022-07-21", "2024-01-01",
+            List.of("bjorncs", "vekterli"), "2022-07-21", "2024-04-01",
             "Configure Vespa TLS capability enforcement mode",
             "Takes effect on restart of Docker container",
             INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
