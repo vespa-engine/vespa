@@ -270,7 +270,12 @@ public class ClusterSearcher extends Searcher {
             Result result = task.get();
             mergedResult.mergeWith(result);
             mergedResult.hits().addAll(result.hits().asUnorderedHits());
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (ExecutionException e) {
+            mergedResult.hits().addError(ErrorMessage.createInternalServerError("Failed querying '" +
+                                                                                query.getModel().getRestrict() + "': " +
+                                                                                Exceptions.toMessageString(e),
+                                                                                e));
+        } catch (InterruptedException e) {
             mergedResult.hits().addError(ErrorMessage.createInternalServerError("Failed querying '" +
                                                                                 query.getModel().getRestrict() + "': " +
                                                                                 Exceptions.toMessageString(e)));
