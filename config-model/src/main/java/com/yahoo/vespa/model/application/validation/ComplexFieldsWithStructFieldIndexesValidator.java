@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.ImmutableSDField;
-import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,21 +21,21 @@ import java.util.stream.Collectors;
  *
  * @author geirst
  */
-public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
+public class ComplexFieldsWithStructFieldIndexesValidator extends Validator {
 
     @Override
-    public void validate(Context context) {
-        for (var cluster : context.model().getSearchClusters()) {
+    public void validate(VespaModel model, DeployState deployState) {
+        for (var cluster : model.getSearchClusters()) {
             if (cluster.isStreaming()) {
                 continue;
             }
             for (var spec : cluster.schemas().values()) {
-                validateComplexFields(context, cluster.getClusterName(), spec.fullSchema());
+                validateComplexFields(cluster.getClusterName(), spec.fullSchema(), deployState.getDeployLogger());
             }
         }
     }
 
-    private static void validateComplexFields(Context context, String clusterName, Schema schema) {
+    private static void validateComplexFields(String clusterName, Schema schema, DeployLogger logger) {
         String unsupportedFields = schema.allFields()
                 .filter(field -> hasStructFieldsWithIndex(field))
                 .map(ComplexFieldsWithStructFieldIndexesValidator::toString)
@@ -41,8 +43,7 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
 
         if (!unsupportedFields.isEmpty()) {
             // TODO (Vespa 9 or before): Change back to an exception when no applications are using it wrong.
-            context.deployState().getDeployLogger().logApplicationPackage(
-                    Level.WARNING,
+            logger.logApplicationPackage(Level.WARNING,
                     String.format("For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
                                   "Remove setting or change to 'indexing: attribute' if needed for matching.",
                                   clusterName, schema.getName(), unsupportedFields));

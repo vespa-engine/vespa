@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.application.validation.AbstractBundleValidator.JarContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,7 +13,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -32,11 +29,7 @@ public class PublicApiBundleValidatorTest {
         var jarFile = BundleValidatorTest.createTemporaryJarFile(tempDir, "non-public-api");
 
         var validator = new PublicApiBundleValidator();
-        validator.validateJarFile(new JarContext() {
-            @Override public void illegal(String error) { fail(); }
-            @Override public void illegal(String error, Throwable cause) { fail(); }
-            @Override public DeployState deployState() { return deployState; }
-        }, jarFile);
+        validator.validateJarFile(deployState, jarFile);
 
         String output = outputBuf.toString();
         assertThat(output, containsString("uses non-public Vespa APIs: ["));

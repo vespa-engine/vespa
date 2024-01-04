@@ -2,8 +2,9 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.util.logging.Logger;
 
@@ -12,19 +13,18 @@ import java.util.logging.Logger;
  *
  * @author mortent
  */
-public class InfrastructureDeploymentValidator implements Validator {
+public class InfrastructureDeploymentValidator extends Validator {
 
     private static final Logger log = Logger.getLogger(InfrastructureDeploymentValidator.class.getName());
 
     @Override
-    public void validate(Context context) {
+    public void validate(VespaModel model, DeployState deployState) {
         // Allow the internally defined tenant owning all infrastructure applications
-        if (TenantName.from("hosted-vespa").equals(context.model().applicationPackage().getApplicationId().tenant())) return;
-        ConfigModelContext.ApplicationType applicationType = context.model().getAdmin().getApplicationType();
+        if (ApplicationId.global().tenant().equals(model.applicationPackage().getApplicationId().tenant())) return;
+        ConfigModelContext.ApplicationType applicationType = model.getAdmin().getApplicationType();
         if (applicationType != ConfigModelContext.ApplicationType.DEFAULT) {
-            log.warning("Tenant %s is not allowed to use application type %s".formatted(context.model().applicationPackage().getApplicationId().toFullString(), applicationType));
-            context.illegal("Tenant is not allowed to override application type");
+            log.warning("Tenant %s is not allowed to use application type %s".formatted(model.applicationPackage().getApplicationId().toFullString(), applicationType));
+            throw new IllegalArgumentException("Tenant is not allowed to override application type");
         }
     }
-
 }

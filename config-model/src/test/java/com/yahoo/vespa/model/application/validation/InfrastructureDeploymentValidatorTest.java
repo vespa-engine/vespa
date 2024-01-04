@@ -43,7 +43,6 @@ public class InfrastructureDeploymentValidatorTest {
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         var validator = new InfrastructureDeploymentValidator();
-        ValidationTester.validate(validator, model, deployState);
+        validator.validate(model, deployState);
     }
-
 }

@@ -293,8 +293,7 @@ public class SessionPreparer {
                     (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Jj][Aa][Rr]"))) {
                         paths.forEach(jarPath -> {
                             try {
-                                new BundleValidator().getPomXmlContent((msg, cause) -> { throw new IllegalArgumentException(msg, cause); },
-                                                                       logger, new JarFile(jarPath.toFile())).ifPresent(pom -> {
+                                new BundleValidator().getPomXmlContent(logger, new JarFile(jarPath.toFile())).ifPresent(pom -> {
                                     try {
                                         new ValidationProcessor().process(pom);
                                     }

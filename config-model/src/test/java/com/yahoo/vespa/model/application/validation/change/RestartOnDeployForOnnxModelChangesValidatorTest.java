@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +71,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
-        return ValidationTester.validateChanges(new RestartOnDeployForOnnxModelChangesValidator(), next, deployStateBuilder().previousModel(current).build());
+        return new RestartOnDeployForOnnxModelChangesValidator().validate(current, next, deployStateBuilder().build());
     }
 
     private static OnnxModelCost onnxModelCost() {

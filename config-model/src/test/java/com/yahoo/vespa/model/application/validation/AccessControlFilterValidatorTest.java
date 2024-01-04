@@ -39,7 +39,7 @@ public class AccessControlFilterValidatorTest {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         try {
-            ValidationTester.validate(new AccessControlFilterValidator(), model, deployState);
+            new AccessControlFilterValidator().validate(model, deployState);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("The 'access-control' feature is not available in open-source Vespa.", e.getMessage());
@@ -53,7 +53,7 @@ public class AccessControlFilterValidatorTest {
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),
                 deployState);
 
-        ValidationTester.validate(new AccessControlFilterValidator(), model, deployState);
+        new AccessControlFilterValidator().validate(model, deployState);
     }
 
     private static DeployState createDeployState() {
@@ -61,5 +61,4 @@ public class AccessControlFilterValidatorTest {
                 .applicationPackage(new MockApplicationPackage.Builder().withServices(SERVICES_XML).build())
                 .build();
     }
-
 }

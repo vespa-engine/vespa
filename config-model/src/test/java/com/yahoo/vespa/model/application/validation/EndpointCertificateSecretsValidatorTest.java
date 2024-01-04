@@ -48,7 +48,7 @@ public class EndpointCertificateSecretsValidatorTest {
             DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.missing(1)));
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-            ValidationTester.validate(new EndpointCertificateSecretsValidator(), model, deployState);
+            new EndpointCertificateSecretsValidator().validate(model, deployState);
         });
         assertTrue(exception.getMessage().contains("TLS enabled, but could not yet retrieve certificate version 1 for application default:default:default"));
     }
@@ -58,7 +58,7 @@ public class EndpointCertificateSecretsValidatorTest {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(new EndpointCertificateSecrets("cert", "key")));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        ValidationTester.validate(new EndpointCertificateSecretsValidator(), model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
     }
 
     @Test
@@ -66,7 +66,7 @@ public class EndpointCertificateSecretsValidatorTest {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.empty());
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        ValidationTester.validate(new EndpointCertificateSecretsValidator(), model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
     }
 
     private static DeployState deployState(String servicesXml, String deploymentXml, Optional<EndpointCertificateSecrets> endpointCertificateSecretsSecrets) {

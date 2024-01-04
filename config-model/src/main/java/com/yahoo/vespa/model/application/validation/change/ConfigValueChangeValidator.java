@@ -5,17 +5,17 @@ import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.Service;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -32,13 +32,13 @@ public class ConfigValueChangeValidator implements ChangeValidator {
 
     /** Inspects the configuration in the new and old Vespa model to determine which services that require restart */
     @Override
-    public void validate(ChangeContext context) {
-        findConfigChangesFromModels(context.previousModel(), context.model(), context.deployState().getDeployLogger()).forEach(context::require);
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        return findConfigChangesFromModels(currentModel, nextModel, deployState.getDeployLogger()).toList();
     }
 
-    Stream<ConfigChangeAction> findConfigChangesFromModels(AbstractConfigProducerRoot currentModel,
-                                                           AbstractConfigProducerRoot nextModel,
-                                                           DeployLogger logger) {
+    public Stream<ConfigChangeAction> findConfigChangesFromModels(AbstractConfigProducerRoot currentModel,
+                                                                  AbstractConfigProducerRoot nextModel,
+                                                                  DeployLogger logger) {
         return nextModel.getDescendantServices().stream()
                 .map(service -> findConfigChangeActionForService(service, currentModel, nextModel, logger))
                 .filter(Optional::isPresent)
@@ -136,8 +136,8 @@ public class ConfigValueChangeValidator implements ChangeValidator {
         return Optional.of(ReflectionUtil.getChangesRequiringRestart(currentConfig.get(), nextConfig.get()));
     }
 
-    private static boolean hasConfigFieldsFlaggedWithRestart(Class<? extends ConfigInstance> configClass,
-                                                             Class<? extends Service> serviceClass) {
+    private static boolean hasConfigFieldsFlaggedWithRestart(
+            Class<? extends ConfigInstance> configClass, Class<? extends Service> serviceClass) {
         if (!ReflectionUtil.hasRestartMethods(configClass)) {
             throw new IllegalStateException(String.format(
                     "%s is listed as restart config for %s but does not contain any restart inspection methods.",

@@ -41,22 +41,22 @@ public class CertificateRemovalChangeValidatorTest {
         CertificateRemovalChangeValidator validator = new CertificateRemovalChangeValidator();
 
         // Adding certs -> ok
-        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, c3), (id, msg) -> ValidationOverrides.empty.invalid(id, msg, now));
+        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, c3), new DeployState.Builder().now(now).build());
 
         // Removing certs -> fails
         assertThrows(ValidationOverrides.ValidationException.class,
                      () ->validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3),
-                                                    (id, msg) -> ValidationOverrides.empty.invalid(id, msg, now)));
+                                                    new DeployState.Builder().now(now).build()));
 
         // Removing certs with validationoverrides -> ok
         validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3),
-                                  (id, msg) -> ValidationOverrides.fromXml(validationOverrides).invalid(id, msg, now));
+                                  new DeployState.Builder().now(now).validationOverrides(ValidationOverrides.fromXml(validationOverrides)).build());
 
         // Adding and removing internal certs are ok:
         validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, internal),
-                                  (id, msg) -> ValidationOverrides.empty.invalid(id, msg, now));
+                                  new DeployState.Builder().build());
         validator.validateClients("clusterId", List.of(c1, c2, internal), List.of(c1, c2),
-                                  (id, msg) -> ValidationOverrides.empty.invalid(id, msg, now));
+                                  new DeployState.Builder().now(now).build());
     }
 
     static X509Certificate certificate(String cn) {

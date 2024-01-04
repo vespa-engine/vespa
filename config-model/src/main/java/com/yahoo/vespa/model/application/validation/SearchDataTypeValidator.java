@@ -1,20 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
-import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.List;
@@ -25,11 +26,11 @@ import java.util.List;
  *
  * @author Simon Thoresen Hult
  */
-public class SearchDataTypeValidator implements Validator {
+public class SearchDataTypeValidator extends Validator {
 
     @Override
-    public void validate(Context context) {
-        List<SearchCluster> clusters = context.model().getSearchClusters();
+    public void validate(VespaModel model, DeployState deployState) {
+        List<SearchCluster> clusters = model.getSearchClusters();
         for (SearchCluster cluster : clusters) {
             if (cluster.isStreaming()) {
                 continue;
@@ -39,22 +40,22 @@ public class SearchDataTypeValidator implements Validator {
                 if (docType == null) {
                     continue;
                 }
-                validateDocument(context, cluster, spec.fullSchema(), docType);
+                validateDocument(cluster, spec.fullSchema(), docType);
             }
         }
     }
 
-    private void validateDocument(Context context, SearchCluster cluster, Schema schema, SDDocumentType doc) {
+    private void validateDocument(SearchCluster cluster, Schema schema, SDDocumentType doc) {
         for (SDDocumentType child : doc.getTypes()) {
-            validateDocument(context, cluster, schema, child);
+            validateDocument(cluster, schema, child);
         }
         for (Field field : doc.fieldSet()) {
             DataType fieldType = field.getDataType();
-            disallowIndexingOfMaps(context, cluster, schema, field);
+            disallowIndexingOfMaps(cluster, schema, field);
             if ( ! isSupportedInSearchClusters(fieldType)) {
-                context.illegal("Field type '" + fieldType.getName() + "' is illegal for search " +
-                                "clusters (field '" + field.getName() + "' in schema '" +
-                                schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
+                throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' is illegal for search " +
+                                                   "clusters (field '" + field.getName() + "' in schema '" +
+                                                   schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
             }
         }
     }
@@ -84,13 +85,12 @@ public class SearchDataTypeValidator implements Validator {
         }
     }
 
-    private void disallowIndexingOfMaps(Context context, SearchCluster cluster, Schema schema, Field field) {
+    private void disallowIndexingOfMaps(SearchCluster cluster, Schema schema, Field field) {
         DataType fieldType = field.getDataType();
         if ((fieldType instanceof MapDataType) && (((SDField) field).doesIndexing())) {
-            context.illegal("Field type '" + fieldType.getName() + "' cannot be indexed for search " +
-                            "clusters (field '" + field.getName() + "' in definition '" +
-                            schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
+            throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' cannot be indexed for search " +
+                                               "clusters (field '" + field.getName() + "' in definition '" +
+                                               schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
         }
     }
-
 }

@@ -7,11 +7,9 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Comparator.comparing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ConfigChangeTestUtils {
@@ -62,8 +60,8 @@ public class ConfigChangeTestUtils {
     public static void assertEqualActions(List<ConfigChangeAction> exp, List<ConfigChangeAction> act) {
         var mutableExp = new ArrayList<>(exp);
         var mutableAct = new ArrayList<>(act);
-        mutableExp.sort(comparing(ConfigChangeAction::getMessage));
-        mutableAct.sort(comparing(ConfigChangeAction::getMessage));
+        mutableExp.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
+        mutableAct.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
         assertEquals(mutableExp, mutableAct);
     }
 

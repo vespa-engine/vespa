@@ -60,7 +60,7 @@ public class ValidationOverrideTest {
         try {
             ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-01T23:59:00");
-            overrides.allows(ValidationId.indexingChange, now);
+            overrides.allows("indexing-change", now);
             overrides.validate(now);
             Assert.fail("Expected validation interval override validation validation failure");
         }
@@ -80,7 +80,7 @@ public class ValidationOverrideTest {
         try {
             ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-01T23:59:00");
-            overrides.allows(ValidationId.indexingChange, now);
+            overrides.allows("indexing-change", now);
             overrides.validate(now);
             Assert.fail("Expected validation interval override validation validation failure");
         }

@@ -61,7 +61,7 @@ public class ContainerInCloudValidatorTest {
         }
         DeployState deployState = builder.build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ValidationTester.validate(new ContainerInCloudValidator(), model, deployState);
+        new ContainerInCloudValidator().validate(model, deployState);
     }
 
 }

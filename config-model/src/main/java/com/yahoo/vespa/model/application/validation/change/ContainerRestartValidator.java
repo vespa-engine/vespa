@@ -2,16 +2,19 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -23,16 +26,18 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 public class ContainerRestartValidator implements ChangeValidator {
 
     @Override
-    public void validate(ChangeContext context) {
-        boolean nodesUnchanged = context.previousModel().allocatedHosts().equals(context.model().allocatedHosts());
-        boolean contentUnchanged = contentHostsOf(context.previousModel()).equals(contentHostsOf(context.model()));
-        for (ContainerCluster<ApplicationContainer> cluster : context.model().getContainerClusters().values()) {
-            cluster.getContainers().stream()
-                   .filter(container -> isExistingContainer(container, context.previousModel()))
-                   .filter(container -> shouldContainerRestartOnDeploy(container, context.model()))
-                   .map(container -> createConfigChangeAction(cluster.id(), container, context.model(), nodesUnchanged, contentUnchanged))
-                   .forEach(context::require);
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        boolean nodesUnchanged = currentModel.allocatedHosts().equals(nextModel.allocatedHosts());
+        boolean contentUnchanged = contentHostsOf(currentModel).equals(contentHostsOf(nextModel));
+        List<ConfigChangeAction> actions = new ArrayList<>();
+        for (ContainerCluster<ApplicationContainer> cluster : nextModel.getContainerClusters().values()) {
+            actions.addAll(cluster.getContainers().stream()
+                                  .filter(container -> isExistingContainer(container, currentModel))
+                                  .filter(container -> shouldContainerRestartOnDeploy(container, nextModel))
+                                  .map(container -> createConfigChangeAction(cluster.id(), container, nextModel, nodesUnchanged, contentUnchanged))
+                                  .toList());
         }
+        return actions;
     }
 
     private Set<HostSpec> contentHostsOf(VespaModel model) {

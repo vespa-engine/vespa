@@ -71,7 +71,7 @@ public class CloudDataPlaneFilterValidatorTest {
                                                             certFile2, List.of(createCertificate("bar"))));
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ValidationTester.validate(new CloudDataPlaneFilterValidator(), model, deployState);
+        new CloudDataPlaneFilterValidator().validate(model, deployState);
     }
 
     @Test
@@ -100,8 +100,11 @@ public class CloudDataPlaneFilterValidatorTest {
                                                             certFile2, List.of(certificate)));
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                "Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certFile2, certificate.getSubjectX500Principal().getName()));
+        IllegalArgumentException illegalArgumentException = Assertions.assertThrows(IllegalArgumentException.class, () ->
+                new CloudDataPlaneFilterValidator().validate(model, deployState));
+        assertEquals(
+                "Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certFile2, certificate.getSubjectX500Principal().getName()),
+                illegalArgumentException.getMessage());
     }
 
     @Test
@@ -124,8 +127,11 @@ public class CloudDataPlaneFilterValidatorTest {
                                                     Map.of(certFile1, List.of(certificate, certificate)));
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                "Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certificate.getSubjectX500Principal().getName()));
+        IllegalArgumentException illegalArgumentException = Assertions.assertThrows(IllegalArgumentException.class, () ->
+                new CloudDataPlaneFilterValidator().validate(model, deployState));
+        assertEquals(
+                "Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certificate.getSubjectX500Principal().getName()),
+                illegalArgumentException.getMessage());
     }
 
 
