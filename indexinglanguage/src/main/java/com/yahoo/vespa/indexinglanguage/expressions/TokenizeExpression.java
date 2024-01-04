@@ -69,6 +69,9 @@ public final class TokenizeExpression extends Expression {
         if (config.hasNonDefaultMaxTokenLength()) {
             ret.append(" max-length:" + config.getMaxTokenizeLength());
         }
+        if (config.hasNonDefaultMaxTermOccurrences()) {
+            ret.append(" max-occurrences:" + config.getMaxTermOccurrences());
+        }
         return ret.toString();
     }
 
