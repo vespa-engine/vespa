@@ -2,19 +2,17 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ComplexAttributeFieldUtils;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -24,24 +22,24 @@ import java.util.stream.Collectors;
  *
  * @author geirst
  */
-public class ComplexFieldsWithStructFieldAttributesValidator extends Validator {
+public class ComplexFieldsWithStructFieldAttributesValidator implements Validator {
 
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        List<SearchCluster> searchClusters = model.getSearchClusters();
+    public void validate(Context context) {
+        List<SearchCluster> searchClusters = context.model().getSearchClusters();
         for (SearchCluster cluster : searchClusters) {
             if (cluster.isStreaming()) continue;
 
             for (SchemaInfo spec : cluster.schemas().values()) {
-                validateComplexFields(cluster.getClusterName(), spec.fullSchema(), deployState.getDeployLogger());
+                validateComplexFields(context, cluster.getClusterName(), spec.fullSchema(), context.deployState().getDeployLogger());
             }
         }
     }
 
-    private static void validateComplexFields(String clusterName, Schema schema, DeployLogger logger) {
+    private static void validateComplexFields(Context context, String clusterName, Schema schema, DeployLogger logger) {
         String unsupportedFields = validateComplexFields(schema);
         if (!unsupportedFields.isEmpty()) {
-            throw new IllegalArgumentException(getErrorMessage(clusterName, schema, unsupportedFields));
+            context.illegal(getErrorMessage(clusterName, schema, unsupportedFields));
         }
     }
 

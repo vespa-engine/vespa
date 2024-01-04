@@ -1,22 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.VespaModel;
-
 /**
  * Abstract superclass of all application package validators.
  *
  * @author hmusum
  */
-public abstract class Validator {
+public interface Validator {
 
     /**
-     * Validates the input vespamodel
-     *
-     * @param model a VespaModel object
-     * @param deployState the {@link DeployState} built from building the model
+     * Validates the input Vespa model; illegal configuration should be reported through the context,
+     * while other problems (system error, insufficient quota, etc.) should be thrown.
      */
-    public abstract void validate(VespaModel model, DeployState deployState);
+    void validate(Validation.Context context);
 
 }

@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -31,36 +32,47 @@ import java.util.regex.Pattern;
  *
  * @author bjorncs
  */
-public abstract class AbstractBundleValidator extends Validator {
+public abstract class AbstractBundleValidator implements Validator {
 
-    protected abstract void validateManifest(DeployState state, JarFile jar, Manifest mf);
-    protected abstract void validatePomXml(DeployState state, JarFile jar, Document pom);
+    protected interface JarContext {
+        void illegal(String error);
+        void illegal(String error, Throwable cause);
+        DeployState deployState();
+        static JarContext of(Context context) {
+            return new JarContext() {
+                @Override public void illegal(String error) { context.illegal(error); }
+                @Override public void illegal(String error, Throwable cause) { context.illegal(error, cause); }
+                @Override public DeployState deployState() { return context.deployState(); }
+            };
+        }
+    }
+
+    protected abstract void validateManifest(JarContext context, JarFile jar, Manifest mf);
+    protected abstract void validatePomXml(JarContext context, JarFile jar, Document pom);
 
     @Override
-    public final void validate(VespaModel model, DeployState state) {
-        ApplicationPackage app = state.getApplicationPackage();
-        for (ComponentInfo info : app.getComponentsInfo(state.getVespaVersion())) {
+    public final void validate(Context context) {
+        ApplicationPackage app = context.deployState().getApplicationPackage();
+        for (ComponentInfo info : app.getComponentsInfo(context.deployState().getVespaVersion())) {
             Path path = Path.fromString(info.getPathRelativeToAppDir());
             try {
-                state.getDeployLogger()
+                context.deployState().getDeployLogger()
                         .log(Level.FINE, String.format("Validating bundle at '%s'", path));
                 JarFile jarFile = new JarFile(app.getFileReference(path));
-                validateJarFile(state, jarFile);
+                validateJarFile(JarContext.of(context), jarFile);
             } catch (IOException e) {
-                throw new IllegalArgumentException(
-                        "Failed to validate JAR file '" + path.last() + "'", e);
+                context.illegal("Failed to validate JAR file '" + path.last() + "'", e);
             }
         }
     }
 
-    final void validateJarFile(DeployState state, JarFile jar) throws IOException {
+    final void validateJarFile(JarContext context, JarFile jar) throws IOException {
         Manifest manifest = jar.getManifest();
         if (manifest == null) {
-            throw new IllegalArgumentException("Non-existing or invalid manifest in " + filename(jar));
+            context.illegal("Non-existing or invalid manifest in " + filename(jar));
         }
-        validateManifest(state, jar, manifest);
-        getPomXmlContent(state.getDeployLogger(), jar)
-                .ifPresent(pom -> validatePomXml(state, jar, pom));
+        validateManifest(context, jar, manifest);
+        getPomXmlContent(context::illegal, context.deployState().getDeployLogger(), jar).ifPresent(pom -> validatePomXml(context, jar, pom));
     }
 
     protected final String filename(JarFile jarFile) { return Paths.get(jarFile.getName()).getFileName().toString(); }
@@ -89,7 +101,7 @@ public abstract class AbstractBundleValidator extends Validator {
     }
 
     private static final Pattern POM_FILE_LOCATION = Pattern.compile("META-INF/maven/.+?/.+?/pom.xml");
-    public Optional<Document> getPomXmlContent(DeployLogger deployLogger, JarFile jar) {
+    public Optional<Document> getPomXmlContent(BiConsumer<String, Throwable> context, DeployLogger logger, JarFile jar) {
         return jar.stream()
                 .filter(f -> POM_FILE_LOCATION.matcher(f.getName()).matches())
                 .findFirst()
@@ -100,13 +112,13 @@ public abstract class AbstractBundleValidator extends Validator {
                                 .parse(new InputSource(new StringReader(text)));
                     } catch (SAXException e) {
                         String message = String.format("Unable to parse pom.xml from %s", filename(jar));
-                        deployLogger.log(Level.SEVERE, message);
-                        throw new RuntimeException(message, e);
+                        logger.log(Level.SEVERE, message);
+                        context.accept(message, e);
                     } catch (IOException e) {
-                        deployLogger.log(Level.INFO,
+                        logger.log(Level.INFO,
                                 String.format("Unable to read '%s' from '%s'", f.getName(), jar.getName()));
-                        return null;
                     }
+                    return null;
                 });
     }
 }

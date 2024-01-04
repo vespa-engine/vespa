@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class GlobalDocumentChangeValidatorTest {
 
     @Test
-    void testChangGlobalAttribute() {
+    void testChangeGlobalAttribute() {
         testChangeGlobalAttribute(true, false, false, null);
         testChangeGlobalAttribute(true, true, true, null);
         testChangeGlobalAttribute(false, false, true, null);
@@ -29,7 +29,7 @@ public class GlobalDocumentChangeValidatorTest {
         try {
             tester.deploy(oldModel, getServices(newGlobal), Environment.prod, validationOverrides, "default.indexing").getSecond();
             assertTrue(allowed);
-        } catch (IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             assertFalse(allowed);
             assertEquals("Document type music in cluster default changed global from " + oldGlobal + " to " + newGlobal + ". " +
                     "Add validation override 'global-document-change' to force this change through. " +
@@ -52,8 +52,10 @@ public class GlobalDocumentChangeValidatorTest {
     }
 
     private static final String globalDocumentValidationOverrides =
-            "<validation-overrides>\n" +
-                    "    <allow until='2000-01-14' comment='test override'>global-document-change</allow>\n" +
-                    "</validation-overrides>\n";
+            """
+            <validation-overrides>
+                <allow until='2000-01-14' comment='test override'>global-document-change</allow>
+            </validation-overrides>
+            """;
 
 }

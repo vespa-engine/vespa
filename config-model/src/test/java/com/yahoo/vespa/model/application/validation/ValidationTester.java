@@ -16,12 +16,15 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Execution;
+import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +33,8 @@ import java.util.stream.Stream;
 
 import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SCHEMA;
 import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SCHEMA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -112,6 +117,29 @@ public class ValidationTester {
 
     public static String censorNumbers(String s) {
         return s.replaceAll("\\d", "-");
+    }
+
+    public static void expect(Validator validator, VespaModel model, DeployState deployState, String... expectedMessages) {
+        Execution execution = new Execution(model, deployState);
+        validator.validate(execution);
+        assertTrue(   execution.errors().stream().allMatch(error -> Arrays.stream(expectedMessages).anyMatch(error::contains))
+                   && Arrays.stream(expectedMessages).allMatch(expected -> execution.errors().stream().anyMatch(error -> error.contains(expected))),
+                   "Expected errors: " + Arrays.toString(expectedMessages) + "\nActual errors: " + execution.errors());
+    }
+
+    /** Runs validation, and throws on illegalities. */
+    public static void validate(Validator validator, VespaModel model, DeployState deployState) {
+        Execution execution = new Execution(model, deployState);
+        validator.validate(execution);
+        execution.throwIfFailed();
+    }
+
+    /** Runs validation and returns the resulting config chance actions, without checking whether they're currently allowed; or throws on illegalities. */
+    public static List<ConfigChangeAction> validateChanges(ChangeValidator validator, VespaModel model, DeployState deployState) {
+        Execution execution = new Execution(model, deployState);
+        validator.validate(execution);
+        if ( ! execution.errors().isEmpty()) execution.throwIfFailed();
+        return execution.actions();
     }
 
 }
