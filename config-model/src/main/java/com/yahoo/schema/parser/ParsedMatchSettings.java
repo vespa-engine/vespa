@@ -22,6 +22,7 @@ public class ParsedMatchSettings {
     private String exactTerminator = null;
     private Integer gramSize = null;
     private Integer maxLength = null;
+    private Integer maxTermOccurrences = null;
 
     Optional<MatchType> getMatchType() { return Optional.ofNullable(matchType); }
     Optional<Case> getMatchCase() { return Optional.ofNullable(matchCase); }
@@ -29,6 +30,7 @@ public class ParsedMatchSettings {
     Optional<String> getExactTerminator() { return Optional.ofNullable(exactTerminator); }
     Optional<Integer> getGramSize() { return Optional.ofNullable(gramSize); }
     Optional<Integer> getMaxLength() { return Optional.ofNullable(maxLength); }
+    Optional<Integer> getMaxTermOccurrences() { return Optional.ofNullable(maxTermOccurrences); }
 
     // TODO - consider allowing each set only once:
     void setType(MatchType value) { this.matchType = value; }
@@ -37,5 +39,6 @@ public class ParsedMatchSettings {
     void setExactTerminator(String value) { this.exactTerminator = value; }
     void setGramSize(int value) { this.gramSize = value; }
     void setMaxLength(int value) { this.maxLength = value; }
+    void setMaxTermOccurrences(int value) { this.maxTermOccurrences = value; }
 
 }

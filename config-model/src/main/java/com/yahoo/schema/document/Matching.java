@@ -31,6 +31,8 @@ public class Matching implements Cloneable, Serializable {
 
     /** Maximum number of characters to consider when searching in this field. Used for limiting resources, especially in streaming search. */
     private Integer maxLength;
+    /** Maximum number of occurrences for each term */
+    private Integer maxTermOccurrences;
 
     private String exactMatchTerminator = null;
 
@@ -53,6 +55,8 @@ public class Matching implements Cloneable, Serializable {
 
     public Integer maxLength() { return maxLength; }
     public Matching maxLength(int maxLength) { this.maxLength = maxLength; return this; }
+    public Integer maxTermOccurrences() { return maxTermOccurrences; }
+    public Matching maxTermOccurrences(int maxTermOccurrences) { this.maxTermOccurrences = maxTermOccurrences; return this; }
     public boolean isTypeUserSet() { return typeUserSet; }
 
     public MatchAlgorithm getAlgorithm() { return algorithm; }

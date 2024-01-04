@@ -173,6 +173,7 @@ TOKEN :
     <JOIN: "join"> |
     <LOWER_CASE: "lowercase"> |
     <MAX_LENGTH: "max-length"> |
+    <MAX_OCCURRENCES: "max-occurrences"> |
     <NGRAM: "ngram"> |
     <NORMALIZE: "normalize"> |
     <NOW: "now"> |
@@ -664,10 +665,12 @@ AnnotatorConfig tokenizeCfg() :
     AnnotatorConfig val = new AnnotatorConfig(annotatorCfg);
     String str = "SHORTEST";
     Integer maxLength;
+    Integer maxTermOccurrences;
 }
 {
     ( <STEM> ( <COLON> str = string() ) ? { val.setStemMode(str); } |
       <MAX_LENGTH> <COLON>  maxLength = integer() { val.setMaxTokenLength(maxLength); } |
+      <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integer() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <NORMALIZE> { val.setRemoveAccents(true); } )+
     { return val; }
 }
