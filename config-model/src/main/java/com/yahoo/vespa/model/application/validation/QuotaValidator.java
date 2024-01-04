@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -10,6 +9,7 @@ import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
@@ -24,16 +24,16 @@ import java.util.stream.Collectors;
  *
  * @author ogronnesby
  */
-public class QuotaValidator extends Validator {
+public class QuotaValidator implements Validator {
 
     private static final Logger log = Logger.getLogger(QuotaValidator.class.getName());
     private static final Capacity zeroCapacity = Capacity.from(new ClusterResources(0, 0, NodeResources.zero()));
 
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        var quota = deployState.getProperties().quota();
-        quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
-        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model, deployState.getProperties().zone()));
+    public void validate(Context context) {
+        var quota = context.deployState().getProperties().quota();
+        quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, context.model()));
+        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, context.model(), context.deployState().getProperties().zone()));
     }
 
     private void validateBudget(BigDecimal budget, VespaModel model, Zone zone) {

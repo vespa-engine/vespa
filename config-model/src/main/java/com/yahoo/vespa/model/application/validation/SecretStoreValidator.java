@@ -2,8 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.IdentityProvider;
@@ -14,18 +13,18 @@ import com.yahoo.vespa.model.container.component.Component;
  *
  * @author gjoranv
  */
-public class SecretStoreValidator extends Validator {
+public class SecretStoreValidator implements Validator {
 
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        if (! deployState.isHosted()) return;
-        if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
+    public void validate(Context context) {
+        if (! context.deployState().isHosted()) return;
+        if (context.model().getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
-        for (ContainerCluster cluster : model.getContainerClusters().values()) {
+        for (ContainerCluster<?> cluster : context.model().getContainerClusters().values()) {
             if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster))
-                    throw new IllegalArgumentException(String.format(
-                        "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
-                                " must be declared in deployment.xml.", cluster.getName()));
+                    context.illegal(String.format(
+                            "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
+                            " must be declared in deployment.xml.", cluster.getName()));
         }
     }
 

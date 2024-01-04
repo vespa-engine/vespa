@@ -2,14 +2,11 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
-
-import java.util.List;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 
 /**
  * Checks that no cluster sizes are reduced too much in one go.
@@ -19,31 +16,26 @@ import java.util.List;
 public class ResourcesReductionValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
-        for (var clusterId : current.allClusters()) {
-            if (next.allClusters().contains(clusterId))
-                validate(clusterId, current, next, deployState);
+    public void validate(ChangeContext context) {
+        for (var clusterId : context.previousModel().allClusters()) {
+            if (context.model().allClusters().contains(clusterId))
+                validate(clusterId, context);
         }
-        return List.of();
     }
 
-    private void validate(ClusterSpec.Id clusterId,
-                          VespaModel currentModel,
-                          VespaModel nextModel,
-                          DeployState deployState) {
-        ClusterResources current = clusterResources(clusterId, currentModel);
-        ClusterResources next = clusterResources(clusterId, nextModel);
+    private void validate(ClusterSpec.Id clusterId, ChangeContext context) {
+        ClusterResources current = clusterResources(clusterId, context.previousModel());
+        ClusterResources next = clusterResources(clusterId, context.model());
         if (current == null || next == null) return; // No request recording - test
         if (current.nodeResources().isUnspecified() || next.nodeResources().isUnspecified()) {
             // Self-hosted - unspecified resources; compare node count
             int currentNodes = current.nodes();
             int nextNodes = next.nodes();
             if (nextNodes < 0.5 * currentNodes && nextNodes != currentNodes - 1) {
-                deployState.validationOverrides().invalid(ValidationId.resourcesReduction,
-                                  "Size reduction in '" + clusterId.value() + "' is too large: " +
-                                  "To guard against mistakes, the new max nodes must be at least 50% of the current nodes. " +
-                                  "Current nodes: " + currentNodes + ", new nodes: " + nextNodes,
-                                  deployState.now());
+                context.invalid(ValidationId.resourcesReduction,
+                                "Size reduction in '" + clusterId.value() + "' is too large: " +
+                                "To guard against mistakes, the new max nodes must be at least 50% of the current nodes. " +
+                                "Current nodes: " + currentNodes + ", new nodes: " + nextNodes);
             }
         }
         else {
@@ -52,13 +44,12 @@ public class ResourcesReductionValidator implements ChangeValidator {
             if (nextResources.vcpu() < 0.5 * currentResources.vcpu() ||
                 nextResources.memoryGb() < 0.5 * currentResources.memoryGb() ||
                 nextResources.diskGb() < 0.5 * currentResources.diskGb())
-                deployState.validationOverrides().invalid(ValidationId.resourcesReduction,
-                                  "Resource reduction in '" + clusterId.value() + "' is too large: " +
-                                  "To guard against mistakes, the new max resources must be at least 50% of the current " +
-                                  "max resources in all dimensions. " +
-                                  "Current: " + currentResources.withBandwidthGbps(0) + // (don't output bandwidth here)
-                                  ", new: " + nextResources.withBandwidthGbps(0),
-                                  deployState.now());
+                context.invalid(ValidationId.resourcesReduction,
+                                "Resource reduction in '" + clusterId.value() + "' is too large: " +
+                                "To guard against mistakes, the new max resources must be at least 50% of the current " +
+                                "max resources in all dimensions. " +
+                                "Current: " + currentResources.withBandwidthGbps(0) + // (don't output bandwidth here)
+                                ", new: " + nextResources.withBandwidthGbps(0));
         }
 
     }

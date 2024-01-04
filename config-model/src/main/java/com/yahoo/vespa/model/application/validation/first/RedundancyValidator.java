@@ -2,14 +2,14 @@
 package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.application.validation.Validator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -17,24 +17,23 @@ import java.util.stream.Stream;
  *
  * @author bratseth
  */
-public class RedundancyValidator extends Validator implements ChangeValidator {
+public class RedundancyValidator implements Validator, ChangeValidator {
 
     /** Validate on first deployment. */
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        if ( ! shouldValidate(deployState)) return;
-        clustersWithRedundancyOne(model).forEach(cluster -> invalidRedundancy(cluster, deployState));
+    public void validate(Context context) {
+        if ( ! shouldValidate(context.deployState())) return;
+        clustersWithRedundancyOne(context.model()).forEach(cluster -> invalidRedundancy(cluster, context));
     }
 
     /** Validate on change. */
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
-        if ( ! shouldValidate(deployState)) return List.of();
+    public void validate(ChangeContext context) {
+        if ( ! shouldValidate(context.deployState())) return;
 
-        clustersWithRedundancyOne(next)
-                .filter(cluster -> ! hasRedundancyOne(current.getContentClusters().get(cluster.id().value())))
-                .forEach(cluster -> invalidRedundancy(cluster, deployState));
-        return List.of();
+        clustersWithRedundancyOne(context.model())
+                .filter(cluster -> ! hasRedundancyOne(context.previousModel().getContentClusters().get(cluster.id().value())))
+                .forEach(cluster -> invalidRedundancy(cluster, context));
     }
 
     private boolean shouldValidate(DeployState deployState) {
@@ -49,12 +48,11 @@ public class RedundancyValidator extends Validator implements ChangeValidator {
         return cluster != null && cluster.getRedundancy().finalRedundancy() == 1 && cluster.getRedundancy().groups() == 1;
     }
 
-    private void invalidRedundancy(ContentCluster cluster, DeployState deployState) {
-        deployState.validationOverrides().invalid(ValidationId.redundancyOne,
-                                                  cluster + " has redundancy 1, which will cause it to lose data " +
-                                                  "if a node fails. This requires an override on first deployment " +
-                                                  "in a production zone",
-                                                  deployState.now());
+    private void invalidRedundancy(ContentCluster cluster, Context context) {
+        context.invalid(ValidationId.redundancyOne,
+                        cluster + " has redundancy 1, which will cause it to lose data " +
+                        "if a node fails. This requires an override on first deployment " +
+                        "in a production zone");
     }
 
 }
