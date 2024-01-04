@@ -23,47 +23,28 @@ class force
   force() { FieldSearcher::init(); }
 };
 
-static force __forceInit;
+static force ForceInit;
 
 byte FieldSearcher::_foldLowCase[256];
 byte FieldSearcher::_wordChar[256];
 
 FieldSearcherBase::FieldSearcherBase() noexcept
-    : _qtl(),
-      _qtlFastBuffer(),
-      _qtlFastSize(0),
-      _qtlFast(nullptr)
+    : _qtl()
 {
 }
 
 FieldSearcherBase::FieldSearcherBase(const FieldSearcherBase & org)
-    : _qtl(),
-      _qtlFastBuffer(),
-      _qtlFastSize(0),
-      _qtlFast(nullptr)
+    : _qtl()
 {
     prepare(org._qtl);
 }
 
 FieldSearcherBase::~FieldSearcherBase() = default;
 
-FieldSearcherBase & FieldSearcherBase::operator = (const FieldSearcherBase & org)
-{
-    if (this != &org) {
-        prepare(org._qtl);
-    }
-    return *this;
-}
-
-void FieldSearcherBase::prepare(const QueryTermList & qtl)
+void
+FieldSearcherBase::prepare(const QueryTermList & qtl)
 {
     _qtl = qtl;
-    _qtlFastBuffer.resize(sizeof(*_qtlFast)*(_qtl.size()+1), 0x13);
-    _qtlFast = reinterpret_cast<v16qi *>(reinterpret_cast<unsigned long>(&_qtlFastBuffer[0]+15) & ~0xf);
-    _qtlFastSize = 0;
-    for (auto qt : _qtl) {
-        memcpy(&_qtlFast[_qtlFastSize++], qt->getTerm(), std::min(size_t(16), qt->termLen()));
-    }
 }
 
 FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept
@@ -82,7 +63,8 @@ FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept
 
 FieldSearcher::~FieldSearcher() = default;
 
-bool FieldSearcher::search(const StorageDocument & doc)
+bool
+FieldSearcher::search(const StorageDocument & doc)
 {
     for (auto qt : _qtl) {
         QueryTerm::FieldInfo & fInfo = qt->getFieldInfo(field());
@@ -98,16 +80,16 @@ bool FieldSearcher::search(const StorageDocument & doc)
     return true;
 }
 
-void FieldSearcher::prepare(QueryTermList& qtl,
-                            const SharedSearcherBuf&,
-                            const vsm::FieldPathMapT&,
-                            search::fef::IQueryEnvironment&)
+void
+FieldSearcher::prepare(QueryTermList& qtl, const SharedSearcherBuf&,
+                       const vsm::FieldPathMapT&, search::fef::IQueryEnvironment&)
 {
     FieldSearcherBase::prepare(qtl);
     prepareFieldId();
 }
 
-size_t FieldSearcher::countWords(const FieldRef & f)
+size_t
+FieldSearcher::countWords(const FieldRef & f)
 {
     size_t words = 0;
     const char * n = f.data();
@@ -123,20 +105,23 @@ size_t FieldSearcher::countWords(const FieldRef & f)
     return words;
 }
 
-void FieldSearcher::prepareFieldId()
+void
+FieldSearcher::prepareFieldId()
 {
     for(auto qt : _qtl) {
         qt->resizeFieldId(field());
     }
 }
 
-void FieldSearcher::zeroStat()
+void
+FieldSearcher::zeroStat()
 {
     _badUtf8Count = 0;
     _zeroCount = 0;
 }
 
-void FieldSearcher::init()
+void
+FieldSearcher::init()
 {
     for (unsigned i = 0; i < NELEMS(_foldLowCase); i++) {
         _foldLowCase[i] = 0;
@@ -209,11 +194,10 @@ void FieldSearcher::init()
     _foldLowCase[0xff] = 'y';
 }
 
-void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
-                                  const SharedSearcherBuf& searcherBuf,
-                                  Query& query,
-                                  const vsm::FieldPathMapT& field_paths,
-                                  search::fef::IQueryEnvironment& query_env)
+void
+FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm, const SharedSearcherBuf& searcherBuf,
+                             Query& query, const vsm::FieldPathMapT& field_paths,
+                             search::fef::IQueryEnvironment& query_env)
 {
     QueryTermList qtl;
     query.getLeaves(qtl);
@@ -257,7 +241,8 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
     LOG(debug, "Will search in %s", tmp.c_str());
 }
 
-bool FieldSearcher::onSearch(const StorageDocument & doc)
+bool
+FieldSearcher::onSearch(const StorageDocument & doc)
 {
     bool retval(true);
     size_t fNo(field());
@@ -298,6 +283,5 @@ FieldSearcher::IteratorHandler::onStructStart(const Content & c)
     LOG(spam, "onStructStart: field value '%s'", c.getValue().toString().c_str());
     _searcher.onStructValue(static_cast<const document::StructFieldValue &>(c.getValue()));
 }
-
 
 }

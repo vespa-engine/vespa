@@ -18,22 +18,17 @@ using ucs4_t = uint32_t;
 using cmptype_t = ucs4_t;
 using SearcherBuf = vespalib::Array<cmptype_t>;
 using SharedSearcherBuf = std::shared_ptr<SearcherBuf>;
-using CharVector = std::vector<char>;
 
 class FieldSearcherBase
 {
 protected:
-    search::streaming::QueryTermList _qtl;
-private:
-    CharVector    _qtlFastBuffer;
-protected:
     FieldSearcherBase() noexcept;
     FieldSearcherBase(const FieldSearcherBase & org);
     virtual ~FieldSearcherBase();
-    FieldSearcherBase & operator = (const FieldSearcherBase & org);
+    FieldSearcherBase & operator = (const FieldSearcherBase & org) = delete;
     void prepare(const search::streaming::QueryTermList & qtl);
-    size_t          _qtlFastSize;
-    search::v16qi  *_qtlFast;
+protected:
+    search::streaming::QueryTermList _qtl;
 };
 
 class FieldSearcher : public FieldSearcherBase
@@ -52,10 +47,8 @@ public:
     ~FieldSearcher() override;
     virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
-    virtual void prepare(search::streaming::QueryTermList& qtl,
-                         const SharedSearcherBuf& buf,
-                         const vsm::FieldPathMapT& field_paths,
-                         search::fef::IQueryEnvironment& query_env);
+    virtual void prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                         const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env);
 
     FieldIdT field()                 const { return _field; }
     void field(FieldIdT v)                 { _field = v; prepareFieldId(); }
@@ -124,10 +117,8 @@ using FieldIdTSearcherMapT = std::vector<FieldSearcherContainer>;
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT
 {
 public:
-    void prepare(const DocumentTypeIndexFieldMapT& difm,
-                 const SharedSearcherBuf& searcherBuf,
-                 search::streaming::Query& query,
-                 const vsm::FieldPathMapT& field_paths,
+    void prepare(const DocumentTypeIndexFieldMapT& difm, const SharedSearcherBuf& searcherBuf,
+                 search::streaming::Query& query, const vsm::FieldPathMapT& field_paths,
                  search::fef::IQueryEnvironment& query_env);
 };
 
