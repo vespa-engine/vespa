@@ -32,10 +32,8 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
                 c = *p;
             }
         } else {
-            const byte * oldP(p);
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             if (Fast_UnicodeUtil::IsWordChar(c)) {
-                _utf8Count[p-oldP-1]++;
                 const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
                 if (repl != nullptr) {
                     size_t repllen = strlen(repl);
@@ -50,8 +48,6 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             } else {
                 if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                     _badUtf8Count++;
-                } else {
-                    _utf8Count[p-oldP-1]++;
                 }
                 c = *p;
             }
@@ -70,10 +66,8 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
                 c = *p;
             }
         } else {
-            const byte * oldP(p);
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             if (__builtin_expect(Fast_UnicodeUtil::IsWordChar(c), false)) {
-                _utf8Count[p-oldP-1]++;
                 const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
                 if (repl != nullptr) {
                     size_t repllen = strlen(repl);
@@ -89,8 +83,6 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             } else {
                 if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                     _badUtf8Count++;
-                } else {
-                    _utf8Count[p-oldP-1]++;
                 }
                 break;
             }
@@ -128,7 +120,6 @@ UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt
         }
         words++;
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words;
 }
 
@@ -154,7 +145,6 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
             addHit(qt,0);
         }
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return 1;
 }
 
@@ -188,7 +178,6 @@ UTF8StringFieldSearcherBase::matchTermSubstring(const FieldRef & f, QueryTerm & 
             }
         }
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words + 1; // we must also count the last word
 }
 
@@ -305,8 +294,6 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
             }
             if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                 _badUtf8Count++;
-            } else {
-                _utf8Count[p-oldP-1]++;
             }
         }
     }

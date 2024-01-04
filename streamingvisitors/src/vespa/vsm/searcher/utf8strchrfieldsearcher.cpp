@@ -42,7 +42,6 @@ UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
         }
         words++;
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words;
 }
 
