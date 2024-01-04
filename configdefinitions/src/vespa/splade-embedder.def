@@ -1,0 +1,29 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=embedding
+
+# Path to tokenizer.json
+tokenizerPath model
+
+# Path to model.onnx
+transformerModel  model
+
+# Max length of token sequence model can handle
+transformerMaxTokens int default=512
+
+# Input names
+transformerInputIds      string default=input_ids
+transformerAttentionMask string default=attention_mask
+transformerTokenTypeIds  string default=token_type_ids
+
+# Output name
+transformerOutput string default=logits
+
+# score threshold to control sparseness
+termScoreThreshold double default=0.0
+
+# Settings for ONNX model evaluation
+transformerExecutionMode enum { parallel, sequential } default=sequential
+transformerInterOpThreads int default=1
+transformerIntraOpThreads int default=-4
+# GPU device id, -1 for CPU
+transformerGpuDevice      int default=0
