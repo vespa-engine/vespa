@@ -104,7 +104,7 @@ class CloudHttpConnectorValidatorTest {
                 .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("c.example.com"))))
                 .build();
         var model = new VespaModel(new NullConfigModelRegistry(), state);
-        ValidationTester.validate(new CloudHttpConnectorValidator(), model, state);
+        new CloudHttpConnectorValidator().validate(model, state);
     }
 
 }

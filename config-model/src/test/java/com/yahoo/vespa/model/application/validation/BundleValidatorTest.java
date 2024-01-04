@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.application.validation.AbstractBundleValidator.JarContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,7 +29,7 @@ public class BundleValidatorTest {
         // Valid jar file
         JarFile ok = createTemporaryJarFile(tempDir, "ok");
         BundleValidator bundleValidator = new BundleValidator();
-        bundleValidator.validateJarFile(contextOf(DeployState.createTestState()), ok);
+        bundleValidator.validateJarFile(DeployState.createTestState(), ok);
 
         // No manifest
         validateWithException("nomanifest", "Non-existing or invalid manifest in nomanifest.jar");
@@ -40,7 +39,7 @@ public class BundleValidatorTest {
         try {
             JarFile jarFile = createTemporaryJarFile(tempDir, jarName);
             BundleValidator bundleValidator = new BundleValidator();
-            bundleValidator.validateJarFile(contextOf(DeployState.createTestState()), jarFile);
+            bundleValidator.validateJarFile(DeployState.createTestState(), jarFile);
             assert (false);
         } catch (IllegalArgumentException e) {
             assertEquals(exceptionMessage, e.getMessage());
@@ -53,7 +52,7 @@ public class BundleValidatorTest {
 
         DeployState state = createDeployState(buffer);
         JarFile jarFile = createTemporaryJarFile(tempDir, "snapshot_bundle");
-        new BundleValidator().validateJarFile(contextOf(state), jarFile);
+        new BundleValidator().validateJarFile(state, jarFile);
         assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
 
@@ -63,7 +62,7 @@ public class BundleValidatorTest {
         DeployState state = createDeployState(buffer);
         BundleValidator validator = new BundleValidator();
         JarFile jarFile = createTemporaryJarFile(tempDir, "import-warnings");
-        validator.validateJarFile(contextOf(state), jarFile);
+        validator.validateJarFile(state, jarFile);
         String output = buffer.toString();
         assertTrue(output
                 .contains("JAR file 'import-warnings.jar' imports the packages [org.json] from 'org.json:json'. \n" +
@@ -124,12 +123,5 @@ public class BundleValidatorTest {
                 List.of("org.json", "version", "[0.0.0,1)", "org.eclipse.jetty.client.api", "version", "[9.4.46,10)"));
     }
 
-    private static JarContext contextOf(DeployState state) {
-        return new JarContext() {
-            @Override public void illegal(String error) { throw new IllegalArgumentException(error); }
-            @Override public void illegal(String error, Throwable cause) { throw new IllegalArgumentException(error, cause); }
-            @Override public DeployState deployState() { return state; }
-        };
-    }
 
 }

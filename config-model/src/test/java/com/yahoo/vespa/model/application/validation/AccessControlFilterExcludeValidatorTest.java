@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import static com.yahoo.vespa.model.application.validation.ValidationTester.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,8 +56,9 @@ public class AccessControlFilterExcludeValidatorTest {
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),
                 deployState);
 
-        expect(new AccessControlFilterExcludeValidator(), model, deployState,
-               "Application cluster container-cluster-with-access-control excludes paths from access control, this is not allowed and should be removed.");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new AccessControlFilterExcludeValidator().validate(model, deployState));
+        String expectedMessage = "Application cluster container-cluster-with-access-control excludes paths from access control, this is not allowed and should be removed.";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     @Test
@@ -69,8 +69,9 @@ public class AccessControlFilterExcludeValidatorTest {
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),
                 deployState);
 
-        ValidationTester.validate(new AccessControlFilterExcludeValidator(), model, deployState);
-        assertTrue(logOutput.toString().contains("Application cluster container-cluster-with-access-control excludes paths from access control, this is not allowed and should be removed."));
+        new AccessControlFilterExcludeValidator().validate(model, deployState);
+        String expectedMessage = "Application cluster container-cluster-with-access-control excludes paths from access control, this is not allowed and should be removed.";
+        assertTrue(logOutput.toString().contains(expectedMessage));
     }
 
     @Test
@@ -79,7 +80,7 @@ public class AccessControlFilterExcludeValidatorTest {
         VespaModel model = new VespaModel(
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),
                 deployState);
-        ValidationTester.validate(new AccessControlFilterExcludeValidator(), model, deployState);
+        new AccessControlFilterExcludeValidator().validate(model, deployState);
     }
 
     @Test
@@ -89,7 +90,7 @@ public class AccessControlFilterExcludeValidatorTest {
                 MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter()),
                 deployState);
 
-        ValidationTester.validate(new AccessControlFilterExcludeValidator(), model, deployState);
+        new AccessControlFilterExcludeValidator().validate(model, deployState);
     }
 
     private static DeployState createDeployState(Zone zone, StringBuffer buffer, boolean allowExcludes) {
@@ -111,6 +112,6 @@ public class AccessControlFilterExcludeValidatorTest {
         Cloud.Builder cloudBuilder = Cloud.builder().name(cloudName);
         if (cloudName == CloudName.AWS) cloudBuilder.account(CloudAccount.from("123456789012"));
         return new Zone(cloudBuilder.build(), systemName, Environment.prod, RegionName.defaultName());
-    }
 
+    }
 }

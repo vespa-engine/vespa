@@ -2,13 +2,14 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.http.Client;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -23,20 +24,22 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
     private static final Logger logger = Logger.getLogger(CertificateRemovalChangeValidator.class.getName());
 
     @Override
-    public void validate(ChangeContext context) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         // Skip for tester applications
-        if (context.previousModel().applicationPackage().getApplicationId().instance().isTester()) return;
-        context.previousModel().getContainerClusters()
+        if (current.applicationPackage().getApplicationId().instance().isTester()) return List.of();
+        current.getContainerClusters()
                 .forEach((clusterId, currentCluster) -> {
-                    if(context.model().getContainerClusters().containsKey(clusterId))
+                    if(next.getContainerClusters().containsKey(clusterId))
                         validateClients(clusterId,
                                         currentCluster.getClients(),
-                                        context.model().getContainerClusters().get(clusterId).getClients(),
-                                        context::invalid);
+                                        next.getContainerClusters().get(clusterId).getClients(),
+                                        deployState);
                 });
+
+        return List.of();
     }
 
-    void validateClients(String clusterId, List<Client> current, List<Client> next, BiConsumer<ValidationId, String> reporter) {
+    void validateClients(String clusterId, List<Client> current, List<Client> next, DeployState deployState) {
         List<X509Certificate> currentCertificates = current.stream()
                 .filter(client -> !client.internal())
                 .map(Client::certificates)
@@ -55,11 +58,12 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
 
         List<X509Certificate> missingCerts = currentCertificates.stream().filter(cert -> !nextCertificates.contains(cert)).toList();
         if (!missingCerts.isEmpty()) {
-            reporter.accept(ValidationId.certificateRemoval,
-                            "Data plane certificate(s) from cluster '" + clusterId + "' is removed " +
-                            "(removed certificates: " + missingCerts.stream().map(x509Certificate -> x509Certificate.getSubjectX500Principal().getName()).toList() + ") " +
-                            "This can cause client connection issues.");
+            deployState.validationOverrides().invalid(ValidationId.certificateRemoval,
+                              "Data plane certificate(s) from cluster '" + clusterId + "' is removed " +
+                              "(removed certificates: " + missingCerts.stream().map(x509Certificate -> x509Certificate.getSubjectX500Principal().getName()).toList() + ") " +
+                              "This can cause client connection issues.",
+                              deployState.now());
         }
-    }
 
+    }
 }

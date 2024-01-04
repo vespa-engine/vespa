@@ -48,7 +48,7 @@ public class SecretStoreValidatorTest {
         DeployState deployState = deployState(servicesXml(), deploymentXml(true));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        ValidationTester.validate(new SecretStoreValidator(), model, deployState);
+        new SecretStoreValidator().validate(model, deployState);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class SecretStoreValidatorTest {
             DeployState deployState = deployState(servicesXml(), deploymentXml(false));
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-            ValidationTester.validate(new SecretStoreValidator(), model, deployState);
+            new SecretStoreValidator().validate(model, deployState);
 
         });
         assertTrue(exception.getMessage().contains("Container cluster 'default' uses a secret store, so an Athenz domain and" +
@@ -74,7 +74,7 @@ public class SecretStoreValidatorTest {
         DeployState deployState = deployState(servicesXml, deploymentXml(false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        ValidationTester.validate(new SecretStoreValidator(), model, deployState);
+        new SecretStoreValidator().validate(model, deployState);
     }
 
     private static DeployState deployState(String servicesXml, String deploymentXml) {

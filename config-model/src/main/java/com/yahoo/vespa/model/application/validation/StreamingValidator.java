@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.document.TensorDataType;
@@ -9,7 +10,7 @@ import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.MatchType;
-import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
@@ -19,18 +20,18 @@ import java.util.logging.Level;
 /**
  * Validates streaming mode
  */
-public class StreamingValidator implements Validator {
+public class StreamingValidator extends Validator {
 
     @Override
-    public void validate(Context context) {
-        List<SearchCluster> searchClusters = context.model().getSearchClusters();
+    public void validate(VespaModel model, DeployState deployState) {
+        List<SearchCluster> searchClusters = model.getSearchClusters();
         for (SearchCluster cluster : searchClusters) {
             if ( ! cluster.isStreaming()) continue;
 
             var streamingCluster = (StreamingSearchCluster)cluster;
-            warnStreamingAttributes(streamingCluster, context.deployState().getDeployLogger());
-            warnStreamingGramMatching(streamingCluster, context.deployState().getDeployLogger());
-            failStreamingDocumentReferences(context, streamingCluster);
+            warnStreamingAttributes(streamingCluster, deployState.getDeployLogger());
+            warnStreamingGramMatching(streamingCluster, deployState.getDeployLogger());
+            failStreamingDocumentReferences(streamingCluster);
         }
     }
 
@@ -80,14 +81,14 @@ public class StreamingValidator implements Validator {
                                                     "': 'attribute' has same match semantics as 'index'.");
     }
 
-    private static void failStreamingDocumentReferences(Context context, StreamingSearchCluster sc) {
+    private static void failStreamingDocumentReferences(StreamingSearchCluster sc) {
         for (Attribute attribute : sc.derived().getAttributeFields().attributes()) {
             DataType dataType = attribute.getDataType();
             if (dataType instanceof NewDocumentReferenceDataType) {
                 String errorMessage = String.format("For streaming search cluster '%s': Attribute '%s' has type '%s'. " +
                                                     "Document references and imported fields are not allowed in streaming search.",
                                                     sc.getClusterName(), attribute.getName(), dataType.getName());
-                context.illegal(errorMessage);
+                throw new IllegalArgumentException(errorMessage);
             }
         }
     }

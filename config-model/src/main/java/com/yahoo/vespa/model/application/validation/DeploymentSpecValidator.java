@@ -3,8 +3,9 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerModel;
 
 import java.io.Reader;
@@ -17,29 +18,29 @@ import java.util.Optional;
  * @author hmusum
  * @author bratseth
  */
-public class DeploymentSpecValidator implements Validator {
+public class DeploymentSpecValidator extends Validator {
 
     @Override
-    public void validate(Context context) {
-        Optional<Reader> deployment = context.deployState().getApplicationPackage().getDeployment();
+    public void validate(VespaModel model, DeployState deployState) {
+        Optional<Reader> deployment = deployState.getApplicationPackage().getDeployment();
         if ( deployment.isEmpty()) return;
 
         Reader deploymentReader = deployment.get();
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(deploymentReader);
-        List<ContainerModel> containers = context.model().getRoot().configModelRepo().getModels(ContainerModel.class);
+        List<ContainerModel> containers = model.getRoot().configModelRepo().getModels(ContainerModel.class);
         for (DeploymentInstanceSpec instance : deploymentSpec.instances()) {
             instance.endpoints().forEach(endpoint -> {
-                requireClusterId(context, containers, instance.name(),
-                                 "Endpoint '" + endpoint.endpointId() + "'", endpoint.containerId());
+                requireClusterId(containers, instance.name(), "Endpoint '" + endpoint.endpointId() + "'",
+                                 endpoint.containerId());
             });
         }
     }
 
-    private static void requireClusterId(Context context, List<ContainerModel> containers, InstanceName instanceName,
-                                         String endpoint, String id) {
+    private static void requireClusterId(List<ContainerModel> containers, InstanceName instanceName, String context,
+                                         String id) {
         if (containers.stream().noneMatch(container -> container.getCluster().getName().equals(id)))
-            context.illegal(endpoint + " in instance " + instanceName + ": '" + id +
-                            "' specified in deployment.xml does not match any container cluster ID");
+            throw new IllegalArgumentException(context + " in instance " + instanceName + ": '" + id +
+                                               "' specified in deployment.xml does not match any container cluster ID");
     }
 
 }

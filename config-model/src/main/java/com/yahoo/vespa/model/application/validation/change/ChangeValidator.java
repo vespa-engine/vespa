@@ -2,9 +2,11 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
-import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.config.application.api.ValidationOverrides;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -15,9 +17,15 @@ import java.util.List;
 public interface ChangeValidator {
 
     /**
-     * Validates changes from the previous to the next model. Necessary actions by the user
-     * should be reported through the context; see {@link Validator} for more details.
+     * Validates the current active vespa model with the next model.
+     * Both current and next should be non-null.
+     *
+     * @param current the current active model
+     * @param next the next model we would like to activate
+     * @return a list of actions specifying what needs to be done in order to activate the new model.
+     *         Return an empty list if nothing needs to be done
+     * @throws IllegalArgumentException if the change fails validation
      */
-    void validate(ChangeContext context);
+    List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState);
 
 }

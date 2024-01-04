@@ -67,7 +67,7 @@ class CloudUserFilterValidatorTest {
                 .properties(new TestProperties().setHostedVespa(isHosted).setAllowUserFilters(false))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ValidationTester.validate(new CloudUserFilterValidator(), model, deployState);
+        new CloudUserFilterValidator().validate(model, deployState);
     }
 
 }

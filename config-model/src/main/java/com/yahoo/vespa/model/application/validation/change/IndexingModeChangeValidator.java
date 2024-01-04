@@ -4,8 +4,9 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.SearchNode;
@@ -15,8 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static java.util.stream.Collectors.toCollection;
+import java.util.stream.Collectors;
 
 /**
  * Returns any change to the indexing mode of a cluster.
@@ -27,12 +27,14 @@ import static java.util.stream.Collectors.toCollection;
 public class IndexingModeChangeValidator implements ChangeValidator {
 
     @Override
-    public void validate(ChangeContext context) {
-        for (Map.Entry<String, ContentCluster> currentEntry : context.previousModel().getContentClusters().entrySet()) {
-            ContentCluster nextCluster = context.model().getContentClusters().get(currentEntry.getKey());
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        List<ConfigChangeAction> actions = new ArrayList<>();
+        for (Map.Entry<String, ContentCluster> currentEntry : currentModel.getContentClusters().entrySet()) {
+            ContentCluster nextCluster = nextModel.getContentClusters().get(currentEntry.getKey());
             if (nextCluster == null) continue;
-            validateContentCluster(currentEntry.getValue(), nextCluster).forEach(context::require);
+            actions.addAll(validateContentCluster(currentEntry.getValue(), nextCluster));
         }
+        return actions;
     }
 
     private static List<ConfigChangeAction> validateContentCluster(ContentCluster currentCluster, ContentCluster nextCluster) {
@@ -86,7 +88,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
     private static Set<String> toDocumentTypeNames(List<NewDocumentType> types) {
         return types.stream()
                 .map(type -> type.getFullName().getName())
-                .collect(toCollection(LinkedHashSet::new));
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
 }
