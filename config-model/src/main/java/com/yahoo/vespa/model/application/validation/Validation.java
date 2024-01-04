@@ -111,8 +111,8 @@ public class Validation {
         new CloudHttpConnectorValidator().validate(execution);
         new UrlConfigValidator().validate(execution);
         new JvmHeapSizeValidator().validate(execution);
-        // TODO: new InfrastructureDeploymentValidator().validate(execution);
-        new EndpointCertificateSecretsValidator().validate(execution); // TODO: move last
+        new InfrastructureDeploymentValidator().validate(execution);
+        new EndpointCertificateSecretsValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
