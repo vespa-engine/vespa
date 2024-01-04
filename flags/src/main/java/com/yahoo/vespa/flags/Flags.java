@@ -254,7 +254,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2023-12-31",
+            List.of("arnej"), "2021-11-15", "2024-12-31",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
