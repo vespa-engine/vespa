@@ -102,7 +102,6 @@ public class Validation {
         new ValidationOverridesValidator().validate(execution);
         new ConstantValidator().validate(execution);
         new SecretStoreValidator().validate(execution);
-        new EndpointCertificateSecretsValidator().validate(execution); // TODO: move last
         new AccessControlFilterValidator().validate(execution);
         new QuotaValidator().validate(execution);
         new UriBindingsValidator().validate(execution);
@@ -113,6 +112,7 @@ public class Validation {
         new UrlConfigValidator().validate(execution);
         new JvmHeapSizeValidator().validate(execution);
         // TODO: new InfrastructureDeploymentValidator().validate(execution);
+        new EndpointCertificateSecretsValidator().validate(execution); // TODO: move last
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
