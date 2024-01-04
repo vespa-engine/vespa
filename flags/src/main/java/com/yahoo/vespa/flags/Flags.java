@@ -449,7 +449,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES = defineFeatureFlag(
             "restart-on-deploy-when-onnx-model-changes", false,
-            List.of("hmusum"), "2023-12-04", "2024-01-04",
+            List.of("hmusum"), "2023-12-04", "2024-02-01",
             "If set, restart on deploy if onnx model or onnx model options used by a container cluster change",
             "Takes effect at redeployment",
             INSTANCE_ID);
