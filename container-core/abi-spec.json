@@ -2018,6 +2018,7 @@
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder searchHandlerPaths(java.util.Collection)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder ignoredUserAgents(java.lang.String)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder ignoredUserAgents(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder reporterEnabled(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric build()"
     ],
     "fields" : [
@@ -2040,7 +2041,8 @@
       "public java.util.List searchHandlerPaths()",
       "public java.lang.String searchHandlerPaths(int)",
       "public java.util.List ignoredUserAgents()",
-      "public java.lang.String ignoredUserAgents(int)"
+      "public java.lang.String ignoredUserAgents(int)",
+      "public boolean reporterEnabled()"
     ],
     "fields" : [ ]
   },

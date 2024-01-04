@@ -37,19 +37,20 @@ class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
     private final Set<String> ignoredUserAgents;
+    private final boolean reporterEnabled;
 
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
     ResponseMetricAggregator(ServerConfig.Metric cfg) {
-        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents());
+        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled());
     }
 
     ResponseMetricAggregator(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
-                             Collection<String> ignoredUserAgents) {
+                             Collection<String> ignoredUserAgents, boolean reporterEnabled) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
-
+        this.reporterEnabled = reporterEnabled;
     }
 
     static ResponseMetricAggregator getBean(JettyHttpServer server) { return getBean(server.server()); }
@@ -67,12 +68,15 @@ class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.
     }
 
     List<StatisticsEntry> takeStatistics() {
+        if (reporterEnabled)
+            throw new IllegalStateException("Cannot take consistent snapshot while reporter is enabled");
         var ret = new ArrayList<StatisticsEntry>();
         consume((metric, value) -> ret.add(new StatisticsEntry(metric, value)));
         return ret;
     }
 
     void reportSnapshot(Metric metricAggregator) {
+        if (!reporterEnabled) throw new IllegalStateException("Reporter is not enabled");
         consume((metric, value) -> {
             Metric.Context ctx = metricAggregator.createContext(metric.dimensions.asMap());
             metricAggregator.add(metric.name, value, ctx);

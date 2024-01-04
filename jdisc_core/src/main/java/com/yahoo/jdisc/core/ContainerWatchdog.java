@@ -41,9 +41,10 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
 
     private final Object monitor = new Object();
     private final List<DeactivatedContainer> deactivatedContainers = new LinkedList<>();
-    private final ScheduledExecutorService scheduler;
     private final Clock clock;
+    private final boolean enableScheduler;
 
+    private ScheduledExecutorService scheduler;
     private ActiveContainer currentContainer;
     private Instant currentContainerActivationTime;
     private int numStaleContainers;
@@ -53,25 +54,31 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
 
 
     ContainerWatchdog() {
-        this(new ScheduledThreadPoolExecutor(
-                     1,
-                     runnable -> {
-                         Thread thread = new Thread(runnable, "container-watchdog");
-                         thread.setDaemon(true);
-                         return thread;
-                     }),
-             Clock.systemUTC());
+        this(Clock.systemUTC(), true);
     }
 
-    ContainerWatchdog(ScheduledExecutorService scheduler, Clock clock) {
-        this.scheduler = scheduler;
+    /* For unit testing only */
+    ContainerWatchdog(Clock clock, boolean enableScheduler) {
         this.clock = clock;
         this.lastLogTime = clock.instant();
+        this.enableScheduler = enableScheduler;
     }
 
     void start() {
-        this.containerMontoringTask = scheduler.scheduleAtFixedRate(this::monitorDeactivatedContainers,
-                CONTAINER_CHECK_PERIOD.getSeconds(), CONTAINER_CHECK_PERIOD.getSeconds(), TimeUnit.SECONDS);
+        if (enableScheduler) {
+            if (scheduler == null) this.scheduler = new ScheduledThreadPoolExecutor(
+                    1,
+                    runnable -> {
+                        Thread thread = new Thread(runnable, "container-watchdog");
+                        thread.setDaemon(true);
+                        return thread;
+                    });
+            if (containerMontoringTask != null) containerMontoringTask.cancel(false);
+            if (threadMonitoringTask != null) threadMonitoringTask.cancel(false);
+            containerMontoringTask = scheduler.scheduleAtFixedRate(
+                    this::monitorDeactivatedContainers,
+                    CONTAINER_CHECK_PERIOD.getSeconds(), CONTAINER_CHECK_PERIOD.getSeconds(), TimeUnit.SECONDS);
+        }
     }
 
     @Override
@@ -88,9 +95,14 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
         if (containerMontoringTask != null) containerMontoringTask.cancel(false);
         if (threadMonitoringTask != null) threadMonitoringTask.cancel(false);
         synchronized (monitor) {
+            if (scheduler != null) scheduler.shutdownNow();
             deactivatedContainers.clear();
             currentContainer = null;
             currentContainerActivationTime = null;
+            if (scheduler != null && !scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warning("Failed to shutdown container watchdog within 10 seconds");
+            }
+            scheduler = null;
         }
     }
 
@@ -102,7 +114,7 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
             currentContainer = nextContainer;
             currentContainerActivationTime = clock.instant();
             if (threadMonitoringTask != null) threadMonitoringTask.cancel(false);
-            threadMonitoringTask = scheduler.schedule(this::monitorThreads, 1, TimeUnit.MINUTES);
+            if (enableScheduler) threadMonitoringTask = scheduler.schedule(this::monitorThreads, 1, TimeUnit.MINUTES);
         }
     }
 
