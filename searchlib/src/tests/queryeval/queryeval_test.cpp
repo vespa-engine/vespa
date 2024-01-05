@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/regex/regex.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
@@ -19,9 +19,9 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchcommon/common/growstrategy.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("query_eval_test");
@@ -87,15 +87,16 @@ std::unique_ptr<sourceselector::Iterator> selector() {
 void testMultiSearch(SearchIterator & search) {
     auto & ms = dynamic_cast<MultiSearch &>(search);
     ms.initRange(3, 309);
-    EXPECT_EQUAL(2u, ms.getDocId());
-    EXPECT_EQUAL(309u, ms.getEndId());
+    EXPECT_EQ(2u, ms.getDocId());
+    EXPECT_EQ(309u, ms.getEndId());
     for (const auto & child : ms.getChildren()) {
-        EXPECT_EQUAL(2u, child->getDocId());
-        EXPECT_EQUAL(309u, child->getEndId());
+        EXPECT_EQ(2u, child->getDocId());
+        EXPECT_EQ(309u, child->getEndId());
     }
 }
 
-TEST("test that OR.andWith is a NOOP") {
+TEST(QueryEvalTest, test_that_or_andwith_is_a_noop)
+{
     TermFieldMatchData tfmd;
     MultiSearch::Children ch;
     ch.emplace_back(new TrueSearch(tfmd));
@@ -106,7 +107,8 @@ TEST("test that OR.andWith is a NOOP") {
     EXPECT_TRUE(search->andWith(std::move(filter), 1));
 }
 
-TEST("test that non-strict AND.andWith is a NOOP") {
+TEST(QueryEvalTest, test_that_non_strict_and_andwidth_is_a_noop)
+{
     TermFieldMatchData tfmd;
     MultiSearch::Children ch;
     ch.emplace_back(new TrueSearch(tfmd));
@@ -117,7 +119,8 @@ TEST("test that non-strict AND.andWith is a NOOP") {
     EXPECT_TRUE(filter);
 }
 
-TEST("test that strict AND.andWith steals filter and places it correctly based on estimate") {
+TEST(QueryEvalTest, test_that_strict_and_andwidth_steals_filter_and_places_it_correctly_based_on_estimate)
+{
     TermFieldMatchData tfmd;
     std::vector<SearchIterator *> ch;
     ch.emplace_back(new TrueSearch(tfmd));
@@ -129,19 +132,19 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
 
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
     const auto & andChildren = dynamic_cast<MultiSearch &>(*search).getChildren();
-    EXPECT_EQUAL(3u, andChildren.size());
-    EXPECT_EQUAL(ch[0], andChildren[0].get());
-    EXPECT_EQUAL(filterP, andChildren[1].get());
-    EXPECT_EQUAL(ch[1], andChildren[2].get());
+    EXPECT_EQ(3u, andChildren.size());
+    EXPECT_EQ(ch[0], andChildren[0].get());
+    EXPECT_EQ(filterP, andChildren[1].get());
+    EXPECT_EQ(ch[1], andChildren[2].get());
 
     auto filter2 = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filter2P = filter2.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter2), 6).get());
-    EXPECT_EQUAL(4u, andChildren.size());
-    EXPECT_EQUAL(filter2P, andChildren[0].get());
-    EXPECT_EQUAL(ch[0], andChildren[1].get());
-    EXPECT_EQUAL(filterP, andChildren[2].get());
-    EXPECT_EQUAL(ch[1], andChildren[3].get());
+    EXPECT_EQ(4u, andChildren.size());
+    EXPECT_EQ(filter2P, andChildren[0].get());
+    EXPECT_EQ(ch[0], andChildren[1].get());
+    EXPECT_EQ(filterP, andChildren[2].get());
+    EXPECT_EQ(ch[1], andChildren[3].get());
 }
 
 class NonStrictTrueSearch : public TrueSearch
@@ -151,7 +154,8 @@ public:
     [[nodiscard]] Trinary is_strict() const override { return Trinary::False; }
 };
 
-TEST("test that strict AND.andWith does not place non-strict iterator first") {
+TEST(QueryEvalTest, test_that_strict_and_andwidth_does_not_place_non_strict_iterator_first)
+{
     TermFieldMatchData tfmd;
     std::vector<SearchIterator *> ch;
     ch.emplace_back(new TrueSearch(tfmd));
@@ -162,34 +166,38 @@ TEST("test that strict AND.andWith does not place non-strict iterator first") {
     SearchIterator * filterP = filter.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 6).get());
     const auto & andChildren = dynamic_cast<MultiSearch &>(*search).getChildren();
-    EXPECT_EQUAL(3u, andChildren.size());
-    EXPECT_EQUAL(ch[0], andChildren[0].get());
-    EXPECT_EQUAL(filterP, andChildren[1].get());
-    EXPECT_EQUAL(ch[1], andChildren[2].get());
+    EXPECT_EQ(3u, andChildren.size());
+    EXPECT_EQ(ch[0], andChildren[0].get());
+    EXPECT_EQ(filterP, andChildren[1].get());
+    EXPECT_EQ(ch[1], andChildren[2].get());
 }
 
-TEST("test that strict rank search forwards to its greedy first child") {
+TEST(QueryEvalTest, test_that_strict_rank_search_forwards_to_its_greedy_first_child)
+{
     TermFieldMatchData tfmd;
     SearchIterator::UP search = RankSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, true);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
-TEST("test that non-strict rank search does NOT forward to its greedy first child") {
+TEST(QueryEvalTest, test_that_non_strict_rank_search_does_not_forward_to_its_greedy_first_child)
+{
     TermFieldMatchData tfmd;
     SearchIterator::UP search = RankSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, false);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
 }
 
-TEST("test that strict andnot search forwards to its greedy first child") {
+TEST(QueryEvalTest, test_that_strict_andnot_search_forwards_to_its_greedy_first_child)
+{
     TermFieldMatchData tfmd;
     SearchIterator::UP search = AndNotSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, true);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
-TEST("test that non-strict andnot search does NOT forward to its greedy first child") {
+TEST(QueryEvalTest, test_that_non_strict_andnot_search_does_not_forward_to_its_greedy_first_child)
+{
     TermFieldMatchData tfmd;
     SearchIterator::UP search = AndNotSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, false);
     auto filter = std::make_unique<TrueSearch>(tfmd);
@@ -199,13 +207,10 @@ TEST("test that non-strict andnot search does NOT forward to its greedy first ch
 void expect_match(std::string input, std::string regexp) {
     using vespalib::Regex;
     Regex pattern = Regex::from_pattern(regexp, Regex::Options::DotMatchesNewline);
-    if (! EXPECT_TRUE(pattern.partial_match(input))) {
-        fprintf(stderr, "no match for pattern: >>>%s<<< in input:\n>>>\n%s\n<<<\n",
-                regexp.c_str(), input.c_str());
-    }
+    EXPECT_TRUE(pattern.partial_match(input)) << "no match for pattern: >>>" << regexp << "<<< in input: >>>\n" << input << "<<<";
 }
 
-TEST("testAnd") {
+TEST(QueryEvalTest, test_and) {
     SimpleResult a;
     SimpleResult b;
     a.addHit(5).addHit(10).addHit(16).addHit(30);
@@ -219,17 +224,17 @@ TEST("testAnd") {
     SearchIterator::UP and_ab = and_b->createSearch(*md, true);
 
     EXPECT_TRUE(dynamic_cast<const AndSearch *>(and_ab.get()) != nullptr);
-    EXPECT_EQUAL(4u, dynamic_cast<AndSearch &>(*and_ab).estimate());
+    EXPECT_EQ(4u, dynamic_cast<AndSearch &>(*and_ab).estimate());
     SimpleResult res;
     res.search(*and_ab);
     SimpleResult expect;
     expect.addHit(5).addHit(30);
-    EXPECT_EQUAL(res, expect);
+    EXPECT_EQ(res, expect);
 
     SearchIterator::UP filter_ab = and_b->createFilterSearch(true, upper_bound);
     SimpleResult filter_res;
     filter_res.search(*filter_ab);
-    EXPECT_EQUAL(res, expect);
+    EXPECT_EQ(res, expect);
     std::string dump = filter_ab->asString();
     expect_match(dump, "upper");
     expect_match(dump, "AndSearchStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
@@ -239,10 +244,8 @@ TEST("testAnd") {
     expect_match(dump, "AndSearchNoStrict.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
 }
 
-TEST("mutisearch and initRange") {
-}
-
-TEST("testOr") {
+TEST(QueryEvalTest, test_or)
+{
     {
         SimpleResult a;
         SimpleResult b;
@@ -260,12 +263,12 @@ TEST("testOr") {
         res.search(*or_ab);
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(17).addHit(30);
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
 
         SearchIterator::UP filter_ab = or_b->createFilterSearch(true, upper_bound);
         SimpleResult filter_res;
         filter_res.search(*filter_ab);
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
         expect_match(dump, "OrLikeSearch.true.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
@@ -305,34 +308,35 @@ struct MultiSearchRemoveTest {
     static SearchIterator::UP remove(MultiSearch &ms, size_t idx) { return ms.remove(idx); }
 };
 
-TEST("testMultiSearch") {
+TEST(QueryEvalTest, test_multi_search)
+{
     std::vector<SearchIterator *> orig;
     orig.emplace_back(new EmptySearch());
     orig.emplace_back(new EmptySearch());
     orig.emplace_back(new EmptySearch());
     TestInsertRemoveSearch ms({orig[0], orig[1], orig[2]});
-    EXPECT_EQUAL(3u, ms.getChildren().size());
-    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
-    EXPECT_EQUAL(orig[1], ms.getChildren()[1].get());
-    EXPECT_EQUAL(orig[2], ms.getChildren()[2].get());
-    EXPECT_EQUAL(0u, ms._accumInsert);
-    EXPECT_EQUAL(0u, ms._accumRemove);
+    EXPECT_EQ(3u, ms.getChildren().size());
+    EXPECT_EQ(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQ(orig[1], ms.getChildren()[1].get());
+    EXPECT_EQ(orig[2], ms.getChildren()[2].get());
+    EXPECT_EQ(0u, ms._accumInsert);
+    EXPECT_EQ(0u, ms._accumRemove);
 
-    EXPECT_EQUAL(orig[1], MultiSearchRemoveTest::remove(ms, 1).get());
-    EXPECT_EQUAL(2u, ms.getChildren().size());
-    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
-    EXPECT_EQUAL(orig[2], ms.getChildren()[1].get());
-    EXPECT_EQUAL(0u, ms._accumInsert);
-    EXPECT_EQUAL(1u, ms._accumRemove);
+    EXPECT_EQ(orig[1], MultiSearchRemoveTest::remove(ms, 1).get());
+    EXPECT_EQ(2u, ms.getChildren().size());
+    EXPECT_EQ(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQ(orig[2], ms.getChildren()[1].get());
+    EXPECT_EQ(0u, ms._accumInsert);
+    EXPECT_EQ(1u, ms._accumRemove);
 
     orig.emplace_back(new EmptySearch());
     ms.insert(1, SearchIterator::UP(orig.back()));
-    EXPECT_EQUAL(3u, ms.getChildren().size());
-    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
-    EXPECT_EQUAL(orig[3], ms.getChildren()[1].get());
-    EXPECT_EQUAL(orig[2], ms.getChildren()[2].get());
-    EXPECT_EQUAL(1u, ms._accumInsert);
-    EXPECT_EQUAL(1u, ms._accumRemove);
+    EXPECT_EQ(3u, ms.getChildren().size());
+    EXPECT_EQ(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQ(orig[3], ms.getChildren()[1].get());
+    EXPECT_EQ(orig[2], ms.getChildren()[2].get());
+    EXPECT_EQ(1u, ms._accumInsert);
+    EXPECT_EQ(1u, ms._accumRemove);
 }
 
 class DummySingleValueBitNumericAttributeBlueprint : public SimpleLeafBlueprint
@@ -370,7 +374,8 @@ private:
 };
 
 
-TEST("testAndNot") {
+TEST(QueryEvalTest, test_andnot)
+{
     {
         SimpleResult a;
         SimpleResult b;
@@ -388,12 +393,12 @@ TEST("testAndNot") {
         res.search(*andnot_ab);
         SimpleResult expect;
         expect.addHit(10);
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
 
         SearchIterator::UP filter_ab = andnot_b->createFilterSearch(true, upper_bound);
         SimpleResult filter_res;
         filter_res.search(*filter_ab);
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
         expect_match(dump, "AndNotSearch.*SimpleSearch.*<strict,upper>.*SimpleSearch.*<nostrict,lower>");
@@ -420,7 +425,7 @@ TEST("testAndNot") {
         SimpleResult expect;
         expect.addHit(1).addHit(10);
 
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
     }
     {
         SimpleResult a;
@@ -446,13 +451,14 @@ TEST("testAndNot") {
         SimpleResult expect;
         expect.addHit(1).addHit(10);
 
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
     }
     {
     }
 }
 
-TEST("testRank") {
+TEST(QueryEvalTest, test_rank)
+{
     {
         SimpleResult a;
         SimpleResult b;
@@ -471,7 +477,7 @@ TEST("testRank") {
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(16).addHit(30);
 
-        EXPECT_EQUAL(res, expect);
+        EXPECT_EQ(res, expect);
     }
 }
 
@@ -600,7 +606,8 @@ getExpectedSlime() {
 "}";
 }
 
-TEST("testDump") {
+TEST(QueryEvalTest, test_dump)
+{
     using SBChild = SourceBlenderSearch::Child;
 
     SearchIterator::UP search = AndSearch::create( {
@@ -622,13 +629,13 @@ TEST("testDump") {
     auto s = slime.toString();
     vespalib::Slime expectedSlime;
     vespalib::slime::JsonFormat::decode(getExpectedSlime(), expectedSlime);
-    EXPECT_EQUAL(expectedSlime, slime);
+    EXPECT_EQ(expectedSlime, slime);
     // fprintf(stderr, "%s", search->asString().c_str());
 }
 
-TEST("testFieldSpec") {
-    EXPECT_EQUAL(8u, sizeof(FieldSpecBase));
-    EXPECT_EQUAL(72u, sizeof(FieldSpec));
+TEST(QueryEvalTest, test_field_spec) {
+    EXPECT_EQ(8u, sizeof(FieldSpecBase));
+    EXPECT_EQ(72u, sizeof(FieldSpec));
 }
 
 
@@ -652,9 +659,9 @@ std::vector<size_t> fill_vector(size_t begin, size_t end) {
 
 void verify_unpack(const UnpackInfo &unpack, const std::vector<size_t> &expect) {
     std::vector<size_t> actual = vectorize(unpack);
-    EXPECT_EQUAL(unpack.empty(), expect.empty());
-    EXPECT_EQUAL(unpack.unpackAll(), (expect.size() == unpack_child_cnt));
-    EXPECT_EQUAL(expect, actual);
+    EXPECT_EQ(unpack.empty(), expect.empty());
+    EXPECT_EQ(unpack.unpackAll(), (expect.size() == unpack_child_cnt));
+    EXPECT_EQ(expect, actual);
     size_t child_idx = 0;
     for (size_t next_unpack: expect) {
         while (child_idx < next_unpack) {
@@ -664,19 +671,23 @@ void verify_unpack(const UnpackInfo &unpack, const std::vector<size_t> &expect) 
     }
 }
 
-TEST("require that unpack info has expected memory footprint") {
-    EXPECT_EQUAL(32u, sizeof(UnpackInfo));
+TEST(QueryEvalTest, require_that_unpack_info_has_expected_memory_footprint)
+{
+    EXPECT_EQ(32u, sizeof(UnpackInfo));
 }
 
-TEST("require that unpack info starts out empty") {
+TEST(QueryEvalTest, require_that_unpack_info_starts_out_empty)
+{
     verify_unpack(UnpackInfo(), {});
 }
 
-TEST("require that unpack info force all unpacks all children") {
+TEST(QueryEvalTest, require_that_unpack_info_force_all_unpacks_all_children)
+{
     verify_unpack(UnpackInfo().forceAll(), fill_vector(0, unpack_child_cnt));
 }
 
-TEST("require that adding a large index to unpack info forces unpack all") {
+TEST(QueryEvalTest, require_that_adding_a_large_index_to_unpack_info_forces_unpack_all)
+{
     UnpackInfo unpack;
     unpack.add(0);
     unpack.add(max_unpack_index);
@@ -685,7 +696,8 @@ TEST("require that adding a large index to unpack info forces unpack all") {
     verify_unpack(unpack, fill_vector(0, unpack_child_cnt));
 }
 
-TEST("require that adding too many children to unpack info forces unpack all") {
+TEST(QueryEvalTest, require_that_adding_too_many_children_to_unpack_info_forces_unpack_all)
+{
     UnpackInfo unpack;
     std::vector<size_t> expect;
     for (size_t i = 0; i < max_unpack_size; ++i) {
@@ -697,19 +709,22 @@ TEST("require that adding too many children to unpack info forces unpack all") {
     verify_unpack(unpack, fill_vector(0, unpack_child_cnt));
 }
 
-TEST("require that adding normal unpack info indexes works") {
+TEST(QueryEvalTest, require_that_adding_normal_unpack_info_indexes_works)
+{
     UnpackInfo unpack;
     unpack.add(3).add(5).add(7).add(14).add(50);
     verify_unpack(unpack, {3,5,7,14,50});
 }
 
-TEST("require that adding unpack info indexes out of order works") {
+TEST(QueryEvalTest, require_that_adding_unpack_info_indexes_out_of_order_works)
+{
     UnpackInfo unpack;
     unpack.add(5).add(3).add(7).add(50).add(14);
     verify_unpack(unpack, {3,5,7,14,50});
 }
 
-TEST("require that basic insert remove of unpack info works") {
+TEST(QueryEvalTest, require_that_basic_insert_remove_of_unpack_info_works)
+{
     UnpackInfo unpack;
     unpack.insert(1).insert(3);
     verify_unpack(unpack, {1, 3});
@@ -729,7 +744,8 @@ TEST("require that basic insert remove of unpack info works") {
     verify_unpack(unpack, {});
 }
 
-TEST("require that inserting too many indexs into unpack info forces unpack all") {
+TEST(QueryEvalTest, require_that_inserting_too_many_indexes_into_unpack_info_forces_unpack_all)
+{
     for (bool unpack_inserted: {true, false}) {
         UnpackInfo unpack;
         for (size_t i = 0; i < max_unpack_size; ++i) {
@@ -745,7 +761,8 @@ TEST("require that inserting too many indexs into unpack info forces unpack all"
     }
 }
 
-TEST("require that implicitly overflowing indexes during insert in unpack info forces unpack all") {
+TEST(QueryEvalTest, require_that_implicitly_overflowing_indexes_during_insert_in_unpack_info_forces_unpack_all)
+{
     for (bool unpack_inserted: {true, false}) {
         UnpackInfo unpack;
         unpack.insert(max_unpack_index);
@@ -755,7 +772,8 @@ TEST("require that implicitly overflowing indexes during insert in unpack info f
     }
 }
 
-TEST("require that inserting a too high index into unpack info forces unpack all") {
+TEST(QueryEvalTest, require_that_inserting_a_too_high_index_into_unpack_info_forces_unpack_all)
+{
     for (bool unpack_inserted: {true, false}) {
         UnpackInfo unpack;
         for (size_t i = 0; i < 10; ++i) {
@@ -771,7 +789,7 @@ TEST("require that inserting a too high index into unpack info forces unpack all
     }
 }
 
-TEST("require that we can insert indexes into unpack info that we do not unpack") {
+TEST(QueryEvalTest, require_that_we_can_insert_indexes_into_unpack_info_that_we_do_not_unpack) {
     UnpackInfo unpack;
     unpack.add(10).add(20).add(30);
     verify_unpack(unpack, {10, 20, 30});    
@@ -779,65 +797,85 @@ TEST("require that we can insert indexes into unpack info that we do not unpack"
     verify_unpack(unpack, {11, 22, 33});    
 }
 
-TEST("testTrueSearch") {
-    EXPECT_EQUAL(16u, sizeof(EmptySearch));
-    EXPECT_EQUAL(24u, sizeof(TrueSearch));
+TEST(QueryEvalTest, test_true_search)
+{
+    EXPECT_EQ(16u, sizeof(EmptySearch));
+    EXPECT_EQ(24u, sizeof(TrueSearch));
 
     TermFieldMatchData tfmd;
     TrueSearch t(tfmd);
-    EXPECT_EQUAL(0u, t.getDocId());
-    EXPECT_EQUAL(0u, t.getEndId());
+    EXPECT_EQ(0u, t.getDocId());
+    EXPECT_EQ(0u, t.getEndId());
     t.initRange(7, 10);
-    EXPECT_EQUAL(6u, t.getDocId());
-    EXPECT_EQUAL(10u, t.getEndId());
+    EXPECT_EQ(6u, t.getDocId());
+    EXPECT_EQ(10u, t.getEndId());
     EXPECT_TRUE(t.seek(9));
-    EXPECT_EQUAL(9u, t.getDocId());
+    EXPECT_EQ(9u, t.getDocId());
     EXPECT_FALSE(t.isAtEnd());
     EXPECT_TRUE(t.seek(10));
-    EXPECT_EQUAL(10u, t.getDocId());
+    EXPECT_EQ(10u, t.getDocId());
     EXPECT_TRUE(t.isAtEnd());
     t.initRange(4, 14);
-    EXPECT_EQUAL(3u, t.getDocId());
-    EXPECT_EQUAL(14u, t.getEndId());
+    EXPECT_EQ(3u, t.getDocId());
+    EXPECT_EQ(14u, t.getEndId());
     EXPECT_FALSE(t.isAtEnd());
 }
 
-TEST("test InitRangeVerifier") {
+TEST(QueryEvalTest, test_init_range_verifier)
+{
     InitRangeVerifier ir;
-    EXPECT_EQUAL(207u, ir.getDocIdLimit());
-    EXPECT_EQUAL(41u, ir.getExpectedDocIds().size());
+    EXPECT_EQ(207u, ir.getDocIdLimit());
+    EXPECT_EQ(41u, ir.getExpectedDocIds().size());
     auto inverted = InitRangeVerifier::invert(ir.getExpectedDocIds(), 300);
     size_t numInverted = 300 - 41 - 1;
-    EXPECT_EQUAL(numInverted, inverted.size());
-    EXPECT_EQUAL(2u, inverted[0]);
-    EXPECT_EQUAL(299u, inverted[numInverted - 1]);
+    EXPECT_EQ(numInverted, inverted.size());
+    EXPECT_EQ(2u, inverted[0]);
+    EXPECT_EQ(299u, inverted[numInverted - 1]);
     ir.verify(*ir.createIterator(ir.getExpectedDocIds(), false));
     ir.verify(*ir.createIterator(ir.getExpectedDocIds(), true));
 }
 
-TEST("Test multisearch and andsearchstrict iterators adheres to initRange") {
+TEST(QueryEvalTest, test_multisearch_and_andsearchstrict_iterators_adheres_to_init_range)
+{
     InitRangeVerifier ir;
-    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), false),
-                                   ir.createFullIterator() }, false));
-
-    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), true),
-                                   ir.createFullIterator() }, true));
+    {
+        SCOPED_TRACE("non-strict");
+        ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), false),
+                                       ir.createFullIterator() }, false));
+    }
+    {
+        SCOPED_TRACE("strict");
+        ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), true),
+                                       ir.createFullIterator() }, true));
+    }
 }
 
-TEST("Test andnotsearchstrict iterators adheres to initRange") {
+TEST(QueryEvalTest, test_andnotsearchstrict_iterators_adheres_to_init_range) {
     InitRangeVerifier ir;
-   
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), false),
-                                             ir.createEmptyIterator() }, false)));
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), true),
-                                             ir.createEmptyIterator() }, true)));
+
+    {
+        SCOPED_TRACE("non-strict");
+        ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), false),
+                                         ir.createEmptyIterator() }, false));
+    }
+    {
+        SCOPED_TRACE("strict");
+        ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), true),
+                                         ir.createEmptyIterator() }, true));
+    }
 
     auto inverted = InitRangeVerifier::invert(ir.getExpectedDocIds(), ir.getDocIdLimit());
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator(),
-                                              ir.createIterator(inverted, false) }, false)));
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator(),
-                                              ir.createIterator(inverted, false) }, true)));
+    {
+        SCOPED_TRACE("non-strict full");
+        ir.verify( AndNotSearch::create({ir.createFullIterator(),
+                                         ir.createIterator(inverted, false) }, false));
+    }
+    {
+        SCOPED_TRACE("strict full");
+        ir.verify( AndNotSearch::create({ir.createFullIterator(),
+                                         ir.createIterator(inverted, false) }, true));
+    }
 }
 
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
