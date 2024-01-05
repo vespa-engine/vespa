@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,7 @@ public class ContainerRestartValidatorTest {
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
-        return new ContainerRestartValidator().validate(current, next, new DeployState.Builder().build());
+        return ValidationTester.validateChanges(new ContainerRestartValidator(), next, new DeployState.Builder().previousModel(current).build());
     }
 
     private static VespaModel createModel(boolean restartOnDeploy, boolean alwaysRestart) {

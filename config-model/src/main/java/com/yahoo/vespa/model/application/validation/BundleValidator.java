@@ -27,10 +27,8 @@ import java.util.regex.Pattern;
  */
 public class BundleValidator extends AbstractBundleValidator {
 
-    public BundleValidator() {}
-
     @Override
-    protected void validateManifest(DeployState state, JarFile jar, Manifest mf) {
+    protected void validateManifest(JarContext reporter, JarFile jar, Manifest mf) {
         // Check for required OSGI headers
         Attributes attributes = mf.getMainAttributes();
         HashSet<String> mfAttributes = new HashSet<>();
@@ -41,23 +39,22 @@ public class BundleValidator extends AbstractBundleValidator {
                 "Bundle-ManifestVersion", "Bundle-Name", "Bundle-SymbolicName", "Bundle-Version");
         for (String header : requiredOSGIHeaders) {
             if (!mfAttributes.contains(header)) {
-                throw new IllegalArgumentException("Required OSGI header '" + header +
-                        "' was not found in manifest in '" + filename(jar) + "'");
+                reporter.illegal("Required OSGI header '" + header + "' was not found in manifest in '" + filename(jar) + "'");
             }
         }
 
         if (attributes.getValue("Bundle-Version").endsWith(".SNAPSHOT")) {
-            log(state, Level.WARNING,
+            log(reporter.deployState(), Level.WARNING,
                     "Deploying snapshot bundle " + filename(jar) + ".\nTo use this bundle, you must include the " +
                             "qualifier 'SNAPSHOT' in the version specification in services.xml.");
         }
 
         if (attributes.getValue("Import-Package") != null) {
-            validateImportedPackages(state, jar, mf);
+            validateImportedPackages(reporter.deployState(), jar, mf);
         }
     }
 
-    @Override protected void validatePomXml(DeployState state, JarFile jar, Document pom) {}
+    @Override protected void validatePomXml(JarContext reporter, JarFile jar, Document pom) { }
 
     private void validateImportedPackages(DeployState state, JarFile jar, Manifest manifest) {
         Map<DeprecatedProvidedBundle, List<String>> deprecatedPackagesInUse = new HashMap<>();
@@ -73,7 +70,7 @@ public class BundleValidator extends AbstractBundleValidator {
         });
         deprecatedPackagesInUse.forEach((artifact, packagesInUse) -> {
             log(state, Level.WARNING, "JAR file '%s' imports the packages %s from '%s'. \n%s",
-                    filename(jar), packagesInUse, artifact.name, artifact.description);
+                filename(jar), packagesInUse, artifact.name, artifact.description);
         });
     }
 
