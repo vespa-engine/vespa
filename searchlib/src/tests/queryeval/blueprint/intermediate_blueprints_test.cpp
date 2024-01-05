@@ -1289,7 +1289,6 @@ TEST("require that OR blueprint use saturated sum as estimate") {
 }
 
 void verify_relative_estimate(make &&mk, double expect) {
-    EXPECT_EQUAL(mk.making->estimate(), 0.0);
     Blueprint::UP bp = std::move(mk).leafs({200,300,950});
     bp->setDocIdLimit(1000);
     EXPECT_EQUAL(bp->estimate(), expect);
@@ -1380,7 +1379,7 @@ TEST("cost for ONEAR") {
 }
 
 TEST("cost for WEAKAND") {
-    verify_cost(make::WEAKAND(1000), calc_cost({{1.1, 0.8},{1.2, 0.7},{1.3, 0.5}}));
+    verify_cost(make::WEAKAND(1000), calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

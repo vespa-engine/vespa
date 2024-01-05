@@ -144,22 +144,6 @@ public:
         return (total_docs == 0) ? 0.0 : double(est) / double(total_docs);
     }
 
-    static double cost_of(const Children &children, auto flow) {
-        double cost = 0.0;
-        for (const auto &child: children) {
-            cost += flow.flow() * child->cost();
-            flow.add(child->estimate());
-        }
-        return cost;
-    }
-
-    static double estimate_of(const Children &children, auto flow) {
-        for (const auto &child: children) {
-            flow.add(child->estimate());
-        }
-        return flow.estimate();
-    }
-
     // utility that just takes maximum estimate
     static HitEstimate max(const std::vector<HitEstimate> &data);
 
@@ -171,20 +155,6 @@ public:
     // upper limit for estimate: docid_limit
     // lower limit for docid_limit: max child estimate
     static HitEstimate sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit);
-
-    // sort children to minimize total cost of OR flow
-    struct MinimalOrCost {
-        bool operator () (const auto &a, const auto &b) const noexcept {
-            return a->estimate() / a->cost() > b->estimate() / b->cost();
-        }
-    };
-
-    // sort children to minimize total cost of AND flow
-    struct MinimalAndCost {
-        bool operator () (const auto &a, const auto &b) const noexcept {
-            return (1.0 - a->estimate()) / a->cost() > (1.0 - b->estimate()) / b->cost();
-        }
-    };
 
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {

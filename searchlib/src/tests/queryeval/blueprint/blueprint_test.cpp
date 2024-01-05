@@ -24,10 +24,10 @@ class MyOr : public IntermediateBlueprint
 private:
 public:
     double calculate_cost() const final {
-        return cost_of(get_children(), OrFlow());
+        return OrFlow::cost_of(get_children());
     }
     double calculate_relative_estimate() const final {
-        return estimate_of(get_children(), OrFlow());
+        return OrFlow::estimate_of(get_children());
     }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
