@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 /**
@@ -19,12 +20,12 @@ public class CloudClientsValidator implements Validator {
         if (!ctx.deployState().isHosted()) return;
         ctx.model().getContainerClusters().forEach((clusterName, cluster) -> {
             for (var client : cluster.getClients()) {
-                client.certificates().forEach(cert -> validateCertificate(clusterName, client.id(), cert, ctx.deployState()));
+                client.certificates().forEach(cert -> validateCertificate(clusterName, client.id(), cert, ctx::illegal, ctx.deployState()));
             }
         });
     }
 
-    static void validateCertificate(String clusterName, String clientId, X509Certificate cert, DeployState state) {
+    static void validateCertificate(String clusterName, String clientId, X509Certificate cert, BiConsumer<String, Throwable> reporter, DeployState state) {
         try {
             var extensions = TBSCertificate.getInstance(cert.getTBSCertificate()).getExtensions();
             if (extensions == null) return; // Certificate without any extensions is okay
@@ -45,7 +46,7 @@ public class CloudClientsValidator implements Validator {
                 state.getDeployLogger().log(Level.WARNING, errorMessage(clusterName, clientId, message));
             }
         } catch (CertificateEncodingException e) {
-            throw new IllegalArgumentException(errorMessage(clusterName, clientId, e.getMessage()), e);
+            reporter.accept(errorMessage(clusterName, clientId, e.getMessage()), e);
         }
     }
 
