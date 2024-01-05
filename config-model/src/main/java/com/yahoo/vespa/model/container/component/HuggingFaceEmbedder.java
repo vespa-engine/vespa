@@ -43,9 +43,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
                 getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
-        vocabRef = Model.fromXml(state, xml, "tokenizer-model", Set.of(HF_TOKENIZER))
-                .map(Model::modelReference)
-                .orElseGet(() -> resolveDefaultVocab(model, state));
+        vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
@@ -54,14 +52,6 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
         model.registerOnnxModelCost(cluster, onnxModelOptions);
-    }
-
-    private static ModelReference resolveDefaultVocab(Model model, DeployState state) {
-        var modelId = model.modelId().orElse(null);
-        if (state.isHosted() && modelId != null) {
-            return Model.fromParams(state, model.name(), modelId + "-vocab", null, null, Set.of(HF_TOKENIZER)).modelReference();
-        }
-        throw new IllegalArgumentException("'tokenizer-model' must be specified");
     }
 
     @Override

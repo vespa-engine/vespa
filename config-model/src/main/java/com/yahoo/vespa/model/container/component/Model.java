@@ -56,6 +56,19 @@ class Model {
         return new Model(ds, model.getTagName(), modelId, url, path, requiredTags);
     }
 
+    /** Return tokenizer model from XML if specified, alternatively use model id for ONNX model with suffix '-vocab' appended */
+    static Model fromXmlOrImplicitlyFromOnnxModel(
+            DeployState ds, Element parent, Model onnxModel, String paramName, Set<String> requiredTags) {
+        return fromXml(ds, parent, paramName, requiredTags)
+                .orElseGet(() -> {
+                    var modelId = onnxModel.modelId().orElse(null);
+                    if (ds.isHosted() && modelId != null) {
+                        return fromParams(ds, onnxModel.name(), modelId + "-vocab", null, null, requiredTags);
+                    }
+                    throw new IllegalArgumentException("'%s' must be specified".formatted(paramName));
+                });
+    }
+
     void registerOnnxModelCost(ApplicationContainerCluster c, OnnxModelOptions onnxModelOptions) {
         var resolvedUrl = resolvedUrl().orElse(null);
         if (file != null) c.onnxModelCostCalculator().registerModel(file, onnxModelOptions);
