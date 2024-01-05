@@ -83,11 +83,12 @@ public class Flags {
             List.of("hakonhall"), "2023-11-29", "2024-02-29",
             "Link nessusagent to the given group, or run legacy task (\":legacy\"), or disable task (\"\").",
             "Takes effect after host admin restart",
-            (String value) -> value.equals(":legacy") ||  // Run legacy task.  Is a no-op outside YAHOO cloud.
-                              value.equals(":stop") ||    // Stop / shut down Nessus if it is running
-                              value.equals("All") ||      // Link to All group.
-                              value.equals("vespa-ci") || // Link to vespa-ci group.
-                              value.isEmpty(),            // Skip task
+            (String value) -> value.equals(":legacy") ||      // Run legacy task.  Is a no-op outside YAHOO cloud.
+                              value.equals(":stop") ||        // Stop / shut down Nessus if it is running
+                              value.equals("All") ||          // Link to the All group.
+                              value.equals("vespa-ci") ||     // Link to the vespa-ci group.
+                              value.equals("vespa-config") || // Link to the vespa-config group.
+                              value.isEmpty(),                // Skip task
             ARCHITECTURE, CLAVE);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
