@@ -55,12 +55,14 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_INTEGER = "integer";
     private static final String CMD_STRING = "string";
     private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
+    private final boolean isStreaming;
     private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
     private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets;
     private Schema schema;
 
-    public IndexInfo(Schema schema) {
+    public IndexInfo(Schema schema, boolean isStreaming) {
+        this.isStreaming = isStreaming;
         this.fieldSets = schema.fieldSets().userFieldSets();
         addIndexCommand("sddocname", CMD_INDEX);
         addIndexCommand("sddocname", CMD_WORD);
@@ -223,7 +225,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private boolean normalizeAccents(ImmutableSDField field) {
-        return field.getNormalizing().doRemoveAccents() && isTypeOrNested(field, DataType.STRING);
+        return !isStreaming && field.getNormalizing().doRemoveAccents() && isTypeOrNested(field, DataType.STRING);
     }
 
     private boolean isTypeOrNested(ImmutableSDField field, DataType type) {
@@ -370,7 +372,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 anyStemming = true;
                 stemmingCommand = CMD_STEM + ":" + getEffectiveStemming(field).toStemMode();
             }
-            if (field.getNormalizing().doRemoveAccents()) {
+            if (normalizeAccents(field)) {
                 anyNormalizing = true;
             }
             if (isTypeOrNested(field, DataType.STRING)) {

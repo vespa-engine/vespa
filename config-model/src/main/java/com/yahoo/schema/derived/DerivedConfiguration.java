@@ -55,7 +55,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     }
 
     DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(schema, new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build());
+        this(schema, new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build(), false);
     }
 
     /**
@@ -65,7 +65,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
      *               argument is live. Which means that this object will be inconsistent if the given
      *               schema is later modified.
      */
-    public DerivedConfiguration(Schema schema, DeployState deployState) {
+    public DerivedConfiguration(Schema schema, DeployState deployState, boolean isStreaming) {
         try {
             Validator.ensureNotNull("Schema", schema);
             this.schema = schema;
@@ -81,7 +81,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
                 juniperrc = new Juniperrc(schema);
                 rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
                 indexingScript = new IndexingScript(schema);
-                indexInfo = new IndexInfo(schema);
+                indexInfo = new IndexInfo(schema, isStreaming);
                 schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
                 indexSchema = new IndexSchema(schema);
                 importedFields = new ImportedFields(schema);
