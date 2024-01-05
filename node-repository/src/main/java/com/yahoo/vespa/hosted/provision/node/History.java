@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * An immutable record of the last event of each type happening to this node, and a chronological log of the events.
@@ -78,34 +79,6 @@ public class History {
         return event(type)
                 .map(event -> event.at().isBefore(time))
                 .orElse(false);
-    }
-
-    /** Returns the instant the services went down, unless the services have been up afterward. */
-    public Optional<Instant> downSince() { return instantOf(Event.Type.down, Event.Type.up); }
-
-    /** Returns the instant the services went up, unless the services have been down afterward. */
-    public Optional<Instant> upSince() { return instantOf(Event.Type.up, Event.Type.down); }
-
-    /** Returns true if there is a down event without a later up. */
-    public boolean isDown() { return downSince().isPresent(); }
-
-    /** Returns true if there is an up event without a later down. */
-    public boolean isUp() { return upSince().isPresent(); }
-
-    /** Returns the instant the node suspended, unless the node has been resumed afterward. */
-    public Optional<Instant> suspendedSince() { return instantOf(Event.Type.suspended, Event.Type.resumed); }
-
-    /** Returns the instant the node was resumed, unless the node has been suspended afterward. */
-    public Optional<Instant> resumedSince() { return instantOf(Event.Type.resumed, Event.Type.suspended); }
-
-    /** Returns true if there is a suspended event without a later resumed. */
-    public boolean isSuspended() { return suspendedSince().isPresent(); }
-
-    /** Returns true if there is a resumed event without a later suspended. */
-    public boolean isResumed() { return resumedSince().isPresent(); }
-
-    private Optional<Instant> instantOf(History.Event.Type type, History.Event.Type sentinelType) {
-        return event(type).map(History.Event::at).filter(instant -> !hasEventAfter(sentinelType, instant));
     }
 
     /** Returns the last event of each type in this history */
@@ -207,10 +180,6 @@ public class History {
             down,
             // The active node came up according to the service monitor
             up,
-            // The node has been given permission to suspend by Orchestrator
-            suspended,
-            // The node has resumed from suspension by Orchestrator
-            resumed,
             // The node resources/flavor were changed
             resized(false),
             // The node was rebooted

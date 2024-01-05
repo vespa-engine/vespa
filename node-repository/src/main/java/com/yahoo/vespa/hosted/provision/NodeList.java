@@ -221,7 +221,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     /** Returns the subset of nodes which have a record of being down */
-    public NodeList down() { return matching(node -> node.history().isDown()); }
+    public NodeList down() { return matching(Node::isDown); }
 
     /** Returns the subset of nodes which are being retired */
     public NodeList retiring() {

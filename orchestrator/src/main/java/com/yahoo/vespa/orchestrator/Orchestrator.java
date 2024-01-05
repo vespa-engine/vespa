@@ -49,14 +49,6 @@ public interface Orchestrator {
      */
     HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
 
-    default Optional<HostStatus> getOptionalNodeStatus(String hostname) {
-        try {
-            return Optional.of(getNodeStatus(new HostName(hostname)));
-        } catch (HostNameNotFoundException e) {
-            return Optional.empty();
-        }
-    }
-
     /** Get host info for hostname in application, returning no-remarks if not in application. */
     HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname);
 
