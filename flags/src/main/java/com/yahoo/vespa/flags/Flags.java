@@ -92,7 +92,7 @@ public class Flags {
             "Link nessusagent to the given group, or run legacy task (\":legacy\"), or disable task (\"\").",
             "Takes effect after host admin restart",
             VALID_NESSUS_AGENT_GROUPS::contains,
-            ARCHITECTURE, CLAVE);
+            ARCHITECTURE, CLAVE, NODE_TYPE);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
