@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <cassert>
 
 namespace search::test {
 
@@ -25,8 +25,8 @@ public:
           _int_attr(dynamic_cast<IntegerAttribute *>(_attr.get())),
           _dww(_attr->as_docid_with_weight_posting_store())
     {
-        ASSERT_TRUE(_int_attr != nullptr);
-        ASSERT_TRUE(_dww != nullptr);
+        assert(_int_attr != nullptr);
+        assert(_dww != nullptr);
     }
     ~DocumentWeightAttributeHelper();
 
@@ -36,7 +36,7 @@ public:
             _attr->addDoc(docid);
         }
         _attr->commit();
-        ASSERT_EQUAL((limit - 1), docid);
+        assert((limit - 1) == docid);
     }
 
     void set_doc(uint32_t docid, int64_t key, int32_t weight) {
