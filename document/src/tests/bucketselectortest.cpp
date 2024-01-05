@@ -5,10 +5,10 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/testdocrepo.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 #include <iostream>
-#include <gtest/gtest.h>
 
 using document::select::Node;
 using document::select::Parser;

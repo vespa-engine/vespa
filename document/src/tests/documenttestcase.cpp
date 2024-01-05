@@ -22,14 +22,13 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
-
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
 #include <fcntl.h>
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <filesystem>
 
