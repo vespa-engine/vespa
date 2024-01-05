@@ -23,7 +23,9 @@ class CloudClientsValidatorTest {
         var logger = new DeployLoggerStub();
         var state = new DeployState.Builder().deployLogger(logger).build();
         var cert = readTestCertificate("cert-with-empty-sequence-of-extensions.pem");
-        CloudClientsValidator.validateCertificate("default", "my-feed-client", cert, state);
+        CloudClientsValidator.validateCertificate("default", "my-feed-client", cert,
+                                                  (msg, cause) -> { throw new IllegalArgumentException(msg, cause); },
+                                                  state);
         var expected = "Client **my-feed-client** defined for cluster **default** contains an invalid certificate: " +
                 "The certificate's ASN.1 structure contains an empty sequence of extensions, " +
                 "which is a violation of the ASN.1 specification. " +
@@ -38,7 +40,9 @@ class CloudClientsValidatorTest {
         var logger = new DeployLoggerStub();
         var state = new DeployState.Builder().deployLogger(logger).build();
         var cert = readTestCertificate("valid-cert.pem");
-        assertDoesNotThrow(() -> CloudClientsValidator.validateCertificate("default", "my-feed-client", cert, state));
+        assertDoesNotThrow(() -> CloudClientsValidator.validateCertificate("default", "my-feed-client", cert,
+                                                                           (msg, cause) -> { throw new IllegalArgumentException(msg, cause); },
+                                                                           state));
         assertEquals(0, logger.entries.size());
     }
 
