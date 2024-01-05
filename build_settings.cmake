@@ -6,10 +6,11 @@ if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
 endif()
 
 if (VESPA_USE_SANITIZER)
-    if (VESPA_USE_SANITIZER STREQUAL "address" OR VESPA_USE_SANITIZER STREQUAL "thread" OR VESPA_USE_SANITIZER STREQUAL "undefined")
+    if (VESPA_USE_SANITIZER STREQUAL "address" OR VESPA_USE_SANITIZER STREQUAL "thread" OR
+        VESPA_USE_SANITIZER STREQUAL "undefined" OR VESPA_USE_SANITIZER STREQUAL "address,undefined")
         message("-- Instrumenting code using ${VESPA_USE_SANITIZER} sanitizer")
     else()
-        message(FATAL_ERROR "Unsupported sanitizer option '${VESPA_USE_SANITIZER}'. Supported: 'address', 'thread' or 'undefined'")
+        message(FATAL_ERROR "Unsupported sanitizer option '${VESPA_USE_SANITIZER}'. Supported: 'address', 'thread', 'undefined' or 'address,undefined'")
     endif()
 endif()
 
@@ -35,7 +36,7 @@ else()
     set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
 endif()
 if (VESPA_USE_SANITIZER)
-  if (VESPA_USE_SANITIZER STREQUAL "address" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+  if (VESPA_USE_SANITIZER MATCHES "address" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
     # Turn off maybe uninitialized and restrict warnings when compiling with
     # address sanitizer on gcc 12 or newer.
     set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized -Wno-restrict")
@@ -84,10 +85,11 @@ else()
 endif()
 
 # Disable dangling reference and overloaded virtual warnings when using gcc 13
-# Disable stringop-oveflow and array-bounds warning when using gcc 13.
+# Disable stringop-oveflow, stringop-overread and array-bounds warning when using gcc 13.
+# The latter heuristics are sufficiently broken to be useless in practice.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
-    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual -Wno-stringop-overflow -Wno-array-bounds")
+    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual -Wno-stringop-overflow -Wno-stringop-overread -Wno-array-bounds")
   endif()
 endif()
 
@@ -101,7 +103,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
 if (VESPA_USE_SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
-    if (VESPA_USE_SANITIZER STREQUAL "undefined")
+    if (VESPA_USE_SANITIZER MATCHES "undefined")
         # Many false positives when checking vptr due to limited visibility
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
     endif()
@@ -198,7 +200,7 @@ if(VESPA_USE_SANITIZER)
 endif()
 # Dump stack when finding issues in unit tests using undefined sanitizer
 if(VESPA_USE_SANITIZER)
-    if(VESPA_USE_SANITIZER STREQUAL "undefined")
+    if(VESPA_USE_SANITIZER MATCHES "undefined")
         set(VESPA_SANITIZER_ENV "UBSAN_OPTIONS=print_stacktrace=1")
     endif()
 endif()
