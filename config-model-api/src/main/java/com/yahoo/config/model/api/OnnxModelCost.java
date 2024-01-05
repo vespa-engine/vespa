@@ -8,10 +8,10 @@ import com.yahoo.config.provision.ClusterSpec;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author bjorncs
+ * @author hmusum
  */
 public interface OnnxModelCost {
 
@@ -31,17 +31,7 @@ public interface OnnxModelCost {
         void store();
     }
 
-    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {
-
-        public ModelInfo(String modelId, long estimatedCost, long hash, OnnxModelOptions onnxModelOptions) {
-            this(modelId, estimatedCost, hash, Optional.of(onnxModelOptions));
-        }
-
-        public OnnxModelOptions options() {
-            return onnxModelOptions.orElseThrow(() -> new IllegalStateException("No onnxModelOptions exist"));
-        }
-
-    }
+    record ModelInfo(String modelId, long estimatedCost, long hash, OnnxModelOptions onnxModelOptions) {}
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
