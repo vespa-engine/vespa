@@ -151,7 +151,7 @@ class HttpRequestStrategyTest {
         assertEquals(success, serialised.get());
 
         // Some error responses are retried.
-        HttpResponse serverError = HttpResponse.of(500, null);
+        HttpResponse serverError = HttpResponse.of(503, null);
         cluster.expect((__, vessel) -> vessel.complete(serverError));
         assertEquals(serverError, strategy.enqueue(id1, request).get());
         assertEquals(11, strategy.stats().requests());
@@ -180,7 +180,7 @@ class HttpRequestStrategyTest {
         codes.put(200, 4L);
         codes.put(400, 1L);
         codes.put(429, 2L);
-        codes.put(500, 3L);
+        codes.put(503, 3L);
         assertEquals(codes, stats.responsesByCode());
         assertEquals(3, stats.exceptions());
 
