@@ -113,6 +113,7 @@ public class Validation {
         new JvmHeapSizeValidator().validate(execution);
         new InfrastructureDeploymentValidator().validate(execution);
         new EndpointCertificateSecretsValidator().validate(execution);
+        new CloudClientsValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
