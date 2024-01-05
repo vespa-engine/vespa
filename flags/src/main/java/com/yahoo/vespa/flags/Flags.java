@@ -78,17 +78,20 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
+    public static final List<String> VALID_NESSUS_AGENT_GROUPS = List.of(
+            "",              // Skip task
+            ":legacy",       // Run legacy task.  Is a no-op outside YAHOO cloud.
+            ":stop",         // Stop / shut down Nessus if it is running
+            "All",           // Link to the All group.
+            "vespa-ci",      // Link to the vespa-ci group.
+            "vespa-config"); // Link to the vespa-config group.
+
     public static final UnboundStringFlag NESSUS_AGENT_GROUP = defineStringFlag(
             "nessus-agent-group", ":legacy",
             List.of("hakonhall"), "2023-11-29", "2024-02-29",
             "Link nessusagent to the given group, or run legacy task (\":legacy\"), or disable task (\"\").",
             "Takes effect after host admin restart",
-            (String value) -> value.equals(":legacy") ||      // Run legacy task.  Is a no-op outside YAHOO cloud.
-                              value.equals(":stop") ||        // Stop / shut down Nessus if it is running
-                              value.equals("All") ||          // Link to the All group.
-                              value.equals("vespa-ci") ||     // Link to the vespa-ci group.
-                              value.equals("vespa-config") || // Link to the vespa-config group.
-                              value.isEmpty(),                // Skip task
+            VALID_NESSUS_AGENT_GROUPS::contains,
             ARCHITECTURE, CLAVE);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
