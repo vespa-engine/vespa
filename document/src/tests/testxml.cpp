@@ -10,8 +10,8 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 using vespalib::StringTokenizer;
 

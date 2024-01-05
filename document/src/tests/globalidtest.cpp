@@ -4,7 +4,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace document {
 

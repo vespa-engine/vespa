@@ -6,7 +6,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace document {
 

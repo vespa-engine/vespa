@@ -10,7 +10,7 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
 using vespalib::nbostream;
