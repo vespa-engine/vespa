@@ -4,12 +4,12 @@
 
 #include "test_master.h"
 #include "test_comparators.h"
+#include "test_path.h"
 
 #define TEST_STR(str) #str
 #define TEST_CAT_IMPL(a, b) a ## b
 #define TEST_CAT(a, b) TEST_CAT_IMPL(a, b)
 #define TEST_MASTER vespalib::TestMaster::master
-#define TEST_PATH(local_file) TEST_MASTER.get_path(local_file)
 #define TEST_DEBUG(lhsFile, rhsFile) TEST_MASTER.openDebugFiles(lhsFile, rhsFile)
 #define TEST_STATE(msg) vespalib::TestStateGuard TEST_CAT(testStateGuard, __LINE__) (__FILE__, __LINE__, msg)
 #define TEST_DO(doit) do { TEST_STATE(TEST_STR(doit)); doit; } while(false)

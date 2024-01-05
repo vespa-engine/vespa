@@ -73,7 +73,6 @@ private:
 private:
     std::mutex                                     _lock;
     std::string                                    _name;
-    std::string                                    _path_prefix;
     SharedState                                    _state;
     std::vector<std::unique_ptr<ThreadState> > _threadStorage;
     using lock_guard = std::lock_guard<std::mutex>;
@@ -97,7 +96,6 @@ private:
 public:
     void init(const char *name);
     std::string getName();
-    std::string get_path(const std::string &local_file);
     void setThreadName(const char *name);
     const char *getThreadName();
     void setThreadUnwind(bool unwind);
