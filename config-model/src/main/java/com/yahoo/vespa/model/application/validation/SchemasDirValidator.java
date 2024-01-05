@@ -3,8 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 import java.util.logging.Level;
 
@@ -13,17 +12,14 @@ import java.util.logging.Level;
  *
  * @author hmusum
  */
-public class SchemasDirValidator extends Validator {
-
-    public SchemasDirValidator() {
-    }
+public class SchemasDirValidator implements Validator {
 
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        ApplicationPackage app = deployState.getApplicationPackage();
+    public void validate(Context context) {
+        ApplicationPackage app = context.deployState().getApplicationPackage();
         ApplicationFile sdDir = app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR);
         if (sdDir.exists() && sdDir.isDirectory())
-            deployState.getDeployLogger().logApplicationPackage(
+            context.deployState().getDeployLogger().logApplicationPackage(
                     Level.WARNING,
                     "Directory " + ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative() +
                     "/ should not be used for schemas, use " + ApplicationPackage.SCHEMAS_DIR.getRelative() + "/ instead");

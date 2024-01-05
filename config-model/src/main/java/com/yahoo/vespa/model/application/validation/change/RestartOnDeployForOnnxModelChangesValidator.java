@@ -4,9 +4,8 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.OnnxModelCost;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.Host;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.util.ArrayList;
@@ -16,10 +15,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static com.yahoo.config.model.api.OnnxModelCost.ModelInfo;
 import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.gbLimit;
 import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.percentLimit;
 import static java.util.logging.Level.FINE;
-import static com.yahoo.config.model.api.OnnxModelCost.ModelInfo;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -34,28 +33,26 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     private static final Logger log = Logger.getLogger(RestartOnDeployForOnnxModelChangesValidator.class.getName());
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
-        if ( ! deployState.featureFlags().restartOnDeployWhenOnnxModelChanges()) return List.of();
-        List<ConfigChangeAction> actions = new ArrayList<>();
+    public void validate(ChangeContext context) {
+        if ( ! context.deployState().featureFlags().restartOnDeployWhenOnnxModelChanges()) return;
 
         // Compare onnx models used by each cluster and set restart on deploy for cluster if estimated cost,
         // model hash or model options have changed
-        for (var cluster : nextModel.getContainerClusters().values()) {
-            var clusterInCurrentModel = currentModel.getContainerClusters().get(cluster.getName());
+        for (var cluster : context.model().getContainerClusters().values()) {
+            var clusterInCurrentModel = context.previousModel().getContainerClusters().get(cluster.getName());
             if (clusterInCurrentModel == null) continue;
 
             var currentModels = clusterInCurrentModel.onnxModelCostCalculator().models();
             var nextModels = cluster.onnxModelCostCalculator().models();
 
-            if (enoughMemoryToAvoidRestart(clusterInCurrentModel, cluster, deployState.getDeployLogger()))
+            if (enoughMemoryToAvoidRestart(clusterInCurrentModel, cluster, context.deployState().getDeployLogger()))
                 continue;
 
             log.log(FINE, "Validating %s, current Onnx models:%s, next Onnx models:%s"
                     .formatted(cluster, currentModels, nextModels));
-            actions.addAll(validateModelChanges(cluster, currentModels, nextModels));
-            actions.addAll(validateSetOfModels(cluster, currentModels, nextModels));
+            validateModelChanges(cluster, currentModels, nextModels).forEach(context::require);
+            validateSetOfModels(cluster, currentModels, nextModels).forEach(context::require);
         }
-        return actions;
     }
 
     private List<ConfigChangeAction> validateModelChanges(ApplicationContainerCluster cluster,

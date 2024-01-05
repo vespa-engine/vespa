@@ -3,13 +3,12 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.application.validation.change.search.ChangeMessageBuilder;
 import com.yahoo.vespa.model.application.validation.change.search.DocumentTypeChangeValidator;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -28,20 +27,18 @@ import java.util.stream.Collectors;
 public class StreamingSearchClusterChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
-        List<ConfigChangeAction> result = new ArrayList<>();
-        current.getContentClusters().forEach((clusterName, currentCluster) -> {
-            ContentCluster nextCluster = next.getContentClusters().get(clusterName);
+    public void validate(ChangeContext context) {
+        context.previousModel().getContentClusters().forEach((clusterName, currentCluster) -> {
+            ContentCluster nextCluster = context.model().getContentClusters().get(clusterName);
             if (nextCluster != null) {
                 List<StreamingSearchCluster> nextStreamingClusters = nextCluster.getSearch().getStreamingClusters();
                 currentCluster.getSearch().getStreamingClusters().forEach(currentStreamingCluster -> {
                     Optional<StreamingSearchCluster> nextStreamingCluster = findStreamingCluster(currentStreamingCluster.getClusterName(), nextStreamingClusters);
-                    nextStreamingCluster.ifPresent(streamingSearchCluster -> result.addAll(validateStreamingCluster(currentCluster, currentStreamingCluster,
-                            nextCluster, streamingSearchCluster)));
+                    nextStreamingCluster.ifPresent(streamingSearchCluster -> validateStreamingCluster(currentCluster, currentStreamingCluster,
+                            nextCluster, streamingSearchCluster).forEach(context::require));
                 });
             }
         });
-        return result;
     }
 
     private static Optional<StreamingSearchCluster> findStreamingCluster(String clusterName, List<StreamingSearchCluster> clusters) {

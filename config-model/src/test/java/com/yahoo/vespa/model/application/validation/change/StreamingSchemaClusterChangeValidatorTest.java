@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
@@ -69,8 +70,8 @@ public class StreamingSchemaClusterChangeValidatorTest {
         }
 
         public List<ConfigChangeAction> validate() {
-            return normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                 new DeployState.Builder().build()));
+            return normalizeServicesInActions(ValidationTester.validateChanges(validator, nextModel,
+                                                                               new DeployState.Builder().previousModel(currentModel).build()));
         }
 
         public void assertValidation() {
