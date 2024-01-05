@@ -15,6 +15,7 @@ import org.w3c.dom.Element;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represents a model, e.g ONNX model for an embedder.
@@ -28,7 +29,7 @@ class Model {
     private final ApplicationFile file;
     private final ModelReference ref;
 
-    private Model(DeployState ds, String paramName, String modelId, URI url, Path file) {
+    private Model(DeployState ds, String paramName, String modelId, URI url, Path file, Set<String> requiredTags) {
         this.paramName = Objects.requireNonNull(paramName);
         if (modelId == null && url == null && file == null)
             throw new IllegalArgumentException("At least one of 'model-id', 'url' or 'path' must be specified");
@@ -37,22 +38,22 @@ class Model {
         this.file = file != null ? ds.getApplicationPackage().getFile(file) : null;
         this.ref = ModelIdResolver.resolveToModelReference(
                 paramName, Optional.ofNullable(modelId), Optional.ofNullable(url).map(URI::toString),
-                Optional.ofNullable(file).map(Path::toString), ds);
+                Optional.ofNullable(file).map(Path::toString), requiredTags, ds);
     }
 
-    static Model fromParams(DeployState ds, String paramName, String modelId, URI url, Path file) {
-        return new Model(ds, paramName, modelId, url, file);
+    static Model fromParams(DeployState ds, String paramName, String modelId, URI url, Path file, Set<String> requiredTags) {
+        return new Model(ds, paramName, modelId, url, file, requiredTags);
     }
 
-    static Optional<Model> fromXml(DeployState ds, Element parent, String name) {
-        return XmlHelper.getOptionalChild(parent, name).map(e -> fromXml(ds, e));
+    static Optional<Model> fromXml(DeployState ds, Element parent, String name, Set<String> requiredTags) {
+        return XmlHelper.getOptionalChild(parent, name).map(e -> fromXml(ds, e, requiredTags));
     }
 
-    static Model fromXml(DeployState ds, Element model) {
+    static Model fromXml(DeployState ds, Element model, Set<String> requiredTags) {
         var modelId = XmlHelper.getOptionalAttribute(model, "model-id").orElse(null);
         var url = XmlHelper.getOptionalAttribute(model, "url").map(URI::create).orElse(null);
         var path = XmlHelper.getOptionalAttribute(model, "path").map(Path::fromString).orElse(null);
-        return new Model(ds, model.getTagName(), modelId, url, path);
+        return new Model(ds, model.getTagName(), modelId, url, path, requiredTags);
     }
 
     void registerOnnxModelCost(ApplicationContainerCluster c, OnnxModelOptions onnxModelOptions) {

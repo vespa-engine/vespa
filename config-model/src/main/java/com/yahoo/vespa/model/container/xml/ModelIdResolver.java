@@ -7,10 +7,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
-import java.util.Collections;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -21,44 +22,55 @@ import java.util.stream.Collectors;
  */
 public class ModelIdResolver {
 
-    private static Map<String, String> setupProvidedModels() {
-        Map<String, String> models = new HashMap<>();
-        models.put("minilm-l6-v2",          "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx");
-        models.put("mpnet-base-v2",         "https://data.vespa.oath.cloud/onnx_models/sentence-all-mpnet-base-v2.onnx");
-        models.put("bert-base-uncased",     "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt");
-        models.put("flan-t5-vocab",         "https://data.vespa.oath.cloud/onnx_models/flan-t5-spiece.model");
-        models.put("flan-t5-small-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-encoder-model.onnx");
-        models.put("flan-t5-small-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-decoder-model.onnx");
-        models.put("flan-t5-base-encoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-encoder-model.onnx");
-        models.put("flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx");
-        models.put("flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx");
-        models.put("flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx");
+    public static final String HF_TOKENIZER = "huggingface-tokenizer";
+    public static final String ONNX_MODEL = "onnx-model";
+    public static final String BERT_VOCAB = "bert-vocabulary";
 
-        models.put("multilingual-e5-base", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/model.onnx");
-        models.put("multilingual-e5-base-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json");
+    private static Map<String, ProvidedModel> setupProvidedModels() {
+        var m = new HashMap<String, ProvidedModel>();
+        register(m, "minilm-l6-v2",          "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx", Set.of(ONNX_MODEL));
+        register(m, "mpnet-base-v2",         "https://data.vespa.oath.cloud/onnx_models/sentence-all-mpnet-base-v2.onnx", Set.of(ONNX_MODEL));
+        register(m, "bert-base-uncased",     "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt", Set.of(BERT_VOCAB));
+        register(m, "flan-t5-vocab",         "https://data.vespa.oath.cloud/onnx_models/flan-t5-spiece.model", Set.of());
+        register(m, "flan-t5-small-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-small-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-decoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-base-encoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx", Set.of(ONNX_MODEL));
+        register(m, "flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx", Set.of(ONNX_MODEL));
 
-        models.put("multilingual-e5-small", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/model.onnx");
-        models.put("multilingual-e5-small-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/tokenizer.json");
+        register(m, "multilingual-e5-base", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-base-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        models.put("multilingual-e5-small-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/model.onnx");
-        models.put("multilingual-e5-small-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/tokenizer.json");
+        register(m, "multilingual-e5-small", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-small-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        models.put("e5-small-v2", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/model.onnx");
-        models.put("e5-small-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/tokenizer.json");
+        register(m, "multilingual-e5-small-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "multilingual-e5-small-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-small-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        models.put("e5-small-v2-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/model.onnx");
-        models.put("e5-small-v2-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/tokenizer.json");
+        register(m, "e5-small-v2", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-small-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        models.put("e5-base-v2", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx");
-        models.put("e5-base-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/tokenizer.json");
+        register(m, "e5-small-v2-cpu-friendly", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-small-v2-cpu-friendly-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2-cpu-friendly/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        models.put("e5-large-v2", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/model.onnx");
-        models.put("e5-large-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/tokenizer.json");
+        register(m, "e5-base-v2", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-base-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/tokenizer.json", Set.of(HF_TOKENIZER));
 
-        return Collections.unmodifiableMap(models);
+        register(m, "e5-large-v2", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "e5-large-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        return Map.copyOf(m);
     }
 
-    private static final Map<String, String> providedModels = setupProvidedModels();
+    private record ProvidedModel(String modelId, URI uri, Set<String> tags) {
+        ProvidedModel { tags = Set.copyOf(tags); }
+    }
+
+    private static void register(Map<String, ProvidedModel> models, String modelId, String uri, Set<String> tags) {
+        models.put(modelId, new ProvidedModel(modelId, URI.create(uri), tags));
+    }
+
+    private static final Map<String, ProvidedModel> providedModels = setupProvidedModels();
 
     /**
      * Finds any config values of type 'model' below the given config element and
@@ -79,7 +91,7 @@ public class ModelIdResolver {
         if ( ! value.hasAttribute("model-id")) return;
 
         if (hosted) {
-            value.setAttribute("url", modelIdToUrl(value.getTagName(), value.getAttribute("model-id")));
+            value.setAttribute("url", modelIdToUrl(value.getTagName(), value.getAttribute("model-id"), Set.of()));
             value.removeAttribute("path");
         }
         else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path")) {
@@ -88,10 +100,10 @@ public class ModelIdResolver {
     }
 
     public static ModelReference resolveToModelReference(
-            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
+            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, Set<String> requiredTags, DeployState state) {
         if (id.isEmpty()) return createModelReference(Optional.empty(), url, path, state);
         else if (state.isHosted())
-            return createModelReference(id, Optional.of(modelIdToUrl(paramName, id.get())), Optional.empty(), state);
+            return createModelReference(id, Optional.of(modelIdToUrl(paramName, id.get(), requiredTags)), Optional.empty(), state);
         else if (url.isEmpty() && path.isEmpty()) throw onlyModelIdInHostedException(paramName);
         else return createModelReference(id, url, path, state);
     }
@@ -106,11 +118,17 @@ public class ModelIdResolver {
                                              "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
     }
 
-    private static String modelIdToUrl(String valueName, String modelId) {
+    private static String modelIdToUrl(String valueName, String modelId, Set<String> requiredTags) {
         if ( ! providedModels.containsKey(modelId))
             throw new IllegalArgumentException("Unknown model id '" + modelId + "' on '" + valueName + "'. Available models are [" +
                                                providedModels.keySet().stream().sorted().collect(Collectors.joining(", ")) + "]");
-        return providedModels.get(modelId);
+        var providedModel = providedModels.get(modelId);
+        if (!providedModel.tags().containsAll(requiredTags)) {
+            throw new IllegalArgumentException(
+                    "Model '%s' on '%s' has tags %s but are missing required tags %s"
+                            .formatted(modelId, valueName, providedModel.tags(), requiredTags));
+        }
+        return providedModel.uri().toString();
     }
 
 }
