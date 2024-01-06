@@ -487,6 +487,7 @@ private:
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
     bool is_text_matching(vespalib::stringref index) const noexcept override;
+    Normalizing normalizing_mode(vespalib::stringref index) const noexcept override;
 };
 
 class SearchVisitorFactory : public storage::VisitorFactory {

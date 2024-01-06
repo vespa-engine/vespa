@@ -11,7 +11,7 @@ using search::fef::MatchData;
 namespace search::streaming {
 
 DotProductTerm::DotProductTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, uint32_t num_terms)
-    : MultiTerm(std::move(result_base), index, Type::WORD, num_terms)
+    : MultiTerm(std::move(result_base), index, num_terms)
 {
 }
 

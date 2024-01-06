@@ -35,8 +35,8 @@ public:
      *              added together.
      */
     static void Setup(uint32_t flags);
-    static ucs4_t lowercase_and_fold_ascii(ucs4_t c) noexcept { return _lowerCase[c]; }
-    static ucs4_t lowercase_ascii(ucs4_t c) noexcept { return _foldCase[c]; }
+    static ucs4_t lowercase_and_fold_ascii(ucs4_t c) noexcept { return _foldCase[c]; }
+    static ucs4_t lowercase_ascii(ucs4_t c) noexcept { return _lowerCase[c]; }
     static bool is_wordchar_ascii7bit(ucs4_t c) noexcept { return _isWord[c]; }
     static ucs4_t lowercase(ucs4_t c) {
         if (c < 767)

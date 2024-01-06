@@ -77,7 +77,7 @@ private:
         void onStructStart(const Content & c) override;
 
     public:
-        explicit IteratorHandler(FieldSearcher & searcher) : _searcher(searcher) {}
+        explicit IteratorHandler(FieldSearcher & searcher) noexcept : _searcher(searcher) {}
     };
     friend class IteratorHandler; // to allow calls to onValue();
 
