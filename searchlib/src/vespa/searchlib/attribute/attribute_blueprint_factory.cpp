@@ -5,9 +5,7 @@
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_multi_term_blueprint.h"
-#include "i_docid_posting_store.h"
-#include "i_docid_with_weight_posting_store.h"
-#include "in_term_search.h"
+#include "i_direct_posting_store.h"
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
@@ -575,13 +573,12 @@ class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
 private:
     const FieldSpec &_field;
     const IAttributeVector &_attr;
-    const IDocidPostingStore *_dps;
-    const IDocidWithWeightPostingStore *_dwwps;
+    const IDocidWithWeightPostingStore *_dww;
     vespalib::string _scratchPad;
 
     bool use_docid_with_weight_posting_store() const {
         // TODO: Relax requirement on always having weight iterator for query operators where that makes sense.
-        return (_dwwps != nullptr) && (_dwwps->has_always_btree_iterator());
+        return (_dww != nullptr) && (_dww->has_always_btree_iterator());
     }
 
 public:
@@ -590,8 +587,7 @@ public:
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
-          _dps(attr.as_docid_posting_store()),
-          _dwwps(attr.as_docid_with_weight_posting_store()),
+          _dww(attr.as_docid_with_weight_posting_store()),
           _scratchPad()
     {
     }
@@ -601,7 +597,7 @@ public:
     void visitSimpleTerm(TermNode &n) {
         if (use_docid_with_weight_posting_store() && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
-            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwwps, key));
+            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dww, key));
         } else {
             visitTerm(n);
         }
@@ -666,8 +662,8 @@ public:
     void visit(PredicateQuery &n) override { visitPredicate(n); }
     void visit(RegExpTerm & n) override { visitTerm(n); }
 
-    template <typename BlueprintType>
-    void createDirectMultiTerm(BlueprintType *bp, MultiTerm &n);
+    template <typename WS>
+    void createDirectWeightedSet(WS *bp, MultiTerm &n);
 
     template <typename WS>
     void createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger);
@@ -680,7 +676,8 @@ public:
         return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
     }
 
-    void visit(query::WeightedSetTerm &n) override {
+    template <typename Node>
+    void create_weighted_set_or_in(Node &n) {
         bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());
         bool isInteger = _attr.isIntegerType();
@@ -695,8 +692,8 @@ public:
         } else {
             if (use_docid_with_weight_posting_store()) {
                 auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::WeightedSetTermSearch>
-                        (_field, _attr, *_dwwps, n.getNumTerms());
-                createDirectMultiTerm(bp, n);
+                        (_field, _attr, *_dww, n.getNumTerms());
+                createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
                 createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
@@ -704,11 +701,15 @@ public:
         }
     }
 
+    void visit(query::WeightedSetTerm &n) override {
+        create_weighted_set_or_in(n);
+    }
+
     void visit(query::DotProduct &n) override {
         if (use_docid_with_weight_posting_store()) {
             auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::DotProductSearch>
-                    (_field, _attr, *_dwwps, n.getNumTerms());
-            createDirectMultiTerm(bp, n);
+                    (_field, _attr, *_dww, n.getNumTerms());
+            createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
             createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
@@ -717,10 +718,10 @@ public:
 
     void visit(query::WandTerm &n) override {
         if (use_docid_with_weight_posting_store()) {
-            auto *bp = new DirectWandBlueprint(_field, *_dwwps,
+            auto *bp = new DirectWandBlueprint(_field, *_dww,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
                                                n.getNumTerms());
-            createDirectMultiTerm(bp, n);
+            createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new ParallelWeakAndBlueprint(_field,
                     n.getTargetNumHits(),
@@ -731,18 +732,7 @@ public:
     }
 
     void visit(query::InTerm &n) override {
-        if (_dps != nullptr) {
-            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidPostingStore, attribute::InTermSearch>
-                    (_field, _attr, *_dps, n.getNumTerms());
-            createDirectMultiTerm(bp, n);
-        } else if (_dwwps != nullptr) {
-            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, attribute::InTermSearch>
-                    (_field, _attr, *_dwwps, n.getNumTerms());
-            createDirectMultiTerm(bp, n);
-        } else {
-            auto* bp = new WeightedSetTermBlueprint(_field);
-            createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
-        }
+        create_weighted_set_or_in(n);
     }
 
     void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {
@@ -777,9 +767,9 @@ public:
     void visit(query::FuzzyTerm &n) override { visitTerm(n); }
 };
 
-template <typename BlueprintType>
+template <typename WS>
 void
-CreateBlueprintVisitor::createDirectMultiTerm(BlueprintType *bp, MultiTerm &n) {
+CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, MultiTerm &n) {
     Blueprint::UP result(bp);
     Blueprint::HitEstimate estimate;
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
