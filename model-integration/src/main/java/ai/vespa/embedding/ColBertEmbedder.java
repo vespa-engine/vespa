@@ -57,7 +57,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
     private final long querySequenceToken;
 
     private final long documentSequenceToken;
-    private Set<Long> skipTokens;
+    private final Set<Long> skipTokens;
 
     public record TransformerInput(List<Long> inputIds, List<Long> attentionMask) {}
 
