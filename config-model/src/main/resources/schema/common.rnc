@@ -138,9 +138,10 @@ ColBertEmbedder =
    element transformer-mask-token { xsd:integer }? &
    element transformer-input-ids { xsd:string }? &
    element transformer-attention-mask { xsd:string }? &
-   element transformer-token-type-ids { xsd:string }? &
+   element transformer-pad-token { xsd:integer }? &
+   element query-token-id { xsd:integer }? &
+   element document-token-id { xsd:integer }? &
    element transformer-output { xsd:string }? &
-   element normalize { xsd:boolean }? &
    OnnxModelExecutionParams &
    StartOfSequence &
    EndOfSequence

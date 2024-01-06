@@ -12,11 +12,24 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
 public class ColBertEmbedderTest {
+
+    @Test
+    public void tesSkipTokens() {
+        Set<Long> skipTokens = embedder.getSkipTokens();
+        assertTrue(skipTokens.contains(999L));
+        assertTrue(skipTokens.contains(1000L));
+        assertTrue(skipTokens.contains(1001L));
+        assertTrue(skipTokens.contains(1002L));
+        assertTrue(skipTokens.contains(1003L));
+        assertTrue(skipTokens.contains(1031L));
+    }
 
     @Test
     public void testPacking() {
@@ -65,6 +78,50 @@ public class ColBertEmbedderTest {
             //throws because 128/8 does not fit into 15
             assertEmbed("tensor<int8>(qt{},x[15])", "this is a query", indexingContext);
         });
+    }
+
+    @Test
+    public void testInputTensorsWordPiece() {
+        //wordPiece tokenizer("this is a query !") -> [2023, 2003, 1037, 23032, 999]
+        List<Long> tokens = List.of(2023L, 2003L, 1037L, 23032L, 999L);
+        ColBertEmbedder.TransformerInput input = embedder.buildTransformerInput(tokens,10,true);
+        assertEquals(10,input.inputIds().size());
+        assertEquals(10,input.attentionMask().size());
+        assertEquals(List.of(101L, 1L, 2023L, 2003L, 1037L, 23032L, 999L, 102L, 103L, 103L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 0L, 0L),input.attentionMask());
+
+        input = embedder.buildTransformerInput(tokens,10,false);
+        assertEquals(7,input.inputIds().size());
+        assertEquals(7,input.attentionMask().size());
+        assertEquals(List.of(101L, 2L, 2023L, 2003L, 1037L, 23032L, 102L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L, 1L, 1L, 1L, 1L),input.attentionMask());
+    }
+
+    @Test
+    public void testInputTensorsSentencePiece() {
+        //Sentencepiece tokenizer("this is a query !") -> [903, 83, 10, 41, 1294, 711]
+        // ! is mapped to 711 and is a punctuation character
+        List<Long> tokens = List.of(903L, 83L, 10L, 41L, 1294L, 711L);
+        ColBertEmbedder.TransformerInput input = multiLingualEmbedder.buildTransformerInput(tokens,10,true);
+        assertEquals(10,input.inputIds().size());
+        assertEquals(10,input.attentionMask().size());
+        assertEquals(List.of(0L, 3L, 903L, 83L, 10L, 41L, 1294L, 711L, 2L, 250001L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 0L),input.attentionMask());
+
+        //NO padding for document side and 711 (punctuation) is now filtered out
+        input = multiLingualEmbedder.buildTransformerInput(tokens,10,false);
+        assertEquals(8,input.inputIds().size());
+        assertEquals(8,input.attentionMask().size());
+        assertEquals(List.of(0L, 4L, 903L, 83L, 10L, 41L, 1294L, 2L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L),input.attentionMask());
+
+        input = multiLingualEmbedder.buildTransformerInput(List.of(711L), 5, true);
+        assertEquals(List.of(0L, 3L, 711L,2L, 250001L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L, 1L, 0L),input.attentionMask());
+
+        input = multiLingualEmbedder.buildTransformerInput(List.of(711L), 5, false);
+        assertEquals(List.of(0L, 4L, 2L),input.inputIds());
+        assertEquals(List.of(1L, 1L, 1L),input.attentionMask());
     }
 
     @Test
@@ -120,22 +177,44 @@ public class ColBertEmbedderTest {
         }
     }
 
-    static final Embedder embedder;
+    static final ColBertEmbedder embedder;
+
+    static final ColBertEmbedder multiLingualEmbedder;
     static final Embedder.Context indexingContext;
     static final Embedder.Context queryContext;
     static {
         indexingContext = new Embedder.Context("schema.indexing");
         queryContext = new Embedder.Context("query(qt)");
         embedder = getEmbedder();
+        multiLingualEmbedder = getMultiLingualEmbedder();
     }
-    private static Embedder getEmbedder() {
-        String vocabPath = "src/test/models/onnx/transformer/tokenizer.json";
+    private static ColBertEmbedder getEmbedder() {
+        String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
         ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
+        return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+    }
+
+    private static ColBertEmbedder getMultiLingualEmbedder() {
+        String vocabPath = "src/test/models/onnx/transformer/sentence_piece_tokenizer.json";
+        String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
+        builder.tokenizerPath(ModelReference.valueOf(vocabPath));
+        builder.transformerModel(ModelReference.valueOf(modelPath));
+        builder.transformerGpuDevice(-1);
+
+        builder.transformerStartSequenceToken(0);
+        builder.transformerPadToken(1);
+        builder.transformerEndSequenceToken(2);
+        builder.transformerMaskToken(250001);
+        builder.queryTokenId(3);
+        builder.documentTokenId(4);
+
         return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 }
