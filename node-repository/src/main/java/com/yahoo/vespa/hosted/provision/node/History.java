@@ -180,6 +180,10 @@ public class History {
             down,
             // The active node came up according to the service monitor
             up,
+            // The node has been given permission to suspend by Orchestrator
+            suspended,
+            // The node has resumed from suspension by Orchestrator
+            resumed,
             // The node resources/flavor were changed
             resized(false),
             // The node was rebooted
