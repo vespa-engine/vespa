@@ -10,9 +10,11 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LINGUISTICS_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 
 /**
  * @author bjorncs
@@ -25,7 +27,7 @@ public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceT
         super("com.yahoo.language.huggingface.HuggingFaceTokenizer", LINGUISTICS_BUNDLE_NAME, xml);
         for (Element element : XML.getChildren(xml, "model")) {
             var lang = element.hasAttribute("language") ? element.getAttribute("language") : "unknown";
-            langToModel.put(lang, Model.fromXml(state, element).modelReference());
+            langToModel.put(lang, Model.fromXml(state, element, Set.of(HF_TOKENIZER)).modelReference());
         }
     }
 
