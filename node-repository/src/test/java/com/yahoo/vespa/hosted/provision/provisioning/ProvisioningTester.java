@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
@@ -23,6 +22,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -100,20 +100,19 @@ public class ProvisioningTester {
     private int nextIP = 0;
 
     private ProvisioningTester(Curator curator,
-                               NodeFlavors nodeFlavors,
-                               HostResourcesCalculator resourcesCalculator,
-                               Zone zone,
-                               NameResolver nameResolver,
-                               DockerImage containerImage,
-                               Orchestrator orchestrator,
-                               HostProvisioner hostProvisioner,
-                               LoadBalancerServiceMock loadBalancerService,
-                               FlagSource flagSource,
-                               int spareCount,
-                               ManualClock clock) {
+                              NodeFlavors nodeFlavors,
+                              HostResourcesCalculator resourcesCalculator,
+                              Zone zone,
+                              NameResolver nameResolver,
+                              DockerImage containerImage,
+                              Orchestrator orchestrator,
+                              HostProvisioner hostProvisioner,
+                              LoadBalancerServiceMock loadBalancerService,
+                              FlagSource flagSource,
+                              int spareCount) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
-        this.clock = clock;
+        this.clock = new ManualClock();
         this.hostProvisioner = hostProvisioner;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
         this.nodeRepository = new NodeRepository(nodeFlavors,
@@ -659,7 +658,6 @@ public class ProvisioningTester {
         private HostProvisioner hostProvisioner;
         private FlagSource flagSource;
         private int spareCount = 0;
-        private ManualClock clock = new ManualClock();
         private DockerImage defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
 
         public Builder curator(Curator curator) {
@@ -737,11 +735,6 @@ public class ProvisioningTester {
             return this;
         }
 
-        public Builder clock(ManualClock clock) {
-            this.clock = clock;
-            return this;
-        }
-
         private FlagSource defaultFlagSource() {
             return new InMemoryFlagSource();
         }
@@ -753,12 +746,11 @@ public class ProvisioningTester {
                                           Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                                           Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                                           defaultImage,
-                                          Optional.ofNullable(orchestrator).orElseGet(() -> new OrchestratorMock(clock)),
+                                          Optional.ofNullable(orchestrator).orElseGet(OrchestratorMock::new),
                                           hostProvisioner,
                                           new LoadBalancerServiceMock(),
                                           Optional.ofNullable(flagSource).orElse(defaultFlagSource()),
-                                          spareCount,
-                                          clock);
+                                          spareCount);
         }
 
         private static FlavorsConfig asConfig(List<Flavor> flavors) {

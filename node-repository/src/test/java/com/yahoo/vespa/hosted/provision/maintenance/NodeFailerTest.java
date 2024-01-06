@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Report;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -172,8 +170,8 @@ public class NodeFailerTest {
         tester.clock.advance(Duration.ofMinutes(65));
         tester.runMaintainers();
 
-        assertTrue(tester.nodeRepository.nodes().node(host_from_normal_app).get().history().isDown());
-        assertTrue(tester.nodeRepository.nodes().node(host_from_suspended_app).get().history().isDown());
+        assertTrue(tester.nodeRepository.nodes().node(host_from_normal_app).get().isDown());
+        assertTrue(tester.nodeRepository.nodes().node(host_from_suspended_app).get().isDown());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(host_from_normal_app).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(host_from_suspended_app).get().state());
     }
@@ -205,10 +203,8 @@ public class NodeFailerTest {
         String downHost1 = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
         String downHost2 = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app2).asList().get(3).hostname();
         // No liveness evidence yet:
-        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isDown());
-        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isUp());
-        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isSuspended());
-        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isResumed());
+        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().isDown());
+        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().isUp());
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
@@ -218,10 +214,8 @@ public class NodeFailerTest {
             assertEquals(0, tester.deployer.activations);
             assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
             assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-            assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isDown());
-            assertTrue(tester.nodeRepository.nodes().node(downHost1).get().history().isUp());
-            assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isSuspended());
-            assertTrue(tester.nodeRepository.nodes().node(downHost1).get().history().isResumed());
+            assertFalse(tester.nodeRepository.nodes().node(downHost1).get().isDown());
+            assertTrue(tester.nodeRepository.nodes().node(downHost1).get().isUp());
         }
 
         tester.serviceMonitor.setHostDown(downHost1);
@@ -233,16 +227,16 @@ public class NodeFailerTest {
             assertEquals(0, tester.deployer.activations);
             assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
             assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-            assertTrue(tester.nodeRepository.nodes().node(downHost1).get().history().isDown());
-            assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isUp());
+            assertTrue(tester.nodeRepository.nodes().node(downHost1).get().isDown());
+            assertFalse(tester.nodeRepository.nodes().node(downHost1).get().isUp());
         }
         tester.serviceMonitor.setHostUp(downHost1);
 
         // downHost2 should now be failed and replaced, but not downHost1
         tester.clock.advance(Duration.ofDays(1));
         tester.runMaintainers();
-        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().history().isDown());
-        assertTrue(tester.nodeRepository.nodes().node(downHost1).get().history().isUp());
+        assertFalse(tester.nodeRepository.nodes().node(downHost1).get().isDown());
+        assertTrue(tester.nodeRepository.nodes().node(downHost1).get().isUp());
         assertEquals(1, tester.deployer.activations);
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
@@ -316,64 +310,6 @@ public class NodeFailerTest {
         tester.clock.advance(Duration.ofMinutes(45));
         tester.runMaintainers();
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
-    }
-
-    @Test
-    public void suspension_extends_grace_period() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
-        String downNode = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
-
-        // host down, but within 1h timeout
-        tester.serviceMonitor.setHostDown(downNode);
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // 30m is still within 1h timeout
-        tester.clock.advance(Duration.ofMinutes(30));
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // suspend
-        tester.clock.advance(Duration.ofSeconds(5));
-        tester.nodeRepository.orchestrator().setNodeStatus(new HostName(downNode), HostStatus.ALLOWED_TO_BE_DOWN);
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // the timeout should now be 4h, so still ~3:30 left.
-        tester.clock.advance(Duration.ofHours(3));
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // advancing another hour takes us beyond the 4h timeout
-        tester.clock.advance(Duration.ofHours(1));
-        tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
-    }
-
-    @Test
-    public void suspension_defers_downtime() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
-        String downNode = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
-
-        // host suspends and goes down
-        tester.nodeRepository.orchestrator().setNodeStatus(new HostName(downNode), HostStatus.ALLOWED_TO_BE_DOWN);
-        tester.serviceMonitor.setHostDown(downNode);
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // host resumes after 30m
-        tester.clock.advance(Duration.ofMinutes(30));
-        tester.nodeRepository.orchestrator().setNodeStatus(new HostName(downNode), HostStatus.NO_REMARKS);
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-
-        // the host should fail 1h after resume, not when the node goes down. Verify this
-        tester.clock.advance(Duration.ofMinutes(45));
-        tester.runMaintainers();
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
-        tester.clock.advance(Duration.ofMinutes(30));
-        tester.runMaintainers();
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
     }
 
@@ -717,21 +653,21 @@ public class NodeFailerTest {
         tester.serviceMonitor.setHostDown(downHost);
         tester.runMaintainers();
         node = tester.nodeRepository.nodes().node(downHost).get();
-        assertTrue(node.history().isDown());
+        assertTrue(node.isDown());
         assertEquals(Node.State.active, node.state());
 
         // CMR still ongoing, don't fail yet
         clock.advance(Duration.ofHours(1));
         tester.runMaintainers();
         node = tester.nodeRepository.nodes().node(downHost).get();
-        assertTrue(node.history().isDown());
+        assertTrue(node.isDown());
         assertEquals(Node.State.active, node.state());
 
         // No ongoing CMR anymore, host should be failed
         clock.advance(Duration.ofHours(1));
         tester.runMaintainers();
         node = tester.nodeRepository.nodes().node(downHost).get();
-        assertTrue(node.history().isDown());
+        assertTrue(node.isDown());
         assertEquals(Node.State.failed, node.state());
     }
 

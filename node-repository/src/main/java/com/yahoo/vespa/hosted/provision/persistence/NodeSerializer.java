@@ -428,8 +428,6 @@ public class NodeSerializer {
             case "deallocated" -> History.Event.Type.deallocated;
             case "down" -> History.Event.Type.down;
             case "up" -> History.Event.Type.up;
-            case "suspended" -> History.Event.Type.suspended;
-            case "resumed" -> History.Event.Type.resumed;
             case "resized" -> History.Event.Type.resized;
             case "rebooted" -> History.Event.Type.rebooted;
             case "osUpgraded" -> History.Event.Type.osUpgraded;
@@ -456,8 +454,6 @@ public class NodeSerializer {
             case deallocated -> "deallocated";
             case down -> "down";
             case up -> "up";
-            case suspended -> "suspended";
-            case resumed -> "resumed";
             case resized -> "resized";
             case rebooted -> "rebooted";
             case osUpgraded -> "osUpgraded";

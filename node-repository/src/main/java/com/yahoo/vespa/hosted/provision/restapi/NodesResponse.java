@@ -180,7 +180,7 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         object.setBool("wantToRebuild", node.status().wantToRebuild());
         object.setBool("wantToUpgradeFlavor", node.status().wantToUpgradeFlavor());
-        object.setBool("down", node.history().isDown());
+        object.setBool("down", node.isDown());
         toSlime(node.history().events(), object.setArray("history"));
         toSlime(node.history().log(), object.setArray("log"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
