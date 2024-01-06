@@ -59,7 +59,7 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
                                                             instance,
                                                             zone.environment(),
                                                             zone.region(),
-                                                            tags)
+                zone.cloud(), tags)
                 .run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");

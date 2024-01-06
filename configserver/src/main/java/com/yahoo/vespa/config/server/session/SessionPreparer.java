@@ -321,6 +321,7 @@ public class SessionPreparer {
                                     instance,
                                     zone.environment(),
                                     zone.region(),
+                                    zone.cloud().name(),
                                     tags)
                         .run();
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
