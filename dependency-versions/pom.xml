@@ -111,8 +111,8 @@
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
         <joda-time.vespa.version>2.12.6</joda-time.vespa.version>
-        <junit.vespa.version>5.10.0</junit.vespa.version>
-        <junit.platform.vespa.version>1.10.0</junit.platform.vespa.version>
+        <junit.vespa.version>5.10.1</junit.vespa.version>
+        <junit.platform.vespa.version>1.10.1</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <luben.zstd.vespa.version>1.5.5-11</luben.zstd.vespa.version>
         <lucene.vespa.version>9.9.1</lucene.vespa.version>
@@ -146,8 +146,8 @@
 
         <!-- Versions used by tenant parent pom and testing framework -->
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
-        <junit.vespa.tenant.version>5.8.1</junit.vespa.tenant.version>
-        <junit.platform.vespa.tenant.version>1.8.1</junit.platform.vespa.tenant.version>
+        <junit.vespa.tenant.version>5.10.1</junit.vespa.tenant.version>
+        <junit.platform.vespa.tenant.version>1.10.1</junit.platform.vespa.tenant.version>
         <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
