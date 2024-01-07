@@ -28,8 +28,8 @@ public:
         ucs4_t * _cbuf;
 
     public:
-        BufferWrapper(ucs4_t * buf) : _bbuf(buf), _cbuf(buf) { }
-        BufferWrapper(ucs4_t * buf, size_t *) : _bbuf(buf), _cbuf(buf) { }
+        explicit BufferWrapper(ucs4_t * buf) noexcept : _bbuf(buf), _cbuf(buf) { }
+        BufferWrapper(ucs4_t * buf, size_t *) noexcept : _bbuf(buf), _cbuf(buf) { }
         void onCharacter(ucs4_t ch, size_t) { *_cbuf++ = ch; }
         void onOffset(size_t) { }
         void incBuf(size_t inc) { _cbuf += inc; }
@@ -50,7 +50,7 @@ public:
         size_t * _coff;
 
     public:
-        OffsetWrapper(ucs4_t * buf, size_t * offsets) : BufferWrapper(buf), _boff(offsets), _coff(offsets) {}
+        explicit OffsetWrapper(ucs4_t * buf, size_t * offsets) noexcept : BufferWrapper(buf), _boff(offsets), _coff(offsets) {}
         void onCharacter(ucs4_t ch, size_t of) { *_cbuf++ = ch; *_coff++ = of; }
         void onOffset(size_t of) { *_coff++ = of; }
         bool valid() { return (size() == (size_t)(_coff - _boff)); }
@@ -103,9 +103,8 @@ protected:
     size_t matchTermExact(const FieldRef & f, search::streaming::QueryTerm & qt);
 
 public:
-    UTF8StringFieldSearcherBase();
-    UTF8StringFieldSearcherBase(FieldIdT fId);
-    ~UTF8StringFieldSearcherBase();
+    explicit UTF8StringFieldSearcherBase(FieldIdT fId);
+    ~UTF8StringFieldSearcherBase() override;
     void prepare(search::streaming::QueryTermList& qtl,
                  const SharedSearcherBuf& buf,
                  const vsm::FieldPathMapT& field_paths,

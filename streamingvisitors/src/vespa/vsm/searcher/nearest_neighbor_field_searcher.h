@@ -43,7 +43,7 @@ private:
 public:
     NearestNeighborFieldSearcher(FieldIdT fid,
                                  search::attribute::DistanceMetric metric);
-    ~NearestNeighborFieldSearcher();
+    ~NearestNeighborFieldSearcher() override;
 
     std::unique_ptr<FieldSearcher> duplicate() const override;
     void prepare(search::streaming::QueryTermList& qtl,

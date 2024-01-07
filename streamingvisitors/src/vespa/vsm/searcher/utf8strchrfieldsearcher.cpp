@@ -14,7 +14,7 @@ UTF8StrChrFieldSearcher::duplicate() const
 }
 
 size_t
-UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
+UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 {
     (void) mintsz;
     termcount_t words(0);

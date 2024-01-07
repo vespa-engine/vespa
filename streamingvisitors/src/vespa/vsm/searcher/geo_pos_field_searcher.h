@@ -8,8 +8,8 @@ namespace vsm {
 
 class GeoPosFieldSearcher : public FieldSearcher {
 public:
-    GeoPosFieldSearcher(FieldIdT fId=0);
-    ~GeoPosFieldSearcher();
+    GeoPosFieldSearcher(FieldIdT fId);
+    ~GeoPosFieldSearcher() override;
     void prepare(search::streaming::QueryTermList& qtl,
                  const SharedSearcherBuf& buf,
                  const vsm::FieldPathMapT& field_paths,
@@ -21,7 +21,7 @@ protected:
     using GeoLocation = search::common::GeoLocation;
     class GeoPosInfo : public GeoLocation {
     public:
-        GeoPosInfo (GeoLocation loc) noexcept : GeoLocation(std::move(loc)) {}
+        explicit GeoPosInfo (GeoLocation loc) noexcept : GeoLocation(std::move(loc)) {}
         bool cmp(const document::StructFieldValue & fv) const;
     };
     using GeoPosInfoListT = std::vector<GeoPosInfo>;

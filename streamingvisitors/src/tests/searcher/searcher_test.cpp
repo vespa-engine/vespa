@@ -114,7 +114,7 @@ struct SnippetModifierSetup
 
 SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
     : query(terms),
-      searcher(new UTF8SubstringSnippetModifier()),
+      searcher(new UTF8SubstringSnippetModifier(0)),
       env(),
       modifier(searcher)
 {
@@ -361,7 +361,7 @@ assertFieldInfo(FieldSearcher & fs, const StringList & query,
 void
 assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
 {
-    UTF8SubstringSnippetModifier mod;
+    UTF8SubstringSnippetModifier mod(0);
     performSearch(mod, query, StringFieldValue(fv));
     EXPECT_EQUAL(mod.getModifiedBuf().getPos(), exp.size());
     std::string actual(mod.getModifiedBuf().getBuffer(), mod.getModifiedBuf().getPos());
@@ -659,7 +659,7 @@ TEST("integer search")
 
 TEST("floating point search")
 {
-    FloatFieldSearcher fs;
+    FloatFieldSearcher fs(0);
     TEST_DO(assertFloat(fs,         "10",    10, true));
     TEST_DO(assertFloat(fs,       "10.5",  10.5, true));
     TEST_DO(assertFloat(fs,      "-10.5", -10.5, true));
@@ -726,7 +726,7 @@ TEST("Snippet modifier search") {
                                                       "\xe7\x9f\xb3\x1f\xe6\x98\x8e\xe5\x87\xb1\x1f\xe5\x9c\xa8");
 
     { // check that resizing works
-        UTF8SubstringSnippetModifier mod;
+        UTF8SubstringSnippetModifier mod(0);
         EXPECT_EQUAL(mod.getModifiedBuf().getLength(), 32u);
         EXPECT_EQUAL(mod.getModifiedBuf().getPos(), 0u);
         performSearch(mod, StringList().add("a"), StringFieldValue("aaaaaaaaaaaaaaaa"));

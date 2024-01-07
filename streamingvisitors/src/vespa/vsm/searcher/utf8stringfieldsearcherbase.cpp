@@ -209,11 +209,6 @@ UTF8StringFieldSearcherBase::matchTermSuffix(const FieldRef & f, QueryTerm & qt)
     return words;
 }
 
-UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase() :
-    StrChrFieldSearcher()
-{
-}
-
 UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase(FieldIdT fId) :
     StrChrFieldSearcher(fId)
 {

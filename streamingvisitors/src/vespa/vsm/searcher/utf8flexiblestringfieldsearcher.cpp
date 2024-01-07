@@ -58,10 +58,6 @@ UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
     }
 }
 
-UTF8FlexibleStringFieldSearcher::UTF8FlexibleStringFieldSearcher() :
-    UTF8StringFieldSearcherBase()
-{ }
-
 UTF8FlexibleStringFieldSearcher::UTF8FlexibleStringFieldSearcher(FieldIdT fId) :
     UTF8StringFieldSearcherBase(fId)
 { }

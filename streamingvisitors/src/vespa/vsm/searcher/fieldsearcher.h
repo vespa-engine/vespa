@@ -39,7 +39,8 @@ public:
         PREFIX,
         SUBSTRING,
         SUFFIX,
-        EXACT
+        EXACT,
+        CASED
     };
 
     explicit FieldSearcher(FieldIdT fId) noexcept : FieldSearcher(fId, false) {}
@@ -56,6 +57,7 @@ public:
     bool substring()                 const { return _matchType == SUBSTRING; }
     bool suffix()                    const { return _matchType == SUFFIX; }
     bool exact()                     const { return _matchType == EXACT; }
+    bool cased()                     const { return _matchType == CASED; }
     void setMatchType(MatchType mt)        { _matchType = mt; }
     static void init();
     static search::byte fold(search::byte c)               { return _foldLowCase[c]; }
