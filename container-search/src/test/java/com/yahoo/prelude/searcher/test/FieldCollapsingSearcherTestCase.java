@@ -68,6 +68,82 @@ public class FieldCollapsingSearcherTestCase {
         assertEquals(1, checker.queryCount);
     }
 
+    /**
+     * Tests that we do not fail on documents with missing collapsefield
+     * and that they are kept in the result.
+     */
+    @Test
+    void testFieldCollapsingWithCollapseFieldMissing() {
+        Map<Searcher, Searcher> chained = new HashMap<>();
+
+        // Set up
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
+        DocumentSourceSearcher docsource = new DocumentSourceSearcher();
+        chained.put(collapse, docsource);
+
+        // Caveat: Collapse is set to false, because that's what the
+        // collapser asks for
+        Query q = new Query("?query=test_collapse");
+        // The searcher turns off collapsing further on in the chain
+        q.properties().set("collapse", "0");
+        Result r = new Result(q);
+        r.hits().add(createHitWithoutFields("http://acme.org/a.html", 10));
+        r.hits().add(createHitAmid("http://acme.org/b.html", 9, 1));
+        r.hits().add(createHitWithoutFields("http://acme.org/c.html", 9));
+        r.hits().add(createHitAmid("http://acme.org/d.html", 8, 2));
+        r.hits().add(createHitAmid("http://acme.org/d.html", 7, 2));
+        r.setTotalHitCount(5);
+        docsource.addResult(q, r);
+
+        // Test basic collapsing on amid
+        q = new Query("?query=test_collapse&collapsefield=amid&collapsesize=1");
+        r = doSearch(collapse, q, 0, 10, chained);
+
+        assertEquals(4, r.getHitCount());
+        assertEquals(1, docsource.getQueryCount());
+
+        assertHitWithoutFields("http://acme.org/a.html", 10, r.hits().get(0));
+        assertHitAmid("http://acme.org/b.html", 9, 1, r.hits().get(1));
+        assertHitWithoutFields("http://acme.org/c.html", 9, r.hits().get(2));
+        assertHitAmid("http://acme.org/d.html", 8, 2, r.hits().get(3));
+    }
+
+    @Test
+    void testFieldCollapsingOnMultipleFieldsWithCollapseFieldsMissing() {
+        Map<Searcher, Searcher> chained = new HashMap<>();
+
+        // Set up
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
+        DocumentSourceSearcher docsource = new DocumentSourceSearcher();
+        chained.put(collapse, docsource);
+
+        // Caveat: Collapse is set to false, because that's what the
+        // collapser asks for
+        Query q = new Query("?query=test_collapse");
+        // The searcher turns off collapsing further on in the chain
+        q.properties().set("collapse", "0");
+        Result r = new Result(q);
+        r.hits().add(createHitWithoutFields("http://acme.org/a.html", 10));  // - -
+        r.hits().add(createHitBmid("http://acme.org/b.html", 9, 1));  // - 1
+        r.hits().add(createHitAmid("http://acme.org/c.html", 9, 1));  // 1 -
+        r.hits().add(createHitBmid("http://acme.org/d.html", 8, 1));  // - 1
+        r.hits().add(createHit("http://acme.org/e.html", 8, 2, 2));  // 2 2
+        r.setTotalHitCount(5);
+        docsource.addResult(q, r);
+
+        // Test basic collapsing
+        q = new Query("?query=test_collapse&collapsefield=amid,bmid&collapsesize=1");
+        r = doSearch(collapse, q, 0, 10, chained);
+
+        assertEquals(4, r.getHitCount());
+        assertEquals(1, docsource.getQueryCount());
+
+        assertHitWithoutFields("http://acme.org/a.html", 10, r.hits().get(0));
+        assertHitBmid("http://acme.org/b.html", 9, 1, r.hits().get(1));
+        assertHitAmid("http://acme.org/c.html", 9, 1, r.hits().get(2));
+        assertHit("http://acme.org/e.html", 8, 2, 2, r.hits().get(3));
+    }
+
     @Test
     void testFieldCollapsing() {
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -551,9 +627,19 @@ public class FieldCollapsingSearcherTestCase {
         }
     }
 
+    private FastHit createHitWithoutFields(String uri, int relevancy) {
+        return new FastHit(uri,relevancy);
+    }
+
     private FastHit createHitAmid(String uri,int relevancy,int amid) {
         FastHit hit = new FastHit(uri,relevancy);
         hit.setField("amid", String.valueOf(amid));
+        return hit;
+    }
+
+    private FastHit createHitBmid(String uri,int relevancy,int bmid) {
+        FastHit hit = new FastHit(uri,relevancy);
+        hit.setField("bmid", String.valueOf(bmid));
         return hit;
     }
 
@@ -564,10 +650,22 @@ public class FieldCollapsingSearcherTestCase {
         return hit;
     }
 
+    private void assertHitWithoutFields(String uri,int relevancy,Hit hit) {
+        assertEquals(uri,hit.getId().toString());
+        assertEquals(relevancy, ((int) hit.getRelevance().getScore()));
+        assertTrue(hit.fields().isEmpty());
+    }
+
     private void assertHitAmid(String uri, int relevancy, int amid, Hit hit) {
         assertEquals(uri,hit.getId().toString());
         assertEquals(relevancy, ((int) hit.getRelevance().getScore()));
         assertEquals(amid,Integer.parseInt((String) hit.getField("amid")));
+    }
+
+    private void assertHitBmid(String uri, int relevancy, int bmid, Hit hit) {
+        assertEquals(uri,hit.getId().toString());
+        assertEquals(relevancy, ((int) hit.getRelevance().getScore()));
+        assertEquals(bmid,Integer.parseInt((String) hit.getField("bmid")));
     }
 
     private void assertHit(String uri,int relevancy,int amid,int bmid,Hit hit) {
