@@ -6,10 +6,10 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -114,23 +114,9 @@ public class FieldCollapsingSearcher extends Searcher {
             resultSource = search(query.clone(), execution, nextOffset, hitsToRequest);
             fill(resultSource, summaryClass, execution);
 
-            // collapse by the primary field, using the query-result as the source
-            // this either fills an empty result, or extends the existing one from a previous iteration
-            collapse(result, knownCollapses, resultSource, collapseFields[0],
-                    getCollapseSize(query.properties(), collapseFields[0], globalCollapseSize)
+            collapse(result, knownCollapses, resultSource,
+                collapseFields, query.properties(), globalCollapseSize
             );
-
-            // collapse even further, using the other fields
-            // using the result as source, we just (possibly) reduce the number of hits
-            for (int i = 1; i < collapseFields.length; i++) {
-                Result newResult = new Result(query);
-
-                collapse(newResult, knownCollapses, result, collapseFields[i],
-                        getCollapseSize(query.properties(), collapseFields[i], globalCollapseSize)
-                );
-
-                result = newResult;
-            }
 
             hitsAfterCollapse = result.getHitCount();
             if (resultSource.getTotalHitCount() < (hitsToRequest + nextOffset)) {
@@ -165,36 +151,51 @@ public class FieldCollapsingSearcher extends Searcher {
 
     /**
      * Collapse logic. Preserves only maxHitsPerField hits
-     * for each unique value of the collapsing parameter.
+     * for each unique value of the collapsing parameters.
+     * Uses collapsefields sequentially.
      */
-    private void collapse(Result result, Map<String, Integer> knownCollapses,
-                          Result resultSource, String collapseField, int collapseSize) {
+    private void collapse(Result result, Map<String, Integer> knownCollapses, Result resultSource,
+                          String[] collapseFields, Properties queryProperties, int globalCollapseSize) {
+
         for (Hit unknownHit : resultSource.hits()) {
             if (!(unknownHit instanceof FastHit hit)) {
                 result.hits().add(unknownHit);
                 continue;
             }
-            Object peek = hit.getField(collapseField);
-            String collapseId = peek != null ? peek.toString() : null;
-            if (collapseId == null) {
-                result.hits().add(hit);
-                continue;
+
+            boolean addHit = true;
+
+            for (String collapseField : collapseFields) {
+
+                Object peek = hit.getField(collapseField);
+                String collapseId = peek != null ? peek.toString() : null;
+                if (collapseId == null) {
+                    continue;
+                }
+
+                // prepending the fieldname is necessary to distinguish between values in the different collapsefields
+                // @ cannot occur in fieldnames
+                String collapseKey = collapseField + "@" + collapseId;
+
+                if (knownCollapses.containsKey(collapseKey)) {
+                    int numHitsThisField = knownCollapses.get(collapseKey);
+                    int collapseSize = getCollapseSize(queryProperties, collapseField, globalCollapseSize);
+
+                    if (numHitsThisField < collapseSize) {
+                        ++numHitsThisField;
+                        knownCollapses.put(collapseKey, numHitsThisField);
+                    } else {
+                        addHit = false;
+                        // immediate return, so that following collapseFields do not record the fieldvalues of this hit
+                        // needed for sequential collapsing, otherwise later collapsefields would remove too many hits
+                        break;
+                    }
+                } else {
+                    knownCollapses.put(collapseKey, 1);
+                }
             }
 
-            // prepending the fieldname is necessary to distinguish between values in the different collapsefields
-            // @ cannot occur in fieldnames
-            String collapseKey = collapseField + "@" + collapseId;
-
-            if (knownCollapses.containsKey(collapseKey)) {
-                int numHitsThisField = knownCollapses.get(collapseKey);
-
-                if (numHitsThisField < collapseSize) {
-                    result.hits().add(hit);
-                    ++numHitsThisField;
-                    knownCollapses.put(collapseKey, numHitsThisField);
-                }
-            } else {
-                knownCollapses.put(collapseKey, 1);
+            if (addHit) {
                 result.hits().add(hit);
             }
         }
