@@ -325,13 +325,14 @@ public class FieldCollapsingSearcherTestCase {
         assertHit("http://acme.org/a.html", 10, 1, 0, r.hits().get(0));
         assertHit("http://acme.org/c.html", 8, 0, 1, r.hits().get(1));
 
+        docsource.resetQueryCount();
 
         // Test collapsing, starting with bmid
         q = new Query("?query=test_collapse&collapsesize=1&collapsefield=bmid,amid");
         r = doSearch(collapse, q, 0, 4, chained);
 
         assertEquals(1, r.getHitCount());
-        assertEquals(2, docsource.getQueryCount()); // 2 because + 1 from above
+        assertEquals(1, docsource.getQueryCount());
         assertHit("http://acme.org/a.html", 10, 1, 0, r.hits().get(0));
     }
 
