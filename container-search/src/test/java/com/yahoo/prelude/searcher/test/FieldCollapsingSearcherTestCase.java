@@ -81,11 +81,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHitWithoutFields("http://acme.org/a.html", 10));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 1));
@@ -117,11 +113,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHitWithoutFields("http://acme.org/a.html", 10));  // - -
         r.hits().add(createHitBmid("http://acme.org/b.html", 9, 1));  // - 1
@@ -153,11 +145,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
-        Query q = new Query("?query=test_collapse&collapsefield=amid");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+        Query q = new Query("?query=test_collapse");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
@@ -194,11 +182,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
-        Query q = new Query("?query=test_collapse&collapsefield=amid");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+        Query q = new Query("?query=test_collapse");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
@@ -264,9 +248,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        Query q = new Query("?query=test_collapse&collapsesize=1&collapsefield=amid");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+        Query q = new Query("?query=test_collapse");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
@@ -311,8 +293,6 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, docsource);
 
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHit("http://acme.org/a.html", 10, 1, 0));
         r.hits().add(createHit("http://acme.org/b.html", 9, 1, 1));
@@ -353,8 +333,6 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, docsource);
 
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHit("http://acme.org/a.html", 10, 1, 1));
         r.hits().add(createHit("http://acme.org/b.html", 9, 1, 0));
@@ -387,8 +365,6 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, docsource);
 
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHit("http://acme.org/a.html", 10, 1, 1));
         r.hits().add(createHit("http://acme.org/b.html", 9, 1, 0));
@@ -425,8 +401,6 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, docsource);
 
         Query q = new Query("?query=test_collapse");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHit("http://acme.org/a.html", 10, 0, 1, 1)); // first hit
         r.hits().add(createHit("http://acme.org/b.html", 9, 0, 1, 2));
@@ -473,9 +447,7 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
 
-        Query q = new Query("?query=test_collapse&collapse=true&collapsefield=amid");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+        Query q = new Query("?query=test_collapse");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 1));
         r.hits().add(createHitAmid("http://acme.org/b.html", 10, 1));
@@ -510,11 +482,7 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, messUp);
         chained.put(messUp, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the collapser asks for
         Query q = new Query("?query=%22test%20collapse%22+b&collapsefield=amid&type=all");
-
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
@@ -544,11 +512,8 @@ public class FieldCollapsingSearcherTestCase {
         FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
-        Query q = new Query("?query=test_collapse&collapsefield=amid&summary=placeholder");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+
+        Query q = new Query("?query=test_collapse&summary=placeholder");
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
@@ -595,11 +560,8 @@ public class FieldCollapsingSearcherTestCase {
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         Chain<Searcher> chain = new Chain<>(collapse, new AddAggregationStyleGroupingResultSearcher(), docsource);
 
-        // Caveat: Collapse is set to false, because that's what the
-        // collapser asks for
-        Query q = new Query("?query=test_collapse&collapsefield=amid");
-        // The searcher turns off collapsing further on in the chain
-        q.properties().set("collapse", "0");
+        Query q = new Query("?query=test_collapse");
+
         Result r = new Result(q);
         r.hits().add(createHitAmid("http://acme.org/a.html", 10, 0));
         r.hits().add(createHitAmid("http://acme.org/b.html", 9, 0));
