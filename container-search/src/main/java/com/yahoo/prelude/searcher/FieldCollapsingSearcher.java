@@ -32,12 +32,16 @@ public class FieldCollapsingSearcher extends Searcher {
     private static final CompoundName collapsesize = CompoundName.from("collapsesize");
     private static final CompoundName collapseSummaryName = CompoundName.from("collapse.summary");
 
+    /** Separator used for the fieldnames in collapsefield */
+    private static final String separator = ",";
+
     /** Maximum number of queries to send next searcher */
     private static final int maxQueries = 4;
 
     /**
      * The max number of hits that will be preserved per unique
-     * value of the collapsing parameter.
+     * value of the collapsing parameter,
+     * if no field-specific value is configured.
      */
     private int defaultCollapseSize;
 
@@ -91,7 +95,7 @@ public class FieldCollapsingSearcher extends Searcher {
 
         if (collapseFieldParam == null) return execution.search(query);
 
-        String[] collapseFields = collapseFieldParam.split(",");
+        String[] collapseFields = collapseFieldParam.split(separator);
 
         int globalCollapseSize = query.properties().getInteger(collapsesize, defaultCollapseSize);
 
@@ -201,17 +205,13 @@ public class FieldCollapsingSearcher extends Searcher {
         }
     }
 
-    private Integer getCollapseSize(Properties properties, String fieldName, Integer globalCollapseSize) {
+    private int getCollapseSize(Properties properties, String fieldName, int globalCollapseSize) {
         Integer fieldCollapseSize = properties.getInteger(collapsesize.append(fieldName));
 
         if (fieldCollapseSize != null) {
             return fieldCollapseSize;
         }
 
-        if (globalCollapseSize != null) {
-            return globalCollapseSize;
-        }
-
-        return defaultCollapseSize;
+        return globalCollapseSize;
     }
 }
