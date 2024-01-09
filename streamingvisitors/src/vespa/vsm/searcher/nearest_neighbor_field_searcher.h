@@ -11,10 +11,7 @@
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 
 namespace search::fef { class IQueryEnvironment; }
-
-namespace search::tensor {
-class TensorExtAttribute;
-}
+namespace search::tensor { class TensorExtAttribute; }
 
 namespace vsm {
 
@@ -52,7 +49,7 @@ public:
                  search::fef::IQueryEnvironment& query_env) override;
     void onValue(const document::FieldValue& fv) override;
 
-    static search::attribute::DistanceMetric distance_metric_from_string(const vespalib::string& value);
+    static search::attribute::DistanceMetric distance_metric_from_string(vespalib::stringref value);
 };
 
 }

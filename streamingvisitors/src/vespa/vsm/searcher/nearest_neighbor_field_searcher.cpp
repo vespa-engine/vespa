@@ -141,17 +141,17 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
 }
 
 DistanceMetric
-NearestNeighborFieldSearcher::distance_metric_from_string(const vespalib::string& value)
+NearestNeighborFieldSearcher::distance_metric_from_string(vespalib::stringref value)
 {
     // Valid string values must match the definition of DistanceMetric in
     // config-model/src/main/java/com/yahoo/schema/document/Attribute.java
-    auto v = value;
+    vespalib::string v = value;
     std::transform(v.begin(), v.end(), v.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     try {
         return DistanceMetricUtils::to_distance_metric(v);
     } catch (vespalib::IllegalStateException&) {
-        vespalib::Issue::report("Distance metric '%s' is not supported. Using 'euclidean' instead", value.c_str());
+        vespalib::Issue::report("Distance metric '%s' is not supported. Using 'euclidean' instead", v.c_str());
         return DistanceMetric::Euclidean;
     }
 }

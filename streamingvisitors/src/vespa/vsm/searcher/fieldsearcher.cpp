@@ -55,10 +55,8 @@ FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept
       _currentElementId(0),
       _currentElementWeight(1),
       _words(0),
-      _badUtf8Count(0),
-      _zeroCount(0)
+      _badUtf8Count(0)
 {
-    zeroStat();
 }
 
 FieldSearcher::~FieldSearcher() = default;
@@ -111,13 +109,6 @@ FieldSearcher::prepareFieldId()
     for(auto qt : _qtl) {
         qt->resizeFieldId(field());
     }
-}
-
-void
-FieldSearcher::zeroStat()
-{
-    _badUtf8Count = 0;
-    _zeroCount = 0;
 }
 
 void

@@ -22,6 +22,7 @@ using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::Normalizing;
+using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
 using search::streaming::QueryTermList;
 using TermType = QueryTerm::Type;
 using namespace vsm;
@@ -763,28 +764,32 @@ TEST("snippet modifier") {
     }
 }
 
-TEST("FieldSearchSpec constrution") {
+TEST("FieldSearchSpec construction") {
     {
         FieldSearchSpec f;
         EXPECT_FALSE(f.valid());
         EXPECT_EQUAL(0u, f.id());
         EXPECT_EQUAL("", f.name());
         EXPECT_EQUAL(0x100000u, f.maxLength());
+        EXPECT_EQUAL("", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE_AND_FOLD == f.normalize_mode());
     }
     {
-        FieldSearchSpec f(7, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 789);
+        FieldSearchSpec f(7, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 789);
         EXPECT_TRUE(f.valid());
         EXPECT_EQUAL(7u, f.id());
         EXPECT_EQUAL("f0", f.name());
         EXPECT_EQUAL(789u, f.maxLength());
         EXPECT_EQUAL(789u, f.searcher().maxFieldLength());
+        EXPECT_EQUAL("substring", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE == f.normalize_mode());
     }
 }
 
 TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
-    specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 1000);
-    specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "", 1000);
+    specMap[0] = FieldSearchSpec(0, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 1000);
+    specMap[1] = FieldSearchSpec(1, "f1", Searchmethod::AUTOUTF8, Normalizing::NONE, "", 1000);
     IndexFieldMapT indexMap;
     indexMap["i0"].push_back(0);
     indexMap["i1"].push_back(1);

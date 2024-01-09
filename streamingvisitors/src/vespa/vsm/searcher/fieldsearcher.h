@@ -59,13 +59,13 @@ public:
     bool exact()                     const { return _matchType == EXACT; }
     bool cased()                     const { return _matchType == CASED; }
     void setMatchType(MatchType mt)        { _matchType = mt; }
+    MatchType match_type() const noexcept { return _matchType; }
     static void init();
     static search::byte fold(search::byte c)               { return _foldLowCase[c]; }
     static search::byte iswordchar(search::byte c)         { return _wordChar[c]; }
     static search::byte isspace(search::byte c)            { return ! iswordchar(c); }
     static size_t countWords(const FieldRef & f);
     int32_t getCurrentWeight()       const { return _currentElementWeight; }
-    void zeroStat();
     FieldSearcher & maxFieldLength(uint32_t maxFieldLength_) { _maxFieldLength = maxFieldLength_; return *this; }
     size_t maxFieldLength() const { return _maxFieldLength; }
 
@@ -96,11 +96,9 @@ private:
     int32_t       _currentElementWeight; // Contains the weight of the current item being evaluated.
 protected:
     /// Number of terms searched.
-    unsigned _words;
+    unsigned      _words;
     /// Number of utf8 bytes by utf8 size.
-    unsigned _badUtf8Count;
-    unsigned _zeroCount;
-protected:
+    unsigned      _badUtf8Count;
     /**
      * Adds a hit to the given query term.
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
