@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_tensor_from_weighted_set_test_app TEST
     tensor_from_weighted_set_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_tensor_from_weighted_set_test_app COMMAND searchlib_tensor_from_weighted_set_test_app)

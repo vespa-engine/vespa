@@ -17,5 +17,6 @@ vespa_add_executable(searchlib_featurebenchmark_app
     featurebenchmark.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_featurebenchmark_app COMMAND searchlib_featurebenchmark_app BENCHMARK)

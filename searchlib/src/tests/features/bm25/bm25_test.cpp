@@ -4,9 +4,9 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::features;

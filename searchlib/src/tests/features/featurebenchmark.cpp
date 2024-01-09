@@ -11,7 +11,7 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <fstream>
