@@ -182,13 +182,18 @@ public class FieldCollapsingSearcherTestCase {
         assertHitAmid("http://acme.org/g.html", 7, 3, r.hits().get(3));
     }
 
+    /**
+     * Test that collapsing works if multiple searches are necessary.
+     */
     @Test
     void testFieldCollapsingTwoPhase() {
-        // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
-        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
+
+        // Set up
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher(1, 1.0);
         DocumentSourceSearcher docsource = new DocumentSourceSearcher();
         chained.put(collapse, docsource);
+
         // Caveat: Collapse is set to false, because that's what the
         // collapser asks for
         Query q = new Query("?query=test_collapse&collapsefield=amid");
@@ -208,10 +213,10 @@ public class FieldCollapsingSearcherTestCase {
 
         // Test basic collapsing on mid
         q = new Query("?query=test_collapse&collapsefield=amid");
-        r = doSearch(collapse, q, 0, 10, chained);
+        r = doSearch(collapse, q, 0, 4, chained);
 
         assertEquals(4, r.getHitCount());
-        assertEquals(1, docsource.getQueryCount());
+        assertEquals(2, docsource.getQueryCount());
         assertHitAmid("http://acme.org/a.html", 10, 0, r.hits().get(0));
         assertHitAmid("http://acme.org/c.html", 9, 1, r.hits().get(1));
         assertHitAmid("http://acme.org/e.html", 8, 2, r.hits().get(2));
