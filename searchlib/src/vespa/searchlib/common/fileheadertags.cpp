@@ -7,7 +7,7 @@ namespace search::tags {
 vespalib::string FREEZE_TIME("freezeTime");
 vespalib::string CREATE_TIME("createTime");
 vespalib::string FROZEN("frozen");
-vespalib::string DOCID_LIMIT("docidLimit");
+vespalib::string DOCID_LIMIT("docIdLimit");
 vespalib::string FILE_BIT_SIZE("fileBitSize");
 vespalib::string DESC("desc");
 vespalib::string ENTRY_SIZE("entrySize");
