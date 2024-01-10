@@ -457,7 +457,8 @@ public class NodeSerializer {
             case down -> "down";
             case up -> "up";
             case suspended -> "suspended";
-            case resumed -> "resumed";            case resized -> "resized";
+            case resumed -> "resumed";
+            case resized -> "resized";
             case rebooted -> "rebooted";
             case osUpgraded -> "osUpgraded";
             case firmwareVerified -> "firmwareVerified";
