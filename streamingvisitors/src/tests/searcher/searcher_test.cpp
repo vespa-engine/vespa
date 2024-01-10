@@ -441,11 +441,11 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits()).add(Hits()));
     assertString(fs, StringList().add("and").add("overloading"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
 
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "oper",  field, Hits().add(0).add(2));
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits().add(0).add(2)).add(Hits()));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     if (!EXPECT_TRUE(testStringFieldInfo(fs))) return false;
 
     { // test handling of several underscores
@@ -554,12 +554,12 @@ TEST("utf8 substring search with empty term")
 TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
-    assertString(fs, "rsand", field, Hits());
-    assertString(fs, "tor",   field, Hits().add(2));
-    assertString(fs, "tors",  field, Hits().add(0));
+    TEST_DO(assertString(fs, "rsand", field, Hits()));
+    TEST_DO(assertString(fs, "tor",   field, Hits().add(2)));
+    TEST_DO(assertString(fs, "tors",  field, Hits().add(0)));
 
-    assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits()));
-    assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
+    TEST_DO(assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits())));
+    TEST_DO(assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3))));
 
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
@@ -591,22 +591,22 @@ TEST("utf8 flexible searcher"){
 
     // prefix
     assertString(fs, "vesp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "vesp",   "vespa", Hits().add(0));
 
     // substring
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*esp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUBSTRING);
+    fs.match_type(FieldSearcher::SUBSTRING);
     assertString(fs, "esp",  "vespa", Hits().add(0));
 
     // suffix
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*espa",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUFFIX);
+    fs.match_type(FieldSearcher::SUFFIX);
     assertString(fs, "espa",  "vespa", Hits().add(0));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 

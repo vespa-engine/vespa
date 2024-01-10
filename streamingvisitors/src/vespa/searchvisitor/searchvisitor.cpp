@@ -42,6 +42,7 @@ using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::expression::ConfigureStaticParams;
 using search::streaming::Query;
+using search::streaming::Normalizing;
 using search::streaming::QueryTermList;
 using storage::StorageComponent;
 using storage::VisitorEnvironment;
@@ -329,11 +330,11 @@ SearchVisitor::is_text_matching(vespalib::stringref index) const noexcept {
 namespace {
 
 uint32_t
-count_exact(const vsm::FieldSearchSpecMapT & specMap, const StringFieldIdTMap & fieldIdMap) {
+count_normalize_lowercase(const vsm::FieldSearchSpecMapT & specMap, const StringFieldIdTMap & fieldIdMap) {
     size_t count = 0;
     for (const auto & fieldId : fieldIdMap.map()) {
         auto found = specMap.find(fieldId.second);
-        if ((found != specMap.end()) && found->second.searcher().exact()) {
+        if ((found != specMap.end()) && found->second.searcher().normalize_mode() == Normalizing::LOWERCASE) {
             count++;
         }
     }
@@ -341,11 +342,11 @@ count_exact(const vsm::FieldSearchSpecMapT & specMap, const StringFieldIdTMap & 
 }
 
 uint32_t
-count_cased(const vsm::FieldSearchSpecMapT & specMap, const StringFieldIdTMap & fieldIdMap) {
+count_normalize_none(const vsm::FieldSearchSpecMapT & specMap, const StringFieldIdTMap & fieldIdMap) {
     size_t count = 0;
     for (const auto & fieldId : fieldIdMap.map()) {
         auto found = specMap.find(fieldId.second);
-        if ((found != specMap.end()) && found->second.searcher().cased()) {
+        if ((found != specMap.end()) && found->second.searcher().normalize_mode() == Normalizing::NONE) {
             count++;
         }
     }
@@ -358,8 +359,8 @@ SearchMethodInfo::Normalizing
 SearchVisitor::normalizing_mode(vespalib::stringref index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    if (count_cased(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) return Normalizing::NONE;
-    if (count_exact(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) return Normalizing::LOWERCASE;
+    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) return Normalizing::NONE;
+    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) return Normalizing::LOWERCASE;
     return Normalizing::LOWERCASE_AND_FOLD;
 }
 

@@ -20,7 +20,7 @@ public:
     explicit UTF8ExactStringFieldSearcher(FieldIdT fId)
         : UTF8StringFieldSearcherBase(fId)
     {
-        setMatchType(EXACT);
+        match_type(EXACT);
     }
 };
 

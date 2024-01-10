@@ -62,7 +62,6 @@ protected:
     SharedSearcherBuf _buf;
 
     using byte = search::byte;
-    using Normalizing = search::streaming::Normalizing;
 
     class TokenizeReader {
     public:
@@ -120,15 +119,6 @@ protected:
 
     template<typename Reader>
     void tokenize(Reader & reader);
-
-    Normalizing normalize_mode() const noexcept {
-        switch (match_type()) {
-            case EXACT: return Normalizing::LOWERCASE;
-            case CASED: return Normalizing::NONE;
-            default: return Normalizing::LOWERCASE_AND_FOLD;
-        }
-        return Normalizing::LOWERCASE_AND_FOLD;
-    }
 
     /**
      * Matches the given query term against the words in the given field reference
