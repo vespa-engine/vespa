@@ -310,7 +310,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private boolean notInCommands(String index) {
         for (IndexCommand command : commands) {
-            if (command.getIndex().equals(index)) {
+            if (command.index().equals(index)) {
                 return false;
             }
         }
@@ -324,8 +324,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         for (IndexCommand command : commands) {
             iiB.command(
                     new IndexInfoConfig.Indexinfo.Command.Builder()
-                        .indexname(command.getIndex())
-                        .command(command.getCommand()));
+                        .indexname(command.index())
+                        .command(command.command()));
         }
         // Make user defined field sets searchable
         for (FieldSet fieldSet : fieldSets.values()) {
@@ -525,53 +525,32 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     /**
-     * An index command. Null commands are also represented, to detect consistency issues. This is an (immutable) value
-     * object.
-     */
-    public static class IndexCommand {
-
-        private final String index;
-
-        private final String command;
-
-        public IndexCommand(String index, String command) {
-            this.index = index;
-            this.command = command;
-        }
-
-        public String getIndex() {
-            return index;
-        }
-
-        public String getCommand() {
-            return command;
-        }
+         * An index command. Null commands are also represented, to detect consistency issues. This is an (immutable) value
+         * object.
+         */
+        public record IndexCommand(String index, String command) {
 
         /**
          * Returns true if this is the null command (do nothing)
          */
         public boolean isNull() {
-            return command.equals("");
-        }
-
-        public int hashCode() {
-            return index.hashCode() + 17 * command.hashCode();
+            return command.isEmpty();
         }
 
         public boolean equals(Object object) {
-            if (!(object instanceof IndexCommand other)) {
-                return false;
+                if (!(object instanceof IndexCommand other)) {
+                    return false;
+                }
+
+                return other.index.equals(this.index) &&
+                        other.command.equals(this.command);
             }
 
-            return other.index.equals(this.index) &&
-                   other.command.equals(this.command);
-        }
+            public String toString() {
+                return "index command " + command + " on index " + index;
+            }
 
-        public String toString() {
-            return "index command " + command + " on index " + index;
         }
-
-    }
 
     /**
      * A command which may override the command setting of a field for a particular index
