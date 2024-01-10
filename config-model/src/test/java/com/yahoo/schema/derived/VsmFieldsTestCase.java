@@ -51,48 +51,27 @@ public class VsmFieldsTestCase {
         assertEquals(VsmfieldsConfig.Fieldspec.Searchmethod.NONE, fieldSpec.searchmethod());
     }
 
+    private void testIndexMatching(Matching matching, VsmfieldsConfig.Fieldspec.Normalize.Enum normalize, String arg1) {
+        Schema schema = createSchema();
+        SDField field = new TemporarySDField(schema.getDocument(), "f", DataType.STRING);
+        field.parseIndexingScript("{ index }");
+        field.setMatching(matching);
+        schema.getDocument().addField(field);
+        VsmfieldsConfig cfg = vsmfieldsConfig(schema);
+        VsmfieldsConfig.Fieldspec fieldSpec = cfg.fieldspec().get(0);
+        assertEquals("f", fieldSpec.name());
+        assertEquals(VsmfieldsConfig.Fieldspec.Searchmethod.AUTOUTF8, fieldSpec.searchmethod());
+        assertEquals(normalize, fieldSpec.normalize());
+        assertEquals(arg1, fieldSpec.arg1());
+    }
+
     @Test
     void test_exact_string() {
-        Schema schema = createSchema();
-        SDField field = new TemporarySDField(schema.getDocument(), "f", DataType.STRING);
-        field.parseIndexingScript("{ index }");
-        field.setMatching(new Matching(MatchType.EXACT).setCase(Case.CASED));
-        schema.getDocument().addField(field);
-        VsmfieldsConfig cfg = vsmfieldsConfig(schema);
-        VsmfieldsConfig.Fieldspec fieldSpec = cfg.fieldspec().get(0);
-        assertEquals("f", fieldSpec.name());
-        assertEquals(VsmfieldsConfig.Fieldspec.Searchmethod.AUTOUTF8, fieldSpec.searchmethod());
-        assertEquals(VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE, fieldSpec.normalize());
-        assertEquals("exact", fieldSpec.arg1());
-    }
-
-    @Test
-    void test_string() {
-        Schema schema = createSchema();
-        SDField field = new TemporarySDField(schema.getDocument(), "f", DataType.STRING);
-        field.parseIndexingScript("{ index }");
-        field.setMatching(new Matching(MatchType.TEXT));
-        schema.getDocument().addField(field);
-        VsmfieldsConfig cfg = vsmfieldsConfig(schema);
-        VsmfieldsConfig.Fieldspec fieldSpec = cfg.fieldspec().get(0);
-        assertEquals("f", fieldSpec.name());
-        assertEquals(VsmfieldsConfig.Fieldspec.Searchmethod.AUTOUTF8, fieldSpec.searchmethod());
-        assertEquals(VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD, fieldSpec.normalize());
-        assertEquals("", fieldSpec.arg1());
-    }
-
-    @Test
-    void test_cased_string() {
-        Schema schema = createSchema();
-        SDField field = new TemporarySDField(schema.getDocument(), "f", DataType.STRING);
-        field.parseIndexingScript("{ index }");
-        field.setMatching(new Matching(MatchType.TEXT).setCase(Case.CASED));
-        schema.getDocument().addField(field);
-        VsmfieldsConfig cfg = vsmfieldsConfig(schema);
-        VsmfieldsConfig.Fieldspec fieldSpec = cfg.fieldspec().get(0);
-        assertEquals("f", fieldSpec.name());
-        assertEquals(VsmfieldsConfig.Fieldspec.Searchmethod.AUTOUTF8, fieldSpec.searchmethod());
-        assertEquals(VsmfieldsConfig.Fieldspec.Normalize.NONE, fieldSpec.normalize());
-        assertEquals("", fieldSpec.arg1());
+        testIndexMatching(new Matching(MatchType.TEXT),
+                          VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD, "");
+        testIndexMatching(new Matching(MatchType.TEXT).setCase(Case.CASED),
+                          VsmfieldsConfig.Fieldspec.Normalize.NONE, "");
+        testIndexMatching(new Matching(MatchType.EXACT).setCase(Case.CASED),
+                          VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE, "exact");
     }
 }
