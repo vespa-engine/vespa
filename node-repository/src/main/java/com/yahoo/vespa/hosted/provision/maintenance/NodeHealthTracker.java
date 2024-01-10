@@ -12,6 +12,10 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
@@ -20,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Checks if nodes are responding and updates their status accordingly
@@ -33,11 +37,13 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Provides (more accurate) information about the status of active hosts */
     private final ServiceMonitor serviceMonitor;
+    private final Orchestrator orchestrator;
 
     public NodeHealthTracker(ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                              Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
         this.serviceMonitor = serviceMonitor;
+        this.orchestrator = nodeRepository().orchestrator();
     }
 
     @Override
@@ -55,10 +61,14 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
         serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName().forEach((hostname, serviceInstances) -> {
             Optional<Node> node = activeNodes.node(hostname.toString());
             if (node.isEmpty()) return;
+            boolean isDown = allDown(serviceInstances);
+
+            Optional<HostStatus> status = orchestrator.getOptionalNodeStatus(node.get().hostname());
+            if (status.isEmpty()) return;
+            boolean isSuspended = status.get().isSuspended();
 
             // Already correct record, nothing to do
-            boolean isDown = allDown(serviceInstances);
-            if (isDown == node.get().isDown() && isDown != node.get().isUp()) return;
+            if (isDownConsistent(node.get(), isDown) && isSuspendedConsistent(node.get(), isSuspended)) return;
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
@@ -66,11 +76,14 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
                 attempts.add(1);
-                if (isDown) {
-                    recordAsDown(node.get(), lock);
-                } else {
-                    recordAsUp(node.get(), lock);
-                }
+
+                Node newNode = node.get();
+                if (!isDownConsistent(newNode, isDown))
+                    newNode = isDown ? newNode.downAt(clock().instant(), Agent.NodeHealthTracker) : newNode.upAt(clock().instant(), Agent.NodeHealthTracker);
+                if (!isSuspendedConsistent(newNode, isSuspended))
+                    newNode = isSuspended ? newNode.suspendedAt(clock().instant(), Agent.NodeHealthTracker) : newNode.resumedAt(clock().instant(), Agent.NodeHealthTracker);
+                if (newNode != node.get())
+                    nodeRepository().nodes().write(newNode, lock);
             } catch (ApplicationLockException e) {
                 // Fine, carry on with other nodes. We'll try updating this one in the next run
                 log.log(Level.WARNING, "Could not lock " + owner + ": " + Exceptions.toMessageString(e));
@@ -85,8 +98,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
      * If a node remains bad for a long time, the NodeFailer will try to fail the node.
      */
     static boolean allDown(List<ServiceInstance> services) {
-        Map<ServiceStatus, Long> countsByStatus = services.stream()
-                                                          .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
+        Map<ServiceStatus, Long> countsByStatus = services.stream().collect(groupingBy(ServiceInstance::serviceStatus, counting()));
 
         return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
                countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L &&
@@ -101,16 +113,11 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                                .filter(node -> node.allocation().get().owner().equals(application));
     }
 
-    /** Record a node as down if not already recorded */
-    private void recordAsDown(Node node, Mutex lock) {
-        if (node.isDown()) return; // already down: Don't change down timestamp
-        nodeRepository().nodes().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
+    private static boolean isDownConsistent(Node node, boolean isDown) {
+        return isDown ? node.history().isDown() : node.history().isUp();
     }
 
-    /** Clear down record for node, if any */
-    private void recordAsUp(Node node, Mutex lock) {
-        if (node.isUp()) return; // already up: Don't change up timestamp
-        nodeRepository().nodes().write(node.upAt(clock().instant(), Agent.NodeHealthTracker), lock);
+    private static boolean isSuspendedConsistent(Node node, boolean isSuspended) {
+        return isSuspended ? node.history().isSuspended() : node.history().isResumed();
     }
-
 }

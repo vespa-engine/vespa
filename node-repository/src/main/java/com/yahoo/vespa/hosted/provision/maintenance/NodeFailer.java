@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -110,12 +112,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             failingNodes.add(new FailingNode(host, "Host should be failed and have no tenant nodes"));
 
         for (Node node : activeNodes) {
-            Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
-            if (node.isDown() && node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node) && !affectedByMaintenance(node)) {
-                // Allow a grace period after node re-activation
-                if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
-                    failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
-            }
+            downSince(node).ifPresent(instant -> failingNodes.add(new FailingNode(node, "Node has been down since " + instant)));
         }
 
         for (Node node : activeNodes) {
@@ -147,6 +144,26 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     static boolean hasHardwareIssue(Node node, NodeList allNodes) {
         Node host = node.parentHostname().flatMap(allNodes::node).orElse(node);
         return !reasonsToFailHost(host).isEmpty();
+    }
+
+    private Optional<Instant> downSince(Node node) {
+        Optional<Instant> downInstant = node.history().downSince();
+        if (downInstant.isEmpty()) return Optional.empty();
+
+        Instant downSince = Stream.of(downInstant,
+                                      node.history().resumedSince(),
+                                      node.history().event(History.Event.Type.activated).map(History.Event::at))
+                                  .filter(Optional::isPresent)
+                                  .map(Optional::get)
+                                  .max(Comparator.naturalOrder())
+                                  .orElseThrow();
+        Duration graceDuration = node.history().isSuspended() ? suspendedDownTimeLimit : downTimeLimit;
+        if (clock().instant().isBefore(downSince.plus(graceDuration))) return Optional.empty();
+
+        if (applicationSuspended(node)) return Optional.empty();
+        if (affectedByMaintenance(node)) return Optional.empty();
+
+        return Optional.of(downSince);
     }
 
     private boolean applicationSuspended(Node node) {
