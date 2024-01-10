@@ -135,7 +135,7 @@ class JunitRunnerTest {
         }
 
         private TestIdentifier getTestIdentifier(TestDescriptor testDescriptor) {
-            return plan.getTestIdentifier(testDescriptor.getUniqueId().toString());
+            return plan.getTestIdentifier(testDescriptor.getUniqueId());
         }
 
         @Override public void dynamicTestRegistered(TestDescriptor testDescriptor) {
