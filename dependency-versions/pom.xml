@@ -135,7 +135,7 @@
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <spotbugs.vespa.version>4.8.3</spotbugs.vespa.version> <!-- Must match major version in https://github.com/apache/zookeeper/blob/master/pom.xml -->
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
-        <surefire.vespa.version>3.2.3</surefire.vespa.version>
+        <surefire.vespa.version>3.2.5</surefire.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.3.1</wiremock.vespa.version>
