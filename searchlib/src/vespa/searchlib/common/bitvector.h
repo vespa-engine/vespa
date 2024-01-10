@@ -281,6 +281,8 @@ public:
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
     static void consider_enable_range_check();
+    static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
+    static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
 protected:
     using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end) noexcept;
@@ -292,8 +294,6 @@ protected:
     VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Range range);
     bool isValidCount() const noexcept { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
     static bool isValidCount(Index v) noexcept { return v != invalidCount(); }
-    static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
-    static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     size_t numWords() const noexcept { return numWords(size()); }
     static constexpr size_t getAlignment() noexcept { return 0x100u; }
     static size_t numActiveBytes(Index start, Index end) noexcept { return numActiveWords(start, end) * sizeof(Word); }

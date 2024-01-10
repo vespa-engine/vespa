@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "bitvectorkeyscope.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "bitvectorkeyscope.h"
 
 class Fast_BufferedFile;
 
