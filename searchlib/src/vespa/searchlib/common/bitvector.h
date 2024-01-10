@@ -295,7 +295,7 @@ protected:
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     size_t numWords() const noexcept { return numWords(size()); }
-    static constexpr size_t getAlignment() noexcept { return 0x40u; }
+    static constexpr size_t getAlignment() noexcept { return 0x100u; }
     static size_t numActiveBytes(Index start, Index end) noexcept { return numActiveWords(start, end) * sizeof(Word); }
     static Alloc allocatePaddedAndAligned(Index sz) {
         return allocatePaddedAndAligned(0, sz);
