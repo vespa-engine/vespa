@@ -45,8 +45,10 @@ import com.yahoo.search.query.Sorting.LowerCaseSorter;
 import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
+import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
+import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1208,6 +1210,18 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where mixed in (25)",
                 new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
                         "and string fields. The fieldset mixed has both"));
+    }
+
+    // TODO: Put this in the documentation
+    @Test
+    public void testProgrammaticYqlParsing() {
+        Execution execution = new Execution(Execution.Context.createContextStub());
+        Parser parser = ParserFactory.newInstance(Query.Type.YQL,
+                                                  ParserEnvironment.fromExecutionContext(execution.context()));
+        Query query = new Query();
+        query.getModel().setType(Query.Type.YQL);
+        query.getModel().setQueryString("select * from myDoc where foo contains 'bar' and fuz contains '3'");
+        parser.parse(Parsable.fromQueryModel(query.getModel()));
     }
 
     private static void assertNumericInItem(String field, long[] values, QueryTree query) {
