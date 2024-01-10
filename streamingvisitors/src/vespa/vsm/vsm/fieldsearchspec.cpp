@@ -31,17 +31,13 @@ namespace {
 void
 setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
     if (arg1 == "prefix") {
-        searcher->setMatchType(FieldSearcher::PREFIX);
+        searcher->match_type(FieldSearcher::PREFIX);
     } else if (arg1 == "substring") {
-        searcher->setMatchType(FieldSearcher::SUBSTRING);
+        searcher->match_type(FieldSearcher::SUBSTRING);
     } else if (arg1 == "suffix") {
-        searcher->setMatchType(FieldSearcher::SUFFIX);
-    } else if (arg1 == "exact") {
-        searcher->setMatchType(FieldSearcher::EXACT);
-    } else if (arg1 == "word") {
-        searcher->setMatchType(FieldSearcher::EXACT);
-    } else if (arg1 == "cased") {
-        searcher->setMatchType(FieldSearcher::CASED);
+        searcher->match_type(FieldSearcher::SUFFIX);
+    } else if ((arg1 == "exact") || (arg1 == "word")) {
+        searcher->match_type(FieldSearcher::EXACT);
     }
 }
 
@@ -86,12 +82,8 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
             _searcher = std::make_unique<UTF8SubStringFieldSearcher>(fid);
         } else if (_arg1 == "suffix") {
             _searcher = std::make_unique<UTF8SuffixStringFieldSearcher>(fid);
-        } else if (_arg1 == "exact") {
+        } else if ((_arg1 == "exact") || (_arg1 == "word")) {
             _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
-        } else if (_arg1 == "word") {
-            _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
-        } else if (_arg1 == "cased") {
-            _searcher = std::make_unique<UTF8StrChrFieldSearcher>(fid);
         } else if (searchDef == VsmfieldsConfig::Fieldspec::Searchmethod::UTF8) {
             _searcher = std::make_unique<UTF8StrChrFieldSearcher>(fid);
         } else {
@@ -124,6 +116,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
     if (_searcher) {
         setMatchType(_searcher, _arg1);
         _searcher->maxFieldLength(maxLength());
+        _searcher->normalize_mode(_normalize_mode);
     }
 }
 

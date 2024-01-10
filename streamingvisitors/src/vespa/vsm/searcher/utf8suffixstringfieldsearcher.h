@@ -3,8 +3,7 @@
 
 #include "utf8stringfieldsearcherbase.h"
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does suffix utf8 searches.
