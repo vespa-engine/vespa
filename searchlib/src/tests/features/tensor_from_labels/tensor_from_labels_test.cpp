@@ -8,8 +8,8 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/tensor_from_labels_feature.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/simple_value.h>

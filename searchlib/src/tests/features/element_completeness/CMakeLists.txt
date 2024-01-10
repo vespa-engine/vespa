@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_element_completeness_test_app TEST
     element_completeness_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_element_completeness_test_app COMMAND searchlib_element_completeness_test_app)
