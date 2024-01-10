@@ -25,6 +25,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -238,12 +239,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (DataType.URI.equals(fieldType)) {
             return true;
         }
-        if (fieldType instanceof CollectionDataType &&
-            DataType.URI.equals(((CollectionDataType)fieldType).getNestedType()))
-        {
-            return true;
-        }
-        return false;
+        return (fieldType instanceof CollectionDataType collectionFieldType) &&
+                DataType.URI.equals(collectionFieldType.getNestedType());
     }
 
     private void addUriIndexCommands(ImmutableSDField field) {
@@ -322,10 +319,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         IndexInfoConfig.Indexinfo.Builder iiB = new IndexInfoConfig.Indexinfo.Builder();
         iiB.name(getName());
         for (IndexCommand command : commands) {
-            iiB.command(
-                    new IndexInfoConfig.Indexinfo.Command.Builder()
-                        .indexname(command.index())
-                        .command(command.command()));
+            addIndexCommand(iiB, command.index(), command.command());
         }
         // Make user defined field sets searchable
         for (FieldSet fieldSet : fieldSets.values()) {
@@ -335,18 +329,16 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
 
         for (Map.Entry<String, String> e : aliases.entrySet()) {
-            iiB.alias(
-                    new IndexInfoConfig.Indexinfo.Alias.Builder()
-                        .alias(e.getKey())
-                        .indexname(e.getValue()));
+            iiB.alias(new IndexInfoConfig.Indexinfo.Alias.Builder().alias(e.getKey()).indexname(e.getValue()));
         }
         builder.indexinfo(iiB);
     }
 
     // TODO: Move this to the FieldSetSettings processor (and rename it) as that already has to look at this.
     private void addFieldSetCommands(IndexInfoConfig.Indexinfo.Builder iiB, FieldSet fieldSet) {
-        for (String qc : fieldSet.queryCommands())
-            iiB.command(new IndexInfoConfig.Indexinfo.Command.Builder().indexname(fieldSet.getName()).command(qc));
+        for (String qc : fieldSet.queryCommands()) {
+            addIndexCommand(iiB, fieldSet.getName(), qc);
+        }
         boolean anyIndexing = false;
         boolean anyAttributing = false;
         boolean anyLowerCasing = false;
@@ -397,57 +389,29 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             fieldSetMatching = new Matching();
         }
         if (anyLowerCasing) {
-            iiB.command(
-                    new IndexInfoConfig.Indexinfo.Command.Builder()
-                        .indexname(fieldSet.getName())
-                        .command(CMD_LOWERCASE));
+            addIndexCommand(iiB, fieldSet.getName(), CMD_LOWERCASE);
         }
         if (hasMultiValueField(fieldSet)) {
-            iiB.command(
-                    new IndexInfoConfig.Indexinfo.Command.Builder()
-                            .indexname(fieldSet.getName())
-                            .command(CMD_MULTIVALUE));
+            addIndexCommand(iiB, fieldSet.getName(), CMD_MULTIVALUE);
         }
         if (anyIndexing) {
-            iiB.command(
-                    new IndexInfoConfig.Indexinfo.Command.Builder()
-                        .indexname(fieldSet.getName())
-                        .command(CMD_INDEX));
+            addIndexCommand(iiB, fieldSet.getName(), CMD_INDEX);
             if ( ! isExactMatch(fieldSetMatching)) {
                 if (fieldSetMatching == null || fieldSetMatching.getType().equals(MatchType.TEXT)) {
-                    iiB.command(
-                            new IndexInfoConfig.Indexinfo.Command.Builder()
-                                    .indexname(fieldSet.getName())
-                                    .command(CMD_PLAIN_TOKENS));
+                    addIndexCommand(iiB, fieldSet.getName(), CMD_PLAIN_TOKENS);
                 }
                 if (anyStemming) {
-                    iiB.command(
-                        new IndexInfoConfig.Indexinfo.Command.Builder()
-                            .indexname(fieldSet.getName())
-                            .command(stemmingCommand));
+                    addIndexCommand(iiB, fieldSet.getName(), stemmingCommand);
                 }
                 if (anyNormalizing)
-                    iiB.command(
-                            new IndexInfoConfig.Indexinfo.Command.Builder()
-                                .indexname(fieldSet.getName())
-                                .command(CMD_NORMALIZE));
+                    addIndexCommand(iiB, fieldSet.getName(), CMD_NORMALIZE);
                 if (phraseSegmentingCommand != null)
-                    iiB.command(
-                            new IndexInfoConfig.Indexinfo.Command.Builder()
-                                    .indexname(fieldSet.getName())
-                                    .command(phraseSegmentingCommand));
+                    addIndexCommand(iiB, fieldSet.getName(), phraseSegmentingCommand);
             }
         } else {
             // Assume only attribute fields
-            iiB
-            .command(
-                new IndexInfoConfig.Indexinfo.Command.Builder()
-                    .indexname(fieldSet.getName())
-                    .command(CMD_ATTRIBUTE))
-            .command(
-                new IndexInfoConfig.Indexinfo.Command.Builder()
-                    .indexname(fieldSet.getName())
-                    .command(CMD_INDEX));
+            addIndexCommand(iiB, fieldSet.getName(), CMD_ATTRIBUTE);
+            addIndexCommand(iiB, fieldSet.getName(), CMD_INDEX);
         }
         if (anyString) {
             addIndexCommand(iiB, fieldSet.getName(), CMD_STRING);
@@ -460,20 +424,11 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (fieldSetMatching.getType().equals(MatchType.EXACT)) {
                 String term = fieldSetMatching.getExactMatchTerminator();
                 if (term==null) term=ExactMatch.DEFAULT_EXACT_TERMINATOR;
-                iiB.command(
-                        new IndexInfoConfig.Indexinfo.Command.Builder()
-                            .indexname(fieldSet.getName())
-                            .command("exact "+term));
+                addIndexCommand(iiB, fieldSet.getName(), "exact "+term);
             } else if (fieldSetMatching.getType().equals(MatchType.WORD)) {
-                iiB.command(
-                        new IndexInfoConfig.Indexinfo.Command.Builder()
-                            .indexname(fieldSet.getName())
-                            .command(CMD_WORD));
+                addIndexCommand(iiB, fieldSet.getName(), CMD_WORD);
             } else if (fieldSetMatching.getType().equals(MatchType.GRAM)) {
-                iiB.command(
-                        new IndexInfoConfig.Indexinfo.Command.Builder()
-                            .indexname(fieldSet.getName())
-                            .command("ngram " + fieldSetMatching.getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
+                addIndexCommand(iiB, fieldSet.getName(), "ngram " + fieldSetMatching.getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE));
             } else if (fieldSetMatching.getType().equals(MatchType.TEXT)) {
                 
             }
@@ -495,10 +450,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 active = field.getIndex(field.getName()).getStemming();
             }
         }
-        if (active != null) {
-            return active;
-        }
-        return Stemming.BEST;  // assume default
+        return Objects.requireNonNullElse(active, Stemming.BEST);
     }
 
     private boolean stemming(ImmutableSDField field) {
@@ -514,9 +466,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private boolean isExactMatch(Matching m) {
         if (m == null) return false;
-        if (m.getType().equals(MatchType.EXACT)) return true;
-        if (m.getType().equals(MatchType.WORD)) return true;
-        return false;
+        return m.getType().equals(MatchType.EXACT) || m.getType().equals(MatchType.WORD);
     }
 
     @Override
@@ -525,10 +475,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     /**
-         * An index command. Null commands are also represented, to detect consistency issues. This is an (immutable) value
-         * object.
-         */
-        public record IndexCommand(String index, String command) {
+     * An index command. Null commands are also represented, to detect consistency issues. This is an (immutable) value
+     * object.
+     */
+    public record IndexCommand(String index, String command) {
 
         /**
          * Returns true if this is the null command (do nothing)
@@ -538,19 +488,19 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
 
         public boolean equals(Object object) {
-                if (!(object instanceof IndexCommand other)) {
-                    return false;
-                }
-
-                return other.index.equals(this.index) &&
-                        other.command.equals(this.command);
+            if (!(object instanceof IndexCommand other)) {
+                return false;
             }
 
-            public String toString() {
-                return "index command " + command + " on index " + index;
-            }
-
+            return other.index.equals(this.index) &&
+                    other.command.equals(this.command);
         }
+
+        public String toString() {
+            return "index command " + command + " on index " + index;
+        }
+
+    }
 
     /**
      * A command which may override the command setting of a field for a particular index
@@ -595,9 +545,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 return false;
             }
 
-            if (Stemming.NONE.equals(indexStemming)) {
-                // Add nothing
-            } else {
+            if ( ! Stemming.NONE.equals(indexStemming)) {
                 owner.addIndexCommand(indexName, CMD_STEM + ":" + indexStemming.toStemMode());
             }
             return true;
