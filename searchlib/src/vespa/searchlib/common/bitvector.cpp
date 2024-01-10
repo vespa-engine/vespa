@@ -39,7 +39,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
 {
     assert(capacity >= end);
     uint32_t words = numActiveWords(start, capacity);
-    words += (-words & 15); // Pad to 128 byte alignment
+    words += (-words & (getAlignment()/sizeof(Word) - 1)); // Pad to required alignment
     const size_t sz(words * sizeof(Word));
     Alloc alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);

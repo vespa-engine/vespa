@@ -3,6 +3,7 @@
 #include "bitvectorfile.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -14,12 +15,12 @@ namespace search::diskindex {
 
 using search::index::BitVectorWordSingleKey;
 using search::common::FileHeaderContext;
+using namespace tags;
 
 namespace {
 
 void
-readHeader(vespalib::FileHeader &h,
-           const vespalib::string &name)
+readHeader(vespalib::FileHeader &h, const vespalib::string &name)
 {
     Fast_BufferedFile file(32_Ki);
     file.ReadOpenExisting(name.c_str());
@@ -35,13 +36,10 @@ BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
 {
 }
 
-
 BitVectorFileWrite::~BitVectorFileWrite() = default;
 
-
 void
-BitVectorFileWrite::open(const vespalib::string &name,
-                         uint32_t docIdLimit,
+BitVectorFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
                          const TuneFileSeqWrite &tuneFileWrite,
                          const FileHeaderContext &fileHeaderContext)
 {
@@ -65,18 +63,10 @@ BitVectorFileWrite::open(const vespalib::string &name,
         makeDatHeader(fileHeaderContext);
     }
 
-    int64_t pos;
-    size_t bitmapbytes;
+    size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
+    int64_t pos = static_cast<int64_t>(_numKeys) * static_cast<int64_t>(bitmapbytes) + _datHeaderLen;
 
-    bitmapbytes = BitVector::getFileBytes(_docIdLimit);
-
-    pos = static_cast<int64_t>(_numKeys) *
-          static_cast<int64_t>(bitmapbytes) + _datHeaderLen;
-
-    int64_t olddatsize = _datFile->getSize();
-    assert(olddatsize >= pos);
-    (void) olddatsize;
-
+    assert(_datFile->getSize() >= pos);
     _datFile->SetSize(pos);
 
     assert(pos == _datFile->getPosition());
@@ -89,11 +79,12 @@ BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(h, _datFile->GetFileName());
-    h.putTag(Tag("docIdLimit", _docIdLimit));
-    h.putTag(Tag("numKeys", _numKeys));
-    h.putTag(Tag("frozen", 0));
-    h.putTag(Tag("fileBitSize", 0));
-    h.putTag(Tag("desc", "Bitvector data file"));
+    h.putTag(Tag(ENTRY_SIZE, BitVector::getFileBytes(_docIdLimit)));
+    h.putTag(Tag(DOCID_LIMIT, _docIdLimit));
+    h.putTag(Tag(NUM_KEYS, _numKeys));
+    h.putTag(Tag(FROZEN, 0));
+    h.putTag(Tag(FILE_BIT_SIZE, 0));
+    h.putTag(Tag(DESC, "Bitvector data file"));
     _datFile->SetPosition(0);
     _datHeaderLen = h.writeFile(*_datFile);
     _datFile->Flush();
@@ -107,9 +98,9 @@ BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
     using Tag = vespalib::GenericHeader::Tag;
     readHeader(h, _datFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);
-    h.putTag(Tag("numKeys", _numKeys));
-    h.putTag(Tag("frozen", 1));
-    h.putTag(Tag("fileBitSize", fileBitSize));
+    h.putTag(Tag(NUM_KEYS, _numKeys));
+    h.putTag(Tag(FROZEN, 1));
+    h.putTag(Tag(FILE_BIT_SIZE, fileBitSize));
     bool sync_ok = _datFile->Sync();
     assert(sync_ok);
     assert(h.getSize() == _datHeaderLen);
@@ -121,14 +112,12 @@ BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
 
 
 void
-BitVectorFileWrite::addWordSingle(uint64_t wordNum,
-                                  const BitVector &bitVector)
+BitVectorFileWrite::addWordSingle(uint64_t wordNum, const BitVector &bitVector)
 {
     assert(bitVector.size() == _docIdLimit);
     bitVector.invalidateCachedCount();
     Parent::addWordSingle(wordNum, bitVector.countTrueBits());
-    _datFile->WriteBuf(bitVector.getStart(),
-                       bitVector.getFileBytes());
+    _datFile->WriteBuf(bitVector.getStart(), bitVector.getFileBytes());
 }
 
 
@@ -153,21 +142,17 @@ BitVectorFileWrite::sync()
 void
 BitVectorFileWrite::close()
 {
-    size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
-
-    if (_datFile != nullptr) {
-        if (_datFile->IsOpened()) {
-            uint64_t pos = _datFile->getPosition();
-            assert(pos == static_cast<uint64_t>(_numKeys) *
-                   static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
-            (void) bitmapbytes;
-            _datFile->alignEndForDirectIO();
-            updateDatHeader(pos * 8);
-            bool close_ok = _datFile->Close();
-            assert(close_ok);
-        }
-        _datFile.reset();
+    if (_datFile && _datFile->IsOpened()) {
+        size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
+        uint64_t pos = _datFile->getPosition();
+        assert(pos == static_cast<uint64_t>(_numKeys) * static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
+        (void) bitmapbytes;
+        _datFile->alignEndForDirectIO();
+        updateDatHeader(pos * 8);
+        bool close_ok = _datFile->Close();
+        assert(close_ok);
     }
+    _datFile.reset();
     Parent::close();
 }
 
