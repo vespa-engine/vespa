@@ -33,9 +33,15 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     private final Integer transformerStartSequenceToken;
     private final Integer transformerEndSequenceToken;
     private final Integer transformerMaskToken;
+
+    private final Integer transformerPadToken;
     private final Integer maxTokens;
     private final String transformerInputIds;
     private final String transformerAttentionMask;
+
+    private final Integer queryTokenId;
+
+    private final Integer documentTokenId;
 
     private final String transformerOutput;
 
@@ -55,6 +61,9 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         transformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
         transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
         transformerMaskToken = getChildValue(xml, "transformer-mask-token").map(Integer::parseInt).orElse(null);
+        transformerPadToken = getChildValue(xml, "transformer-pad-token").map(Integer::parseInt).orElse(null);
+        queryTokenId = getChildValue(xml, "query-token-id").map(Integer::parseInt).orElse(null);
+        documentTokenId = getChildValue(xml, "document-token-id").map(Integer::parseInt).orElse(null);
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
@@ -73,10 +82,13 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         if (transformerStartSequenceToken != null) b.transformerStartSequenceToken(transformerStartSequenceToken);
         if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
         if (transformerMaskToken != null) b.transformerMaskToken(transformerMaskToken);
-       onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
-       onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
-       onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
-       onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
+        if (transformerPadToken != null) b.transformerPadToken(transformerPadToken);
+        if (queryTokenId != null) b.queryTokenId(queryTokenId);
+        if (documentTokenId != null) b.documentTokenId(documentTokenId);
+        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+        onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
+        onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
+        onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
     }
 
 }

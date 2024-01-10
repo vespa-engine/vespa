@@ -67,9 +67,9 @@
       <transformer-start-sequence-token>101</transformer-start-sequence-token>
       <transformer-end-sequence-token>102</transformer-end-sequence-token>
       <transformer-mask-token>103</transformer-mask-token>
+      <transformer-pad-token>0</transformer-pad-token>
       <transformer-input-ids>my_input_ids</transformer-input-ids>
       <transformer-attention-mask>my_attention_mask</transformer-attention-mask>
-      <transformer-token-type-ids>my_token_type_ids</transformer-token-type-ids>
       <transformer-output>my_output</transformer-output>
       <onnx-execution-mode>parallel</onnx-execution-mode>
       <onnx-intraop-threads>10</onnx-intraop-threads>

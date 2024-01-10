@@ -130,6 +130,10 @@ public class EmbedderTestCase {
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+        assertEquals(1, embedderCfg.queryTokenId());
+        assertEquals(2, embedderCfg.documentTokenId());
+        assertEquals(0, embedderCfg.transformerPadToken());
+        assertEquals(103, embedderCfg.transformerMaskToken());
     }
 
     @Test
@@ -143,6 +147,10 @@ public class EmbedderTestCase {
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+        assertEquals(1, embedderCfg.queryTokenId());
+        assertEquals(2, embedderCfg.documentTokenId());
+        assertEquals(0, embedderCfg.transformerPadToken());
+        assertEquals(103, embedderCfg.transformerMaskToken());
     }
 
     @Test
