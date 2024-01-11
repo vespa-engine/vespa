@@ -180,10 +180,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-exec</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>net.openhft</groupId>
           <artifactId>zero-allocation-hashing</artifactId>
         </exclusion>
