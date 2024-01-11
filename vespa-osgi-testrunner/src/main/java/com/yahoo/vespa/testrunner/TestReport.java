@@ -358,7 +358,7 @@ public class TestReport {
         }
         if (cutoff == 0) {
             while (--i >= 0 && (   stack[i].isNativeMethod()
-                                || stack[i].getClassName().startsWith("java.lang.")
+                                || stack[i].getClassName().startsWith("java.lang.reflect.")
                                 || stack[i].getClassName().startsWith("java.util.")));
             cutoff = i + 1;
         }
