@@ -14,6 +14,9 @@ namespace search::attribute {
 template<typename IteratorPack>
 class MultiTermOrFilterSearchImpl : public MultiTermOrFilterSearch
 {
+    // Vector that caches the docids of the current positions of the iterators in the pack.
+    // This reduces cache misses in doSeek() and seek_all().
+    std::vector<uint32_t> _docids;
     IteratorPack _children;
     fef::TermFieldMatchData* _tfmd;
     void seek_all(uint32_t docId);
@@ -32,6 +35,9 @@ public:
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         _children.initRange(begin, end);
+        for (uint16_t i = 0; i < _children.size(); ++i) {
+            _docids[i] = _children.get_docid(i);
+        }
     }
 
     void or_hits_into(BitVector &result, uint32_t begin_id) override {
@@ -53,6 +59,7 @@ public:
 template<typename IteratorPack>
 MultiTermOrFilterSearchImpl<IteratorPack>::MultiTermOrFilterSearchImpl(IteratorPack&& children, fef::TermFieldMatchData* tfmd)
     : MultiTermOrFilterSearch(),
+      _docids(children.size(), 0),
       _children(std::move(children)),
       _tfmd(tfmd)
 {
@@ -65,9 +72,10 @@ template<typename IteratorPack>
 void
 MultiTermOrFilterSearchImpl<IteratorPack>::seek_all(uint32_t docId) {
     for (uint16_t i = 0; i < _children.size(); ++i) {
-        uint32_t next = _children.get_docid(i);
+        uint32_t next = _docids[i];
         if (next < docId) {
-            _children.seek(i, docId);
+            next = _children.seek(i, docId);
+            _docids[i] = next;
         }
     }
 }
@@ -78,9 +86,10 @@ MultiTermOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
 {
     uint32_t min_doc_id = endDocId;
     for (uint16_t i = 0; i < _children.size(); ++i) {
-        uint32_t next = _children.get_docid(i);
+        uint32_t next = _docids[i];
         if (next < docId) {
             next = _children.seek(i, docId);
+            _docids[i] = next;
         }
         if (next == docId) {
             setDocId(next);
