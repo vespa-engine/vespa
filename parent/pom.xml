@@ -597,6 +597,10 @@
                         <groupId>org.bouncycastle</groupId>
                         <artifactId>bcpkix-jdk15on</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.kohsuke</groupId>
+                        <artifactId>libpam4j</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -607,6 +611,10 @@
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
                         <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kohsuke</groupId>
+                        <artifactId>libpam4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -623,6 +631,10 @@
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
                         <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kohsuke</groupId>
+                        <artifactId>libpam4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

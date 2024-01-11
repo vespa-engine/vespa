@@ -183,7 +183,6 @@ org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}
 org.junit.platform:junit-platform-launcher:${junit.platform.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.version}
-org.kohsuke:libpam4j:1.11
 org.lz4:lz4-java:${org.lz4.vespa.version}
 org.mockito:mockito-core:${mockito.vespa.version}
 org.mockito:mockito-junit-jupiter:${mockito.vespa.version}

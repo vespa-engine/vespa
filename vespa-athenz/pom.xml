@@ -181,6 +181,10 @@
                     <groupId>net.java.dev.jna</groupId>
                     <artifactId>jna</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.kohsuke</groupId>
+                    <artifactId>libpam4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
