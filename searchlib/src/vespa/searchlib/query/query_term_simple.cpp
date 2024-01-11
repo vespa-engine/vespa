@@ -2,6 +2,7 @@
 
 #include "query_term_simple.h"
 #include "base.h"
+#include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
 #include <cmath>
@@ -48,12 +49,26 @@ template <typename T>
 struct FloatDecoder {
     static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
         T v(0);
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 180000
+        vespalib::string tmp(q, qend - q);
+        char* tmp_end = nullptr;
+        const char *tmp_cstring = tmp.c_str();
+        if constexpr (std::is_same_v<T, float>) {
+            v = vespalib::locale::c::strtof_au(tmp_cstring, &tmp_end);
+        } else {
+            v = vespalib::locale::c::strtod_au(tmp_cstring, &tmp_end);
+        }
+        if (end != nullptr) {
+            *end = (tmp_end != nullptr) ? (q + (tmp_end - tmp_cstring)) : nullptr;
+        }
+#else
         for (;q < qend && (isspace(*q) || (*q == '+')); q++);
         std::from_chars_result err = std::from_chars(q, qend, v);
         if (err.ec == std::errc::result_out_of_range) {
             v = (*q == '-') ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();
         }
         *end = err.ptr;
+#endif
         return v;
     }
     static T nearestDownwd(T n, T min) noexcept {
