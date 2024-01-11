@@ -421,10 +421,21 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     in >> size >> cachedHits >> fileBytes;
     assert(size <= std::numeric_limits<BitVector::Index>::max());
     assert(cachedHits <= size || ! bv.isValidCount(cachedHits));
-    if (bv.size() != size)
+    if (bv.size() != size) {
         bv.resize(size);
-    assert(bv.getFileBytes() == fileBytes);
-    in.read(bv.getStart(), bv.getFileBytes());
+    }
+    size_t expected_file_bytes = bv.getFileBytes();
+    size_t read_size = fileBytes;
+    size_t skip_size = 0;
+    if (expected_file_bytes < fileBytes) {
+        read_size = expected_file_bytes;
+        skip_size = fileBytes - expected_file_bytes;
+    }
+    in.read(bv.getStart(), read_size);
+    if (skip_size != 0) {
+        std::vector<char> dummy(skip_size);
+        in.read(dummy.data(), skip_size);
+    }
     assert(bv.testBit(size));
     bv.setTrueBits(cachedHits);
     return in;
