@@ -94,7 +94,8 @@ BitVectorDictionary::lookup(uint64_t wordNum)
         return {};
     }
     int64_t pos = &*itr - &_entries[0];
-    return BitVector::create(_docIdLimit, *_datFile, ((int64_t) _vectorSize) * pos + _datHeaderLen, itr->_numDocs);
+    int64_t offset = ((int64_t) _vectorSize) * pos + _datHeaderLen;
+    return BitVector::create(_docIdLimit, *_datFile, offset, itr->_numDocs);
 }
 
 }

@@ -388,7 +388,6 @@ void
 MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface &file,
                        int64_t offset, Index doccount)
 {
-    assert((offset & (getAlignment() - 1)) == 0);
     void *mapptr = file.MemoryMapPtr(offset);
     assert(mapptr != nullptr);
     if (mapptr != nullptr) {
