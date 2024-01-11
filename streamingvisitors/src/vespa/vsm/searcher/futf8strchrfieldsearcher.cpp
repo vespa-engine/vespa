@@ -19,10 +19,6 @@ FUTF8StrChrFieldSearcher::duplicate() const
     return std::make_unique<FUTF8StrChrFieldSearcher>(*this);
 }
 
-FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher()
-    : UTF8StrChrFieldSearcher(),
-      _folded(4_Ki)
-{ }
 FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher(FieldIdT fId)
     : UTF8StrChrFieldSearcher(fId),
       _folded(4_Ki)

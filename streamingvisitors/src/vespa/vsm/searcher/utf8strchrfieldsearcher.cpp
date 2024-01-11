@@ -14,21 +14,19 @@ UTF8StrChrFieldSearcher::duplicate() const
 }
 
 size_t
-UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
+UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 {
     (void) mintsz;
     termcount_t words(0);
-    const byte * n = reinterpret_cast<const byte *> (f.data());
-    const byte * e = n + f.size();
     if (f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
     }
     cmptype_t * fn = &(*_buf.get())[0];
-    size_t fl(0);
 
-    for( ; n < e; ) {
-        if (!*n) { _zeroCount++; n++; }
-        n = tokenize(n, _buf->capacity(), fn, fl);
+    TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
+    while ( reader.hasNext() ) {
+        tokenize(reader);
+        size_t fl = reader.complete();
         for (auto qt : _qtl) {
             const cmptype_t * term;
             termsize_t tsz = qt->term(term);

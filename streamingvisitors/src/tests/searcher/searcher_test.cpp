@@ -22,6 +22,7 @@ using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::Normalizing;
+using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
 using search::streaming::QueryTermList;
 using TermType = QueryTerm::Type;
 using namespace vsm;
@@ -114,7 +115,7 @@ struct SnippetModifierSetup
 
 SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
     : query(terms),
-      searcher(new UTF8SubstringSnippetModifier()),
+      searcher(new UTF8SubstringSnippetModifier(0)),
       env(),
       modifier(searcher)
 {
@@ -361,7 +362,7 @@ assertFieldInfo(FieldSearcher & fs, const StringList & query,
 void
 assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
 {
-    UTF8SubstringSnippetModifier mod;
+    UTF8SubstringSnippetModifier mod(0);
     performSearch(mod, query, StringFieldValue(fv));
     EXPECT_EQUAL(mod.getModifiedBuf().getPos(), exp.size());
     std::string actual(mod.getModifiedBuf().getBuffer(), mod.getModifiedBuf().getPos());
@@ -440,11 +441,11 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits()).add(Hits()));
     assertString(fs, StringList().add("and").add("overloading"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
 
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "oper",  field, Hits().add(0).add(2));
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits().add(0).add(2)).add(Hits()));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     if (!EXPECT_TRUE(testStringFieldInfo(fs))) return false;
 
     { // test handling of several underscores
@@ -553,12 +554,12 @@ TEST("utf8 substring search with empty term")
 TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
-    assertString(fs, "rsand", field, Hits());
-    assertString(fs, "tor",   field, Hits().add(2));
-    assertString(fs, "tors",  field, Hits().add(0));
+    TEST_DO(assertString(fs, "rsand", field, Hits()));
+    TEST_DO(assertString(fs, "tor",   field, Hits().add(2)));
+    TEST_DO(assertString(fs, "tors",  field, Hits().add(0)));
 
-    assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits()));
-    assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
+    TEST_DO(assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits())));
+    TEST_DO(assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3))));
 
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
@@ -590,22 +591,22 @@ TEST("utf8 flexible searcher"){
 
     // prefix
     assertString(fs, "vesp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "vesp",   "vespa", Hits().add(0));
 
     // substring
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*esp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUBSTRING);
+    fs.match_type(FieldSearcher::SUBSTRING);
     assertString(fs, "esp",  "vespa", Hits().add(0));
 
     // suffix
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*espa",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUFFIX);
+    fs.match_type(FieldSearcher::SUFFIX);
     assertString(fs, "espa",  "vespa", Hits().add(0));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
@@ -659,7 +660,7 @@ TEST("integer search")
 
 TEST("floating point search")
 {
-    FloatFieldSearcher fs;
+    FloatFieldSearcher fs(0);
     TEST_DO(assertFloat(fs,         "10",    10, true));
     TEST_DO(assertFloat(fs,       "10.5",  10.5, true));
     TEST_DO(assertFloat(fs,      "-10.5", -10.5, true));
@@ -726,7 +727,7 @@ TEST("Snippet modifier search") {
                                                       "\xe7\x9f\xb3\x1f\xe6\x98\x8e\xe5\x87\xb1\x1f\xe5\x9c\xa8");
 
     { // check that resizing works
-        UTF8SubstringSnippetModifier mod;
+        UTF8SubstringSnippetModifier mod(0);
         EXPECT_EQUAL(mod.getModifiedBuf().getLength(), 32u);
         EXPECT_EQUAL(mod.getModifiedBuf().getPos(), 0u);
         performSearch(mod, StringList().add("a"), StringFieldValue("aaaaaaaaaaaaaaaa"));
@@ -763,28 +764,32 @@ TEST("snippet modifier") {
     }
 }
 
-TEST("FieldSearchSpec constrution") {
+TEST("FieldSearchSpec construction") {
     {
         FieldSearchSpec f;
         EXPECT_FALSE(f.valid());
         EXPECT_EQUAL(0u, f.id());
         EXPECT_EQUAL("", f.name());
         EXPECT_EQUAL(0x100000u, f.maxLength());
+        EXPECT_EQUAL("", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE_AND_FOLD == f.normalize_mode());
     }
     {
-        FieldSearchSpec f(7, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 789);
+        FieldSearchSpec f(7, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 789);
         EXPECT_TRUE(f.valid());
         EXPECT_EQUAL(7u, f.id());
         EXPECT_EQUAL("f0", f.name());
         EXPECT_EQUAL(789u, f.maxLength());
         EXPECT_EQUAL(789u, f.searcher().maxFieldLength());
+        EXPECT_EQUAL("substring", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE == f.normalize_mode());
     }
 }
 
 TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
-    specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 1000);
-    specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "", 1000);
+    specMap[0] = FieldSearchSpec(0, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 1000);
+    specMap[1] = FieldSearchSpec(1, "f1", Searchmethod::AUTOUTF8, Normalizing::NONE, "", 1000);
     IndexFieldMapT indexMap;
     indexMap["i0"].push_back(0);
     indexMap["i1"].push_back(1);

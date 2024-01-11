@@ -12,11 +12,10 @@ class UTF8SubStringFieldSearcher : public UTF8StringFieldSearcherBase
 {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    UTF8SubStringFieldSearcher()             : UTF8StringFieldSearcherBase() { }
-    UTF8SubStringFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
+    explicit UTF8SubStringFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
 protected:
     size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
-    size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
+    size_t matchTerms(const FieldRef & f, size_t shortestTerm) override;
 };
 
 }

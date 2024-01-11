@@ -31,15 +31,13 @@ namespace {
 void
 setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
     if (arg1 == "prefix") {
-        searcher->setMatchType(FieldSearcher::PREFIX);
+        searcher->match_type(FieldSearcher::PREFIX);
     } else if (arg1 == "substring") {
-        searcher->setMatchType(FieldSearcher::SUBSTRING);
+        searcher->match_type(FieldSearcher::SUBSTRING);
     } else if (arg1 == "suffix") {
-        searcher->setMatchType(FieldSearcher::SUFFIX);
-    } else if (arg1 == "exact") {
-        searcher->setMatchType(FieldSearcher::EXACT);
-    } else if (arg1 == "word") {
-        searcher->setMatchType(FieldSearcher::EXACT);
+        searcher->match_type(FieldSearcher::SUFFIX);
+    } else if ((arg1 == "exact") || (arg1 == "word")) {
+        searcher->match_type(FieldSearcher::EXACT);
     }
 }
 
@@ -51,6 +49,7 @@ FieldSearchSpec::FieldSearchSpec()
       _maxLength(0x100000),
       _searcher(),
       _searchMethod(VsmfieldsConfig::Fieldspec::Searchmethod::NONE),
+      _normalize_mode(Normalizing::LOWERCASE_AND_FOLD),
       _arg1(),
       _reconfigured(false)
 {
@@ -60,15 +59,15 @@ FieldSearchSpec::~FieldSearchSpec() = default;
 FieldSearchSpec::FieldSearchSpec(FieldSearchSpec&& rhs) noexcept = default;
 FieldSearchSpec& FieldSearchSpec::operator=(FieldSearchSpec&& rhs) noexcept = default;
 
-FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname,
-                                 VsmfieldsConfig::Fieldspec::Searchmethod searchDef,
-                                 const vespalib::string & arg1, size_t maxLength_) :
+FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname, Searchmethod searchDef,
+                                 Normalizing normalize_mode, vespalib::stringref arg1_in, size_t maxLength_in) :
     _id(fid),
     _name(fname),
-    _maxLength(maxLength_),
+    _maxLength(maxLength_in),
     _searcher(),
     _searchMethod(searchDef),
-    _arg1(arg1),
+    _normalize_mode(normalize_mode),
+    _arg1(arg1_in),
     _reconfigured(false)
 {
     switch(searchDef) {
@@ -79,13 +78,11 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
     case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
     case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::UTF8:
-        if (arg1 == "substring") {
+        if (_arg1 == "substring") {
             _searcher = std::make_unique<UTF8SubStringFieldSearcher>(fid);
-        } else if (arg1 == "suffix") {
+        } else if (_arg1 == "suffix") {
             _searcher = std::make_unique<UTF8SuffixStringFieldSearcher>(fid);
-        } else if (arg1 == "exact") {
-            _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
-        } else if (arg1 == "word") {
+        } else if ((_arg1 == "exact") || (_arg1 == "word")) {
             _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
         } else if (searchDef == VsmfieldsConfig::Fieldspec::Searchmethod::UTF8) {
             _searcher = std::make_unique<UTF8StrChrFieldSearcher>(fid);
@@ -112,13 +109,14 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         _searcher = std::make_unique<GeoPosFieldSearcher>(fid);
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR:
-        auto dm = NearestNeighborFieldSearcher::distance_metric_from_string(arg1);
+        auto dm = NearestNeighborFieldSearcher::distance_metric_from_string(_arg1);
         _searcher = std::make_unique<NearestNeighborFieldSearcher>(fid, dm);
         break;
     }
     if (_searcher) {
-        setMatchType(_searcher, arg1);
+        setMatchType(_searcher, _arg1);
         _searcher->maxFieldLength(maxLength());
+        _searcher->normalize_mode(_normalize_mode);
     }
 }
 
@@ -166,20 +164,20 @@ FieldSearchSpecMap::FieldSearchSpecMap() = default;
 FieldSearchSpecMap::~FieldSearchSpecMap() = default;
 
 namespace {
-    const std::string _G_empty("");
-    const std::string _G_value(".value");
-    const std::regex _G_map1("\\{[a-zA-Z0-9]+\\}");
-    const std::regex _G_map2("\\{\".*\"\\}");
-    const std::regex _G_array("\\[[0-9]+\\]");
+    const std::string G_empty;
+    const std::string G_value(".value");
+    const std::regex G_map1("\\{[a-zA-Z0-9]+\\}");
+    const std::regex G_map2("\\{\".*\"\\}");
+    const std::regex G_array("\\[[0-9]+\\]");
 }
 
 vespalib::string
 FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
 {
     if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
-        std::string index = std::regex_replace(std::string(rawIndex), _G_map1, _G_value);
-        index = std::regex_replace(index, _G_map2, _G_value);
-        index = std::regex_replace(index, _G_array, _G_empty);
+        std::string index = std::regex_replace(std::string(rawIndex), G_map1, G_value);
+        index = std::regex_replace(index, G_map2, G_value);
+        index = std::regex_replace(index, G_array, G_empty);
         return index;
     }
     return rawIndex;
@@ -258,17 +256,26 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
     return ifm;
 }
 
+search::streaming::Normalizing
+normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode) {
+    switch (normalize_mode) {
+        case VsmfieldsConfig::Fieldspec::Normalize::NONE: return search::streaming::Normalizing::NONE;
+        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE: return search::streaming::Normalizing::LOWERCASE;
+        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE_AND_FOLD: return search::streaming::Normalizing::LOWERCASE_AND_FOLD;
+    }
+    return search::streaming::Normalizing::LOWERCASE_AND_FOLD;
 }
 
-bool
+}
+
+void
 FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
 {
-    bool retval(true);
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
     for(const VsmfieldsConfig::Fieldspec & cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());
         FieldIdT fieldId = specMap().size();
-        FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, cfs.arg1.c_str(), cfs.maxlength);
+        FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, normalize_mode(cfs.normalize), cfs.arg1, cfs.maxlength);
         _specMap[fieldId] = std::move(fss);
         _nameIdMap.add(cfs.name, fieldId);
         LOG(spam, "M in %d = %s", fieldId, cfs.name.c_str());
@@ -283,7 +290,6 @@ FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
         }
         _documentTypeMap[di.name] = indexMapp;
     }
-    return retval;
 }
 
 void
@@ -338,7 +344,7 @@ FieldSearchSpecMap::get_distance_metric(const vespalib::string& name) const
     if (!itr->second.uses_nearest_neighbor_search_method()) {
         return dm;
     }
-    return vsm::NearestNeighborFieldSearcher::distance_metric_from_string(itr->second.get_arg1());
+    return vsm::NearestNeighborFieldSearcher::distance_metric_from_string(itr->second.arg1());
 }
 
 vespalib::asciistream &

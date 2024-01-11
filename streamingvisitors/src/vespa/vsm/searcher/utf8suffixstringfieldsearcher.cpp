@@ -14,24 +14,19 @@ UTF8SuffixStringFieldSearcher::duplicate() const
 }
 
 size_t
-UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
+UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 {
     (void) mintsz;
     termcount_t words = 0;
-    const byte * srcbuf = reinterpret_cast<const byte *> (f.data());
-    const byte * srcend = srcbuf + f.size();
     if (f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
     }
     cmptype_t * dstbuf = &(*_buf.get())[0];
-    size_t tokenlen = 0;
 
-    for( ; srcbuf < srcend; ) {
-        if (*srcbuf == 0) {
-            ++_zeroCount;
-            ++srcbuf;
-        }
-        srcbuf = tokenize(srcbuf, _buf->capacity(), dstbuf, tokenlen);
+    TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), dstbuf);
+    while ( reader.hasNext() ) {
+        tokenize(reader);
+        size_t tokenlen = reader.complete();
         for (auto qt : _qtl) {
             const cmptype_t * term;
             termsize_t tsz = qt->term(term);

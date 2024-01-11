@@ -46,12 +46,16 @@ public class Matching implements Cloneable, Serializable {
     public MatchType getType() { return type; }
     public Case getCase() { return casing; }
 
-    public void setType(MatchType type) {
+    public Matching setType(MatchType type) {
         this.type = type;
         typeUserSet = true;
+        return this;
     }
 
-    public void setCase(Case casing) { this.casing = casing; }
+    public Matching setCase(Case casing) {
+        this.casing = casing;
+        return this;
+    }
 
     public Integer maxLength() { return maxLength; }
     public Matching maxLength(int maxLength) { this.maxLength = maxLength; return this; }

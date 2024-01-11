@@ -17,10 +17,10 @@ protected:
 
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    UTF8ExactStringFieldSearcher(FieldIdT fId)
+    explicit UTF8ExactStringFieldSearcher(FieldIdT fId)
         : UTF8StringFieldSearcherBase(fId)
     {
-        setMatchType(EXACT);
+        match_type(EXACT);
     }
 };
 

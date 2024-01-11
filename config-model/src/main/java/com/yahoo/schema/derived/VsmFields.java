@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.schema.FieldSets;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.Matching;
@@ -144,7 +145,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             public static Type GEO_POSITION = new Type("GEOPOS");
             public static Type NEAREST_NEIGHBOR = new Type("NEAREST_NEIGHBOR");
 
-            private String searchMethod;
+            private final String searchMethod;
 
             private Type(String searchMethod) {
                 this.searchMethod = searchMethod;
@@ -261,10 +262,17 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             return getMatchingName();
         }
 
+        private static VsmfieldsConfig.Fieldspec.Normalize.Enum toNormalize(Matching matching) {
+            if (matching.getType() == MatchType.EXACT) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
+            if (matching.getCase() == Case.CASED) return VsmfieldsConfig.Fieldspec.Normalize.Enum.NONE;
+            return VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD;
+        }
+
         public VsmfieldsConfig.Fieldspec.Builder getFieldSpecConfig() {
             var fB = new VsmfieldsConfig.Fieldspec.Builder();
             fB.name(getName())
               .searchmethod(VsmfieldsConfig.Fieldspec.Searchmethod.Enum.valueOf(type.getSearchMethod()))
+              .normalize(toNormalize(matching))
               .arg1(getArg1())
               .fieldtype(isAttribute
                              ? VsmfieldsConfig.Fieldspec.Fieldtype.ATTRIBUTE

@@ -110,20 +110,11 @@ UTF8SubstringSnippetModifier::insertSeparators(const char * mbegin, const char *
     _modified->put(_unitSep);
 }
 
-UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier() :
-    UTF8StringFieldSearcherBase(),
-    _modified(new CharBuffer(32)),
-    _offsets(new std::vector<size_t>(32)),
-    _readPtr(NULL),
-    _unitSep(juniper::separators::unit_separator)
-{
-}
-
 UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier(FieldIdT fId) :
     UTF8StringFieldSearcherBase(fId),
     _modified(new CharBuffer(32)),
     _offsets(new std::vector<size_t>(32)),
-    _readPtr(NULL),
+    _readPtr(nullptr),
     _unitSep(juniper::separators::unit_separator)
 {
 }
@@ -134,12 +125,12 @@ UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier(FieldIdT fId,
     UTF8StringFieldSearcherBase(fId),
     _modified(modBuf),
     _offsets(offBuf),
-    _readPtr(NULL),
+    _readPtr(nullptr),
     _unitSep(juniper::separators::unit_separator)
 {
 }
 
-UTF8SubstringSnippetModifier::~UTF8SubstringSnippetModifier() {}
+UTF8SubstringSnippetModifier::~UTF8SubstringSnippetModifier() = default;
 
 }
 

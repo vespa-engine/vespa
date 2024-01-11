@@ -51,14 +51,13 @@ FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept
     : FieldSearcherBase(),
       _field(fId),
       _matchType(defaultPrefix ? PREFIX : REGULAR),
+      _normalize_mode(Normalizing::LOWERCASE_AND_FOLD),
       _maxFieldLength(0x100000),
       _currentElementId(0),
       _currentElementWeight(1),
       _words(0),
-      _badUtf8Count(0),
-      _zeroCount(0)
+      _badUtf8Count(0)
 {
-    zeroStat();
 }
 
 FieldSearcher::~FieldSearcher() = default;
@@ -71,7 +70,7 @@ FieldSearcher::search(const StorageDocument & doc)
         fInfo.setHitOffset(qt->getHitList().size());
     }
     onSearch(doc);
-    for(auto qt : _qtl) {
+    for (auto qt : _qtl) {
         QueryTerm::FieldInfo & fInfo = qt->getFieldInfo(field());
         fInfo.setHitCount(qt->getHitList().size() - fInfo.getHitOffset());
         fInfo.setFieldLength(_words);
@@ -111,13 +110,6 @@ FieldSearcher::prepareFieldId()
     for(auto qt : _qtl) {
         qt->resizeFieldId(field());
     }
-}
-
-void
-FieldSearcher::zeroStat()
-{
-    _badUtf8Count = 0;
-    _zeroCount = 0;
 }
 
 void
