@@ -68,7 +68,7 @@ public class SpladeEmbedderTest {
 
     static final Embedder spladeEmbedder;
     static final Embedder.Context indexingContext;
-    static final Double scoreThreshold =  1.15;
+    static final Double scoreThreshold = 1.15;
 
     static {
         indexingContext = new Embedder.Context("schema.indexing");
