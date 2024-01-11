@@ -15,6 +15,7 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
+#include <vespa/vsm/searcher/tokenizereader.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
 
 using namespace document;
@@ -869,6 +870,26 @@ TEST("counting of words") {
     StringList field = StringList().add("a").add("aa bb cc");
     assertString(fs, "bb", field, Hits().add(2));
     assertString(fs, StringList().add("bb").add("not"), field, HitsList().add(Hits().add(2)).add(Hits()));
+}
+
+vespalib::string NormalizationInput = "test That Somehing happens with during NårmØlization";
+
+void
+verifyNormalization(Normalizing normalizing, size_t expected_len, const char * expected) {
+    ucs4_t buf[256];
+    TokenizeReader reader(reinterpret_cast<const search::byte *>(NormalizationInput.c_str()), NormalizationInput.size(), buf);
+    while (reader.hasNext()) {
+        reader.normalize(reader.next(), normalizing);
+    }
+    size_t len = reader.complete();
+    EXPECT_EQUAL(expected_len, len);
+    EXPECT_EQUAL(0,  Fast_UnicodeUtil::utf8cmp(expected, buf));
+}
+
+TEST("test normalizing") {
+    verifyNormalization(Normalizing::NONE, 52, NormalizationInput.c_str());
+    verifyNormalization(Normalizing::LOWERCASE, 52, "test that somehing happens with during nårmølization");
+    verifyNormalization(Normalizing::LOWERCASE_AND_FOLD, 54, "test that somehing happens with during naarmoelization");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

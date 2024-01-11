@@ -17,6 +17,7 @@ vespa_add_library(vsm_vsmsearcher OBJECT
     intfieldsearcher.cpp
     nearest_neighbor_field_searcher.cpp
     strchrfieldsearcher.cpp
+    tokenizereader.cpp
     utf8flexiblestringfieldsearcher.cpp
     utf8strchrfieldsearcher.cpp
     utf8stringfieldsearcherbase.cpp
