@@ -4,6 +4,7 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.hosted.cd.InconclusiveTestException;
 import com.yahoo.collections.Comparables;
 import com.yahoo.vespa.testrunner.TestRunner.Suite;
+import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.UniqueId.Segment;
 import org.junit.platform.launcher.TestIdentifier;
@@ -29,6 +30,8 @@ import static java.util.Arrays.copyOf;
  * @author jonmv
  */
 public class TestReport {
+
+    private static final List<String> testFrameworkRootClasses = List.of(ReflectionUtils.class.getName(), JunitRunner.class.getName());
 
     private final Object monitor = new Object();
     private final Set<TestIdentifier> complete = new HashSet<>();
@@ -138,7 +141,7 @@ public class TestReport {
 
     void log(LogRecord record) {
         synchronized (monitor) {
-            if (record.getThrown() != null) trimStackTraces(record.getThrown(), JunitRunner.class.getName());
+            if (record.getThrown() != null) trimStackTraces(record.getThrown());
             if ( ! (current.children.peekLast() instanceof OutputNode))
                 current.children.add(new OutputNode(current));
 
@@ -277,9 +280,9 @@ public class TestReport {
         private final Throwable thrown;
         private final Suite suite;
 
-        public FailureNode(NamedNode parent, Instant now, Throwable thrown, Suite suite) {
+        FailureNode(NamedNode parent, Instant now, Throwable thrown, Suite suite) {
             super(parent, null, thrown.toString(), now);
-            trimStackTraces(thrown, JunitRunner.class.getName());
+            trimStackTraces(thrown);
             this.thrown = thrown;
             this.suite = suite;
 
@@ -330,7 +333,7 @@ public class TestReport {
      * This is based on the assumption that the relevant stack is anything above the first native
      * reflection invocation, above any frame in the given root class.
      */
-    static void trimStackTraces(Throwable thrown, String testFrameworkRootClass) {
+    static void trimStackTraces(Throwable thrown) {
         if (thrown == null)
             return;
 
@@ -340,8 +343,8 @@ public class TestReport {
         int cutoff = 0;
         boolean rootedInTestFramework = false;
         while (++i < stack.length) {
-            rootedInTestFramework |= testFrameworkRootClass.equals(stack[i].getClassName());
-            if (firstReflectFrame == -1 && stack[i].getClassName().startsWith("jdk.internal.reflect."))
+            rootedInTestFramework |= testFrameworkRootClasses.contains(stack[i].getClassName());
+            if (firstReflectFrame == -1 && (stack[i].getClassName().startsWith("jdk.internal.reflect.") || stack[i].getClassName().startsWith("java.lang.reflect.")))
                 firstReflectFrame = i; // jdk.internal.reflect class invokes the first user test frame, on both jdk 17 and 21.
             if (rootedInTestFramework && firstReflectFrame > 0) {
                 cutoff = firstReflectFrame;
@@ -353,12 +356,18 @@ public class TestReport {
                 break;
             }
         }
+        if (cutoff == 0) {
+            while (--i >= 0 && (   stack[i].isNativeMethod()
+                                || stack[i].getClassName().startsWith("java.lang.reflect.")
+                                || stack[i].getClassName().startsWith("java.util.")));
+            cutoff = i + 1;
+        }
         thrown.setStackTrace(copyOf(stack, cutoff));
 
         for (Throwable suppressed : thrown.getSuppressed())
-            trimStackTraces(suppressed, testFrameworkRootClass);
+            trimStackTraces(suppressed);
 
-        trimStackTraces(thrown.getCause(), testFrameworkRootClass);
+        trimStackTraces(thrown.getCause());
     }
 
     private static String toString(Suite suite) {
