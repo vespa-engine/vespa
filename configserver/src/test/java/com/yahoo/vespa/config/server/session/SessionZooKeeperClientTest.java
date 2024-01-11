@@ -14,9 +14,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +25,7 @@ import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PAT
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
 import static java.math.BigDecimal.valueOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -37,10 +36,6 @@ public class SessionZooKeeperClientTest {
     private static final TenantName tenantName = TenantName.defaultName();
 
     private Curator curator;
-
-    @SuppressWarnings("deprecation")
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -107,9 +102,9 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Cannot write application id 'someOtherTenant.foo.bim' for tenant 'default'");
-        zkc.writeApplicationId(id);
+        assertEquals("Cannot write application id 'someOtherTenant.foo.bim' for tenant 'default'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> zkc.writeApplicationId(id)).getMessage());
     }
 
     @Test
@@ -176,12 +171,13 @@ public class SessionZooKeeperClientTest {
                                              List.of(),
                                              List.of(),
                                              Optional.empty(),
-                                             List.of()));
+                                             List.of(),
+                                             ActivationTriggers.empty()));
         Path path = sessionPath(sessionId).append(SESSION_DATA_PATH);
         assertTrue(curator.exists(path));
         String data = Utf8.toString(curator.getData(path).get());
         assertTrue(data.contains("{\"applicationId\":\"default:default:default\",\"applicationPackageReference\":\"foo\",\"version\":\"8.195.1\",\"createTime\":"));
-        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]}"));
+        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[],\"activationTriggers\":{\"nodeRestarts\":[],\"reindexings\":[]}"));
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {

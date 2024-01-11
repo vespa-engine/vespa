@@ -358,7 +358,8 @@ public class SessionPreparer {
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
-                                  params.dataplaneTokens());
+                                  params.dataplaneTokens(),
+                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()));
             checkTimeout("write state to zookeeper");
         }
 
@@ -401,7 +402,8 @@ public class SessionPreparer {
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
-                                       List<DataplaneToken> dataplaneTokens) {
+                                       List<DataplaneToken> dataplaneTokens,
+                                       ActivationTriggers activationTriggers) {
         var zooKeeperDeplyer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
             zooKeeperDeplyer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -417,6 +419,7 @@ public class SessionPreparer {
                                           operatorCertificates,
                                           cloudAccount,
                                           dataplaneTokens,
+                                          activationTriggers,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
             zooKeeperDeplyer.cleanup();

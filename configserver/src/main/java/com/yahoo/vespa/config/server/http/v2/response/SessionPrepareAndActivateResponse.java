@@ -24,15 +24,17 @@ public class SessionPrepareAndActivateResponse extends SlimeJsonResponse {
         String message = "Session " + result.sessionId() + " for tenant '" + tenantName.value() + "' prepared and activated.";
         Cursor root = slime.get();
 
-        root.setString("tenant", tenantName.value());
         root.setString("session-id", Long.toString(result.sessionId()));
-        root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
-                "/application/v2/tenant/" + tenantName +
-                "/application/" + applicationId.application().value() +
-                "/environment/" + zone.environment().value() +
-                "/region/" + zone.region().value() +
-                "/instance/" + applicationId.instance().value());
         root.setString("message", message);
+
+        // TODO: remove unused fields, but add whether activation was successful.
+        root.setString("tenant", tenantName.value());
+        root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
+                              "/application/v2/tenant/" + tenantName +
+                              "/application/" + applicationId.application().value() +
+                              "/environment/" + zone.environment().value() +
+                              "/region/" + zone.region().value() +
+                              "/instance/" + applicationId.instance().value());
         new ConfigChangeActionsSlimeConverter(result.configChangeActions()).toSlime(root);
     }
 
