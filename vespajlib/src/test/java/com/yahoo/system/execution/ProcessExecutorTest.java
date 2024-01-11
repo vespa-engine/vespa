@@ -3,6 +3,7 @@ package com.yahoo.system.execution;
 
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -16,7 +17,7 @@ public class ProcessExecutorTest {
     @Test
     public void echo_can_be_executed() throws Exception {
         final String message = "Hello from executor!";
-        ProcessExecutor executor = new ProcessExecutor.Builder(10).build();
+        ProcessExecutor executor = new ProcessExecutor.Builder(Duration.ofSeconds(10)).build();
         Optional<ProcessResult> result = executor.execute("echo " + message);
         assertTrue(result.isPresent());
         assertEquals(message, result.get().stdOut.trim());

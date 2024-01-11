@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -24,11 +25,11 @@ import java.util.concurrent.TimeUnit;
 public class ProcessExecutor {
 
     public static class Builder {
-        private final int timeoutSeconds;
+        private final Duration timeout;
         private int[] successExitCodes;
 
-        public Builder(int timeoutSeconds) {
-            this.timeoutSeconds = timeoutSeconds;
+        public Builder(Duration timeout) {
+            this.timeout = timeout;
         }
 
         public Builder successExitCodes(int... successExitCodes) {
@@ -37,16 +38,16 @@ public class ProcessExecutor {
         }
 
         public ProcessExecutor build() {
-            return new ProcessExecutor(timeoutSeconds, successExitCodes);
+            return new ProcessExecutor(timeout, successExitCodes);
         }
     }
 
-    private ProcessExecutor(int timeoutSeconds, int[] successExitCodes) {
-        this.timeoutSeconds = timeoutSeconds;
+    private ProcessExecutor(Duration timeout, int[] successExitCodes) {
+        this.timeout = timeout;
         this.successExitCodes = successExitCodes;
     }
 
-    public final int timeoutSeconds;
+    private final Duration timeout;
     private final int[] successExitCodes;
 
     /**
@@ -68,9 +69,9 @@ public class ProcessExecutor {
         ByteArrayOutputStream processErr = new ByteArrayOutputStream();
         ByteArrayOutputStream processOut = new ByteArrayOutputStream();
 
-        DefaultExecutor executor = new DefaultExecutor();
+        DefaultExecutor executor = DefaultExecutor.builder().get();
         executor.setStreamHandler(createStreamHandler(processOut, processErr, processInput));
-        ExecuteWatchdog watchDog = new ExecuteWatchdog(TimeUnit.SECONDS.toMillis(timeoutSeconds));
+        ExecuteWatchdog watchDog = ExecuteWatchdog.builder().setTimeout(timeout).get();
         executor.setWatchdog(watchDog);
         executor.setExitValues(successExitCodes);
 
