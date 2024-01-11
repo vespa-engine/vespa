@@ -17,9 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -336,10 +334,6 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
         /** The listener to the parent of this list, or null if this is the root */
         private final DataListListener parent;
 
-        /** Queue of rendering tasks that can be executed immediately without dispatching to executor and incuring a context switch */
-        private final Queue<Runnable> syncTasks = new LinkedList<>();
-
-
         public DataListListener(DataList list, DataListListener parent) {
             this.list = list;
             this.parent = parent;
@@ -347,35 +341,19 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
         @Override
         protected void render() throws IOException, InterruptedException, ExecutionException {
-            try {
-                if (dataListListenerStack.peekFirst() != this)
-                    return; // This listens to some ancestor of the current list, do this later
-                if (beforeHandoverMode &&  ! list.isFrozen())
-                    return; // Called on completion of a list which is not frozen yet - hold off until frozen
+            if (dataListListenerStack.peekFirst() != this)
+                return; // This listens to some ancestor of the current list, do this later
+            if (beforeHandoverMode &&  ! list.isFrozen())
+                return; // Called on completion of a list which is not frozen yet - hold off until frozen
 
-                if ( ! beforeHandoverMode)
-                    // Trigger completion if not done already to invoke any listeners on that event.
-                    // Note that the completable future might have its get() method overridden.
-                    // See DrainOnGetFuture.get() and friends for details.
-                    list.completeFuture().get();
-                boolean startedRendering = renderData();
-                if ( ! startedRendering || uncompletedChildren > 0) return; // children must render to completion first
-                if (list.completeFuture().isDone()) // might not be when in before handover mode
-                    endListLevel();
-                else
-                    stream.flush();
-            } finally {
-                RuntimeException exception = null;
-                while (!syncTasks.isEmpty()) {
-                    try {
-                        syncTasks.poll().run();
-                    } catch (RuntimeException e) {
-                        if (exception == null) exception = e;
-                        else exception.addSuppressed(e);
-                    }
-                }
-                if (exception != null) throw exception;
-            }
+            if ( ! beforeHandoverMode)
+                list.completeFuture().get(); // trigger completion if not done already to invoke any listeners on that event
+            boolean startedRendering = renderData();
+            if ( ! startedRendering || uncompletedChildren > 0) return; // children must render to completion first
+            if (list.completeFuture().isDone()) // might not be when in before handover mode
+                endListLevel();
+            else
+                stream.flush();
         }
 
         private void endListLevel() throws IOException {
@@ -448,7 +426,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             }
         }
 
-        private void listenTo(DataList<?> subList, boolean listenToNewDataAdded) throws IOException {
+        private void listenTo(DataList subList, boolean listenToNewDataAdded) throws IOException {
             DataListListener listListener = new DataListListener(subList,this);
             dataListListenerStack.addFirst(listListener);
 
@@ -457,16 +435,9 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
             flushIfLikelyToSuspend(subList);
 
-            // Execute listener in the same thread if possible to avoid context switch
-
-            if (subList.isFrozen()) syncTasks.add(listListener);
-            else subList.addFreezeListener(listListener, getExecutor());
-
-            if (subList.completeFuture().isDone()) syncTasks.add(listListener);
-            else subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
-
-            if (subList.incoming().completedFuture().isDone()) syncTasks.add(listListener);
-            else subList.incoming().completedFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.addFreezeListener(listListener, getExecutor());
+            subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.incoming().completedFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
         }
 
         private boolean isOrdered(DataList dataList) {
