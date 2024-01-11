@@ -7,6 +7,10 @@
 
 namespace vsm {
 
+/**
+ * Handles tokenization of utf8 input with on the fly normalization.
+ * It handles Normalizing::NONE, Normalizing::LOWERCASE, and Normalizing::LOWERCASE_AND_FOLD
+ */
 class TokenizeReader {
 public:
     using byte = search::byte;
