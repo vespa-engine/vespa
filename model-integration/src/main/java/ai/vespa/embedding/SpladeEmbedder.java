@@ -130,15 +130,33 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
      * @return A mapped tensor with the terms from the vocab that has a score above the threshold
      */
     public Tensor sparsify(IndexedTensor modelOutput, TensorType tensorType) {
-        IndexedTensor vocab = customMaxReduceOverLogOfRelu(modelOutput);
         var builder = Tensor.Builder.of(tensorType);
-        for(int i = 0; i < vocab.size(); i++) {
-            var score =  vocab.get(i);
-            if (score > termScoreThreshold) {
-                String term = tokenizer.decode(List.of((long) i));
+        long[] shape = modelOutput.shape();
+        if(shape.length != 3) {
+            throw new IllegalArgumentException("The indexed tensor must be 3-dimensional");
+        }
+        long batch = shape[0];
+        if (batch != 1) {
+            throw new IllegalArgumentException("Batch size must be 1");
+        }
+        long sequenceLength = shape[1];
+        long vocabSize = shape[2];
+
+        //Iterate over the vocab dimension and find the max value for each sequence token
+        for(int v = 0; v < vocabSize; v++) {
+            double maxLogOfRelu = Double.MIN_VALUE;
+            for(int s = 0; s < sequenceLength; s++) {
+                double value = modelOutput.get(0, s, v); // batch, sequence, vocab
+                double logOfRelu = Math.log(1 + Math.max(0, value));
+                if(logOfRelu > maxLogOfRelu) {
+                    maxLogOfRelu = logOfRelu;
+                }
+            }
+            if (maxLogOfRelu > termScoreThreshold) {
+                String term = tokenizer.decode(List.of((long) v));
                 builder.cell().
                         label(tensorType.dimensions().get(0).name(), term)
-                        .value(score);
+                        .value(maxLogOfRelu);
             }
         }
         return builder.build();
@@ -157,43 +175,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
     public void deconstruct() {
         evaluator.close();
         tokenizer.close();
-    }
-
-    /**
-     * Custom max reduce over the sequence dimension of the output tensor. This
-     * to reduce GC pressure from generic Tensor.reduce operation.
-     *
-     * @param tensor the model output tensor of shape d1,dim where d1 is the sequence length and dim is size
-     *               of the vocabulary
-     * @return A tensor of shape d1,1 where each value is the max of the log of the relu of the input tensor
-     */
-    private static IndexedTensor customMaxReduceOverLogOfRelu(IndexedTensor tensor) {
-        long[] shape = tensor.shape();
-        if(shape.length != 3) {
-            throw new IllegalArgumentException("The indexed tensor must be 3-dimensional");
-        }
-        long batch = shape[0];
-        if (batch != 1) {
-            throw new IllegalArgumentException("Batch size must be 1");
-        }
-        long sequenceLength = shape[1];
-        long vocabSize = shape[2];
-
-        TensorType type = new TensorType.Builder(TensorType.Value.FLOAT).indexed("vocab", vocabSize).build();
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        //Iterate over the vocab dimension and find the max value for each sequence token
-        for(int v = 0; v < vocabSize; v++) {
-            double maxLogOfRelu = Double.MIN_VALUE;
-            for(int s = 0; s < sequenceLength; s++) {
-                double value = tensor.get(0, s, v); // batch, sequence, vocab
-                double logOfRelu = Math.log(1 + Math.max(0, value));
-                if(logOfRelu > maxLogOfRelu) {
-                    maxLogOfRelu = logOfRelu;
-                }
-            }
-            builder.cell(maxLogOfRelu, v);
-        }
-        return builder.build();
     }
 
 }

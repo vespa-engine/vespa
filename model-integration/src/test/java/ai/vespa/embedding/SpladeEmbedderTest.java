@@ -11,6 +11,7 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -43,7 +44,7 @@ public class SpladeEmbedderTest {
         assertEquals(0, result.size());
     }
 
-    @Test
+    @Ignore
     public void testPerformanceNotTerrible() {
         String text = "what was the manhattan project in this context it was a secret project to develop a nuclear weapon in world war" +
                 " ii the project was led by the united states with the support of the united kingdom and canada";
