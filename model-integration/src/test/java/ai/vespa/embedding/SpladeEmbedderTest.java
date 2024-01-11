@@ -44,6 +44,19 @@ public class SpladeEmbedderTest {
     }
 
     @Test
+    public void testPerformanceNotTerrible() {
+        String text = "what was the manhattan project in this context it was a secret project to develop a nuclear weapon in world war" +
+                " ii the project was led by the united states with the support of the united kingdom and canada";
+        Long now = System.currentTimeMillis();
+        int n = 10;
+        for (int i = 0; i < n; i++) {
+            assertEmbed("tensor<float>(t{})", text, indexingContext);
+        }
+        Long elapsed = (System.currentTimeMillis() - now)/1000;
+        System.out.println("Elapsed time: " + elapsed + " ms");
+    }
+
+    @Test
     public void throwsOnInvalidTensorType() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
             assertEmbed("tensor<float>(d[128])", "", indexingContext);
@@ -54,7 +67,7 @@ public class SpladeEmbedderTest {
 
     static final Embedder spladeEmbedder;
     static final Embedder.Context indexingContext;
-    static final Double scoreThreshold = 1.15;
+    static final Double scoreThreshold =  1.15;
 
     static {
         indexingContext = new Embedder.Context("schema.indexing");
