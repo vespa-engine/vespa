@@ -2,7 +2,6 @@
 #pragma once
 
 #include "strchrfieldsearcher.h"
-#include <vespa/fastlib/text/normwordfolder.h>
 
 namespace vsm {
 
@@ -60,62 +59,6 @@ public:
 
 protected:
     SharedSearcherBuf _buf;
-
-    using byte = search::byte;
-
-    class TokenizeReader {
-    public:
-        TokenizeReader(const byte *p, uint32_t len, ucs4_t *q) noexcept
-            : _p(p),
-              _p_end(p + len),
-              _q(q),
-              _q_start(q)
-        {}
-        ucs4_t next() noexcept { return Fast_UnicodeUtil::GetUTF8Char(_p); }
-        void normalize(ucs4_t c, Normalizing normalize_mode) {
-            switch (normalize_mode) {
-                case Normalizing::LOWERCASE:
-                    c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
-                    [[fallthrough]];
-                case Normalizing::NONE:
-                    *_q++ = c;
-                    break;
-                case Normalizing::LOWERCASE_AND_FOLD:
-                    fold(c);
-                    break;
-            }
-        }
-        bool hasNext() const noexcept { return _p < _p_end; }
-        const byte * p() const noexcept { return _p; }
-        size_t complete() noexcept {
-            *_q = 0;
-            size_t token_len = _q - _q_start;
-            _q = _q_start;
-            return token_len;
-        }
-    private:
-        void fold(ucs4_t c) {
-            const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-            if (repl != nullptr) {
-                size_t repllen = strlen(repl);
-                if (repllen > 0) {
-                    _q = Fast_UnicodeUtil::ucs4copy(_q,repl);
-                }
-            } else {
-                c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
-                *_q++ = c;
-            }
-        }
-        void lowercase(ucs4_t c) {
-            c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
-            *_q++ = c;
-        }
-        const byte *_p;
-        const byte *_p_end;
-        ucs4_t     *_q;
-        ucs4_t     *_q_start;
-    };
-
 
     template<typename Reader>
     void tokenize(Reader & reader);
