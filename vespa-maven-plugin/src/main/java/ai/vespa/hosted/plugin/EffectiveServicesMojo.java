@@ -2,6 +2,7 @@
 package ai.vespa.hosted.plugin;
 
 import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -37,6 +38,9 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
     @Parameter(property = "outputDirectory", defaultValue = "target")
     private String outputDirectory;
 
+    @Parameter(property = "cloud", defaultValue = "default")
+    private String cloud;
+
     @Override
     protected void doExecute() throws Exception {
         File services = new File(servicesFile);
@@ -46,20 +50,21 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
         ZoneId zone = zoneOf(environment, region);
         Path output = Paths.get(outputDirectory).resolve("services-" + zone.environment().value() + "-" + zone.region().value() + ".xml");
         Tags tagz = Tags.fromString(tags);
-        Files.write(output, effectiveServices(services, zone, InstanceName.from(instance), tagz).getBytes(StandardCharsets.UTF_8));
+        Files.write(output, effectiveServices(services, zone, CloudName.from(cloud), InstanceName.from(instance), tagz).getBytes(StandardCharsets.UTF_8));
         getLog().info("Effective services for " + zone +
                       ", instance " + instance +
                       ( tags == null ? "" : ", tags '" + tagz + "'") +
                       " written to " + output);
     }
 
-    static String effectiveServices(File servicesFile, ZoneId zone, InstanceName instance, Tags tags) throws Exception {
+    static String effectiveServices(File servicesFile, ZoneId zone, CloudName cloud, InstanceName instance, Tags tags) throws Exception {
         Document processedServicesXml = new XmlPreProcessor(servicesFile.getParentFile(),
                                                             servicesFile,
                                                             instance,
                                                             zone.environment(),
                                                             zone.region(),
-                zone.cloud(), tags)
+                                                            cloud,
+                                                            tags)
                 .run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
