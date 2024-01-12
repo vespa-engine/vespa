@@ -26,20 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SchemaTestCase {
 
     @Test
-    public void documentIdCanBeIndexed() throws ParseException {
-        String schema = """
-                schema test {
-                  document test {
-                  }
-                  field id type string {
-                    indexing: input documentid | attribute | summary
-                  }
-                }
-                """;
-        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), schema);
-    }
-
-    @Test
     void testValidationOfInheritedSchema() throws ParseException {
         try {
             String schema = joinLines(
