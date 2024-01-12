@@ -46,7 +46,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
     @Override
     protected void derive(SDDocumentType document, Schema schema) {
         super.derive(document, schema);
-        StreamingDocumentType docType=getDocumentType(document.getName());
+        StreamingDocumentType docType = getDocumentType(document.getName());
         if (docType == null) {
             docType = new StreamingDocumentType(document.getName(), schema.fieldSets());
             doctypes.put(document.getName(), docType);
@@ -56,7 +56,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
     }
 
-    protected void derive(StreamingDocumentType document, SDField field) {
+    private void derive(StreamingDocumentType document, SDField field) {
         if (field.usesStructOrMap()) {
             if (GeoPos.isAnyPos(field)) {
                 StreamingField streamingField = new StreamingField(field);
@@ -97,8 +97,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         fields.put(name, field);
     }
 
-    /** Returns a streaming index, or null if there is none with this name */
-    public StreamingDocumentType getDocumentType(String name) {
+    private StreamingDocumentType getDocumentType(String name) {
         return doctypes.get(name);
     }
 
@@ -263,9 +262,14 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
 
         private static VsmfieldsConfig.Fieldspec.Normalize.Enum toNormalize(Matching matching) {
+            // The ordering/priority below is important.
+            // exact = > lowercase only
             if (matching.getType() == MatchType.EXACT) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
-            if (matching.getType() == MatchType.WORD) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
+            // cased takes priority
             if (matching.getCase() == Case.CASED) return VsmfieldsConfig.Fieldspec.Normalize.Enum.NONE;
+            // word implies lowercase (used for attributes)
+            if (matching.getType() == MatchType.WORD) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
+            // Everything else
             return VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD;
         }
 

@@ -73,5 +73,9 @@ public class VsmFieldsTestCase {
                           VsmfieldsConfig.Fieldspec.Normalize.NONE, "");
         testIndexMatching(new Matching(MatchType.EXACT).setCase(Case.CASED),
                           VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE, "exact");
+        testIndexMatching(new Matching(MatchType.WORD),
+                          VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE, "word");
+        testIndexMatching(new Matching(MatchType.WORD).setCase(Case.CASED),
+                          VsmfieldsConfig.Fieldspec.Normalize.NONE, "word");
     }
 }
