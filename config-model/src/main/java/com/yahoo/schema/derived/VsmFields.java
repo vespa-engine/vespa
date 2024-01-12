@@ -264,7 +264,6 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
         private static VsmfieldsConfig.Fieldspec.Normalize.Enum toNormalize(Matching matching) {
             if (matching.getType() == MatchType.EXACT) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
-            if (matching.getType() == MatchType.WORD) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
             if (matching.getCase() == Case.CASED) return VsmfieldsConfig.Fieldspec.Normalize.Enum.NONE;
             return VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD;
         }
