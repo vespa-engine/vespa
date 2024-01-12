@@ -595,7 +595,7 @@ public class YqlParser implements Parser {
         }
         WandItem out = new WandItem(getIndex(args.get(0)), targetNumHits);
         Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
-                                              "min score for hit inclusion");
+                                              "score must be above this threshold for hit inclusion");
         if (scoreThreshold != null) {
             out.setScoreThreshold(scoreThreshold);
         }

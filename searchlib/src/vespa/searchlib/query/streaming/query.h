@@ -90,8 +90,6 @@ public:
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_OR) ||
-               (type == ParseItem::ITEM_DOT_PRODUCT) ||
-               (type == ParseItem::ITEM_WAND) ||
                (type == ParseItem::ITEM_WEAK_AND);
     }
 };

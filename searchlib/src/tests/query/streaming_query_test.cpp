@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
+#include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -955,6 +956,68 @@ TEST(StreamingQueryTest, dot_product_term)
     auto tmd1 = md.resolveTermField(1);
     EXPECT_EQ(23, tmd1->getDocId());
     EXPECT_EQ(-17 * 27 + 9 * 2, tmd1->getRawScore());
+}
+
+namespace {
+
+constexpr double exp_wand_score_field_12 = 13 * 27 + 4 * 2;
+constexpr double exp_wand_score_field_11 = 17 * 27 + 9 * 2;
+
+void
+check_wand_term(double limit, const vespalib::string& label)
+{
+    SCOPED_TRACE(label);
+    search::streaming::WandTerm term({}, "index", 2);
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "7", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(27));
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "9", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(2));
+    EXPECT_EQ(2, term.get_terms().size());
+    term.set_score_threshold(limit);
+    SimpleTermData td;
+    /*
+     * Search in fields 10, 11 and 12 (cf. fieldset in schema).
+     * Fields 11 and 12 have content for doc containing the keys.
+     * Fields 10 and 12 have valid handles and can be used for ranking.
+     * Field 11 does not have a valid handle, thus no associated match data.
+     */
+    td.addField(10);
+    td.addField(11);
+    td.addField(12);
+    td.lookupField(10)->setHandle(0);
+    td.lookupField(12)->setHandle(1);
+    EXPECT_FALSE(term.evaluate());
+    auto& q0 = *term.get_terms()[0];
+    q0.add(0, 11, 0, 17);
+    q0.add(0, 12, 0, 13);
+    auto& q1 = *term.get_terms()[1];
+    q1.add(0, 11, 0, 9);
+    q1.add(0, 12, 0, 4);
+    EXPECT_EQ(limit < exp_wand_score_field_11, term.evaluate());
+    MatchData md(MatchData::params().numTermFields(2));
+    term.unpack_match_data(23, td, md);
+    auto tmd0 = md.resolveTermField(0);
+    EXPECT_NE(23, tmd0->getDocId());
+    auto tmd1 = md.resolveTermField(1);
+    if (limit < exp_wand_score_field_12) {
+        EXPECT_EQ(23, tmd1->getDocId());
+        EXPECT_EQ(exp_wand_score_field_12, tmd1->getRawScore());
+    } else {
+        EXPECT_NE(23, tmd1->getDocId());
+    }
+}
+
+}
+
+TEST(StreamingQueryTest, wand_term)
+{
+    check_wand_term(0.0, "no limit");
+    check_wand_term(exp_wand_score_field_12 - 1, "score above limit");
+    check_wand_term(exp_wand_score_field_12, "score at limit");
+    check_wand_term(exp_wand_score_field_12 + 1, "score below limit");
+    check_wand_term(exp_wand_score_field_11 - 1, "hidden score above limit");
+    check_wand_term(exp_wand_score_field_11, "hidden score at limit");
+    check_wand_term(exp_wand_score_field_11 + 1, "hidden score below limit");
 }
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)
