@@ -25,6 +25,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.Comparator.naturalOrder;
+
 /**
  * Watches pending reindexing, and sets these to ready when config convergence is observed.
  * Also removes data for clusters or document types which no longer exist.
@@ -84,7 +86,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         return () -> {
             if (oldest.get() == 0)
                 oldest.set(convergence.getServiceConfigGenerations(application, timeout).values().stream()
-                                      .min(Comparator.naturalOrder())
+                                      .min(naturalOrder())
                                       .orElse(-1L));
 
             return oldest.get();

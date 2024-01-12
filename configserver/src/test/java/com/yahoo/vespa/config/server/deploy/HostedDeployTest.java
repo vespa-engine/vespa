@@ -25,8 +25,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.GetConfigRequest;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -34,6 +32,7 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.model.VespaModel;
@@ -58,7 +57,6 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
-import static com.yahoo.yolean.Exceptions.findCause;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -468,28 +466,40 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testConfigConvergenceBeforeRestart() {
+    public void testPendingRestartsAreTriggered() {
         List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
         List<ServiceInfo> services = createServices(1);
-        List<ServiceInfo> twoServices = createServices(2);
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
                         new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
+        List<ServiceInfo> mutableServices = new ArrayList<>(services);
         DeployTester tester = createTester(hosts,
                                            modelFactories,
                                            prodZone,
                                            Clock.systemUTC(),
-                                           new MockConfigConvergenceChecker(2L, services));
+                                           new MockConfigConvergenceChecker(2L, mutableServices));
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
         DeployHandlerLogger deployLogger = result.deployLogger();
 
         assertLogContainsMessage(deployLogger, "Scheduled service restart of 1 nodes: hostName0");
-        assertLogContainsMessage(deployLogger, "Wait for all services to use new config generation before restarting");
-        // Should only check convergence on 1 of the nodes
-        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName0:serviceName0 on generation 1. Will retry");
-        assertLogContainsMessage(deployLogger, "Services converged on new config generation 2");
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
+        assertEquals(Set.of("hostName0"), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
+
+        PendingRestartsMaintainer maintainer = new PendingRestartsMaintainer(tester.applicationRepository(),
+                                                                             tester.curator(),
+                                                                             tester.applicationRepository().clock(),
+                                                                             Duration.ofDays(1));
+        // Maintainer does not trigger services before convergence has been reached
+        maintainer.run();
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
+        assertEquals(Set.of("hostName0"), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
+
+        // All services converge, and maintainer triggers restarts
+        mutableServices.clear();
+        maintainer.run();
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
     }
 
     private void assertLogContainsMessage(DeployHandlerLogger log, String message) {
