@@ -6,7 +6,11 @@ import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
 
+import java.util.Set;
 import java.util.logging.Level;
+
+import static com.yahoo.config.provision.CloudName.DEFAULT;
+import static com.yahoo.config.provision.CloudName.YAHOO;
 
 /**
  * Validates that 'access-control' does not include any exclusions unless explicitly allowed.
@@ -33,10 +37,10 @@ public class AccessControlFilterExcludeValidator implements Validator {
     private void verifyNoExclusions(String clusterId, AccessControl accessControl, Context context) {
         if (!accessControl.excludedBindings().isEmpty()) {
             String message = "Application cluster %s excludes paths from access control, this is not allowed and should be removed.".formatted(clusterId);
-            if (context.deployState().zone().cloud().name().equals(CloudName.AWS)) {
-                context.illegal(message);
-            } else {
+            if (Set.of(DEFAULT, YAHOO).contains(context.deployState().zone().cloud().name())) {
                 context.deployState().getDeployLogger().log(Level.WARNING, message);
+            } else {
+                context.illegal(message);
             }
         }
    }
