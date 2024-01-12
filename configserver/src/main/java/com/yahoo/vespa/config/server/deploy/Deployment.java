@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -171,58 +172,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         Set<String> nodesToRestart = session.getActivationTriggers().nodeRestarts().stream().map(NodeRestart::hostname).collect(toSet());
         if (nodesToRestart.isEmpty()) return;
 
-        // TODO: replace this with a maintainer that waits for active config >= this session's config generation,
-        //       and let config convergence waiter in controller also check _pending_ restarts, maintained by that.
-        //       Here, we'll then instead hand these restarts over to that maintainer, with our session id.
-        waitForConfigToConverge(applicationId, nodesToRestart);
-
-        provisioner.get().restart(applicationId, HostFilter.from(nodesToRestart));
-        String restartsMessage = String.format("Scheduled service restart of %d nodes: %s",
-                                               nodesToRestart.size(), nodesToRestart.stream().sorted().collect(Collectors.joining(", ")));
-        deployLogger.log(Level.INFO, restartsMessage);
-        log.info(String.format("%sScheduled service restart of %d nodes: %s",
-                               session.logPre(), nodesToRestart.size(), restartsMessage));
+        applicationRepository.modifyPendingRestarts(applicationId, pendingRestarts -> pendingRestarts.withRestarts(session.getSessionId(), nodesToRestart));
+        deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                                                   nodesToRestart.size(), nodesToRestart.stream().sorted().collect(joining(", "))));
+        log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d: %s",
+                               session.logPre(), nodesToRestart.size(), session.getSessionId(), nodesToRestart.stream().sorted().collect(joining(", "))));
         this.configChangeActions = configChangeActions.withRestartActions(new RestartActions());
-    }
-
-    private void waitForConfigToConverge(ApplicationId applicationId, Set<String> hostnames) {
-        deployLogger.log(Level.INFO, "Wait for all services to use new config generation before restarting");
-        var convergenceChecker = applicationRepository.configConvergenceChecker();
-        var app = applicationRepository.getActiveApplication(applicationId);
-
-        ServiceListResponse response = null;
-        while (timeLeft(applicationId, response)) {
-            response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app, hostnames);
-            if (response.converged) {
-                deployLogger.log(Level.INFO, "Services converged on new config generation " + response.currentGeneration);
-                return;
-            } else {
-                deployLogger.log(Level.INFO, "Services that did not converge on new config generation " +
-                        response.wantedGeneration + ": " +
-                        servicesNotConvergedFormatted(response) + ". Will retry");
-                try { Thread.sleep(5_000); } catch (InterruptedException e) { /* ignore */ }
-            }
-        }
-    }
-
-    private boolean timeLeft(ApplicationId applicationId, ServiceListResponse response) {
-        try {
-            params.get().getTimeoutBudget().assertNotTimedOut(
-                    () -> "Timeout exceeded while waiting for config convergence for " + applicationId +
-                            ", wanted generation " + response.wantedGeneration + ", these services had another generation: " +
-                            servicesNotConvergedFormatted(response));
-        } catch (UncheckedTimeoutException e) {
-            throw new ConfigNotConvergedException(e);
-        }
-        return true;
-    }
-
-    private String servicesNotConvergedFormatted(ServiceListResponse response) {
-        return response.services().stream()
-                .filter(service -> service.currentGeneration != response.wantedGeneration)
-                .map(service -> service.serviceInfo.getHostName() + ":" + service.serviceInfo.getServiceName() +
-                        " on generation " + service.currentGeneration)
-                .collect(Collectors.joining(", "));
     }
 
     private void storeReindexing(ApplicationId applicationId) {

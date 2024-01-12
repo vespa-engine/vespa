@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
 
 import static com.yahoo.vespa.curator.transaction.CuratorOperations.setData;
+import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -197,6 +199,25 @@ public class ApplicationCuratorDatabase {
                       .toList();
     }
 
+    public PendingRestarts readPendingRestarts(ApplicationId id) {
+        return curator.getData(pendingRestartsPath(id))
+                      .map(PendingRestartsSerializer::fromBytes)
+                      .orElse(PendingRestarts.empty());
+    }
+
+    public void modifyPendingRestarts(ApplicationId id, UnaryOperator<PendingRestarts> modification) {
+        try (Lock lock = curator.lock(restartsLockPath(id), Duration.ofMinutes(1))) {
+            PendingRestarts original = readPendingRestarts(id);
+            PendingRestarts modified = modification.apply(original);
+            if (original != modified) {
+                if (modified.isEmpty())
+                    curator.delete(pendingRestartsPath(id));
+                else
+                    curator.set(pendingRestartsPath(id), PendingRestartsSerializer.toBytes(modified));
+            }
+        }
+    }
+
     public Optional<ApplicationReindexing> readReindexingStatus(ApplicationId id) {
         return curator.getData(reindexingDataPath(id))
                       .map(ReindexingStatusSerializer::fromBytes);
@@ -209,6 +230,10 @@ public class ApplicationCuratorDatabase {
     /** Sets up a listenable cache with the given listener, over the applications path of this tenant. */
     public Curator.DirectoryCache createApplicationsPathCache(ExecutorService zkCacheExecutor) {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
+    }
+
+    private Path restartsLockPath(ApplicationId id) {
+        return locksPath.append(id.serializedForm() + "::restarts");
     }
 
     private Path reindexingLockPath(ApplicationId id) {
@@ -225,6 +250,38 @@ public class ApplicationCuratorDatabase {
 
     private Path reindexingDataPath(ApplicationId id) {
         return applicationPath(id).append("reindexing");
+    }
+
+    private Path pendingRestartsPath(ApplicationId id) {
+        return applicationPath(id).append("restarts");
+    }
+
+    private static class PendingRestartsSerializer {
+
+        private static final String GENERATIONS = "generations";
+        private static final String GENERATION = "generation";
+        private static final String HOSTNAMES = "hostnames";
+
+        private static byte[] toBytes(PendingRestarts pendingRestarts) {
+            Cursor root = new Slime().setObject();
+            Cursor generationsArray = root.setArray(GENERATIONS);
+            pendingRestarts.generationsForRestarts().forEach((generation, hostnames) -> {
+                Cursor generationObject = generationsArray.addObject();
+                generationObject.setLong(GENERATION, generation);
+                hostnames.forEach(generationObject.setArray(HOSTNAMES)::addString);
+            });
+            return uncheck(() -> SlimeUtils.toJsonBytes(root));
+        }
+
+        private static PendingRestarts fromBytes(byte[] data) {
+            Cursor root = SlimeUtils.jsonToSlimeOrThrow(data).get();
+            return new PendingRestarts(SlimeUtils.entriesStream(root.field(GENERATIONS))
+                                                 .collect(toMap(entry -> entry.field(GENERATION).asLong(),
+                                                                entry -> SlimeUtils.entriesStream(entry.field(HOSTNAMES))
+                                                                                   .map(Inspector::asString)
+                                                                                   .toList())));
+        }
+
     }
 
     private static class ReindexingStatusSerializer {
@@ -263,7 +320,7 @@ public class ApplicationCuratorDatabase {
                     setStatus(statusObject, status);
                 });
             });
-            return Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(root));
+            return uncheck(() -> SlimeUtils.toJsonBytes(root));
         }
 
         private static void setStatus(Cursor statusObject, Status status) {

@@ -56,6 +56,7 @@ import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.PendingRestarts;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
@@ -1039,6 +1040,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
 
         tenant.getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.empty(), modifications);
+    }
+
+    public PendingRestarts getPendingRestarts(ApplicationId id) {
+        return requireDatabase(id).readPendingRestarts(id);
+    }
+
+    public void modifyPendingRestarts(ApplicationId id, UnaryOperator<PendingRestarts> modifications) {
+        if (hostProvisioner.isEmpty()) return;
+        getTenant(id).getApplicationRepo().database().modifyPendingRestarts(id, modifications);
     }
 
     public ConfigserverConfig configserverConfig() {
