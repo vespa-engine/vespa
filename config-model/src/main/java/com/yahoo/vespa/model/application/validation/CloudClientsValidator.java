@@ -43,7 +43,8 @@ public class CloudClientsValidator implements Validator {
                         "Please update the application package with a new certificate, " +
                         "e.g by generating a new one using the Vespa CLI `$ vespa auth cert`. " +
                         "Such certificate will no longer be accepted in near future.";
-                state.getDeployLogger().log(Level.WARNING, errorMessage(clusterName, clientId, message));
+                state.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING, errorMessage(clusterName, clientId, message));
             }
         } catch (CertificateEncodingException e) {
             reporter.accept(errorMessage(clusterName, clientId, e.getMessage()), e);
