@@ -1,11 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.document.Document;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.ImportedFieldsResolver;
 import com.yahoo.schema.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +24,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author bratseth
  */
 public class SchemaTestCase {
+
+    @Test
+    public void documentIdCanBeIndexed() throws ParseException {
+        String schema = """
+                schema test {
+                  document test {
+                  }
+                  field id type string {
+                    indexing: input documentid | attribute | summary
+                  }
+                }
+                """;
+        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), schema);
+    }
 
     @Test
     void testValidationOfInheritedSchema() throws ParseException {
