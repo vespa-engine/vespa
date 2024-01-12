@@ -6,7 +6,10 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
 
@@ -37,13 +40,26 @@ public class AllocationOptimizer {
     public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment,
                                                              ClusterModel model,
                                                              Limits limits) {
+        return findBestAllocations(loadAdjustment, model, limits).stream().findFirst();
+    }
+
+    /**
+     * Searches the space of possible allocations given a target relative load
+     * and (optionally) cluster limits and returns the best alternative.
+     *
+     * @return the best allocations sorted by preference, if there are any possible legal allocations, fulfilling the target
+     *         fully or partially, within the limits
+     */
+    public List<AllocatableResources> findBestAllocations(Load loadAdjustment,
+                                                         ClusterModel model,
+                                                         Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
-        Optional<AllocatableResources> bestAllocation = Optional.empty();
+        List<AllocatableResources> bestAllocations = new ArrayList<>();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
@@ -65,11 +81,20 @@ public class AllocationOptimizer {
                                                                      model,
                                                                      nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get(), model))
-                    bestAllocation = allocatableResources;
+                bestAllocations.add(allocatableResources.get());
             }
         }
-        return bestAllocation;
+        return bestAllocations.stream()
+                .sorted((one, other) -> {
+                    if (one.preferableTo(other, model))
+                        return -1;
+                    else if (other.preferableTo(one, model)) {
+                        return 1;
+                    }
+                    return 0;
+                })
+                .limit(3)
+                .toList();
     }
 
     /** Returns the max resources of a host one node may allocate. */

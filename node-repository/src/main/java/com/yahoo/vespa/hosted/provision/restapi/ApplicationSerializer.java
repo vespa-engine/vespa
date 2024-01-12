@@ -66,11 +66,21 @@ public class ApplicationSerializer {
         if ( ! cluster.groupSize().isEmpty())
             toSlime(cluster.groupSize(), clusterObject.setObject("groupSize"));
         toSlime(currentResources, clusterObject.setObject("current"));
-        if (cluster.shouldSuggestResources(currentResources))
+        if (cluster.shouldSuggestResources(currentResources)) {
             toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
+            toSlime(cluster.suggestions(), clusterObject.setArray("suggestions"));
+
+        }
         toSlime(cluster.target(), clusterObject.setObject("target"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setLong("scalingDuration", cluster.scalingDuration(nodes.clusterSpec()).toMillis());
+    }
+
+    private static void toSlime(List<Autoscaling> suggestions, Cursor autoscalingArray) {
+        suggestions.forEach(suggestion -> {
+                var autoscalingObject = autoscalingArray.addObject();
+                toSlime(suggestion, autoscalingObject);
+        });
     }
 
     private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {

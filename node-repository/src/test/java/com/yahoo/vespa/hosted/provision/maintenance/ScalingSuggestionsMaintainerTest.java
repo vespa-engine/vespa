@@ -78,6 +78,12 @@ public class ScalingSuggestionsMaintainerTest {
         assertEquals("7 nodes with [vcpu: 4.1, memory: 5.3 Gb, disk: 16.5 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app2, cluster2, tester).resources().get().toString());
 
+        // Secondary suggestions
+        assertEquals("7 nodes with [vcpu: 3.7, memory: 4.5 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+                suggestionsOf(app1, cluster1, tester).get(1).resources().get().toString());
+        assertEquals("8 nodes with [vcpu: 3.6, memory: 4.7 Gb, disk: 14.2 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+                suggestionsOf(app2, cluster2, tester).get(1).resources().get().toString());
+
         // Utilization goes way down
         tester.clock().advance(Duration.ofHours(13));
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
@@ -97,7 +103,7 @@ public class ScalingSuggestionsMaintainerTest {
         tester.clock().advance(Duration.ofDays(3));
         addMeasurements(0.7f, 0.7f, 0.7f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
-        var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggested().resources().get();
+        var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestions().stream().findFirst().flatMap(Autoscaling::resources).get();
         tester.deploy(app1, cluster1, Capacity.from(suggested, suggested,
                                                     IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty()));
         tester.clock().advance(Duration.ofDays(2));
@@ -121,7 +127,11 @@ public class ScalingSuggestionsMaintainerTest {
     }
 
     private Autoscaling suggestionOf(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
-        return tester.nodeRepository().applications().get(app).get().cluster(cluster.id()).get().suggested();
+        return suggestionsOf(app, cluster, tester).get(0);
+    }
+
+    private List<Autoscaling> suggestionsOf(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
+        return tester.nodeRepository().applications().get(app).get().cluster(cluster.id()).get().suggestions();
     }
 
     private boolean shouldSuggest(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
