@@ -313,7 +313,7 @@ assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & f
 std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
-    Query q(query, fs.exact() ? Normalizing::LOWERCASE : Normalizing::LOWERCASE_AND_FOLD);
+    Query q(query, fs.normalize_mode());
 
     // prepare field searcher
     test::MockFieldSearcherEnv env;
@@ -347,7 +347,7 @@ assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv
 
 bool
 assertFieldInfo(FieldSearcher & fs, const StringList & query,
-                              const FieldValue & fv, const FieldInfoList & exp)
+                const FieldValue & fv, const FieldInfoList & exp)
 {
     auto qtv = performSearch(fs, query, fv);
     if (!EXPECT_EQUAL(qtv.size(), exp.size())) return false;
