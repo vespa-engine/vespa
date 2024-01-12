@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -53,6 +54,7 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.dev,
                                                     RegionName.defaultName(),
+                                                    Cloud.defaultCloud().name(),
                                                     Tags.empty()).run());
 
         // Difference from dev: node1
@@ -88,6 +90,7 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.staging,
                                                     RegionName.defaultName(),
+                                                    Cloud.defaultCloud().name(),
                                                     Tags.empty()).run());
 
         String expectedPerfUsWest =
@@ -121,7 +124,7 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-west"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
 
         String expectedPerfUsEastAndCentral =
                 """
@@ -155,14 +158,14 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-east"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
         TestBase.assertDocument(expectedPerfUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-central"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
 
         String expectedProdUsWest =
                 """
@@ -204,7 +207,7 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-west"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
 
         String expectedProdUsEastAndCentral =
                 """
@@ -246,14 +249,14 @@ public class XmlPreprocessorTest {
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-east"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
         TestBase.assertDocument(expectedProdUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-central"),
-                                                    Tags.empty()).run());
+                                        Cloud.defaultCloud().name(), Tags.empty()).run());
     }
 
     @Test
@@ -304,6 +307,7 @@ public class XmlPreprocessorTest {
                                                InstanceName.defaultName(),
                                                Environment.prod,
                                                RegionName.defaultName(),
+                                               Cloud.defaultCloud().name(),
                                                Tags.empty()).run());
         TestBase.assertDocument(expectedProd, docDev);
     }

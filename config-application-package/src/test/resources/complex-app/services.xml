@@ -260,8 +260,11 @@
     </content>
 
     <content id="filedocument" version="1.0">
-        <nodes count="2" groups="2">
+        <nodes count="2" groups="2" deploy:cloud="aws">
             <resources vcpu="4" memory="8Gb" disk="32Gb" />
+        </nodes>
+        <nodes count="2" groups="2" deploy:cloud="gcp">
+            <resources vcpu="3" memory="9Gb" disk="37Gb" />
         </nodes>
         <redundancy>1</redundancy>
     </content>

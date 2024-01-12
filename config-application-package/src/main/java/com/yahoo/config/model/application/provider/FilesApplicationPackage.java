@@ -598,6 +598,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                     instance,
                                                     zone.environment(),
                                                     zone.region(),
+                                                    zone.cloud().name(),
                                                     getDeploymentSpec().instance(instance)
                                                                        .map(DeploymentInstanceSpec::tags)
                                                                        .orElse(Tags.empty()))
