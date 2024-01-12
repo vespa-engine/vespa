@@ -14,7 +14,7 @@ UTF8ExactStringFieldSearcher::duplicate() const
 }
 
 size_t
-UTF8ExactStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
+UTF8ExactStringFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 {
     (void) mintsz;
     for (auto qt : _qtl) {
