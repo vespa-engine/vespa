@@ -74,8 +74,6 @@ public class Validation {
         }
         else if (deployState.getPreviousModel().isPresent() && (deployState.getPreviousModel().get() instanceof VespaModel)) {
             validateChanges(execution);
-            // TODO: Why is this done here? It won't be done on more than one config server?
-            deferConfigChangesForClustersToBeRestarted(execution.actions, model);
         }
 
         execution.throwIfFailed();
@@ -136,22 +134,6 @@ public class Validation {
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
-    }
-
-    private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
-        Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
-                                                           .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
-                                                           .map(action -> action.clusterId())
-                                                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
-        for (var clusterToRestart : clustersToBeRestarted) {
-            var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
-            if (containerCluster != null)
-                containerCluster.setDeferChangesUntilRestart(true);
-
-            var contentCluster = model.getContentClusters().get(clusterToRestart.value());
-            if (contentCluster != null)
-                contentCluster.setDeferChangesUntilRestart(true);
-        }
     }
 
     public interface Context {

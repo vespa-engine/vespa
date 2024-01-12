@@ -22,8 +22,11 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.ComponentsConfig;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.config.GetConfigRequest;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -33,6 +36,7 @@ import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -48,6 +52,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
@@ -497,14 +502,15 @@ public class HostedDeployTest {
     @Test
     public void testThatAllowedConfigChangeActionsAreActedUpon() {
         List<Host> hosts = createHosts(9, "6.1.0");
-        List<ServiceInfo> services = createServices(1);
+        List<ServiceInfo> searchServices = List.of(new ServiceInfo("proton", "searchnode", null, Map.of("clustername", "music"), "configid", "host"));
+        List<ServiceInfo> containerServices = List.of(new ServiceInfo("jdisc", "container", null, Map.of("clustername", "container"), "configid", "host"));
 
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange,
-                                                                          "reindex please", services, "music"),
-                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("music"), ValidationId.indexModeChange,
+                                                                          "reindex please", searchServices, "music"),
+                                                    new VespaRestartAction(ClusterSpec.Id.from("container"), "change", containerServices)));
 
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
@@ -519,8 +525,22 @@ public class HostedDeployTest {
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
         assertEquals(Optional.of(ApplicationReindexing.empty()
-                                                      .withPending("cluster0", "music", prepareResult.sessionId())),
+                                                      .withPending("music", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+
+        VespaModel model = ((VespaModel) tester.tenant().getSessionRepository()
+                                               .activeApplicationVersions(tester.applicationId()).get().get(Version.fromString("6.1.0")).get()
+                                               .getModel());
+
+        // Config for the container cluster to be restarted has been deferred until after restart.
+        ComponentsConfig.Builder builder1 = new ComponentsConfig.Builder();
+        model.getContainerClusters().get("container").getContainers().get(0).getConfig(builder1);
+        assertTrue(builder1.getApplyOnRestart());
+
+        // Config for the metricsproxy cluster, which is not restarted, has not been deferred until after restart.
+        ComponentsConfig.Builder builder2 = new ComponentsConfig.Builder();
+        model.getAdmin().getMetricsProxyCluster().getContainers().get(0).getConfig(builder2);
+        assertFalse(builder2.getApplyOnRestart());
     }
 
     @Test

@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -33,6 +34,10 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -118,7 +123,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
         ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
-        return new Application(modelFactory.createModel(modelContext),
+        return new Application(withDeferredConfigForRestartingClusters(modelFactory.createModel(modelContext)),
                                serverCache,
                                applicationGeneration,
                                modelFactory.version(),
@@ -163,6 +168,17 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readOperatorCertificates(),
                                                zkClient.readCloudAccount(),
                                                zkClient.readDataplaneTokens());
+    }
+
+    private Model withDeferredConfigForRestartingClusters(Model model) {
+        if ( ! (model instanceof VespaModel vespaModel)) return model;
+        for (ClusterSpec.Id cluster : zkClient.readActivationTriggers().restartingClusters()) {
+            ApplicationContainerCluster containerCluster = vespaModel.getContainerClusters().get(cluster.value());
+            if (containerCluster != null) containerCluster.setDeferChangesUntilRestart(true);
+            ContentCluster contentCluster = vespaModel.getContentClusters().get(cluster.value());
+            if (contentCluster != null) contentCluster.setDeferChangesUntilRestart(true);
+        }
+        return model;
     }
 
 }

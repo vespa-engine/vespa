@@ -43,7 +43,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         try {
             return deployer().deployTime(application)
                     .map(lastDeployTime ->    lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments))
-                            || deployer().readiedReindexingAfter(application, lastDeployTime))
+                                           || deployer().readiedReindexingAfter(application, lastDeployTime))
                     .orElse(false);
         }
         catch (Exception e) {

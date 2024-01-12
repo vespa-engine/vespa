@@ -177,7 +177,8 @@ public class SessionZooKeeperClientTest {
         assertTrue(curator.exists(path));
         String data = Utf8.toString(curator.getData(path).get());
         assertTrue(data.contains("{\"applicationId\":\"default:default:default\",\"applicationPackageReference\":\"foo\",\"version\":\"8.195.1\",\"createTime\":"));
-        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[],\"activationTriggers\":{\"nodeRestarts\":[],\"reindexings\":[]}"));
+        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]," +
+                                 "\"activationTriggers\":{\"nodeRestarts\":[],\"restartingClusters\":[],\"reindexings\":[]}"));
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {
