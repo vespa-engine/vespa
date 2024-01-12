@@ -7,6 +7,13 @@ using search::streaming::QueryTermList;
 
 namespace vsm {
 
+UTF8ExactStringFieldSearcher::UTF8ExactStringFieldSearcher(FieldIdT fId)
+    : UTF8StringFieldSearcherBase(fId)
+{
+    match_type(EXACT);
+    normalize_mode(Normalizing::LOWERCASE);
+}
+
 std::unique_ptr<FieldSearcher>
 UTF8ExactStringFieldSearcher::duplicate() const
 {

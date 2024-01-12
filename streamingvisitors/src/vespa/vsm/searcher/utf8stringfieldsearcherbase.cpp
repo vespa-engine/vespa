@@ -55,22 +55,26 @@ UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt
 size_t
 UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
 {
-    const byte * n = reinterpret_cast<const byte *> (f.data());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
     const cmptype_t * eterm = term+tsz;
-    const byte * e = n + f.size();
+    if ( f.size() >= _buf->size()) {
+        _buf->reserve(f.size() + 1);
+    }
+    cmptype_t * fn = _buf->data();
     if (tsz <= f.size()) {
         bool equal(true);
-        for (; equal && (n < e) && (term < eterm); term++) {
-            if (*term < 0x80) {
-                equal = (*term == Fast_NormalizeWordFolder::lowercase_ascii(*n++));
-            } else {
-                cmptype_t c = Fast_NormalizeWordFolder::lowercase(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
-                equal = (*term == c);
+        Normalizing norm_mode = normalize_mode();
+        TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
+        while (equal && reader.hasNext() && (term < eterm)) {
+            reader.normalize(reader.next(), norm_mode);
+            size_t len = reader.complete();
+            for (size_t i(0); i < len; i++) {
+                equal = (term[i] == fn[i]);
             }
+            term += len;
         }
-        if (equal && (term == eterm) && (qt.isPrefix() || (n == e))) {
+        if (equal && (term == eterm) && (qt.isPrefix() || ! reader.hasNext())) {
             addHit(qt,0);
         }
     }

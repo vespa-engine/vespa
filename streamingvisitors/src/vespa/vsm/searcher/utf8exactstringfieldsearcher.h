@@ -17,11 +17,7 @@ protected:
 
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    explicit UTF8ExactStringFieldSearcher(FieldIdT fId)
-        : UTF8StringFieldSearcherBase(fId)
-    {
-        match_type(EXACT);
-    }
+    explicit UTF8ExactStringFieldSearcher(FieldIdT fId);
 };
 
 }
