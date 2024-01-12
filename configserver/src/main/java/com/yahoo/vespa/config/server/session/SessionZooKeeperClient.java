@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.session.SessionData.ACTIVATION_TRIGGERS_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.ATHENZ_DOMAIN;
@@ -351,6 +352,16 @@ public class SessionZooKeeperClient {
                 .map(SlimeUtils::jsonToSlime)
                 .map(slime -> DataplaneTokenSerializer.fromSlime(slime.get()))
                 .orElse(List.of());
+    }
+
+    public void writeActivationTriggers(ActivationTriggers activationTriggers) {
+        curator.set(sessionPath.append(ACTIVATION_TRIGGERS_PATH), ActivationTriggersSerializer.toJson(activationTriggers));
+    }
+
+    public ActivationTriggers readActivationTriggers() {
+        return curator.getData(sessionPath.append(ACTIVATION_TRIGGERS_PATH))
+                      .map(ActivationTriggersSerializer::fromJson)
+                      .orElse(ActivationTriggers.empty());
     }
 
     /**

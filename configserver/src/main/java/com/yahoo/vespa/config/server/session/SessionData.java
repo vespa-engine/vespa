@@ -41,7 +41,8 @@ public record SessionData(ApplicationId applicationId,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
-                          List<DataplaneToken> dataplaneTokens) {
+                          List<DataplaneToken> dataplaneTokens,
+                          ActivationTriggers activationTriggers) {
 
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
     static final String APPLICATION_ID_PATH = "applicationId";
@@ -56,6 +57,7 @@ public record SessionData(ApplicationId applicationId,
     static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
     static final String DATAPLANE_TOKENS_PATH = "dataplaneTokens";
     static final String SESSION_DATA_PATH = "sessionData";
+    static final String ACTIVATION_TRIGGERS_PATH = "activationTriggers";
 
     public byte[] toJson() {
         try {
@@ -87,6 +89,8 @@ public record SessionData(ApplicationId applicationId,
 
         Cursor dataplaneTokensArray = object.setArray(DATAPLANE_TOKENS_PATH);
         DataplaneTokenSerializer.toSlime(dataplaneTokens, dataplaneTokensArray);
+
+        ActivationTriggersSerializer.toSlime(activationTriggers, object.setObject(ACTIVATION_TRIGGERS_PATH));
     }
 
     static SessionData fromSlime(Slime slime) {
@@ -103,7 +107,8 @@ public record SessionData(ApplicationId applicationId,
                                TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
                                OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
                                optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),
-                               DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)));
+                               DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)),
+                               ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)));
     }
 
 }

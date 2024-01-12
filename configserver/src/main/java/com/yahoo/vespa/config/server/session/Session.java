@@ -158,6 +158,10 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readDataplaneTokens();
     }
 
+    public ActivationTriggers getActivationTriggers() {
+        return sessionZooKeeperClient.readActivationTriggers();
+    }
+
     public SessionZooKeeperClient getSessionZooKeeperClient() { return sessionZooKeeperClient; }
 
     private Transaction createSetStatusTransaction(Status status) {

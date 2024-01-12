@@ -65,6 +65,7 @@ public final class PrepareParams {
     private final boolean dryRun;
     private final boolean verbose;
     private final boolean isBootstrap;
+    private final boolean isInternalRedeployment;
     private final boolean force;
     private final boolean waitForResourcesInPrepare;
     private final Optional<Version> vespaVersion;
@@ -84,6 +85,7 @@ public final class PrepareParams {
                           boolean dryRun,
                           boolean verbose,
                           boolean isBootstrap,
+                          boolean isInternalRedeployment,
                           Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
@@ -102,6 +104,7 @@ public final class PrepareParams {
         this.dryRun = dryRun;
         this.verbose = verbose;
         this.isBootstrap = isBootstrap;
+        this.isInternalRedeployment = isInternalRedeployment;
         this.vespaVersion = vespaVersion;
         this.containerEndpoints = containerEndpoints;
         this.endpointCertificateMetadata = endpointCertificateMetadata;
@@ -124,6 +127,7 @@ public final class PrepareParams {
         private boolean isBootstrap = false;
         private boolean force = false;
         private boolean waitForResourcesInPrepare = false;
+        private boolean isInternalRedeployment = false;
         private ApplicationId applicationId = null;
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
@@ -161,6 +165,11 @@ public final class PrepareParams {
 
         public Builder isBootstrap(boolean isBootstrap) {
             this.isBootstrap = isBootstrap;
+            return this;
+        }
+
+        public Builder isInternalRedeployment(boolean isInternalRedeployment) {
+            this.isInternalRedeployment = isInternalRedeployment;
             return this;
         }
 
@@ -285,6 +294,7 @@ public final class PrepareParams {
                                      dryRun,
                                      verbose,
                                      isBootstrap,
+                                     isInternalRedeployment,
                                      vespaVersion,
                                      containerEndpoints,
                                      endpointCertificateMetadata,
@@ -423,6 +433,8 @@ public final class PrepareParams {
     }
 
     public boolean isBootstrap() { return isBootstrap; }
+
+    public boolean isInternalRedeployment() { return isInternalRedeployment; }
 
     public boolean force() { return force; }
 
