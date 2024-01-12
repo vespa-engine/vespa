@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class VsmFieldsTestCase {
 
-    private static Schema createSchema() {
+     static Schema createSchema() {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         var sdoc = new SDDocumentType("test");
         schema.addDocument(sdoc);
