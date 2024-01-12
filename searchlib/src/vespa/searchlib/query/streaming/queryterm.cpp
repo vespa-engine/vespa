@@ -179,4 +179,10 @@ QueryTerm::as_multi_term() noexcept
     return nullptr;
 }
 
+RegexpTerm*
+QueryTerm::as_regexp_term() noexcept
+{
+    return nullptr;
+}
+
 }

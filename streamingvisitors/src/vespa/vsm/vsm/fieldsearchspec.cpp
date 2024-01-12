@@ -134,7 +134,8 @@ FieldSearchSpec::reconfig(const QueryTerm & term)
         if ((term.isSubstring() && _arg1 != "substring") ||
             (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") ||
-            (term.isPrefix() && _arg1 == "suffix"))
+            (term.isPrefix() && _arg1 == "suffix") ||
+            term.isRegex())
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             // preserve the basic match property of the searcher

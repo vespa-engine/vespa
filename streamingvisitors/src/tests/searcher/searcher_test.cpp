@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/searchlib/query/streaming/regexp_term.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
@@ -21,6 +22,7 @@
 using namespace document;
 using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
+using search::streaming::RegexpTerm;
 using search::streaming::QueryTerm;
 using search::streaming::Normalizing;
 using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
@@ -63,7 +65,12 @@ private:
         for (const auto & term : terms) {
             ParsedQueryTerm pqt = parseQueryTerm(term);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second, normalizing));
+            std::string effective_index = pqt.first.empty() ? "index" : pqt.first;
+            if (pt.second != TermType::REGEXP) {
+                qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
+            } else {
+                qtv.push_back(std::make_unique<RegexpTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
+            }
         }
         for (const auto & i : qtv) {
             qtl.push_back(i.get());
@@ -91,6 +98,8 @@ public:
             return std::make_pair(term.substr(1, term.size() - 2), TermType::SUBSTRINGTERM);
         } else if (term[0] == '*') {
             return std::make_pair(term.substr(1, term.size() - 1), TermType::SUFFIXTERM);
+        } else if (term[0] == '#') { // magic regex enabler
+            return std::make_pair(term.substr(1), TermType::REGEXP);
         } else if (term[term.size() - 1] == '*') {
             return std::make_pair(term.substr(0, term.size() - 1), TermType::PREFIXTERM);
         } else {
@@ -479,6 +488,8 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
         ASSERT_TRUE(Query::parseTerm("*suffix").second == TermType::SUFFIXTERM);
         ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
         ASSERT_TRUE(Query::parseTerm("prefix*").second == TermType::PREFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("#regex").first == "regex");
+        ASSERT_TRUE(Query::parseTerm("#regex").second == TermType::REGEXP);
         ASSERT_TRUE(Query::parseTerm("term").first == "term");
         ASSERT_TRUE(Query::parseTerm("term").second == TermType::WORD);
     }
@@ -582,7 +593,7 @@ TEST("utf8 exact match") {
     TEST_DO(assertString(fs, "hütte",  "hütter", Hits()));
 }
 
-TEST("utf8 flexible searcher"){
+TEST("utf8 flexible searcher (except regex)"){
     UTF8FlexibleStringFieldSearcher fs(0);
     // regular
     assertString(fs, "vespa", "vespa", Hits().add(0));
@@ -611,6 +622,38 @@ TEST("utf8 flexible searcher"){
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
+TEST("utf8 flexible searcher handles regex and by default has case-insensitive partial match semantics") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // Note: the # term prefix is a magic term-as-regex symbol used only for tests in this file
+    TEST_DO(assertString(fs, "#abc",   "ABC", Hits().add(0)));
+    TEST_DO(assertString(fs, "#bc",    "ABC", Hits().add(0)));
+    TEST_DO(assertString(fs, "#ab",    "ABC", Hits().add(0)));
+    TEST_DO(assertString(fs, "#[a-z]", "ABC", Hits().add(0)));
+    TEST_DO(assertString(fs, "#(zoid)(berg)", "why not zoidberg?", Hits().add(0)));
+    TEST_DO(assertString(fs, "#[a-z]", "123", Hits()));
+}
+
+TEST("utf8 flexible searcher handles case-sensitive regex matching") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    fs.normalize_mode(Normalizing::NONE);
+    TEST_DO(assertString(fs, "#abc",   "ABC", Hits()));
+    TEST_DO(assertString(fs, "#abc",   "abc", Hits().add(0)));
+    TEST_DO(assertString(fs, "#[A-Z]",   "A", Hits().add(0)));
+    TEST_DO(assertString(fs, "#[A-Z]", "ABC", Hits().add(0)));
+    TEST_DO(assertString(fs, "#[A-Z]", "abc", Hits()));
+}
+
+TEST("utf8 flexible searcher handles regexes with explicit anchoring") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    TEST_DO(assertString(fs, "#^foo",  "food", Hits().add(0)));
+    TEST_DO(assertString(fs, "#^foo",  "afoo", Hits()));
+    TEST_DO(assertString(fs, "#foo$",  "afoo", Hits().add(0)));
+    TEST_DO(assertString(fs, "#foo$",  "food", Hits()));
+    TEST_DO(assertString(fs, "#^foo$", "foo",  Hits().add(0)));
+    TEST_DO(assertString(fs, "#^foo$", "food", Hits()));
+    TEST_DO(assertString(fs, "#^foo$", "oo",   Hits()));
+}
+
 TEST("bool search") {
     BoolFieldSearcher fs(0);
     TEST_DO(assertBool(fs,     "true",  true, true));
@@ -635,6 +678,8 @@ TEST("integer search")
     TEST_DO(assertInt(fs,    "<11",  10, true));
     TEST_DO(assertInt(fs,    "<11",  11, false));
     TEST_DO(assertInt(fs,    "-10", -10, true));
+    TEST_DO(assertInt(fs,     "10", -10, false));
+    TEST_DO(assertInt(fs,    "-10",  10, false));
     TEST_DO(assertInt(fs,     "-9", -10, false));
     TEST_DO(assertInt(fs,      "a",  10, false));
     TEST_DO(assertInt(fs, "[-5;5]",  -5, true));
