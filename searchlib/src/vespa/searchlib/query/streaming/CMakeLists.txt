@@ -9,5 +9,6 @@ vespa_add_library(searchlib_query_streaming OBJECT
     querynode.cpp
     querynoderesultbase.cpp
     queryterm.cpp
+    wand_term.cpp
     DEPENDS
 )

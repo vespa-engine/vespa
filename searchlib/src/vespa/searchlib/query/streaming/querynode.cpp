@@ -5,6 +5,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
+#include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
 #include <charconv>
 #include <vespa/log/log.h>
@@ -40,7 +41,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_EQUIV:
     case ParseItem::ITEM_WEIGHTED_SET:
-    case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_PHRASE:
     case ParseItem::ITEM_SAME_ELEMENT:
@@ -56,9 +56,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             }
             if ((type == ParseItem::ITEM_WEAK_AND) ||
                 (type == ParseItem::ITEM_WEIGHTED_SET) ||
-                (type == ParseItem::ITEM_DOT_PRODUCT) ||
-                (type == ParseItem::ITEM_SAME_ELEMENT) ||
-                (type == ParseItem::ITEM_WAND))
+                (type == ParseItem::ITEM_SAME_ELEMENT))
             {
                 qn->setIndex(queryRep.getIndexName());
             }
@@ -191,6 +189,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_DOT_PRODUCT:
         qn = build_dot_product_term(factory, queryRep);
         break;
+    case ParseItem::ITEM_WAND:
+        qn = build_wand_term(factory, queryRep);
+        break;
     default:
         skip_unknown(queryRep);
         break;
@@ -251,11 +252,22 @@ QueryNode::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt,
 std::unique_ptr<QueryNode>
 QueryNode::build_dot_product_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
-    auto dp =std::make_unique<DotProductTerm>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    auto dp = std::make_unique<DotProductTerm>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
     dp->setWeight(queryRep.GetWeight());
     dp->setUniqueId(queryRep.getUniqueId());
     populate_multi_term(factory.normalizing_mode(dp->index()), *dp, queryRep);
     return dp;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_wand_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+{
+    auto wand = std::make_unique<WandTerm>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    wand->setWeight(queryRep.GetWeight());
+    wand->setUniqueId(queryRep.getUniqueId());
+    wand->set_score_threshold(queryRep.getScoreThreshold());
+    populate_multi_term(factory.normalizing_mode(wand->index()), *wand, queryRep);
+    return wand;
 }
 
 void
