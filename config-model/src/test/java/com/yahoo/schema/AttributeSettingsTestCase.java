@@ -280,7 +280,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     void requireThatMutableIsAllowedThroughIndexing() throws ParseException {
-        IndexingScript script = new IndexingScript(getSearchWithMutables(), false);
+        IndexingScript script = new IndexingScript(getSearchWithMutables());
         IlscriptsConfig.Builder builder = new IlscriptsConfig.Builder();
         script.getConfig(builder);
         IlscriptsConfig cfg = builder.build();
