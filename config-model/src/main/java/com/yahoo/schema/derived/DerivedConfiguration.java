@@ -80,7 +80,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
                 summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
                 juniperrc = new Juniperrc(schema);
                 rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
-                indexingScript = new IndexingScript(schema, isStreaming);
+                indexingScript = new IndexingScript(schema);
                 indexInfo = new IndexInfo(schema, isStreaming);
                 schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
                 indexSchema = new IndexSchema(schema);

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AssertIndexingScript {
 
     public static void assertIndexing(List<String> expected, Schema schema) {
-        assertIndexing(expected, new IndexingScript(schema, false).expressions());
+        assertIndexing(expected, new IndexingScript(schema).expressions());
     }
 
     public static void assertIndexing(List<String> expected, IndexingScript script) {
