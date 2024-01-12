@@ -10,6 +10,7 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
@@ -103,7 +104,9 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     private static class DropTokenize extends ExpressionConverter {
         @Override
         protected boolean shouldConvert(Expression exp) {
-            return exp instanceof TokenizeExpression;
+            // Handle both string and array<string>
+            return (exp instanceof TokenizeExpression) ||
+                    ((exp instanceof ForEachExpression foreach) && (foreach.getInnerExpression() instanceof TokenizeExpression));
         }
 
         @Override

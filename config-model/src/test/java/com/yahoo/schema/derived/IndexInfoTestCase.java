@@ -45,7 +45,7 @@ public class IndexInfoTestCase {
         return builder.build();
     }
 
-    private static VespaModel createModel(String schemaName, String sdContent) {
+    static VespaModel createModel(String schemaName, String sdContent) {
         var builder = new DeployState.Builder();
         return new ApplicationPackageBuilder()
                 .addCluster(new ContentClusterBuilder().name("content").docTypes(List.of(DocType.index(schemaName))))
