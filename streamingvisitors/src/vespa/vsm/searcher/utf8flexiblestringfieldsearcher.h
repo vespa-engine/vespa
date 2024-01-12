@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
+#include "utf8stringfieldsearcherbase.h"
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does utf8 searches based on the query term type.

@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
+#include "utf8stringfieldsearcherbase.h"
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does suffix utf8 searches.
@@ -17,12 +16,7 @@ protected:
 
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    explicit UTF8ExactStringFieldSearcher(FieldIdT fId)
-        : UTF8StringFieldSearcherBase(fId)
-    {
-        match_type(EXACT);
-    }
+    explicit UTF8ExactStringFieldSearcher(FieldIdT fId);
 };
 
 }
-
