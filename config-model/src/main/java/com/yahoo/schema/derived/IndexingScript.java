@@ -104,9 +104,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     private static class DropTokenize extends ExpressionConverter {
         @Override
         protected boolean shouldConvert(Expression exp) {
-            // Handle both string and array<string>
-            return (exp instanceof TokenizeExpression) ||
-                    ((exp instanceof ForEachExpression foreach) && (foreach.getInnerExpression() instanceof TokenizeExpression));
+            return exp instanceof TokenizeExpression;
         }
 
         @Override
