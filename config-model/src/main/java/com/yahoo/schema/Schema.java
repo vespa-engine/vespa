@@ -18,7 +18,6 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.document.TemporaryImportedFields;
-import com.yahoo.schema.document.annotation.SDAnnotationType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;

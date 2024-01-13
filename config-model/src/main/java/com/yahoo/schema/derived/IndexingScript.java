@@ -6,9 +6,11 @@ import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
@@ -16,6 +18,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.PassthroughExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SetLanguageExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 
 import java.util.ArrayList;
@@ -36,8 +39,10 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     private final List<String> docFields = new ArrayList<>();
     private final List<Expression> expressions = new ArrayList<>();
     private List<ImmutableSDField> fieldsSettingLanguage;
+    private final boolean isStreaming;
 
-    public IndexingScript(Schema schema) {
+    public IndexingScript(Schema schema, boolean isStreaming) {
+        this.isStreaming = isStreaming;
         derive(schema);
     }
 
@@ -96,21 +101,40 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         configBuilder.ilscript(ilscriptBuilder);
     }
 
+    private static class DropTokenize extends ExpressionConverter {
+        @Override
+        protected boolean shouldConvert(Expression exp) {
+            // Handle both string and array<string>
+            return (exp instanceof TokenizeExpression) ||
+                    ((exp instanceof ForEachExpression foreach) && (foreach.getInnerExpression() instanceof TokenizeExpression));
+        }
+
+        @Override
+        protected Expression doConvert(Expression exp) {
+            return null;
+        }
+    }
+
     private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
         ArrayList<Expression> later = new ArrayList<>();
         Set<String> touchedFields = new HashSet<>();
         for (Expression expression : expressions) {
-            if (modifiesSelf(expression) && ! setsLanguage(expression))
+            if (isStreaming) {
+                expression = expression.convertChildren(new DropTokenize());
+            }
+            if (modifiesSelf(expression) && ! setsLanguage(expression)) {
                 later.add(expression);
-            else
+            } else {
                 ilscriptBuilder.content(expression.toString());
+            }
 
             FieldScanVisitor fieldFetcher = new FieldScanVisitor();
             fieldFetcher.visit(expression);
             touchedFields.addAll(fieldFetcher.touchedFields());
         }
-        for (Expression exp : later)
+        for (Expression exp : later) {
             ilscriptBuilder.content(exp.toString());
+        }
         generateSyntheticStatementsForUntouchedFields(ilscriptBuilder, touchedFields);
     }
 
@@ -171,8 +195,8 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     }
 
     private static class FieldScanVisitor extends ExpressionVisitor {
-        List<String> touchedFields = new ArrayList<String>();
-        List<String> candidates = new ArrayList<String>();
+        List<String> touchedFields = new ArrayList<>();
+        List<String> candidates = new ArrayList<>();
 
         @Override
         protected void doVisit(Expression exp) {
