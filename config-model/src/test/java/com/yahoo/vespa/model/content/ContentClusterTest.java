@@ -1440,7 +1440,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertGroupsAllowedDown(2, 1, 2);
     }
 
-    private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled) {
+    private void assertIndexingDocprocEnabled(boolean indexed, boolean force) {
         String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
@@ -1456,25 +1456,32 @@ public class ContentClusterTest extends ContentBaseTest {
                 "</services>";
         VespaModel model = createEnd2EndOneNode(new TestProperties(), services);
         var searchCluster = model.getContentClusters().get("search").getSearch();
-        assertEquals(expEnabled, searchCluster.getIndexingDocproc().isPresent());
+        if (force) {
+            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
+            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
+        } else if (indexed) {
+            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
+        } else {
+            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
+        }
     }
 
     @Test
     void testIndexingDocprocEnabledWhenIndexMode()
     {
-        assertIndexingDocprocEnabled(true, false, true);
+        assertIndexingDocprocEnabled(true, false);
     }
 
     @Test
     void testIndexingDocprocNotEnabledWhenStreamingMode()
     {
-        assertIndexingDocprocEnabled(false, false, false);
+        assertIndexingDocprocEnabled(false, false);
     }
 
     @Test
     void testIndexingDocprocEnabledWhenStreamingModeAndForced()
     {
-        assertIndexingDocprocEnabled(false, true, true);
+        assertIndexingDocprocEnabled(false, true);
     }
 
     private void assertGroupsAllowedDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {
