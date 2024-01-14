@@ -132,6 +132,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * The API for managing applications.
@@ -789,7 +790,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        return convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
+        ServiceListResponse response = convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
+        if (response.converged && ! getPendingRestarts(applicationId).isEmpty())
+            return new ServiceListResponse(response.services.stream().collect(toMap(service -> service.serviceInfo,
+                                                                                    service -> service.currentGeneration)),
+                                           response.wantedGeneration,
+                                           response.currentGeneration);
+        return response;
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
