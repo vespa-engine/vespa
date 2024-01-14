@@ -360,11 +360,21 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public final long currentGeneration;
         public final boolean converged;
 
-        public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
-            services.forEach((key, value) -> this.services.add(new Service(key, value)));
+        private ServiceListResponse(List<Service> services, long wantedGeneration, long currentGeneration, boolean converged) {
+            this.services.addAll(services);
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
-            this.converged = currentGeneration >= wantedGeneration;
+            this.converged = converged;
+        }
+        public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
+            this(services.entrySet().stream().map(entry -> new Service(entry.getKey(), entry.getValue())).toList(),
+                 wantedGeneration,
+                 currentGeneration,
+                 currentGeneration >= wantedGeneration);
+        }
+
+        public ServiceListResponse unconverged() {
+            return new ServiceListResponse(services, wantedGeneration, currentGeneration, false);
         }
 
         public List<Service> services() { return services; }

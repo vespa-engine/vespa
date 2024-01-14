@@ -792,10 +792,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                    Optional<Version> vespaVersion) {
         ServiceListResponse response = convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
         if (response.converged && ! getPendingRestarts(applicationId).isEmpty())
-            return new ServiceListResponse(response.services.stream().collect(toMap(service -> service.serviceInfo,
-                                                                                    service -> service.currentGeneration)),
-                                           response.wantedGeneration,
-                                           response.currentGeneration);
+            response = response.unconverged();
         return response;
     }
 
