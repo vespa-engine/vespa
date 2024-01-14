@@ -200,9 +200,11 @@ public class ApplicationCuratorDatabase {
     }
 
     public PendingRestarts readPendingRestarts(ApplicationId id) {
-        return curator.getData(pendingRestartsPath(id))
-                      .map(PendingRestartsSerializer::fromBytes)
-                      .orElse(PendingRestarts.empty());
+        try (Lock lock = curator.lock(restartsLockPath(id), Duration.ofMinutes(1))) {
+            return curator.getData(pendingRestartsPath(id))
+                          .map(PendingRestartsSerializer::fromBytes)
+                          .orElse(PendingRestarts.empty());
+        }
     }
 
     public void modifyPendingRestarts(ApplicationId id, UnaryOperator<PendingRestarts> modification) {
