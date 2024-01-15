@@ -438,7 +438,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ENABLE_NEW_PAYMENT_METHOD_FLOW = defineFeatureFlag(
-            "enable-new-payment-method-flow", false,
+            "enable-new-payment-method-flow", true,
             List.of("bjorncs"), "2023-11-29", "2024-03-01",
             "Whether to enable the new billing flow",
             "Takes effect immediately",
