@@ -37,7 +37,10 @@ struct SimpleWandFixture {
         SearchIterator::UP search(spec.create());
         hits.search(*search);
     }
+    ~SimpleWandFixture();
 };
+
+SimpleWandFixture::~SimpleWandFixture() = default;
 
 struct AdvancedWandFixture {
     MyWandSpec   spec;
@@ -51,7 +54,10 @@ struct AdvancedWandFixture {
         SearchIterator::UP search(spec.create());
         hits.search(*search);
     }
+    ~AdvancedWandFixture();
 };
+
+AdvancedWandFixture::~AdvancedWandFixture() = default;
 
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {

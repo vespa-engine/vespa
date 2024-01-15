@@ -391,7 +391,10 @@ struct HeapFixture
         SearchIterator::UP sb(spec.create());
         result.search(*sb);
     }
+    ~HeapFixture();
 };
+
+HeapFixture::~HeapFixture() = default;
 
 TEST(ParallelWeakAndTest, require_that_scores_are_collected_in_batches_before_adjusting_heap)
 {
