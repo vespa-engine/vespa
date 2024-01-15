@@ -7,6 +7,7 @@
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/wand_term.h>
+#include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -1018,6 +1019,42 @@ TEST(StreamingQueryTest, wand_term)
     check_wand_term(exp_wand_score_field_11 - 1, "hidden score above limit");
     check_wand_term(exp_wand_score_field_11, "hidden score at limit");
     check_wand_term(exp_wand_score_field_11 + 1, "hidden score below limit");
+}
+
+TEST(StreamingQueryTest, weighted_set_term)
+{
+    search::streaming::WeightedSetTerm term({}, "index", 2);
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "7", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(4));
+    term.add_term(std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "9", "", QueryTermSimple::Type::WORD));
+    term.get_terms().back()->setWeight(Weight(13));
+    EXPECT_EQ(2, term.get_terms().size());
+    SimpleTermData td;
+    td.addField(10);
+    td.addField(11);
+    td.addField(12);
+    td.lookupField(10)->setHandle(0);
+    td.lookupField(12)->setHandle(1);
+    EXPECT_FALSE(term.evaluate());
+    auto& q0 = *term.get_terms()[0];
+    q0.add(0, 11, 0, 10);
+    q0.add(0, 12, 0, 10);
+    auto& q1 = *term.get_terms()[1];
+    q1.add(0, 11, 0, 10);
+    q1.add(0, 12, 0, 10);
+    EXPECT_TRUE(term.evaluate());
+    MatchData md(MatchData::params().numTermFields(2));
+    term.unpack_match_data(23, td, md);
+    auto tmd0 = md.resolveTermField(0);
+    EXPECT_NE(23, tmd0->getDocId());
+    auto tmd1 = md.resolveTermField(1);
+    EXPECT_EQ(23, tmd1->getDocId());
+    using Weights = std::vector<int32_t>;
+    Weights weights;
+    for (auto& pos : *tmd1) {
+        weights.emplace_back(pos.getElementWeight());
+    }
+    EXPECT_EQ((Weights{13, 4}), weights);
 }
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)

@@ -103,8 +103,7 @@ public:
     EquivQueryNode() noexcept : OrQueryNode("EQUIV") { }
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override {
-        return (type == ParseItem::ITEM_EQUIV) ||
-               (type == ParseItem::ITEM_WEIGHTED_SET);
+        return (type == ParseItem::ITEM_EQUIV);
     }
 };
 
