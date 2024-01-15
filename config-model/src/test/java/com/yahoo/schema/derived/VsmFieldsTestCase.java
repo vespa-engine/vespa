@@ -32,8 +32,7 @@ public class VsmFieldsTestCase {
      private static VsmfieldsConfig vsmfieldsConfig(Schema schema) {
          VsmFields vsmFields = new VsmFields(schema);
          VsmfieldsConfig.Builder cfgBuilder = new VsmfieldsConfig.Builder();
-         vsmFields.getConfig(cfgBuilder);
-         return cfgBuilder.build();
+         vsmFields.getConfig(cfgBuilder);return cfgBuilder.build();
      }
 
     @Test

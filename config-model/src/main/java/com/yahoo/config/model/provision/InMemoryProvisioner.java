@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
@@ -309,7 +310,9 @@ public class InMemoryProvisioner implements HostProvisioner {
             if (a.memoryGb() < b.memoryGb()) return -1;
             if (a.diskGb() > b.diskGb()) return 1;
             if (a.diskGb() < b.diskGb()) return -1;
-            return Double.compare(a.vcpu(), b.vcpu());
+            if (a.vcpu() > b.vcpu()) return 1;
+            if (a.vcpu() < b.vcpu()) return -1;
+            return 0;
         }
     }
 

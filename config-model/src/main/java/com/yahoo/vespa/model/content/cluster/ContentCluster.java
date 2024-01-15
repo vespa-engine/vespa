@@ -209,10 +209,20 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 docprocChain = docprocChain.trim();
             }
             if (docprocCluster != null && !docprocCluster.isEmpty()) {
-                c.getSearch().getIndexingDocproc().setClusterName(docprocCluster);
+                if (!c.getSearch().hasIndexedCluster() && c.getSearch().getIndexingDocproc().isEmpty() &&
+                        docprocChain != null && !docprocChain.isEmpty()) {
+                    c.getSearch().setupStreamingSearchIndexingDocProc();
+                }
+                var indexingDocproc = c.getSearch().getIndexingDocproc();
+                if (indexingDocproc.isPresent()) {
+                    indexingDocproc.get().setClusterName(docprocCluster);
+                }
             }
             if (docprocChain != null && !docprocChain.isEmpty()) {
-                c.getSearch().getIndexingDocproc().setChainName(docprocChain);
+                var indexingDocproc = c.getSearch().getIndexingDocproc();
+                if (indexingDocproc.isPresent()) {
+                    indexingDocproc.get().setChainName(docprocChain);
+                }
             }
         }
 
@@ -291,7 +301,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     Objects.requireNonNull(admin.getLogserver(), "logserver cannot be null");
                     List<HostResource> host = List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
-                                                                         host, clusterName, true, deployState),
+                                                                         host,
+                                                                         clusterName,
+                                                                         true,
+                                                                         deployState),
                                                 deployState);
                 }
                 clusterControllers = admin.getClusterControllers();
@@ -444,6 +457,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
+        if (getSearch().getIndexingDocproc().isEmpty()) return;
         DocumentProtocol.getConfig(builder, getConfigId());
     }
 

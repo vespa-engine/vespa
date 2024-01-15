@@ -1440,34 +1440,41 @@ public class ContentClusterTest extends ContentBaseTest {
         assertGroupsAllowedDown(2, 1, 2);
     }
 
-    private void assertIndexingDocprocEnabled(boolean indexed) {
+    private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled) {
         String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
-                "    <search/>" +
+                "    <document-processing/>" +
                 "  </container>" +
                 "  <content id='search' version='1.0'>" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
+                "      <document-processing cluster='default'" + (force ? " chain='indexing'" : "") + "/>" +
                 "      <document type='type1' mode='" + (indexed ? "index" : "streaming") + "'/>" +
                 "    </documents>" +
                 "  </content>" +
                 "</services>";
         VespaModel model = createEnd2EndOneNode(new TestProperties(), services);
         var searchCluster = model.getContentClusters().get("search").getSearch();
-        assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
+        assertEquals(expEnabled, searchCluster.getIndexingDocproc().isPresent());
     }
 
     @Test
     void testIndexingDocprocEnabledWhenIndexMode()
     {
-        assertIndexingDocprocEnabled(true);
+        assertIndexingDocprocEnabled(true, false, true);
     }
 
     @Test
     void testIndexingDocprocNotEnabledWhenStreamingMode()
     {
-        assertIndexingDocprocEnabled(false);
+        assertIndexingDocprocEnabled(false, false, false);
+    }
+
+    @Test
+    void testIndexingDocprocEnabledWhenStreamingModeAndForced()
+    {
+        assertIndexingDocprocEnabled(false, true, true);
     }
 
     private void assertGroupsAllowedDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {

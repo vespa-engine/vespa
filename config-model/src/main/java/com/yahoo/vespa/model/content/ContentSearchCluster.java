@@ -58,7 +58,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster indexedCluster;
-    private final IndexingDocproc indexingDocproc;
+    private Optional<IndexingDocproc> indexingDocproc;
     private Redundancy redundancy;
 
     private final String clusterName;
@@ -208,7 +208,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                  double fractionOfMemoryReserved)
     {
         super(parent, "search");
-        this.indexingDocproc = new IndexingDocproc();
+        this.indexingDocproc = Optional.empty();
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
@@ -262,6 +262,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                 throw new IllegalArgumentException("Duplicate indexed cluster '" + indexedCluster.getClusterName() + "'");
             }
             indexedCluster = (IndexedSearchCluster)sc;
+            if (indexingDocproc.isPresent()) {
+                throw new IllegalArgumentException("Indexing docproc has previously been setup for streaming search");
+            }
+            indexingDocproc = Optional.of(indexedCluster.getIndexingDocproc());
         }
         clusters.put(sc.getClusterName(), sc);
     }
@@ -479,7 +483,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     public Map<String, SearchCluster> getClusters() { return clusters; }
     public IndexedSearchCluster getIndexed() { return indexedCluster; }
     public boolean hasIndexedCluster()       { return indexedCluster != null; }
-    public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
+    public Optional<IndexingDocproc> getIndexingDocproc() { return indexingDocproc; }
+    public void setupStreamingSearchIndexingDocProc() {
+        if (indexingDocproc.isEmpty()) {
+            indexingDocproc = Optional.of(new IndexingDocproc());
+        }
+    }
     public String getClusterName() { return clusterName; }
 
     @Override

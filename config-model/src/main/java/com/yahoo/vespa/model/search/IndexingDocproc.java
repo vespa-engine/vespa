@@ -3,8 +3,6 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 
-import java.util.Objects;
-
 /**
  * Utility class to track configuration for which indexing docproc to use by a search cluster.
  */
@@ -53,7 +51,7 @@ public class IndexingDocproc {
     }
 
     public String getServiceName() {
-        return Objects.requireNonNull(chain).getServiceName();
+        return chain.getServiceName();
     }
 
     /**

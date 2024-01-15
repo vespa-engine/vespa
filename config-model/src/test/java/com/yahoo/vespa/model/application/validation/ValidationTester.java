@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SCHEMA;
 import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SCHEMA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**

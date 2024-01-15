@@ -110,7 +110,11 @@ public final class DocumentProtocol implements Protocol,
         for (ContentCluster cluster : Content.getContentClusters(repo)) {
             DocumentProtocolPoliciesConfig.Cluster.Builder clusterBuilder = new DocumentProtocolPoliciesConfig.Cluster.Builder();
             addSelector(cluster.getConfigId(), cluster.getRoutingSelector(), clusterBuilder);
-            addRoutes(getDirectRouteName(cluster.getConfigId()), getIndexedRouteName(cluster.getConfigId()), clusterBuilder);
+            if (cluster.getSearch().getIndexingDocproc().isPresent())
+                addRoutes(getDirectRouteName(cluster.getConfigId()), getIndexedRouteName(cluster.getConfigId()), clusterBuilder);
+            else
+                clusterBuilder.defaultRoute(cluster.getConfigId());
+
             builder.cluster(cluster.getConfigId(), clusterBuilder);
         }
     }
@@ -222,13 +226,18 @@ public final class DocumentProtocol implements Protocol,
     private static void addContentRouting(List<ContentCluster> content, RoutingTableSpec table) {
         for (ContentCluster cluster : content) {
             RouteSpec spec = new RouteSpec(cluster.getConfigId());
-            var indexingDocproc = cluster.getSearch().getIndexingDocproc();
-            table.addRoute(spec.addHop("[MessageType:" + cluster.getConfigId() + "]"));
-            table.addRoute(new RouteSpec(getIndexedRouteName(cluster.getConfigId()))
-                                   .addHop(indexingDocproc.getServiceName())
-                                   .addHop("[Content:cluster=" + cluster.getName() + "]"));
-            table.addRoute(new RouteSpec(getDirectRouteName(cluster.getConfigId()))
-                                   .addHop("[Content:cluster=" + cluster.getName() + "]"));
+
+            if (cluster.getSearch().getIndexingDocproc().isPresent()) {
+                var indexingDocproc = cluster.getSearch().getIndexingDocproc().get();
+                table.addRoute(spec.addHop("[MessageType:" + cluster.getConfigId() + "]"));
+                table.addRoute(new RouteSpec(getIndexedRouteName(cluster.getConfigId()))
+                                       .addHop(indexingDocproc.getServiceName())
+                                       .addHop("[Content:cluster=" + cluster.getName() + "]"));
+                table.addRoute(new RouteSpec(getDirectRouteName(cluster.getConfigId()))
+                                       .addHop("[Content:cluster=" + cluster.getName() + "]"));
+            } else {
+                table.addRoute(spec.addHop("[Content:cluster=" + cluster.getName() + "]"));
+            }
             table.addRoute(new RouteSpec("storage/cluster." + cluster.getName())
                                    .addHop("route:" + cluster.getConfigId()));
         }

@@ -41,6 +41,7 @@ public class IndexedSearchCluster extends SearchCluster
         DispatchNodesConfig.Producer,
         ConfigInstance.Producer {
 
+    private final IndexingDocproc indexingDocproc;
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 
@@ -67,6 +68,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
+        indexingDocproc = new IndexingDocproc();
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
@@ -75,6 +77,9 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     protected IndexingMode getIndexingMode() { return IndexingMode.REALTIME; }
+
+    public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
+
 
     public void addSearcher(SearchNode searcher) {
         searchNodes.add(searcher);

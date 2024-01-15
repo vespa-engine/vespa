@@ -65,13 +65,9 @@ public class StorageContentTest extends ContentBaseTest {
         DocumentProtocol protocol = (DocumentProtocol) routing.getProtocols().get(0);
 
         RoutingTableSpec spec = protocol.getRoutingTableSpec();
-        assertEquals(3, spec.getNumHops());
-        assertEquals("docproc/cluster.bar.indexing/chain.indexing", spec.getHop(0).getName());
-        assertEquals("[LoadBalancer:cluster=docproc/cluster.bar.indexing;session=chain.indexing]", spec.getHop(0).getSelector());
-        assertEquals("docproc/cluster.zoo.indexing/chain.indexing", spec.getHop(1).getName());
-        assertEquals("[LoadBalancer:cluster=docproc/cluster.zoo.indexing;session=chain.indexing]", spec.getHop(1).getSelector());
-        assertEquals("indexing", spec.getHop(2).getName());
-        assertEquals("[DocumentRouteSelector]", spec.getHop(2).getSelector());
+        assertEquals(1, spec.getNumHops());
+        assertEquals("indexing", spec.getHop(0).getName());
+        assertEquals("[DocumentRouteSelector]", spec.getHop(0).getSelector());
 
         Map<String, RouteSpec> routes = new TreeMap<>();
 
