@@ -163,7 +163,7 @@ class AggregateTestRunnerTest {
             }
         }
         catch (Exception e) {
-            TestReport.trimStackTraces(e);
+            TestReport.trimStackTraces(e, "org.junit.platform.commons.util.ReflectionUtils");
             assertEquals("""
                             java.lang.RuntimeException: java.lang.RuntimeException: inner
                             \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:162)
