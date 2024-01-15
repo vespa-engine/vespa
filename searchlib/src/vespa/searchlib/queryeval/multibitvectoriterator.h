@@ -37,12 +37,20 @@ public:
     bool seek(uint32_t docId) noexcept;
     bool acceptExtraFilter() const noexcept { return Update::isAnd(); }
 private:
-    bool updateLastValue(uint32_t docId) noexcept;
+    bool updateLastValue(uint32_t docId) noexcept {
+        if (docId >= _lastMaxDocIdLimit) {
+            return updateLastValueCold(docId);
+        }
+        return false;
+    }
+    VESPA_DLL_LOCAL bool updateLastValueCold(uint32_t docId) noexcept __attribute__((noinline));
+    VESPA_DLL_LOCAL void fetchChunk(uint32_t docId) noexcept __attribute__((noinline));
+
     using IAccelrated = vespalib::hwaccelrated::IAccelrated;
 
     Update              _update;
     const IAccelrated & _accel;
-    alignas(64) Word    _lastWords[8];
+    alignas(64) Word    _lastWords[16];
     static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
 };
 

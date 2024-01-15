@@ -52,5 +52,8 @@ metric.searchHandlerPaths[]           string
 # User-agent names to ignore wrt statistics (crawlers etc)
 metric.ignoredUserAgents[]            string
 
+# Whether to enable scheduled metric reporter. Disabled for unit testing to stop metric counters from being reset.
+metric.reporterEnabled                bool   default = true
+
 # Whether to enable jdisc connection log
 connectionLog.enabled                 bool default=false

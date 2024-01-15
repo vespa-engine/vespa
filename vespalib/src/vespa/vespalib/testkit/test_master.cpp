@@ -18,11 +18,6 @@ const char *skip_path(const char *file) {
     return (last == nullptr) ? file : (last + 1);
 }
 
-std::string get_source_dir() {
-    const char *dir = getenv("SOURCE_DIRECTORY");
-    return (dir ? dir : ".");
-}
-
 } // namespace vespalib::<unnamed>
 
 //-----------------------------------------------------------------------------
@@ -170,7 +165,6 @@ TestMaster::reportConclusion(const lock_guard &)
 TestMaster::TestMaster()
     : _lock(),
       _name("<unnamed>"),
-      _path_prefix(get_source_dir() + "/"),
       _state(),
       _threadStorage()
 {
@@ -193,12 +187,6 @@ TestMaster::getName()
 {
     lock_guard guard(_lock);
     return _name;
-}
-
-std::string
-TestMaster::get_path(const std::string &local_file)
-{
-    return (_path_prefix + local_file);
 }
 
 void

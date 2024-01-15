@@ -9,7 +9,7 @@ NearestNeighborQueryNode::NearestNeighborQueryNode(std::unique_ptr<QueryNodeResu
                                                    const string& query_tensor_name, const string& field_name,
                                                    uint32_t target_hits, double distance_threshold,
                                                    int32_t unique_id, search::query::Weight weight)
-    : QueryTerm(std::move(resultBase), query_tensor_name, field_name, Type::NEAREST_NEIGHBOR),
+    : QueryTerm(std::move(resultBase), query_tensor_name, field_name, Type::NEAREST_NEIGHBOR, Normalizing::NONE),
       _target_hits(target_hits),
       _distance_threshold(distance_threshold),
       _distance(),

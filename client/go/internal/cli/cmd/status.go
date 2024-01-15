@@ -176,7 +176,11 @@ $ vespa status deployment -t local [session-id] --wait 600
 			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
-				return err
+				var hints []string
+				if waiter.Timeout == 0 {
+					hints = []string{"Consider using the --wait flag to wait for completion"}
+				}
+				return ErrCLI{Status: 1, warn: true, hints: hints, error: err}
 			}
 			if t.IsCloud() {
 				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))

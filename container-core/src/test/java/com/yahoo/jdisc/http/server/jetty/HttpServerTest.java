@@ -178,7 +178,7 @@ public class HttpServerTest {
         var metricConsumer = new MetricConsumerMock();
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
-                new ServerConfig.Builder(),
+                new ServerConfig.Builder().metric(new ServerConfig.Metric.Builder().reporterEnabled(false)),
                 new ConnectorConfig.Builder(),
                 binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
         driver.client()
@@ -614,7 +614,8 @@ public class HttpServerTest {
     @Test
     void requireThatResponseStatsAreCollected() throws Exception {
         RequestTypeHandler handler = new RequestTypeHandler();
-        JettyTestDriver driver = JettyTestDriver.newInstance(handler);
+        var cfg = new ServerConfig.Builder().metric(new ServerConfig.Metric.Builder().reporterEnabled(false));
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(handler, cfg, new ConnectorConfig.Builder());
         var statisticsCollector = ResponseMetricAggregator.getBean(driver.server());;
         {
             List<ResponseMetricAggregator.StatisticsEntry> stats = statisticsCollector.takeStatistics();
@@ -655,7 +656,8 @@ public class HttpServerTest {
                                                                                       statisticsCollector) {
         List<ResponseMetricAggregator.StatisticsEntry> entries = Collections.emptyList();
         int tries = 0;
-        while (entries.isEmpty() && tries < 10000) {
+        // Wait up to 30 seconds before giving up
+        while (entries.isEmpty() && tries < 300) {
             entries = statisticsCollector.takeStatistics();
             if (entries.isEmpty())
                 try {Thread.sleep(100); } catch (InterruptedException e) {}

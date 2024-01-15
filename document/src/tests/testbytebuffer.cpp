@@ -4,9 +4,9 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/fieldvalue/serializablearray.h>
 #include <vespa/document/util/bufferexceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <gtest/gtest.h>
 
 
 using namespace document;

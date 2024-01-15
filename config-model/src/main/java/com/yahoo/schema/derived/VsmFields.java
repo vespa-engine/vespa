@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.schema.FieldSets;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.Matching;
@@ -45,7 +46,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
     @Override
     protected void derive(SDDocumentType document, Schema schema) {
         super.derive(document, schema);
-        StreamingDocumentType docType=getDocumentType(document.getName());
+        StreamingDocumentType docType = getDocumentType(document.getName());
         if (docType == null) {
             docType = new StreamingDocumentType(document.getName(), schema.fieldSets());
             doctypes.put(document.getName(), docType);
@@ -55,7 +56,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
     }
 
-    protected void derive(StreamingDocumentType document, SDField field) {
+    private void derive(StreamingDocumentType document, SDField field) {
         if (field.usesStructOrMap()) {
             if (GeoPos.isAnyPos(field)) {
                 StreamingField streamingField = new StreamingField(field);
@@ -96,8 +97,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         fields.put(name, field);
     }
 
-    /** Returns a streaming index, or null if there is none with this name */
-    public StreamingDocumentType getDocumentType(String name) {
+    private StreamingDocumentType getDocumentType(String name) {
         return doctypes.get(name);
     }
 
@@ -144,7 +144,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             public static Type GEO_POSITION = new Type("GEOPOS");
             public static Type NEAREST_NEIGHBOR = new Type("NEAREST_NEIGHBOR");
 
-            private String searchMethod;
+            private final String searchMethod;
 
             private Type(String searchMethod) {
                 this.searchMethod = searchMethod;
@@ -261,10 +261,23 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             return getMatchingName();
         }
 
+        private static VsmfieldsConfig.Fieldspec.Normalize.Enum toNormalize(Matching matching) {
+            // The ordering/priority below is important.
+            // exact = > lowercase only
+            if (matching.getType() == MatchType.EXACT) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
+            // cased takes priority
+            if (matching.getCase() == Case.CASED) return VsmfieldsConfig.Fieldspec.Normalize.Enum.NONE;
+            // word implies lowercase (used for attributes)
+            if (matching.getType() == MatchType.WORD) return VsmfieldsConfig.Fieldspec.Normalize.Enum.LOWERCASE;
+            // Everything else
+            return VsmfieldsConfig.Fieldspec.Normalize.LOWERCASE_AND_FOLD;
+        }
+
         public VsmfieldsConfig.Fieldspec.Builder getFieldSpecConfig() {
             var fB = new VsmfieldsConfig.Fieldspec.Builder();
             fB.name(getName())
               .searchmethod(VsmfieldsConfig.Fieldspec.Searchmethod.Enum.valueOf(type.getSearchMethod()))
+              .normalize(toNormalize(matching))
               .arg1(getArg1())
               .fieldtype(isAttribute
                              ? VsmfieldsConfig.Fieldspec.Fieldtype.ATTRIBUTE

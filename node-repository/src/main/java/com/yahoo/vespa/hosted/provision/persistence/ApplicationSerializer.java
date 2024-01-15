@@ -76,6 +76,8 @@ public class ApplicationSerializer {
     private static final String cpuKey = "cpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
+    private static final String gpuKey = "gpu";
+    private static final String gpuMemory = "gpuMemory";
     private static final String fromKey = "from";
     private static final String toKey = "to";
     private static final String generationKey = "generation";
@@ -201,12 +203,16 @@ public class ApplicationSerializer {
         loadObject.setDouble(cpuKey, load.cpu());
         loadObject.setDouble(memoryKey, load.memory());
         loadObject.setDouble(diskKey, load.disk());
+        loadObject.setDouble(gpuKey, load.gpu());
+        loadObject.setDouble(gpuMemory, load.gpuMemory());
     }
 
     private static Load loadFromSlime(Inspector loadObject) {
         return new Load(loadObject.field(cpuKey).asDouble(),
                         loadObject.field(memoryKey).asDouble(),
-                        loadObject.field(diskKey).asDouble());
+                        loadObject.field(diskKey).asDouble(),
+                        loadObject.field(gpuKey).asDouble(),
+                        loadObject.field(gpuMemory).asDouble());
     }
 
     private static void toSlime(Autoscaling.Metrics metrics, Cursor metricsObject) {

@@ -1,16 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.test.AnotherrestartConfig;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.test.RestartConfig;
-import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.test.AnotherrestartConfig;
+import com.yahoo.test.RestartConfig;
+import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -25,7 +24,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Testing the validator on both a stub model and a real-life Vespa model.
@@ -152,11 +153,6 @@ public class ConfigValueChangeValidatorTest {
         assertEmptyLog();
     }
 
-    private List<ConfigChangeAction> getConfigChanges(VespaModel currentModel, VespaModel nextModel) {
-        ConfigValueChangeValidator validator = new ConfigValueChangeValidator();
-        return validator.validate(currentModel, nextModel, new DeployState.Builder().deployLogger(logger).build());
-    }
-
     private List<ConfigChangeAction> getConfigChanges(AbstractConfigProducerRoot currentModel,
                                                       AbstractConfigProducerRoot nextModel) {
         ConfigValueChangeValidator validator = new ConfigValueChangeValidator();
@@ -245,8 +241,7 @@ public class ConfigValueChangeValidatorTest {
             setHostResource(new HostResource(new Host(null, "localhost")));
         }
 
-        @Override
-        public int getPortCount() {
+        @Override public int getPortCount() {
             return 0;
         }
 
@@ -262,8 +257,7 @@ public class ConfigValueChangeValidatorTest {
             this.value = value;
         }
 
-        @Override
-        public void getConfig(RestartConfig.Builder builder) {
+        @Override public void getConfig(RestartConfig.Builder builder) {
             builder.value(value);
         }
 
@@ -283,8 +277,7 @@ public class ConfigValueChangeValidatorTest {
             this.anotherValue = anotherValue;
         }
 
-        @Override
-        public void getConfig(AnotherrestartConfig.Builder builder) {
+        @Override public void getConfig(AnotherrestartConfig.Builder builder) {
             builder.anothervalue(anotherValue);
         }
     }

@@ -52,7 +52,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                                                                         .deployLogger(logger)
                                                                                         .rankProfileRegistry(builder.getRankProfileRegistry())
                                                                                         .queryProfiles(builder.getQueryProfileRegistry())
-                                                                                        .build());
+                                                                                        .build(), false);
         return export(dirName, builder, config);
     }
 

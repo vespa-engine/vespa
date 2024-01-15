@@ -43,7 +43,6 @@ vespa_add_library(searchlib_attribute OBJECT
     direct_multi_term_blueprint.cpp
     distance_metric_utils.cpp
     diversity.cpp
-    document_weight_or_filter_search.cpp
     empty_search_context.cpp
     enum_store_compaction_spec.cpp
     enum_store_dictionary.cpp
@@ -84,6 +83,7 @@ vespa_add_library(searchlib_attribute OBJECT
     multi_numeric_search_context.cpp
     multi_string_enum_hint_search_context.cpp
     multi_string_enum_search_context.cpp
+    multi_term_or_filter_search.cpp
     multi_value_mapping.cpp
     multi_value_mapping_base.cpp
     multienumattribute.cpp

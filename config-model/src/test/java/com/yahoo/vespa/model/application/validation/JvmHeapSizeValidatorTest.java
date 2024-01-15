@@ -13,6 +13,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
@@ -38,27 +39,25 @@ class JvmHeapSizeValidatorTest {
 
     @Test
     void fails_on_too_low_jvm_percentage() throws IOException, SAXException {
-        var deployState = createDeployState(8, 7L * 1024 * 1024 * 1024);
+        var deployState = createDeployState(9, 7L * 1024 * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated percentage of memory of JVM in cluster 'container' is too low (3% < 15%). Estimated cost of ONNX models is 7.00GB";
-        assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
+        ValidationTester.expect(new JvmHeapSizeValidator(), model, deployState,
+                                "Allocated percentage of memory of JVM in cluster 'container' is too low (12% < 15%). Estimated cost of ONNX models is 7.00GB");
     }
 
     @Test
     void fails_on_too_low_heap_size() throws IOException, SAXException {
         var deployState = createDeployState(2.2, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        var e = assertThrows(IllegalArgumentException.class, () -> new JvmHeapSizeValidator().validate(model, deployState));
-        String expectedMessage = "Allocated memory to JVM in cluster 'container' is too low (0.50GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.";
-        assertTrue(e.getMessage().contains(expectedMessage), e.getMessage());
+        ValidationTester.expect(new JvmHeapSizeValidator(), model, deployState,
+                                "Allocated memory to JVM in cluster 'container' is too low (0.50GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.");
     }
 
     @Test
     void accepts_adequate_heap_size() throws IOException, SAXException {
         var deployState = createDeployState(8, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        assertDoesNotThrow(() -> new JvmHeapSizeValidator().validate(model, deployState));
+        assertDoesNotThrow(() -> ValidationTester.validate(new JvmHeapSizeValidator(), model, deployState));
     }
 
     @Test
@@ -80,7 +79,7 @@ class JvmHeapSizeValidatorTest {
                 </services>""";
         var deployState = createDeployState(servicesXml, 2, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        assertDoesNotThrow(() -> new JvmHeapSizeValidator().validate(model, deployState));
+        assertDoesNotThrow(() -> ValidationTester.validate(new JvmHeapSizeValidator(), model, deployState));
     }
 
     private static DeployState createDeployState(String servicesXml, double nodeGb, long modelCostBytes) {
@@ -121,18 +120,13 @@ class JvmHeapSizeValidatorTest {
         ModelCostDummy(long modelCost) { this.modelCost = modelCost; }
 
         @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId) { return this; }
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}
         @Override public boolean restartOnDeploy() { return false;}
+        @Override public void store() {}
         @Override public long aggregatedModelCostInBytes() { return totalCost.get(); }
-        @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-
-        @Override
-        public void registerModel(URI uri) {
-            assertEquals("https://my/url/model.onnx", uri.toString());
-            totalCost.addAndGet(modelCost);
-        }
 
         @Override
         public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {

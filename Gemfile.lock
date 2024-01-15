@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     Ascii85 (1.1.0)
-    addressable (2.8.5)
+    addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
     afm (0.2.2)
     async (2.6.4)
@@ -25,7 +25,7 @@ GEM
     fiber-annotation (0.2.0)
     fiber-local (1.0.0)
     forwardable-extended (2.6.0)
-    google-protobuf (3.24.3-x86_64-linux)
+    google-protobuf (3.24.4)
     hashery (2.1.2)
     html-proofer (5.0.8)
       addressable (~> 2.3)
@@ -40,7 +40,7 @@ GEM
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
     io-event (1.3.2)
-    jekyll (4.3.2)
+    jekyll (4.3.3)
       addressable (~> 2.4)
       colorator (~> 1.0)
       em-websocket (~> 0.5)
@@ -87,7 +87,7 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
-    public_suffix (5.0.3)
+    public_suffix (5.0.4)
     racc (1.7.1)
     rainbow (3.1.1)
     rake (13.1.0)

@@ -65,14 +65,12 @@ private:
     std::vector<vespalib::string> _dumpFeatures;
     Warnings                 _warnings;
     StringStringMap          _feature_rename_map;
+    bool                     _sort_blueprints_by_cost;
     bool                     _ignoreDefaultRankFeatures;
     bool                     _compiled;
     bool                     _compileError;
     bool                     _degradationAscendingOrder;
     bool                     _always_mark_phrase_expensive;
-    bool                     _create_postinglist_when_non_strict;
-    bool                     _use_estimate_for_fetch_postings;
-    bool                     _use_thread_bundle_for_fetch_postings;
     vespalib::string         _diversityAttribute;
     uint32_t                 _diversityMinGroups;
     double                   _diversityCutoffFactor;
@@ -225,9 +223,6 @@ public:
         return _degradationAscendingOrder;
     }
     bool always_mark_phrase_expensive() const noexcept { return _always_mark_phrase_expensive; }
-    bool create_postinglist_when_non_strict() const noexcept { return _create_postinglist_when_non_strict; }
-    bool use_estimate_for_fetch_postings() const noexcept { return _use_estimate_for_fetch_postings; }
-    bool use_thread_bundle_for_fetch_postings() const noexcept { return _use_thread_bundle_for_fetch_postings; }
     /** get number of hits to collect during graceful degradation in match phase */
     uint32_t getDegradationMaxHits() const {
         return _degradationMaxHits;
@@ -465,6 +460,7 @@ public:
     const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
 
     bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
+    bool sort_blueprints_by_cost() const noexcept { return _sort_blueprints_by_cost; }
 };
 
 }

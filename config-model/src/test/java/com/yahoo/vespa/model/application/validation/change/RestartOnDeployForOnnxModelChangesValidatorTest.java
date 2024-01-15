@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,6 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,7 +72,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
-        return new RestartOnDeployForOnnxModelChangesValidator().validate(current, next, deployStateBuilder().build());
+        return ValidationTester.validateChanges(new RestartOnDeployForOnnxModelChangesValidator(), next, deployStateBuilder().previousModel(current).build());
     }
 
     private static OnnxModelCost onnxModelCost() {
@@ -80,7 +80,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static OnnxModelCost onnxModelCost(long estimatedCost, long hash) {
-        return (appPkg, applicationId) -> new OnnxModelCost.Calculator() {
+        return (appPkg, applicationId, clusterId) -> new OnnxModelCost.Calculator() {
 
             private final Map<String, OnnxModelCost.ModelInfo> models = new HashMap<>();
             private boolean restartOnDeploy = false;
@@ -89,17 +89,11 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
             public long aggregatedModelCostInBytes() { return estimatedCost; }
 
             @Override
-            public void registerModel(ApplicationFile path) {}
-
-            @Override
             public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
 
             @Override
-            public void registerModel(URI uri) {}
-
-            @Override
             public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {
-                models.put(uri.toString(), new OnnxModelCost.ModelInfo(uri.toString(), estimatedCost, hash, Optional.ofNullable(onnxModelOptions)));
+                models.put(uri.toString(), new OnnxModelCost.ModelInfo(uri.toString(), estimatedCost, hash, onnxModelOptions));
             }
 
             @Override
@@ -110,6 +104,9 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
 
             @Override
             public boolean restartOnDeploy() { return restartOnDeploy; }
+
+            @Override
+            public void store() {}
         };
     }
 

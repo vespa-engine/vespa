@@ -96,7 +96,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
 {
     assert(capacity >= end);
     uint32_t words = numActiveWords(start, capacity);
-    words += (-words & 15); // Pad to 64 byte alignment
+    words += (-words & (getAlignment()/sizeof(Word) - 1)); // Pad to required alignment
     const size_t sz(words * sizeof(Word));
     Alloc alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);
@@ -445,7 +445,6 @@ void
 MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface &file,
                        int64_t offset, Index doccount)
 {
-    assert((offset & (getAlignment() - 1)) == 0);
     void *mapptr = file.MemoryMapPtr(offset);
     assert(mapptr != nullptr);
     if (mapptr != nullptr) {
@@ -478,10 +477,21 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     in >> size >> cachedHits >> fileBytes;
     assert(size <= std::numeric_limits<BitVector::Index>::max());
     assert(cachedHits <= size || ! bv.isValidCount(cachedHits));
-    if (bv.size() != size)
+    if (bv.size() != size) {
         bv.resize(size);
-    assert(bv.getFileBytes() == fileBytes);
-    in.read(bv.getStart(), bv.getFileBytes());
+    }
+    size_t expected_file_bytes = bv.getFileBytes();
+    size_t read_size = fileBytes;
+    size_t skip_size = 0;
+    if (expected_file_bytes < fileBytes) {
+        read_size = expected_file_bytes;
+        skip_size = fileBytes - expected_file_bytes;
+    }
+    in.read(bv.getStart(), read_size);
+    if (skip_size != 0) {
+        std::vector<char> dummy(skip_size);
+        in.read(dummy.data(), skip_size);
+    }
     assert(bv.testBit(size));
     bv.setTrueBits(cachedHits);
     return in;

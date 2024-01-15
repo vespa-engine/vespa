@@ -455,27 +455,15 @@ FuzzyAlgorithm::lookup(const Properties& props, vespalib::FuzzyMatchingAlgorithm
     return vespalib::fuzzy_matching_algorithm_from_string(value, default_value);
 }
 
+const vespalib::string SortBlueprintsByCost::NAME("vespa.matching.sort_blueprints_by_cost");
+const bool SortBlueprintsByCost::DEFAULT_VALUE(false);
+bool SortBlueprintsByCost::check(const Properties &props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
 const vespalib::string AlwaysMarkPhraseExpensive::NAME("vespa.matching.always_mark_phrase_expensive");
 const bool AlwaysMarkPhraseExpensive::DEFAULT_VALUE(false);
 bool AlwaysMarkPhraseExpensive::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
-const vespalib::string CreatePostingListWhenNonStrict::NAME("vespa.matching.create_postinglist_when_non_strict");
-const bool CreatePostingListWhenNonStrict::DEFAULT_VALUE(true);
-bool CreatePostingListWhenNonStrict::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
-const vespalib::string UseEstimateForFetchPostings::NAME("vespa.matching.use_estimate_for_fetch_postings");
-const bool UseEstimateForFetchPostings::DEFAULT_VALUE(false);
-bool UseEstimateForFetchPostings::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
-const vespalib::string UseThreadBundleForFetchPostings::NAME("vespa.matching.use_thread_bundle_for_fetch_postings");
-const bool UseThreadBundleForFetchPostings::DEFAULT_VALUE(false);
-bool UseThreadBundleForFetchPostings::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 

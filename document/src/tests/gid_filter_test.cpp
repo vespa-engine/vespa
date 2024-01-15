@@ -4,7 +4,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/testdocrepo.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace document::select {
 

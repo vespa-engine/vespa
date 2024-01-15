@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content.utils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 

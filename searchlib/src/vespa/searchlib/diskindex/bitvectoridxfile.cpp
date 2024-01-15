@@ -2,6 +2,7 @@
 
 #include "bitvectoridxfile.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -13,6 +14,7 @@ namespace search::diskindex {
 
 using search::index::BitVectorWordSingleKey;
 using search::common::FileHeaderContext;
+using namespace tags;
 
 namespace {
 
@@ -45,10 +47,9 @@ BitVectorIdxFileWrite::idxSize() const
 }
 
 void
-BitVectorIdxFileWrite::open(const vespalib::string &name,
-                         uint32_t docIdLimit,
-                         const TuneFileSeqWrite &tuneFileWrite,
-                         const FileHeaderContext &fileHeaderContext)
+BitVectorIdxFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
+                            const TuneFileSeqWrite &tuneFileWrite,
+                            const FileHeaderContext &fileHeaderContext)
 {
     if (_numKeys != 0) {
         assert(docIdLimit == _docIdLimit);
@@ -90,13 +91,14 @@ BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(h, _idxFile->GetFileName());
-    h.putTag(Tag("docIdLimit", _docIdLimit));
-    h.putTag(Tag("numKeys", _numKeys));
-    h.putTag(Tag("frozen", 0));
+    h.putTag(Tag(ENTRY_SIZE, (int64_t) BitVector::getFileBytes(_docIdLimit)));
+    h.putTag(Tag(DOCID_LIMIT, _docIdLimit));
+    h.putTag(Tag(NUM_KEYS, _numKeys));
+    h.putTag(Tag(FROZEN, 0));
     if (_scope != BitVectorKeyScope::SHARED_WORDS) {
-        h.putTag(Tag("fileBitSize", 0));
+        h.putTag(Tag(FILE_BIT_SIZE, 0));
     }
-    h.putTag(Tag("desc", "Bitvector dictionary file, single words"));
+    h.putTag(Tag(DESC, "Bitvector dictionary file, single words"));
     _idxFile->SetPosition(0);
     _idxHeaderLen = h.writeFile(*_idxFile);
     _idxFile->Flush();
@@ -109,10 +111,10 @@ BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
     using Tag = vespalib::GenericHeader::Tag;
     readHeader(h, _idxFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);
-    h.putTag(Tag("numKeys", _numKeys));
-    h.putTag(Tag("frozen", 1));
+    h.putTag(Tag(NUM_KEYS, _numKeys));
+    h.putTag(Tag(FROZEN, 1));
     if (_scope != BitVectorKeyScope::SHARED_WORDS) {
-        h.putTag(Tag("fileBitSize", fileBitSize));
+        h.putTag(Tag(FILE_BIT_SIZE, fileBitSize));
     }
     bool sync_ok = _idxFile->Sync();
     assert(sync_ok);
@@ -160,17 +162,15 @@ BitVectorIdxFileWrite::sync()
 void
 BitVectorIdxFileWrite::close()
 {
-    if (_idxFile) {
-        if (_idxFile->IsOpened()) {
-            uint64_t pos = _idxFile->getPosition();
-            assert(pos == idxSize());
-            _idxFile->alignEndForDirectIO();
-            updateIdxHeader(pos * 8);
-            bool close_ok = _idxFile->Close();
-            assert(close_ok);
-        }
-        _idxFile.reset();
+    if (_idxFile && _idxFile->IsOpened()) {
+        uint64_t pos = _idxFile->getPosition();
+        assert(pos == idxSize());
+        _idxFile->alignEndForDirectIO();
+        updateIdxHeader(pos * 8);
+        bool close_ok = _idxFile->Close();
+        assert(close_ok);
     }
+    _idxFile.reset();
 }
 
 }

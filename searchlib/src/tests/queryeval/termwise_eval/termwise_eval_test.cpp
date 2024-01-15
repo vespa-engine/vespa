@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
@@ -8,11 +7,12 @@
 #include <vespa/searchlib/queryeval/termwise_search.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/termwise_blueprint_helper.h>
-#include <vespa/vespalib/test/insertion_operators.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 using namespace search;
@@ -192,7 +192,10 @@ std::vector<uint32_t> make_expect(uint32_t begin, uint32_t end) {
     return expect;
 }
 
-void verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_t begin, uint32_t end) {
+void
+verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_t begin, uint32_t end, const vespalib::string& label)
+{
+    SCOPED_TRACE(label);
     std::vector<uint32_t> actual;
     search.initRange(begin, end);
     for (uint32_t docid = begin; docid < end; ++docid) {
@@ -200,7 +203,7 @@ void verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_
             actual.push_back(docid);
         }
     }
-    EXPECT_EQUAL(expect, actual);
+    EXPECT_EQ(expect, actual);
 }
 
 //-----------------------------------------------------------------------------
@@ -213,95 +216,107 @@ MatchData::UP make_match_data() {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that pseudo term produces correct results") {
-    TEST_DO(verify({1,2,3,4,5}, *UP(TERM({1,2,3,4,5}, true)), 1, 6));
-    TEST_DO(verify({1,2,3,4,5}, *UP(TERM({1,2,3,4,5}, false)), 1, 6));
-    TEST_DO(verify({3,4,5}, *UP(TERM({1,2,3,4,5}, true)), 3, 6));
-    TEST_DO(verify({3,4,5}, *UP(TERM({1,2,3,4,5}, false)), 3, 6));
-    TEST_DO(verify({1,2,3}, *UP(TERM({1,2,3,4,5}, true)), 1, 4));
-    TEST_DO(verify({1,2,3}, *UP(TERM({1,2,3,4,5}, false)), 1, 4));
+TEST(TermwiseEvalTest, require_that_pseudo_term_produces_correct_results)
+{
+    verify({1,2,3,4,5}, *UP(TERM({1,2,3,4,5}, true)), 1, 6, "strict full");
+    verify({1,2,3,4,5}, *UP(TERM({1,2,3,4,5}, false)), 1, 6, "non-strict full");
+    verify({3,4,5}, *UP(TERM({1,2,3,4,5}, true)), 3, 6, "strict last");
+    verify({3,4,5}, *UP(TERM({1,2,3,4,5}, false)), 3, 6, "non-strict last");
+    verify({1,2,3}, *UP(TERM({1,2,3,4,5}, true)), 1, 4, "strict first");
+    verify({1,2,3}, *UP(TERM({1,2,3,4,5}, false)), 1, 4, "non-strict first");
 }
 
-TEST("require that normal search gives expected results") {
+TEST(TermwiseEvalTest, require_that_normal_search_gives_expected_results)
+{
     auto search = make_search(true);
-    TEST_DO(verify(make_expect(1, 10), *search, 1, 10));
+    verify(make_expect(1, 10), *search, 1, 10, "strict normal");
 }
 
-TEST("require that filter search gives expected results") {
+TEST(TermwiseEvalTest, require_that_filter_search_gives_expected_results)
+{
     auto search = make_filter_search(true);
-    TEST_DO(verify(make_expect(1, 10), *search, 1, 10));
+    verify(make_expect(1, 10), *search, 1, 10, "strict filter");
 }
 
-TEST("require that termwise AND/OR search produces appropriate results") {
+TEST(TermwiseEvalTest, require_that_termwise_and_or_or_search_produces_appropriate_results)
+{
     for (uint32_t begin: {1, 2, 5}) {
         for (uint32_t end: {6, 7, 10}) {
             for (bool strict_search: {true, false}) {
                 for (bool strict_wrapper: {true, false}) {
-                    TEST_STATE(make_string("begin: %u, end: %u, strict_search: %s, strict_wrapper: %s",
-                                    begin, end, strict_search ? "true" : "false",
-                                    strict_wrapper ? "true" : "false").c_str());
+                    auto label = make_string("begin: %u, end: %u, strict_search: %s, strict_wrapper: %s",
+                                             begin, end, strict_search ? "true" : "false",
+                                             strict_wrapper ? "true" : "false");
                     auto search = make_termwise(make_search(strict_search), strict_wrapper);
-                    TEST_DO(verify(make_expect(begin, end), *search, begin, end));
+                    verify(make_expect(begin, end), *search, begin, end, label);
                 }
             }
         }
     }
 }
 
-TEST("require that termwise filter search produces appropriate results") {
+TEST(TermwiseEvalTest, require_that_termwise_filter_search_produces_appropriate_results)
+{
     for (uint32_t begin: {1, 2, 5}) {
         for (uint32_t end: {6, 7, 10}) {
             for (bool strict_search: {true, false}) {
                 for (bool strict_wrapper: {true, false}) {
-                    TEST_STATE(make_string("begin: %u, end: %u, strict_search: %s, strict_wrapper: %s",
-                                    begin, end, strict_search ? "true" : "false",
-                                    strict_wrapper ? "true" : "false").c_str());
+                    auto label = make_string("begin: %u, end: %u, strict_search: %s, strict_wrapper: %s",
+                                             begin, end, strict_search ? "true" : "false",
+                                             strict_wrapper ? "true" : "false");
                     auto search = make_termwise(make_filter_search(strict_search), strict_wrapper);
-                    TEST_DO(verify(make_expect(begin, end), *search, begin, end));
+                    verify(make_expect(begin, end), *search, begin, end, label);
                 }
             }
         }
     }
 }
 
-TEST("require that termwise ANDNOT with single term works") {
-    TEST_DO(verify({2,3,4}, *make_termwise(ANDNOT({ TERM({1,2,3,4,5}, true) }, true), true), 2, 5));
+TEST(TermwiseEvalTest, require_that_termwise_andnot_with_single_term_works)
+{
+    verify({2,3,4}, *make_termwise(ANDNOT({ TERM({1,2,3,4,5}, true) }, true), true), 2, 5, "termwise andnot");
 }
 
-TEST("require that pseudo term is rewindable") {
+TEST(TermwiseEvalTest, require_that_pseudo_term_is_rewindable)
+{
     auto search = UP(TERM({1,2,3,4,5}, true));
-    TEST_DO(verify({3,4,5}, *search, 3, 6));
-    TEST_DO(verify({1,2,3,4}, *search, 1, 5));
+    verify({3,4,5}, *search, 3, 6, "pseudo term end");
+    verify({1,2,3,4}, *search, 1, 5, "pseudo term rewound to start");
 }
 
-TEST("require that termwise wrapper is rewindable") {
+TEST(TermwiseEvalTest, require_that_termwise_wrapper_is_rewindable)
+{
     auto search = make_termwise(make_search(true), true);
-    TEST_DO(verify(make_expect(3, 7), *search, 3, 7));
-    TEST_DO(verify(make_expect(1, 5), *search, 1, 5));
+    verify(make_expect(3, 7), *search, 3, 7, "termwise wrapper end");
+    verify(make_expect(1, 5), *search, 1, 5, "termwise wrapper rewound to start");
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that leaf blueprints allow termwise evaluation by default") {
+TEST(TermwiseEvalTest, require_that_leaf_blueprints_allow_termwise_evaluation_by_default)
+{
     MyBlueprint bp({});
     EXPECT_TRUE(bp.getState().allow_termwise_eval());
 }
 
-TEST("require that leaf blueprints can enable/disable termwise evaluation") {
+TEST(TermwiseEvalTest, require_that_leaf_blueprints_can_enable_and_disable_termwise_evaluation)
+{
     MyBlueprint enable({}, true);
     MyBlueprint disable({}, false);
     EXPECT_TRUE(enable.getState().allow_termwise_eval());
     EXPECT_FALSE(disable.getState().allow_termwise_eval());
 }
 
-TEST("require that intermediate blueprints disallow termwise evaluation by default") {
+TEST(TermwiseEvalTest, require_that_intermediate_blueprints_disallow_termwise_evaluation_by_default)
+{
     MyOr bp(false);
     bp.addChild(UP(new MyBlueprint({}, true)));
     bp.addChild(UP(new MyBlueprint({}, true)));
     EXPECT_FALSE(bp.getState().allow_termwise_eval());
 }
 
-TEST("require that intermediate blueprints can enable/disable termwise evaluation") {
+TEST(TermwiseEvalTest, require_that_intermediate_blueprints_can_enable_and_disable_termwise_evaluation)
+{
     MyOr enable(true, true);
     enable.addChild(UP(new MyBlueprint({}, true)));
     enable.addChild(UP(new MyBlueprint({}, true)));
@@ -312,7 +327,8 @@ TEST("require that intermediate blueprints can enable/disable termwise evaluatio
     EXPECT_FALSE(disable.getState().allow_termwise_eval());
 }
 
-TEST("require that intermediate blueprints cannot be termwise unless all its children are termwise") {
+TEST(TermwiseEvalTest, require_that_intermediate_blueprints_cannot_be_termwise_unless_all_its_children_are_termwise)
+{
     MyOr bp(true, true);
     bp.addChild(UP(new MyBlueprint({}, true)));
     bp.addChild(UP(new MyBlueprint({}, false)));
@@ -321,27 +337,30 @@ TEST("require that intermediate blueprints cannot be termwise unless all its chi
 
 //-----------------------------------------------------------------------------
 
-TEST("require that leafs have tree size 1") {
+TEST(TermwiseEvalTest, require_that_leafs_have_tree_size_1)
+{
     MyBlueprint bp({});
-    EXPECT_EQUAL(1u, bp.getState().tree_size());    
+    EXPECT_EQ(1u, bp.getState().tree_size());
 }
 
-TEST("require that tree size is accumulated correctly by intermediate nodes") {
+TEST(TermwiseEvalTest, require_that_tree_size_is_accumulated_correctly_by_intermediate_nodes)
+{
     MyOr bp(false);
-    EXPECT_EQUAL(1u, bp.getState().tree_size());    
+    EXPECT_EQ(1u, bp.getState().tree_size());
     bp.addChild(UP(new MyBlueprint({})));
     bp.addChild(UP(new MyBlueprint({})));
-    EXPECT_EQUAL(3u, bp.getState().tree_size());
+    EXPECT_EQ(3u, bp.getState().tree_size());
     auto child = UP(new MyOr(false));
     child->addChild(UP(new MyBlueprint({})));
     child->addChild(UP(new MyBlueprint({})));
     bp.addChild(std::move(child));
-    EXPECT_EQUAL(6u, bp.getState().tree_size());
+    EXPECT_EQ(6u, bp.getState().tree_size());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that any blueprint node can obtain the root") {
+TEST(TermwiseEvalTest, require_that_any_blueprint_node_can_obtain_the_root)
+{
     MyOr bp(false);
     bp.addChild(UP(new MyBlueprint({1,2,3})));
     bp.addChild(UP(new MyBlueprint({1,2,3,4,5,6})));
@@ -354,35 +373,38 @@ TEST("require that any blueprint node can obtain the root") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that match data keeps track of the termwise limit") {
+TEST(TermwiseEvalTest, require_that_match_data_keeps_track_of_the_termwise_limit)
+{
     auto md = make_match_data();
-    EXPECT_EQUAL(1.0, md->get_termwise_limit());
+    EXPECT_EQ(1.0, md->get_termwise_limit());
     md->set_termwise_limit(0.03);
-    EXPECT_EQUAL(0.03, md->get_termwise_limit());
+    EXPECT_EQ(0.03, md->get_termwise_limit());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that terwise test search string dump is detailed enough") {
-    EXPECT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
-                 make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString());
+TEST(TermwiseEvalTest, require_that_terwise_test_search_string_dump_is_detailed_enough)
+{
+    EXPECT_EQ(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+              make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
-                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, false), TERM({3}, true) }, true), true)->asString());
+    EXPECT_NE(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+              make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, false), TERM({3}, true) }, true), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
-                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, false), true)->asString());
+    EXPECT_NE(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+              make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, false), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
-                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), false)->asString());
+    EXPECT_NE(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+              make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), false)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
-                     make_termwise(OR({ TERM({1,2,3}, true), TERM({3}, true), TERM({2,3}, true) }, true), true)->asString());
+    EXPECT_NE(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+              make_termwise(OR({ TERM({1,2,3}, true), TERM({3}, true), TERM({2,3}, true) }, true), true)->asString());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that basic termwise evaluation works") {
+TEST(TermwiseEvalTest, require_that_basic_termwise_evaluation_works)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -391,12 +413,13 @@ TEST("require that basic termwise evaluation works") {
     my_or.addChild(UP(new MyBlueprint({1}, true, 1)));
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
     }
 }
 
-TEST("require that the hit rate must be high enough for termwise evaluation to be activated") {
+TEST(TermwiseEvalTest, require_that_the_hit_rate_must_be_high_enough_for_termwise_evaluation_to_be_activated)
+{
     auto md = make_match_data();
     md->set_termwise_limit(1.0); // <-
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -409,7 +432,8 @@ TEST("require that the hit rate must be high enough for termwise evaluation to b
     }
 }
 
-TEST("require that enough unranked termwise terms are present for termwise evaluation to be activated") {
+TEST(TermwiseEvalTest, require_that_enough_unranked_termwise_terms_are_present_for_termwise_evaluation_to_be_activated)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -423,29 +447,31 @@ TEST("require that enough unranked termwise terms are present for termwise evalu
     }
 }
 
-TEST("require that termwise evaluation can be multi-level, but not duplicated") {
+TEST(TermwiseEvalTest, require_that_termwise_evaluation_can_be_multi_level_but_not_duplicated)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(2)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     OrBlueprint my_or;
-    my_or.addChild(UP(new MyBlueprint({1}, true, 1)));    
+    my_or.addChild(UP(new MyBlueprint({1}, true, 1)));
     auto child = UP(new OrBlueprint());
     child->addChild(UP(new MyBlueprint({2}, true, 2)));
     child->addChild(UP(new MyBlueprint({3}, true, 3)));
     my_or.addChild(std::move(child));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(OR({ TERM({1}, strict),
-                                        ORz({ TERM({2}, strict), TERM({3}, strict) }, strict) },
-                                      strict), strict)->asString());
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  make_termwise(OR({ TERM({1}, strict),
+                                     ORz({ TERM({2}, strict), TERM({3}, strict) }, strict) },
+                                   strict), strict)->asString());
     }
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that OR can be completely termwise") {
+TEST(TermwiseEvalTest, require_that_or_can_be_completely_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -454,12 +480,13 @@ TEST("require that OR can be completely termwise") {
     my_or.addChild(UP(new MyBlueprint({1}, true, 1)));
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
     }
 }
 
-TEST("require that OR can be partially termwise") {
+TEST(TermwiseEvalTest, require_that_or_can_be_partially_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -469,13 +496,14 @@ TEST("require that OR can be partially termwise") {
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     ORs({ make_termwise(OR({ TERM({1}, strict), TERM({3}, strict) }, strict), strict),
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  ORs({ make_termwise(OR({ TERM({1}, strict), TERM({3}, strict) }, strict), strict),
                            TERM({2}, strict) }, strict)->asString());
     }
 }
 
-TEST("require that OR puts termwise subquery at the right place") {
+TEST(TermwiseEvalTest, require_that_or_puts_termwise_subquery_at_the_right_place)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -485,14 +513,15 @@ TEST("require that OR puts termwise subquery at the right place") {
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     ORs({ TERM({1}, strict),
-                           make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
-                                         strict) }, strict)->asString());
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  ORs({ TERM({1}, strict),
+                        make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
+                                      strict) }, strict)->asString());
     }
 }
 
-TEST("require that OR can use termwise eval also when having non-termwise children") {
+TEST(TermwiseEvalTest, require_that_or_can_use_termwise_eval_also_when_having_non_termwise_children)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -503,17 +532,18 @@ TEST("require that OR can use termwise eval also when having non-termwise childr
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     ORz({ TERM({1}, strict),
-                           make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
-                                         strict)},
-                         strict)->asString());
+        EXPECT_EQ(my_or.createSearch(*md, strict)->asString(),
+                  ORz({ TERM({1}, strict),
+                        make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
+                                      strict)},
+                      strict)->asString());
     }
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that AND can be completely termwise") {
+TEST(TermwiseEvalTest, require_that_and_can_be_completely_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -522,12 +552,13 @@ TEST("require that AND can be completely termwise") {
     my_and.addChild(UP(new MyBlueprint({1}, true, 1)));
     my_and.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
-                     make_termwise(AND({ TERM({1}, strict), TERM({2}, false) }, strict), strict)->asString());
+        EXPECT_EQ(my_and.createSearch(*md, strict)->asString(),
+                  make_termwise(AND({ TERM({1}, strict), TERM({2}, false) }, strict), strict)->asString());
     }
 }
 
-TEST("require that AND can be partially termwise") {
+TEST(TermwiseEvalTest, require_that_and_can_be_partially_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -537,7 +568,7 @@ TEST("require that AND can be partially termwise") {
     my_and.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_and.createSearch(*md, strict)->asString(),
                      ANDs({ make_termwise(AND({ TERM({1}, strict), TERM({3}, false) },
                                               strict),
                                           strict),
@@ -545,7 +576,8 @@ TEST("require that AND can be partially termwise") {
     }
 }
 
-TEST("require that AND puts termwise subquery at the right place") {
+TEST(TermwiseEvalTest, require_that_and_puts_termwise_subquery_at_the_right_place)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -555,14 +587,15 @@ TEST("require that AND puts termwise subquery at the right place") {
     my_and.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_and.createSearch(*md, strict)->asString(),
                      ANDs({ TERM({1}, strict),
                             make_termwise(AND({ TERM({2}, false), TERM({3}, false) }, false),
                                           false) }, strict)->asString());
     }
 }
 
-TEST("require that AND can use termwise eval also when having non-termwise children") {
+TEST(TermwiseEvalTest, require_that_and_can_use_termwise_eval_also_when_having_non_termwise_children)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -573,7 +606,7 @@ TEST("require that AND can use termwise eval also when having non-termwise child
     my_and.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_and.createSearch(*md, strict)->asString(),
                      ANDz({ TERM({1}, strict),
                             make_termwise(AND({ TERM({2}, false), TERM({3}, false) }, false),
                                           false) }, strict)->asString());
@@ -582,7 +615,8 @@ TEST("require that AND can use termwise eval also when having non-termwise child
 
 //-----------------------------------------------------------------------------
 
-TEST("require that ANDNOT can be completely termwise") {
+TEST(TermwiseEvalTest, require_that_andnot_can_be_completely_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -590,13 +624,14 @@ TEST("require that ANDNOT can be completely termwise") {
     my_andnot.addChild(UP(new MyBlueprint({1}, true, 1)));
     my_andnot.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_andnot.createSearch(*md, strict)->asString(),
                      make_termwise(ANDNOT({ TERM({1}, strict), TERM({2}, false) },
                                           strict), strict)->asString());
     }
 }
 
-TEST("require that ANDNOT can be partially termwise") {
+TEST(TermwiseEvalTest, require_that_andnot_can_be_partially_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     AndNotBlueprint my_andnot;
@@ -604,14 +639,15 @@ TEST("require that ANDNOT can be partially termwise") {
     my_andnot.addChild(UP(new MyBlueprint({2}, true, 2)));
     my_andnot.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_andnot.createSearch(*md, strict)->asString(),
                      ANDNOT({ TERM({1}, strict),
                               make_termwise(OR({ TERM({2}, false), TERM({3}, false) }, false),
                                             false) }, strict)->asString());
     }
 }
 
-TEST("require that ANDNOT can be partially termwise with first child being termwise") {
+TEST(TermwiseEvalTest, require_that_andnot_can_be_partially_termwise_with_first_child_being_termwise)
+{
     auto md = make_match_data();
     md->set_termwise_limit(0.0);
     md->resolveTermField(1)->tagAsNotNeeded();
@@ -620,7 +656,7 @@ TEST("require that ANDNOT can be partially termwise with first child being termw
     my_andnot.addChild(UP(new MyBlueprint({2}, false, 2)));
     my_andnot.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
-        EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
+        EXPECT_EQ(my_andnot.createSearch(*md, strict)->asString(),
                      ANDNOT({ make_termwise(ANDNOT({ TERM({1}, strict), TERM({3}, false) }, strict),
                                             strict),
                               TERM({2}, false) }, strict)->asString());
@@ -629,7 +665,8 @@ TEST("require that ANDNOT can be partially termwise with first child being termw
 
 //-----------------------------------------------------------------------------
 
-TEST("require that termwise blueprint helper calculates unpack info correctly") {
+TEST(TermwiseEvalTest, require_that_termwise_blueprint_helper_calculates_unpack_info_correctly)
+{
     OrBlueprint my_or;
     my_or.addChild(UP(new MyBlueprint({1}, false, 1))); // termwise not allowed
     my_or.addChild(UP(new MyBlueprint({2}, false, 2))); // termwise not allowed and ranked
@@ -641,9 +678,9 @@ TEST("require that termwise blueprint helper calculates unpack info correctly") 
     unpack.add(1);
     unpack.add(3);
     TermwiseBlueprintHelper helper(my_or, std::move(dummy_searches), unpack);
-    EXPECT_EQUAL(helper.get_result().size(), 3u);
-    EXPECT_EQUAL(helper.get_termwise_children().size(), 2u);
-    EXPECT_EQUAL(helper.first_termwise, 2u);
+    EXPECT_EQ(helper.get_result().size(), 3u);
+    EXPECT_EQ(helper.get_termwise_children().size(), 2u);
+    EXPECT_EQ(helper.first_termwise, 2u);
     EXPECT_TRUE(!helper.termwise_unpack.needUnpack(0));
     EXPECT_TRUE(helper.termwise_unpack.needUnpack(1));
     EXPECT_TRUE(!helper.termwise_unpack.needUnpack(2));
@@ -658,11 +695,12 @@ public:
         return make_termwise(createIterator(getExpectedDocIds(), strict), strict);
     }
 };
-TEST("test terwise adheres to search iterator requirements.") {
+TEST(TermwiseEvalTest, test_termwise_adheres_to_search_iterator_requirements)
+{
     Verifier verifier;
     verifier.verify();
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

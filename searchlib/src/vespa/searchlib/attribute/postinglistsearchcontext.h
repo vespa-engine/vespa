@@ -57,6 +57,13 @@ protected:
 
     ~PostingListSearchContext() override;
 
+    double avg_values_per_document() const noexcept {
+        return static_cast<double>(_numValues) / static_cast<double>(_docIdLimit);
+    }
+    double avg_postinglist_size() const noexcept {
+        return static_cast<double>(_numValues) / _dictSize;
+    }
+
     void lookupTerm(const vespalib::datastore::EntryComparator &comp);
     void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
     void lookupSingle();
@@ -72,8 +79,6 @@ protected:
      * by looking at the posting lists in the range [lower, upper>.
      */
     virtual size_t calc_estimated_hits_in_range() const = 0;
-    virtual void fillArray() = 0;
-    virtual void fillBitVector(vespalib::ThreadBundle & thread_bundle) = 0;
 };
 
 
@@ -88,6 +93,7 @@ protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using FrozenView = typename PostingStore::BTreeType::FrozenView;
+    using ExecuteInfo = queryeval::ExecuteInfo;
 
     const PostingStore& _posting_store;
     /*
@@ -101,10 +107,10 @@ protected:
     ~PostingListSearchContextT() override;
 
     void lookupSingle();
-    void fillArray() override;
-    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
+    virtual void fillArray();
+    virtual void fillBitVector(const ExecuteInfo &);
 
-    void fetchPostings(const queryeval::ExecuteInfo & strict) override;
+    void fetchPostings(const ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
     void diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                    size_t max_per_group, size_t cutoff_groups, bool cutoff_strict);
@@ -131,6 +137,7 @@ protected:
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using EntryRef = vespalib::datastore::EntryRef;
     using PostingStore = typename Parent::PostingStore;
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent::_docIdLimit;
     using Parent::_lowerDictItr;
     using Parent::_merger;
@@ -154,7 +161,7 @@ protected:
     template <bool fill_array>
     void fill_array_or_bitvector();
     void fillArray() override;
-    void fillBitVector(vespalib::ThreadBundle & thread_bundle) override;
+    void fillBitVector(const ExecuteInfo &) override;
 };
 
 
@@ -177,6 +184,7 @@ class StringPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
 {
 private:
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
@@ -186,7 +194,7 @@ private:
     bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
         return use_dictionary_entry(it);
     }
-    bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const override;
+    bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
 public:
     StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -196,6 +204,7 @@ class NumericPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>
 {
 private:
+    using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
     using BaseType = typename AttrT::T;
     using Params = attribute::SearchContextParams;
@@ -215,7 +224,7 @@ private:
             ? limit
             : estimate;
     }
-    void fetchPostings(const queryeval::ExecuteInfo & execInfo) override {
+    void fetchPostings(const ExecuteInfo & execInfo) override {
         if (params().diversityAttribute() != nullptr) {
             bool forward = (this->getRangeLimit() > 0);
             size_t wanted_hits = std::abs(this->getRangeLimit());
@@ -227,7 +236,7 @@ private:
         }
     }
 
-    bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info) const override;
+    bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
     size_t calc_estimated_hits_in_range() const override;
 
 public:
@@ -343,14 +352,11 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_st
     // Based on this we see that LMC = 5 * PLMC.
     // The same relationship is found with the test case range_hits_ratio=[200].
 
-    if ( ! info.create_postinglist_when_non_strict()) return false;
-
-    constexpr float lookup_match_constant = 5.0;
-    constexpr float posting_list_merge_constant = 1.0;
+    constexpr double lookup_match_constant = 5.0;
+    constexpr double posting_list_merge_constant = 1.0;
 
     uint32_t exp_doc_hits = this->_docIdLimit * info.hit_rate();
-    float avg_values_per_document = static_cast<float>(this->_numValues) / static_cast<float>(this->_docIdLimit);
-    float lookup_match_cost = exp_doc_hits * avg_values_per_document * lookup_match_constant;
+    float lookup_match_cost = exp_doc_hits * this->avg_values_per_document() * lookup_match_constant;
     float posting_list_cost = this->estimated_hits_in_range() * posting_list_merge_constant;
     return posting_list_cost < lookup_match_cost;
 }
@@ -362,14 +368,25 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::calc_estimated_hits_in_range(
     size_t exact_sum = 0;
     size_t estimated_sum = 0;
 
-    auto it = this->_lowerDictItr;
-    for (uint32_t count = 0; (it != this->_upperDictItr) && (count < this->max_posting_lists_to_count); ++it, ++count) {
-        exact_sum += this->_posting_store.frozenSize(it.getData().load_acquire());
+    // Sample lower range
+    auto it_forward = this->_lowerDictItr;
+    for (uint32_t count = 0; (it_forward != this->_upperDictItr) && (count < this->max_posting_lists_to_count); ++it_forward, ++count) {
+        exact_sum += this->_posting_store.frozenSize(it_forward.getData().load_acquire());
     }
-    if (it != this->_upperDictItr) {
-        uint32_t remaining_posting_lists = this->_upperDictItr - it;
-        float hits_per_posting_list = static_cast<float>(exact_sum) / static_cast<float>(this->max_posting_lists_to_count);
-        estimated_sum = remaining_posting_lists * hits_per_posting_list;
+    if (it_forward != this->_upperDictItr) {
+        //Sample upper range
+        auto it_backward = this->_upperDictItr;
+        for (uint32_t count = 0; (it_backward != it_forward) && (count < this->max_posting_lists_to_count);++count) {
+            --it_backward;
+            exact_sum += this->_posting_store.frozenSize(it_backward.getData().load_acquire());
+        }
+        if (it_forward != it_backward) {
+            // Estimate the rest
+            uint32_t remaining_posting_lists = it_backward - it_forward;
+            double measured_hits_per_posting_list = static_cast<double>(exact_sum) / (this->max_posting_lists_to_count * 2);
+            // Let measure and global rate count equally, to reduce the effect of outlayers.
+            estimated_sum = remaining_posting_lists * (measured_hits_per_posting_list + this->avg_postinglist_size())/2;
+        }
     }
     return exact_sum + estimated_sum;
 }

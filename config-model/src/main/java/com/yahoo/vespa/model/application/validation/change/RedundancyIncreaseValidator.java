@@ -2,11 +2,8 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import java.util.List;
 
 /**
  * Checks that redundancy is not increased (without a validation override),
@@ -17,21 +14,19 @@ import java.util.List;
 public class RedundancyIncreaseValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
-        for (ContentCluster currentCluster : current.getContentClusters().values()) {
-            ContentCluster nextCluster = next.getContentClusters().get(currentCluster.getSubId());
+    public void validate(ChangeContext context) {
+        for (ContentCluster currentCluster : context.previousModel().getContentClusters().values()) {
+            ContentCluster nextCluster = context.model().getContentClusters().get(currentCluster.getSubId());
             if (nextCluster == null) continue;
             if (redundancyOf(nextCluster) > redundancyOf(currentCluster)) {
-                deployState.validationOverrides().invalid(ValidationId.redundancyIncrease,
-                                  "Increasing redundancy from " + redundancyOf(currentCluster) + " to " +
-                                  redundancyOf(nextCluster) + " in '" + currentCluster + ". " +
-                                  "This is a safe operation but verify that you have room for a " +
-                                  redundancyOf(nextCluster) + "/" + redundancyOf(currentCluster) + "x increase " +
-                                  "in content size",
-                                  deployState.now());
+                context.invalid(ValidationId.redundancyIncrease,
+                                "Increasing redundancy from " + redundancyOf(currentCluster) + " to " +
+                                redundancyOf(nextCluster) + " in '" + currentCluster + ". " +
+                                "This is a safe operation but verify that you have room for a " +
+                                redundancyOf(nextCluster) + "/" + redundancyOf(currentCluster) + "x increase " +
+                                "in content size");
             }
         }
-        return List.of();
     }
 
     private int redundancyOf(ContentCluster cluster) {

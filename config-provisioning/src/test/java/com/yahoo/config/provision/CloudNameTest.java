@@ -14,9 +14,10 @@ class CloudNameTest {
     @Test
     void returns_same_instance_for_known_clouds() {
         assertSame(CloudName.from("aws"), CloudName.AWS);
+        assertSame(CloudName.from("azure"), CloudName.AZURE);
         assertSame(CloudName.from("gcp"), CloudName.GCP);
         assertSame(CloudName.from("default"), CloudName.DEFAULT);
         assertSame(CloudName.from("yahoo"), CloudName.YAHOO);
-        assertThrows(IllegalArgumentException.class, () -> CloudName.from("aWs")); // Must be lower case
+        assertThrows(IllegalArgumentException.class, () -> CloudName.from("aWs")); // Must be lowercase
     }
 }

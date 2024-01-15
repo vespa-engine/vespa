@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vsm/searcher/utf8substringsearcher.h>
+#include "utf8substringsearcher.h"
 #include <vespa/fastlib/text/unicodeutil.h>
 
 using search::byte;
@@ -45,8 +45,6 @@ UTF8SubStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
             for(; (fn < fre) && ! Fast_UnicodeUtil::IsWordChar(*fn); fn++ );
         }
     }
-
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words + 1; // we must also count the last word
 }
 

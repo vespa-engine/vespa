@@ -144,6 +144,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                     row.putBool(6, snapshot.getSecond().inService());
                     row.putBool(7, snapshot.getSecond().stable());
                     row.putFloat(8, (float) snapshot.getSecond().queryRate());
+                    row.putFloat(9, (float) snapshot.getSecond().load().gpu());
+                    row.putFloat(10, (float) snapshot.getSecond().load().gpuMemory());
                     row.append();
                 }
                 writer.commit();
@@ -243,6 +245,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private void ensureNodeTableIsUpdated() {
         try {
             // Example: nodeTable.ensureColumnExists("write_rate", "float");
+            // TODO(mpolden): Remove after January 2024
+            nodeTable.ensureColumnExists("gpu_util", "float");
+            nodeTable.ensureColumnExists("gpu_mem_total_util", "float");
         } catch (Exception e) {
             nodeTable.repair(e);
         }
@@ -262,7 +267,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         try {
             issue("create table " + nodeTable.name +
                   " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
-                  "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
+                  "  application_generation long, inService boolean, stable boolean, queries_rate float," +
+                  "  gpu_util float, gpu_mem_total_util float" +
+                  " )" +
                   " timestamp(at)" +
                   "PARTITION BY DAY;",
                   newContext());
@@ -311,7 +318,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                                       new NodeMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(1) / 1000),
                                                              new Load(record.getFloat(2),
                                                                       record.getFloat(3),
-                                                                      record.getFloat(4)),
+                                                                      record.getFloat(4),
+                                                                      getFloatOrDefault(record, 9, 0),
+                                                                      getFloatOrDefault(record, 10, 0)),
                                                              record.getLong(5),
                                                              record.getBool(6),
                                                              record.getBool(7),
@@ -321,6 +330,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             }
             return snapshots;
         }
+    }
+
+    private float getFloatOrDefault(Record record, int col, float defaultValue) {
+        float value = record.getFloat(col);
+        return Float.isNaN(value) ? defaultValue : value;
     }
 
     private ClusterTimeseries getClusterSnapshots(ApplicationId application, ClusterSpec.Id cluster) throws SqlException {

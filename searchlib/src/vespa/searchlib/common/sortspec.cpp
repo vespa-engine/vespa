@@ -30,7 +30,7 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
     vespalib::Utf8Writer w(_buffer);
     while (r.hasMore()) {
         ucs4_t c = r.getChar(0xFFFD);
-        c = Fast_NormalizeWordFolder::ToFold(c);
+        c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
         w.putChar(c);
     }
     return {_buffer.begin(), _buffer.size()};

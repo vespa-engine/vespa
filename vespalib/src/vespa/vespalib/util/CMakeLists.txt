@@ -17,7 +17,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     box.cpp
     cgroup_resource_limits.cpp
     classname.cpp
-    clock.cpp
     compress.cpp
     compressor.cpp
     count_down_latch.cpp

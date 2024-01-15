@@ -141,7 +141,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
-    @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }

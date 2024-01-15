@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_testkit OBJECT
     test_comparators.cpp
     test_hook.cpp
     test_master.cpp
+    test_path.cpp
     test_state_guard.cpp
     testapp.cpp
     time_bomb.cpp

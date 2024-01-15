@@ -5,7 +5,7 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/features/element_similarity_feature.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <initializer_list>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>

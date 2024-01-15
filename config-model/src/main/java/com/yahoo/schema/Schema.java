@@ -18,7 +18,6 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.document.TemporaryImportedFields;
-import com.yahoo.schema.document.annotation.SDAnnotationType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -293,8 +292,7 @@ public class Schema implements ImmutableSchema {
 
     @Override
     public List<ImmutableSDField> allFieldsList() {
-        List<ImmutableSDField> all = new ArrayList<>();
-        all.addAll(extraFieldList());
+        List<ImmutableSDField> all = new ArrayList<>(extraFieldList());
         for (Field field : documentType.fieldSet()) {
             all.add((ImmutableSDField) field);
         }
@@ -668,11 +666,10 @@ public class Schema implements ImmutableSchema {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Schema)) {
+        if (!(o instanceof Schema other)) {
             return false;
         }
 
-        Schema other = (Schema)o;
         return getName().equals(other.getName());
     }
 
@@ -688,7 +685,7 @@ public class Schema implements ImmutableSchema {
 
     public boolean isAccessingDiskSummary(SummaryField field) {
         if (!field.getTransform().isInMemory()) return true;
-        if (field.getSources().size() == 0) return isAccessingDiskSummary(getName());
+        if (field.getSources().isEmpty()) return isAccessingDiskSummary(getName());
         for (SummaryField.Source source : field.getSources()) {
             if (isAccessingDiskSummary(source.getName()))
                 return true;
@@ -715,22 +712,6 @@ public class Schema implements ImmutableSchema {
     private Schema requireInherited() {
         if (inheritedSchema != null) return inheritedSchema;
         return owner.schemas().get(inherited.get());
-    }
-
-    /**
-     * For adding structs defined in document scope
-     *
-     * @param dt the struct to add
-     * @return self, for chaining
-     */
-    public Schema addType(SDDocumentType dt) {
-        documentType.addType(dt); // TODO This is a very very dirty thing. It must go
-        return this;
-    }
-
-    public Schema addAnnotation(SDAnnotationType dt) {
-        documentType.addAnnotation(dt);
-        return this;
     }
 
     public void validate(DeployLogger logger) {

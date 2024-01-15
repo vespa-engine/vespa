@@ -54,7 +54,7 @@ public class RetiringOsUpgrader extends OsUpgrader {
         }
         return nodes.not().deprovisioning()
                     .not().onOsVersion(target.version())
-                    .matching(node -> canUpgradeAt(instant, node))
+                    .matching(node -> canUpgradeTo(target.version(), instant, node))
                     .byIncreasingOsVersion()
                     .first(upgradeSlots(target, nodes.deprovisioning()));
     }

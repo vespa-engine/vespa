@@ -606,6 +606,7 @@ public class SessionRepository {
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
                                 existingSession.getDataplaneTokens(),
+                                existingSession.getActivationTriggers(),
                                 writeSessionData);
     }
 

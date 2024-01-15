@@ -95,6 +95,10 @@ public class AnnotatorConfig implements Cloneable {
         return maxTokenizeLength != DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
+    public boolean hasNonDefaultMaxTermOccurrences() {
+        return maxTermOccurrences != DEFAULT_MAX_TERM_OCCURRENCES;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof AnnotatorConfig rhs)) {

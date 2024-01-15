@@ -46,7 +46,7 @@ public class SchemaToDerivedConfigExporter {
                         .deployLogger(logger)
                         .rankProfileRegistry(builder.getRankProfileRegistry())
                         .queryProfiles(builder.getQueryProfileRegistry())
-                        .build());
+                        .build(), false);
         exportConfig(dirPath, derived, builder);
     }
 }

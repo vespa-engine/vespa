@@ -81,7 +81,7 @@ public class UrlConfigValidatorTest {
                 .build();
         DeployState deployState = createDeployState(app, systemName);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        new UrlConfigValidator().validate(model, deployState);
+        ValidationTester.validate(new UrlConfigValidator(), model, deployState);
     }
 
     private static DeployState createDeployState(ApplicationPackage app, SystemName systemName) {

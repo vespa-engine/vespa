@@ -431,20 +431,14 @@ public final class Node implements Nodelike {
         return with(history.with(new History.Event(History.Event.Type.up, agent, instant)));
     }
 
-    /** Returns true if we have positive evidence that this node is down. */
-    public boolean isDown() {
-        Optional<Instant> downAt = history().event(History.Event.Type.down).map(History.Event::at);
-        if (downAt.isEmpty()) return false;
-
-        return !history().hasEventAfter(History.Event.Type.up, downAt.get());
+    /** Returns a copy of this with a history event saying it has been suspended at instant. */
+    public Node suspendedAt(Instant instant, Agent agent) {
+        return with(history.with(new History.Event(History.Event.Type.suspended, agent, instant)));
     }
 
-    /** Returns true if we have positive evidence that this node is up. */
-    public boolean isUp() {
-        Optional<Instant> upAt = history().event(History.Event.Type.up).map(History.Event::at);
-        if (upAt.isEmpty()) return false;
-
-        return !history().hasEventAfter(History.Event.Type.down, upAt.get());
+    /** Returns a copy of this with a history event saying it has been resumed at instant. */
+    public Node resumedAt(Instant instant, Agent agent) {
+        return with(history.with(new History.Event(History.Event.Type.resumed, agent, instant)));
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */

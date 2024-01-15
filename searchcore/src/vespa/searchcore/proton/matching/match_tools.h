@@ -16,7 +16,6 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
-#include <vespa/vespalib/util/clock.h>
 
 namespace vespalib { class ExecutionProfiler; }
 namespace vespalib { struct ThreadBundle; }
@@ -42,7 +41,7 @@ private:
     using RankSetup = search::fef::RankSetup;
     using ExecutionProfiler = vespalib::ExecutionProfiler;
     QueryLimiter                    &_queryLimiter;
-    const vespalib::Doom            &_doom;
+    const vespalib::Doom             _doom;
     const Query                     &_query;
     MaybeMatchPhaseLimiter          &_match_limiter;
     const QueryEnvironment          &_queryEnv;

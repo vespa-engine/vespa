@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "parallel_weak_and_search.h"
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/objects/visit.h>
@@ -243,7 +243,7 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
         assert(childrenMatchData->getNumTermFields() == dict_entries.size());
         wand::Terms terms;
         for (size_t i = 0; i < dict_entries.size(); ++i) {
-            terms.push_back(wand::Term(new DocumentWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
+            terms.push_back(wand::Term(new DocidWithWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
                                        weights[i],
                                        dict_entries[i].posting_size,
                                        childrenMatchData->resolveTermField(handles[i])));

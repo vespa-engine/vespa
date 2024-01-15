@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_beta_features_test_app TEST
     beta_features_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(
     NAME searchlib_beta_features_test_app

@@ -119,7 +119,7 @@ public class EmbedExpression extends Expression  {
                                                   "Don't know what tensor type to embed into");
         targetType = toTargetTensor(context.getInputType(this, outputField));
         if ( ! validTarget(targetType))
-            throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, " +
+            throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor," +
                                                   "an array of dense 1d tensors, or a mixed 2d tensor");
         context.setValueType(createdOutputType());
     }
@@ -134,14 +134,14 @@ public class EmbedExpression extends Expression  {
         if  ( ! ( dataType instanceof TensorDataType))
             throw new IllegalArgumentException("Expected a tensor data type but got " + dataType);
         return ((TensorDataType)dataType).getTensorType();
-
     }
 
     private boolean validTarget(TensorType target) {
-        if (target.dimensions().size() == 1 && target.indexedSubtype().rank() == 1)
+        if (target.dimensions().size() == 1) //indexed or mapped 1d tensor
             return true;
-        if (target.dimensions().size() == 2 && target.indexedSubtype().rank() == 1 && target.mappedSubtype().rank() == 1)
-            return true;
+        if (target.dimensions().size() == 2 && target.indexedSubtype().rank() == 1
+                && target.mappedSubtype().rank() == 1)
+            return true; //mixed mapped-indexed 2d tensor
         return false;
     }
 

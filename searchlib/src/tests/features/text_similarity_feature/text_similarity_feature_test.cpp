@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/features/text_similarity_feature.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
-#include <initializer_list>
-#include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <initializer_list>
 
 using namespace search::fef;
 using namespace search::fef::test;

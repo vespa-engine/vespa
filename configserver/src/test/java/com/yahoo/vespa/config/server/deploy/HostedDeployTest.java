@@ -22,6 +22,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.ComponentsConfig;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
@@ -31,8 +32,10 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -48,12 +51,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
-import static com.yahoo.yolean.Exceptions.findCause;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -463,28 +466,40 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testConfigConvergenceBeforeRestart() {
+    public void testPendingRestartsAreTriggered() {
         List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
         List<ServiceInfo> services = createServices(1);
-        List<ServiceInfo> twoServices = createServices(2);
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
                         new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
+        List<ServiceInfo> mutableServices = new ArrayList<>(services);
         DeployTester tester = createTester(hosts,
                                            modelFactories,
                                            prodZone,
                                            Clock.systemUTC(),
-                                           new MockConfigConvergenceChecker(2L, services));
+                                           new MockConfigConvergenceChecker(2L, mutableServices));
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
         DeployHandlerLogger deployLogger = result.deployLogger();
 
         assertLogContainsMessage(deployLogger, "Scheduled service restart of 1 nodes: hostName0");
-        assertLogContainsMessage(deployLogger, "Wait for all services to use new config generation before restarting");
-        // Should only check convergence on 1 of the nodes
-        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName0:serviceName0 on generation 1. Will retry");
-        assertLogContainsMessage(deployLogger, "Services converged on new config generation 2");
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
+        assertEquals(Set.of("hostName0"), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
+
+        PendingRestartsMaintainer maintainer = new PendingRestartsMaintainer(tester.applicationRepository(),
+                                                                             tester.curator(),
+                                                                             tester.applicationRepository().clock(),
+                                                                             Duration.ofDays(1));
+        // Maintainer does not trigger services before convergence has been reached
+        maintainer.run();
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
+        assertEquals(Set.of("hostName0"), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
+
+        // All services converge, and maintainer triggers restarts
+        mutableServices.clear();
+        maintainer.run();
+        assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());
     }
 
     private void assertLogContainsMessage(DeployHandlerLogger log, String message) {
@@ -497,14 +512,15 @@ public class HostedDeployTest {
     @Test
     public void testThatAllowedConfigChangeActionsAreActedUpon() {
         List<Host> hosts = createHosts(9, "6.1.0");
-        List<ServiceInfo> services = createServices(1);
+        List<ServiceInfo> searchServices = List.of(new ServiceInfo("proton", "searchnode", null, Map.of("clustername", "music"), "configid", "host"));
+        List<ServiceInfo> containerServices = List.of(new ServiceInfo("jdisc", "container", null, Map.of("clustername", "container"), "configid", "host"));
 
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange,
-                                                                          "reindex please", services, "music"),
-                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("music"), ValidationId.indexModeChange,
+                                                                          "reindex please", searchServices, "music"),
+                                                    new VespaRestartAction(ClusterSpec.Id.from("container"), "change", containerServices)));
 
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
@@ -519,8 +535,22 @@ public class HostedDeployTest {
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
         assertEquals(Optional.of(ApplicationReindexing.empty()
-                                                      .withPending("cluster0", "music", prepareResult.sessionId())),
+                                                      .withPending("music", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+
+        VespaModel model = ((VespaModel) tester.tenant().getSessionRepository()
+                                               .activeApplicationVersions(tester.applicationId()).get().get(Version.fromString("6.1.0")).get()
+                                               .getModel());
+
+        // Config for the container cluster to be restarted has been deferred until after restart.
+        ComponentsConfig.Builder builder1 = new ComponentsConfig.Builder();
+        model.getContainerClusters().get("container").getContainers().get(0).getConfig(builder1);
+        assertTrue(builder1.getApplyOnRestart());
+
+        // Config for the metricsproxy cluster, which is not restarted, has not been deferred until after restart.
+        ComponentsConfig.Builder builder2 = new ComponentsConfig.Builder();
+        model.getAdmin().getMetricsProxyCluster().getContainers().get(0).getConfig(builder2);
+        assertFalse(builder2.getApplyOnRestart());
     }
 
     @Test

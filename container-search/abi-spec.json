@@ -7802,6 +7802,7 @@
       "public static com.yahoo.search.result.ErrorMessage createNotFound(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createBadRequest(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createInternalServerError(java.lang.String)",
+      "public static com.yahoo.search.result.ErrorMessage createInternalServerError(java.lang.String, java.lang.Throwable)",
       "public static com.yahoo.search.result.ErrorMessage createSearchReplyError(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createDocsumReplyError(java.lang.String)",
       "public void setSource(java.lang.String)",

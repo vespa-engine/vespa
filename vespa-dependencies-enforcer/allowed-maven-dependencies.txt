@@ -4,8 +4,6 @@ ai.djl.huggingface:tokenizers:${huggingface.vespa.version}
 ai.djl:api:${huggingface.vespa.version}
 aopalliance:aopalliance:${aopalliance.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
-ch.qos.logback:logback-classic:1.2.10
-ch.qos.logback:logback-core:1.2.10
 classworlds:classworlds:1.1-alpha-2
 com.amazonaws:aws-java-sdk-core:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-kms:${aws-sdk.vespa.version}
@@ -24,7 +22,7 @@ com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.github.spotbugs:spotbugs-annotations:${spotbugs.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
-com.google.guava:failureaccess:1.0.1
+com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
 com.google.inject:guice:${guice.vespa.version}
 com.google.j2objc:j2objc-annotations:2.8
@@ -65,9 +63,7 @@ io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:osx-aar
 io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:osx-x86_64
 io.netty:netty-tcnative-boringssl-static:${netty-tcnative.vespa.version}:windows-x86_64
 io.netty:netty-tcnative-classes:${netty-tcnative.vespa.version}
-io.netty:netty-tcnative:${netty-tcnative.vespa.version}
 io.netty:netty-transport-classes-epoll:${netty.vespa.version}
-io.netty:netty-transport-native-epoll:${netty.vespa.version}
 io.netty:netty-transport-native-epoll:${netty.vespa.version}:linux-x86_64
 io.netty:netty-transport-native-unix-common:${netty.vespa.version}
 io.netty:netty-transport:${netty.vespa.version}
@@ -93,7 +89,6 @@ org.antlr:antlr-runtime:${antlr.vespa.version}
 org.antlr:antlr4-runtime:${antlr4.vespa.version}
 org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:${spifly.vespa.version}
 org.apache.commons:commons-compress:${commons-compress.vespa.version}
-org.apache.commons:commons-exec:${commons-exec.vespa.version}
 org.apache.commons:commons-lang3:${commons-lang3.vespa.version}
 org.apache.commons:commons-math3:${commons.math3.vespa.version}
 org.apache.curator:curator-client:${curator.vespa.version}
@@ -128,10 +123,8 @@ org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
 org.apache.zookeeper:zookeeper-jute:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper-jute:3.8.0
 org.apache.zookeeper:zookeeper-jute:3.9.1
 org.apache.zookeeper:zookeeper:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper:3.8.0
 org.apache.zookeeper:zookeeper:3.9.1
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
@@ -142,7 +135,7 @@ org.codehaus.plexus:plexus-archiver:4.8.0
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
-org.codehaus.plexus:plexus-interpolation:1.26
+org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
 org.codehaus.plexus:plexus-utils:${maven-shade-plugin.vespa.version}
 org.eclipse.angus:angus-activation:${jakarta.inject.vespa.version}
@@ -190,7 +183,6 @@ org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}
 org.junit.platform:junit-platform-launcher:${junit.platform.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.version}
-org.kohsuke:libpam4j:1.11
 org.lz4:lz4-java:${org.lz4.vespa.version}
 org.mockito:mockito-core:${mockito.vespa.version}
 org.mockito:mockito-junit-jupiter:${mockito.vespa.version}

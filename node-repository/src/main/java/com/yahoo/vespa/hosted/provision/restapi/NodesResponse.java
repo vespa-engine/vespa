@@ -167,7 +167,7 @@ class NodesResponse extends SlimeJsonResponse {
         node.status().osVersion().current().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
         node.status().osVersion().wanted().ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
         if (node.type().isHost()) {
-            object.setBool("deferOsUpgrade", !nodeRepository.osVersions().canUpgrade(node));
+            object.setBool("deferOsUpgrade", nodeRepository.osVersions().deferringUpgrade(node));
         }
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong("currentFirmwareCheck", instant.toEpochMilli()));
         if (node.type().isHost())
@@ -180,7 +180,7 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         object.setBool("wantToRebuild", node.status().wantToRebuild());
         object.setBool("wantToUpgradeFlavor", node.status().wantToUpgradeFlavor());
-        object.setBool("down", node.isDown());
+        object.setBool("down", node.history().isDown());
         toSlime(node.history().events(), object.setArray("history"));
         toSlime(node.history().log(), object.setArray("log"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));

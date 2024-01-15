@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.NodeResources;
 
-import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 
@@ -14,32 +12,36 @@ import java.util.function.Predicate;
  *
  * @author bratseth
  */
-public class Load {
+public record Load(double cpu, double memory, double disk, double gpu, double gpuMemory) {
 
-    public enum Dimension { cpu, memory, disk }
+    public enum Dimension { cpu, memory, disk, gpu, gpuMemory }
 
-    private final double cpu, memory, disk;
-
-    public Load(double cpu, double memory, double disk) {
+    public Load(double cpu, double memory, double disk, double gpu, double gpuMemory) {
         this.cpu = requireNormalized(cpu, "cpu");
         this.memory = requireNormalized(memory, "memory");
         this.disk = requireNormalized(disk, "disk");
+        this.gpu = requireNormalized(gpu, "gpu");
+        this.gpuMemory = requireNormalized(gpuMemory, "gpuMemory");
     }
 
     public double cpu() { return cpu; }
     public double memory() { return memory; }
     public double disk() { return disk; }
+    public double gpu() { return gpu; }
+    public double gpuMemory() { return gpuMemory; }
 
-    public Load withCpu(double cpu) { return new Load(cpu, memory, disk); }
-    public Load withMemory(double memory) { return new Load(cpu, memory, disk); }
-    public Load withDisk(double disk) { return new Load(cpu, memory, disk); }
+    public Load withCpu(double cpu) { return new Load(cpu, memory, disk, gpu, gpuMemory); }
+    public Load withMemory(double memory) { return new Load(cpu, memory, disk, gpu, gpuMemory); }
+    public Load withDisk(double disk) { return new Load(cpu, memory, disk, gpu, gpuMemory); }
+    public Load withGpu(double gpu) { return new Load(cpu, memory, disk, gpu, gpuMemory); }
+    public Load withGpuMemory(double gpuMemory) { return new Load(cpu, memory, disk, gpu, gpuMemory); }
 
     public Load add(Load other) {
         return join(other, (a, b) -> a + b);
     }
 
     public Load multiply(NodeResources resources) {
-        return new Load(cpu * resources.vcpu(), memory * resources.memoryGb(), disk * resources.diskGb());
+        return new Load(cpu * resources.vcpu(), memory * resources.memoryGb(), disk * resources.diskGb(), gpu * resources.gpuResources().count(), gpu * resources.gpuResources().memoryGb());
     }
     public Load multiply(double factor) {
         return map(v -> v * factor);
@@ -55,21 +57,25 @@ public class Load {
         return map(v -> divide(v, divisor));
     }
     public Load divide(NodeResources resources) {
-        return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
+        return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()), divide(gpu, resources.gpuResources().count()), divide(gpuMemory, resources.gpuResources().memoryGb()));
     }
 
     /** Returns the load where the given function is applied to each dimension of this. */
     public Load map(DoubleUnaryOperator f) {
         return new Load(f.applyAsDouble(cpu),
                         f.applyAsDouble(memory),
-                        f.applyAsDouble(disk));
+                        f.applyAsDouble(disk),
+                        f.applyAsDouble(gpu),
+                        f.applyAsDouble(gpuMemory));
     }
 
     /** Returns the load where the given function is applied to each dimension of this and the given load. */
     public Load join(Load other, DoubleBinaryOperator f) {
         return new Load(f.applyAsDouble(this.cpu(), other.cpu()),
                         f.applyAsDouble(this.memory(), other.memory()),
-                        f.applyAsDouble(this.disk(), other.disk()));
+                        f.applyAsDouble(this.disk(), other.disk()),
+                        f.applyAsDouble(this.gpu(), other.gpu()),
+                        f.applyAsDouble(this.gpuMemory(), other.gpuMemory()));
     }
 
     /** Returns true if any dimension matches the predicate. */
@@ -88,6 +94,8 @@ public class Load {
             case cpu -> cpu();
             case memory -> memory();
             case disk -> disk();
+            case gpu -> gpu();
+            case gpuMemory -> gpuMemory();
         };
     }
 
@@ -95,7 +103,7 @@ public class Load {
         if (Double.isNaN(value))
             throw new IllegalArgumentException(name + " must be a number but is NaN");
         if (value < 0)
-            throw new IllegalArgumentException(name + " must be zero or lager, but is " + value);
+            throw new IllegalArgumentException(name + " must be zero or larger, but is " + value);
         return value;
     }
 
@@ -105,28 +113,19 @@ public class Load {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof Load other)) return false;
-        if (other.cpu() != this.cpu()) return false;
-        if (other.memory() != this.memory()) return false;
-        if (other.disk() != this.disk()) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(cpu, memory, disk); }
-
-    @Override
     public String toString() {
-        return "load: " + cpu + " cpu, " + memory + " memory, " + disk + " disk";
+        return "load: " + cpu + " cpu, " + memory + " memory, " + disk + " disk," + gpu + " gpu," + gpuMemory + " gpuMemory";
     }
 
-    public static Load zero() { return new Load(0, 0, 0); }
-    public static Load one() { return new Load(1, 1, 1); }
+    public static Load zero() { return new Load(0, 0, 0, 0, 0); }
+    public static Load one() { return new Load(1, 1, 1, 1, 1); }
 
     public static Load byDividing(NodeResources a, NodeResources b) {
-        return new Load(divide(a.vcpu(), b.vcpu()), divide(a.memoryGb(), b.memoryGb()), divide(a.diskGb(), b.diskGb()));
+        return new Load(divide(a.vcpu(), b.vcpu()),
+                        divide(a.memoryGb(), b.memoryGb()),
+                        divide(a.diskGb(), b.diskGb()),
+                        divide(a.gpuResources().count(), b.gpuResources().count()),
+                        divide(a.gpuResources().memoryGb(), b.gpuResources().memoryGb()));
     }
 
 }

@@ -1,16 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/features/euclidean_distance_feature.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 
 
 using search::feature_t;

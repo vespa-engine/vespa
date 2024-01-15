@@ -771,7 +771,9 @@
     "attributes" : [
       "public"
     ],
-    "methods" : [ ],
+    "methods" : [
+      "public java.util.Map messagesById()"
+    ],
     "fields" : [ ]
   },
   "com.yahoo.config.application.api.ValidationOverrides" : {
@@ -784,8 +786,10 @@
       "public void <init>(java.util.List)",
       "public void invalid(java.util.Map, java.time.Instant)",
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
+      "public java.util.Optional invalidException(java.util.Map, java.time.Instant)",
       "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
+      "public void validate(java.time.Instant, java.util.function.Consumer)",
       "public boolean validate(java.time.Instant)",
       "public java.lang.String xmlForm()",
       "public static java.lang.String toAllowMessage(com.yahoo.config.application.api.ValidationId)",
@@ -1278,9 +1282,7 @@
       "public java.util.List ignoredHttpUserAgents()",
       "public boolean enableProxyProtocolMixedMode()",
       "public java.lang.String logFileCompressionAlgorithm(java.lang.String)",
-      "public boolean enableGlobalPhase()",
       "public java.lang.String summaryDecodePolicy()",
-      "public boolean enableNestedMultivalueGrouping()",
       "public int contentLayerMetadataFeatureLevel()",
       "public boolean dynamicHeapSize()",
       "public java.lang.String unknownConfigDefinition()",
@@ -1291,7 +1293,8 @@
       "public boolean createPostinglistWhenNonStrict()",
       "public boolean useEstimateForFetchPostings()",
       "public boolean useThreadBundleForFetchPostings()",
-      "public boolean restartOnDeployWhenOnnxModelChanges()"
+      "public boolean restartOnDeployWhenOnnxModelChanges()",
+      "public boolean sortBlueprintsByCost()"
     ],
     "fields" : [ ]
   },
@@ -1456,13 +1459,12 @@
     ],
     "methods" : [
       "public abstract long aggregatedModelCostInBytes()",
-      "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public abstract void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
-      "public abstract void registerModel(java.net.URI)",
       "public abstract void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public abstract java.util.Map models()",
       "public abstract void setRestartOnDeploy()",
-      "public abstract boolean restartOnDeploy()"
+      "public abstract boolean restartOnDeploy()",
+      "public abstract void store()"
     ],
     "fields" : [ ]
   },
@@ -1477,15 +1479,14 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
+      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.ClusterSpec$Id)",
       "public long aggregatedModelCostInBytes()",
-      "public void registerModel(com.yahoo.config.application.api.ApplicationFile)",
       "public void registerModel(com.yahoo.config.application.api.ApplicationFile, com.yahoo.config.model.api.OnnxModelOptions)",
-      "public void registerModel(java.net.URI)",
       "public void registerModel(java.net.URI, com.yahoo.config.model.api.OnnxModelOptions)",
       "public java.util.Map models()",
       "public void setRestartOnDeploy()",
-      "public boolean restartOnDeploy()"
+      "public boolean restartOnDeploy()",
+      "public void store()"
     ],
     "fields" : [ ]
   },
@@ -1498,14 +1499,14 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, long, long, java.util.Optional)",
+      "public void <init>(java.lang.String, long, long, com.yahoo.config.model.api.OnnxModelOptions)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public java.lang.String modelId()",
       "public long estimatedCost()",
       "public long hash()",
-      "public java.util.Optional onnxModelOptions()"
+      "public com.yahoo.config.model.api.OnnxModelOptions onnxModelOptions()"
     ],
     "fields" : [ ]
   },
@@ -1518,7 +1519,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
+      "public com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId)",
+      "public abstract com.yahoo.config.model.api.OnnxModelCost$Calculator newCalculator(com.yahoo.config.application.api.ApplicationPackage, com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.ClusterSpec$Id)",
       "public static com.yahoo.config.model.api.OnnxModelCost disabled()"
     ],
     "fields" : [ ]

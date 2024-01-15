@@ -293,7 +293,8 @@ public class SessionPreparer {
                     (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Jj][Aa][Rr]"))) {
                         paths.forEach(jarPath -> {
                             try {
-                                new BundleValidator().getPomXmlContent(logger, new JarFile(jarPath.toFile())).ifPresent(pom -> {
+                                new BundleValidator().getPomXmlContent((msg, cause) -> { throw new IllegalArgumentException(msg, cause); },
+                                                                       logger, new JarFile(jarPath.toFile())).ifPresent(pom -> {
                                     try {
                                         new ValidationProcessor().process(pom);
                                     }
@@ -320,6 +321,7 @@ public class SessionPreparer {
                                     instance,
                                     zone.environment(),
                                     zone.region(),
+                                    zone.cloud().name(),
                                     tags)
                         .run();
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
@@ -357,7 +359,8 @@ public class SessionPreparer {
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
-                                  params.dataplaneTokens());
+                                  params.dataplaneTokens(),
+                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()));
             checkTimeout("write state to zookeeper");
         }
 
@@ -400,7 +403,8 @@ public class SessionPreparer {
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
-                                       List<DataplaneToken> dataplaneTokens) {
+                                       List<DataplaneToken> dataplaneTokens,
+                                       ActivationTriggers activationTriggers) {
         var zooKeeperDeplyer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
             zooKeeperDeplyer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -416,6 +420,7 @@ public class SessionPreparer {
                                           operatorCertificates,
                                           cloudAccount,
                                           dataplaneTokens,
+                                          activationTriggers,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
             zooKeeperDeplyer.cleanup();

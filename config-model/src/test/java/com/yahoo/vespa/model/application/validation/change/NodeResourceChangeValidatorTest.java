@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +59,7 @@ public class NodeResourceChangeValidatorTest {
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {
-        return new NodeResourceChangeValidator().validate(current, next, new DeployState.Builder().build());
+        return ValidationTester.validateChanges(new NodeResourceChangeValidator(), next, new DeployState.Builder().previousModel(current).build());
     }
 
     private static VespaModel model(int mem1, int mem2, int mem3, int mem4) {

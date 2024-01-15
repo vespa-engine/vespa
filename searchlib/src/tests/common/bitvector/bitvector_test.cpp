@@ -646,45 +646,45 @@ TEST("requireThatGrowWorks")
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
 
     EXPECT_EQUAL(200u, v.reader().size());
-    EXPECT_EQUAL(1023u, v.writer().capacity()); 
+    EXPECT_EQUAL(2047u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
-    EXPECT_TRUE(v.reserve(1024));
+    EXPECT_TRUE(v.reserve(2048u));
     EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.extend(202));
     EXPECT_EQUAL(202u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(200));
     EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
-    EXPECT_FALSE(v.reserve(2047));
+    EXPECT_FALSE(v.reserve(4095u));
     EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(202));
     EXPECT_EQUAL(202u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQUAL(4u, v.writer().countTrueBits());
 
     EXPECT_FALSE(v.shrink(100));
     EXPECT_EQUAL(100u, v.reader().size()); 
-    EXPECT_EQUAL(2047u, v.writer().capacity()); 
+    EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71]", v.reader()));
     EXPECT_EQUAL(3u, v.writer().countTrueBits());
 
     v.writer().invalidateCachedCount();
-    EXPECT_TRUE(v.reserve(3100));
+    EXPECT_TRUE(v.reserve(5100u));
     EXPECT_EQUAL(100u, v.reader().size());
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQUAL(6143u, v.writer().capacity());
     EXPECT_EQUAL(3u, v.writer().countTrueBits());
 
     g.assign_generation(1);
@@ -701,9 +701,9 @@ TEST("require that growable bit vectors keeps memory allocator")
     EXPECT_EQUAL(AllocStats(1, 0), stats);
     v.writer().resize(1); // DO NOT TRY THIS AT HOME
     EXPECT_EQUAL(AllocStats(2, 1), stats);
-    v.reserve(2000);
+    v.reserve(2048);
     EXPECT_EQUAL(AllocStats(3, 1), stats);
-    v.extend(4000);
+    v.extend(5000);
     EXPECT_EQUAL(AllocStats(4, 1), stats);
     v.shrink(200);
     EXPECT_EQUAL(AllocStats(4, 1), stats);

@@ -8,11 +8,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.tokenizer");
 
-JuniperTokenizer::JuniperTokenizer(const Fast_WordFolder* wordfolder,
-				   const char* text, size_t len, ITokenProcessor* successor,
-                                   const juniper::SpecialTokenRegistry * registry) :
+JuniperTokenizer::JuniperTokenizer(const Fast_WordFolder* wordfolder, const char* text, size_t len,
+                                   ITokenProcessor* successor, const juniper::SpecialTokenRegistry * registry) :
     _wordfolder(wordfolder), _text(text), _len(len), _successor(successor), _registry(registry),
-    _charpos(0), _wordpos(0)
+    _charpos(0), _wordpos(0), _buffer()
 { }
 
 
@@ -32,19 +31,19 @@ void JuniperTokenizer::scan()
 
     const char* src = _text;
     const char* src_end = _text + _len;
-    const char* startpos = NULL;
+    const char* startpos = nullptr;
     ucs4_t* dst = _buffer;
     ucs4_t* dst_end = dst + TOKEN_DSTLEN;
     size_t result_len;
 
     while (src < src_end)
     {
-        if (_registry == NULL) {
+        if (_registry == nullptr) {
             // explicit prefetching seems to have negative effect with many threads
             src = _wordfolder->UCS4Tokenize(src, src_end, dst, dst_end, startpos, result_len);
         } else {
             const char * tmpSrc = _registry->tokenize(src, src_end, dst, dst_end, startpos, result_len);
-            if (tmpSrc == NULL) {
+            if (tmpSrc == nullptr) {
                 src = _wordfolder->UCS4Tokenize(src, src_end, dst, dst_end, startpos, result_len);
             } else {
                 src = tmpSrc;
@@ -63,6 +62,6 @@ void JuniperTokenizer::scan()
     }
     token.bytepos = _len;
     token.bytelen = 0;
-    token.token = NULL;
+    token.token = nullptr;
     _successor->handle_end(token);
 }

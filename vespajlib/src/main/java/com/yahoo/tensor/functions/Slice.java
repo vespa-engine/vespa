@@ -278,10 +278,11 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         }
 
         private String valueToString(ToStringContext<NAMETYPE> context) {
-            if (label != null)
-                return label;
-            else
+            if (label != null) {
+                return TensorAddress.labelToString(label);
+            } else {
                 return index.toString(context);
+            }
         }
 
         @Override

@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/features/distancetopathfeature.h>
 #include <vespa/searchlib/features/termdistancefeature.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 
 class Test : public FtTestApp
 {

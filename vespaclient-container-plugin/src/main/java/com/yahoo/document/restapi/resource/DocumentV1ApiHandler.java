@@ -52,6 +52,7 @@ import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.Response.Status;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -909,13 +910,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
     }
 
-    private static void badGateway(HttpRequest request, Throwable t, ResponseHandler handler) {
-        loggingException(() -> {
-            log.log(FINE, t, () -> "Document access error handling request " + request.getMethod() + " " + request.getUri().getRawPath());
-            JsonResponse.create(request, Exceptions.toMessageString(t), handler).respond(Response.Status.BAD_GATEWAY);
-        });
-    }
-
     private static void timeout(HttpRequest request, String message, ResponseHandler handler) {
         loggingException(() -> {
             log.log(FINE, () -> "Timeout handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
@@ -970,9 +964,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
-            }
-            catch (DispatchException e) {
-                badGateway(request, e, handler);
             }
             catch (RuntimeException e) {
                 serverError(request, e, handler);
@@ -1097,11 +1088,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                     case TIMEOUT -> jsonResponse.commit(Response.Status.GATEWAY_TIMEOUT);
                     case ERROR -> {
                         log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
-                        jsonResponse.commit(Response.Status.BAD_GATEWAY);
+                        jsonResponse.commit(Status.INTERNAL_SERVER_ERROR);
                     }
                     default -> {
                         log.log(WARNING, "Unexpected document API operation outcome '" + response.outcome() + "' " + response.getTextMessage());
-                        jsonResponse.commit(Response.Status.BAD_GATEWAY);
+                        jsonResponse.commit(Status.INTERNAL_SERVER_ERROR);
                     }
                 }
             }
@@ -1402,7 +1393,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                             if (session.get() != null)
                                 response.writeTrace(session.get().getTrace());
 
-                            int status = Response.Status.BAD_GATEWAY;
+                            int status = Status.INTERNAL_SERVER_ERROR;
                             switch (code) {
                                 case TIMEOUT: // Intentional fallthrough.
                                 case ABORTED:
@@ -1539,7 +1530,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 case 404 -> report(DocumentOperationStatus.NOT_FOUND);
                 case 412 -> report(DocumentOperationStatus.CONDITION_FAILED);
                 case 429 -> report(DocumentOperationStatus.TOO_MANY_REQUESTS);
-                case 500,502,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
+                case 500,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
                 default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));
             }
             metrics.reportHttpRequest(clientVersion());

@@ -3,7 +3,9 @@
 #include <vespa/searchlib/attribute/direct_multi_term_blueprint.h>
 #include <vespa/searchlib/attribute/i_docid_posting_store.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
+#include <vespa/searchlib/attribute/in_term_search.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
@@ -19,11 +21,20 @@ using namespace search::queryeval;
 using namespace search;
 using testing::StartsWith;
 
-struct IntegerKey : public IDirectPostingStore::LookupKey {
+using LookupKey = IDirectPostingStore::LookupKey;
+
+struct IntegerKey : public LookupKey {
     int64_t _value;
     IntegerKey(int64_t value_in) : _value(value_in) {}
     vespalib::stringref asString() const override { abort(); }
     bool asInteger(int64_t& value) const override { value = _value; return true; }
+};
+
+struct StringKey : public LookupKey {
+    vespalib::string _value;
+    StringKey(int64_t value_in) : _value(std::to_string(value_in)) {}
+    vespalib::stringref asString() const override { return _value; }
+    bool asInteger(int64_t&) const override { abort(); }
 };
 
 const vespalib::string field_name = "test";
@@ -50,112 +61,153 @@ concat(const Docids& a, const Docids& b)
     return res;
 }
 
-std::shared_ptr<AttributeVector>
-make_attribute(bool field_is_filter, CollectionType col_type)
+template <typename AttributeType, typename DataType>
+void
+populate_attribute(AttributeType& attr, const std::vector<DataType>& values)
 {
-    Config cfg(BasicType::INT64, col_type);
+    // Values 0 and 1 have btree (short) posting lists.
+    attr.update(10, values[0]);
+    attr.update(30, values[1]);
+    attr.update(31, values[1]);
+
+    // Values 2 and 3 have bitvector posting lists.
+    // We need at least 128 documents to get bitvector posting list (see PostingStoreBase2::resizeBitVectors())
+    for (auto docid : range(100, 128)) {
+        attr.update(docid, values[2]);
+    }
+    for (auto docid : range(300, 128)) {
+        attr.update(docid, values[3]);
+    }
+    attr.commit(true);
+}
+
+std::shared_ptr<AttributeVector>
+make_attribute(CollectionType col_type, BasicType type, bool field_is_filter)
+{
+    Config cfg(type, col_type);
     cfg.setFastSearch(true);
     if (field_is_filter) {
         cfg.setIsFilter(field_is_filter);
     }
     uint32_t num_docs = doc_id_limit - 1;
     auto attr = test::AttributeBuilder(field_name, cfg).docs(num_docs).get();
-    IntegerAttribute& real = dynamic_cast<IntegerAttribute&>(*attr);
-
-    // Values 1 and 3 have btree (short) posting lists with weights.
-    real.update(10, 1);
-    real.update(30, 3);
-    real.update(31, 3);
-
-    // Values 100 and 300 have bitvector posting lists.
-    // We need at least 128 documents to get bitvector posting list (see PostingStoreBase2::resizeBitVectors())
-    for (auto docid : range(100, 128)) {
-        real.update(docid, 100);
+    if (type == BasicType::STRING) {
+        populate_attribute<StringAttribute, vespalib::string>(dynamic_cast<StringAttribute&>(*attr),
+                                                              {"1", "3", "100", "300"});
+    } else {
+        populate_attribute<IntegerAttribute, int64_t>(dynamic_cast<IntegerAttribute&>(*attr),
+                                                      {1, 3, 100, 300});
     }
-    for (auto docid : range(300, 128)) {
-        real.update(docid, 300);
-    }
-    attr->commit(true);
     return attr;
 }
 
 void
-expect_has_btree_iterator(const IDirectPostingStore& store, int64_t term_value)
+expect_has_btree_iterator(const IDirectPostingStore& store, const LookupKey& key)
 {
     auto snapshot = store.get_dictionary_snapshot();
-    auto res = store.lookup(IntegerKey(term_value), snapshot);
+    auto res = store.lookup(key, snapshot);
     EXPECT_TRUE(store.has_btree_iterator(res.posting_idx));
 }
 
 void
-expect_has_bitvector_iterator(const IDirectPostingStore& store, int64_t term_value)
+expect_has_bitvector_iterator(const IDirectPostingStore& store, const LookupKey& key)
 {
     auto snapshot = store.get_dictionary_snapshot();
-    auto res = store.lookup(IntegerKey(term_value), snapshot);
+    auto res = store.lookup(key, snapshot);
     EXPECT_TRUE(store.has_bitvector(res.posting_idx));
 }
 
+template <typename LookupKeyType>
 void
 validate_posting_lists(const IDirectPostingStore& store)
 {
-    expect_has_btree_iterator(store, 1);
-    expect_has_btree_iterator(store, 3);
+    expect_has_btree_iterator(store, LookupKeyType(1));
+    expect_has_btree_iterator(store, LookupKeyType(3));
     if (store.has_always_btree_iterator()) {
-        expect_has_btree_iterator(store, 100);
-        expect_has_btree_iterator(store, 300);
+        expect_has_btree_iterator(store, LookupKeyType(100));
+        expect_has_btree_iterator(store, LookupKeyType(300));
     }
-    expect_has_bitvector_iterator(store, 100);
-    expect_has_bitvector_iterator(store, 300);
+    expect_has_bitvector_iterator(store, LookupKeyType(100));
+    expect_has_bitvector_iterator(store, LookupKeyType(300));
 }
 
+enum OperatorType {
+    In,
+    WSet
+};
+
 struct TestParam {
+    OperatorType op_type;
     CollectionType col_type;
-    TestParam(CollectionType col_type_in) : col_type(col_type_in) {}
+    BasicType type;
+    TestParam(OperatorType op_type_in, CollectionType col_type_in, BasicType type_in)
+        : op_type(op_type_in), col_type(col_type_in), type(type_in) {}
     ~TestParam() = default;
 };
 
 std::ostream& operator<<(std::ostream& os, const TestParam& param)
 {
-    os << param.col_type.asString();
+    os << (param.op_type == OperatorType::In ? "in_" : "wset_") << param.col_type.asString() << "_" << param.type.asString();
     return os;
 }
 
+using SingleInBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, InTermSearch>;
+using MultiInBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, InTermSearch>;
+using SingleWSetBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, WeightedSetTermSearch>;
+using MultiWSetBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
+
 class DirectMultiTermBlueprintTest : public ::testing::TestWithParam<TestParam> {
 public:
-    using SingleValueBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, WeightedSetTermSearch>;
-    using MultiValueBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
     std::shared_ptr<AttributeVector> attr;
-    std::shared_ptr<SingleValueBlueprintType> single_blueprint;
-    std::shared_ptr<MultiValueBlueprintType> multi_blueprint;
-    queryeval::ComplexLeafBlueprint* blueprint;
+    bool in_operator;
+    bool single_type;
+    bool integer_type;
+    std::shared_ptr<ComplexLeafBlueprint> blueprint;
     Blueprint::HitEstimate estimate;
     fef::TermFieldMatchData tfmd;
     fef::TermFieldMatchDataArray tfmda;
     DirectMultiTermBlueprintTest()
         : attr(),
-          single_blueprint(),
-          multi_blueprint(),
+          in_operator(true),
+          single_type(true),
+          integer_type(true),
           blueprint(),
           tfmd(),
           tfmda()
     {
         tfmda.add(&tfmd);
     }
+    ~DirectMultiTermBlueprintTest() {}
     void setup(bool field_is_filter, bool need_term_field_match_data) {
-        attr = make_attribute(field_is_filter, GetParam().col_type);
+        attr = make_attribute(GetParam().col_type, GetParam().type, field_is_filter);
+        in_operator = GetParam().op_type == OperatorType::In;
+        single_type = GetParam().col_type == CollectionType::SINGLE;
+        integer_type = GetParam().type != BasicType::STRING;
         FieldSpec spec(field_name, field_id, fef::TermFieldHandle(), field_is_filter);
-        if (GetParam().col_type == CollectionType::SINGLE) {
-            const auto* store = attr->as_docid_posting_store();
-            ASSERT_TRUE(store);
-            validate_posting_lists(*store);
-            single_blueprint = std::make_shared<SingleValueBlueprintType>(spec, *attr, *store, 2);
-            blueprint = single_blueprint.get();
+        const IDirectPostingStore* store;
+        if (single_type) {
+            auto real_store = attr->as_docid_posting_store();
+            ASSERT_TRUE(real_store);
+            if (in_operator) {
+                blueprint = std::make_shared<SingleInBlueprintType>(spec, *attr, *real_store, 2);
+            } else {
+                blueprint = std::make_shared<SingleWSetBlueprintType>(spec, *attr, *real_store, 2);
+            }
+            store = real_store;
         } else {
-            const auto* store = attr->as_docid_with_weight_posting_store();
-            ASSERT_TRUE(store);
-            validate_posting_lists(*store);
-            multi_blueprint = std::make_shared<MultiValueBlueprintType>(spec, *attr, *store, 2);
-            blueprint = multi_blueprint.get();
+            auto real_store = attr->as_docid_with_weight_posting_store();
+            ASSERT_TRUE(real_store);
+            if (in_operator) {
+                blueprint = std::make_shared<MultiInBlueprintType>(spec, *attr, *real_store, 2);
+            } else {
+                blueprint = std::make_shared<MultiWSetBlueprintType>(spec, *attr, *real_store, 2);
+            }
+            store = real_store;
+        }
+        if (integer_type) {
+            validate_posting_lists<IntegerKey>(*store);
+        } else {
+            validate_posting_lists<StringKey>(*store);
         }
         blueprint->setDocIdLimit(doc_id_limit);
         if (need_term_field_match_data) {
@@ -164,15 +216,34 @@ public:
             tfmd.tagAsNotNeeded();
         }
     }
-    void add_term(int64_t term_value) {
-        if (single_blueprint) {
-            single_blueprint->addTerm(IntegerKey(term_value), 1, estimate);
+    template <typename BlueprintType>
+    void add_term_helper(BlueprintType& b, int64_t term_value) {
+        if (integer_type) {
+            b.addTerm(IntegerKey(term_value), 1, estimate);
         } else {
-            multi_blueprint->addTerm(IntegerKey(term_value), 1, estimate);
+            b.addTerm(StringKey(term_value), 1, estimate);
+        }
+    }
+    void add_term(int64_t term_value) {
+        if (single_type) {
+            if (in_operator) {
+                add_term_helper(dynamic_cast<SingleInBlueprintType&>(*blueprint), term_value);
+            } else {
+                add_term_helper(dynamic_cast<SingleWSetBlueprintType&>(*blueprint), term_value);
+            }
+        } else {
+            if (in_operator) {
+                add_term_helper(dynamic_cast<MultiInBlueprintType&>(*blueprint), term_value);
+            } else {
+                add_term_helper(dynamic_cast<MultiWSetBlueprintType&>(*blueprint), term_value);
+            }
         }
     }
     std::unique_ptr<SearchIterator> create_leaf_search() const {
         return blueprint->createLeafSearch(tfmda, true);
+    }
+    vespalib::string multi_term_iterator() const {
+        return in_operator ? "search::attribute::MultiTermOrFilterSearchImpl" : "search::queryeval::WeightedSetTermSearchImpl";
     }
 };
 
@@ -201,30 +272,54 @@ expect_or_child(SearchIterator& itr, size_t child, const vespalib::string& exp_c
 
 INSTANTIATE_TEST_SUITE_P(DefaultInstantiation,
                          DirectMultiTermBlueprintTest,
-                         testing::Values(CollectionType::SINGLE, CollectionType::WSET),
+                         testing::Values(TestParam(OperatorType::In, CollectionType::SINGLE, BasicType::INT64),
+                                         TestParam(OperatorType::In, CollectionType::SINGLE, BasicType::STRING),
+                                         TestParam(OperatorType::In, CollectionType::WSET, BasicType::INT64),
+                                         TestParam(OperatorType::In, CollectionType::WSET, BasicType::STRING),
+                                         TestParam(OperatorType::WSet, CollectionType::SINGLE, BasicType::INT64),
+                                         TestParam(OperatorType::WSet, CollectionType::SINGLE, BasicType::STRING),
+                                         TestParam(OperatorType::WSet, CollectionType::WSET, BasicType::INT64),
+                                         TestParam(OperatorType::WSet, CollectionType::WSET, BasicType::STRING)),
                          testing::PrintToStringParamName());
 
-TEST_P(DirectMultiTermBlueprintTest, weight_iterators_used_for_none_filter_field)
-{
+TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_none_filter_field) {
     setup(false, true);
     add_term(1);
     add_term(3);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith("search::queryeval::WeightedSetTermSearchImpl"));
+    EXPECT_THAT(itr->asString(), StartsWith(multi_term_iterator()));
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, weight_iterators_used_instead_of_bitvectors_for_none_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_for_none_filter_field)
 {
     setup(false, true);
+    if (!in_operator) {
+        return;
+    }
     add_term(1);
     add_term(100);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith("search::queryeval::WeightedSetTermSearchImpl"));
+    expect_or_iterator(*itr, 2);
+    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 1, multi_term_iterator());
     expect_hits(concat({10}, range(100, 128)), *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_weight_iterators_used_for_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_for_none_filter_field)
+{
+    setup(false, true);
+    if (in_operator) {
+        return;
+    }
+    add_term(1);
+    add_term(100);
+    auto itr = create_leaf_search();
+    EXPECT_THAT(itr->asString(), StartsWith(multi_term_iterator()));
+    expect_hits(concat({10}, range(100, 128)), *itr);
+}
+
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_filter_field)
 {
     setup(true, true);
     add_term(1);
@@ -235,7 +330,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_weight_iterators_used_for_fi
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 2, "search::queryeval::WeightedSetTermSearchImpl");
+    expect_or_child(*itr, 2, multi_term_iterator());
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
@@ -251,17 +346,17 @@ TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, filter_iterator_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, or_filter_iterator_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
     add_term(3);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::DocumentWeightOrFilterSearchImpl"));
+    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermOrFilterSearchImpl"));
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_or_filter_iterator_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
@@ -272,11 +367,11 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_filter_iterator_used_for_fil
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 2, "search::attribute::DocumentWeightOrFilterSearchImpl");
+    expect_or_child(*itr, 2, "search::attribute::MultiTermOrFilterSearchImpl");
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_and_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
     add_term(100);

@@ -44,7 +44,7 @@ public interface ModelContext {
     ExecutorService getExecutor();
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
     Properties properties();
-    default Optional<File> appDir() { return Optional.empty();}
+    default Optional<File> appDir() { return Optional.empty(); }
     OnnxModelCost onnxModelCost();
 
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
@@ -72,7 +72,7 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2023") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2024") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String queryDispatchPolicy() { return "adaptive"; }
@@ -106,9 +106,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
-        @ModelFeatureFlag(owners = {"arnej, bjorncs"}, removeAfter = "8.262") default boolean enableGlobalPhase() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.261") default boolean enableNestedMultivalueGrouping() { return true; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean dynamicHeapSize() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
@@ -116,10 +114,11 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default long mergingMaxMemoryUsagePerNode() { return -1; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean usePerDocumentThrottledDeleteBucket() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean createPostinglistWhenNonStrict() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useEstimateForFetchPostings() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useThreadBundleForFetchPostings() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean createPostinglistWhenNonStrict() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean useEstimateForFetchPostings() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.278") default boolean useThreadBundleForFetchPostings() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

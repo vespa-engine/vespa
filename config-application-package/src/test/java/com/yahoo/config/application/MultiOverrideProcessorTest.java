@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -126,13 +127,13 @@ public class MultiOverrideProcessorTest {
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(input));
-        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Tags.empty()).process(inputDoc);
+        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Cloud.defaultCloud().name(), Tags.empty()).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 
     private void assertOverrideWithIds(Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(inputWithIds));
-        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Tags.empty()).process(inputDoc);
+        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Cloud.defaultCloud().name(), Tags.empty()).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 

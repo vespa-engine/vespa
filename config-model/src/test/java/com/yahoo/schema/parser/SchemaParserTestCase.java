@@ -120,6 +120,23 @@ public class SchemaParserTestCase {
         assertEquals("onnx(mymodel)", rp1.getGlobalPhaseExpression().get());
     }
 
+    @Test
+    void maxOccurrencesCanBeParsed() throws Exception {
+        String input = joinLines
+                ("schema foo {",
+                        "  document foo {",
+                        "    field bar type string {",
+                        "      indexing: summary | index",
+                        "      match { max-occurrences: 11 }",
+                        "    }",
+                        "  }",
+                        "}");
+        ParsedSchema schema = parseString(input);
+        var field = schema.getDocument().getFields().get(0);
+        assertEquals("bar", field.name());
+        assertEquals(11, field.matchSettings().getMaxTermOccurrences().get());
+    }
+
     void checkFileParses(String fileName) throws Exception {
         var schema = parseFile(fileName);
         assertNotNull(schema);

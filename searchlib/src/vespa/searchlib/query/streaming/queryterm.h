@@ -27,13 +27,10 @@ public:
     class EncodingBitMap
     {
     public:
-        EncodingBitMap(uint8_t bm=0) : _enc(bm) { }
+        explicit EncodingBitMap(uint8_t bm) : _enc(bm) { }
         bool isFloat()        const { return _enc & Float; }
         bool isBase10Integer()        const { return _enc & Base10Integer; }
         bool isAscii7Bit()            const { return _enc & Ascii7Bit; }
-        void setBase10Integer(bool v)       { if (v) _enc |= Base10Integer; else _enc &= ~Base10Integer; }
-        void setAscii7Bit(bool v)           { if (v) _enc |= Ascii7Bit; else _enc &= ~Ascii7Bit; }
-        void setFloat(bool v)               { if (v) _enc |= Float; else _enc &= ~Float; }
     private:
         enum { Ascii7Bit=0x01, Base10Integer=0x02, Float=0x04 };
         uint8_t _enc;
@@ -54,7 +51,12 @@ public:
         uint32_t _hitCount;
         uint32_t _fieldLength;
     };
-    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, Type type);
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, stringref term, const string & index, Type type)
+        : QueryTerm(std::move(resultBase), term, index, type, (type == Type::EXACTSTRINGTERM)
+                                                              ? Normalizing::LOWERCASE
+                                                              : Normalizing::LOWERCASE_AND_FOLD)
+    {}
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, stringref term, const string & index, Type type, Normalizing normalizing);
     QueryTerm(const QueryTerm &) = delete;
     QueryTerm & operator = (const QueryTerm &) = delete;
     QueryTerm(QueryTerm &&) = delete;

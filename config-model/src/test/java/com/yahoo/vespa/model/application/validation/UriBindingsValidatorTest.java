@@ -107,7 +107,7 @@ public class UriBindingsValidatorTest {
                 .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        new UriBindingsValidator().validate(model, deployState);
+        ValidationTester.validate(new UriBindingsValidator(), model, deployState);
     }
 
     private static String createServicesXmlWithHandler(String handlerBinding) {

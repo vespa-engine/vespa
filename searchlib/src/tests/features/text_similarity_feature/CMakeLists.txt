@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_text_similarity_feature_test_app TEST
     text_similarity_feature_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_text_similarity_feature_test_app COMMAND searchlib_text_similarity_feature_test_app)

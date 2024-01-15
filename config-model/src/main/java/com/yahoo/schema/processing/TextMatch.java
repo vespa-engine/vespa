@@ -16,13 +16,9 @@ import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Simon Thoresen Hult
@@ -64,8 +60,16 @@ public class TextMatch extends Processor {
         }
         ret.setStemMode(activeStemming.toStemMode());
         ret.setRemoveAccents(field.getNormalizing().doRemoveAccents());
-        if ((field.getMatching() != null) && (field.getMatching().maxLength() != null)) {
-            ret.setMaxTokenLength(field.getMatching().maxLength());
+        var fieldMatching = field.getMatching();
+        if (fieldMatching != null) {
+            var maxLength = fieldMatching.maxLength();
+            if (maxLength != null) {
+                ret.setMaxTokenLength(maxLength);
+            }
+            var maxTermOccurrences = fieldMatching.maxTermOccurrences();
+            if (maxTermOccurrences != null) {
+                ret.setMaxTermOccurrences(maxTermOccurrences);
+            }
         }
         return ret;
     }

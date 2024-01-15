@@ -9,7 +9,6 @@ import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
 import org.eclipse.jetty.http.HttpField;
@@ -41,7 +40,6 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -174,7 +172,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     public void start() {
         try {
             server.start();
-            metricsReporter.start();
+            if (config.metric().reporterEnabled()) metricsReporter.start();
             logEffectiveSslConfiguration();
         } catch (final Exception e) {
             if (e instanceof IOException && e.getCause() instanceof BindException) {

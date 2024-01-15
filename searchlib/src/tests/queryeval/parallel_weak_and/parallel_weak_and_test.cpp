@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -10,8 +10,9 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::query;
 using namespace search::queryeval;
@@ -284,89 +285,101 @@ struct AlgoExhaustPastFixture : public FixtureBase
 };
 
 
-TEST_F("require that algorithm prunes bad hits after enough good ones are obtained", AlgoSimpleFixture)
+TEST(ParallelWeakAndTest, require_that_algorithm_prunes_bad_hits_after_enough_good_ones_are_obtained)
 {
+    AlgoSimpleFixture f;
     FakeResult expect = FakeResult()
                         .doc(1).score(1 * 1 + 4 * 1)
                         .doc(2).score(1 * 2)
                         .doc(3).score(1 * 3 + 4 * 3)
                         .doc(5).score(1 * 5 + 4 * 5);
-    EXPECT_EQUAL(expect, f.result);
+    EXPECT_EQ(expect, f.result);
 }
 
-TEST_F("require that algorithm uses subsearches as expected", AlgoSimpleFixture) {
-    EXPECT_EQUAL(SearchHistory()
-                 .seek("PWAND", 1).seek("B", 1).step("B", 1).unpack("B", 1).step("PWAND", 1)
-                 .unpack("PWAND", 1).seek("A", 1).step("A", 1).unpack("A", 1)
-                 .seek("PWAND", 2).seek("B", 2).step("B", 3).seek("A", 2).step("A", 2).unpack("A", 2).step("PWAND", 2)
-                 .unpack("PWAND", 2)
-                 .seek("PWAND", 3).unpack("B", 3).step("PWAND", 3)
-                 .unpack("PWAND", 3).seek("A", 3).step("A", 3).unpack("A", 3)
-                 .seek("PWAND", 4).seek("B", 4).step("B", 5).seek("A", 4).step("A", 4).unpack("A", 4).unpack("B", 5).step("PWAND", 5)
-                 .unpack("PWAND", 5).seek("A", 5).step("A", 5).unpack("A", 5)
-                 .seek("PWAND", 6).seek("B", 6).step("B", search::endDocId).step("PWAND", search::endDocId),
-                 f.spec.getHistory());
-}
-
-TEST_F("require that algorithm considers documents in the right order", AlgoAdvancedFixture)
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_subsearches_as_expected)
 {
-    EXPECT_EQUAL(SimpleResult()
-                 .addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
-                 .addHit(11).addHit(12).addHit(13).addHit(14).addHit(15)
-                 .addHit(111).addHit(112).addHit(113).addHit(114).addHit(115), asSimpleResult(f.result));
+    AlgoSimpleFixture f;
+    EXPECT_EQ(SearchHistory()
+              .seek("PWAND", 1).seek("B", 1).step("B", 1).unpack("B", 1).step("PWAND", 1)
+              .unpack("PWAND", 1).seek("A", 1).step("A", 1).unpack("A", 1)
+              .seek("PWAND", 2).seek("B", 2).step("B", 3).seek("A", 2).step("A", 2).unpack("A", 2).step("PWAND", 2)
+              .unpack("PWAND", 2)
+              .seek("PWAND", 3).unpack("B", 3).step("PWAND", 3)
+              .unpack("PWAND", 3).seek("A", 3).step("A", 3).unpack("A", 3)
+              .seek("PWAND", 4).seek("B", 4).step("B", 5).seek("A", 4).step("A", 4).unpack("A", 4).unpack("B", 5).step("PWAND", 5)
+              .unpack("PWAND", 5).seek("A", 5).step("A", 5).unpack("A", 5)
+              .seek("PWAND", 6).seek("B", 6).step("B", search::endDocId).step("PWAND", search::endDocId),
+              f.spec.getHistory());
 }
 
-TEST_F("require that algorithm take initial docid for subsearches into account", AlgoSubsearchFixture)
+TEST(ParallelWeakAndTest, require_that_algorithm_considers_documents_in_the_right_order)
 {
-    EXPECT_EQUAL(FakeResult().doc(10).score(20), f.result);
-    EXPECT_EQUAL(SearchHistory().seek("PWAND", 1).unpack("B", 10).step("PWAND", 10).unpack("PWAND", 10)
-                 .seek("PWAND", 11).seek("B", 11).step("B", search::endDocId).step("PWAND", search::endDocId),
-                 f.spec.getHistory());
+    AlgoAdvancedFixture f;
+    EXPECT_EQ(SimpleResult()
+              .addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
+              .addHit(11).addHit(12).addHit(13).addHit(14).addHit(15)
+              .addHit(111).addHit(112).addHit(113).addHit(114).addHit(115), asSimpleResult(f.result));
 }
 
-TEST_F("require that algorithm uses first match when two matches have same score", AlgoSameScoreFixture)
+TEST(ParallelWeakAndTest, require_that_algorithm_take_initial_docid_for_subsearches_into_account)
 {
-    EXPECT_EQUAL(FakeResult().doc(1).score(100), f.result);
+    AlgoSubsearchFixture f;
+    EXPECT_EQ(FakeResult().doc(10).score(20), f.result);
+    EXPECT_EQ(SearchHistory().seek("PWAND", 1).unpack("B", 10).step("PWAND", 10).unpack("PWAND", 10)
+              .seek("PWAND", 11).seek("B", 11).step("B", search::endDocId).step("PWAND", search::endDocId),
+              f.spec.getHistory());
 }
 
-TEST_F("require that algorithm uses initial score threshold (all hits greater)", AlgoScoreThresholdFixture(29))
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_first_match_when_two_matches_have_same_score)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(1).score(1 * 10 + 2 * 20)
-                 .doc(2).score(1 * 30)
-                 .doc(3).score(2 * 40), f.result);
+    AlgoSameScoreFixture f;
+    EXPECT_EQ(FakeResult().doc(1).score(100), f.result);
 }
 
-TEST_F("require that algorithm uses initial score threshold (2 hits greater)", AlgoScoreThresholdFixture(30))
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_initial_score_threshold_case_all_hits_greater)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(1).score(1 * 10 + 2 * 20)
-                 .doc(3).score(2 * 40), f.result);
+    AlgoScoreThresholdFixture f(29);
+    EXPECT_EQ(FakeResult()
+              .doc(1).score(1 * 10 + 2 * 20)
+              .doc(2).score(1 * 30)
+              .doc(3).score(2 * 40), f.result);
 }
 
-TEST_F("require that algorithm uses initial score threshold (1 hit greater)", AlgoScoreThresholdFixture(50))
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_initial_score_threshold_case_2_hits_greater)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(3).score(2 * 40), f.result);
+    AlgoScoreThresholdFixture f(30);
+    EXPECT_EQ(FakeResult()
+              .doc(1).score(1 * 10 + 2 * 20)
+              .doc(3).score(2 * 40), f.result);
 }
 
-TEST_F("require that algorithm uses initial score threshold (0 hits greater)", AlgoScoreThresholdFixture(80))
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_initial_score_threshold_case_1_hit_greater)
 {
-    EXPECT_EQUAL(FakeResult(), f.result);
+    AlgoScoreThresholdFixture f(50);
+    EXPECT_EQ(FakeResult()
+              .doc(3).score(2 * 40), f.result);
 }
 
-TEST_F("require that algorithm handle large scores", AlgoLargeScoresFixture(60000L * 70000L))
+TEST(ParallelWeakAndTest, require_that_algorithm_uses_initial_score_threshold_case_0_hits_greater)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(1).score(60000L * 60000L + 70000L * 80000L)
-                 .doc(3).score(70000L * 90000L), f.result);
+    AlgoScoreThresholdFixture f(80);
+    EXPECT_EQ(FakeResult(), f.result);
 }
 
-TEST_F("require that algorithm steps all present terms when past is empty", AlgoExhaustPastFixture(25))
+TEST(ParallelWeakAndTest, require_that_algorithm_handles_large_scores)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(3).score(40)
-                 .doc(5).score(30), f.result);
+    AlgoLargeScoresFixture f(60000L * 70000L);
+    EXPECT_EQ(FakeResult()
+              .doc(1).score(60000L * 60000L + 70000L * 80000L)
+              .doc(3).score(70000L * 90000L), f.result);
+}
+
+TEST(ParallelWeakAndTest, require_that_algorithm_steps_all_present_terms_when_past_is_empty)
+{
+    AlgoExhaustPastFixture f(25);
+    EXPECT_EQ(FakeResult()
+              .doc(3).score(40)
+              .doc(5).score(30), f.result);
 }
 
 struct HeapFixture
@@ -380,14 +393,15 @@ struct HeapFixture
     }
 };
 
-TEST_F("require that scores are collected in batches before adjusting heap", HeapFixture)
+TEST(ParallelWeakAndTest, require_that_scores_are_collected_in_batches_before_adjusting_heap)
 {
-    EXPECT_EQUAL(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5).addHit(6),
-                 f.result);
-    EXPECT_EQUAL(ScoresHistory().add(Scores().add(1).add(2))
-                                .add(Scores().add(3).add(4))
-                                .add(Scores().add(5).add(6)),
-                                f.spec.heap.history);
+    HeapFixture f;
+    EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5).addHit(6),
+              f.result);
+    EXPECT_EQ(ScoresHistory().add(Scores().add(1).add(2))
+              .add(Scores().add(3).add(4))
+              .add(Scores().add(5).add(6)),
+              f.spec.heap.history);
 }
 
 
@@ -400,13 +414,14 @@ struct SearchFixture : public FixtureBase
     }
 };
 
-TEST_F("require that dot product score is calculated", SearchFixture)
+TEST(ParallelWeakAndTest, require_that_dot_product_score_is_calculated)
 {
+    SearchFixture f;
     FakeResult expect = FakeResult()
                         .doc(1).score(1 * 10 + 2 * 20)
                         .doc(2).score(1 * 30)
                         .doc(3).score(2 * 40);
-    EXPECT_EQUAL(expect, f.result);
+    EXPECT_EQ(expect, f.result);
 }
 
 
@@ -452,8 +467,9 @@ struct BlueprintHitsFixture : public BlueprintFixtureBase
     bool maxScoreFirst() {
         SearchIterator::UP itr = iterator();
         const ParallelWeakAndSearch *wand = dynamic_cast<ParallelWeakAndSearch*>(itr.get());
-        ASSERT_EQUAL(2u, wand->get_num_terms());
-        return (wand->get_term_weight(0) == 20);
+        bool failed = false;
+        EXPECT_EQ(2u, wand->get_num_terms()) << (failed = true, "");
+        return failed ? false : (wand->get_term_weight(0) == 20);
     }
 };
 
@@ -468,7 +484,10 @@ struct ThresholdBoostFixture : public FixtureBase
         SearchIterator::UP si(spec.create());
         result = doSearch(*si, spec.rootMatchData);
     }
+    ~ThresholdBoostFixture();
 };
+
+ThresholdBoostFixture::~ThresholdBoostFixture() = default;
 
 struct BlueprintFixture : public BlueprintFixtureBase
 {
@@ -497,89 +516,99 @@ struct BlueprintAsStringFixture : public BlueprintFixtureBase
 };
 
 
-TEST_F("require that hit estimate is calculated", BlueprintFixture)
+TEST(ParallelWeakAndTest, require_that_hit_estimate_is_calculated)
 {
+    BlueprintFixture f;
     Node::UP term = f.spec.createNode();
     Blueprint::UP bp = f.blueprint(*term);
-    EXPECT_EQUAL(4u, bp->getState().estimate().estHits);
+    EXPECT_EQ(4u, bp->getState().estimate().estHits);
 }
 
-TEST_F("require that blueprint picks up docid limit", BlueprintFixture)
+TEST(ParallelWeakAndTest, require_that_blueprint_picks_up_docid_limit)
 {
+    BlueprintFixture f;
     Node::UP term = f.spec.createNode(57, 67, 77.7);
     Blueprint::UP bp = f.blueprint(*term);
     const ParallelWeakAndBlueprint * pbp = dynamic_cast<const ParallelWeakAndBlueprint *>(bp.get());
-    EXPECT_EQUAL(0u, pbp->get_docid_limit());
+    EXPECT_EQ(0u, pbp->get_docid_limit());
     bp->setDocIdLimit(1000);
-    EXPECT_EQUAL(1000u, pbp->get_docid_limit());
+    EXPECT_EQ(1000u, pbp->get_docid_limit());
 }
 
-TEST_F("require that scores to track, score threshold and threshold boost factor is passed down from query node to blueprint", BlueprintFixture)
+TEST(ParallelWeakAndTest, require_that_scores_to_track_score_threshold_and_threshold_boost_factor_is_passed_down_from_query_node_to_blueprint)
 {
+    BlueprintFixture f;
     Node::UP term = f.spec.createNode(57, 67, 77.7);
     Blueprint::UP bp = f.blueprint(*term);
     const ParallelWeakAndBlueprint * pbp = dynamic_cast<const ParallelWeakAndBlueprint *>(bp.get());
-    EXPECT_EQUAL(57u, pbp->getScores().getScoresToTrack());
-    EXPECT_EQUAL(67u, pbp->getScoreThreshold());
-    EXPECT_EQUAL(77.7, pbp->getThresholdBoostFactor());
+    EXPECT_EQ(57u, pbp->getScores().getScoresToTrack());
+    EXPECT_EQ(67u, pbp->getScoreThreshold());
+    EXPECT_EQ(77.7, pbp->getThresholdBoostFactor());
 }
 
-TEST_F("require that search iterator is correctly setup and executed", BlueprintFixture)
+TEST(ParallelWeakAndTest, require_that_search_iterator_is_correctly_setup_and_executed)
 {
+    BlueprintFixture f;
     FakeResult expect = FakeResult()
                         .doc(1).score(1 * 10 + 2 * 20)
                         .doc(2).score(1 * 30)
                         .doc(3).score(2 * 40);
-    EXPECT_EQUAL(expect, f.search());
+    EXPECT_EQ(expect, f.search());
 }
 
-TEST_F("require that initial score threshold can be specified (1 hit greater)", BlueprintFixture)
+TEST(ParallelWeakAndTest, require_that_initial_score_threshold_can_be_specified_case_1_hit_greater)
 {
+    BlueprintFixture f;
     Node::UP term = f.spec.createNode(3, 50);
-    EXPECT_EQUAL(FakeResult()
-                 .doc(3).score(2 * 40), f.search(*term));
+    EXPECT_EQ(FakeResult()
+              .doc(3).score(2 * 40), f.search(*term));
 }
 
-TEST_F("require that large scores are handled", BlueprintLargeScoresFixture)
+TEST(ParallelWeakAndTest, require_that_large_scores_are_handled)
 {
+    BlueprintLargeScoresFixture f;
     Node::UP term = f.spec.createNode(3, 60000L * 70000L);
-    EXPECT_EQUAL(FakeResult()
-                 .doc(1).score(60000L * 60000L + 70000L * 80000L)
-                 .doc(3).score(70000L * 90000L), f.search(*term));
+    EXPECT_EQ(FakeResult()
+              .doc(1).score(60000L * 60000L + 70000L * 80000L)
+              .doc(3).score(70000L * 90000L), f.search(*term));
 }
 
-TEST_F("require that docid limit is propagated to search iterator", BlueprintFixture())
+TEST(ParallelWeakAndTest, require_that_docid_limit_is_propagated_to_search_iterator)
 {
+    BlueprintFixture f1;
     f1.spec.docIdLimit = 4050;
     SearchIterator::UP itr = f1.iterator();
     const ParallelWeakAndSearch *wand = dynamic_cast<ParallelWeakAndSearch*>(itr.get());
-    EXPECT_EQUAL(4050u, wand->getMatchParams().docIdLimit);
+    EXPECT_EQ(4050u, wand->getMatchParams().docIdLimit);
 }
 
-TEST_FFF("require that terms are sorted for maximum skipping",
-         BlueprintHitsFixture(50, 50, 100),
-         BlueprintHitsFixture(60, 50, 100),
-         BlueprintHitsFixture(80, 50, 100))
+TEST(ParallelWeakAndTest, require_that_terms_are_sorted_for_maximum_skipping)
 {
+    BlueprintHitsFixture f1(50, 50, 100);
+    BlueprintHitsFixture f2(60, 50, 100);
+    BlueprintHitsFixture f3(80, 50, 100);
     EXPECT_TRUE(f1.maxScoreFirst());
     EXPECT_TRUE(f2.maxScoreFirst());
     EXPECT_FALSE(f3.maxScoreFirst());
 }
 
-TEST_FF("require that threshold boosting works as expected", ThresholdBoostFixture(1.0), ThresholdBoostFixture(2.0))
+TEST(ParallelWeakAndTest, require_that_threshold_boosting_works_as_expected)
 {
-    EXPECT_EQUAL(FakeResult()
-                 .doc(1).score(1000)
-                 .doc(2).score(2000)
-                 .doc(3).score(3000)
-                 .doc(4).score(4200), f1.result);
-    EXPECT_EQUAL(FakeResult()
-                 .doc(2).score(2000)
-                 .doc(4).score(4200), f2.result);
+    ThresholdBoostFixture f1(1.0);
+    ThresholdBoostFixture f2(2.0);
+    EXPECT_EQ(FakeResult()
+              .doc(1).score(1000)
+              .doc(2).score(2000)
+              .doc(3).score(3000)
+              .doc(4).score(4200), f1.result);
+    EXPECT_EQ(FakeResult()
+              .doc(2).score(2000)
+              .doc(4).score(4200), f2.result);
 }
 
-TEST_F("require that asString() on blueprint works", BlueprintAsStringFixture)
+TEST(ParallelWeakAndTest, require_that_asString_on_blueprint_works)
 {
+    BlueprintAsStringFixture f;
     Node::UP term = f.spec.createNode(57, 67);
     Blueprint::UP bp = f.blueprint(*term);
     vespalib::string expStr = "search::queryeval::ParallelWeakAndBlueprint {\n"
@@ -599,6 +628,7 @@ TEST_F("require that asString() on blueprint works", BlueprintAsStringFixture)
                               "        tree_size: 2\n"
                               "        allow_termwise_eval: false\n"
                               "    }\n"
+                              "    cost: 1\n"
                               "    sourceId: 4294967295\n"
                               "    docid_limit: 0\n"
                               "    _weights: std::vector {\n"
@@ -622,12 +652,13 @@ TEST_F("require that asString() on blueprint works", BlueprintAsStringFixture)
                               "                tree_size: 1\n"
                               "                allow_termwise_eval: true\n"
                               "            }\n"
+                              "            cost: 1\n"
                               "            sourceId: 4294967295\n"
                               "            docid_limit: 0\n"
                               "        }\n"
                               "    }\n"
                               "}\n";
-    EXPECT_EQUAL(expStr, bp->asString());
+    EXPECT_EQ(expStr, bp->asString());
 }
 
 using MatchParams = ParallelWeakAndSearch::MatchParams;
@@ -659,7 +690,7 @@ SearchIterator::UP create_wand(bool use_dww,
     assert(childrenMatchData->getNumTermFields() == dict_entries.size());
     wand::Terms terms;
     for (size_t i = 0; i < dict_entries.size(); ++i) {
-        terms.push_back(wand::Term(new DocumentWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
+        terms.push_back(wand::Term(new DocidWithWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
                                    weights[i],
                                    dict_entries[i].posting_size,
                                    childrenMatchData->resolveTermField(handles[i])));
@@ -684,11 +715,12 @@ private:
     mutable DummyHeap _dummy_heap;
 };
 
-TEST("verify search iterator conformance") {
+TEST(ParallelWeakAndTest, verify_search_iterator_conformance)
+{
     for (bool use_dww: {false, true}) {
         Verifier verifier(use_dww);
         verifier.verify();
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

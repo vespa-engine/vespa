@@ -26,10 +26,9 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                               DocEntryList& entries,
                               HitCounter& hitCounter)
 {
-    for (size_t i = 0; i < entries.size(); ++i) {
-        const spi::DocEntry& entry(*entries[i]);
-        if (!entry.isRemove()) {
-            const document::Document* doc = entry.getDocument();
+    for (const auto & entry : entries) {
+        if (!entry->isRemove()) {
+            const document::Document* doc = entry->getDocument();
 
             if (doc) {
                 const document::IdString& idString = doc->getId().getScheme();
@@ -57,33 +56,25 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
 }
 
 void CountVisitor::completedVisiting(HitCounter&) {
-    documentapi::MapVisitorMessage* cmd(new documentapi::MapVisitorMessage());
+    auto cmd = std::make_unique<documentapi::MapVisitorMessage>();
 
-    for (std::map<std::string, int>::iterator iter = _schemeCount.begin();
-         iter != _schemeCount.end();
-         iter++) {
-        cmd->getData().set(vespalib::make_string("scheme.%s", iter->first.c_str()), iter->second);
+    for (const auto & count : _schemeCount) {
+        cmd->getData().set(vespalib::make_string("scheme.%s", count.first.c_str()), count.second);
     }
 
-    for (NamespaceCountMap::const_iterator iter = _namespaceCount.begin();
-         iter != _namespaceCount.end();
-         iter++) {
-        cmd->getData().set(vespalib::make_string("namespace.%s", iter->first.c_str()), iter->second);
+    for (const auto & count : _namespaceCount) {
+        cmd->getData().set(vespalib::make_string("namespace.%s", count.first.c_str()), count.second);
     }
 
-    for (GroupCountMap::const_iterator iter = _groupCount.begin();
-         iter != _groupCount.end();
-         iter++) {
-        cmd->getData().set(vespalib::make_string("group.%s", iter->first.c_str()), iter->second);
+    for (const auto & count : _groupCount) {
+        cmd->getData().set(vespalib::make_string("group.%s", count.first.c_str()), count.second);
     }
 
-    for (std::map<uint64_t, int>::iterator iter = _userCount.begin();
-         iter != _userCount.end();
-         iter++) {
-        cmd->getData().set(vespalib::make_string("user.%" PRIu64, iter->first), iter->second);
+    for (const auto & count : _userCount) {
+        cmd->getData().set(vespalib::make_string("user.%" PRIu64, count.first), count.second);
     }
 
-    sendMessage(documentapi::DocumentMessage::UP(cmd));
+    sendMessage(std::move(cmd));
 }
 
 }

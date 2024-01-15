@@ -16,6 +16,7 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -139,7 +140,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 : defaultHeapSizePercentageOfAvailableMemory;
         onnxModelCost = deployState.onnxModelCost();
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
-                deployState.getApplicationPackage(), deployState.getProperties().applicationId());
+                deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
     }
 

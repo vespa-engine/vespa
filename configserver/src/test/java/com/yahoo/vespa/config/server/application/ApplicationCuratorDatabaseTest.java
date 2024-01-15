@@ -7,10 +7,14 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,6 +42,32 @@ public class ApplicationCuratorDatabaseTest {
 
         db.writeReindexingStatus(id, reindexing);
         assertEquals(reindexing, db.readReindexingStatus(id).orElseThrow());
+    }
+
+    @Test
+    public void testPendingRestartsSerialization() {
+        ApplicationId id = ApplicationId.defaultId();
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+
+        assertEquals(Map.of(), db.readPendingRestarts(id).generationsForRestarts());
+
+        db.modifyPendingRestarts(id, restarts -> {
+            assertSame(PendingRestarts.empty(), restarts);
+            return restarts.withRestarts(2, List.of("a", "b"))
+                           .withRestarts(2, List.of("c", "d"))
+                           .withRestarts(3, List.of("a, b"))
+                           .withRestarts(2, List.of("a", "b"));
+        });
+        assertEquals(Map.of(2L, Set.of("a", "b", "c", "d"), 3L, Set.of("a, b")), db.readPendingRestarts(id).generationsForRestarts());
+
+        db.modifyPendingRestarts(id, restarts -> restarts.withoutPreviousGenerations(1));
+        assertEquals(Map.of(2L, Set.of("a", "b", "c", "d"), 3L, Set.of("a, b")), db.readPendingRestarts(id).generationsForRestarts());
+
+        db.modifyPendingRestarts(id, restarts -> restarts.withoutPreviousGenerations(2));
+        assertEquals(Map.of(3L, Set.of("a, b")), db.readPendingRestarts(id).generationsForRestarts());
+
+        db.modifyPendingRestarts(id, restarts -> restarts.withoutPreviousGenerations(3));
+        assertSame(PendingRestarts.empty(), db.readPendingRestarts(id));
     }
 
     @Test

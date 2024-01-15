@@ -23,8 +23,8 @@ private:
     const char        * _readPtr;  // buffer to read from (field reference)
     char                _unitSep;  // the unit separator character to use
 
-    virtual size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
-    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
+    size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
+    size_t matchTerms(const FieldRef & f, size_t shortestTerm) override;
 
     /**
      * Copies n bytes from the field reference to the modified buffer and updates the read pointer.
@@ -51,9 +51,8 @@ public:
 
     std::unique_ptr<FieldSearcher> duplicate() const override;
 
-    UTF8SubstringSnippetModifier();
-    UTF8SubstringSnippetModifier(FieldIdT fId);
-    ~UTF8SubstringSnippetModifier();
+    explicit UTF8SubstringSnippetModifier(FieldIdT fId);
+    ~UTF8SubstringSnippetModifier() override;
 
     /**
      * Creates a new instance.

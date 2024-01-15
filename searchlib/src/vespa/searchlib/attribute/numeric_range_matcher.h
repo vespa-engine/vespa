@@ -24,7 +24,8 @@ private:
     int _limit;
     size_t _max_per_group;
 public:
-    NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange=false);
+    NumericRangeMatcher(const QueryTermSimple& queryTerm) : NumericRangeMatcher(queryTerm, false) {}
+    NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange);
 protected:
     Int64Range getRange() const {
         return {static_cast<int64_t>(_low), static_cast<int64_t>(_high)};
@@ -41,8 +42,8 @@ protected:
     search::Range<BaseType>
     cappedRange(bool isFloat)
     {
-        BaseType low = static_cast<BaseType>(_low);
-        BaseType high = static_cast<BaseType>(_high);
+        auto low = static_cast<BaseType>(_low);
+        auto high = static_cast<BaseType>(_high);
 
         BaseType numMin = std::numeric_limits<BaseType>::min();
         BaseType numMax = std::numeric_limits<BaseType>::max();

@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_internal_max_reduce_prod_join_feature_test_app TE
 	internal_max_reduce_prod_join_feature_test.cpp
     DEPENDS
         searchlib
+        searchlib_test
 )
 vespa_add_test(NAME searchlib_internal_max_reduce_prod_join_feature_test_app COMMAND searchlib_internal_max_reduce_prod_join_feature_test_app)
