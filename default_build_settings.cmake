@@ -131,8 +131,13 @@ function(vespa_use_default_build_settings)
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
       if(APPLE AND (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")))
       elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        # Default to haswell cpu or newer
-        set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=haswell -mtune=skylake-avx512")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0 AND NOT CMAKE_CXX_COMPILE_VERSION VERSION_GREATER_EQUAL 12.3)
+          # Temporary workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108599
+          set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=haswell -mtune=skylake")
+        else()
+          # Default to haswell cpu or newer
+          set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=haswell -mtune=skylake-avx512")
+	endif()
       endif()
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
       set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=armv8.2-a+fp16+dotprod+crypto -mtune=neoverse-n1")
