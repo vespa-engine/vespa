@@ -107,9 +107,7 @@ QueryConnector::create(ParseItem::ItemType type)
         case search::ParseItem::ITEM_AND:          return std::make_unique<AndQueryNode>();
         case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
-        case search::ParseItem::ITEM_WEIGHTED_SET:
         case search::ParseItem::ITEM_EQUIV:        return std::make_unique<EquivQueryNode>();
-        case search::ParseItem::ITEM_WAND:         return std::make_unique<OrQueryNode>();
         case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
         case search::ParseItem::ITEM_PHRASE:       return std::make_unique<PhraseQueryNode>();
         case search::ParseItem::ITEM_SAME_ELEMENT: return std::make_unique<SameElementQueryNode>();
