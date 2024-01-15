@@ -3,6 +3,7 @@
 
 #include "time.h"
 #include <atomic>
+#include <memory>
 
 namespace vespalib {
 
