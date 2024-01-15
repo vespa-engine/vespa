@@ -27,7 +27,6 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
@@ -93,7 +92,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final Reindexing reindexing;
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
-    private final Set<ClusterSpec.Id> restartingClusters;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -129,8 +127,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<DockerImage> wantedDockerImageRepo,
                         Reindexing reindexing,
                         Optional<ValidationOverrides> validationOverrides,
-                        OnnxModelCost onnxModelCost,
-                        Set<ClusterSpec.Id> restartingClusters) {
+                        OnnxModelCost onnxModelCost) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -159,7 +156,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.wantedDockerImageRepo = wantedDockerImageRepo;
         this.reindexing = reindexing;
         this.onnxModelCost = onnxModelCost;
-        this.restartingClusters = Set.copyOf(restartingClusters);
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -315,8 +311,6 @@ public class DeployState implements ConfigDefinitionStore {
 
     public OnnxModelCost onnxModelCost() { return onnxModelCost; }
 
-    public Set<ClusterSpec.Id> restartingClusters() { return restartingClusters; }
-
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication;
@@ -346,7 +340,6 @@ public class DeployState implements ConfigDefinitionStore {
         private Reindexing reindexing = null;
         private Optional<ValidationOverrides> validationOverrides = Optional.empty();
         private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
-        private Set<ClusterSpec.Id> restartingClusters = Set.of();
 
         public Builder() {}
 
@@ -466,11 +459,6 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder onnxModelCost(OnnxModelCost instance) { this.onnxModelCost = instance; return this; }
 
-        public Builder restartingClusters(Set<ClusterSpec.Id> restartingClusters) {
-            this.restartingClusters = Set.copyOf(restartingClusters);
-            return this;
-        }
-
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -504,8 +492,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    wantedDockerImageRepo,
                                    reindexing,
                                    validationOverrides,
-                                   onnxModelCost,
-                                   restartingClusters);
+                                   onnxModelCost);
         }
 
     }
