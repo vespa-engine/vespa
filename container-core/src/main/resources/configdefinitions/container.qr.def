@@ -12,7 +12,7 @@ filedistributor.configid reference default=""
 rpc.enabled bool default=false restart
 
 ## RPC server listen port
-rpc.port int default=8086 restart
+rpc.port int default=8086
 
 ## Which interface to bind to.
 rpc.host string default="" restart
