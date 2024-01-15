@@ -1440,48 +1440,34 @@ public class ContentClusterTest extends ContentBaseTest {
         assertGroupsAllowedDown(2, 1, 2);
     }
 
-    private void assertIndexingDocprocEnabled(boolean indexed, boolean force) {
+    private void assertIndexingDocprocEnabled(boolean indexed) {
         String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
-                "    <document-processing/>" +
+                "    <search/>" +
                 "  </container>" +
                 "  <content id='search' version='1.0'>" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
-                "      <document-processing cluster='default'" + (force ? " chain='indexing'" : "") + "/>" +
                 "      <document type='type1' mode='" + (indexed ? "index" : "streaming") + "'/>" +
                 "    </documents>" +
                 "  </content>" +
                 "</services>";
         VespaModel model = createEnd2EndOneNode(new TestProperties(), services);
         var searchCluster = model.getContentClusters().get("search").getSearch();
-        if (force) {
-            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
-            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
-        } else if (indexed) {
-            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
-        } else {
-            assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
-        }
+        assertEquals("default", searchCluster.getIndexingDocproc().getClusterName("search"));
     }
 
     @Test
     void testIndexingDocprocEnabledWhenIndexMode()
     {
-        assertIndexingDocprocEnabled(true, false);
+        assertIndexingDocprocEnabled(true);
     }
 
     @Test
     void testIndexingDocprocNotEnabledWhenStreamingMode()
     {
-        assertIndexingDocprocEnabled(false, false);
-    }
-
-    @Test
-    void testIndexingDocprocEnabledWhenStreamingModeAndForced()
-    {
-        assertIndexingDocprocEnabled(false, true);
+        assertIndexingDocprocEnabled(false);
     }
 
     private void assertGroupsAllowedDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {
