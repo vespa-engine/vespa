@@ -1374,7 +1374,6 @@
       "public abstract com.yahoo.config.application.api.FileRegistry getFileRegistry()",
       "public abstract java.util.concurrent.ExecutorService getExecutor()",
       "public java.util.Optional reindexing()",
-      "public java.util.Set restartingClusters()",
       "public abstract com.yahoo.config.model.api.ModelContext$Properties properties()",
       "public java.util.Optional appDir()",
       "public abstract com.yahoo.config.model.api.OnnxModelCost onnxModelCost()",

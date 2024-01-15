@@ -43,7 +43,6 @@ public interface ModelContext {
     FileRegistry getFileRegistry();
     ExecutorService getExecutor();
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
-    default Set<ClusterSpec.Id> restartingClusters() { return Set.of(); }
     Properties properties();
     default Optional<File> appDir() { return Optional.empty(); }
     OnnxModelCost onnxModelCost();
