@@ -27,6 +27,9 @@ protected:
     WeightedSetTermSearch() = default;
 
 public:
+    static constexpr bool filter_search = false;
+    static constexpr bool require_btree_iterators = false;
+
     // TODO: pass ownership with unique_ptr
     static SearchIterator::UP create(const std::vector<SearchIterator *> &children,
                                      search::fef::TermFieldMatchData &tmd,

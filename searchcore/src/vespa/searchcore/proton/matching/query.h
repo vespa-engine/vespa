@@ -103,13 +103,12 @@ public:
      * testing becomes harder. Not calling this function enables the
      * test to verify the original query without optimization.
      **/
-    void optimize();
+    void optimize(bool sort_by_cost);
     void fetchPostings(const ExecuteInfo & executeInfo) ;
 
     void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace,
-                              bool create_postinglist_when_non_strict, bool use_estimate_for_fetch_postings);
+                              search::engine::Trace& trace, bool sort_by_cost);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.

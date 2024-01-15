@@ -16,12 +16,12 @@ using matching::Matcher;
 using matching::MatchingStats;
 using namespace vespalib::make_string_short;
 
-Matchers::Matchers(const vespalib::Clock &clock,
+Matchers::Matchers(const std::atomic<vespalib::steady_time> & now_ref,
                    matching::QueryLimiter &queryLimiter,
                    const search::fef::RankingAssetsRepo &rankingAssetsRepo)
     : _rpmap(),
       _ranking_assets_repo(rankingAssetsRepo),
-      _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), clock, queryLimiter,
+      _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), now_ref, queryLimiter,
                                           _ranking_assets_repo, -1)),
       _default()
 { }

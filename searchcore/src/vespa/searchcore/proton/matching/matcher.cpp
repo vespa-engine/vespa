@@ -116,7 +116,7 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 
 }  // namespace proton::matching::<unnamed>
 
-Matcher::Matcher(const search::index::Schema &schema, Properties props, const vespalib::Clock &clock,
+Matcher::Matcher(const search::index::Schema &schema, Properties props, const std::atomic<steady_time> & now_ref,
                  QueryLimiter &queryLimiter, const search::fef::IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey)
   : _indexEnv(distributionKey, schema, std::move(props), rankingAssetsRepo),
     _blueprintFactory(),
@@ -125,7 +125,7 @@ Matcher::Matcher(const search::index::Schema &schema, Properties props, const ve
     _statsLock(),
     _stats(softtimeout::Factor::lookup(_indexEnv.getProperties())),
     _startTime(my_clock::now()),
-    _clock(clock),
+    _now_ref(now_ref),
     _queryLimiter(queryLimiter),
     _distributionKey(distributionKey)
 {
@@ -166,12 +166,12 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                         : _stats.softDoomFactor())
                     : 0.95;
     vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
-    vespalib::steady_time safeDoom(_clock.getTimeNS() + safeLeft);
+    vespalib::steady_time safeDoom(_now_ref.load(std::memory_order_relaxed) + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
-    vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    vespalib::Doom doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
                                                request.trace(), request.getStackRef(), request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
@@ -248,7 +248,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
-        GroupingContext groupingContext(metaStore.getValidLids(), _clock, request.getTimeOfDoom(),
+        GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom(),
                                         request.groupSpec.data(), request.groupSpec.size());
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;

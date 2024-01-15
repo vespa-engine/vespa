@@ -15,9 +15,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -36,7 +38,7 @@ public class ValidationOverrides {
 
     private final String xmlForm;
 
-    /** Creates a validation overrides which does not have an xml form */
+    /** Creates a validation overrides which does not have an XML form */
     public ValidationOverrides(List<Allow> overrides) {
         this(overrides, null);
     }
@@ -48,10 +50,7 @@ public class ValidationOverrides {
 
     /** Throws a ValidationException unless all given validation is overridden at this time */
     public void invalid(Map<ValidationId, ? extends Collection<String>> messagesByValidationId, Instant now) {
-        Map<ValidationId, Collection<String>> disallowed = new HashMap<>(messagesByValidationId);
-        disallowed.keySet().removeIf(id -> allows(id, now));
-        if ( ! disallowed.isEmpty())
-            throw new ValidationException(disallowed);
+        invalidException(messagesByValidationId, now).ifPresent(e -> { throw e; });
     }
 
     /** Throws a ValidationException unless this validation is overridden at this time */
@@ -60,6 +59,21 @@ public class ValidationOverrides {
             throw new ValidationException(validationId, message);
     }
 
+    public Optional<ValidationException> invalidException(Map<ValidationId, ? extends Collection<String>> messagesByValidationId, Instant now) {
+        Map<ValidationId, Collection<String>> disallowed = new HashMap<>(messagesByValidationId);
+        disallowed.keySet().removeIf(id -> allows(id, now));
+
+        if (disallowed.size() == 1 && disallowed.values().iterator().next().size() == 1) // Single-message form if possible.
+            return Optional.of(new ValidationException(disallowed.keySet().iterator().next(),
+                                                       disallowed.values().iterator().next().iterator().next()));
+
+        if ( ! disallowed.isEmpty())
+            return Optional.of(new ValidationException(disallowed));
+
+        return Optional.empty();
+    }
+
+    // TODO: remove after 8.284 is gone
     public boolean allows(String validationIdString, Instant now) {
         Optional<ValidationId> validationId = ValidationId.from(validationIdString);
         if (validationId.isEmpty()) return false; // unknown id -> not allowed
@@ -76,12 +90,17 @@ public class ValidationOverrides {
     }
 
     /** Validates overrides (checks 'until' date') */
-    public boolean validate(Instant now) {
+    public void validate(Instant now, Consumer<String> reporter) {
         for (Allow override : overrides) {
             if (now.plus(Duration.ofDays(30)).isBefore(override.until))
-                throw new IllegalArgumentException("validation-overrides is invalid: " + override +
-                                                   " is too far in the future: Max 30 days is allowed");
+                reporter.accept("validation-overrides is invalid: " + override +
+                                " is too far in the future: Max 30 days is allowed");
         }
+    }
+
+    /** Validates overrides (checks 'until' date') */
+    public boolean validate(Instant now) {
+        validate(now, message -> { throw new IllegalArgumentException(message); });
         return false;
     }
 
@@ -163,10 +182,13 @@ public class ValidationOverrides {
      */
     public static class ValidationException extends IllegalArgumentException {
 
+        private final Map<ValidationId, Collection<String>> messagesById = new LinkedHashMap<>();
+
         static final long serialVersionUID = 789984668;
 
         private ValidationException(ValidationId validationId, String message) {
             super(validationId + ": " + message + ". " + toAllowMessage(validationId));
+            messagesById.put(validationId, List.of(message));
         }
 
         private ValidationException(Map<ValidationId, Collection<String>> messagesById) {
@@ -175,7 +197,10 @@ public class ValidationOverrides {
                                                String.join("\n\t", messages.getValue()) + "\n" +
                                                toAllowMessage(messages.getKey()))
                               .collect(Collectors.joining("\n")));
+            messagesById.forEach((id, messages) -> this.messagesById.put(id, List.copyOf(messages)));
         }
+
+        public Map<ValidationId, Collection<String>> messagesById() { return Map.copyOf(messagesById); }
 
     }
 

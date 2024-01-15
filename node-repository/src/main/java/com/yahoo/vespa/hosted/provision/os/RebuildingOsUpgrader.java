@@ -71,7 +71,7 @@ public class RebuildingOsUpgrader extends OsUpgrader {
         List<Node> hostsToRebuild = new ArrayList<>(rebuildLimit);
         NodeList candidates = hosts.not().rebuilding(softRebuild)
                                    .not().onOsVersion(target.version())
-                                   .matching(node -> canUpgradeAt(now, node))
+                                   .matching(node -> canUpgradeTo(target.version(), now, node))
                                    .byIncreasingOsVersion();
         for (Node host : candidates) {
             if (hostsToRebuild.size() == rebuildLimit) break;

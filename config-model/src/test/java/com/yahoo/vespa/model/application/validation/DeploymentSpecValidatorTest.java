@@ -63,7 +63,7 @@ public class DeploymentSpecValidatorTest {
         try {
             var deployState = builder.build();
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            new DeploymentSpecValidator().validate(model, deployState);
+            ValidationTester.validate(new DeploymentSpecValidator(), model, deployState);
             fail("Did not get expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals(message, e.getMessage());

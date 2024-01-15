@@ -49,6 +49,8 @@ public class ConfigServerMaintenance {
         maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
         maintainers.add(new ReindexingMaintainer(applicationRepository, curator,
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
+        if (applicationRepository.configserverConfig().hostedVespa())
+            maintainers.add(new PendingRestartsMaintainer(applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
     }
 
     public void shutdown() {

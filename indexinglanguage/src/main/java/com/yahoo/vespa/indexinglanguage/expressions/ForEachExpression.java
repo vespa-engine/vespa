@@ -11,6 +11,8 @@ import com.yahoo.vespa.indexinglanguage.FieldValueConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
+import java.util.Objects;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -20,7 +22,7 @@ public final class ForEachExpression extends CompositeExpression {
 
     public ForEachExpression(Expression exp) {
         super(UnresolvedDataType.INSTANCE);
-        this.exp = exp;
+        this.exp = Objects.requireNonNull(exp);
     }
 
     public Expression getInnerExpression() {
@@ -29,7 +31,8 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public ForEachExpression convertChildren(ExpressionConverter converter) {
-        return new ForEachExpression(converter.convert(exp));
+        Expression converted = converter.convert(exp);
+        return converted != null ?  new ForEachExpression(converted) : null;
     }
 
     @Override

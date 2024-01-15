@@ -1,6 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -8,14 +14,8 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/tensor_from_weighted_set_feature.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/eval/eval/function.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 
 using search::feature_t;
 using namespace search::fef;

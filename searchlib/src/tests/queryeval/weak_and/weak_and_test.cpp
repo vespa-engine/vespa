@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -7,7 +6,9 @@
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
@@ -60,32 +61,39 @@ struct WeightOrder {
 
 } // namespace <unnamed>
 
-TEST_F("require that wand prunes bad hits after enough good ones are obtained", SimpleWandFixture) {
-    EXPECT_EQUAL(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(5), f.hits);
+TEST(WeakAndTest, require_that_wand_prunes_bad_hits_after_enough_good_ones_are_obtained)
+{
+    SimpleWandFixture f;
+    EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(5), f.hits);
 }
 
-TEST_F("require that wand uses subsearches as expected", SimpleWandFixture) {
-    EXPECT_EQUAL(History()
-                 .seek("WAND", 1).seek("bar", 1).step("bar", 1).step("WAND", 1)
-                 .unpack("WAND", 1).seek("foo", 1).step("foo", 1).unpack("bar", 1).unpack("foo", 1)
-                 .seek("WAND", 2).seek("bar", 2).step("bar", 3).seek("foo", 2).step("foo", 2).step("WAND", 2)
-                 .unpack("WAND", 2).unpack("foo", 2)
-                 .seek("WAND", 3).step("WAND", 3)
-                 .unpack("WAND", 3).seek("foo", 3).step("foo", 3).unpack("bar", 3).unpack("foo", 3)
-                 .seek("WAND", 4).seek("bar", 4).step("bar", 5).seek("foo", 5).step("foo", 5).step("WAND", 5)
-                 .unpack("WAND", 5).unpack("bar", 5).unpack("foo", 5)
-                 .seek("WAND", 6).seek("bar", 6).step("bar", search::endDocId).step("WAND", search::endDocId),
-                 f.spec.getHistory());
+TEST(WeakAndTest, require_that_wand_uses_subsearches_as_expected)
+{
+    SimpleWandFixture f;
+    EXPECT_EQ(History()
+              .seek("WAND", 1).seek("bar", 1).step("bar", 1).step("WAND", 1)
+              .unpack("WAND", 1).seek("foo", 1).step("foo", 1).unpack("bar", 1).unpack("foo", 1)
+              .seek("WAND", 2).seek("bar", 2).step("bar", 3).seek("foo", 2).step("foo", 2).step("WAND", 2)
+              .unpack("WAND", 2).unpack("foo", 2)
+              .seek("WAND", 3).step("WAND", 3)
+              .unpack("WAND", 3).seek("foo", 3).step("foo", 3).unpack("bar", 3).unpack("foo", 3)
+              .seek("WAND", 4).seek("bar", 4).step("bar", 5).seek("foo", 5).step("foo", 5).step("WAND", 5)
+              .unpack("WAND", 5).unpack("bar", 5).unpack("foo", 5)
+              .seek("WAND", 6).seek("bar", 6).step("bar", search::endDocId).step("WAND", search::endDocId),
+              f.spec.getHistory());
 }
 
-TEST_F("require that documents are considered in the right order", AdvancedWandFixture) {
-    EXPECT_EQUAL(SimpleResult()
-                 .addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
-                 .addHit(11).addHit(12).addHit(13).addHit(14).addHit(15)
-                 .addHit(111).addHit(112).addHit(113).addHit(114).addHit(115), f.hits);
+TEST(WeakAndTest, require_that_documents_are_considered_in_the_right_order)
+{
+    AdvancedWandFixture f;
+    EXPECT_EQ(SimpleResult()
+              .addHit(1).addHit(2).addHit(3).addHit(4).addHit(5)
+              .addHit(11).addHit(12).addHit(13).addHit(14).addHit(15)
+              .addHit(111).addHit(112).addHit(113).addHit(114).addHit(115), f.hits);
 }
 
-TEST("require that initial docid for subsearches are taken into account") {
+TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_account)
+{
     History history;
     wand::Terms terms;
     terms.push_back(wand::Term(new TrackedSearch("foo", history, new EagerChild(search::endDocId)), 100, 1));
@@ -93,10 +101,10 @@ TEST("require that initial docid for subsearches are taken into account") {
     SearchIterator::UP search(new TrackedSearch("WAND", history, WeakAndSearch::create(terms, 2, true)));
     SimpleResult hits;
     hits.search(*search);
-    EXPECT_EQUAL(SimpleResult().addHit(10), hits);
-    EXPECT_EQUAL(History().seek("WAND", 1).step("WAND", 10).unpack("WAND", 10).unpack("bar", 10)
-                 .seek("WAND", 11).seek("bar", 11).step("bar", search::endDocId).step("WAND", search::endDocId),
-                 history);
+    EXPECT_EQ(SimpleResult().addHit(10), hits);
+    EXPECT_EQ(History().seek("WAND", 1).step("WAND", 10).unpack("WAND", 10).unpack("bar", 10)
+              .seek("WAND", 11).seek("bar", 11).step("bar", search::endDocId).step("WAND", search::endDocId),
+              history);
 }
 
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
@@ -111,9 +119,10 @@ private:
     }
 };
 
-TEST("verify search iterator conformance") {
+TEST(WeakAndTest, verify_search_iterator_conformance)
+{
     IteratorChildrenVerifier verifier;
     verifier.verify();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

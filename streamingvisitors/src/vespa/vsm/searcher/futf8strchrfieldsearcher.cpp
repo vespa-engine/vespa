@@ -19,10 +19,6 @@ FUTF8StrChrFieldSearcher::duplicate() const
     return std::make_unique<FUTF8StrChrFieldSearcher>(*this);
 }
 
-FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher()
-    : UTF8StrChrFieldSearcher(),
-      _folded(4_Ki)
-{ }
 FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher(FieldIdT fId)
     : UTF8StrChrFieldSearcher(fId),
       _folded(4_Ki)
@@ -36,7 +32,7 @@ FUTF8StrChrFieldSearcher::ansiFold(const char * toFold, size_t sz, char * folded
   for(size_t i=0; i < sz; i++) {
     byte c = toFold[i];
     if (c>=128) { retval = false; break; }
-    folded[i] = FieldSearcher::_foldLowCase[c];
+    folded[i] = fold(c);
   }
   return retval;
 }
@@ -209,7 +205,6 @@ size_t FUTF8StrChrFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
     folded[f.size()+1] = 0x01;
     memset(folded + f.size() + 2, 0, 16); // initialize padding data to avoid valgrind complaining about uninitialized values
     return match(folded, f.size(), qt);
-    NEED_CHAR_STAT(addPureUsAsciiField(f.size()));
   } else {
     return UTF8StrChrFieldSearcher::matchTerm(f, qt);
   }
@@ -227,7 +222,6 @@ size_t FUTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t min
     folded[f.size()+1] = 0x01;
     memset(folded + f.size() + 2, 0, 16); // initialize padding data to avoid valgrind complaining about uninitialized values
     return match(folded, f.size(), mintsz, &_qtl[0], _qtl.size());
-    NEED_CHAR_STAT(addPureUsAsciiField(f.size()));
   } else {
     return UTF8StrChrFieldSearcher::matchTerms(f, mintsz);
   }

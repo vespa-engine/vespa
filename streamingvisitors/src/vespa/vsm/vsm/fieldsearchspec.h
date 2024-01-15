@@ -10,20 +10,29 @@ namespace vsm {
 class FieldSearchSpec
 {
 public:
+    using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
+    using Normalizing = search::streaming::Normalizing;
     FieldSearchSpec();
-    FieldSearchSpec(const FieldIdT & id, const vespalib::string & name,
-                    VsmfieldsConfig::Fieldspec::Searchmethod searchMethod,
-                    const vespalib::string & arg1, size_t maxLength);
+    FieldSearchSpec(const FieldIdT & id, const vespalib::string & name, Searchmethod searchMethod,
+                    Normalizing normalize_mode, vespalib::stringref arg1, size_t maxLength);
     ~FieldSearchSpec();
     FieldSearchSpec(FieldSearchSpec&& rhs) noexcept;
     FieldSearchSpec& operator=(FieldSearchSpec&& rhs) noexcept;
-    const FieldSearcher & searcher() const { return *_searcher; }
-    const vespalib::string &  name() const { return _name; }
-    FieldIdT                    id() const { return _id; }
-    bool                     valid() const { return static_cast<bool>(_searcher); }
-    size_t               maxLength() const { return _maxLength; }
-    bool uses_nearest_neighbor_search_method() const noexcept { return _searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR; }
-    const vespalib::string& get_arg1() const noexcept { return _arg1; }
+    const FieldSearcher & searcher() const noexcept { return *_searcher; }
+    const vespalib::string &  name() const noexcept { return _name; }
+    FieldIdT                    id() const noexcept { return _id; }
+    bool                     valid() const noexcept { return static_cast<bool>(_searcher); }
+    size_t               maxLength() const noexcept { return _maxLength; }
+    Normalizing     normalize_mode() const noexcept { return _normalize_mode; }
+    const vespalib::string&   arg1() const noexcept { return _arg1; }
+    bool uses_nearest_neighbor_search_method() const noexcept {
+        return _searchMethod == Searchmethod::NEAREST_NEIGHBOR;
+    }
+    bool uses_string_search_method() const noexcept {
+        return  (_searchMethod == Searchmethod::UTF8) ||
+                (_searchMethod == Searchmethod::AUTOUTF8) ||
+                (_searchMethod == Searchmethod::SSE2UTF8);
+    }
 
     /**
      * Reconfigures the field searcher based on information in the given query term.
@@ -37,7 +46,8 @@ private:
     vespalib::string       _name;
     size_t                 _maxLength;
     FieldSearcherContainer _searcher;
-    VsmfieldsConfig::Fieldspec::Searchmethod _searchMethod;
+    Searchmethod           _searchMethod;
+    Normalizing            _normalize_mode;
     vespalib::string       _arg1;
     bool                   _reconfigured;
 };
@@ -55,7 +65,7 @@ public:
      * and a mapping from field name to field id. It then iterates over all document types and index names
      * and creates a mapping from index name to list of field ids for each document type.
      **/
-    bool buildFromConfig(const VsmfieldsHandle & conf);
+    void buildFromConfig(const VsmfieldsHandle & conf);
 
     /**
      * Iterates over the given field name vector adding extra elements to the mapping from field name to field id.
@@ -71,17 +81,13 @@ public:
      * Adds a [field name, field id] entry to the given mapping for each field name used in the given query.
      * This is achieved by mapping from query term index name -> list of field ids -> [field name, field id] pairs.
      **/
-    bool buildFieldsInQuery(const search::streaming::Query & query, StringFieldIdTMap & fieldsInQuery) const;
-
-    /**
-     * Adds a [field name, field id] entry to the given mapping for each field name in the given vector.
-     **/
-    void buildFieldsInQuery(const std::vector<vespalib::string> & otherFieldsNeeded, StringFieldIdTMap & fieldsInQuery) const;
+    StringFieldIdTMap buildFieldsInQuery(const search::streaming::Query & query) const;
+    void addFieldsFromIndex(vespalib::stringref index, StringFieldIdTMap & fieldIdMap) const;
 
     /**
      * Adds a FieldSearcher object to the given field searcher map for each field name in the other map.
      **/
-    void buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap);
+    void buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap) const;
 
     const FieldSearchSpecMapT & specMap()                 const { return _specMap; }
     //const IndexFieldMapT & indexMap()                     const { return _documentTypeMap.begin()->second; }
@@ -89,7 +95,7 @@ public:
     const StringFieldIdTMap & nameIdMap()                 const { return _nameIdMap; }
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & f);
 
-    static vespalib::string stripNonFields(const vespalib::string & rawIndex);
+    static vespalib::string stripNonFields(vespalib::stringref rawIndex);
     search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
 
 private:

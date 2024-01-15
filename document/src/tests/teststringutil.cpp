@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/util/stringutil.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
 using vespalib::string;

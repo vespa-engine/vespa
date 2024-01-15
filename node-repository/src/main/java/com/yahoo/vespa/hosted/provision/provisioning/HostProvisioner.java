@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostEvent;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -93,6 +95,9 @@ public interface HostProvisioner {
 
     /** Returns whether flavor for given host can be upgraded to a newer generation */
     boolean canUpgradeFlavor(Node host, Node child, Predicate<NodeResources> realHostResourcesWithinLimits);
+
+    /** Returns all OS versions available to host for the given major version */
+    Set<Version> osVersions(Node host, int majorVersion);
 
     /** Updates the given hosts to indicate that they are allocated to the given application. */
     default void updateAllocation(Collection<Node> hosts, ApplicationId owner) { }

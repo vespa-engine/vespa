@@ -5,7 +5,7 @@
 #include <cstring>
 
 bool Fast_NormalizeWordFolder::_isInitialized = false;
-std::mutex _initMutex;
+
 bool Fast_NormalizeWordFolder::_doAccentRemoval = false;
 bool Fast_NormalizeWordFolder::_doSharpSSubstitution = false;
 bool Fast_NormalizeWordFolder::_doLigatureSubstitution = false;
@@ -13,16 +13,25 @@ bool Fast_NormalizeWordFolder::_doMulticharExpansion = false;
 bool Fast_NormalizeWordFolder::_isWord[128];
 
 ucs4_t Fast_NormalizeWordFolder::_foldCase[767]; // Up to Latin Extended B (0x0250)
+ucs4_t Fast_NormalizeWordFolder::_lowerCase[767];
 ucs4_t Fast_NormalizeWordFolder::_foldCaseHighAscii[256]; // Latin Extended Additional (0x1E00 - 0x1F00)
+ucs4_t Fast_NormalizeWordFolder::_lowerCaseHighAscii[256];
 ucs4_t Fast_NormalizeWordFolder::_kanaMap[192];
 ucs4_t Fast_NormalizeWordFolder::_halfwidth_fullwidthMap[240];
+
+namespace {
+
+std::mutex G_initMutex;
+Fast_NormalizeWordFolder G_forceWorldFolderInit;
+}
+
 
 void
 Fast_NormalizeWordFolder::Setup(uint32_t flags)
 {
     // Only allow setting these when not initialized or initializing...
     {
-        std::lock_guard<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(G_initMutex);
         _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
         _doSharpSSubstitution    = (DO_SHARP_S_SUBSTITUTION     & flags) != 0;
         _doLigatureSubstitution  = (DO_LIGATURE_SUBSTITUTION    & flags) != 0;
@@ -37,17 +46,16 @@ Fast_NormalizeWordFolder::Initialize()
 {
     unsigned int i;
     if (!_isInitialized) {
-        std::lock_guard<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(G_initMutex);
         if (!_isInitialized) {
 
             for (i = 0; i < 128; i++)
                 _isWord[i] = Fast_UnicodeUtil::IsWordChar(i);
             for (i = 0; i < 767; i++) {
-                _foldCase[i] = Fast_UnicodeUtil::ToLower(i);
+                _foldCase[i] = _lowerCase[i] = Fast_UnicodeUtil::ToLower(i);
             }
-
             for (i = 0x1E00; i < 0x1F00; i++) {
-                _foldCaseHighAscii[i - 0x1E00] = Fast_UnicodeUtil::ToLower(i);
+                _foldCaseHighAscii[i - 0x1E00] = _lowerCaseHighAscii[i - 0x1E00] = Fast_UnicodeUtil::ToLower(i);
             }
 
             if (_doAccentRemoval) {
@@ -73,7 +81,6 @@ Fast_NormalizeWordFolder::Initialize()
                 _foldCase[0xda] = 'u';
                 _foldCase[0xdb] = 'u';
                 _foldCase[0xdd] = 'y';
-
                 _foldCase[0xe0] = 'a';
                 _foldCase[0xe1] = 'a';
                 _foldCase[0xe2] = 'a';
@@ -394,17 +401,11 @@ Fast_NormalizeWordFolder::Fast_NormalizeWordFolder()
 }
 
 
-Fast_NormalizeWordFolder::~Fast_NormalizeWordFolder(void)
-{
-}
+Fast_NormalizeWordFolder::~Fast_NormalizeWordFolder() = default;
 
 const char*
-Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
-                                   const char *bufend,
-                                   ucs4_t *dstbuf,
-                                   ucs4_t *dstbufend,
-                                   const char*& origstart,
-                                   size_t& tokenlen) const
+Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
+                                       ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const
 {
 
     ucs4_t c;
@@ -451,7 +452,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
             if (repllen > 0)
                 q = Fast_UnicodeUtil::ucs4copy(q,repl);
         } else {
-            c = ToFold(c);
+            c = lowercase_and_fold(c);
             *q++ = c;
         }
     }
@@ -563,7 +564,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf,
                     if (repllen > 0)
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                 } else {
-                    c = ToFold(c);
+                    c = lowercase_and_fold(c);
                     *q++ = c;
                 }
                 if (q >= eq) {		// Junk rest of word

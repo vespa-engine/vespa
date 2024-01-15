@@ -9,8 +9,8 @@ class IntFieldSearcher : public FieldSearcher
 {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    IntFieldSearcher(FieldIdT fId=0);
-    ~IntFieldSearcher();
+    explicit IntFieldSearcher(FieldIdT fId);
+    ~IntFieldSearcher() override;
     void prepare(search::streaming::QueryTermList& qtl,
                  const SharedSearcherBuf& buf,
                  const vsm::FieldPathMapT& field_paths,

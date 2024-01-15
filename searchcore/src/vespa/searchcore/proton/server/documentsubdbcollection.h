@@ -12,7 +12,6 @@
 #include <optional>
 
 namespace vespalib {
-    class Clock;
     class Executor;
     class HwInfo;
     class ThreadStackExecutorBase;
@@ -91,7 +90,7 @@ public:
             MetricsWireService &metricsWireService,
             DocumentDBTaggedMetrics &metrics,
             matching::QueryLimiter & queryLimiter,
-            const vespalib::Clock &clock,
+            const std::atomic<vespalib::steady_time> & now_ref,
             std::mutex &configMutex,
             const vespalib::string &baseDir,
             const vespalib::HwInfo &hwInfo);

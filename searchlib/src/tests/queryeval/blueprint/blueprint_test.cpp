@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -22,8 +23,12 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
-    double calculate_cost() const final { return 1.0; }
-    double calculate_relative_estimate() const final { return 0.5; }
+    double calculate_cost() const final {
+        return cost_of(get_children(), OrFlow());
+    }
+    double calculate_relative_estimate() const final {
+        return estimate_of(get_children(), OrFlow());
+    }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
     }
@@ -32,7 +37,7 @@ public:
         return mixChildrenFields();
     }
 
-    void sort(Children &children) const override {
+    void sort(Children &children, bool) const override {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 
@@ -440,7 +445,8 @@ TEST_F("testChildAndNotCollapsing", Fixture)
                                    )
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
-    unsorted = Blueprint::optimize(std::move(unsorted));
+    unsorted->setDocIdLimit(1000);
+    unsorted = Blueprint::optimize(std::move(unsorted), true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -479,7 +485,8 @@ TEST_F("testChildAndCollapsing", Fixture)
                               );
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
-    unsorted = Blueprint::optimize(std::move(unsorted));
+    unsorted->setDocIdLimit(1000);
+    unsorted = Blueprint::optimize(std::move(unsorted), true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -517,7 +524,8 @@ TEST_F("testChildOrCollapsing", Fixture)
                                    .add(MyLeafSpec(1).addField(2, 42).create())
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
-    unsorted = Blueprint::optimize(std::move(unsorted));
+    unsorted->setDocIdLimit(1000);
+    unsorted = Blueprint::optimize(std::move(unsorted), true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -560,7 +568,8 @@ TEST_F("testChildSorting", Fixture)
                               );
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
-    unsorted = Blueprint::optimize(std::move(unsorted));
+    unsorted->setDocIdLimit(1000);
+    unsorted = Blueprint::optimize(std::move(unsorted), true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -646,6 +655,7 @@ getExpectedBlueprint()
            "        tree_size: 2\n"
            "        allow_termwise_eval: false\n"
            "    }\n"
+           "    cost: 1\n"
            "    sourceId: 4294967295\n"
            "    docid_limit: 0\n"
            "    children: std::vector {\n"
@@ -666,6 +676,7 @@ getExpectedBlueprint()
            "                tree_size: 1\n"
            "                allow_termwise_eval: true\n"
            "            }\n"
+           "            cost: 1\n"
            "            sourceId: 4294967295\n"
            "            docid_limit: 0\n"
            "        }\n"
@@ -696,6 +707,7 @@ getExpectedSlimeBlueprint() {
            "        tree_size: 2,"
            "        allow_termwise_eval: false"
            "    },"
+           "    cost: 1.0,"
            "    sourceId: 4294967295,"
            "    docid_limit: 0,"
            "    children: {"
@@ -721,6 +733,7 @@ getExpectedSlimeBlueprint() {
            "                tree_size: 1,"
            "                allow_termwise_eval: true"
            "            },"
+           "            cost: 1.0,"
            "            sourceId: 4294967295,"
            "            docid_limit: 0"
            "        }"

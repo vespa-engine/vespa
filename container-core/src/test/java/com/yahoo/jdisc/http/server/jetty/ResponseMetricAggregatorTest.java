@@ -26,7 +26,7 @@ public class ResponseMetricAggregatorTest {
 
     private final List<String> monitoringPaths = List.of("/status.html");
     private final List<String> searchPaths = List.of("/search");
-    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, Set.of());
+    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, Set.of(), false);
 
     @BeforeEach
     public void initializeCollector() {

@@ -154,7 +154,6 @@
                                         <include>net.openhft:zero-allocation-hashing:jar:${zero-allocation-hashing.vespa.version}:test</include>
                                         <include>org.antlr:antlr-runtime:${antlr.vespa.version}:test</include>
                                         <include>org.antlr:antlr4-runtime:${antlr4.vespa.version}:test</include>
-                                        <include>org.apache.commons:commons-exec:${commons-exec.vespa.version}:test</include>
                                         <include>org.apache.commons:commons-math3:${commons.math3.vespa.version}:test</include>
                                         <include>org.apache.felix:org.apache.felix.framework:${felix.vespa.version}:test</include>
                                         <include>org.apache.felix:org.apache.felix.log:${felix.log.vespa.version}:test</include>

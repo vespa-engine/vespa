@@ -17,7 +17,7 @@ class WarmupIndexCollection;
 
 class IWarmupDone {
 public:
-    virtual ~IWarmupDone() { }
+    virtual ~IWarmupDone() = default;
     virtual void warmupDone(std::shared_ptr<WarmupIndexCollection> current) = 0;
 };
 /**
@@ -35,7 +35,6 @@ public:
                           ISearchableIndexCollection::SP next,
                           IndexSearchable & warmup,
                           vespalib::Executor & executor,
-                          const vespalib::Clock & clock,
                           IWarmupDone & warmupDone);
     ~WarmupIndexCollection() override;
     // Implements IIndexCollection
@@ -66,7 +65,6 @@ public:
     vespalib::string toString() const override;
     bool doUnpack() const { return _warmupConfig.getUnpack(); }
     void drainPending();
-    const vespalib::Clock & clock() const { return _clock; }
     vespalib::steady_time warmupEndTime() const { return _warmupEndTime; }
     vespalib::MonitoredRefCount & pendingTasks() { return _pendingTasks; }
 private:
@@ -80,7 +78,6 @@ private:
     ISearchableIndexCollection::SP     _next;
     IndexSearchable                  & _warmup;
     vespalib::Executor               & _executor;
-    const vespalib::Clock            & _clock;
     IWarmupDone                      & _warmupDone;
     vespalib::steady_time              _warmupEndTime;
     std::mutex                         _lock;

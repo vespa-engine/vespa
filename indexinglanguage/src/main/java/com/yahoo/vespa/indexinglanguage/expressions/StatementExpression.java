@@ -12,7 +12,6 @@ import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     @Override
     public StatementExpression convertChildren(ExpressionConverter converter) {
         return new StatementExpression(asList().stream()
-                                               .map(child -> converter.convert(child))
+                                               .map(converter::convert)
                                                .filter(Objects::nonNull)
                                                .toList());
     }

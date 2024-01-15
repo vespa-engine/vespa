@@ -26,8 +26,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
       _invokeService(std::make_unique<vespalib::InvokeServiceImpl>(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),
                                                                             cfg.field_writer_config().reactionTime()))),
       _invokeRegistrations(),
-      _bucket_executor(bucket_executor),
-      _clock(dynamic_cast<const vespalib::InvokeServiceImpl &>(*_invokeService).nowRef())
+      _bucket_executor(bucket_executor)
 {
     const auto& fw_cfg = cfg.field_writer_config();
     _field_writer = vespalib::SequencedTaskExecutor::create(vespalib::be_nice(CpuUsage::wrap(proton_field_writer_executor, CpuUsage::Category::WRITE), cfg.feeding_niceness()),
@@ -51,6 +50,11 @@ SharedThreadingService::sync_all_executors() {
     if (_field_writer) {
         _field_writer->sync_all();
     }
+}
+
+const std::atomic<vespalib::steady_time> &
+SharedThreadingService::nowRef() const {
+    return dynamic_cast<const vespalib::InvokeServiceImpl &>(*_invokeService).nowRef();
 }
 
 }

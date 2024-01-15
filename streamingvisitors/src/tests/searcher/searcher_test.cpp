@@ -15,12 +15,15 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
+#include <vespa/vsm/searcher/tokenizereader.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
 
 using namespace document;
 using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
+using search::streaming::Normalizing;
+using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
 using search::streaming::QueryTermList;
 using TermType = QueryTerm::Type;
 using namespace vsm;
@@ -47,7 +50,7 @@ class String
 private:
     const std::string & _str;
 public:
-    String(const std::string & str) : _str(str) {}
+    explicit String(const std::string & str) : _str(str) {}
     bool operator==(const String & rhs) const {
         return _str == rhs._str;
     }
@@ -56,14 +59,14 @@ public:
 class Query
 {
 private:
-    void setupQuery(const StringList & terms) {
-        for (size_t i = 0; i < terms.size(); ++i) {
-            ParsedQueryTerm pqt = parseQueryTerm(terms[i]);
+    void setupQuery(const StringList & terms, Normalizing normalizing) {
+        for (const auto & term : terms) {
+            ParsedQueryTerm pqt = parseQueryTerm(term);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
+            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second, normalizing));
         }
-        for (size_t i = 0; i < qtv.size(); ++i) {
-            qtl.push_back(qtv[i].get());
+        for (const auto & i : qtv) {
+            qtl.push_back(i.get());
         }
     }
 public:
@@ -72,14 +75,16 @@ public:
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;
-    Query(const StringList & terms);
+
+    explicit Query(const StringList & terms) : Query(terms, Normalizing::LOWERCASE_AND_FOLD) {}
+    Query(const StringList & terms, Normalizing normalizing);
     ~Query();
     static ParsedQueryTerm parseQueryTerm(const std::string & queryTerm) {
         size_t i = queryTerm.find(':');
         if (i != std::string::npos) {
-            return ParsedQueryTerm(queryTerm.substr(0, i), queryTerm.substr(i + 1));
+            return {queryTerm.substr(0, i), queryTerm.substr(i + 1)};
         }
-        return ParsedQueryTerm(std::string(), queryTerm);
+        return {std::string(), queryTerm};
     }
     static ParsedTerm parseTerm(const std::string & term) {
         if (term[0] == '*' && term[term.size() - 1] == '*') {
@@ -94,8 +99,8 @@ public:
     }
 };
 
-Query::Query(const StringList & terms) : eqnr(), qtv(), qtl() {
-    setupQuery(terms);
+Query::Query(const StringList & terms, Normalizing normalizing) : eqnr(), qtv(), qtl() {
+    setupQuery(terms, normalizing);
 }
 Query::~Query() = default;
 
@@ -111,7 +116,7 @@ struct SnippetModifierSetup
 
 SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
     : query(terms),
-      searcher(new UTF8SubstringSnippetModifier()),
+      searcher(new UTF8SubstringSnippetModifier(0)),
       env(),
       modifier(searcher)
 {
@@ -254,8 +259,8 @@ getFieldValue(const StringList & fv)
 
     static ArrayDataType type(*DataType::STRING);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(StringFieldValue(fv[i]));
+    for (const auto & v : fv) {
+        afv.add(StringFieldValue(v));
     }
     return afv;
 }
@@ -265,8 +270,8 @@ getFieldValue(const LongList & fv)
 {
     static ArrayDataType type(*DataType::LONG);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(LongFieldValue(fv[i]));
+    for (long v : fv) {
+        afv.add(LongFieldValue(v));
     }
     return afv;
 }
@@ -276,8 +281,8 @@ getFieldValue(const FloatList & fv)
 {
     static ArrayDataType type(*DataType::FLOAT);
     ArrayFieldValue afv(type);
-    for (size_t i = 0; i < fv.size(); ++i) {
-        afv.add(FloatFieldValue(fv[i]));
+    for (float v : fv) {
+        afv.add(FloatFieldValue(v));
     }
     return afv;
 }
@@ -286,8 +291,8 @@ bool
 assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
     QueryNodeResultFactory eqnr;
-    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD);
-    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD);
+    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD, Normalizing::LOWERCASE_AND_FOLD);
+    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD, Normalizing::LOWERCASE_AND_FOLD);
     const ucs4_t * a;
     size_t alen = qa.term(a);
     const ucs4_t * b;
@@ -299,8 +304,8 @@ void
 assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
 {
     HitsList hl;
-    for (size_t i = 0; i < exp.size(); ++i) {
-        hl.push_back(exp[i] ? Hits().add(0) : Hits());
+    for (bool v : exp) {
+        hl.push_back(v ? Hits().add(0) : Hits());
     }
     assertSearch(fs, query, fv, hl);
 }
@@ -308,7 +313,7 @@ assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & f
 std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
-    Query q(query);
+    Query q(query, fs.normalize_mode());
 
     // prepare field searcher
     test::MockFieldSearcherEnv env;
@@ -316,7 +321,7 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
 
     // setup document
     SharedFieldPathMap sfim(new FieldPathMapT());
-    sfim->push_back(FieldPath());
+    sfim->emplace_back();
     StorageDocument doc(std::make_unique<document::Document>(), sfim, 1);
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
@@ -342,7 +347,7 @@ assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv
 
 bool
 assertFieldInfo(FieldSearcher & fs, const StringList & query,
-                              const FieldValue & fv, const FieldInfoList & exp)
+                const FieldValue & fv, const FieldInfoList & exp)
 {
     auto qtv = performSearch(fs, query, fv);
     if (!EXPECT_EQUAL(qtv.size(), exp.size())) return false;
@@ -358,7 +363,7 @@ assertFieldInfo(FieldSearcher & fs, const StringList & query,
 void
 assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
 {
-    UTF8SubstringSnippetModifier mod;
+    UTF8SubstringSnippetModifier mod(0);
     performSearch(mod, query, StringFieldValue(fv));
     EXPECT_EQUAL(mod.getModifiedBuf().getPos(), exp.size());
     std::string actual(mod.getModifiedBuf().getBuffer(), mod.getModifiedBuf().getPos());
@@ -369,7 +374,7 @@ assertSnippetModifier(const StringList & query, const std::string & fv, const st
 void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, const std::string & exp)
 {
     FieldValue::UP mfv = setup.modifier.modify(fv);
-    const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(*mfv.get());
+    const auto & lfv = static_cast<const document::LiteralFieldValueB &>(*mfv.get());
     const std::string & actual = lfv.getValue();
     EXPECT_EQUAL(actual.size(), exp.size());
     EXPECT_EQUAL(actual, exp);
@@ -377,11 +382,11 @@ void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, 
 
 void assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId, const StringList & terms)
 {
-    if (terms.size() == 0) {
-        ASSERT_TRUE(man.getModifiers().getModifier(fId) == NULL);
+    if (terms.empty()) {
+        ASSERT_TRUE(man.getModifiers().getModifier(fId) == nullptr);
         return;
     }
-    ASSERT_TRUE(man.getModifiers().getModifier(fId) != NULL);
+    ASSERT_TRUE(man.getModifiers().getModifier(fId) != nullptr);
     UTF8SubstringSnippetModifier * searcher =
         (static_cast<SnippetModifier *>(man.getModifiers().getModifier(fId)))->getSearcher().get();
     EXPECT_EQUAL(searcher->getQueryTerms().size(), terms.size());
@@ -437,11 +442,11 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits()).add(Hits()));
     assertString(fs, StringList().add("and").add("overloading"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
 
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "oper",  field, Hits().add(0).add(2));
     assertString(fs, StringList().add("oper").add("tor"), field, HitsList().add(Hits().add(0).add(2)).add(Hits()));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     if (!EXPECT_TRUE(testStringFieldInfo(fs))) return false;
 
     { // test handling of several underscores
@@ -466,7 +471,7 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     TEST("verify correct term parsing") {
         ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
         ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
-        ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
+        ASSERT_TRUE(Query::parseQueryTerm("term").first.empty());
         ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
         ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
         ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
@@ -550,12 +555,12 @@ TEST("utf8 substring search with empty term")
 TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
-    assertString(fs, "rsand", field, Hits());
-    assertString(fs, "tor",   field, Hits().add(2));
-    assertString(fs, "tors",  field, Hits().add(0));
+    TEST_DO(assertString(fs, "rsand", field, Hits()));
+    TEST_DO(assertString(fs, "tor",   field, Hits().add(2)));
+    TEST_DO(assertString(fs, "tors",  field, Hits().add(0)));
 
-    assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits()));
-    assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3)));
+    TEST_DO(assertString(fs, StringList().add("an").add("din"), field, HitsList().add(Hits()).add(Hits())));
+    TEST_DO(assertString(fs, StringList().add("nd").add("g"), field, HitsList().add(Hits().add(1)).add(Hits().add(3))));
 
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
@@ -587,22 +592,22 @@ TEST("utf8 flexible searcher"){
 
     // prefix
     assertString(fs, "vesp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::PREFIX);
+    fs.match_type(FieldSearcher::PREFIX);
     assertString(fs, "vesp",   "vespa", Hits().add(0));
 
     // substring
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*esp*",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUBSTRING);
+    fs.match_type(FieldSearcher::SUBSTRING);
     assertString(fs, "esp",  "vespa", Hits().add(0));
 
     // suffix
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     assertString(fs, "*espa",  "vespa", Hits().add(0));
-    fs.setMatchType(FieldSearcher::SUFFIX);
+    fs.match_type(FieldSearcher::SUFFIX);
     assertString(fs, "espa",  "vespa", Hits().add(0));
 
-    fs.setMatchType(FieldSearcher::REGULAR);
+    fs.match_type(FieldSearcher::REGULAR);
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
@@ -656,7 +661,7 @@ TEST("integer search")
 
 TEST("floating point search")
 {
-    FloatFieldSearcher fs;
+    FloatFieldSearcher fs(0);
     TEST_DO(assertFloat(fs,         "10",    10, true));
     TEST_DO(assertFloat(fs,       "10.5",  10.5, true));
     TEST_DO(assertFloat(fs,      "-10.5", -10.5, true));
@@ -723,7 +728,7 @@ TEST("Snippet modifier search") {
                                                       "\xe7\x9f\xb3\x1f\xe6\x98\x8e\xe5\x87\xb1\x1f\xe5\x9c\xa8");
 
     { // check that resizing works
-        UTF8SubstringSnippetModifier mod;
+        UTF8SubstringSnippetModifier mod(0);
         EXPECT_EQUAL(mod.getModifiedBuf().getLength(), 32u);
         EXPECT_EQUAL(mod.getModifiedBuf().getPos(), 0u);
         performSearch(mod, StringList().add("a"), StringFieldValue("aaaaaaaaaaaaaaaa"));
@@ -760,28 +765,32 @@ TEST("snippet modifier") {
     }
 }
 
-TEST("FieldSearchSpec constrution") {
+TEST("FieldSearchSpec construction") {
     {
         FieldSearchSpec f;
         EXPECT_FALSE(f.valid());
         EXPECT_EQUAL(0u, f.id());
         EXPECT_EQUAL("", f.name());
         EXPECT_EQUAL(0x100000u, f.maxLength());
+        EXPECT_EQUAL("", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE_AND_FOLD == f.normalize_mode());
     }
     {
-        FieldSearchSpec f(7, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 789);
+        FieldSearchSpec f(7, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 789);
         EXPECT_TRUE(f.valid());
         EXPECT_EQUAL(7u, f.id());
         EXPECT_EQUAL("f0", f.name());
         EXPECT_EQUAL(789u, f.maxLength());
         EXPECT_EQUAL(789u, f.searcher().maxFieldLength());
+        EXPECT_EQUAL("substring", f.arg1());
+        EXPECT_TRUE(Normalizing::LOWERCASE == f.normalize_mode());
     }
 }
 
 TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
-    specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 1000);
-    specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "", 1000);
+    specMap[0] = FieldSearchSpec(0, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 1000);
+    specMap[1] = FieldSearchSpec(1, "f1", Searchmethod::AUTOUTF8, Normalizing::NONE, "", 1000);
     IndexFieldMapT indexMap;
     indexMap["i0"].push_back(0);
     indexMap["i1"].push_back(1);
@@ -822,13 +831,13 @@ TEST("snippet modifier manager") {
         Query query(StringList().add("i2:foo").add("i2:*bar*"));
         man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         {
-            SnippetModifier * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(0));
+            auto * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(0));
             UTF8SubstringSnippetModifier * searcher = sm->getSearcher().get();
             EXPECT_EQUAL(sm->getValueBuf().getLength(), 128u);
             EXPECT_EQUAL(searcher->getModifiedBuf().getLength(), 64u);
         }
         {
-            SnippetModifier * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(1));
+            auto * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(1));
             UTF8SubstringSnippetModifier * searcher = sm->getSearcher().get();
             EXPECT_EQUAL(sm->getValueBuf().getLength(), 128u);
             EXPECT_EQUAL(searcher->getModifiedBuf().getLength(), 64u);
@@ -861,6 +870,26 @@ TEST("counting of words") {
     StringList field = StringList().add("a").add("aa bb cc");
     assertString(fs, "bb", field, Hits().add(2));
     assertString(fs, StringList().add("bb").add("not"), field, HitsList().add(Hits().add(2)).add(Hits()));
+}
+
+vespalib::string NormalizationInput = "test That Somehing happens with during NårmØlization";
+
+void
+verifyNormalization(Normalizing normalizing, size_t expected_len, const char * expected) {
+    ucs4_t buf[256];
+    TokenizeReader reader(reinterpret_cast<const search::byte *>(NormalizationInput.c_str()), NormalizationInput.size(), buf);
+    while (reader.hasNext()) {
+        reader.normalize(reader.next(), normalizing);
+    }
+    size_t len = reader.complete();
+    EXPECT_EQUAL(expected_len, len);
+    EXPECT_EQUAL(0,  Fast_UnicodeUtil::utf8cmp(expected, buf));
+}
+
+TEST("test normalizing") {
+    verifyNormalization(Normalizing::NONE, 52, NormalizationInput.c_str());
+    verifyNormalization(Normalizing::LOWERCASE, 52, "test that somehing happens with during nårmølization");
+    verifyNormalization(Normalizing::LOWERCASE_AND_FOLD, 54, "test that somehing happens with during naarmoelization");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

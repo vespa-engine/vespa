@@ -2,15 +2,14 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,16 +25,14 @@ import java.util.stream.Collectors;
 public class NodeResourceChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
-        var restartActions = new ArrayList<ConfigChangeAction>();
-        for (ClusterSpec.Id clusterId : current.allClusters()) {
-            Optional<NodeResources> currentResources = resourcesOf(clusterId, current);
-            Optional<NodeResources> nextResources = resourcesOf(clusterId, next);
+    public void validate(ChangeContext context) {
+        for (ClusterSpec.Id clusterId : context.previousModel().allClusters()) {
+            Optional<NodeResources> currentResources = resourcesOf(clusterId, context.previousModel());
+            Optional<NodeResources> nextResources = resourcesOf(clusterId, context.model());
             if (currentResources.isEmpty() || nextResources.isEmpty()) continue; // new or removed cluster
             if ( changeRequiresRestart(currentResources.get(), nextResources.get()))
-                restartActions.addAll(createRestartActionsFor(clusterId, current));
+                createRestartActionsFor(clusterId, context.previousModel()).forEach(context::require);
         }
-        return restartActions;
     }
 
     private boolean changeRequiresRestart(NodeResources currentResources, NodeResources nextResources) {

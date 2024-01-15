@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/searchlib/query/base.h>
 #include <vespa/vsm/searcher/fold.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
@@ -66,7 +65,7 @@ TextUtilTest::assertSkipSeparators(const char * input, size_t len, const UCS4V &
     const byte * srcbuf = reinterpret_cast<const byte *>(input);
     auto dstbuf = std::make_unique<ucs4_t[]>(len + 1);
     auto offsets = std::make_unique<size_t[]>(len + 1);
-    UTF8StrChrFieldSearcher fs;
+    UTF8StrChrFieldSearcher fs(0);
     BW bw(dstbuf.get(), offsets.get());
     size_t dstlen = fs.skipSeparators(srcbuf, len, bw);
     EXPECT_EQUAL(dstlen, expdstbuf.size());

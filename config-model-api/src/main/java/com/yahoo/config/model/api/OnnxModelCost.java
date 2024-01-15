@@ -4,43 +4,46 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author bjorncs
+ * @author hmusum
  */
 public interface OnnxModelCost {
 
-    Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId);
+    // TODO: Remove when no longer in use (oldest model version is 8.283)
+    default Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) {
+        return newCalculator(appPkg, applicationId, null);
+    }
+    Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId);
 
     interface Calculator {
         long aggregatedModelCostInBytes();
-        void registerModel(ApplicationFile path);
         void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions);
-        void registerModel(URI uri);
         void registerModel(URI uri, OnnxModelOptions onnxModelOptions);
         Map<String, ModelInfo> models();
         void setRestartOnDeploy();
         boolean restartOnDeploy();
+        void store();
     }
 
-    record ModelInfo(String modelId, long estimatedCost, long hash, Optional<OnnxModelOptions> onnxModelOptions) {}
+    record ModelInfo(String modelId, long estimatedCost, long hash, OnnxModelOptions onnxModelOptions) {}
 
     static OnnxModelCost disabled() { return new DisabledOnnxModelCost(); }
 
     class DisabledOnnxModelCost implements OnnxModelCost, Calculator {
-        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) { return this; }
+        @Override public Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId) { return this; }
         @Override public long aggregatedModelCostInBytes() {return 0;}
-        @Override public void registerModel(ApplicationFile path) {}
         @Override public void registerModel(ApplicationFile path, OnnxModelOptions onnxModelOptions) {}
-        @Override public void registerModel(URI uri) {}
         @Override public void registerModel(URI uri, OnnxModelOptions onnxModelOptions) {}
         @Override public Map<String, ModelInfo> models() { return Map.of(); }
         @Override public void setRestartOnDeploy() {}
         @Override public boolean restartOnDeploy() { return false; }
+        @Override public void store() {}
     }
 
 }

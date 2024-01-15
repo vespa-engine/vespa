@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "singlestringattribute.h"
+#include "i_docid_posting_store.h"
 #include "postinglistattribute.h"
+#include "singlestringattribute.h"
+#include "string_direct_posting_store_adapter.h"
 
 namespace search {
 
@@ -48,12 +50,17 @@ private:
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
     using PostingParent::forwardedOnAddDoc;
+
 public:
     using PostingStore = typename PostingParent::PostingStore;
     using Dictionary = EnumPostingTree;
     using PostingParent::get_posting_store;
 
 private:
+    using DirectPostingStoreAdapterType = attribute::StringDirectPostingStoreAdapter<IDocidPostingStore,
+                                                                                     PostingStore, EnumStore>;
+    DirectPostingStoreAdapterType _posting_store_adapter;
+
     void freezeEnumDictionary() override;
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
     void applyUpdateValueChange(const Change & c,
@@ -76,6 +83,8 @@ public:
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+
+    const IDocidPostingStore* as_docid_posting_store() const override { return &_posting_store_adapter; }
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());

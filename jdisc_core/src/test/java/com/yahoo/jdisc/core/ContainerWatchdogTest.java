@@ -9,10 +9,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author bjorncs
@@ -24,7 +22,7 @@ public class ContainerWatchdogTest {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ManualClock clock = new ManualClock(Instant.EPOCH);
         DummyMetric metric = new DummyMetric();
-        ContainerWatchdog watchdog = new ContainerWatchdog(mock(ScheduledExecutorService.class), clock);
+        ContainerWatchdog watchdog = new ContainerWatchdog(clock, false);
 
         ActiveContainer containerWithoutRetainedResources = new ActiveContainer(driver.newContainerBuilder());
 

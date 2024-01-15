@@ -18,7 +18,7 @@ namespace search::attribute {
 
 /**
  * Blueprint used for multi-term query operators as InTerm, WeightedSetTerm or DotProduct
- * over a multi-value attribute which supports the IDocidWithWeightPostingStore interface.
+ * over an attribute which supports the IDocidPostingStore or IDocidWithWeightPostingStore interface.
  *
  * This uses access to low-level posting lists, which speeds up query execution.
  */
@@ -44,7 +44,9 @@ private:
                                                                  std::vector<std::unique_ptr<queryeval::SearchIterator>>&& bitvectors,
                                                                  bool strict) const;
 
-    std::unique_ptr<queryeval::SearchIterator> create_search_helper(const fef::TermFieldMatchDataArray& tfmda, bool strict, bool is_filter_search) const;
+    template <bool filter_search, bool need_match_data>
+    std::unique_ptr<queryeval::SearchIterator> create_search_helper(const fef::TermFieldMatchDataArray& tfmda,
+                                                                    bool strict) const;
 
 public:
     DirectMultiTermBlueprint(const queryeval::FieldSpec &field, const IAttributeVector &iattr, const PostingStoreType &attr, size_t size_hint);

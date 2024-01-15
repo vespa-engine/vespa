@@ -147,6 +147,15 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                 createPredicateField("test", DataType.PREDICATE, "{ attribute; }", 2, OptionalLong.of(0L), OptionalLong.of(1023L)));
     }
 
+    @Test
+    void requireThatMaxTermOccurrencesIsPropagated() {
+        var field = new SDField("test", DataType.STRING);
+        field.getMatching().maxTermOccurrences(10);
+        field.parseIndexingScript("{ summary | index }");
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" max-occurrences:10 | summary test | index test; }",
+                field);
+    }
+
     private static void assertIndexingScript(String expectedScript, SDField unprocessedField) {
         assertEquals(expectedScript,
                 processField(unprocessedField).toString());

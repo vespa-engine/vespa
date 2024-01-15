@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "utf8stringfieldsearcherbase.h"
-#include <vespa/fastlib/text/normwordfolder.h>
+#include "tokenizereader.h"
 #include <cassert>
 
 using search::streaming::QueryTerm;
@@ -10,115 +10,36 @@ using search::byte;
 
 namespace vsm {
 
-const byte *
-UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * dstbuf, size_t & tokenlen)
-{
-    if (maxSz > 0) {
-        maxSz--;
-    }
-    ucs4_t c(*p);
-    ucs4_t *q(dstbuf);
-    const byte * end(p+maxSz);
+template<typename Reader>
+void
+UTF8StringFieldSearcherBase::tokenize(Reader & reader) {
+    ucs4_t c(0);
+    Normalizing norm_mode = normalize_mode();
+    while (reader.hasNext() && ! Fast_UnicodeUtil::IsWordChar(c = reader.next()));
 
-    // Skip non-word characters between words
-    for (; p < end; ) {
-        if (c < 128) {
-            if (!c) { break; }
-            p++;
-            if (__builtin_expect(Fast_NormalizeWordFolder::_isWord[c], false)) {
-                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
-                c = 0;
-            } else {
-                c = *p;
-            }
-        } else {
-            const byte * oldP(p);
-            c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
-            if (Fast_UnicodeUtil::IsWordChar(c)) {
-                _utf8Count[p-oldP-1]++;
-                const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-                if (repl != NULL) {
-                    size_t repllen = strlen(repl);
-                    if (repllen > 0) {
-                        q = Fast_UnicodeUtil::ucs4copy(q,repl);
-                    }
-                } else {
-                    c = Fast_NormalizeWordFolder::ToFold(c);
-                    *q++ = c;
-                }
-                break;
-            } else {
-                if (c == Fast_UnicodeUtil::_BadUTF8Char) {
-                    _badUtf8Count++;
-                } else {
-                    _utf8Count[p-oldP-1]++;
-                }
-                c = *p;
-            }
+    if (Fast_UnicodeUtil::IsWordChar(c)) {
+        reader.normalize(c, norm_mode);
+        while (reader.hasNext() && Fast_UnicodeUtil::IsWordChar(c = reader.next())) {
+            reader.normalize(c, norm_mode);
         }
     }
-
-    c = *p;  // Next char
-    for (; p < end;) {
-        if (c < 128) {             // Common case, ASCII
-            if (!c) { break; }
-            p++;
-            if (__builtin_expect(!Fast_NormalizeWordFolder::_isWord[c], false)) {
-                c = 0;
-            } else {
-                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
-                c = *p;
-            }
-        } else {
-            const byte * oldP(p);
-            c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
-            if (__builtin_expect(Fast_UnicodeUtil::IsWordChar(c), false)) {
-                _utf8Count[p-oldP-1]++;
-                const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-                if (repl != NULL) {
-                    size_t repllen = strlen(repl);
-                    if (repllen > 0) {
-                        q = Fast_UnicodeUtil::ucs4copy(q,repl);
-                    }
-                } else {
-                    c = Fast_NormalizeWordFolder::ToFold(c);
-                    *q++ = c;
-                }
-
-                c = *p;
-            } else {
-                if (c == Fast_UnicodeUtil::_BadUTF8Char) {
-                    _badUtf8Count++;
-                } else {
-                    _utf8Count[p-oldP-1]++;
-                }
-                break;
-            }
-        }
-    }
-    *q = 0;
-    tokenlen = q - dstbuf;
-    return p;
 }
 
 size_t
 UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt)
 {
     termcount_t words(0);
-    const byte * n = reinterpret_cast<const byte *> (f.data());
-    // __builtin_prefetch(n, 0, 0);
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
-    const byte * e = n + f.size();
     if ( f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
     }
-    cmptype_t * fn = &(*_buf.get())[0];
-    size_t fl(0);
+    cmptype_t * fn = _buf->data();
 
-    for( ; n < e; ) {
-        if (!*n) { _zeroCount++; n++; }
-        n = tokenize(n, _buf->capacity(), fn, fl);
+    TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
+    while ( reader.hasNext() ) {
+        tokenize(reader);
+        size_t fl = reader.complete();
         if ((tsz <= fl) && (prefix() || qt.isPrefix() || (tsz == fl))) {
             const cmptype_t *tt=term, *et=term+tsz;
             for (const cmptype_t *fnt=fn; (tt < et) && (*tt == *fnt); tt++, fnt++);
@@ -128,33 +49,35 @@ UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt
         }
         words++;
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words;
 }
 
 size_t
 UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
 {
-    const byte * n = reinterpret_cast<const byte *> (f.data());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
     const cmptype_t * eterm = term+tsz;
-    const byte * e = n + f.size();
+    if ( f.size() >= _buf->size()) {
+        _buf->reserve(f.size() + 1);
+    }
+    cmptype_t * fn = _buf->data();
     if (tsz <= f.size()) {
         bool equal(true);
-        for (; equal && (n < e) && (term < eterm); term++) {
-            if (*term < 0x80) {
-                equal = (*term == Fast_NormalizeWordFolder::_foldCase[*n++]);
-            } else {
-                cmptype_t c = Fast_NormalizeWordFolder::ToFold(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
-                equal = (*term == c);
+        Normalizing norm_mode = normalize_mode();
+        TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
+        while (equal && reader.hasNext() && (term < eterm)) {
+            reader.normalize(reader.next(), norm_mode);
+            size_t len = reader.complete();
+            for (size_t i(0); i < len; i++) {
+                equal = (term[i] == fn[i]);
             }
+            term += len;
         }
-        if (equal && (term == eterm) && (qt.isPrefix() || (n == e))) {
+        if (equal && (term == eterm) && (qt.isPrefix() || ! reader.hasNext())) {
             addHit(qt,0);
         }
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return 1;
 }
 
@@ -188,7 +111,6 @@ UTF8StringFieldSearcherBase::matchTermSubstring(const FieldRef & f, QueryTerm & 
             }
         }
     }
-    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
     return words + 1; // we must also count the last word
 }
 
@@ -196,33 +118,23 @@ size_t
 UTF8StringFieldSearcherBase::matchTermSuffix(const FieldRef & f, QueryTerm & qt)
 {
     termcount_t words = 0;
-    const byte * srcbuf = reinterpret_cast<const byte *> (f.data());
-    const byte * srcend = srcbuf + f.size();
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
     if (f.size() >= _buf->size()) {
         _buf->reserve(f.size() + 1);
     }
-    cmptype_t * dstbuf = &(*_buf.get())[0];
-    size_t tokenlen = 0;
+    cmptype_t * dstbuf = _buf->data();
 
-    for( ; srcbuf < srcend; ) {
-        if (*srcbuf == 0) {
-            ++_zeroCount;
-            ++srcbuf;
-        }
-        srcbuf = tokenize(srcbuf, _buf->capacity(), dstbuf, tokenlen);
+    TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), dstbuf);
+    while ( reader.hasNext() ) {
+        tokenize(reader);
+        size_t tokenlen = reader.complete();
         if (matchTermSuffix(term, tsz, dstbuf, tokenlen)) {
             addHit(qt, words);
         }
         words++;
     }
     return words;
-}
-
-UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase() :
-    StrChrFieldSearcher()
-{
 }
 
 UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase(FieldIdT fId) :
@@ -280,12 +192,12 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
         if (c < 128) {
             p++;
             if (!isSeparatorCharacter(c)) {
-                dstbuf.onCharacter(Fast_NormalizeWordFolder::_foldCase[c], (oldP - b));
+                dstbuf.onCharacter(Fast_NormalizeWordFolder::lowercase_and_fold_ascii(c), (oldP - b));
             }
         } else {
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
-            if (repl != NULL) {
+            if (repl != nullptr) {
                 size_t repllen = strlen(repl);
                 if (repllen > 0) {
                     ucs4_t * buf = dstbuf.getBuf();
@@ -300,13 +212,11 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
                     }
                 }
             } else {
-                c = Fast_NormalizeWordFolder::ToFold(c);
+                c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
                 dstbuf.onCharacter(c, (oldP - b));
             }
             if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                 _badUtf8Count++;
-            } else {
-                _utf8Count[p-oldP-1]++;
             }
         }
     }

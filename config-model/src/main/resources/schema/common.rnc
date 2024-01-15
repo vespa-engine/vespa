@@ -80,7 +80,7 @@ ComponentDefinition =
 
 TypedComponentDefinition =
    attribute id { xsd:Name } &
-   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder) &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder | SpladeEmbedder ) &
    GenericConfig* &
    Component*
 
@@ -96,6 +96,18 @@ HuggingFaceEmbedder =
    element normalize { xsd:boolean }? &
    OnnxModelExecutionParams &
    EmbedderPoolingStrategy
+
+SpladeEmbedder =
+   attribute type { "splade-embedder" } &
+   element transformer-model { ModelReference } &
+   element tokenizer-model { ModelReference }? &
+   element max-tokens { xsd:positiveInteger }? &
+   element transformer-input-ids { xsd:string }? &
+   element transformer-attention-mask { xsd:string }? &
+   element transformer-token-type-ids { xsd:string }? &
+   element transformer-output { xsd:string }? &
+   element term-score-threshold { xsd:double }? &
+   OnnxModelExecutionParams
 
 HuggingFaceTokenizer =
     attribute type { "hugging-face-tokenizer" } &
@@ -126,9 +138,10 @@ ColBertEmbedder =
    element transformer-mask-token { xsd:integer }? &
    element transformer-input-ids { xsd:string }? &
    element transformer-attention-mask { xsd:string }? &
-   element transformer-token-type-ids { xsd:string }? &
+   element transformer-pad-token { xsd:integer }? &
+   element query-token-id { xsd:integer }? &
+   element document-token-id { xsd:integer }? &
    element transformer-output { xsd:string }? &
-   element normalize { xsd:boolean }? &
    OnnxModelExecutionParams &
    StartOfSequence &
    EndOfSequence

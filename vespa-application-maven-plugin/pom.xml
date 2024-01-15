@@ -64,6 +64,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
+        <configuration>
+          <goalPrefix>vespa-app</goalPrefix>
+        </configuration>
       </plugin>
     </plugins>
   </build>

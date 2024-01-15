@@ -17,6 +17,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author bjorncs
  */
+@Timeout(value = 60)
 class ProxyProtocolTest {
 
     private static final Logger log = Logger.getLogger(ProxyProtocolTest.class.getName());
@@ -155,30 +157,28 @@ class ProxyProtocolTest {
 
     private ContentResponse sendJettyClientRequest(JettyTestDriver testDriver, Path certificateFile, Object tag)
             throws Exception {
-        HttpClient client = createJettyHttpClient(certificateFile);
         ExecutionException cause = null;
-        try {
-            int maxAttempts = 10;
-            for (int attempt = 0; attempt < maxAttempts; attempt++) {
-                try {
-                    ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
-                            .tag(tag)
-                            .send();
-                    assertEquals(200, response.getStatus());
-                    return response;
-                } catch (ExecutionException e) {
-                    // Retry when the server closes the connection before the TLS handshake is completed. This has been observed in CI.
-                    // We have been unable to reproduce this locally. The cause is therefor currently unknown.
-                    log.log(Level.WARNING, String.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
-                    Thread.sleep(10);
-                    cause = e;
-                }
+        int maxAttempts = 10;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            HttpClient client = createJettyHttpClient(certificateFile);
+            try {
+                ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
+                        .tag(tag)
+                        .send();
+                assertEquals(200, response.getStatus());
+                return response;
+            } catch (ExecutionException e) {
+                // Retry when the server closes the connection before the TLS handshake is completed. This has been observed in CI.
+                // We have been unable to reproduce this locally. The cause is therefor currently unknown.
+                log.log(Level.WARNING, String.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
+                Thread.sleep(10);
+                cause = e;
+            } finally {
+                client.stop();
+                client.destroy();
             }
-            throw cause;
-        } finally {
-            client.stop();
-            client.destroy();
         }
+        throw cause;
     }
 
     // Using Jetty's http client as Apache httpclient does not support the proxy-protocol v1/v2.
@@ -189,7 +189,7 @@ class ProxyProtocolTest {
         var connector = new ClientConnector();
         connector.setSslContextFactory(ssl);
         HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(connector));
-        int timeout = 60 * 1000;
+        int timeout = 20 * 1000;
         client.setConnectTimeout(timeout);
         client.setIdleTimeout(timeout);
         client.start();
@@ -216,13 +216,12 @@ class ProxyProtocolTest {
         }
     }
 
-
     /* Don't close Jetty to early ensuring that the request log is written */
     private static void assertLogSizeAndCloseDriver(
             JettyTestDriver driver, InMemoryRequestLog reqLog, int expectedReqLogSize, InMemoryConnectionLog connLog,
             int expectedConnLogSize) {
         Predicate<Void> waitCondition = __ ->
-                reqLog.entries().size() < expectedConnLogSize && connLog.logEntries().size() < expectedConnLogSize;
+                reqLog.entries().size() < expectedReqLogSize && connLog.logEntries().size() < expectedConnLogSize;
         await(waitCondition);
         assertTrue(driver.close());
         if (waitCondition.test(null)) await(waitCondition);

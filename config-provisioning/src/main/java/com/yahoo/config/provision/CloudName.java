@@ -14,6 +14,7 @@ public class CloudName extends PatternedStringWrapper<CloudName> {
 
     private static final Pattern pattern = Pattern.compile("[a-z]([a-z0-9-]*[a-z0-9])*");
     public static final CloudName AWS = new CloudName("aws");
+    public static final CloudName AZURE = new CloudName("azure");
     public static final CloudName GCP = new CloudName("gcp");
     public static final CloudName DEFAULT = new CloudName("default");
     public static final CloudName YAHOO = new CloudName("yahoo");
@@ -25,6 +26,7 @@ public class CloudName extends PatternedStringWrapper<CloudName> {
     public static CloudName from(String cloud) {
         return switch (cloud) {
             case "aws" -> AWS;
+            case "azure" -> AZURE;
             case "gcp" -> GCP;
             case "default" -> DEFAULT;
             case "yahoo" -> YAHOO;

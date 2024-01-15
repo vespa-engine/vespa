@@ -24,11 +24,12 @@ class MultiTerm : public QueryTerm {
 protected:
     std::vector<std::unique_ptr<QueryTerm>> _terms;
 public:
-    MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, Type type, uint32_t num_terms);
-    MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, Type type, std::unique_ptr<query::TermVector> terms);
+    MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index, uint32_t num_terms);
+    MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index,
+              std::unique_ptr<query::TermVector> terms, Normalizing normalizing);
     ~MultiTerm() override;
     void add_term(std::unique_ptr<QueryTerm> term);
-    MultiTerm* as_multi_term() noexcept override;
+    MultiTerm* as_multi_term() noexcept override { return this; }
     void reset() override;
     bool evaluate() const override;
     const HitList& evaluateHits(HitList& hl) const override;

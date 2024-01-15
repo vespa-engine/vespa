@@ -6,8 +6,6 @@
 #include <vespa/searchlib/fef/ranking_assets_repo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace vespalib { class Clock; }
-
 namespace proton {
 
 namespace matching {
@@ -24,7 +22,7 @@ private:
     std::shared_ptr<matching::Matcher>   _default;
 public:
     using SP = std::shared_ptr<Matchers>;
-    Matchers(const vespalib::Clock &clock,
+    Matchers(const std::atomic<vespalib::steady_time> & now_ref,
              matching::QueryLimiter &queryLimiter,
              const search::fef::RankingAssetsRepo &rankingAssetsRepo);
     Matchers(const Matchers &) = delete;

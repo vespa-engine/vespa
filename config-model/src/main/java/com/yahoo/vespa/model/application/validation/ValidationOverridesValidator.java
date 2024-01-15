@@ -2,8 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 import java.io.Reader;
 import java.util.Optional;
@@ -14,15 +13,15 @@ import java.util.Optional;
  *
  * @author hmusum
  */
-public class ValidationOverridesValidator extends Validator {
+public class ValidationOverridesValidator implements Validator {
 
     @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        Optional<Reader> overrides = deployState.getApplicationPackage().getValidationOverrides();
+    public void validate(Context context) {
+        Optional<Reader> overrides = context.deployState().getApplicationPackage().getValidationOverrides();
         if (overrides.isEmpty()) return;
 
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(overrides.get());
-        validationOverrides.validate(deployState.now());
+        validationOverrides.validate(context.deployState().now(), context::illegal);
     }
 
 }

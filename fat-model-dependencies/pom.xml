@@ -119,10 +119,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-exec</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>net.java.dev.jna</groupId>
           <artifactId>jna</artifactId>
         </exclusion>

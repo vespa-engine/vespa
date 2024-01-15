@@ -40,7 +40,6 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -239,8 +238,8 @@ public class MockNodeRepository extends NodeRepository {
                                                        Optional.of(new ClusterResources(4, 1,
                                                                                         new NodeResources(3, 16, 100, 1))),
                                                        clock().instant(),
-                                                       new Load(0.1, 0.2, 0.3),
-                                                       new Load(0.4, 0.5, 0.6),
+                                                       new Load(0.1, 0.2, 0.3, 0, 0),
+                                                       new Load(0.4, 0.5, 0.6, 0, 0),
                                                        new Autoscaling.Metrics(0.7, 0.8, 0.9)));
         try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);

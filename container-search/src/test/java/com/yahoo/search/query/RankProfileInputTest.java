@@ -185,6 +185,21 @@ public class RankProfileInputTest {
         assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders, Language.UNKNOWN.languageCode());
     }
 
+    @Test
+    void testUnembeddedTensorRankFeatureInRequestReferencedFromAParameter() {
+        String text = "text to embed into a tensor";
+        Tensor embedding1 = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+
+        Map<String, Embedder> embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
+                                                );
+        assertEmbedQuery("embed(@param1)", embedding1, embedders, null, text);
+        assertEmbedQuery("embed(emb1, @param1)", embedding1, embedders, null, text);
+        assertEmbedQueryFails("embed(emb1, @noSuchParam)", embedding1, embedders,
+                              "Could not resolve query parameter reference 'noSuchParam' " +
+                              "used in an embed() argument");
+    }
+
     private Query createTensor1Query(String tensorString, String profile, String additionalParams) {
         return new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
@@ -202,18 +217,24 @@ public class RankProfileInputTest {
     }
 
     private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders) {
-        assertEmbedQuery(embed, expected, embedders, null);
+        assertEmbedQuery(embed, expected, embedders, null, null);
     }
 
     private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language) {
+        assertEmbedQuery(embed, expected, embedders, language, null);
+    }
+    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language, String param1Value) {
         String languageParam = language == null ? "" : "&language=" + language;
+        String param1 = param1Value == null ? "" : "&param1=" + urlEncode(param1Value);
+
         String destination = "query(myTensor4)";
 
         Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
                                                  "?" + urlEncode("ranking.features." + destination) +
                                                  "=" + urlEncode(embed) +
                                                  "&ranking=commonProfile" +
-                                                 languageParam,
+                                                 languageParam +
+                                                 param1,
                                                  com.yahoo.jdisc.http.HttpRequest.Method.GET))
                                          .setSchemaInfo(createSchemaInfo())
                                          .setQueryProfile(createQueryProfile())
@@ -230,7 +251,7 @@ public class RankProfileInputTest {
             if (t.getMessage().equals(errMsg)) return;
             t = t.getCause();
         }
-        fail("Error '" + errMsg + "' not thrown");
+        fail("Exception with message '" + errMsg + "' not thrown");
     }
 
     private CompiledQueryProfile createQueryProfile() {

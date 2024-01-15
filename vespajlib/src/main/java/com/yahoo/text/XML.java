@@ -9,9 +9,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -444,6 +446,19 @@ public class XML {
         }
         return valid;
     }
+
+    /**
+     * Creates a new XML TransformerFactory.
+     *
+     * @return a TransformerFactory
+     */
+    public static TransformerFactory createTransformerFactory() {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        return transformerFactory;
+    }
+
 
     /**
      * The point of this weird class and the jumble of abstract methods is

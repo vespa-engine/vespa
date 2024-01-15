@@ -14,7 +14,7 @@
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
+#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace search::features;

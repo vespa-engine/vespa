@@ -217,13 +217,6 @@ public class VespaModelFactory implements ModelFactory {
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
             return new Validation(additionalValidators).validate(model, validationParameters, deployState);
-        } catch (ValidationOverrides.ValidationException e) {
-            if (deployState.isHosted() && zone.environment().isManuallyDeployed())
-                deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
-                                                                    "Auto-overriding validation which would be disallowed in production: " +
-                                                                    Exceptions.toMessageString(e));
-            else
-                rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (IllegalArgumentException | TransientException | QuotaExceededException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {

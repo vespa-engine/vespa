@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
 namespace search::streaming {
@@ -17,11 +18,24 @@ public:
     virtual QueryNodeResultBase * clone() const = 0;
 };
 
+enum class Normalizing {
+    NONE,
+    LOWERCASE,
+    LOWERCASE_AND_FOLD
+};
+
 class QueryNodeResultFactory {
 public:
     virtual ~QueryNodeResultFactory() = default;
-    virtual bool getRewriteFloatTerms() const { return false; }
-    virtual std::unique_ptr<QueryNodeResultBase> create() const { return std::unique_ptr<QueryNodeResultBase>(); }
+    virtual bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept {
+        (void) index;
+        return false;
+    }
+    virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept {
+        (void) index;
+        return Normalizing::NONE;
+    }
+    virtual std::unique_ptr<QueryNodeResultBase> create() const { return {}; }
 };
 }
 

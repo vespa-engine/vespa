@@ -3,14 +3,13 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
@@ -25,20 +24,17 @@ import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnn
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
+import com.yahoo.yolean.Exceptions;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toCollection;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -51,7 +47,7 @@ public class Validation {
 
     public Validation() { this(List.of()); }
 
-    /** Create instance taking additional validators (e.g for cloud applications) */
+    /** Create instance taking additional validators (e.g., for cloud applications) */
     public Validation(List<Validator> additionalValidators) { this.additionalValidators = additionalValidators; }
 
     /**
@@ -62,101 +58,181 @@ public class Validation {
      * @throws ValidationOverrides.ValidationException if the change fails validation
      */
     public List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
+        Execution execution = new Execution(model, deployState);
         if (validationParameters.checkRouting()) {
-            new RoutingValidator().validate(model, deployState);
-            new RoutingSelectorValidator().validate(model, deployState);
+            validateRouting(execution);
         }
-        new SchemasDirValidator().validate(model, deployState);
-        new BundleValidator().validate(model, deployState);
-        new PublicApiBundleValidator().validate(model, deployState);
-        new SearchDataTypeValidator().validate(model, deployState);
-        new ComplexFieldsWithStructFieldAttributesValidator().validate(model, deployState);
-        new ComplexFieldsWithStructFieldIndexesValidator().validate(model, deployState);
-        new StreamingValidator().validate(model, deployState);
-        new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(model, deployState);
-        new NoPrefixForIndexes().validate(model, deployState);
-        new ContainerInCloudValidator().validate(model, deployState);
-        new DeploymentSpecValidator().validate(model, deployState);
-        new ValidationOverridesValidator().validate(model, deployState);
-        new ConstantValidator().validate(model, deployState);
-        new SecretStoreValidator().validate(model, deployState);
-        new EndpointCertificateSecretsValidator().validate(model, deployState);
-        new AccessControlFilterValidator().validate(model, deployState);
-        new QuotaValidator().validate(model, deployState);
-        new UriBindingsValidator().validate(model, deployState);
-        new CloudDataPlaneFilterValidator().validate(model, deployState);
-        new AccessControlFilterExcludeValidator().validate(model, deployState);
-        new CloudUserFilterValidator().validate(model, deployState);
-        new CloudHttpConnectorValidator().validate(model, deployState);
-        new UrlConfigValidator().validate(model, deployState);
-        new JvmHeapSizeValidator().validate(model, deployState);
 
-        additionalValidators.forEach(v -> v.validate(model, deployState));
+        validateModel(validationParameters, execution);
 
-        List<ConfigChangeAction> result = Collections.emptyList();
+        for (Validator validator : additionalValidators) {
+            validator.validate(execution);
+        }
+
         if (deployState.getProperties().isFirstTimeDeployment()) {
-            validateFirstTimeDeployment(model, deployState);
-        } else {
-            Optional<Model> currentActiveModel = deployState.getPreviousModel();
-            if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel)) {
-                result = validateChanges((VespaModel) currentActiveModel.get(), model, deployState);
-                deferConfigChangesForClustersToBeRestarted(result, model);
+            validateFirstTimeDeployment(execution);
+        }
+        else if (deployState.getPreviousModel().isPresent() && (deployState.getPreviousModel().get() instanceof VespaModel)) {
+            validateChanges(execution);
+        }
+
+        execution.throwIfFailed();
+        return execution.actions;
+    }
+
+    private static void validateRouting(Execution execution) {
+        new RoutingValidator().validate(execution);
+        new RoutingSelectorValidator().validate(execution);
+    }
+
+    private static void validateModel(ValidationParameters validationParameters, Execution execution) {
+        new SchemasDirValidator().validate(execution);
+        new BundleValidator().validate(execution);
+        new PublicApiBundleValidator().validate(execution);
+        new SearchDataTypeValidator().validate(execution);
+        new ComplexFieldsWithStructFieldAttributesValidator().validate(execution);
+        new ComplexFieldsWithStructFieldIndexesValidator().validate(execution);
+        new StreamingValidator().validate(execution);
+        new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(execution);
+        new NoPrefixForIndexes().validate(execution);
+        new ContainerInCloudValidator().validate(execution);
+        new DeploymentSpecValidator().validate(execution);
+        new ValidationOverridesValidator().validate(execution);
+        new ConstantValidator().validate(execution);
+        new SecretStoreValidator().validate(execution);
+        new AccessControlFilterValidator().validate(execution);
+        new QuotaValidator().validate(execution);
+        new UriBindingsValidator().validate(execution);
+        new CloudDataPlaneFilterValidator().validate(execution);
+        new AccessControlFilterExcludeValidator().validate(execution);
+        new CloudUserFilterValidator().validate(execution);
+        new CloudHttpConnectorValidator().validate(execution);
+        new UrlConfigValidator().validate(execution);
+        new JvmHeapSizeValidator().validate(execution);
+        new InfrastructureDeploymentValidator().validate(execution);
+        new EndpointCertificateSecretsValidator().validate(execution);
+        new CloudClientsValidator().validate(execution);
+    }
+
+    private static void validateFirstTimeDeployment(Execution execution) {
+        new RedundancyValidator().validate((Context) execution);
+    }
+
+    private static void validateChanges(Execution execution) {
+        new IndexingModeChangeValidator().validate(execution);
+        new GlobalDocumentChangeValidator().validate(execution);
+        new IndexedSearchClusterChangeValidator().validate(execution);
+        new StreamingSearchClusterChangeValidator().validate(execution);
+        new ConfigValueChangeValidator().validate(execution);
+        new StartupCommandChangeValidator().validate(execution);
+        new ContentTypeRemovalValidator().validate(execution);
+        new ContentClusterRemovalValidator().validate(execution);
+        new ResourcesReductionValidator().validate(execution);
+        new ContainerRestartValidator().validate(execution);
+        new NodeResourceChangeValidator().validate(execution);
+        new RedundancyIncreaseValidator().validate(execution);
+        new CertificateRemovalChangeValidator().validate(execution);
+        new RedundancyValidator().validate(execution);
+        new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
+    }
+
+    public interface Context {
+        /** Auxiliary deploy state of the application. */
+        DeployState deployState();
+        /** The model to validate. */
+        VespaModel model();
+        /** Report a failed validation which cannot be overridden; this results in an {@link IllegalArgumentException}. */
+        default void illegal(String message) { illegal(message, null); }
+        /** Report a failed validation which cannot be overridden; this results in an {@link IllegalArgumentException}. */
+        void illegal(String message, Throwable cause);
+        /** Report a failed validation which can be overridden; this results in a {@link ValidationException}. */
+        void invalid(ValidationId id, String message);
+    }
+
+    public interface ChangeContext extends Context {
+        /** The previous model, if any. */
+        VespaModel previousModel();
+        /**
+         * Report an action the user must take to change to the new configuration.
+         * If the action has a {@link ValidationId}, {@link #invalid} is also called for this id, and the action's message.
+         */
+        void require(ConfigChangeAction action);
+    }
+
+    static class Execution implements ChangeContext {
+
+        private final List<String> errors = new ArrayList<>();
+        private final Map<ValidationId, List<String>> failures = new LinkedHashMap<>();
+        private final VespaModel model;
+        private final DeployState deployState;
+        private final List<ConfigChangeAction> actions = new ArrayList<>();
+
+        Execution(VespaModel model, DeployState deployState) {
+            this.model = model;
+            this.deployState = deployState;
+        }
+
+        void throwIfFailed() {
+            Optional<ValidationException> invalidException = deployState.validationOverrides().invalidException(failures, deployState.now());
+            if (invalidException.isPresent() && deployState.isHosted() && deployState.zone().environment().isManuallyDeployed()) {
+                deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
+                                                                    "Auto-overriding validation which would be disallowed in production: " +
+                                                                    Exceptions.toMessageString(invalidException.get()));
+                invalidException = Optional.empty();
             }
+
+            if ( ! errors.isEmpty()) {
+                String illegalMessage = errors.size() == 1 ? errors.get(0)
+                                                           : "multiple errors:\n\t" + String.join("\n\t", errors);
+                if (invalidException.isPresent())
+                    illegalMessage += "\n" + invalidException.get().getMessage();
+
+                throw new IllegalArgumentException(illegalMessage);
+            }
+
+            invalidException.ifPresent(e -> { throw e; });
         }
-        return result;
-    }
 
-    private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,
-                                                            DeployState deployState) {
-        ChangeValidator[] validators = new ChangeValidator[] {
-                new IndexingModeChangeValidator(),
-                new GlobalDocumentChangeValidator(),
-                new IndexedSearchClusterChangeValidator(),
-                new StreamingSearchClusterChangeValidator(),
-                new ConfigValueChangeValidator(),
-                new StartupCommandChangeValidator(),
-                new ContentTypeRemovalValidator(),
-                new ContentClusterRemovalValidator(),
-                new ResourcesReductionValidator(),
-                new ResourcesReductionValidator(),
-                new ContainerRestartValidator(),
-                new NodeResourceChangeValidator(),
-                new RedundancyIncreaseValidator(),
-                new CertificateRemovalChangeValidator(),
-                new RedundancyValidator(),
-                new RestartOnDeployForOnnxModelChangesValidator(),
-        };
-        List<ConfigChangeAction> actions = Arrays.stream(validators)
-                                                 .flatMap(v -> v.validate(currentModel, nextModel, deployState).stream())
-                                                 .toList();
-
-        Map<ValidationId, Collection<String>> disallowableActions = actions.stream()
-                                                                           .filter(action -> action.validationId().isPresent())
-                                                                           .collect(groupingBy(action -> action.validationId().orElseThrow(),
-                                                                                               mapping(ConfigChangeAction::getMessage,
-                                                                                                       toCollection(LinkedHashSet::new))));
-        deployState.validationOverrides().invalid(disallowableActions, deployState.now());
-        return actions;
-    }
-
-    private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new RedundancyValidator().validate(model, deployState);
-    }
-
-    private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
-        Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
-                                                           .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
-                                                           .map(action -> action.clusterId())
-                                                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
-        for (var clusterToRestart : clustersToBeRestarted) {
-            var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
-            if (containerCluster != null)
-                containerCluster.setDeferChangesUntilRestart(true);
-
-            var contentCluster = model.getContentClusters().get(clusterToRestart.value());
-            if (contentCluster != null)
-                contentCluster.setDeferChangesUntilRestart(true);
+        List<ConfigChangeAction> actions() {
+            return actions;
         }
+
+        List<String> errors() {
+            return errors;
+        }
+
+        @Override
+        public DeployState deployState() {
+            return deployState;
+        }
+
+        @Override
+        public VespaModel model() {
+            return model;
+        }
+
+        @Override
+        public VespaModel previousModel() {
+            return (VespaModel) deployState.getPreviousModel().get();
+        }
+
+        @Override
+        public void require(ConfigChangeAction action) {
+            actions.add(action);
+            action.validationId().ifPresent(id -> invalid(id, action.getMessage()));
+        }
+
+        @Override
+        public void illegal(String message, Throwable cause) {
+            if (cause != null) message += ": " + Exceptions.toMessageString(cause);
+            errors.add(message);
+        }
+
+        @Override
+        public void invalid(ValidationId id, String message) {
+            failures.computeIfAbsent(id, __ -> new ArrayList<>()).add(message);
+        }
+
     }
 
 }

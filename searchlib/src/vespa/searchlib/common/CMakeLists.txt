@@ -10,6 +10,7 @@ vespa_add_library(searchlib_common OBJECT
     documentlocations.cpp
     documentsummary.cpp
     fileheadercontext.cpp
+    fileheadertags.cpp
     flush_token.cpp
     geo_gcd.cpp
     geo_location.cpp

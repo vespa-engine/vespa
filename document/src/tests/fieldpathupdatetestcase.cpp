@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/test/fieldvalue_helpers.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -11,7 +12,6 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 
-#include <vespa/document/base/exceptions.h>
 
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/update/documentupdate.h>
@@ -22,11 +22,11 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/util/bytebuffer.h>
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <fcntl.h>
-#include <gtest/gtest.h>
 
 using vespalib::Identifiable;
 using vespalib::nbostream;

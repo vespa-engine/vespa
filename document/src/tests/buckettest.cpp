@@ -2,10 +2,10 @@
 
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/util/random.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/document/bucket/bucket.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/random.h>
 
 namespace document {
 

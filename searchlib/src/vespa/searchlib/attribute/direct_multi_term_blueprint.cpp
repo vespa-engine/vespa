@@ -4,12 +4,15 @@
 #include "direct_multi_term_blueprint.hpp"
 #include "i_docid_posting_store.h"
 #include "i_docid_with_weight_posting_store.h"
+#include "in_term_search.h"
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 
 namespace search::attribute {
 
+template class DirectMultiTermBlueprint<IDocidPostingStore, InTermSearch>;
 template class DirectMultiTermBlueprint<IDocidPostingStore, queryeval::WeightedSetTermSearch>;
+template class DirectMultiTermBlueprint<IDocidWithWeightPostingStore, InTermSearch>;
 template class DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::WeightedSetTermSearch>;
 template class DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::DotProductSearch>;
 

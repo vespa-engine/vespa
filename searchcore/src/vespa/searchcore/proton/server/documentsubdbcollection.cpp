@@ -34,7 +34,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         MetricsWireService &metricsWireService,
         DocumentDBTaggedMetrics &metrics,
         matching::QueryLimiter &queryLimiter,
-        const vespalib::Clock &clock,
+        const std::atomic<vespalib::steady_time> & now_ref,
         std::mutex &configMutex,
         const vespalib::string &baseDir,
         const vespalib::HwInfo &hwInfo)
@@ -64,7 +64,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                                                     metrics.ready.attributes,
                                                                     metricsWireService,
                                                                     attribute_interlock),
-                                        queryLimiter, clock, warmupExecutor)));
+                                        queryLimiter, now_ref, warmupExecutor)));
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, _remSubDbId, SubDbType::REMOVED),

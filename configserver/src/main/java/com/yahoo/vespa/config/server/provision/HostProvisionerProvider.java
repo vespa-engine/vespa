@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * This class is necessary to support both having and not having a host provisioner. We inject
- * a component registry here, which then enables us to check whether or not we have a provisioner available.
+ * a component registry here, which then enables us to check whether we have a provisioner available.
  * We only have a provisioner if we are running in hosted mode.
  *
  * @author Ulf Lilleengen

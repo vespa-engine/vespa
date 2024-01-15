@@ -50,12 +50,16 @@
         "peak" : {
           "cpu" : 0.0,
           "memory" : 0.0,
-          "disk" : 0.0
+          "disk" : 0.0,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "ideal" : {
           "cpu" : 0.0,
           "memory" : 0.0,
-          "disk" : 0.0
+          "disk" : 0.0,
+          "gpu": 0.0,
+          "gpuMemory": 0.0
         },
         "metrics" : {
           "queryRate" : 0.0,

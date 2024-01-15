@@ -39,6 +39,9 @@
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-plugin-plugin</artifactId>
+            <configuration>
+              <goalPrefix>vespa-cfg</goalPrefix>
+            </configuration>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>

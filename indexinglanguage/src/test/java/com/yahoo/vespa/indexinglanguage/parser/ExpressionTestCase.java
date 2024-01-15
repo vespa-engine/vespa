@@ -7,6 +7,8 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -70,6 +72,7 @@ public class ExpressionTestCase {
         assertExpression(TokenizeExpression.class, "tokenize stem:\"ALL\" normalize");
         assertExpression(TokenizeExpression.class, "tokenize stem:\"ALL\"");
         assertExpression(TokenizeExpression.class, "tokenize normalize");
+        assertExpression(TokenizeExpression.class, "tokenize max-occurrences: 15", Optional.of("tokenize max-occurrences:15"));
         assertExpression(ToLongExpression.class, "to_long");
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
@@ -85,9 +88,16 @@ public class ExpressionTestCase {
     }
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {
+        assertExpression(expectedClass, str, Optional.empty());
+    }
+
+    private static void assertExpression(Class expectedClass, String str, Optional<String> expStr) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
         Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse.asMap());
         assertEquals(expectedClass, foo.getClass());
+        if (expStr.isPresent()) {
+            assertEquals(expStr.get(), foo.toString());
+        }
         Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse.asMap());
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);

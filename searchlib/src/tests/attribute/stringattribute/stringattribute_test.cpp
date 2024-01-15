@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
@@ -8,7 +9,6 @@
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
-#include <vespa/searchlib/attribute/multistringpostattribute.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("stringattribute_test");

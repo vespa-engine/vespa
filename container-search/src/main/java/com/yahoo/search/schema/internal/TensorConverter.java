@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
  */
 public class TensorConverter {
 
-    private static final Pattern embedderArgumentRegexp = Pattern.compile("^([A-Za-z0-9_\\-.]+),\\s*([\"'].*[\"'])");
+    private static final Pattern embedderArgumentAndQuotedTextRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*([\"'].*[\"'])");
+    private static final Pattern embedderArgumentAndReferenceRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*(@.*)");
 
     private final Map<String, Embedder> embedders;
 
@@ -27,8 +28,9 @@ public class TensorConverter {
         this.embedders = embedders;
     }
 
-    public Tensor convertTo(TensorType type, String key, Object value, Language language) {
-        var context = new Embedder.Context(key).setLanguage(language);
+    public Tensor convertTo(TensorType type, String key, Object value, Language language,
+                            Map<String, String> contextValues) {
+        var context = new Embedder.Context(key).setLanguage(language).setContextValues(contextValues);
         Tensor tensor = toTensor(type, value, context);
         if (tensor == null) return null;
         if (! tensor.type().isAssignableTo(type))
@@ -55,16 +57,16 @@ public class TensorConverter {
         String embedderId;
 
         // Check if arguments specifies an embedder with the format embed(embedder, "text to encode")
-        Matcher matcher = embedderArgumentRegexp.matcher(argument);
-        if (matcher.matches()) {
+        Matcher matcher;
+        if (( matcher = embedderArgumentAndQuotedTextRegexp.matcher(argument)).matches()) {
             embedderId = matcher.group(1);
+            embedder = requireEmbedder(embedderId);
             argument = matcher.group(2);
-            if ( ! embedders.containsKey(embedderId)) {
-                throw new IllegalArgumentException("Can't find embedder '" + embedderId + "'. " +
-                                                   "Valid embedders are " + validEmbedders(embedders));
-            }
-            embedder = embedders.get(embedderId);
-        } else if (embedders.size() == 0) {
+        } else if (( matcher = embedderArgumentAndReferenceRegexp.matcher(argument)).matches()) {
+                embedderId = matcher.group(1);
+                embedder = requireEmbedder(embedderId);
+                argument = matcher.group(2);
+        } else if (embedders.isEmpty()) {
             throw new IllegalStateException("No embedders provided");  // should never happen
         } else if (embedders.size() > 1) {
             throw new IllegalArgumentException("Multiple embedders are provided but no embedder id is given. " +
@@ -74,17 +76,33 @@ public class TensorConverter {
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        return embedder.embed(removeQuotes(argument), embedderContext.copy().setEmbedderId(embedderId), type);
+        return embedder.embed(resolve(argument, embedderContext), embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
-    private static String removeQuotes(String s) {
-        if (s.startsWith("'") && s.endsWith("'")) {
+    private Embedder requireEmbedder(String embedderId) {
+        if ( ! embedders.containsKey(embedderId))
+            throw new IllegalArgumentException("Can't find embedder '" + embedderId + "'. " +
+                                               "Valid embedders are " + validEmbedders(embedders));
+        return embedders.get(embedderId);
+    }
+
+    private static String resolve(String s, Embedder.Context embedderContext) {
+        if (s.startsWith("'") && s.endsWith("'"))
             return s.substring(1, s.length() - 1);
-        }
-        if (s.startsWith("\"") && s.endsWith("\"")) {
+        if (s.startsWith("\"") && s.endsWith("\""))
             return s.substring(1, s.length() - 1);
-        }
+        if (s.startsWith("@"))
+            return resolveReference(s, embedderContext);
         return s;
+    }
+
+    private static String resolveReference(String s, Embedder.Context embedderContext) {
+        String referenceKey = s.substring(1);
+        String referencedValue = embedderContext.getContextValues().get(referenceKey);
+        if (referencedValue == null)
+            throw new IllegalArgumentException("Could not resolve query parameter reference '" + referenceKey +
+                                               "' used in an embed() argument");
+        return referencedValue;
     }
 
     private static String validEmbedders(Map<String, Embedder> embedders) {

@@ -437,8 +437,7 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
             LOG(debug, "Warming up a disk index.");
             indexes = std::make_shared<WarmupIndexCollection>
                       (_warmupConfig, getLeaf(guard, _source_list, true), indexes,
-                       static_cast<IDiskIndex &>(source), _ctx.getWarmupExecutor(),
-                       _ctx.getThreadingService().clock(), *this);
+                       static_cast<IDiskIndex &>(source), _ctx.getWarmupExecutor(), *this);
         } else {
             LOG(debug, "No warmup needed as it is a memory index that is mapped in.");
         }

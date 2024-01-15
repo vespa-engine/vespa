@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.config.provision.NodeType.host;
@@ -50,6 +52,7 @@ public class MockHostProvisioner implements HostProvisioner {
     private final Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
     private final Set<String> upgradableFlavors = new HashSet<>();
     private final Map<Behaviour, Integer> behaviours = new HashMap<>();
+    private final Set<Version> osVersions = new HashSet<>();
 
     private int deprovisionedHosts = 0;
 
@@ -146,6 +149,11 @@ public class MockHostProvisioner implements HostProvisioner {
         return upgradableFlavors.contains(host.flavor().name());
     }
 
+    @Override
+    public Set<Version> osVersions(Node host, int majorVersion) {
+        return osVersions.stream().filter(v -> v.getMajor() == majorVersion).collect(Collectors.toUnmodifiableSet());
+    }
+
     /** Returns the hosts that have been provisioned by this  */
     public List<ProvisionedHost> provisionedHosts() {
         return Collections.unmodifiableList(provisionedHosts);
@@ -211,6 +219,11 @@ public class MockHostProvisioner implements HostProvisioner {
 
     public MockHostProvisioner addEvent(HostEvent event) {
         hostEvents.add(event);
+        return this;
+    }
+
+    public MockHostProvisioner addOsVersion(Version version) {
+        osVersions.add(version);
         return this;
     }
 

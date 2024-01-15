@@ -69,16 +69,16 @@ public class VespaHttpClientBuilder {
         connectionConfigBuilder.setConnectTimeout(connectTimeout);
         return this;
     }
-    public VespaHttpClientBuilder socketTimeout(long connectTimeout, TimeUnit timeUnit) {
-        connectionConfigBuilder.setConnectTimeout(connectTimeout, timeUnit);
+    public VespaHttpClientBuilder socketTimeout(int socketTimeout, TimeUnit timeUnit) {
+        connectionConfigBuilder.setSocketTimeout(socketTimeout, timeUnit);
+        return this;
+    }
+    public VespaHttpClientBuilder socketTimeout(Timeout socketTimeout) {
+        connectionConfigBuilder.setSocketTimeout(socketTimeout);
         return this;
     }
     public VespaHttpClientBuilder validateAfterInactivity(TimeValue validateAfterInactivity) {
         connectionConfigBuilder.setValidateAfterInactivity(validateAfterInactivity);
-        return this;
-    }
-    public VespaHttpClientBuilder socketTimeout(Timeout connectTimeout) {
-        connectionConfigBuilder.setConnectTimeout(connectTimeout);
         return this;
     }
 

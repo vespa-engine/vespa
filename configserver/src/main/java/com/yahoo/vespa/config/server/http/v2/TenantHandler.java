@@ -6,6 +6,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.RestApiRequestHandler;
@@ -63,7 +64,7 @@ public class TenantHandler extends RestApiRequestHandler<TenantHandler> {
     private HttpResponse putTenant(RestApi.RequestContext context) {
         TenantName name = TenantName.from(context.pathParameters().getStringOrThrow("tenant"));
         if (tenantRepository.checkThatTenantExists(name))
-            throw new RestApiException.BadRequest("There already exists a tenant '" + name + "'");
+            return new MessageResponse("Tenant '" + name + "' already exists");
         if ( ! name.value().matches(TENANT_NAME_REGEXP))
             throw new RestApiException.BadRequest("Illegal tenant name: " + name);
 

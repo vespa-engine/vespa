@@ -9,8 +9,8 @@ class BoolFieldSearcher : public FieldSearcher
 {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    BoolFieldSearcher(FieldIdT fId);
-    ~BoolFieldSearcher();
+    explicit BoolFieldSearcher(FieldIdT fId);
+    ~BoolFieldSearcher() override;
     void prepare(search::streaming::QueryTermList& qtl,
                  const SharedSearcherBuf& buf,
                  const vsm::FieldPathMapT& field_paths,

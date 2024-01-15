@@ -4,10 +4,9 @@
 
 namespace vespalib {
 
-FakeDoom::FakeDoom(steady_time::duration time_to_doom)
+FakeDoom::FakeDoom(steady_time::duration time_to_doom) noexcept
     : _time(steady_clock::now()),
-      _clock(_time),
-      _doom(_clock, _clock.getTimeNS() + time_to_doom)
+      _doom(_time, _time.load(std::memory_order_relaxed) + time_to_doom)
 {
 }
 

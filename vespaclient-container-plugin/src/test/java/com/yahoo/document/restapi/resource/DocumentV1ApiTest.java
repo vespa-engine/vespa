@@ -460,7 +460,7 @@ public class DocumentV1ApiTest {
         assertEquals(400, response.getStatus());
 
         // DELETE with namespace and document type is a restricted visit which deletes visited documents.
-        // When visiting fails fatally, a 502 BAD GATEWAY is returned.
+        // When visiting fails fatally, a 500 INTERAL SERVER ERROR is returned.
         access.expect(tokens.subList(0, 1));
         access.expect(parameters -> {
             assertEquals("(false) and (music) and (id.namespace=='space')", parameters.getDocumentSelection());
@@ -485,7 +485,7 @@ public class DocumentV1ApiTest {
                          "message": "boom"
                        }""",
                        response.readAll());
-        assertEquals(502, response.getStatus());
+        assertEquals(500, response.getStatus());
 
         // DELETE at the root is also a deletion visit. These also require a selection.
         access.expect(parameters -> {
@@ -527,7 +527,7 @@ public class DocumentV1ApiTest {
                          "message": "error"
                        }""",
                        response.readAll());
-        assertEquals(502, response.getStatus());
+        assertEquals(500, response.getStatus());
 
         // GET with namespace, document type and number is a restricted visit.
         access.expect(parameters -> {
@@ -931,12 +931,12 @@ public class DocumentV1ApiTest {
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
                        "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response1.readAll());
-        assertEquals(502, response1.getStatus());
+        assertEquals(500, response1.getStatus());
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
                        "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response2.readAll());
-        assertEquals(502, response2.getStatus());
+        assertEquals(500, response2.getStatus());
 
         // Request response does not arrive before timeout has passed.
         AtomicReference<ResponseHandler> handler = new AtomicReference<>();

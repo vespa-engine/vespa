@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
@@ -11,6 +13,7 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +31,14 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
 
     private final Map<HostName, HostInfo> suspendedHosts = new HashMap<>();
     private final Set<ApplicationId> suspendedApplications = new HashSet<>();
+    private final Clock clock;
+
+    @Inject
+    public OrchestratorMock() { this(new TestTimer(Instant.EPOCH).toUtcClock()); }
+
+    public OrchestratorMock(Clock clock) {
+        this.clock = clock;
+    }
 
     @Override
     public Host getHost(HostName hostName) {
@@ -52,7 +63,13 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
     }
 
     @Override
-    public void setNodeStatus(HostName hostName, HostStatus state) {}
+    public void setNodeStatus(HostName hostName, HostStatus state) {
+        if (state == HostStatus.NO_REMARKS) {
+            suspendedHosts.remove(hostName);
+        } else {
+            suspendedHosts.put(hostName, HostInfo.createSuspended(state, clock.instant()));
+        }
+    }
 
     @Override
     public void resume(HostName hostName) {
@@ -61,7 +78,7 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
 
     @Override
     public void suspend(HostName hostName) {
-        suspendedHosts.put(hostName, HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH));
+        suspendedHosts.put(hostName, HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, clock.instant()));
     }
 
     @Override

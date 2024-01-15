@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_euclidean_distance_test_app TEST
     euclidean_distance_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_euclidean_distance_test_app COMMAND searchlib_euclidean_distance_test_app)

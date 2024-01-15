@@ -65,6 +65,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
+        <configuration>
+          <goalPrefix>vespa-abicheck</goalPrefix>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.openclover</groupId>
