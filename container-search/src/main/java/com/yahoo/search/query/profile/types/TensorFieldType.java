@@ -48,8 +48,7 @@ public class TensorFieldType extends FieldType {
     @Override
     public Object convertFrom(Object o, ConversionContext context) {
         if (o instanceof SubstituteString) return new SubstituteStringTensor((SubstituteString) o, type);
-        return new TensorConverter(context.embedders()).convertTo(type, context.destination(), o,
-                                                                  context.language(), context.contextValues());
+        return new TensorConverter(context.embedders()).convertTo(type, context.destination(), o, context.language());
     }
 
     public static TensorFieldType fromTypeString(String s) {
