@@ -288,7 +288,6 @@ public:
      * TODO: Extend to handle both AND/OR
      */
     static void parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors);
-
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
 protected:
