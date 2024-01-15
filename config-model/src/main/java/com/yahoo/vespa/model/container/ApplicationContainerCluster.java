@@ -101,7 +101,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private final boolean dynamicHeapSize;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -115,7 +114,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
-        dynamicHeapSize = deployState.featureFlags().dynamicHeapSize();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                .map(Model::allocatedHosts)
                                                                .map(AllocatedHosts::getHosts)
@@ -215,10 +213,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(availableMemoryPercentage)); // Node memory is not known
 
             // Node memory is known so convert available memory percentage to node memory percentage
-            double totalMemory = dynamicHeapSize
-                    ? getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow()
-                    : getContainers().get(0).getHostResource().realResources().memoryGb();
-            double jvmHeapDeductionGb = dynamicHeapSize ? onnxModelCostCalculator.aggregatedModelCostInBytes() / (1024D * 1024 * 1024) : 0;
+            double totalMemory = getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow();
+            double jvmHeapDeductionGb = onnxModelCostCalculator.aggregatedModelCostInBytes() / (1024D * 1024 * 1024);
             double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - jvmHeapDeductionGb);
             int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
             logger.log(FINE, () -> "cluster id '%s': memoryPercentage=%d, availableMemory=%f, totalMemory=%f, availableMemoryPercentage=%d, jvmHeapDeductionGb=%f"

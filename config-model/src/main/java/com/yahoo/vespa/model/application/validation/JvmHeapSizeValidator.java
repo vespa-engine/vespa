@@ -18,7 +18,6 @@ public class JvmHeapSizeValidator implements Validator {
 
     @Override
     public void validate(Context context) {
-        if (!context.deployState().featureFlags().dynamicHeapSize()) return;
         if (!context.deployState().isHostedTenantApplication(context.model().getAdmin().getApplicationType())) return;
 
         context.model().getContainerClusters().forEach((clusterId, appCluster) -> {

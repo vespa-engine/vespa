@@ -385,7 +385,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag DYNAMIC_HEAP_SIZE = defineFeatureFlag(
-            "dynamic-heap-size", false,
+            "dynamic-heap-size", true,
             List.of("bjorncs"), "2023-09-21", "2024-02-15",
             "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
             "Takes effect at redeployment",
