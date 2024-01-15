@@ -89,13 +89,13 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
 double
 AndNotBlueprint::calculate_cost() const
 {
-    return cost_of(get_children(), AndNotFlow());
+    return AndNotFlow::cost_of(get_children());
 }
 
 double
 AndNotBlueprint::calculate_relative_estimate() const
 {
-    return estimate_of(get_children(), AndNotFlow());
+    return AndNotFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate
@@ -168,10 +168,10 @@ AndNotBlueprint::get_replacement()
 void
 AndNotBlueprint::sort(Children &children, bool sort_by_cost) const
 {
-    if (children.size() > 2) {
-        if (sort_by_cost) {
-            std::sort(children.begin() + 1, children.end(), MinimalOrCost());
-        } else {
+    if (sort_by_cost) {
+        AndNotFlow::sort(children);
+    } else {
+        if (children.size() > 2) {
             std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
         }
     }
@@ -214,12 +214,12 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
 
 double
 AndBlueprint::calculate_cost() const {
-    return cost_of(get_children(), AndFlow());
+    return AndFlow::cost_of(get_children());
 }
 
 double
 AndBlueprint::calculate_relative_estimate() const {
-    return estimate_of(get_children(), AndFlow());
+    return AndFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate
@@ -265,7 +265,7 @@ void
 AndBlueprint::sort(Children &children, bool sort_by_cost) const
 {
     if (sort_by_cost) {
-        std::sort(children.begin(), children.end(), MinimalAndCost());
+        AndFlow::sort(children);
     } else {
         std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
@@ -323,12 +323,12 @@ OrBlueprint::~OrBlueprint() = default;
 
 double
 OrBlueprint::calculate_cost() const {
-    return cost_of(get_children(), OrFlow());
+    return OrFlow::cost_of(get_children());
 }
 
 double
 OrBlueprint::calculate_relative_estimate() const {
-    return estimate_of(get_children(), OrFlow());
+    return OrFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate
@@ -376,7 +376,7 @@ void
 OrBlueprint::sort(Children &children, bool sort_by_cost) const
 {
     if (sort_by_cost) {
-        std::sort(children.begin(), children.end(), MinimalOrCost());
+        OrFlow::sort(children);
     } else {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
@@ -428,12 +428,12 @@ WeakAndBlueprint::~WeakAndBlueprint() = default;
 
 double
 WeakAndBlueprint::calculate_cost() const {
-    return cost_of(get_children(), OrFlow());
+    return OrFlow::cost_of(get_children());
 }
 
 double
 WeakAndBlueprint::calculate_relative_estimate() const {
-    double child_est = estimate_of(get_children(), OrFlow());
+    double child_est = OrFlow::estimate_of(get_children());
     double my_est = abs_to_rel_est(_n, get_docid_limit());
     return std::min(my_est, child_est);
 }
@@ -499,12 +499,12 @@ WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) c
 
 double
 NearBlueprint::calculate_cost() const {
-    return cost_of(get_children(), AndFlow()) + childCnt() * 1.0;
+    return AndFlow::cost_of(get_children()) + childCnt() * 1.0;
 }
 
 double
 NearBlueprint::calculate_relative_estimate() const {
-    return estimate_of(get_children(), AndFlow());
+    return AndFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate
@@ -523,7 +523,7 @@ void
 NearBlueprint::sort(Children &children, bool sort_by_cost) const
 {
     if (sort_by_cost) {
-        std::sort(children.begin(), children.end(), MinimalAndCost());
+        AndFlow::sort(children);
     } else {
         std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
@@ -566,12 +566,12 @@ NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 
 double
 ONearBlueprint::calculate_cost() const {
-    return cost_of(get_children(), AndFlow()) + (childCnt() * 1.0);
+    return AndFlow::cost_of(get_children()) + (childCnt() * 1.0);
 }
 
 double
 ONearBlueprint::calculate_relative_estimate() const {
-    return estimate_of(get_children(), AndFlow());
+    return AndFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate
@@ -741,7 +741,7 @@ SourceBlenderBlueprint::calculate_cost() const {
 
 double
 SourceBlenderBlueprint::calculate_relative_estimate() const {
-    return estimate_of(get_children(), OrFlow());
+    return OrFlow::estimate_of(get_children());
 }
 
 Blueprint::HitEstimate

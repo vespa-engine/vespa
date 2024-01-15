@@ -1380,7 +1380,7 @@ TEST("cost for ONEAR") {
 }
 
 TEST("cost for WEAKAND") {
-    verify_cost(make::WEAKAND(1000), calc_cost({{1.1, 0.8},{1.2, 0.7},{1.3, 0.5}}));
+    verify_cost(make::WEAKAND(1000), calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }
