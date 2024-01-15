@@ -78,9 +78,8 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstAr
         std::vector<OrParts> parts;
         parts.reserve(thread_bundle.size());
         bits_per_thread = (bits_per_thread/ALIGNMENT_BITS) * ALIGNMENT_BITS;
-        parts.emplace_back(vectors, 0, bits_per_thread);
-        BitVector::Index offset = bits_per_thread;
-        for (uint32_t i(1); (i + 1) < thread_bundle.size(); i++) {
+        BitVector::Index offset = 0;
+        for (uint32_t i(0); (i + 1) < thread_bundle.size(); i++) {
             parts.emplace_back(vectors, offset, bits_per_thread);
             offset += bits_per_thread;
         }
