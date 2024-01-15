@@ -213,7 +213,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(1, cluster.getRoot().hostSystem().getHosts().size());
         HostResource h = cluster.getRoot().hostSystem().getHost("mockhost");
         String [] expectedServices = {
-                "logd", "configproxy", "config-sentinel", "configserver", "logserver",
+                "logd", "configproxy", "config-sentinel", "configserver", "container", "logserver",
                 "slobrok", "storagenode", "distributor", "searchnode", "transactionlogserver",
                 CLUSTERCONTROLLER_CONTAINER.serviceName, METRICS_PROXY_CONTAINER.serviceName
         };

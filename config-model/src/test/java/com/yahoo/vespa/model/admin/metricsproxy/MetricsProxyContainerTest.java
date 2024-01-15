@@ -6,15 +6,18 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
+import java.util.Iterator;
+
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.containerConfigId;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
@@ -104,12 +107,22 @@ public class MetricsProxyContainerTest {
         assertEquals("", container.getPreLoad());
     }
 
+    String hostedConfigIdForHost(VespaModel model, int index) {
+        HostInfo hostInfo = null;
+        for (Iterator<HostInfo> iter = model.getHosts().iterator(); iter.hasNext(); index--) {
+            hostInfo = iter.next();
+            if (index == 0) break;
+        }
+        return CLUSTER_CONFIG_ID + "/" + hostInfo.getHostname();
+    }
+
     @Test
     void hosted_application_propagates_node_dimensions() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted);
-        assertEquals(4, hostedModel.getHosts().size());
-        String configId = containerConfigId(hostedModel, hosted);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
+        assertEquals(5, hostedModel.getHosts().size());
+        String configId = hostedConfigIdForHost(hostedModel, 1);
+
         NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);
 
         assertEquals("content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_TYPE));
@@ -120,9 +133,10 @@ public class MetricsProxyContainerTest {
     @Test
     void metrics_v2_handler_is_set_up_with_node_info_config() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
 
-        var container = (MetricsProxyContainer) hostedModel.id2producer().get(containerConfigId(hostedModel, hosted));
+        String configId = hostedConfigIdForHost(hostedModel, 1);
+        var container = (MetricsProxyContainer) hostedModel.id2producer().get(configId);
         var handlers = container.getHandlers().getComponents();
 
         assertEquals(1, handlers.size());
@@ -136,7 +150,7 @@ public class MetricsProxyContainerTest {
     @Test
     void vespa_services_config_has_all_services() {
         VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(hostedServicesWithContent());
-        assertEquals(9, vespaServicesConfig.service().size());
+        assertEquals(10, vespaServicesConfig.service().size());
 
         for (var service : vespaServicesConfig.service()) {
             if (service.configId().equals("admin/cluster-controllers/0")) {
@@ -178,6 +192,9 @@ public class MetricsProxyContainerTest {
     private static String hostedServicesWithContent() {
         return String.join("\n",
                            "<services>",
+                           "    <container version='1.0' id='foo'>",
+                           "        <nodes count='1'/>",
+                           "    </container>",
                            "    <content version='1.0' id='my-content'>",
                            "        <redundancy>1</redundancy>" +
                            "        <documents />",
