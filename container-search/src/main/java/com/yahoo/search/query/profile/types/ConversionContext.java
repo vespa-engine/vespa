@@ -15,7 +15,6 @@ public class ConversionContext {
     private final String destination;
     private final CompiledQueryProfileRegistry registry;
     private final Map<String, Embedder> embedders;
-    private final Map<String, String> contextValues;
     private final Language language;
 
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry, Embedder embedder,
@@ -31,7 +30,6 @@ public class ConversionContext {
         this.embedders = embedders;
         this.language = context.containsKey("language") ? Language.fromLanguageTag(context.get("language"))
                                                         : Language.UNKNOWN;
-        this.contextValues = context;
     }
 
     /** Returns the local name of the field which will receive the converted value (or null when this is empty) */
@@ -45,9 +43,6 @@ public class ConversionContext {
 
     /** Returns the language, which is never null but may be UNKNOWN */
     Language language() { return language; }
-
-    /** Returns a read-only map of context key-values which can be looked up during conversion. */
-    Map<String,String> contextValues() { return contextValues; }
 
     /** Returns an empty context */
     public static ConversionContext empty() {
