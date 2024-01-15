@@ -314,7 +314,7 @@ public class Flags {
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2024-01-15",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2024-02-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick");
 
