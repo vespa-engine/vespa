@@ -42,12 +42,6 @@ public class ContainerInCloudValidatorTest {
         String servicesXml = """
                         <services version='1.0'>
                           %s
-                          <content id='foo' version='1.0'>
-                            <redundancy>2</redundancy>
-                            <documents>
-                            </documents>
-                            <nodes count='2' />
-                          </content>
                         </services>
                 """.formatted(container);
         ApplicationPackage app = new MockApplicationPackage.Builder()

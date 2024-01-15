@@ -12,7 +12,6 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -47,7 +46,7 @@ class MetricsProxyModelTester {
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder) {
-        return getModel(servicesXml, testMode, new DeployState.Builder(), 4);
+        return getModel(servicesXml, testMode, builder, 4);
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder, int hostCount) {
@@ -60,12 +59,6 @@ class MetricsProxyModelTester {
             builder.endpoints(Set.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.zone, List.of("foo.example.com"))));
         }
         return tester.createModel(servicesXml, true, builder);
-    }
-
-    static String containerConfigId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
-        return (mode == hosted)
-                ? CLUSTER_CONFIG_ID + "/" + model.getHosts().iterator().next().getHostname()
-                : CONTAINER_CONFIG_ID;
     }
 
     static String servicesWithAdminOnly() {
@@ -110,10 +103,6 @@ class MetricsProxyModelTester {
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
         return model.getConfig(ApplicationDimensionsConfig.class, CLUSTER_CONFIG_ID);
-    }
-
-    static QrStartConfig getQrStartConfig(VespaModel model, String hostname) {
-        return model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + hostname);
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {
