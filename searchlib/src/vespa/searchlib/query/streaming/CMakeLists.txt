@@ -10,5 +10,6 @@ vespa_add_library(searchlib_query_streaming OBJECT
     querynoderesultbase.cpp
     queryterm.cpp
     wand_term.cpp
+    weighted_set_term.cpp
     DEPENDS
 )

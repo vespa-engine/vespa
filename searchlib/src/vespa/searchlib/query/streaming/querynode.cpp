@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/wand_term.h>
+#include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
 #include <charconv>
 #include <vespa/log/log.h>
@@ -40,7 +41,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_OR:
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_EQUIV:
-    case ParseItem::ITEM_WEIGHTED_SET:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_PHRASE:
     case ParseItem::ITEM_SAME_ELEMENT:
@@ -55,7 +55,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 nqn->distance(queryRep.getNearDistance());
             }
             if ((type == ParseItem::ITEM_WEAK_AND) ||
-                (type == ParseItem::ITEM_WEIGHTED_SET) ||
                 (type == ParseItem::ITEM_SAME_ELEMENT))
             {
                 qn->setIndex(queryRep.getIndexName());
@@ -192,6 +191,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_WAND:
         qn = build_wand_term(factory, queryRep);
         break;
+    case ParseItem::ITEM_WEIGHTED_SET:
+        qn = build_weighted_set_term(factory, queryRep);
+        break;
     default:
         skip_unknown(queryRep);
         break;
@@ -268,6 +270,16 @@ QueryNode::build_wand_term(const QueryNodeResultFactory& factory, SimpleQuerySta
     wand->set_score_threshold(queryRep.getScoreThreshold());
     populate_multi_term(factory.normalizing_mode(wand->index()), *wand, queryRep);
     return wand;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_weighted_set_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+{
+    auto ws = std::make_unique<WeightedSetTerm>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    ws->setWeight(queryRep.GetWeight());
+    ws->setUniqueId(queryRep.getUniqueId());
+    populate_multi_term(factory.normalizing_mode(ws->index()), *ws, queryRep);
+    return ws;
 }
 
 void
