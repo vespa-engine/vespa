@@ -156,7 +156,7 @@ TEST(FlowTest, basic_and_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         for (bool strict: {false, true}) {
             verify_flow(AndFlow(in, strict), {0.4, 0.7, 0.2},
-                        {{in, in, strict},
+                        {{in, 0.0, strict},
                          {in*0.4, in*0.4, false},
                          {in*0.4*0.7, in*0.4*0.7, false},
                          {in*0.4*0.7*0.2, in*0.4*0.7*0.2, false}});
@@ -168,7 +168,7 @@ TEST(FlowTest, basic_or_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         for (bool strict: {false, true}) {
             verify_flow(OrFlow(in, strict), {0.4, 0.7, 0.2},
-                        {{in, 1.0-in, strict},
+                        {{in, 0.0, strict},
                          {in*0.6, 1.0-in*0.6, strict},
                          {in*0.6*0.3, 1.0-in*0.6*0.3, strict},
                          {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, strict}});
@@ -180,7 +180,7 @@ TEST(FlowTest, basic_and_not_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         for (bool strict: {false, true}) {
             verify_flow(AndNotFlow(in, strict), {0.4, 0.7, 0.2},
-                        {{in, in, strict},
+                        {{in, 0.0, strict},
                          {in*0.4, in*0.4, false},
                          {in*0.4*0.3, in*0.4*0.3, false},
                          {in*0.4*0.3*0.8, in*0.4*0.3*0.8, false}});

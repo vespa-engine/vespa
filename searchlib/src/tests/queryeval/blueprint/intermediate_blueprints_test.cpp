@@ -1289,6 +1289,7 @@ TEST("require that OR blueprint use saturated sum as estimate") {
 }
 
 void verify_relative_estimate(make &&mk, double expect) {
+    EXPECT_EQUAL(mk.making->estimate(), 0.0);
     Blueprint::UP bp = std::move(mk).leafs({200,300,950});
     bp->setDocIdLimit(1000);
     EXPECT_EQUAL(bp->estimate(), expect);

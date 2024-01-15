@@ -177,7 +177,7 @@ public:
         return _strict && _first;
     }
     double estimate() const noexcept {
-        return _flow;
+        return _first ? 0.0 : _flow;
     }
     static void sort(auto adapter, auto &children, bool strict) {
         flow::sort<flow::MinAndCost>(adapter, children);
@@ -200,11 +200,13 @@ class OrFlow : public FlowMixin<OrFlow>{
 private:
     double _flow;
     bool _strict;
+    bool _first;
 public:
     OrFlow(double in, bool strict) noexcept
-      : _flow(in), _strict(strict) {}
+      : _flow(in), _strict(strict), _first(true) {}
     void add(double est) noexcept {
         _flow *= (1.0 - est);
+        _first = false;
     }
     double flow() const noexcept {
         return _flow;
@@ -213,7 +215,7 @@ public:
         return _strict;
     }
     double estimate() const noexcept {
-        return (1.0 - _flow);
+        return _first ? 0.0 : (1.0 - _flow);
     }
     static void sort(auto adapter, auto &children, bool strict) {
         if (strict) {
@@ -247,7 +249,7 @@ public:
         return _strict && _first;
     }
     double estimate() const noexcept {
-        return _flow;
+        return _first ? 0.0 : _flow;
     }
     static void sort(auto adapter, auto &children, bool) {
         flow::sort_partial<flow::MinOrCost>(adapter, children, 1);
