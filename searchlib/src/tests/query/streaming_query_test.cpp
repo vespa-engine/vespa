@@ -1030,6 +1030,12 @@ TEST(StreamingQueryTest, weighted_set_term)
     term.get_terms().back()->setWeight(Weight(13));
     EXPECT_EQ(2, term.get_terms().size());
     SimpleTermData td;
+    /*
+     * Search in fields 10, 11 and 12 (cf. fieldset in schema).
+     * Fields 11 and 12 have content for doc containing the keys.
+     * Fields 10 and 12 have valid handles and can be used for ranking.
+     * Field 11 does not have a valid handle, thus no associated match data.
+     */
     td.addField(10);
     td.addField(11);
     td.addField(12);
