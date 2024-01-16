@@ -18,7 +18,7 @@ namespace search::attribute {
  * @tparam WrapperType Type that wraps an attribute vector and provides access to the attribute value for a given docid.
  */
 template <typename WrapperType>
-class MultiTermFilter final : public queryeval::SearchIterator
+class MultiTermHashFilter final : public queryeval::SearchIterator
 {
 public:
     using Key = typename WrapperType::TokenT;
@@ -31,9 +31,9 @@ private:
     int32_t _weight;
 
 public:
-    MultiTermFilter(fef::TermFieldMatchData& tfmd,
-                    WrapperType attr,
-                    TokenMap&& map);
+    MultiTermHashFilter(fef::TermFieldMatchData& tfmd,
+                        WrapperType attr,
+                        TokenMap&& map);
 
     void and_hits_into(BitVector& result, uint32_t begin_id) override;
     void doSeek(uint32_t docId) override;
