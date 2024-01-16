@@ -66,20 +66,18 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstAr
     size_t max_num_chunks = (size + (MIN_BITS_PER_THREAD - 1)) / MIN_BITS_PER_THREAD;
     size_t max_threads = std::max(1ul, std::min(thread_bundle.size(), max_num_chunks));
 
-    uint32_t bits_per_thread = size/max_threads;
     if (max_threads < 2) {
         for (uint32_t i(1); i < vectors.size(); i++) {
             master->orWith(*vectors[i]);
         }
     } else {
-        Index startIndex = master->getStartIndex();
         for (const BitVector *bv: vectors) {
-            assert(bv->getStartIndex() == startIndex);
+            assert(bv->getStartIndex() == 0u);
             assert(bv->size() == size);
         }
         std::vector<BitVector::OrParts> parts;
         parts.reserve(max_threads);
-        bits_per_thread = (bits_per_thread/ALIGNMENT_BITS) * ALIGNMENT_BITS;
+        uint32_t bits_per_thread = ((size/max_threads)/ALIGNMENT_BITS) * ALIGNMENT_BITS;
         Index offset = 0;
         for (uint32_t i(0); (i + 1) < max_threads; i++) {
             parts.emplace_back(vectors, offset, bits_per_thread);

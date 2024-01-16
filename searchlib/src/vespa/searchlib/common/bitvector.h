@@ -285,6 +285,7 @@ public:
     static void consider_enable_range_check();
     /**
      * Will slice the vectors and if possible use the thread bundle do the operation in parallell
+     * The result of the operation ends up in the first vector.
      * TODO: Extend to handle both AND/OR
      */
     static void parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors);
