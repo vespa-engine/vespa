@@ -832,6 +832,18 @@ TEST("FieldSearchSpec construction") {
     }
 }
 
+TEST("FieldSearchSpec reconfiguration preserves match/normalization properties for new searcher") {
+    FieldSearchSpec f(7, "f0", Searchmethod::AUTOUTF8, Normalizing::NONE, "substring", 789);
+    QueryNodeResultFactory qnrf;
+    QueryTerm qt(qnrf.create(), "foo", "index", TermType::EXACTSTRINGTERM, Normalizing::LOWERCASE_AND_FOLD);
+    // Match type, normalization mode and max length are all properties of the original spec
+    // and should be propagated to the new searcher.
+    f.reconfig(qt);
+    EXPECT_EQUAL(f.searcher().match_type(), FieldSearcher::MatchType::SUBSTRING);
+    EXPECT_EQUAL(f.searcher().normalize_mode(), Normalizing::NONE);
+    EXPECT_EQUAL(f.searcher().maxFieldLength(), 789u);
+}
+
 TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
     specMap[0] = FieldSearchSpec(0, "f0", Searchmethod::AUTOUTF8, Normalizing::LOWERCASE, "substring", 1000);

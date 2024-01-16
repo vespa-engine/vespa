@@ -114,9 +114,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         break;
     }
     if (_searcher) {
-        setMatchType(_searcher, _arg1);
-        _searcher->maxFieldLength(maxLength());
-        _searcher->normalize_mode(_normalize_mode);
+        propagate_settings_to_searcher();
     }
 }
 
@@ -138,8 +136,7 @@ FieldSearchSpec::reconfig(const QueryTerm & term)
             term.isRegex())
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
-            // preserve the basic match property of the searcher
-            setMatchType(_searcher, _arg1);
+            propagate_settings_to_searcher();
             LOG(debug, "Reconfigured to use UTF8FlexibleStringFieldSearcher (%s) for field '%s' with id '%d'",
                 _searcher->prefix() ? "prefix" : "regular", name().c_str(), id());
             _reconfigured = true;
@@ -148,6 +145,15 @@ FieldSearchSpec::reconfig(const QueryTerm & term)
     default:
         break;
     }
+}
+
+void
+FieldSearchSpec::propagate_settings_to_searcher()
+{
+    // preserve the basic match property and normalization mode of the searcher
+    setMatchType(_searcher, _arg1);
+    _searcher->maxFieldLength(maxLength());
+    _searcher->normalize_mode(_normalize_mode);
 }
 
 vespalib::asciistream &

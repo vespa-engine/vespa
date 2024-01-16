@@ -42,6 +42,8 @@ public:
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpec & f);
 
 private:
+    void propagate_settings_to_searcher();
+
     FieldIdT               _id;
     vespalib::string       _name;
     size_t                 _maxLength;
