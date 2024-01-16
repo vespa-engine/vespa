@@ -198,8 +198,7 @@ public class VespaModelFactory implements ModelFactory {
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
-            .onnxModelCost(modelContext.onnxModelCost())
-            .restartingClusters(modelContext.restartingClusters());
+            .onnxModelCost(modelContext.onnxModelCost());
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

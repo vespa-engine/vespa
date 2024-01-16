@@ -15,9 +15,9 @@ import java.util.List;
  *
  * @author jonmv
  */
-public record ActivationTriggers(List<NodeRestart> nodeRestarts, List<ClusterSpec.Id> restartingClusters, List<Reindexing> reindexings) {
+public record ActivationTriggers(List<NodeRestart> nodeRestarts, List<Reindexing> reindexings) {
 
-    private static final ActivationTriggers empty = new ActivationTriggers(List.of(), List.of(), List.of());
+    private static final ActivationTriggers empty = new ActivationTriggers(List.of(), List.of());
 
     public record NodeRestart(String hostname) { }
     public record Reindexing(String clusterId, String documentType) { }
@@ -29,11 +29,6 @@ public record ActivationTriggers(List<NodeRestart> nodeRestarts, List<ClusterSpe
                                                          .useForInternalRestart(isInternalRedeployment)
                                                          .hostnames().stream()
                                                          .map(NodeRestart::new)
-                                                         .toList(),
-                                      configChangeActions.getRestartActions()
-                                                         .useForInternalRestart(isInternalRedeployment)
-                                                         .getEntries().stream()
-                                                         .map(entry -> ClusterSpec.Id.from(entry.getClusterName()))
                                                          .toList(),
                                       configChangeActions.getReindexActions().getEntries().stream()
                                                          .map(entry -> new Reindexing(entry.getClusterName(), entry.getDocumentType()))

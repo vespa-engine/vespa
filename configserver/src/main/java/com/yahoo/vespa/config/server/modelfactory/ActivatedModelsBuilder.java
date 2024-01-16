@@ -118,7 +118,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 modelContextProperties,
                 Optional.empty(),
                 onnxModelCost,
-                zkClient.readActivationTriggers().restartingClusters(),
                 wantedDockerImageRepository,
                 modelFactory.version(),
                 wantedNodeVespaVersion);

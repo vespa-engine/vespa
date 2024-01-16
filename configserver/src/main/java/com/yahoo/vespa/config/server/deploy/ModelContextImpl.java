@@ -22,7 +22,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
@@ -40,7 +39,6 @@ import java.io.File;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -69,7 +67,6 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
     private final OnnxModelCost onnxModelCost;
-    private final Set<ClusterSpec.Id> restartingClusters;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -97,7 +94,6 @@ public class ModelContextImpl implements ModelContext {
                             ModelContext.Properties properties,
                             Optional<File> appDir,
                             OnnxModelCost onnxModelCost,
-                            Collection<Id> restartingClusters,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
@@ -116,7 +112,6 @@ public class ModelContextImpl implements ModelContext {
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.onnxModelCost = onnxModelCost;
-        this.restartingClusters = Set.copyOf(restartingClusters);
     }
 
     @Override
@@ -151,9 +146,6 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<? extends Reindexing> reindexing() { return  reindexing; }
-
-    @Override
-    public Set<ClusterSpec.Id> restartingClusters() { return restartingClusters; }
 
     @Override
     public ModelContext.Properties properties() { return properties; }

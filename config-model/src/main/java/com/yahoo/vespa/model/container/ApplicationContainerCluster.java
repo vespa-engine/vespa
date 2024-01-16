@@ -50,7 +50,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
@@ -152,10 +151,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         registerApplicationBundles(deployState);
         registerUserConfiguredFiles(deployState);
         createEndpoints(deployState);
-        if (onnxModelCostCalculator.restartOnDeploy() || deployState.restartingClusters().contains(id())) {
-            deployState.getDeployLogger().log(Level.INFO, "Deferring config change until restart for cluster '" + id() + "'");
+        if (onnxModelCostCalculator.restartOnDeploy())
             setDeferChangesUntilRestart(true);
-        }
     }
 
     private void registerApplicationBundles(DeployState deployState) {

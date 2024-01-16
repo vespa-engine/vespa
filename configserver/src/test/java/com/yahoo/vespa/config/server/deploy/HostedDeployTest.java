@@ -537,20 +537,6 @@ public class HostedDeployTest {
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("music", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
-
-        VespaModel model = ((VespaModel) tester.tenant().getSessionRepository()
-                                               .activeApplicationVersions(tester.applicationId()).get().get(Version.fromString("6.1.0")).get()
-                                               .getModel());
-
-        // Config for the container cluster to be restarted has been deferred until after restart.
-        ComponentsConfig.Builder builder1 = new ComponentsConfig.Builder();
-        model.getContainerClusters().get("container").getContainers().get(0).getConfig(builder1);
-        assertTrue(builder1.getApplyOnRestart());
-
-        // Config for the metricsproxy cluster, which is not restarted, has not been deferred until after restart.
-        ComponentsConfig.Builder builder2 = new ComponentsConfig.Builder();
-        model.getAdmin().getMetricsProxyCluster().getContainers().get(0).getConfig(builder2);
-        assertFalse(builder2.getApplyOnRestart());
     }
 
     @Test
