@@ -62,6 +62,7 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Phaser;
 import java.util.logging.Level;
@@ -272,8 +273,25 @@ public final class ConfiguredApplication implements Application {
                 if (first(subscriber.config().values()) instanceof QrConfig newConfig) {
                     reconfigure(newConfig.shutdown());
                     synchronized (this) {
-                        if (qrConfig.rpc().port() != newConfig.rpc().port()) {
-                            log.log(Level.INFO, "Rpc port changed from " + qrConfig.rpc().port() + " to " + newConfig.rpc().port());
+                        var currRpc = qrConfig.rpc();
+                        var newRpc = newConfig.rpc();
+                        boolean reListen = (currRpc.port() != newRpc.port()) ||
+                                           (currRpc.enabled() != newRpc.enabled()) ||
+                                           ! Objects.equals(currRpc.host(), newRpc.host()) ||
+                                           ! Objects.equals(currRpc.slobrokId(), newRpc.slobrokId());
+                        if (reListen) {
+                            if (currRpc.port() != newRpc.port()) {
+                                log.log(Level.INFO, "Rpc port changed from " + currRpc.port() + " to " + newRpc.port());
+                            }
+                            if (currRpc.enabled() != newRpc.enabled()) {
+                                log.log(Level.INFO, "Rpc server " + (newRpc.enabled() ? "enabled" : "disabled"));
+                            }
+                            if ( ! Objects.equals(currRpc.host(), newRpc.host())) {
+                                log.log(Level.INFO, "Rpc host changed from " + currRpc.host() + " to " + newRpc.host());
+                            }
+                            if ( ! Objects.equals(currRpc.slobrokId(), newRpc.slobrokId())) {
+                                log.log(Level.INFO, "Rpc slobrokid changed from " + currRpc.slobrokId() + " to " + newRpc.slobrokId());
+                            }
                             try {
                                 reListenRpc(newConfig);
                             } catch (Throwable e) {

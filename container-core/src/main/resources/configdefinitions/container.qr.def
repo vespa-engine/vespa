@@ -9,16 +9,16 @@ namespace=container
 filedistributor.configid reference default=""
 
 ## Is RPC server enabled?
-rpc.enabled bool default=false restart
+rpc.enabled bool default=false
 
 ## RPC server listen port
 rpc.port int default=8086
 
 ## Which interface to bind to.
-rpc.host string default="" restart
+rpc.host string default=""
 
 ## The id this service should register itself with in slobrok
-rpc.slobrokId string default="" restart
+rpc.slobrokId string default=""
 
 ## A unique identifier string for this QRS. The only guarantee given is
 ## this string will be unique for every QRS in a Vespa application.
