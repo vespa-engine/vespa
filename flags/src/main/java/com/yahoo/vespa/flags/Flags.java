@@ -313,11 +313,6 @@ public class Flags {
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2024-02-01",
-            "Whether to enable the one program that should not be named",
-            "Takes effect at next host-admin tick");
-
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class, List.of("jonmv"), "2023-12-15", "2024-06-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
