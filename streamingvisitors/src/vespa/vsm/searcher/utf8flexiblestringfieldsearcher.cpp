@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8flexiblestringfieldsearcher.h"
+#include <vespa/searchlib/query/streaming/regexp_term.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.utf8flexiblestringfieldsearcher");
@@ -27,6 +29,17 @@ UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t min
 }
 
 size_t
+UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef & f, search::streaming::QueryTerm & qt)
+{
+    auto* regexp_term = qt.as_regexp_term();
+    assert(regexp_term != nullptr);
+    if (regexp_term->regexp().partial_match({f.data(), f.size()})) {
+        addHit(qt, 0);
+    }
+    return countWords(f);
+}
+
+size_t
 UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
 {
     if (qt.isPrefix()) {
@@ -41,6 +54,9 @@ UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
     } else if (qt.isExactstring()) {
         LOG(debug, "Use exact match for exact term '%s:%s'", qt.index().c_str(), qt.getTerm());
         return matchTermExact(f, qt);
+    } else if (qt.isRegex()) {
+        LOG(debug, "Use regexp match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
+        return match_regexp(f, qt);
     } else {
         if (substring()) {
             LOG(debug, "Use substring match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
