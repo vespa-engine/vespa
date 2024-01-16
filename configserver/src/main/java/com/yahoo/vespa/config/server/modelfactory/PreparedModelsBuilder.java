@@ -128,7 +128,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 createModelContextProperties(modelFactory.version(), applicationPackage),
                 getAppDir(applicationPackage),
                 onnxModelCost,
-                Set.of(), // Known after preparation and validation, passed from activated models builder only.
                 wantedDockerImageRepository,
                 modelVersion,
                 wantedNodeVespaVersion);
