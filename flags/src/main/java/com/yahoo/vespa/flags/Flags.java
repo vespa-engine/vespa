@@ -306,6 +306,14 @@ public class Flags {
             "Takes effect at next tick",
             INSTANCE_ID);
 
+    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
+            "otelcol-logs", List.of(), String.class,
+            List.of("olaa"), "2024-01-15", "2024-03-01",
+            "Determines log files handled by the OpenTelemetry collector",
+            "Takes effect at next tick",
+            INSTANCE_ID, HOSTNAME
+    );
+
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
             List.of("vekterli"), "2022-11-03", "2024-02-01",
