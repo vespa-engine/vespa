@@ -56,7 +56,6 @@ struct BitVector::OrParts : vespalib::Runnable
     BitVector::Index _byte_size;
 };
 
-
 void
 BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors) {
     constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
@@ -64,8 +63,11 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstAr
     if (vectors.size() < 2) return;
     BitVector * master = vectors[0];
     Index size = master->size();
-    uint32_t bits_per_thread = size/thread_bundle.size();
-    if ((bits_per_thread < MIN_BITS_PER_THREAD) || (thread_bundle.size() < 2)) {
+    size_t max_num_chunks = (size + (MIN_BITS_PER_THREAD - 1)) / MIN_BITS_PER_THREAD;
+    size_t max_threads = std::max(1ul, std::min(thread_bundle.size(), max_num_chunks));
+
+    uint32_t bits_per_thread = size/max_threads;
+    if (max_threads < 2) {
         for (uint32_t i(1); i < vectors.size(); i++) {
             master->orWith(*vectors[i]);
         }
@@ -75,11 +77,11 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstAr
             assert(bv->getStartIndex() == startIndex);
             assert(bv->size() == size);
         }
-        std::vector<OrParts> parts;
-        parts.reserve(thread_bundle.size());
+        std::vector<BitVector::OrParts> parts;
+        parts.reserve(max_threads);
         bits_per_thread = (bits_per_thread/ALIGNMENT_BITS) * ALIGNMENT_BITS;
-        BitVector::Index offset = 0;
-        for (uint32_t i(0); (i + 1) < thread_bundle.size(); i++) {
+        Index offset = 0;
+        for (uint32_t i(0); (i + 1) < max_threads; i++) {
             parts.emplace_back(vectors, offset, bits_per_thread);
             offset += bits_per_thread;
         }
@@ -87,7 +89,6 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstAr
         thread_bundle.run(parts);
         master->repairEnds();
     }
-
 }
 
 Alloc
