@@ -123,7 +123,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
         ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
-        return new Application(withDeferredConfigForRestartingClusters(modelFactory.createModel(modelContext)),
+        return new Application(modelFactory.createModel(modelContext),
                                serverCache,
                                applicationGeneration,
                                modelFactory.version(),
@@ -168,17 +168,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readOperatorCertificates(),
                                                zkClient.readCloudAccount(),
                                                zkClient.readDataplaneTokens());
-    }
-
-    private Model withDeferredConfigForRestartingClusters(Model model) {
-        if ( ! (model instanceof VespaModel vespaModel)) return model;
-        for (ClusterSpec.Id cluster : zkClient.readActivationTriggers().restartingClusters()) {
-            ApplicationContainerCluster containerCluster = vespaModel.getContainerClusters().get(cluster.value());
-            if (containerCluster != null) containerCluster.setDeferChangesUntilRestart(true);
-            ContentCluster contentCluster = vespaModel.getContentClusters().get(cluster.value());
-            if (contentCluster != null) contentCluster.setDeferChangesUntilRestart(true);
-        }
-        return model;
     }
 
 }
