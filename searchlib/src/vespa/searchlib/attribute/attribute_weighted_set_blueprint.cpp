@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_weighted_set_blueprint.h"
-#include "multi_term_filter.hpp"
+#include "multi_term_hash_filter.hpp"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -73,7 +73,7 @@ make_multi_term_filter(fef::TermFieldMatchData& tfmd,
                        const std::vector<int32_t>& weights,
                        const std::vector<ISearchContext*>& contexts)
 {
-    using FilterType = attribute::MultiTermFilter<WrapperType>;
+    using FilterType = attribute::MultiTermHashFilter<WrapperType>;
     typename FilterType::TokenMap tokens;
     WrapperType wrapper(attr);
     for (size_t i = 0; i < contexts.size(); ++i) {

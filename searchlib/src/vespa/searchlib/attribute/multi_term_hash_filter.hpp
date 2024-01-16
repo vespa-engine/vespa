@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include "multi_term_filter.h"
+#include "multi_term_hash_filter.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search::attribute {
 
 template <typename WrapperType>
-MultiTermFilter<WrapperType>::MultiTermFilter(fef::TermFieldMatchData& tfmd,
-                                              WrapperType attr,
-                                              TokenMap&& map)
+MultiTermHashFilter<WrapperType>::MultiTermHashFilter(fef::TermFieldMatchData& tfmd,
+                                                      WrapperType attr,
+                                                      TokenMap&& map)
     : _tfmd(tfmd),
       _attr(attr),
       _map(std::move(map)),
@@ -21,7 +21,7 @@ MultiTermFilter<WrapperType>::MultiTermFilter(fef::TermFieldMatchData& tfmd,
 
 template <typename WrapperType>
 void
-MultiTermFilter<WrapperType>::and_hits_into(BitVector& result, uint32_t begin_id)
+MultiTermHashFilter<WrapperType>::and_hits_into(BitVector& result, uint32_t begin_id)
 {
     auto end = _map.end();
     result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
@@ -29,7 +29,7 @@ MultiTermFilter<WrapperType>::and_hits_into(BitVector& result, uint32_t begin_id
 
 template <typename WrapperType>
 void
-MultiTermFilter<WrapperType>::doSeek(uint32_t docId)
+MultiTermHashFilter<WrapperType>::doSeek(uint32_t docId)
 {
     auto pos = _map.find(_attr.getToken(docId));
     if (pos != _map.end()) {
@@ -40,7 +40,7 @@ MultiTermFilter<WrapperType>::doSeek(uint32_t docId)
 
 template <typename WrapperType>
 void
-MultiTermFilter<WrapperType>::doUnpack(uint32_t docId)
+MultiTermHashFilter<WrapperType>::doUnpack(uint32_t docId)
 {
     _tfmd.reset(docId);
     fef::TermFieldMatchDataPosition pos;
