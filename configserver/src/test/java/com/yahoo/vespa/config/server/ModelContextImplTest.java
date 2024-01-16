@@ -16,6 +16,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
@@ -80,6 +81,7 @@ public class ModelContextImplTest {
                         List.of()),
                 Optional.empty(),
                 OnnxModelCost.disabled(),
+                List.of(Id.from("foobar")),
                 Optional.empty(),
                 new Version(7),
                 new Version(8));
@@ -88,6 +90,7 @@ public class ModelContextImplTest {
         assertFalse(context.previousModel().isPresent());
         assertTrue(context.getFileRegistry() instanceof MockFileRegistry);
         assertTrue(context.configDefinitionRepo() instanceof StaticConfigDefinitionRepo);
+        assertEquals(Set.of(Id.from("foobar")), context.restartingClusters());
         assertEquals(ApplicationId.defaultId(), context.properties().applicationId());
         assertTrue(context.properties().configServerSpecs().isEmpty());
         assertTrue(context.properties().multitenant());

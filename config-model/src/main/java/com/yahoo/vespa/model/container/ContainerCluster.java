@@ -166,7 +166,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String hostClusterId = null;
     private String jvmGCOptions = null;
 
-    private volatile boolean deferChangesUntilRestart = false;
+    private boolean deferChangesUntilRestart = false;
     private boolean clientsLegacyMode;
     private List<Client> clients = List.of();
 
