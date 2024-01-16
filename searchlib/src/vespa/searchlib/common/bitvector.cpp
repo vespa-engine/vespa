@@ -6,6 +6,7 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
@@ -33,6 +34,60 @@ namespace search {
 using vespalib::nbostream;
 
 bool BitVector::_enable_range_check = false;
+
+
+struct BitVector::OrParts : vespalib::Runnable
+{
+    OrParts(vespalib::ConstArrayRef<BitVector *> vectors, BitVector::Index offset, BitVector::Index size) noexcept
+        : _vectors(vectors),
+          _offset(offset),
+          _byte_size((size + 7)/8)
+    {}
+    void run() override {
+        const auto & accelrator = IAccelrated::getAccelerator();
+        BitVector * master = _vectors[0];
+        Word * destination = master->getWordIndex(_offset);
+        for (uint32_t i(1); i < _vectors.size(); i++) {
+            accelrator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
+        }
+    }
+    vespalib::ConstArrayRef<BitVector *> _vectors;
+    BitVector::Index _offset;
+    BitVector::Index _byte_size;
+};
+
+void
+BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors) {
+    constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
+    constexpr uint32_t ALIGNMENT_BITS = 8_Ki;
+    if (vectors.size() < 2) return;
+    BitVector * master = vectors[0];
+    Index size = master->size();
+    size_t max_num_chunks = (size + (MIN_BITS_PER_THREAD - 1)) / MIN_BITS_PER_THREAD;
+    size_t max_threads = std::max(1ul, std::min(thread_bundle.size(), max_num_chunks));
+
+    if (max_threads < 2) {
+        for (uint32_t i(1); i < vectors.size(); i++) {
+            master->orWith(*vectors[i]);
+        }
+    } else {
+        for (const BitVector *bv: vectors) {
+            assert(bv->getStartIndex() == 0u);
+            assert(bv->size() == size);
+        }
+        std::vector<BitVector::OrParts> parts;
+        parts.reserve(max_threads);
+        uint32_t bits_per_thread = ((size/max_threads)/ALIGNMENT_BITS) * ALIGNMENT_BITS;
+        Index offset = 0;
+        for (uint32_t i(0); (i + 1) < max_threads; i++) {
+            parts.emplace_back(vectors, offset, bits_per_thread);
+            offset += bits_per_thread;
+        }
+        parts.emplace_back(vectors, offset, size - offset);
+        thread_bundle.run(parts);
+        master->repairEnds();
+    }
+}
 
 Alloc
 BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc)

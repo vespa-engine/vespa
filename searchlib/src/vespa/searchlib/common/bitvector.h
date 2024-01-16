@@ -5,6 +5,7 @@
 #include "bitword.h"
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
+#include "vespa/vespalib/util/arrayref.h"
 #include <algorithm>
 #if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
 #include <cassert>
@@ -12,6 +13,7 @@
 
 namespace vespalib {
     class nbostream;
+    struct ThreadBundle;
 }
 
 class FastOS_FileInterface;
@@ -281,6 +283,12 @@ public:
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
     static void consider_enable_range_check();
+    /**
+     * Will slice the vectors and if possible use the thread bundle do the operation in parallell
+     * The result of the operation ends up in the first vector.
+     * TODO: Extend to handle both AND/OR
+     */
+    static void parallellOr(vespalib::ThreadBundle & thread_bundle, vespalib::ConstArrayRef<BitVector *> vectors);
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
 protected:
@@ -306,6 +314,7 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
+    struct OrParts;
     static Word load(const Word &word) noexcept { return vespalib::atomic::load_ref_relaxed(word); }
     VESPA_DLL_LOCAL void store(Word &word, Word value);
     static void store_unchecked(Word &word, Word value) noexcept {

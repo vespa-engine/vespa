@@ -11,6 +11,7 @@
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <algorithm>
 
 using namespace search;
@@ -742,6 +743,59 @@ TEST("require that creating partial overlapping vector is properly copied") {
     EXPECT_EQUAL(0u, before->getStartIndex());
     EXPECT_EQUAL(1000u, before->size());
     EXPECT_EQUAL(100u, before->countTrueBits());
+}
+
+void fill(BitVector & bv) {
+    uint32_t numBitsSet = bv.size()/10;
+    for (uint32_t i(0); i < numBitsSet; i++) {
+        bv.setBit(rand()%bv.size());
+    }
+}
+
+BitVector::UP
+orSerial(const std::vector<BitVector::UP> & bvs) {
+    BitVector::UP master = BitVector::create(*bvs[0]);
+    for (uint32_t i(1); i < bvs.size(); i++) {
+        master->orWith(*bvs[i]);
+    }
+    return master;
+}
+
+BitVector::UP
+orParallell(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector::UP> & bvs) {
+    BitVector::UP master = BitVector::create(*bvs[0]);
+    std::vector<BitVector *> vectors;
+    vectors.reserve(bvs.size());
+    vectors.push_back(master.get());
+    for (uint32_t i(1); i < bvs.size(); i++) {
+        vectors.push_back(bvs[i].get());
+    }
+    BitVector::parallellOr(thread_bundle, vectors);
+    return master;
+}
+
+void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVectors, uint32_t numBits) {
+    std::vector<BitVector::UP> bvs;
+    bvs.reserve(numVectors);
+    for (uint32_t i(0); i < numVectors; i++) {
+        bvs.push_back(BitVector::create(numBits));
+        fill(*bvs.back());
+    }
+    auto serial = orSerial(bvs);
+    auto parallell = orParallell(thread_bundle, bvs);
+    EXPECT_TRUE(*serial == *parallell);
+}
+
+TEST("Require that parallell OR computes same result as serial") {
+    srand(7);
+    for (uint32_t numThreads : {1, 3, 7}) {
+        vespalib::SimpleThreadBundle thread_bundle(numThreads);
+        for (uint32_t numVectors : {1, 2, 5}) {
+            for (uint32_t numBits : {1117, 11117, 111117, 1111117, 11111117}) {
+                verifyParallellOr(thread_bundle, numVectors, numBits);
+            }
+        }
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
