@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <iosfwd>
 #include <memory>
 
 namespace search::streaming {
@@ -23,6 +24,8 @@ enum class Normalizing {
     LOWERCASE,
     LOWERCASE_AND_FOLD
 };
+
+std::ostream& operator<<(std::ostream&, Normalizing);
 
 class QueryNodeResultFactory {
 public:
