@@ -130,12 +130,8 @@ public class Struct extends StructuredFieldValue {
         if (myField==null) {
             throw new IllegalArgumentException("No such field in "+getDataType()+" : "+field.getName());
         }
-        if (!myField
-                   .getDataType().isValueCompatible(value)) {
-            throw new IllegalArgumentException(
-                    "Incompatible data types. Got " + value.getDataType()
-                    + ", expected "
-                    + myField.getDataType());
+        if (!myField.getDataType().isValueCompatible(value)) {
+            throw new IllegalArgumentException("Incompatible data types. Got " + value.getDataType() + ", expected " + myField.getDataType());
         }
 
         if (myField.getId()
@@ -199,10 +195,9 @@ public class Struct extends StructuredFieldValue {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Struct)) return false;
+        if (!(o instanceof Struct struct)) return false;
         if (!super.equals(o)) return false;
 
-        Struct struct = (Struct) o;
         return values.equals(struct.values);
     }
 
@@ -266,7 +261,7 @@ public class Struct extends StructuredFieldValue {
     }
 
     private class FieldEntry implements Map.Entry<Field, FieldValue> {
-        private int id;
+        private final int id;
 
         private FieldEntry(int id) {
             this.id = id;
@@ -300,9 +295,8 @@ public class Struct extends StructuredFieldValue {
 
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof FieldEntry)) return false;
+            if (!(o instanceof FieldEntry that)) return false;
 
-            FieldEntry that = (FieldEntry) o;
             return (id == that.id);
         }
 
@@ -327,7 +321,7 @@ public class Struct extends StructuredFieldValue {
 
     private class FieldSetIterator implements Iterator<Map.Entry<Field, FieldValue>> {
         private int position = 0;
-        private int [] increasing = getInOrder();
+        private final int [] increasing = getInOrder();
 
         public boolean hasNext() {
             return (position < increasing.length);
@@ -337,9 +331,7 @@ public class Struct extends StructuredFieldValue {
             if (position >= increasing.length) {
                 throw new NoSuchElementException("No more elements in collection");
             }
-            FieldEntry retval = new FieldEntry(increasing[position]);
-            position++;
-            return retval;
+            return new FieldEntry(increasing[position++]);
         }
 
         public void remove() {
