@@ -134,10 +134,8 @@ public class Struct extends StructuredFieldValue {
             throw new IllegalArgumentException("Incompatible data types. Got " + value.getDataType() + ", expected " + myField.getDataType());
         }
 
-        if (myField.getId()
-                != field.getId()) {
-            throw new IllegalArgumentException(
-                    "Inconsistent field: " + field);
+        if (myField.getId() != field.getId()) {
+            throw new IllegalArgumentException("Inconsistent field: " + field);
         }
 
         int index = values.getIndexOfKey(field.getId());

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Einar M R Rosenvinge
@@ -120,11 +121,8 @@ public class StructDataType extends BaseStructDataType {
         if (!(value instanceof Struct structValue)) {
             return false;
         }
-        if (structValue.getDataType().inherits(this)) {
-            //the value is of this type; or the supertype of the value is of this type, etc....
-            return true;
-        }
-        return false;
+        //the value is of this type; or the supertype of the value is of this type, etc....
+        return structValue.getDataType().inherits(this);
     }
 
     public void inherit(StructDataType type) {
@@ -148,8 +146,7 @@ public class StructDataType extends BaseStructDataType {
 
     public boolean inherits(StructDataType type) {
         if (equals(type)) return true;
-        if (superType != null && superType.inherits(type)) return true;
-        return false;
+        return superType != null && superType.inherits(type);
     }
 
     @Override
@@ -158,8 +155,7 @@ public class StructDataType extends BaseStructDataType {
         if (!(o instanceof StructDataType that)) return false;
         if (!super.equals(o)) return false;
 
-        if (superType != null ? !superType.equals(that.superType) : that.superType != null) return false;
-        return true;
+        return Objects.equals(superType, that.superType);
     }
 
     @Override
