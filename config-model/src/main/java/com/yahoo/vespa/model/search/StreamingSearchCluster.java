@@ -42,6 +42,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     private final AttributesProducer attributesConfig;
     private final String docTypeName;
     private DerivedConfiguration derivedConfig = null;
+    private DocumentDatabase derivedDb = null;
 
     public StreamingSearchCluster(TreeConfigProducer<AnyConfigProducer> parent,
                                   String clusterName,
@@ -85,15 +86,15 @@ public class StreamingSearchCluster extends SearchCluster implements
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
         this.derivedConfig = new DerivedConfiguration(schema, deployState, true);
+        this.derivedDb = new DocumentDatabase(this, docTypeName, this.derivedConfig);
     }
 
     @Override
     public List<DocumentDatabase> getDocumentDbs() {
-        if (derived() == null) {
+        if (derivedDb == null) {
             throw new IllegalArgumentException("missing derivedConfig");
         }
-        var db = new DocumentDatabase(this, docTypeName, derived());
-        return List.of(db);
+        return List.of(derivedDb);
     }
 
     @Override
