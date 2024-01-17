@@ -11,6 +11,23 @@
 
 namespace streaming {
 
+/** handle per-document-type indexing environment */
+class IndexEnvPrototype {
+private:
+    search::fef::TableManager _tableManager;
+    streaming::IndexEnvironment _prototype;
+public:
+    IndexEnvPrototype();
+    void detectFields(const vespa::config::search::vsm::VsmfieldsConfig &fields);
+    void set_ranking_assets_repo(std::shared_ptr<const search::fef::IRankingAssetsRepo> repo) {
+        _prototype.set_ranking_assets_repo(std::move(repo));
+    }
+    std::unique_ptr<IndexEnvironment> clone() const {
+        return std::make_unique<IndexEnvironment>(_prototype);
+    }
+    const IndexEnvironment& current() const { return _prototype; }
+};
+
 /**
  * This class subscribes to the rank-profiles config and keeps a setup per rank profile.
  **/
@@ -30,8 +47,7 @@ public:
         using NamedPropertySet = std::pair<vespalib::string, search::fef::Properties>;
         using ViewMap = vespalib::hash_map<vespalib::string, View>;
         using Map = vespalib::hash_map<vespalib::string, int>;
-        search::fef::TableManager                 _tableManager;
-        IndexEnvironment                          _protoEnv;
+        IndexEnvPrototype                         _protoEnv;
         std::vector<NamedPropertySet>             _properties; // property set per rank profile
         std::vector<IndexEnvironment>             _indexEnv;   // index environment per rank profile
         std::vector<std::shared_ptr<const search::fef::RankSetup>> _rankSetup;  // rank setup per rank profile
@@ -39,7 +55,6 @@ public:
         ViewMap                                   _views;
 
         void addProperties(const vespa::config::search::RankProfilesConfig & cfg);
-        void detectFields(const vsm::VsmfieldsHandle & fields);
         void buildFieldMappings(const vsm::VsmfieldsHandle & fields);
         bool initRankSetup(const search::fef::BlueprintFactory & factory);
         bool setup(const RankManager & manager);
