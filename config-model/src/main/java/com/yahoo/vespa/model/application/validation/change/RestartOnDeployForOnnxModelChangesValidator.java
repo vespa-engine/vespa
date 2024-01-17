@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.util.ArrayList;
@@ -104,10 +105,13 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,
                                                       ApplicationContainerCluster cluster,
                                                       DeployLogger deployLogger) {
+        List<ApplicationContainer> containers = cluster.getContainers();
+        if (containers.isEmpty()) return true;
+
         double currentModelCostInGb = onnxModelCostInGb(clusterInCurrentModel);
         double nextModelCostInGb = onnxModelCostInGb(cluster);
 
-        double totalMemory = cluster.getContainers().get(0).getHostResource().realResources().memoryGb();
+        double totalMemory = containers.get(0).getHostResource().realResources().memoryGb();
         double memoryUsedByModels = currentModelCostInGb + nextModelCostInGb;
         double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - memoryUsedByModels);
 
