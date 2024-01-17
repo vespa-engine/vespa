@@ -3,6 +3,9 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -11,7 +14,10 @@ import com.yahoo.container.jdisc.utils.MultiPartFormParser;
 import com.yahoo.container.jdisc.utils.MultiPartFormParser.PartItem;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.http.HttpHeaders;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -56,19 +62,27 @@ public class ApplicationApiHandler extends SessionHandler {
 
     private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
-    private final Zone zone;
     private final long maxApplicationPackageSize;
 
     @Inject
     public ApplicationApiHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 ConfigserverConfig configserverConfig,
-                                 Zone zone) {
+                                 ConfigserverConfig configserverConfig) {
         super(ctx, applicationRepository);
         this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
         this.maxApplicationPackageSize = configserverConfig.maxApplicationPackageSize();
-        this.zone = zone;
+    }
+
+    @Override
+    protected HttpResponse handlePUT(HttpRequest request) {
+        TenantName tenantName = validateTenant(request);
+        long sessionId = getSessionIdFromRequest(request);
+        ApplicationId app = applicationRepository.activate(tenantRepository.getTenant(tenantName),
+                                                           sessionId,
+                                                           getTimeoutBudget(request, Duration.ofMinutes(2)),
+                                                           shouldIgnoreSessionStaleFailure(request));
+        return new MessageResponse("Session " + sessionId + " for " + app.toFullString() + " activated");
     }
 
     @Override
@@ -112,8 +126,8 @@ public class ApplicationApiHandler extends SessionHandler {
                 .ifPresent(e -> e.addKeyValue("app.id", prepareParams.getApplicationId().toFullString()));
 
         try (compressedStream) {
-            PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams);
-            return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
+            PrepareAndActivateResult result = applicationRepository.deploy(compressedStream, prepareParams);
+            return new SessionPrepareAndActivateResponse(result, prepareParams.getApplicationId());
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -132,8 +146,18 @@ public class ApplicationApiHandler extends SessionHandler {
     }
 
     public static TenantName getTenantNameFromRequest(HttpRequest request) {
-        BindingMatch<?> bm = Utils.getBindingMatch(request, "http://*/application/v2/tenant/*/prepareandactivate*");
+        BindingMatch<?> bm = Utils.getBindingMatch(request, "http://*/application/v2/tenant/*/prepareandactivate*"); // Gosh, these glob rules aren't good ...
         return TenantName.from(bm.group(2));
+    }
+
+    public static long getSessionIdFromRequest(HttpRequest request) {
+        BindingMatch<?> bm = Utils.getBindingMatch(request, "http://*/application/v2/tenant/*/prepareandactivate/*");
+        try {
+            return Long.parseLong(bm.group(3));
+        }
+        catch (NumberFormatException e) {
+            throw new BadRequestException("Session id '" + bm.group(3) + "' is not a number: " + e.getMessage());
+        }
     }
 
 }

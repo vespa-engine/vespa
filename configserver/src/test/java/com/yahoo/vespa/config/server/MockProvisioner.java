@@ -23,6 +23,7 @@ import java.util.List;
 public class MockProvisioner implements Provisioner {
 
     private boolean transientFailureOnPrepare = false;
+    private RuntimeException activationFailure = null;
     private HostProvisioner hostProvisioner = null;
 
     public MockProvisioner hostProvisioner(HostProvisioner hostProvisioner) {
@@ -35,19 +36,29 @@ public class MockProvisioner implements Provisioner {
         return this;
     }
 
+    public MockProvisioner activationFailure(RuntimeException activationFailure) {
+        this.activationFailure = activationFailure;
+        return this;
+    }
+
     @Override
     public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-        if (hostProvisioner != null) {
-            return hostProvisioner.prepare(cluster, capacity, logger);
-        }
         if (transientFailureOnPrepare) {
             throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
+        }
+        if (hostProvisioner != null) {
+            return hostProvisioner.prepare(cluster, capacity, logger);
         }
         throw new UnsupportedOperationException("This mock does not support prepare");
     }
 
     @Override
     public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
+        if (activationFailure != null) {
+            RuntimeException toThrow = activationFailure;
+            activationFailure = null;
+            throw toThrow;
+        }
     }
 
     @Override
