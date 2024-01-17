@@ -36,7 +36,7 @@
     "jest": "^29",
     "lodash": "^4",
     "prettier": "3",
-    "pretty-quick": "^3",
+    "pretty-quick": "^4.0.0",
     "react-router-dom": "^6",
     "use-context-selector": "^1",
     "vite": "^5.0.5"
