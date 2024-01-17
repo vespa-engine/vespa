@@ -144,7 +144,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     private static TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType, List<String> dimensions) {
-        Set<Integer> indexesToRemove = new HashSet<>();
+        Set<Integer> indexesToRemove = new HashSet<>(dimensions.size()*2);
         for (String dimensionToRemove : dimensions)
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
 
