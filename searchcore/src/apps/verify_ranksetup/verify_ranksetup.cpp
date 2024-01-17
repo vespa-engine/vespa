@@ -22,11 +22,9 @@
 #include <vespa/searchlib/fef/onnx_models.h>
 #include <vespa/searchlib/fef/ranking_expressions.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-
 #include <vespa/searchvisitor/indexenvironment.h>
 #include <vespa/searchvisitor/rankmanager.h>
 #include <vespa/vsm/config/config-vsmfields.h>
-
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/asciistream.h>
