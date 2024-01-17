@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
@@ -19,6 +18,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.DocumentDatabase;
@@ -109,7 +109,11 @@ public class RankSetupValidator implements Validator {
         IOUtils.recursiveDeleteDir(dir);
     }
 
-    private void writeConfigs(String dir, AnyConfigProducer producer) throws IOException {
+    private void writeConfigs(String dir, DocumentDatabase producer) throws IOException {
+        var vsmFB = new VsmfieldsConfig.Builder();
+        producer.getDerivedConfiguration().getVsmFields().getConfig(vsmFB);
+        writeConfig(dir, VsmfieldsConfig.getDefName() + ".cfg", vsmFB.build());
+
         RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
         writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpcb.build());
