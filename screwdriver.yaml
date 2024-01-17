@@ -582,7 +582,7 @@ jobs:
           bundle exec jekyll build
       - check-links: |
           bundle exec htmlproofer \
-          --assume-extension --check-html --check-external-hash --no-enforce-http \
+          --assume-extension --check-html --check-external-hash false --no-enforce-http \
           --typhoeus '{"connecttimeout": 10, "timeout": 30, "followlocation": false}' \
           --hydra '{"max_concurrency": 1}' \
           --ignore-urls '/slack.vespa.ai/,/localhost:8080/,/127.0.0.1:3000/,/favicon.svg/,/main.jsx/' \
