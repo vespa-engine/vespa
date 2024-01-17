@@ -50,9 +50,8 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
             return;
         }
 
-        if (o instanceof MapFieldValue) {
+        if (o instanceof MapFieldValue a) {
             if (o == this) return;
-            MapFieldValue a = (MapFieldValue) o;
             values.clear();
             putAll(a);
         } else if (o instanceof Map) {
@@ -80,8 +79,7 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
      * @return true if o is an instance of WeightedSet and the two encapsulated Maps are equal, false otherwise
      */
     public boolean equals(Object o) {
-        if (!(o instanceof MapFieldValue)) return false;
-        MapFieldValue m = (MapFieldValue) o;
+        if (!(o instanceof MapFieldValue m)) return false;
         if (size() != m.size()) return false;
         if ( ! super.equals(m)) return false;
         return entrySet().equals(m.entrySet());
@@ -313,9 +311,9 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
      */
     class MapWrapper implements Map<K,V> {
 
-        private Map<Object,Object> map; // Not field values, basic objects
-        private DataType keyTypeVespa = getDataType().getKeyType();
-        private DataType valTypeVespa = getDataType().getValueType();
+        private final Map<Object,Object> map; // Not field values, basic objects
+        private final DataType keyTypeVespa = getDataType().getKeyType();
+        private final DataType valTypeVespa = getDataType().getValueType();
         public MapWrapper(Map map) {
             this.map=map;
         }
