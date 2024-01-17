@@ -4,6 +4,7 @@ vespa_add_library(searchcore_verify_ranksetup
     verify_ranksetup.cpp
     INSTALL lib64
     DEPENDS
+    streamingvisitors
     searchcore_matching
     searchcore_documentmetastore
 )

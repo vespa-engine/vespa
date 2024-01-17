@@ -4,4 +4,6 @@
 
 #include <vespa/searchlib/fef/verify_feature.h>
 
-std::pair<bool, std::vector<search::fef::Message>> verifyRankSetup(const char * configId);
+enum class SearchMode { INDEXED, STREAMING };
+
+std::pair<bool, std::vector<search::fef::Message>> verifyRankSetup(const char * configId, SearchMode mode);
