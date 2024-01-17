@@ -15,10 +15,6 @@ import java.util.Map;
  */
 public interface OnnxModelCost {
 
-    // TODO: Remove when no longer in use (oldest model version is 8.283)
-    default Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId) {
-        return newCalculator(appPkg, applicationId, null);
-    }
     Calculator newCalculator(ApplicationPackage appPkg, ApplicationId applicationId, ClusterSpec.Id clusterId);
 
     interface Calculator {
