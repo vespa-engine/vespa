@@ -34,7 +34,8 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
 
     @Override
     public void validate(ChangeContext context) {
-        if ( ! context.deployState().featureFlags().restartOnDeployWhenOnnxModelChanges()) return;
+        if ( ! context.deployState().featureFlags().restartOnDeployWhenOnnxModelChanges()
+                || ! context.deployState().isHosted()) return;
 
         // Compare onnx models used by each cluster and set restart on deploy for cluster if estimated cost,
         // model hash or model options have changed
