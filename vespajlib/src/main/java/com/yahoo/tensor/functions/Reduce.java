@@ -128,10 +128,13 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         TensorType reducedType = outputType(argument.type(), dimensions);
 
         // Reduce cells
-        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
+        Set<Integer> indexesToRemove = createIndexesOfDimensionsToRemove(argument.type(), dimensions);
+        // TODO cells.size() is most likely an overestimate, and might need a better heuristic
+        // But the upside is larger than teh downside.
+        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>((int)argument.size());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType, dimensions);
+            TensorAddress reducedAddress = reduceDimensions(indexesToRemove, cell.getKey(), reducedType);
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
             aggregatingCells.get(reducedAddress).aggregate(cell.getValue());
         }
@@ -142,12 +145,14 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return reducedBuilder.build();
 
     }
-
-    private static TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType, List<String> dimensions) {
+    private static Set<Integer> createIndexesOfDimensionsToRemove(TensorType argumentType, List<String> dimensions) {
         Set<Integer> indexesToRemove = new HashSet<>(dimensions.size()*2);
         for (String dimensionToRemove : dimensions)
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
+        return indexesToRemove;
+    }
 
+    private static TensorAddress reduceDimensions(Set<Integer> indexesToRemove, TensorAddress address, TensorType reducedType) {
         String[] reducedLabels = new String[reducedType.dimensions().size()];
         int reducedLabelIndex = 0;
         for (int i = 0; i < address.size(); i++)
