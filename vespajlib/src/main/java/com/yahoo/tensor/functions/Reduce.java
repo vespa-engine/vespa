@@ -150,7 +150,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Set<Integer> indexesToRemove = new HashSet<>(dimensions.size()*2);
         for (String dimensionToRemove : dimensions)
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
-        int [] indexesToKeep = new int[argumentType.rank() - indexesToRemove.size()];
+        int[] indexesToKeep = new int[argumentType.rank() - indexesToRemove.size()];
         int toKeepIndex = 0;
         for (int i = 0; i < argumentType.rank(); i++) {
             if ( ! indexesToRemove.contains(i))
