@@ -9,6 +9,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -164,7 +165,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         int reducedLabelIndex = 0;
         for (int toKeep : indexesToKeep)
             reducedLabels[reducedLabelIndex++] = address.label(toKeep);
-        return TensorAddress.of(reducedLabels);
+        return StringTensorAddress.unsafeOf(reducedLabels);
     }
 
     private static Tensor reduceAllGeneral(Tensor argument, Aggregator aggregator) {
