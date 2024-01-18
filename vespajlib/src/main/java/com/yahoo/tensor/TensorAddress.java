@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.impl.NumericTensorAddress;
+import com.yahoo.tensor.impl.StringTensorAddress;
+
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -14,18 +16,16 @@ import java.util.stream.Collectors;
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
-    private static final String [] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
-
     public static TensorAddress of(String[] labels) {
-        return new StringTensorAddress(labels);
+        return StringTensorAddress.of(labels);
     }
 
     public static TensorAddress ofLabels(String ... labels) {
-        return new StringTensorAddress(labels);
+        return StringTensorAddress.of(labels);
     }
 
     public static TensorAddress of(long ... labels) {
-        return new NumericTensorAddress(labels);
+        return NumericTensorAddress.of(labels);
     }
 
     /** Returns the number of labels in this */
@@ -99,88 +99,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         if (TensorType.labelMatcher.matches(label)) return label; // no quoting
         if (label.contains("'")) return "\"" + label + "\"";
         return "'" + label + "'";
-    }
-
-    private static String[] createSmallIndexesAsStrings(int count) {
-        String [] asStrings = new String[count];
-        for (int i = 0; i < count; i++) {
-            asStrings[i] = String.valueOf(i);
-        }
-        return asStrings;
-    }
-
-    private static String asString(long index) {
-        return ((index >= 0) && (index < SMALL_INDEXES.length)) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
-    }
-
-    private static final class StringTensorAddress extends TensorAddress {
-
-        private final String[] labels;
-
-        private StringTensorAddress(String ... labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
-        }
-
-        @Override
-        public int size() { return labels.length; }
-
-        @Override
-        public String label(int i) { return labels[i]; }
-
-        @Override
-        public long numericLabel(int i) {
-            try {
-                return Long.parseLong(labels[i]);
-            }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Expected an integer label in " + this + " at position " + i + " but got '" + labels[i] + "'");
-            }
-        }
-
-        @Override
-        public TensorAddress withLabel(int index, long label) {
-            String[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = TensorAddress.asString(label);
-            return new StringTensorAddress(labels);
-        }
-
-
-        @Override
-        public String toString() {
-            return "cell address (" + String.join(",", labels) + ")";
-        }
-
-    }
-
-    private static final class NumericTensorAddress extends TensorAddress {
-
-        private final long[] labels;
-
-        private NumericTensorAddress(long[] labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
-        }
-
-        @Override
-        public int size() { return labels.length; }
-
-        @Override
-        public String label(int i) { return TensorAddress.asString(labels[i]); }
-
-        @Override
-        public long numericLabel(int i) { return labels[i]; }
-
-        @Override
-        public TensorAddress withLabel(int index, long label) {
-            long[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = label;
-            return new NumericTensorAddress(labels);
-        }
-
-        @Override
-        public String toString() {
-            return "cell address (" + Arrays.stream(labels).mapToObj(TensorAddress::asString).collect(Collectors.joining(",")) + ")";
-        }
-
     }
 
     /** Builder of a tensor address */

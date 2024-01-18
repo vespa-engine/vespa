@@ -10,6 +10,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -368,7 +369,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }
-            return TensorAddress.of(labels);
+            return StringTensorAddress.unsafeOf(labels);
         }
 
         Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {

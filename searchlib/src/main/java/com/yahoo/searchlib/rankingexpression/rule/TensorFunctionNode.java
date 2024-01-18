@@ -17,6 +17,7 @@ import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,7 +141,7 @@ public class TensorFunctionNode extends CompositeNode {
                     labels[allDimensionsIndex++] = mappedDimensionLabel;
             }
 
-            receivingMap.put(TensorAddress.of(labels), wrapScalar(node));
+            receivingMap.put(StringTensorAddress.unsafeOf(labels), wrapScalar(node));
         }
     }
 
