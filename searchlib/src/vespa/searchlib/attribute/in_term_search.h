@@ -2,14 +2,20 @@
 
 #pragma once
 
+#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+
 namespace search::attribute {
 
 /**
- * Class used as template argument in DirectMultiTermBlueprint to configure it for the InTerm query operator.
+ * Search iterator for an InTerm, sharing the implementation with WeightedSetTerm.
+ *
+ * The only difference is that an InTerm never requires unpacking of weights.
  */
-struct InTermSearch {
+class InTermSearch : public queryeval::WeightedSetTermSearch {
+public:
+    // Whether this iterator is considered a filter, independent of attribute vector settings (ref. rank: filter).
+    // Setting this to true ensures that weights are never unpacked.
     static constexpr bool filter_search = true;
-    static constexpr bool require_btree_iterators = false;
 };
 
 }
