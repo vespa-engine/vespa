@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import ai.vespa.validation.Validation;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
@@ -62,6 +63,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return new DomRootBuilder(name).
                     build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices(), "services.xml")
                                                         .getDocumentElement());
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -204,6 +207,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
         @Override
         protected ApplicationConfigProducerRoot doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element producerSpec) {
+            verifyMinimumRequiredVespaVersion(deployState.getVespaVersion(), producerSpec);
             ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
                                                                                    name,
                                                                                    deployState.getDocumentModel(),
@@ -215,6 +219,17 @@ public class VespaDomBuilder extends VespaModelBuilder {
             new Client(root);
             return root;
         }
+
+        private static void verifyMinimumRequiredVespaVersion(Version thisVersion, Element producerSpec) {
+            var minimumRequiredVespaVersion = producerSpec.getAttribute("minimum-required-vespa-version");
+            if (minimumRequiredVespaVersion.isEmpty()) return;
+            if (Version.fromString(minimumRequiredVespaVersion).compareTo(thisVersion) > 0)
+                throw new IllegalArgumentException(
+                        ("Cannot deploy application, minimum required Vespa version is specified as %s in services.xml" +
+                        ", this Vespa version is %s.")
+                        .formatted(minimumRequiredVespaVersion, thisVersion.toFullString()));
+        }
+
     }
 
     /**
