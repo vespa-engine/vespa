@@ -146,7 +146,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         return reducedBuilder.build();
     }
-    private static int [] createIndexesToKeep(TensorType argumentType, List<String> dimensions) {
+    private static int[] createIndexesToKeep(TensorType argumentType, List<String> dimensions) {
         Set<Integer> indexesToRemove = new HashSet<>(dimensions.size()*2);
         for (String dimensionToRemove : dimensions)
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
