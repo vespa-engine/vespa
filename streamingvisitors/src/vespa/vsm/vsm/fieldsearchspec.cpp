@@ -133,7 +133,7 @@ FieldSearchSpec::reconfig(const QueryTerm & term)
             (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") ||
             (term.isPrefix() && _arg1 == "suffix") ||
-            term.isRegex())
+            (term.isRegex() || term.isFuzzy()))
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             propagate_settings_to_searcher();

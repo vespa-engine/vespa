@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
@@ -18,10 +19,14 @@
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/searcher/tokenizereader.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
+#include <concepts>
+#include <charconv>
+#include <stdexcept>
 
 using namespace document;
 using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
+using search::streaming::FuzzyTerm;
 using search::streaming::RegexpTerm;
 using search::streaming::QueryTerm;
 using search::streaming::Normalizing;
@@ -58,6 +63,46 @@ public:
     }
 };
 
+namespace {
+
+template <std::integral T>
+std::string_view maybe_consume_into(std::string_view str, T& val_out) {
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), val_out);
+    if (ec != std::errc()) {
+        return str;
+    }
+    return str.substr(ptr - str.data());
+}
+
+// Parse optional max edits and prefix lock length from term string.
+// Syntax:
+//   "term"      -> {2, 0, "term"} (default max edits & prefix length)
+//   "{1}term"   -> {1, 0, "term"}
+//   "{1,3}term" -> {1, 3, "term"}
+//
+// Note: this is not a "proper" parser (it accepts empty numeric values); only for testing!
+std::tuple<uint8_t, uint32_t, std::string_view> parse_fuzzy_params(std::string_view term) {
+    if (term.empty() || term[0] != '{') {
+        return {2, 0, term};
+    }
+    uint8_t  max_edits = 2;
+    uint32_t prefix_length = 0;
+    term = maybe_consume_into(term.substr(1), max_edits);
+    if (term.empty() || (term[0] != ',' && term[0] != '}')) {
+        throw std::invalid_argument("malformed fuzzy params at (or after) max_edits");
+    }
+    if (term[0] == '}') {
+        return {max_edits, prefix_length, term.substr(1)};
+    }
+    term = maybe_consume_into(term.substr(1), prefix_length);
+    if (term.empty() || term[0] != '}') {
+        throw std::invalid_argument("malformed fuzzy params at (or after) prefix_length");
+    }
+    return {max_edits, prefix_length, term.substr(1)};
+}
+
+}
+
 class Query
 {
 private:
@@ -66,10 +111,14 @@ private:
             ParsedQueryTerm pqt = parseQueryTerm(term);
             ParsedTerm pt = parseTerm(pqt.second);
             std::string effective_index = pqt.first.empty() ? "index" : pqt.first;
-            if (pt.second != TermType::REGEXP) {
-                qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
+            if (pt.second == TermType::REGEXP) {
+                qtv.push_back(std::make_unique<RegexpTerm>(eqnr.create(), pt.first, effective_index, TermType::REGEXP, normalizing));
+            } else if (pt.second == TermType::FUZZYTERM) {
+                auto [max_edits, prefix_length, actual_term] = parse_fuzzy_params(pt.first);
+                qtv.push_back(std::make_unique<FuzzyTerm>(eqnr.create(), vespalib::stringref(actual_term.data(), actual_term.size()),
+                                                          effective_index, TermType::FUZZYTERM, normalizing, max_edits, prefix_length));
             } else {
-                qtv.push_back(std::make_unique<RegexpTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
+                qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
             }
         }
         for (const auto & i : qtv) {
@@ -100,6 +149,8 @@ public:
             return std::make_pair(term.substr(1, term.size() - 1), TermType::SUFFIXTERM);
         } else if (term[0] == '#') { // magic regex enabler
             return std::make_pair(term.substr(1), TermType::REGEXP);
+        } else if (term[0] == '%') { // equally magic fuzzy enabler
+            return std::make_pair(term.substr(1), TermType::FUZZYTERM);
         } else if (term[term.size() - 1] == '*') {
             return std::make_pair(term.substr(0, term.size() - 1), TermType::PREFIXTERM);
         } else {
@@ -477,31 +528,54 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     return true;
 }
 
-    TEST("verify correct term parsing") {
-        ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
-        ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
-        ASSERT_TRUE(Query::parseQueryTerm("term").first.empty());
-        ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
-        ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
-        ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
-        ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
-        ASSERT_TRUE(Query::parseTerm("*suffix").second == TermType::SUFFIXTERM);
-        ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
-        ASSERT_TRUE(Query::parseTerm("prefix*").second == TermType::PREFIXTERM);
-        ASSERT_TRUE(Query::parseTerm("#regex").first == "regex");
-        ASSERT_TRUE(Query::parseTerm("#regex").second == TermType::REGEXP);
-        ASSERT_TRUE(Query::parseTerm("term").first == "term");
-        ASSERT_TRUE(Query::parseTerm("term").second == TermType::WORD);
-    }
+TEST("parsing of test-only fuzzy term params can extract numeric values") {
+    uint8_t max_edits = 0;
+    uint32_t prefix_length = 1234;
+    std::string_view out;
 
-    TEST("suffix matching") {
-        EXPECT_EQUAL(assertMatchTermSuffix("a",      "vespa"), true);
-        EXPECT_EQUAL(assertMatchTermSuffix("spa",    "vespa"), true);
-        EXPECT_EQUAL(assertMatchTermSuffix("vespa",  "vespa"), true);
-        EXPECT_EQUAL(assertMatchTermSuffix("vvespa", "vespa"), false);
-        EXPECT_EQUAL(assertMatchTermSuffix("fspa",   "vespa"), false);
-        EXPECT_EQUAL(assertMatchTermSuffix("v",      "vespa"), false);
-    }
+    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("myterm");
+    EXPECT_EQUAL(max_edits, 2u);
+    EXPECT_EQUAL(prefix_length, 0u);
+    EXPECT_EQUAL(out, "myterm");
+
+    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("{3}myterm");
+    EXPECT_EQUAL(max_edits, 3u);
+    EXPECT_EQUAL(prefix_length, 0u);
+    EXPECT_EQUAL(out, "myterm");
+
+    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("{2,70}myterm");
+    EXPECT_EQUAL(max_edits, 2u);
+    EXPECT_EQUAL(prefix_length, 70u);
+    EXPECT_EQUAL(out, "myterm");
+}
+
+TEST("verify correct term parsing") {
+    ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
+    ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
+    ASSERT_TRUE(Query::parseQueryTerm("term").first.empty());
+    ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
+    ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
+    ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
+    ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
+    ASSERT_TRUE(Query::parseTerm("*suffix").second == TermType::SUFFIXTERM);
+    ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
+    ASSERT_TRUE(Query::parseTerm("prefix*").second == TermType::PREFIXTERM);
+    ASSERT_TRUE(Query::parseTerm("#regex").first == "regex");
+    ASSERT_TRUE(Query::parseTerm("#regex").second == TermType::REGEXP);
+    ASSERT_TRUE(Query::parseTerm("%fuzzy").first == "fuzzy");
+    ASSERT_TRUE(Query::parseTerm("%fuzzy").second == TermType::FUZZYTERM);
+    ASSERT_TRUE(Query::parseTerm("term").first == "term");
+    ASSERT_TRUE(Query::parseTerm("term").second == TermType::WORD);
+}
+
+TEST("suffix matching") {
+    EXPECT_EQUAL(assertMatchTermSuffix("a",      "vespa"), true);
+    EXPECT_EQUAL(assertMatchTermSuffix("spa",    "vespa"), true);
+    EXPECT_EQUAL(assertMatchTermSuffix("vespa",  "vespa"), true);
+    EXPECT_EQUAL(assertMatchTermSuffix("vvespa", "vespa"), false);
+    EXPECT_EQUAL(assertMatchTermSuffix("fspa",   "vespa"), false);
+    EXPECT_EQUAL(assertMatchTermSuffix("v",      "vespa"), false);
+}
 
 TEST("Test basic strchrfield searchers") {
     {
@@ -652,6 +726,96 @@ TEST("utf8 flexible searcher handles regexes with explicit anchoring") {
     TEST_DO(assertString(fs, "#^foo$", "foo",  Hits().add(0)));
     TEST_DO(assertString(fs, "#^foo$", "food", Hits()));
     TEST_DO(assertString(fs, "#^foo$", "oo",   Hits()));
+}
+
+TEST("utf8 flexible searcher handles fuzzy search in uncased mode") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // Term syntax (only applies to these tests):
+    //   %{k}term   => fuzzy match "term" with max edits k
+    //   %{k,p}term => fuzzy match "term" with max edits k, prefix lock length p
+
+    // DFA is used for k in {1, 2}
+    TEST_DO(assertString(fs, "%{1}abc",  "abc",    Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}ABC",  "abc",    Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}abc",  "ABC",    Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}Abc",  "abd",    Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}abc",  "ABCD",   Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}abc",  "abcde",  Hits()));
+    TEST_DO(assertString(fs, "%{2}abc",  "abcde",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{2}abc",  "xabcde", Hits()));
+    // Fallback to non-DFA matcher when k not in {1, 2}
+    TEST_DO(assertString(fs, "%{3}abc",  "abc",   Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3}abc",  "XYZ",   Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3}abc",  "XYZ!",  Hits()));
+}
+
+TEST("utf8 flexible searcher handles fuzzy search in cased mode") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    fs.normalize_mode(Normalizing::NONE);
+    TEST_DO(assertString(fs, "%{1}abc", "abc",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}abc", "Abc",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1}ABC", "abc",  Hits()));
+    TEST_DO(assertString(fs, "%{2}Abc", "abc",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{2}abc", "AbC",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3}abc", "ABC",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3}abc", "ABCD", Hits()));
+}
+
+TEST("utf8 flexible searcher handles fuzzy search with prefix locking") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // DFA
+    TEST_DO(assertString(fs, "%{1,4}zoid",     "zoi",        Hits()));
+    TEST_DO(assertString(fs, "%{1,4}zoid",     "zoid",       Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,4}zoid",     "ZOID",       Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "zoid",       Hits()));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "ZoidBerg",   Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "ZoidBergg",  Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "zoidborg",   Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "zoidblergh", Hits()));
+    TEST_DO(assertString(fs, "%{2,4}zoidberg", "zoidblergh", Hits().add(0)));
+    // Fallback
+    TEST_DO(assertString(fs, "%{3,4}zoidberg", "zoidblergh", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3,4}zoidberg", "zoidbooorg", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{3,4}zoidberg", "zoidzooorg", Hits()));
+
+    fs.normalize_mode(Normalizing::NONE);
+    // DFA
+    TEST_DO(assertString(fs, "%{1,4}zoid",     "ZOID",       Hits()));
+    TEST_DO(assertString(fs, "%{1,4}ZOID",     "zoid",       Hits()));
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "zoidBerg",   Hits().add(0))); // 1 edit
+    TEST_DO(assertString(fs, "%{1,4}zoidberg", "zoidBblerg", Hits()));        // 2 edits, 1 max
+    TEST_DO(assertString(fs, "%{2,4}zoidberg", "zoidBblerg", Hits().add(0))); // 2 edits, 2 max
+    // Fallback
+    TEST_DO(assertString(fs, "%{3,4}zoidberg", "zoidBERG",   Hits()));        // 4 edits, 3 max
+    TEST_DO(assertString(fs, "%{4,4}zoidberg", "zoidBERG",   Hits().add(0))); // 4 edits, 4 max
+}
+
+TEST("utf8 flexible searcher fuzzy match with max_edits=0 implies exact match") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    TEST_DO(assertString(fs, "%{0}zoid",   "zoi",  Hits()));
+    TEST_DO(assertString(fs, "%{0,4}zoid", "zoi",  Hits()));
+    TEST_DO(assertString(fs, "%{0}zoid",   "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{0}zoid",   "ZOID", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{0,4}zoid", "ZOID", Hits().add(0)));
+    fs.normalize_mode(Normalizing::NONE);
+    TEST_DO(assertString(fs, "%{0}zoid",   "ZOID", Hits()));
+    TEST_DO(assertString(fs, "%{0,4}zoid", "ZOID", Hits()));
+    TEST_DO(assertString(fs, "%{0}zoid",   "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{0,4}zoid", "zoid", Hits().add(0)));
+}
+
+TEST("utf8 flexible searcher caps oversized fuzzy prefix length to term length") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // DFA
+    TEST_DO(assertString(fs, "%{1,5}zoid",    "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,9001}zoid", "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{1,9001}zoid", "boid", Hits()));
+    // Fallback
+    TEST_DO(assertString(fs, "%{0,5}zoid",    "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{5,5}zoid",    "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{0,9001}zoid", "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{5,9001}zoid", "zoid", Hits().add(0)));
+    TEST_DO(assertString(fs, "%{5,9001}zoid", "boid", Hits()));
 }
 
 TEST("bool search") {

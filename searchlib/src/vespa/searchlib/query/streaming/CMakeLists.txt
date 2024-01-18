@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_query_streaming OBJECT
     SOURCES
     dot_product_term.cpp
+    fuzzy_term.cpp
     in_term.cpp
     multi_term.cpp
     nearest_neighbor_query_node.cpp

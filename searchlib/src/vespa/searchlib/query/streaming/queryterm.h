@@ -11,6 +11,7 @@
 
 namespace search::streaming {
 
+class FuzzyTerm;
 class NearestNeighborQueryNode;
 class MultiTerm;
 class RegexpTerm;
@@ -95,6 +96,7 @@ public:
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
     virtual MultiTerm* as_multi_term() noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
+    virtual FuzzyTerm* as_fuzzy_term() noexcept;
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;
