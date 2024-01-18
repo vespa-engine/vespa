@@ -63,18 +63,14 @@ public class RankSetupValidator implements Validator {
                                                context.deployState().getProperties().applicationId().toFullString() +
                                                ".")
                     .toFile();
-            for (SearchCluster cluster : context.model().getSearchClusters()) {
-                // Skipping ranking expression checking for streaming clusters, not implemented yet
-                if (cluster.isStreaming()) continue;
-
-                IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
+            for (SearchCluster sc : context.model().getSearchClusters()) {
                 String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
                     String schemaName = docDb.getDerivedConfiguration().getSchema().getName();
                     String schemaDir = clusterDir + schemaName + "/";
                     writeConfigs(schemaDir, docDb);
                     writeExtraVerifyRankSetupConfig(schemaDir, docDb);
-                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir)) {
+                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir, sc.isStreaming())) {
                         return;
                     }
                 }
@@ -87,11 +83,11 @@ public class RankSetupValidator implements Validator {
         }
     }
 
-    private boolean validate(Context context, String configId, SearchCluster searchCluster, String schema, File tempDir) {
+    private boolean validate(Context context, String configId, SearchCluster searchCluster, String schema, File tempDir, boolean isStreaming) {
         Instant start = Instant.now();
         try {
             log.log(Level.FINE, () -> String.format("Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
-            boolean ret = execValidate(context, configId, searchCluster, schema);
+            boolean ret = execValidate(context, configId, searchCluster, schema, isStreaming);
             if (!ret) {
                 // Give up, don't log same error msg repeatedly
                 deleteTempDir(tempDir);
@@ -175,8 +171,8 @@ public class RankSetupValidator implements Validator {
         IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(ConfigInstance.serialize(config)), false);
     }
 
-    private boolean execValidate(Context context, String configId, SearchCluster sc, String sdName) {
-        String command = String.format("%s %s", binaryName, configId);
+    private boolean execValidate(Context context, String configId, SearchCluster sc, String sdName, boolean isStreaming) {
+        String command = String.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
         try {
             Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
             Integer exitCode = ret.getFirst();
