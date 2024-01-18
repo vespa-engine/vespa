@@ -208,7 +208,7 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
             currMatchCount++;
             if ((currMatchCount+1) == numFields) {
                 Hit h = nextHL[indexVector[currMatchCount]];
-                hl.emplace_back(0, h.context(), h.elemId(), h.weight());
+                hl.emplace_back(0, h.field_id(), h.elemId(), h.weight());
                 currMatchCount = 0;
                 indexVector[0]++;
             }
@@ -260,26 +260,26 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
         const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
         size_t firstPosition = currHit.pos();
         uint32_t currElemId = currHit.elemId();
-        uint32_t currContext = currHit.context();
+        uint32_t curr_field_id = currHit.field_id();
 
         const HitList & nextHL = next->evaluateHits(tmpHL);
 
         int diff(0);
         size_t nextIndexMax = nextHL.size();
         while ((nextIndex < nextIndexMax) &&
-              ((nextHL[nextIndex].context() < currContext) ||
-               ((nextHL[nextIndex].context() == currContext) && (nextHL[nextIndex].elemId() <= currElemId))) &&
+              ((nextHL[nextIndex].field_id() < curr_field_id) ||
+               ((nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].elemId() <= currElemId))) &&
              ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
         {
             nextIndex++;
         }
-        if ((diff == 1) && (nextHL[nextIndex].context() == currContext) && (nextHL[nextIndex].elemId() == currElemId)) {
+        if ((diff == 1) && (nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].elemId() == currElemId)) {
             currPhraseLen++;
             if ((currPhraseLen+1) == fullPhraseLen) {
                 Hit h = nextHL[indexVector[currPhraseLen]];
                 hl.push_back(h);
-                const QueryTerm::FieldInfo & fi = next->getFieldInfo(h.context());
-                updateFieldInfo(h.context(), hl.size() - 1, fi.getFieldLength());
+                const QueryTerm::FieldInfo & fi = next->getFieldInfo(h.field_id());
+                updateFieldInfo(h.field_id(), hl.size() - 1, fi.getFieldLength());
                 currPhraseLen = 0;
                 indexVector[0]++;
             }

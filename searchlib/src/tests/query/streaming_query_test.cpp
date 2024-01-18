@@ -23,9 +23,9 @@ using TermType = QueryTerm::Type;
 using search::fef::SimpleTermData;
 using search::fef::MatchData;
 
-void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weight) {
+void assertHit(const Hit & h, size_t expWordpos, size_t exp_field_id, int32_t weight) {
     EXPECT_EQ(h.wordpos(), expWordpos);
-    EXPECT_EQ(h.context(), expContext);
+    EXPECT_EQ(h.field_id(), exp_field_id);
     EXPECT_EQ(h.weight(), weight);
 }
 
@@ -479,11 +479,11 @@ TEST(StreamingQueryTest, test_phrase_evaluate)
     p->evaluateHits(hits);
     ASSERT_EQ(3u, hits.size());
     EXPECT_EQ(hits[0].wordpos(), 2u);
-    EXPECT_EQ(hits[0].context(), 0u);
+    EXPECT_EQ(hits[0].field_id(), 0u);
     EXPECT_EQ(hits[1].wordpos(), 6u);
-    EXPECT_EQ(hits[1].context(), 1u);
+    EXPECT_EQ(hits[1].field_id(), 1u);
     EXPECT_EQ(hits[2].wordpos(), 2u);
-    EXPECT_EQ(hits[2].context(), 3u);
+    EXPECT_EQ(hits[2].field_id(), 3u);
     ASSERT_EQ(4u, p->getFieldInfoSize());
     EXPECT_EQ(p->getFieldInfo(0).getHitOffset(), 0u);
     EXPECT_EQ(p->getFieldInfo(0).getHitCount(),  1u);
@@ -847,22 +847,22 @@ TEST(StreamingQueryTest, test_same_element_evaluate)
     sameElem->evaluateHits(hits);
     EXPECT_EQ(4u, hits.size());
     EXPECT_EQ(0u, hits[0].wordpos());
-    EXPECT_EQ(2u, hits[0].context());
+    EXPECT_EQ(2u, hits[0].field_id());
     EXPECT_EQ(0u, hits[0].elemId());
     EXPECT_EQ(130,  hits[0].weight());
 
     EXPECT_EQ(0u, hits[1].wordpos());
-    EXPECT_EQ(2u, hits[1].context());
+    EXPECT_EQ(2u, hits[1].field_id());
     EXPECT_EQ(2u, hits[1].elemId());
     EXPECT_EQ(140,  hits[1].weight());
 
     EXPECT_EQ(0u, hits[2].wordpos());
-    EXPECT_EQ(2u, hits[2].context());
+    EXPECT_EQ(2u, hits[2].field_id());
     EXPECT_EQ(4u, hits[2].elemId());
     EXPECT_EQ(150,  hits[2].weight());
 
     EXPECT_EQ(0u, hits[3].wordpos());
-    EXPECT_EQ(2u, hits[3].context());
+    EXPECT_EQ(2u, hits[3].field_id());
     EXPECT_EQ(5u, hits[3].elemId());
     EXPECT_EQ(160,  hits[3].weight());
     EXPECT_TRUE(sameElem->evaluate());
