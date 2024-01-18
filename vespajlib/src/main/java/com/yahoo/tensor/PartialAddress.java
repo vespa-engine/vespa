@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.impl.StringTensorAddress;
+
 import java.util.Arrays;
 
 /**
@@ -83,7 +85,7 @@ public class PartialAddress {
                     throw new IllegalArgumentException(type + " dimension names does not match " + this);
                 stringLabels[i] = label;
             }
-            return TensorAddress.of(stringLabels);
+            return StringTensorAddress.unsafeOf(stringLabels);
         }
     }
 

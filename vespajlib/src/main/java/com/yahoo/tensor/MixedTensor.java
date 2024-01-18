@@ -3,6 +3,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -553,7 +554,7 @@ public class MixedTensor implements Tensor {
                     mappedIndex++;
                 }
             }
-            return TensorAddress.of(labels);
+            return StringTensorAddress.unsafeOf(labels);
         }
 
         @Override
@@ -563,7 +564,7 @@ public class MixedTensor implements Tensor {
 
         private String contentToString(MixedTensor tensor, long maxCells) {
             if (mappedDimensions.size() > 1) throw new IllegalStateException("Should be ensured by caller");
-            if (mappedDimensions.size() == 0) {
+            if (mappedDimensions.isEmpty()) {
                 StringBuilder b = new StringBuilder();
                 int cellsWritten = denseSubspaceToString(tensor, 0, maxCells, b);
                 if (cellsWritten == maxCells && cellsWritten < tensor.size())

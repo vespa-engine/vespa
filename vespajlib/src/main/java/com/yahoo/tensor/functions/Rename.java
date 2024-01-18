@@ -8,6 +8,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +36,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
-        if (fromDimensions.size() < 1)
+        if (fromDimensions.isEmpty())
             throw new IllegalArgumentException("from dimensions is empty, must rename at least one dimension");
         if (fromDimensions.size() != toDimensions.size())
             throw new IllegalArgumentException("Rename from and to dimensions must be equal, was " +
@@ -122,7 +123,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         String[] reorderedLabels = new String[toIndexes.length];
         for (int i = 0; i < toIndexes.length; i++)
             reorderedLabels[toIndexes[i]] = address.label(i);
-        return TensorAddress.of(reorderedLabels);
+        return StringTensorAddress.unsafeOf(reorderedLabels);
     }
 
     private String toVectorString(List<String> elements) {

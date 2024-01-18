@@ -12,6 +12,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,7 +145,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     private static Tensor indexedSubspaceJoin(IndexedTensor subspace, IndexedTensor superspace, TensorType joinedType, boolean reversedArgumentOrder, DoubleBinaryOperator combinator) {
-        if (subspace.size() == 0 || superspace.size() == 0) // special case empty here to avoid doing it when finding sizes
+        if (subspace.isEmpty() || superspace.isEmpty()) // special case empty here to avoid doing it when finding sizes
             return Tensor.Builder.of(joinedType, new DimensionSizes.Builder(joinedType.dimensions().size()).build()).build();
 
         DimensionSizes joinedSizes = joinedSize(joinedType, subspace, superspace);
@@ -227,7 +228,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         String[] subspaceLabels = new String[subspaceIndexes.length];
         for (int i = 0; i < subspaceIndexes.length; i++)
             subspaceLabels[i] = superAddress.label(subspaceIndexes[i]);
-        return TensorAddress.of(subspaceLabels);
+        return StringTensorAddress.unsafeOf(subspaceLabels);
     }
 
     /** Slow join which works for any two tensors */
@@ -377,7 +378,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
-        return TensorAddress.of(joinedLabels);
+        return StringTensorAddress.unsafeOf(joinedLabels);
     }
 
     /**
@@ -418,7 +419,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (int i = 0; i < labels.length; ++i) {
             labels[i] = address.label(indexMap[i]);
         }
-        return TensorAddress.of(labels);
+        return StringTensorAddress.unsafeOf(labels);
     }
 
 }
