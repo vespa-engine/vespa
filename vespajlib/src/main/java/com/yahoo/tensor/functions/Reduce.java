@@ -128,7 +128,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         TensorType reducedType = outputType(argument.type(), dimensions);
 
         // Reduce cells
-        int [] indexesToKeep = createIndexesToKeep(argument.type(), dimensions);
+        int[] indexesToKeep = createIndexesToKeep(argument.type(), dimensions);
         // TODO cells.size() is most likely an overestimate, and might need a better heuristic
         // But the upside is larger than the downside.
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>((int)argument.size());
