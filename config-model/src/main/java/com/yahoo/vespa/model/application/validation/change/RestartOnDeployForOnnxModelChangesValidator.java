@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.util.ArrayList;
@@ -34,7 +35,8 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
 
     @Override
     public void validate(ChangeContext context) {
-        if ( ! context.deployState().featureFlags().restartOnDeployWhenOnnxModelChanges()) return;
+        if ( ! context.deployState().featureFlags().restartOnDeployWhenOnnxModelChanges()
+                || ! context.deployState().isHosted()) return;
 
         // Compare onnx models used by each cluster and set restart on deploy for cluster if estimated cost,
         // model hash or model options have changed
@@ -104,10 +106,13 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
     private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,
                                                       ApplicationContainerCluster cluster,
                                                       DeployLogger deployLogger) {
+        List<ApplicationContainer> containers = cluster.getContainers();
+        if (containers.isEmpty()) return true;
+
         double currentModelCostInGb = onnxModelCostInGb(clusterInCurrentModel);
         double nextModelCostInGb = onnxModelCostInGb(cluster);
 
-        double totalMemory = cluster.getContainers().get(0).getHostResource().realResources().memoryGb();
+        double totalMemory = containers.stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow();
         double memoryUsedByModels = currentModelCostInGb + nextModelCostInGb;
         double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - memoryUsedByModels);
 
