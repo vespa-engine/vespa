@@ -949,6 +949,7 @@
     "methods" : [
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
+      "public int sizeAsInt()",
       "public double get(com.yahoo.tensor.TensorAddress)",
       "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public java.util.Iterator cellIterator()",
@@ -1153,7 +1154,8 @@
     "methods" : [
       "public abstract com.yahoo.tensor.TensorType type()",
       "public boolean isEmpty()",
-      "public abstract long size()",
+      "public long size()",
+      "public int sizeAsInt()",
       "public abstract double get(com.yahoo.tensor.TensorAddress)",
       "public abstract boolean has(com.yahoo.tensor.TensorAddress)",
       "public abstract java.util.Iterator cellIterator()",

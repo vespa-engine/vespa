@@ -48,7 +48,7 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
-        buffer.putInt1_4Bytes((int)tensor.size()); // XXX: Size truncation
+        buffer.putInt1_4Bytes(tensor.sizeAsInt()); // XXX: Size truncation
         switch (serializationValueType) {
             case DOUBLE: encodeCells(buffer, tensor, buffer::putDouble); break;
             case FLOAT: encodeCells(buffer, tensor, (val) -> buffer.putFloat(val.floatValue())); break;
