@@ -64,10 +64,25 @@ public interface Tensor {
 
     /**
      *  Returns the number of cells in this.
-     *  TODO Figure how to best return an int instead of a long
-     *  An int is large enough, and java is far better at int base loops than long
+     *  Allows for very large tensors, but if you only handle size in the int range
+     *  prefer sizeAsInt().
      **/
-    long size();
+    default long size() {
+        return sizeAsInt();
+    }
+
+    /**
+     * Safe way to get size as an int and detect when not possible.
+     * Prefer this over size() as
+     * @return size() as an int
+     */
+    default int sizeAsInt() {
+        long sz = size();
+        if (sz > Integer.MAX_VALUE) {
+            throw new IndexOutOfBoundsException("size = " + sz + ", which is too large to fit in an int");
+        }
+        return (int) sz;
+    }
 
     /** Returns the value of a cell, or 0.0 if this cell does not exist */
     double get(TensorAddress address);

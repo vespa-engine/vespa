@@ -22,6 +22,10 @@ class IndexedDoubleTensor extends IndexedTensor {
         return values.length;
     }
 
+    /** Once we can store more cells than an int we should drop this method. */
+    @Override
+    public int sizeAsInt() { return values.length; }
+
     @Override
     public double get(long valueIndex) { return values[(int)valueIndex]; }
 

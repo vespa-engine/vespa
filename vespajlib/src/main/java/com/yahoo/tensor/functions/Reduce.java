@@ -131,7 +131,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         int[] indexesToKeep = createIndexesToKeep(argument.type(), dimensions);
         // TODO cells.size() is most likely an overestimate, and might need a better heuristic
         // But the upside is larger than the downside.
-        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>((int)argument.size());
+        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>(argument.sizeAsInt());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress reducedAddress = reduceDimensions(indexesToKeep, cell.getKey());

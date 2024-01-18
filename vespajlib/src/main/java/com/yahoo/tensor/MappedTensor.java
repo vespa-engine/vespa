@@ -31,6 +31,10 @@ public class MappedTensor implements Tensor {
     @Override
     public long size() { return cells.size(); }
 
+    /** Once we can store more cells than an int we should drop this. */
+    @Override
+    public int sizeAsInt() { return cells.size(); }
+
     @Override
     public double get(TensorAddress address) { return cells.getOrDefault(address, 0.0); }
 
