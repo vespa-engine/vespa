@@ -152,7 +152,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
         int [] indexesToKeep = new int[argumentType.rank() - indexesToRemove.size()];
         int toKeepIndex = 0;
-        for (int i = 0;i < argumentType.rank(); i++) {
+        for (int i = 0; i < argumentType.rank(); i++) {
             if ( ! indexesToRemove.contains(i))
                 indexesToKeep[toKeepIndex++] = i;
         }
