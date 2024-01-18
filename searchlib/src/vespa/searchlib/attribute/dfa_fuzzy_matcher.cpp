@@ -54,6 +54,11 @@ DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uin
     _successor = _prefix;
 }
 
+DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased)
+    : DfaFuzzyMatcher(target, max_edits, prefix_size, cased, LevenshteinDfa::DfaType::Table)
+{
+}
+
 DfaFuzzyMatcher::~DfaFuzzyMatcher() = default;
 
 const char*
@@ -69,10 +74,10 @@ DfaFuzzyMatcher::skip_prefix(const char* word) const
 }
 
 bool
-DfaFuzzyMatcher::is_match(const char* word) const
+DfaFuzzyMatcher::is_match(std::string_view word) const
 {
     if (_prefix_size > 0) {
-        Utf8ReaderForZTS reader(word);
+        Utf8Reader reader(word.data(), word.size());
         size_t pos = 0;
         for (; pos < _prefix.size() && reader.hasMore(); ++pos) {
             uint32_t code_point = reader.getChar();
@@ -89,7 +94,7 @@ DfaFuzzyMatcher::is_match(const char* word) const
         if (pos != _prefix_size) {
             return false;
         }
-        word = reader.get_current_ptr();
+        word = word.substr(reader.getPos());
     }
     auto match = _dfa.match(word);
     return match.matches();
