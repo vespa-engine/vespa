@@ -159,7 +159,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return indexesToKeep;
     }
 
-    private static TensorAddress reduceDimensions(int [] indexesToKeep, TensorAddress address) {
+    private static TensorAddress reduceDimensions(int[] indexesToKeep, TensorAddress address) {
         String[] reducedLabels = new String[indexesToKeep.length];
         int reducedLabelIndex = 0;
         for (int toKeep : indexesToKeep)
