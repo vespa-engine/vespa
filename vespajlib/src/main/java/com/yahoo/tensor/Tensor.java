@@ -62,7 +62,11 @@ public interface Tensor {
     /** Returns whether this have any cells */
     default boolean isEmpty() { return size() == 0; }
 
-    /** Returns the number of cells in this */
+    /**
+     *  Returns the number of cells in this.
+     *  TODO Figure how to best return an int instead of a long
+     *  An int is large enough, and java is far better at int base loops than long
+     **/
     long size();
 
     /** Returns the value of a cell, or 0.0 if this cell does not exist */
