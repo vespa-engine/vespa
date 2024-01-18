@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.DoubleBinaryOperator;
 
 /**
  * A sparse implementation of a tensor backed by a Map of cells to values.
@@ -83,7 +82,7 @@ public class MappedTensor implements Tensor {
 
     @Override
     public String toAbbreviatedString(boolean withType, boolean shortForms) {
-        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() + 1)));
     }
 
     private String toString(boolean withType, boolean shortForms, long maxCells) {

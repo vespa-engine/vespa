@@ -90,7 +90,7 @@ public abstract class IndexedTensor implements Tensor {
      * @throws IllegalArgumentException if any of the indexes are out of bound or a wrong number of indexes are given
      */
     public double get(long ... indexes) {
-        return get((int)toValueIndex(indexes, dimensionSizes));
+        return get(toValueIndex(indexes, dimensionSizes));
     }
 
     /**

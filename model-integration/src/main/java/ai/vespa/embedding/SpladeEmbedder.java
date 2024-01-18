@@ -12,6 +12,7 @@ import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import java.nio.file.Paths;
 import java.util.List;
@@ -139,10 +140,18 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         if (batch != 1) {
             throw new IllegalArgumentException("Batch size must be 1");
         }
-        long sequenceLength = shape[1];
-        long vocabSize = shape[2];
+        if (shape[1] > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("sequenceLength=" + shape[1] + " larger than an int");
+        }
+        if (shape[2] > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("vocabSize=" + shape[2] + " larger than an int");
+        }
+        int sequenceLength = (int) shape[1];
+        int vocabSize = (int) shape[2];
 
+        String dimension = tensorType.dimensions().get(0).name();
         //Iterate over the vocab dimension and find the max value for each sequence token
+        long [] tokens = new long[1];
         for(int v = 0; v < vocabSize; v++) {
             double maxLogOfRelu = Double.MIN_VALUE;
             for(int s = 0; s < sequenceLength; s++) {
@@ -153,9 +162,10 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
                 }
             }
             if (maxLogOfRelu > termScoreThreshold) {
-                String term = tokenizer.decode(List.of((long) v));
-                builder.cell().
-                        label(tensorType.dimensions().get(0).name(), term)
+                tokens[0] = v;
+                String term = tokenizer.decode(tokens);
+                builder.cell()
+                        .label(dimension, term)
                         .value(maxLogOfRelu);
             }
         }
