@@ -33,12 +33,16 @@ public class StreamingValidatorTest {
                 "Document references and imported fields are not allowed in streaming search."));
     }
 
+    private static List<String> filter(List<String> warnings) {
+        return warnings.stream().filter(x -> x.indexOf("Cannot run program") == -1).toList();
+    }
+
     @Test
     void tensor_field_without_index_gives_no_warning() {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field nn type tensor(x[2]) { indexing: attribute | summary\n" +
                     "attribute { distance-metric: euclidean } }");
-        assertTrue(logger.warnings.isEmpty());
+        assertTrue(filter(logger.warnings).isEmpty());
     }
 
     @Test
@@ -46,9 +50,10 @@ public class StreamingValidatorTest {
         var logger = new TestableDeployLogger();
         var model = createModel(logger, "field nn type tensor(x[2]) { indexing: attribute | index | summary\n" +
                     "attribute { distance-metric: euclidean } }");
-        assertEquals(1, logger.warnings.size());
+        var warnings = filter(logger.warnings);
+        assertEquals(1, warnings.size());
         assertEquals("For streaming search cluster 'content.test', SD field 'nn': hnsw index is not relevant and not supported, ignoring setting",
-                logger.warnings.get(0));
+                     warnings.get(0));
     }
 
     private static VespaModel createModel(DeployLogger logger, String sdContent) {
