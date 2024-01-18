@@ -88,7 +88,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(std::u
 }
 
 template <typename PostingStoreType, typename SearchType>
-template <bool filter_search, bool need_match_data>
+template <bool filter_search>
 std::unique_ptr<queryeval::SearchIterator>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda,
                                                                              bool strict) const
@@ -103,27 +103,18 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
     auto& tfmd = *tfmda[0];
     bool use_bit_vector_when_available = filter_search || !_attr.has_always_btree_iterator();
     auto weights = create_iterators(btree_iterators, bitvectors, use_bit_vector_when_available, tfmd, strict);
-    if constexpr (filter_search || (!need_match_data && !SearchType::require_btree_iterators)) {
-        auto filter = !btree_iterators.empty() ?
-                      (need_match_data ?
-                          attribute::MultiTermOrFilterSearch::create(std::move(btree_iterators), tfmd) :
-                          attribute::MultiTermOrFilterSearch::create(std::move(btree_iterators))) :
-                      std::unique_ptr<SearchIterator>();
-        return combine_iterators(std::move(filter), std::move(bitvectors), strict);
-    }
     bool field_is_filter = getState().fields()[0].isFilter();
-    if constexpr (!filter_search && !SearchType::require_btree_iterators) {
+    if constexpr (!SearchType::require_btree_iterators) {
         auto multi_term = !btree_iterators.empty() ?
-                SearchType::create(tfmd, field_is_filter, std::move(weights), std::move(btree_iterators))
+                SearchType::create(tfmd, (filter_search || field_is_filter), std::move(weights), std::move(btree_iterators))
                 : std::unique_ptr<SearchIterator>();
         return combine_iterators(std::move(multi_term), std::move(bitvectors), strict);
-    } else if constexpr (SearchType::require_btree_iterators) {
+    } else {
         // In this case we should only have btree iterators.
         assert(btree_iterators.size() == _terms.size());
         assert(weights.index() == 0);
         return SearchType::create(tfmd, field_is_filter, std::get<0>(weights).get(), std::move(btree_iterators));
     }
-    return std::make_unique<queryeval::EmptySearch>();
 }
 
 template <typename PostingStoreType, typename SearchType>
@@ -132,12 +123,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const f
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
-    bool need_match_data = !tfmda[0]->isNotNeeded();
-    if (need_match_data) {
-        return create_search_helper<SearchType::filter_search, true>(tfmda, strict);
-    } else {
-        return create_search_helper<SearchType::filter_search, false>(tfmda, strict);
-    }
+    return create_search_helper<SearchType::filter_search>(tfmda, strict);
 }
 
 template <typename PostingStoreType, typename SearchType>
@@ -146,7 +132,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(bool 
 {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
-    wrapper->wrap(create_search_helper<true, false>(wrapper->tfmda(), strict));
+    wrapper->wrap(create_search_helper<true>(wrapper->tfmda(), strict));
     return wrapper;
 }
 

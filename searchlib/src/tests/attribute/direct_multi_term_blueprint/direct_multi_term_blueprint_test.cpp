@@ -156,12 +156,17 @@ using MultiInBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingSto
 using SingleWSetBlueprintType = DirectMultiTermBlueprint<IDocidPostingStore, WeightedSetTermSearch>;
 using MultiWSetBlueprintType = DirectMultiTermBlueprint<IDocidWithWeightPostingStore, WeightedSetTermSearch>;
 
+vespalib::string iterator_unpack_docid_and_weights = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)0";
+vespalib::string iterator_unpack_docid = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)1";
+vespalib::string iterator_unpack_none = "search::queryeval::WeightedSetTermSearchImpl<(search::queryeval::UnpackType)2";
+
 class DirectMultiTermBlueprintTest : public ::testing::TestWithParam<TestParam> {
 public:
     std::shared_ptr<AttributeVector> attr;
     bool in_operator;
     bool single_type;
     bool integer_type;
+    bool field_is_filter;
     std::shared_ptr<ComplexLeafBlueprint> blueprint;
     Blueprint::HitEstimate estimate;
     fef::TermFieldMatchData tfmd;
@@ -171,6 +176,7 @@ public:
           in_operator(true),
           single_type(true),
           integer_type(true),
+          field_is_filter(false),
           blueprint(),
           tfmd(),
           tfmda()
@@ -178,7 +184,8 @@ public:
         tfmda.add(&tfmd);
     }
     ~DirectMultiTermBlueprintTest() {}
-    void setup(bool field_is_filter, bool need_term_field_match_data) {
+    void setup(bool field_is_filter_in, bool need_term_field_match_data) {
+        field_is_filter = field_is_filter_in;
         attr = make_attribute(GetParam().col_type, GetParam().type, field_is_filter);
         in_operator = GetParam().op_type == OperatorType::In;
         single_type = GetParam().col_type == CollectionType::SINGLE;
@@ -242,8 +249,11 @@ public:
     std::unique_ptr<SearchIterator> create_leaf_search() const {
         return blueprint->createLeafSearch(tfmda, true);
     }
-    vespalib::string multi_term_iterator() const {
-        return in_operator ? "search::attribute::MultiTermOrFilterSearchImpl" : "search::queryeval::WeightedSetTermSearchImpl";
+    vespalib::string resolve_iterator_with_unpack() const {
+        if (in_operator) {
+            return iterator_unpack_docid;
+        }
+        return field_is_filter ? iterator_unpack_docid : iterator_unpack_docid_and_weights;
     }
 };
 
@@ -287,11 +297,11 @@ TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_none_filter_field)
     add_term(1);
     add_term(3);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith(multi_term_iterator()));
+    EXPECT_THAT(itr->asString(), StartsWith(resolve_iterator_with_unpack()));
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_for_none_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_for_in_operator)
 {
     setup(false, true);
     if (!in_operator) {
@@ -302,11 +312,11 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 1, multi_term_iterator());
+    expect_or_child(*itr, 1, iterator_unpack_docid);
     expect_hits(concat({10}, range(100, 128)), *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_for_none_filter_field)
+TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_for_wset_operator)
 {
     setup(false, true);
     if (in_operator) {
@@ -315,7 +325,7 @@ TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_
     add_term(1);
     add_term(100);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith(multi_term_iterator()));
+    EXPECT_THAT(itr->asString(), StartsWith(iterator_unpack_docid_and_weights));
     expect_hits(concat({10}, range(100, 128)), *itr);
 }
 
@@ -330,7 +340,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_fil
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 2, multi_term_iterator());
+    expect_or_child(*itr, 2, iterator_unpack_docid);
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
@@ -346,17 +356,17 @@ TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, or_filter_iterator_used_for_filter_field_when_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
     add_term(3);
     auto itr = create_leaf_search();
-    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermOrFilterSearchImpl"));
+    EXPECT_THAT(itr->asString(), StartsWith(iterator_unpack_none));
     expect_hits({10, 30, 31}, *itr);
 }
 
-TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_or_filter_iterator_used_for_filter_field_when_ranking_not_needed)
+TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
     add_term(1);
@@ -367,7 +377,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_or_filter_iterator_used_for_
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 2, "search::attribute::MultiTermOrFilterSearchImpl");
+    expect_or_child(*itr, 2, iterator_unpack_none);
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
 
