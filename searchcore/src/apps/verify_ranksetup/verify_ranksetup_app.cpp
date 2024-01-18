@@ -34,14 +34,20 @@ toLogLevel(search::fef::Level level) {
     abort();
 }
 }
+
 int
 App::main(int argc, char **argv)
 {
+    SearchMode mode = SearchMode::INDEXED;
+    if (argc == 3 && (strcmp("-S", argv[2]) == 0)) {
+        mode = SearchMode::STREAMING;
+        --argc;
+    }
     if (argc != 2) {
         return usage();
     }
 
-    auto [ok, messages] = verifyRankSetup(argv[1]);
+    auto [ok, messages] = verifyRankSetup(argv[1], mode);
 
     for (const auto & msg : messages) {
         VLOG(toLogLevel(msg.first), "%s", msg.second.c_str());

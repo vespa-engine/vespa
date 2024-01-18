@@ -22,10 +22,14 @@
 #include <vespa/searchlib/fef/onnx_models.h>
 #include <vespa/searchlib/fef/ranking_expressions.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
+#include <vespa/searchvisitor/indexenvironment.h>
+#include <vespa/searchvisitor/rankmanager.h>
+#include <vespa/vsm/config/config-vsmfields.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <optional>
+#include <functional>
 
 using config::ConfigContext;
 using config::ConfigHandle;
@@ -43,6 +47,7 @@ using vespa::config::search::core::RankingConstantsConfig;
 using vespa::config::search::core::RankingExpressionsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
 using vespa::config::search::core::VerifyRanksetupConfig;
+using vespa::config::search::vsm::VsmfieldsConfig;
 using vespalib::eval::BadConstantValue;
 using vespalib::eval::ConstantValue;
 using vespalib::eval::FastValueBuilderFactory;
@@ -99,11 +104,12 @@ class VerifyRankSetup
 {
 private:
     std::vector<search::fef::Message> _messages;
-    bool verify(const search::index::Schema &schema,
-                const search::fef::Properties &props,
-                const IRankingAssetsRepo &repo);
+    SearchMode _searchMode;
+
+    bool verifyIndexEnv(const search::fef::IIndexEnvironment &indexEnv);
 
     bool verifyConfig(const VerifyRanksetupConfig &myCfg,
+                      const VsmfieldsConfig &vsmFieldsCcfg,
                       const RankProfilesConfig &rankCfg,
                       const IndexschemaConfig &schemaCfg,
                       const AttributesConfig &attributeCfg,
@@ -112,7 +118,7 @@ private:
                       const OnnxModelsConfig &modelsCfg);
 
 public:
-    VerifyRankSetup();
+    explicit VerifyRankSetup(SearchMode mode);
     ~VerifyRankSetup();
     [[nodiscard]] const std::vector<search::fef::Message> & getMessages() const { return _messages; }
     bool verify(const std::string & configId);
@@ -140,7 +146,9 @@ DummyRankingAssetsRepo::DummyRankingAssetsRepo(const RankingConstantsConfig &cfg
       _expressions(std::move(expressions)),
       _onnxModels(std::move(onnxModels))
 {}
+
 DummyRankingAssetsRepo::~DummyRankingAssetsRepo() = default;
+
 vespalib::eval::ConstantValue::UP
 DummyRankingAssetsRepo::getConstant(const vespalib::string &name) const {
     for (const auto &entry: cfg.constant) {
@@ -156,18 +164,15 @@ DummyRankingAssetsRepo::getConstant(const vespalib::string &name) const {
     return {};
 }
 
-VerifyRankSetup::VerifyRankSetup()
-    : _messages()
+VerifyRankSetup::VerifyRankSetup(SearchMode mode)
+    : _messages(),
+      _searchMode(mode)
 { }
 
 VerifyRankSetup::~VerifyRankSetup() = default;
 
 bool
-VerifyRankSetup::verify(const search::index::Schema &schema,
-                        const search::fef::Properties &props,
-                        const IRankingAssetsRepo &repo)
-{
-    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo);
+VerifyRankSetup::verifyIndexEnv(const search::fef::IIndexEnvironment &indexEnv) {
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);
@@ -195,6 +200,7 @@ VerifyRankSetup::verify(const search::index::Schema &schema,
 
 bool
 VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
+                              const VsmfieldsConfig &vsmFieldsCfg,
                               const RankProfilesConfig &rankCfg,
                               const IndexschemaConfig &schemaCfg,
                               const AttributesConfig &attributeCfg,
@@ -203,17 +209,38 @@ VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
                               const OnnxModelsConfig &modelsCfg)
 {
     bool ok = true;
+    auto repo = std::make_shared<DummyRankingAssetsRepo>(constantsCfg,
+                                                         make_expressions(expressionsCfg, myCfg, _messages),
+                                                         make_models(modelsCfg, myCfg, _messages));
+
+    using IndexEnvFactory = std::function<std::unique_ptr<search::fef::IIndexEnvironment>(const search::fef::Properties &)>;
+    IndexEnvFactory factory;
+    streaming::IndexEnvPrototype streamingProto;
     search::index::Schema schema;
-    search::index::SchemaBuilder::build(schemaCfg, schema);
-    search::index::SchemaBuilder::build(attributeCfg, schema);
-    DummyRankingAssetsRepo repo(constantsCfg, make_expressions(expressionsCfg, myCfg, _messages),
-                                make_models(modelsCfg, myCfg, _messages));
+    if (_searchMode == SearchMode::STREAMING) {
+        streamingProto.set_ranking_assets_repo(repo);
+        streamingProto.detectFields(vsmFieldsCfg);
+        factory = [&](const search::fef::Properties &properties)
+                  {
+                      auto indexEnv = streamingProto.clone();
+                      indexEnv->getProperties().import(properties);
+                      return indexEnv;
+                  };
+    } else {
+        search::index::SchemaBuilder::build(schemaCfg, schema);
+        search::index::SchemaBuilder::build(attributeCfg, schema);
+        factory = [&](const search::fef::Properties &properties)
+                  {
+                      return std::make_unique<proton::matching::IndexEnvironment>(0, schema, properties, *repo);
+                  };
+    }
     for(const auto & profile : rankCfg.rankprofile) {
         search::fef::Properties properties;
         for(const auto & j : profile.fef.property) {
             properties.add(j.name, j.value);
         }
-        if (verify(schema, properties, repo)) {
+        auto indexEnvP = factory(properties);
+        if (verifyIndexEnv(*indexEnvP)) {
             _messages.emplace_back(search::fef::Level::INFO,
                                    fmt("rank profile '%s': pass", profile.name.c_str()));
         } else {
@@ -241,8 +268,17 @@ VerifyRankSetup::verify(const std::string & configid)
         ConfigHandle<RankingExpressionsConfig>::UP expressionsHandle = subscriber.subscribe<RankingExpressionsConfig>(cfgId);
         ConfigHandle<OnnxModelsConfig>::UP modelsHandle = subscriber.subscribe<OnnxModelsConfig>(cfgId);
 
+        std::unique_ptr<VsmfieldsConfig> vsmFieldsCfg = std::make_unique<VsmfieldsConfig>();
+        ConfigHandle<VsmfieldsConfig>::UP vsmFieldsHandle;
+        if (_searchMode == SearchMode::STREAMING) {
+            vsmFieldsHandle = subscriber.subscribe<VsmfieldsConfig>(cfgId);
+        }
         subscriber.nextConfig();
+        if (_searchMode == SearchMode::STREAMING) {
+            vsmFieldsCfg = vsmFieldsHandle->getConfig();
+        }
         ok = verifyConfig(*myHandle->getConfig(),
+                          *vsmFieldsCfg,
                           *rankHandle->getConfig(),
                           *schemaHandle->getConfig(),
                           *attributesHandle->getConfig(),
@@ -260,8 +296,8 @@ VerifyRankSetup::verify(const std::string & configid)
 }
 
 std::pair<bool, std::vector<search::fef::Message>>
-verifyRankSetup(const char * configId) {
-    VerifyRankSetup verifier;
+verifyRankSetup(const char * configId, SearchMode mode) {
+    VerifyRankSetup verifier{mode};
     bool ok = verifier.verify(configId);
 
     return {ok, verifier.getMessages()};

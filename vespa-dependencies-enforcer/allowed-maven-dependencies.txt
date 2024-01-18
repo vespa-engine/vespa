@@ -202,5 +202,4 @@ org.slf4j:slf4j-simple:${slf4j.vespa.version}
 org.tukaani:xz:1.9
 org.wiremock:wiremock-standalone:${wiremock.vespa.version}
 org.xerial.snappy:snappy-java:${snappy.vespa.version}
-software.amazon.ion:ion-java:1.0.2
 xerces:xercesImpl:${xerces.vespa.version}
