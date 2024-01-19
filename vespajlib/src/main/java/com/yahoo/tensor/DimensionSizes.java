@@ -11,10 +11,19 @@ import java.util.Arrays;
 public final class DimensionSizes {
 
     private final long[] sizes;
+    private final long[] productOfSizesFromHereOn;
+    private final long totalSize;
 
     private DimensionSizes(Builder builder) {
         this.sizes = builder.sizes;
         builder.sizes = null; // invalidate builder to avoid copying the array
+        this.productOfSizesFromHereOn = new long[sizes.length];
+        long product = 1;
+        for (int i = sizes.length; i-- > 0; ) {
+            productOfSizesFromHereOn[i] = product;
+            product *= sizes[i];
+        }
+        this.totalSize = product;
     }
 
     /**
@@ -49,10 +58,11 @@ public final class DimensionSizes {
 
     /** Returns the product of the sizes of this */
     public long totalSize() {
-        long productSize = 1;
-        for (long dimensionSize : sizes )
-            productSize *= dimensionSize;
-        return productSize;
+        return totalSize;
+    }
+
+    long productOfDimensionsAfter(int afterIndex) {
+        return productOfSizesFromHereOn[afterIndex];
     }
 
     @Override

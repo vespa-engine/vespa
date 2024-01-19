@@ -105,8 +105,9 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
 
     public Encoding encode(String text) { return encode(text, Language.UNKNOWN); }
     public Encoding encode(String text, Language language) { return Encoding.from(resolve(language).encode(text)); }
-    public String decode(List<Long> tokens) { return decode(tokens, Language.UNKNOWN); }
-    public String decode(List<Long> tokens, Language language) { return resolve(language).decode(toArray(tokens)); }
+
+    public String decode(long [] tokens) { return decode(tokens, Language.UNKNOWN); }
+    public String decode(long [] tokens, Language language) { return resolve(language).decode(tokens); }
 
     @Override
     public void close() {

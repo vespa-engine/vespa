@@ -20,6 +20,7 @@ import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
 import com.yahoo.tensor.functions.Expand;
+import com.yahoo.tensor.impl.NumericTensorAddress;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -623,7 +624,7 @@ public interface Tensor {
             public TensorType type() { return tensorBuilder.type(); }
 
             public CellBuilder label(String dimension, long label) {
-                return label(dimension, String.valueOf(label));
+                return label(dimension, NumericTensorAddress.asString(label));
             }
 
             public Builder value(double cellValue) {
