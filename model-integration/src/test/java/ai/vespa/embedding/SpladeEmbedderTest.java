@@ -49,11 +49,11 @@ public class SpladeEmbedderTest {
         String text = "what was the manhattan project in this context it was a secret project to develop a nuclear weapon in world war" +
                 " ii the project was led by the united states with the support of the united kingdom and canada";
         Long now = System.currentTimeMillis();
-        int n = 10;
+        int n = 1000; // Takes around 8s on Intel core i9 2.4Ghz (macbook pro, 2019)
         for (int i = 0; i < n; i++) {
             assertEmbed("tensor<float>(t{})", text, indexingContext);
         }
-        Long elapsed = (System.currentTimeMillis() - now)/1000;
+        Long elapsed = System.currentTimeMillis() - now;
         System.out.println("Elapsed time: " + elapsed + " ms");
     }
 

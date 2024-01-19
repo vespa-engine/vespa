@@ -720,6 +720,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.DirectIndexedAddress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void setIndex(int, int)",
+      "public long getIndex()",
+      "public long getStride(int)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.IndexedDoubleTensor$BoundDoubleBuilder" : {
     "superClass" : "com.yahoo.tensor.IndexedTensor$BoundBuilder",
     "interfaces" : [ ],
@@ -894,6 +908,8 @@
       "public java.util.Iterator subspaceIterator(java.util.Set, com.yahoo.tensor.DimensionSizes)",
       "public java.util.Iterator subspaceIterator(java.util.Set)",
       "public varargs double get(long[])",
+      "public double get(com.yahoo.tensor.DirectIndexedAddress)",
+      "public com.yahoo.tensor.DirectIndexedAddress directAddress()",
       "public varargs float getFloat(long[])",
       "public double get(com.yahoo.tensor.TensorAddress)",
       "public boolean has(com.yahoo.tensor.TensorAddress)",
