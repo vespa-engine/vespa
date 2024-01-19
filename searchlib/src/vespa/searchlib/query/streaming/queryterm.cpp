@@ -185,4 +185,10 @@ QueryTerm::as_regexp_term() noexcept
     return nullptr;
 }
 
+FuzzyTerm*
+QueryTerm::as_fuzzy_term() noexcept
+{
+    return nullptr;
+}
+
 }

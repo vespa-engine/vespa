@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "query.h"
+#include "fuzzy_term.h"
 #include "nearest_neighbor_query_node.h"
+#include "query.h"
 #include "regexp_term.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
@@ -147,17 +148,16 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         } else {
             Normalizing normalize_mode = factory.normalizing_mode(ssIndex);
             std::unique_ptr<QueryTerm> qt;
-            if (sTerm != TermType::REGEXP) {
-                qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm, normalize_mode);
-            } else {
+            if (sTerm == TermType::REGEXP) {
                 qt = std::make_unique<RegexpTerm>(factory.create(), ssTerm, ssIndex, TermType::REGEXP, normalize_mode);
+            } else if (sTerm == TermType::FUZZYTERM) {
+                qt = std::make_unique<FuzzyTerm>(factory.create(), ssTerm, ssIndex, TermType::FUZZYTERM, normalize_mode,
+                                                 queryRep.getFuzzyMaxEditDistance(), queryRep.getFuzzyPrefixLength());
+            } else [[likely]] {
+                qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm, normalize_mode);
             }
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
-            if (qt->isFuzzy()) {
-                qt->setFuzzyMaxEditDistance(queryRep.getFuzzyMaxEditDistance());
-                qt->setFuzzyPrefixLength(queryRep.getFuzzyPrefixLength());
-            }
             if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
                 auto phrase = std::make_unique<PhraseQueryNode>();
                 auto dotPos = ssTerm.find('.');

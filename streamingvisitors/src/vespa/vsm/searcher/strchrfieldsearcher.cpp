@@ -34,7 +34,7 @@ bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
     }
   } else {
     for (auto qt : _qtl) {
-      if (fieldRef.size() >= qt->termLen() || qt->isRegex()) {
+      if (fieldRef.size() >= qt->termLen() || qt->isRegex() || qt->isFuzzy()) {
         _words += matchTerm(fieldRef, *qt);
       } else {
         _words += countWords(fieldRef);
@@ -49,8 +49,8 @@ size_t StrChrFieldSearcher::shortestTerm() const
   size_t mintsz(_qtl.front()->termLen());
   for (auto it=_qtl.begin()+1, mt=_qtl.end(); it != mt; it++) {
     const QueryTerm & qt = **it;
-    if (qt.isRegex()) {
-        return 0; // Must avoid "too short query term" optimization when using regex
+    if (qt.isRegex() || qt.isFuzzy()) {
+        return 0; // Must avoid "too short query term" optimization when using regex or fuzzy
     }
     mintsz = std::min(mintsz, qt.termLen());
   }

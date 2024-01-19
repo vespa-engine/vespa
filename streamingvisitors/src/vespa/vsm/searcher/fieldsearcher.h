@@ -46,7 +46,7 @@ public:
     explicit FieldSearcher(FieldIdT fId) noexcept : FieldSearcher(fId, false) {}
     FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept;
     ~FieldSearcher() override;
-    virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
     virtual void prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
                          const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env);
