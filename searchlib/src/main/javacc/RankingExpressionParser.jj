@@ -177,7 +177,7 @@ List<ReferenceNode> featureList() :
     ReferenceNode exp;
 }
 {
-    ( ( exp = feature() { ret.add(exp); } )+ <EOF> )
+    ( ( exp = feature() { ret.add(exp); } )* <EOF> )
     { return ret; }
 }
 
