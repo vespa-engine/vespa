@@ -35,6 +35,8 @@ private:
     using IteratorType = typename PostingStoreType::IteratorType;
     using IteratorWeights = std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>>;
 
+    bool use_hash_filter(bool strict) const;
+
     IteratorWeights create_iterators(std::vector<IteratorType>& btree_iterators,
                                      std::vector<std::unique_ptr<queryeval::SearchIterator>>& bitvectors,
                                      bool use_bitvector_when_available,

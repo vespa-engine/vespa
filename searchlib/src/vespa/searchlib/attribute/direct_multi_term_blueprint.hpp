@@ -8,6 +8,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
+#include <cmath>
 #include <memory>
 #include <type_traits>
 
@@ -37,6 +38,43 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::DirectMultiTermBlueprint
 
 template <typename PostingStoreType, typename SearchType>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::~DirectMultiTermBlueprint() = default;
+
+
+template <typename PostingStoreType, typename SearchType>
+bool
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::use_hash_filter(bool strict) const
+{
+    if (strict || _iattr.hasMultiValue()) {
+        return false;
+    }
+    // The following very simplified formula was created after analysing performance of the IN operator
+    // on a 10M document corpus using a machine with an Intel Xeon 2.5 GHz CPU with 48 cores and 256 Gb of memory:
+    // https://github.com/vespa-engine/system-test/tree/master/tests/performance/in_operator
+    //
+    // The following 25 test cases were used to calculate the cost of using btree iterators (strict):
+    // op_hits_ratios = [5, 10, 50, 100, 200] * tokens_in_op = [1, 5, 10, 100, 1000]
+    // For each case we calculate the latency difference against the case with tokens_in_op=1 and the same op_hits_ratio.
+    // This indicates the extra time used to produce the same number of hits when having multiple tokens in the operator.
+    // The latency diff is divided with the number of hits produced and convert to nanoseconds:
+    //   10M * (op_hits_ratio / 1000) * 1000 * 1000
+    // Based on the numbers we can approximate the cost per document (in nanoseconds) as:
+    //   8.0 (ns) * log2(tokens_in_op).
+    // NOTE: This is very simplified. Ideally we should also take into consideration the hit estimate of this blueprint,
+    //       as the cost per document will be lower when producing few hits.
+    //
+    // In addition, the following 28 test cases were used to calculate the cost of using the hash filter (non-strict).
+    // filter_hits_ratios = [1, 5, 10, 50, 100, 150, 200] x op_hits_ratios = [200] x tokens_in_op = [5, 10, 100, 1000]
+    // The code was altered to always using the hash filter for non-strict iterators.
+    // For each case we calculate the latency difference against a case from above with tokens_in_op=1 that produce a similar number of hits.
+    // This indicates the extra time used to produce the same number of hits when using the hash filter.
+    // The latency diff is divided with the number of hits the test filter produces and convert to nanoseconds:
+    //   10M * (filter_hits_ratio / 1000) * 1000 * 1000
+    // Based on the numbers we calculate the average cost per document (in nanoseconds) as 26.0 ns.
+
+    float hash_filter_cost_per_doc_ns = 26.0;
+    float btree_iterator_cost_per_doc_ns = 8.0 * std::log2(_terms.size());
+    return hash_filter_cost_per_doc_ns < btree_iterator_cost_per_doc_ns;
+}
 
 template <typename PostingStoreType, typename SearchType>
 typename DirectMultiTermBlueprint<PostingStoreType, SearchType>::IteratorWeights
@@ -96,14 +134,21 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
     if (_terms.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
+    auto& tfmd = *tfmda[0];
+    bool field_is_filter = getState().fields()[0].isFilter();
+    if constexpr (SearchType::supports_hash_filter) {
+        if (use_hash_filter(strict)) {
+            return SearchType::create_hash_filter(tfmd, (filter_search || field_is_filter),
+                                                  _weights, _terms,
+                                                  _iattr, _attr, _dictionary_snapshot);
+        }
+    }
     std::vector<IteratorType> btree_iterators;
     std::vector<queryeval::SearchIterator::UP> bitvectors;
     const size_t num_children = _terms.size();
     btree_iterators.reserve(num_children);
-    auto& tfmd = *tfmda[0];
     bool use_bit_vector_when_available = filter_search || !_attr.has_always_btree_iterator();
     auto weights = create_iterators(btree_iterators, bitvectors, use_bit_vector_when_available, tfmd, strict);
-    bool field_is_filter = getState().fields()[0].isFilter();
     if constexpr (!SearchType::require_btree_iterators) {
         auto multi_term = !btree_iterators.empty() ?
                 SearchType::create(tfmd, (filter_search || field_is_filter), std::move(weights), std::move(btree_iterators))

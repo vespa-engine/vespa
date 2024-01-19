@@ -26,6 +26,7 @@ using LookupKey = IDirectPostingStore::LookupKey;
 struct IntegerKey : public LookupKey {
     int64_t _value;
     IntegerKey(int64_t value_in) : _value(value_in) {}
+    IntegerKey(const vespalib::string&) : _value() { abort(); }
     vespalib::stringref asString() const override { abort(); }
     bool asInteger(int64_t& value) const override { value = _value; return true; }
 };
@@ -33,6 +34,7 @@ struct IntegerKey : public LookupKey {
 struct StringKey : public LookupKey {
     vespalib::string _value;
     StringKey(int64_t value_in) : _value(std::to_string(value_in)) {}
+    StringKey(const vespalib::string& value_in) : _value(value_in) {}
     vespalib::stringref asString() const override { return _value; }
     bool asInteger(int64_t&) const override { abort(); }
 };
@@ -78,6 +80,10 @@ populate_attribute(AttributeType& attr, const std::vector<DataType>& values)
     for (auto docid : range(300, 128)) {
         attr.update(docid, values[3]);
     }
+    if (values.size() > 4) {
+        attr.update(40, values[4]);
+        attr.update(41, values[5]);
+    }
     attr.commit(true);
 }
 
@@ -93,7 +99,7 @@ make_attribute(CollectionType col_type, BasicType type, bool field_is_filter)
     auto attr = test::AttributeBuilder(field_name, cfg).docs(num_docs).get();
     if (type == BasicType::STRING) {
         populate_attribute<StringAttribute, vespalib::string>(dynamic_cast<StringAttribute&>(*attr),
-                                                              {"1", "3", "100", "300"});
+                                                              {"1", "3", "100", "300", "foo", "Foo"});
     } else {
         populate_attribute<IntegerAttribute, int64_t>(dynamic_cast<IntegerAttribute&>(*attr),
                                                       {1, 3, 100, 300});
@@ -223,15 +229,16 @@ public:
             tfmd.tagAsNotNeeded();
         }
     }
-    template <typename BlueprintType>
-    void add_term_helper(BlueprintType& b, int64_t term_value) {
+    template <typename BlueprintType, typename TermType>
+    void add_term_helper(BlueprintType& b, TermType term_value) {
         if (integer_type) {
             b.addTerm(IntegerKey(term_value), 1, estimate);
         } else {
             b.addTerm(StringKey(term_value), 1, estimate);
         }
     }
-    void add_term(int64_t term_value) {
+    template <typename TermType>
+    void add_term(TermType term_value) {
         if (single_type) {
             if (in_operator) {
                 add_term_helper(dynamic_cast<SingleInBlueprintType&>(*blueprint), term_value);
@@ -246,8 +253,18 @@ public:
             }
         }
     }
-    std::unique_ptr<SearchIterator> create_leaf_search() const {
-        return blueprint->createLeafSearch(tfmda, true);
+    void add_terms(const std::vector<int64_t>& term_values) {
+        for (auto value : term_values) {
+            add_term(value);
+        }
+    }
+    void add_terms(const std::vector<vespalib::string>& term_values) {
+        for (auto value : term_values) {
+            add_term(value);
+        }
+    }
+    std::unique_ptr<SearchIterator> create_leaf_search(bool strict = true) const {
+        return blueprint->createLeafSearch(tfmda, strict);
     }
     vespalib::string resolve_iterator_with_unpack() const {
         if (in_operator) {
@@ -262,7 +279,7 @@ expect_hits(const Docids& exp_docids, SearchIterator& itr)
 {
     SimpleResult exp(exp_docids);
     SimpleResult act;
-    act.search(itr);
+    act.search(itr, doc_id_limit);
     EXPECT_EQ(exp, act);
 }
 
@@ -294,8 +311,7 @@ INSTANTIATE_TEST_SUITE_P(DefaultInstantiation,
 
 TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_none_filter_field) {
     setup(false, true);
-    add_term(1);
-    add_term(3);
+    add_terms({1, 3});
     auto itr = create_leaf_search();
     EXPECT_THAT(itr->asString(), StartsWith(resolve_iterator_with_unpack()));
     expect_hits({10, 30, 31}, *itr);
@@ -307,8 +323,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_
     if (!in_operator) {
         return;
     }
-    add_term(1);
-    add_term(100);
+    add_terms({1, 100});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
@@ -322,8 +337,7 @@ TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_
     if (in_operator) {
         return;
     }
-    add_term(1);
-    add_term(100);
+    add_terms({1, 100});
     auto itr = create_leaf_search();
     EXPECT_THAT(itr->asString(), StartsWith(iterator_unpack_docid_and_weights));
     expect_hits(concat({10}, range(100, 128)), *itr);
@@ -332,10 +346,7 @@ TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_instead_of_bitvectors_
 TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_filter_field)
 {
     setup(true, true);
-    add_term(1);
-    add_term(3);
-    add_term(100);
-    add_term(300);
+    add_terms({1, 3, 100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
@@ -347,8 +358,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_fil
 TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
 {
     setup(true, true);
-    add_term(100);
-    add_term(300);
+    add_terms({100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
@@ -359,8 +369,7 @@ TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
 TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
-    add_term(1);
-    add_term(3);
+    add_terms({1, 3});
     auto itr = create_leaf_search();
     EXPECT_THAT(itr->asString(), StartsWith(iterator_unpack_none));
     expect_hits({10, 30, 31}, *itr);
@@ -369,10 +378,7 @@ TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_filter_field_when_
 TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
-    add_term(1);
-    add_term(3);
-    add_term(100);
-    add_term(300);
+    add_terms({1, 3, 100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 3);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
@@ -384,13 +390,49 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_fil
 TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_when_ranking_not_needed)
 {
     setup(true, false);
-    add_term(100);
-    add_term(300);
+    add_terms({100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
     expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
     expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
+}
+
+TEST_P(DirectMultiTermBlueprintTest, hash_filter_used_for_non_strict_iterator_with_10_or_more_terms)
+{
+    setup(true, true);
+    if (!single_type) {
+        return;
+    }
+    add_terms({1, 3, 3, 3, 3, 3, 3, 3, 3, 3});
+    auto itr = create_leaf_search(false);
+    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermHashFilter"));
+    expect_hits({10, 30, 31}, *itr);
+}
+
+TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_non_strict_iterator_with_9_or_less_terms)
+{
+    setup(true, true);
+    if (!single_type) {
+        return;
+    }
+    add_terms({1, 3, 3, 3, 3, 3, 3, 3, 3});
+    auto itr = create_leaf_search(false);
+    EXPECT_THAT(itr->asString(), StartsWith(iterator_unpack_docid));
+    expect_hits({10, 30, 31}, *itr);
+}
+
+TEST_P(DirectMultiTermBlueprintTest, hash_filter_with_string_folding_used_for_non_strict_iterator)
+{
+    setup(true, true);
+    if (!single_type || integer_type) {
+        return;
+    }
+    // "foo" matches documents with "foo" (40) and "Foo" (41).
+    add_terms({"foo", "3", "3", "3", "3", "3", "3", "3", "3", "3"});
+    auto itr = create_leaf_search(false);
+    EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermHashFilter"));
+    expect_hits({30, 31, 40, 41}, *itr);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

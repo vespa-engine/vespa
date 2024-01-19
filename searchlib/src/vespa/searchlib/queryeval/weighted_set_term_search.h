@@ -11,6 +11,8 @@
 #include <variant>
 #include <vector>
 
+namespace search::attribute { class IAttributeVector; }
+
 namespace search::fef { class TermFieldMatchData; }
 
 namespace search::queryeval {
@@ -30,6 +32,8 @@ public:
     static constexpr bool filter_search = false;
     // Whether this iterator requires btree iterators for all tokens/terms used by the operator.
     static constexpr bool require_btree_iterators = false;
+    // Whether this supports creating a hash filter iterator;
+    static constexpr bool supports_hash_filter = true;
 
     // TODO: pass ownership with unique_ptr
     static SearchIterator::UP create(const std::vector<SearchIterator *> &children,
@@ -47,6 +51,14 @@ public:
                                      bool is_filter_search,
                                      std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                                      std::vector<DocidWithWeightIterator> &&iterators);
+
+    static SearchIterator::UP create_hash_filter(search::fef::TermFieldMatchData& tmd,
+                                                 bool is_filter_search,
+                                                 const std::vector<int32_t>& weights,
+                                                 const std::vector<IDirectPostingStore::LookupResult>& terms,
+                                                 const attribute::IAttributeVector& attr,
+                                                 const IDirectPostingStore& posting_store,
+                                                 vespalib::datastore::EntryRef dictionary_snapshot);
 
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.

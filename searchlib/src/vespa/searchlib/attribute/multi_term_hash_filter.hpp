@@ -42,10 +42,14 @@ template <typename WrapperType>
 void
 MultiTermHashFilter<WrapperType>::doUnpack(uint32_t docId)
 {
-    _tfmd.reset(docId);
-    fef::TermFieldMatchDataPosition pos;
-    pos.setElementWeight(_weight);
-    _tfmd.appendPosition(pos);
+    if constexpr (unpack_weights) {
+        _tfmd.reset(docId);
+        fef::TermFieldMatchDataPosition pos;
+        pos.setElementWeight(_weight);
+        _tfmd.appendPosition(pos);
+    } else {
+        _tfmd.resetOnlyDocId(docId);
+    }
 }
     
 }

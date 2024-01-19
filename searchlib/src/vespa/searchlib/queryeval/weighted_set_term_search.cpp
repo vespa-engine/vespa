@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "weighted_set_term_search.h"
-#include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/attribute/multi_term_or_filter_search.h>
-#include <vespa/vespalib/objects/visit.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/attribute/i_direct_posting_store.h>
+#include <vespa/searchlib/attribute/multi_term_hash_filter.hpp>
+#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include "iterator_pack.h"
 #include "blueprint.h"
@@ -235,6 +238,100 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               std::vector<DocidWithWeightIterator> &&iterators)
 {
     return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+}
+
+namespace {
+
+class HashFilterWrapper {
+protected:
+    const attribute::IAttributeVector& _attr;
+public:
+    HashFilterWrapper(const attribute::IAttributeVector& attr) : _attr(attr) {}
+};
+
+template <bool unpack_weights_t>
+class StringHashFilterWrapper : public HashFilterWrapper {
+public:
+    using TokenT = attribute::IAttributeVector::EnumHandle;
+    static constexpr bool unpack_weights = unpack_weights_t;
+    StringHashFilterWrapper(const attribute::IAttributeVector& attr)
+        : HashFilterWrapper(attr)
+    {}
+    auto mapToken(const IDirectPostingStore::LookupResult& term, const IDirectPostingStore& store, vespalib::datastore::EntryRef dict_snapshot) const {
+        std::vector<TokenT> result;
+        store.collect_folded(term.enum_idx, dict_snapshot, [&](vespalib::datastore::EntryRef ref) { result.emplace_back(ref.ref()); });
+        return result;
+    }
+    TokenT getToken(uint32_t docid) const {
+        return _attr.getEnum(docid);
+    }
+};
+
+template <bool unpack_weights_t>
+class IntegerHashFilterWrapper : public HashFilterWrapper {
+public:
+    using TokenT = attribute::IAttributeVector::largeint_t;
+    static constexpr bool unpack_weights = unpack_weights_t;
+    IntegerHashFilterWrapper(const attribute::IAttributeVector& attr)
+        : HashFilterWrapper(attr)
+    {}
+    auto mapToken(const IDirectPostingStore::LookupResult& term,
+                  const IDirectPostingStore& store,
+                  vespalib::datastore::EntryRef) const {
+        std::vector<TokenT> result;
+        result.emplace_back(store.get_integer_value(term.enum_idx));
+        return result;
+    }
+    TokenT getToken(uint32_t docid) const {
+        return _attr.getInt(docid);
+    }
+};
+
+template <typename WrapperType>
+SearchIterator::UP
+create_hash_filter_helper(fef::TermFieldMatchData& tfmd,
+                          const std::vector<int32_t>& weights,
+                          const std::vector<IDirectPostingStore::LookupResult>& terms,
+                          const attribute::IAttributeVector& attr,
+                          const IDirectPostingStore& posting_store,
+                          vespalib::datastore::EntryRef dict_snapshot)
+{
+    using FilterType = attribute::MultiTermHashFilter<WrapperType>;
+    typename FilterType::TokenMap tokens;
+    WrapperType wrapper(attr);
+    for (size_t i = 0; i < terms.size(); ++i) {
+        for (auto token : wrapper.mapToken(terms[i], posting_store, dict_snapshot)) {
+            tokens[token] = weights[i];
+        }
+    }
+    return std::make_unique<FilterType>(tfmd, wrapper, std::move(tokens));
+}
+
+}
+
+SearchIterator::UP
+WeightedSetTermSearch::create_hash_filter(search::fef::TermFieldMatchData& tmd,
+                                          bool is_filter_search,
+                                          const std::vector<int32_t>& weights,
+                                          const std::vector<IDirectPostingStore::LookupResult>& terms,
+                                          const attribute::IAttributeVector& attr,
+                                          const IDirectPostingStore& posting_store,
+                                          vespalib::datastore::EntryRef dict_snapshot)
+{
+    if (attr.isStringType()) {
+        if (is_filter_search) {
+            return create_hash_filter_helper<StringHashFilterWrapper<false>>(tmd, weights, terms, attr, posting_store, dict_snapshot);
+        } else {
+            return create_hash_filter_helper<StringHashFilterWrapper<true>>(tmd, weights, terms, attr, posting_store, dict_snapshot);
+        }
+    } else {
+        assert(attr.isIntegerType());
+        if (is_filter_search) {
+            return create_hash_filter_helper<IntegerHashFilterWrapper<false>>(tmd, weights, terms, attr, posting_store, dict_snapshot);
+        } else {
+            return create_hash_filter_helper<IntegerHashFilterWrapper<true>>(tmd, weights, terms, attr, posting_store, dict_snapshot);
+        }
+    }
 }
 
 }

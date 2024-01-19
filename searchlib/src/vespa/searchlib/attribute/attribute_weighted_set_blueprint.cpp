@@ -6,12 +6,12 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 
 namespace search {
@@ -38,6 +38,7 @@ class StringEnumWrapper : public AttrWrapper
 {
 public:
     using TokenT = uint32_t;
+    static constexpr bool unpack_weights = true;
     explicit StringEnumWrapper(const IAttributeVector & attr)
         : AttrWrapper(attr) {}
     auto mapToken(const ISearchContext &context) const {
@@ -52,6 +53,7 @@ class IntegerWrapper : public AttrWrapper
 {
 public:
     using TokenT = uint64_t;
+    static constexpr bool unpack_weights = true;
     explicit IntegerWrapper(const IAttributeVector & attr) : AttrWrapper(attr) {}
     std::vector<int64_t> mapToken(const ISearchContext &context) const {
         std::vector<int64_t> result;
