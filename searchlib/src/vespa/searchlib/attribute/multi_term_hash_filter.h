@@ -23,6 +23,7 @@ class MultiTermHashFilter final : public queryeval::SearchIterator
 public:
     using Key = typename WrapperType::TokenT;
     using TokenMap = vespalib::hash_map<Key, int32_t, vespalib::hash<Key>, std::equal_to<Key>, vespalib::hashtable_base::and_modulator>;
+    static constexpr bool unpack_weights = WrapperType::unpack_weights;
 
 private:
     fef::TermFieldMatchData& _tfmd;
