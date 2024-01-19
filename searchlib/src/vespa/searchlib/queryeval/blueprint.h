@@ -53,7 +53,7 @@ public:
     using SearchIteratorUP = std::unique_ptr<SearchIterator>;
 
     enum class OptimizePass { FIRST, LAST };
-    
+
     struct HitEstimate {
         uint32_t estHits;
         bool     empty;
@@ -75,7 +75,6 @@ public:
     {
     private:
         FieldSpecBaseList _fields;
-        double            _relative_estimate;
         uint32_t          _estimateHits;
         uint32_t          _tree_size : 20;
         bool              _estimateEmpty : 1;
@@ -111,9 +110,6 @@ public:
             return nullptr;
         }
 
-        void relative_estimate(double value) noexcept { _relative_estimate = value; }
-        double relative_estimate() const noexcept { return _relative_estimate; }
-        
         void estimate(HitEstimate est) noexcept {
             _estimateHits = est.estHits;
             _estimateEmpty = est.empty;
@@ -182,7 +178,9 @@ public:
 
 private:
     Blueprint *_parent;
+    double     _relative_estimate;
     double     _cost;
+    double     _strict_cost;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
     bool       _frozen;
@@ -198,7 +196,9 @@ protected:
         _frozen = true;
     }
 
+    void set_relative_estimate(double value) noexcept { _relative_estimate = value; }
     void set_cost(double value) noexcept { _cost = value; }
+    void set_strict_cost(double value) noexcept { _strict_cost = value; }
     
 public:
     class IPredicate {
@@ -222,19 +222,22 @@ public:
     Blueprint *getParent() const noexcept { return _parent; }
     bool has_parent() const { return (_parent != nullptr); }
 
-    double cost() const noexcept { return _cost; }
-    
     Blueprint &setSourceId(uint32_t sourceId) noexcept { _sourceId = sourceId; return *this; }
     uint32_t getSourceId() const noexcept { return _sourceId; }
 
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
-    static Blueprint::UP optimize(Blueprint::UP bp, bool sort_by_cost);
-    virtual void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) = 0;
-    virtual void optimize_self(OptimizePass pass, bool sort_by_cost);
+    static Blueprint::UP optimize(Blueprint::UP bp);
+    virtual void sort(bool strict, bool sort_by_cost) = 0;
+    static Blueprint::UP optimize_and_sort(Blueprint::UP bp, bool strict, bool sort_by_cost) {
+        auto result = optimize(std::move(bp));
+        result->sort(strict, sort_by_cost);
+        return result;
+    }
+    virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
+    virtual void optimize_self(OptimizePass pass);
     virtual Blueprint::UP get_replacement();
-    virtual bool should_optimize_children() const { return true; }
 
     virtual bool supports_termwise_children() const { return false; }
     virtual bool always_needs_unpack() const { return false; }
@@ -254,9 +257,27 @@ public:
     const Blueprint &root() const;
 
     double hit_ratio() const { return getState().hit_ratio(_docid_limit); }
-    double estimate() const { return getState().relative_estimate(); }
-    virtual double calculate_relative_estimate() const = 0;
 
+    // The flow statistics for a blueprint is calculated during the
+    // LAST optimize pass (just prior to sorting). The relative
+    // estimate may be used to calculate the costs and the non-strict
+    // cost may be used to calculate the strict cost. After being
+    // calculated, each value is available through a simple accessor
+    // function. Note that these values may not be available for
+    // blueprints used inside complex leafs (this case will probably
+    // be solved using custom flow adapters that has knowledge of
+    // docid limit).
+    //
+    //    'estimate': relative estimate in the range [0,1]
+    //        'cost': per-document cost of non-strict evaluation
+    // 'strict_cost': per-document cost of strict evaluation
+    double estimate() const noexcept { return _relative_estimate; }
+    double cost() const noexcept { return _cost; }
+    double strict_cost() const noexcept { return _strict_cost; }
+    virtual double calculate_relative_estimate() const = 0;
+    virtual double calculate_cost() const = 0;
+    virtual double calculate_strict_cost() const = 0;
+    
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
@@ -360,7 +381,8 @@ public:
 
     void setDocIdLimit(uint32_t limit) noexcept final;
 
-    void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) final;
+    void optimize(Blueprint* &self, OptimizePass pass) final;
+    void sort(bool strict, bool sort_by_cost) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -374,10 +396,9 @@ public:
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     
-    virtual double calculate_cost() const = 0;
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
-    virtual void sort(Children &children, bool sort_by_cost) const = 0;
+    virtual void sort(Children &children, bool strict, bool sort_by_cost) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -396,11 +417,12 @@ class LeafBlueprint : public Blueprint
 {
 private:
     State _state;
+    mutable bool _can_skip = true;
 protected:
-    void optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost) final;
+    void optimize(Blueprint* &self, OptimizePass pass) final;
+    void sort(bool strict, bool sort_by_cost) override;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
-        _state.relative_estimate(calculate_relative_estimate());
         notifyChange();
     }
     void set_cost_tier(uint32_t value);
@@ -431,9 +453,9 @@ protected:
 public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
-    void setDocIdLimit(uint32_t limit) noexcept final;
-    using Blueprint::set_cost;
     double calculate_relative_estimate() const override;
+    double calculate_cost() const override;
+    double calculate_strict_cost() const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;

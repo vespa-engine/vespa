@@ -13,19 +13,11 @@ namespace search::queryeval {
 namespace flow {
 
 // the default adapter expects the shape of std::unique_ptr<Blueprint>
-// with respect to estimate, cost and (coming soon) strict_cost.
+// with respect to estimate, cost and strict_cost.
 struct DefaultAdapter {
     double estimate(const auto &child) const noexcept { return child->estimate(); }
     double cost(const auto &child) const noexcept { return child->cost(); }
-    // Estimate the per-document cost of strict evaluation of this
-    // child. This will typically be something like (estimate() *
-    // cost()) for leafs with posting lists. OR will aggregate strict
-    // cost by calculating the minimal OR flow of strict child
-    // costs. AND will aggregate strict cost by calculating the
-    // minimal AND flow where the cost of the first child is
-    // substituted by its strict cost. This value is currently not
-    // available in Blueprints.
-    double strict_cost(const auto &child) const noexcept { return child->cost(); }
+    double strict_cost(const auto &child) const noexcept { return child->strict_cost(); }
 };
 
 template <typename ADAPTER, typename T>
@@ -154,8 +146,6 @@ struct FlowMixin {
     static double cost_of(const auto &children, bool strict) {
         return cost_of(flow::DefaultAdapter(), children, strict);
     }
-    // TODO: remove
-    static double cost_of(const auto &children) { return cost_of(children, false); }
 };
 
 class AndFlow : public FlowMixin<AndFlow> {
@@ -190,9 +180,8 @@ public:
             children[0] = std::move(the_one);
         }
     }
-    // TODO: add strict
-    static void sort(auto &children) {
-        sort(flow::DefaultAdapter(), children, false);
+    static void sort(auto &children, bool strict) {
+        sort(flow::DefaultAdapter(), children, strict);
     }
 };
 
@@ -224,9 +213,8 @@ public:
             flow::sort<flow::MinOrCost>(adapter, children);
         }
     }
-    // TODO: add strict
-    static void sort(auto &children) {
-        sort(flow::DefaultAdapter(), children, false);
+    static void sort(auto &children, bool strict) {
+        sort(flow::DefaultAdapter(), children, strict);
     }
 };
 
@@ -254,9 +242,8 @@ public:
     static void sort(auto adapter, auto &children, bool) {
         flow::sort_partial<flow::MinOrCost>(adapter, children, 1);
     }
-    // TODO: add strict
-    static void sort(auto &children) {
-        sort(flow::DefaultAdapter(), children, false);
+    static void sort(auto &children, bool strict) {
+        sort(flow::DefaultAdapter(), children, strict);
     }
 };
 

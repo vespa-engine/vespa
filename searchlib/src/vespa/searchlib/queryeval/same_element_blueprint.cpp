@@ -45,7 +45,7 @@ SameElementBlueprint::addTerm(Blueprint::UP term)
 }
 
 void
-SameElementBlueprint::optimize_self(OptimizePass pass, bool)
+SameElementBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::LAST) {
         std::sort(_terms.begin(), _terms.end(),

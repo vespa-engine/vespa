@@ -180,9 +180,10 @@ TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate)
     activate_lids({ 1, 2, 3, 4 }, true);
     // the number of hits are overestimated based on the number of
     // documents that could be active (100 in this test fixture)
-    EXPECT_EQ(make_whitelist_blueprint(1000)->estimate(), 0.1);
-    EXPECT_EQ(make_whitelist_blueprint(200)->estimate(), 0.5);
-    EXPECT_EQ(make_whitelist_blueprint(5)->estimate(), 1.0);
+    // NOTE: optimize must be called in order to calculate the relative estimate
+    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(1000))->estimate(), 0.1);
+    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(200))->estimate(), 0.5);
+    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(5))->estimate(), 1.0);
 }
 
 class LidAllocatorPerformanceTest : public LidAllocatorTest,
