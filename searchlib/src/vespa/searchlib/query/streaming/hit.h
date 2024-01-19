@@ -19,9 +19,7 @@ public:
     uint32_t wordpos() const { return _position & 0xffffff; }
     uint32_t field_id() const noexcept { return _position >> 24; }
     uint32_t elemId() const { return _elemId; }
-    bool operator < (const Hit & b) const { return cmp(b) < 0; }
 private:
-    int cmp(const Hit & b) const { return _position - b._position; }
     uint32_t _position;
     uint32_t _elemId;
     int32_t  _weight;
