@@ -159,7 +159,7 @@ public class TokenBuffer {
         if (name.equals(currentName()) && current().isScalarValue()) {
             toReturn = tokens.get(position);
         } else {
-            i = tokens.iterator();
+            i = rest().iterator();
             i.next(); // just ignore the first value, as we know it's not what
                       // we're looking for, and it's nesting effect is already
                       // included
