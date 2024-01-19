@@ -26,7 +26,7 @@ using search::index::schema::DataType;
 
 using vespalib::make_string_short::fmt;
 
-enum class SearchMode { INDEXED, STREAMING };
+enum class SearchMode { INDEXED, STREAMING, BOTH };
 
 struct Writer {
     FILE *file;
@@ -258,7 +258,17 @@ struct Setup {
         write_onnx_models(Writer(gen_dir + "/onnx-models.cfg"));
         write_self_cfg(Writer(gen_dir + "/verify-ranksetup.cfg"));
     }
-    bool verify(SearchMode mode = SearchMode::INDEXED) {
+    bool verify(SearchMode mode = SearchMode::BOTH) {
+        if (mode == SearchMode::BOTH) {
+            bool res_indexed = verify_mode(SearchMode::INDEXED);
+            bool res_streaming = verify_mode(SearchMode::STREAMING);
+            EXPECT_EQUAL(res_indexed, res_streaming);
+            return res_indexed;
+        } else {
+            return verify_mode(mode);
+        }
+    }
+    bool verify_mode(SearchMode mode) {
         generate();
         vespalib::Process process(fmt("%s dir:%s%s", prog, gen_dir.c_str(),
                                       (mode == SearchMode::STREAMING ? " -S" : "")),
@@ -268,18 +278,18 @@ struct Setup {
         }
         return (process.join() == 0);
     }
-    void verify_valid(std::initializer_list<std::string> features) {
+    void verify_valid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_TRUE(verify())) {
+            if (!EXPECT_TRUE(verify(mode))) {
                 fprintf(stderr, "--> feature '%s' was invalid (should be valid)\n", f.c_str());
             }
         }
     }
-    void verify_invalid(std::initializer_list<std::string> features) {
+    void verify_invalid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_TRUE(!verify())) {
+            if (!EXPECT_TRUE(!verify(mode))) {
                 fprintf(stderr, "--> feature '%s' was valid (should be invalid)\n", f.c_str());
             }
         }
@@ -346,18 +356,15 @@ TEST_F("setup output directory", Setup()) {
 //-----------------------------------------------------------------------------
 
 TEST_F("require that empty setup passes validation", EmptySetup()) {
-    EXPECT_TRUE(f.verify(SearchMode::INDEXED));
-    EXPECT_TRUE(f.verify(SearchMode::STREAMING));
+    EXPECT_TRUE(f.verify());
 }
 
 TEST_F("require that we can verify multiple rank profiles", SimpleSetup()) {
     f.first_phase(valid_feature);
     f.good_profile();
-    EXPECT_TRUE(f.verify(SearchMode::INDEXED));
-    EXPECT_TRUE(f.verify(SearchMode::STREAMING));
+    EXPECT_TRUE(f.verify());
     f.bad_profile();
-    EXPECT_TRUE(!f.verify(SearchMode::INDEXED));
-    EXPECT_TRUE(!f.verify(SearchMode::STREAMING));
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that first phase can break validation", SimpleSetup()) {
@@ -388,12 +395,12 @@ TEST_F("require that dump features can break validation", SimpleSetup()) {
 //-----------------------------------------------------------------------------
 
 TEST_F("require that fieldMatch feature requires single value field", SimpleSetup()) {
-    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"});
+    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"}, SearchMode::INDEXED);
     f.verify_valid({"fieldMatch(title)"});
 }
 
 TEST_F("require that age feature requires attribute parameter", SimpleSetup()) {
-    f.verify_invalid({"age(unknown)", "age(title)"});
+    f.verify_invalid({"age(unknown)", "age(title)"}, SearchMode::INDEXED);
     f.verify_valid({"age(date)"});
 }
 
@@ -403,7 +410,7 @@ TEST_F("require that nativeRank can be used on any valid field", SimpleSetup()) 
 }
 
 TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleSetup()) {
-    f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"});
+    f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"}, SearchMode::INDEXED);
     f.verify_valid({"nativeAttributeMatch", "nativeAttributeMatch(date)"});
 }
 
