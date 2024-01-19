@@ -51,11 +51,4 @@ MultiTerm::evaluate() const
     return false;
 }
 
-const HitList&
-MultiTerm::evaluateHits(HitList& hl) const
-{
-    hl.clear();
-    return hl;
-}
-
 }
