@@ -11,7 +11,7 @@ This documents tells you what you need to know to contribute.
 ## Open development
 
 All work on Vespa happens directly on GitHub,
-using the [GitHub flow model](https://docs.github.com/en/get-started/quickstart/github-flow).
+using the [GitHub flow model](https://docs.github.com/en/get-started/using-github/github-flow).
 We release the master branch four times a week, and you should expect it to always work.
 The continuous build of Vespa is at [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud).
 You can follow the fate of each commit there.
