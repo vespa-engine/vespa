@@ -300,7 +300,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
 
                 // optimize for hitlist giving all hits for a single field in one chunk
                 for (const Hit & hit : hitList) {
-                    uint32_t fieldId = hit.context();
+                    uint32_t fieldId = hit.field_id();
                     if (fieldId != lastFieldId) {
                         // reset to notfound/unknown values
                         tmd = nullptr;

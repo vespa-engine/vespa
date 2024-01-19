@@ -25,7 +25,7 @@ WeightedSetTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchDat
     for (const auto& term : _terms) {
         auto& hl = term->evaluateHits(hl_store);
         for (auto& hit : hl) {
-            scores[hit.context()].emplace_back(term->weight().percent());
+            scores[hit.field_id()].emplace_back(term->weight().percent());
         }
     }
     auto num_fields = td.numFields();
