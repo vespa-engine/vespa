@@ -6,6 +6,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler.Context;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -108,7 +109,8 @@ class ApplicationApiHandlerTest {
                 .build();
         handler = new ApplicationApiHandler(new Context(Runnable::run, null),
                                             applicationRepository,
-                                            configserverConfig);
+                                            configserverConfig,
+                                            Zone.defaultZone());
     }
 
     private HttpResponse put(long sessionId, Map<String, String> parameters) throws IOException {
@@ -158,8 +160,10 @@ class ApplicationApiHandlerTest {
                        {
                          "log": [ ],
                          "message": "Session 2 for tenant 'test' prepared and activated.",
-                         "sessionId": "2",
+                         "session-id": "2",
                          "activated": true,
+                         "tenant": "test",
+                         "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
                          "configChangeActions": {
                            "restart": [ ],
                            "refeed": [ ],
@@ -216,8 +220,10 @@ class ApplicationApiHandlerTest {
                        {
                          "log": [ ],
                          "message": "Session 2 for tenant 'test' prepared, but activation failed: host still booting",
-                         "sessionId": "2",
+                         "session-id": "2",
                          "activated": false,
+                         "tenant": "test",
+                         "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
                          "configChangeActions": {
                            "restart": [ ],
                            "refeed": [ ],
@@ -234,8 +240,10 @@ class ApplicationApiHandlerTest {
                        {
                          "log": [ ],
                          "message": "Session 3 for tenant 'test' prepared, but activation failed: lock timeout",
-                         "sessionId": "3",
+                         "session-id": "3",
                          "activated": false,
+                         "tenant": "test",
+                         "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
                          "configChangeActions": {
                            "restart": [ ],
                            "refeed": [ ],

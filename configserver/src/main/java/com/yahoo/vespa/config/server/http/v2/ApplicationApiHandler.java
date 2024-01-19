@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.utils.MultiPartFormParser;
@@ -63,15 +64,18 @@ public class ApplicationApiHandler extends SessionHandler {
     private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
     private final long maxApplicationPackageSize;
+    private final Zone zone;
 
     @Inject
     public ApplicationApiHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 ConfigserverConfig configserverConfig) {
+                                 ConfigserverConfig configserverConfig,
+                                 Zone zone) {
         super(ctx, applicationRepository);
         this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
         this.maxApplicationPackageSize = configserverConfig.maxApplicationPackageSize();
+        this.zone = zone;
     }
 
     @Override
@@ -127,7 +131,7 @@ public class ApplicationApiHandler extends SessionHandler {
 
         try (compressedStream) {
             PrepareAndActivateResult result = applicationRepository.deploy(compressedStream, prepareParams);
-            return new SessionPrepareAndActivateResponse(result, prepareParams.getApplicationId());
+            return new SessionPrepareAndActivateResponse(result, prepareParams.getApplicationId(), request, zone);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
