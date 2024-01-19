@@ -15,6 +15,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.EndpointsChecker;
@@ -24,6 +25,7 @@ import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -71,6 +73,7 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
+import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
@@ -363,36 +366,40 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return deployment;
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+    public PrepareAndActivateResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
-        PrepareResult prepareResult;
+        PrepareAndActivateResult result;
         try {
             threadLockStats.startRecording("deploy of " + prepareParams.getApplicationId().serializedForm());
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, logger);
+            result = deploy(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
             threadLockStats.stopRecording();
             cleanupTempDirectory(tempDir, logger);
         }
-        return prepareResult;
+        return result;
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams));
+        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams)).deployResult();
     }
 
-    private PrepareResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private PrepareAndActivateResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
         long sessionId = createSession(prepareParams.getApplicationId(),
                                        prepareParams.getTimeoutBudget(),
                                        applicationDir,
                                        logger);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
-        if ( ! prepareParams.isDryRun())
+        RuntimeException activationFailure = null;
+        if ( ! prepareParams.isDryRun()) try {
             deployment.activate();
-
-        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+        }
+        catch (ParentHostUnavailableException | ApplicationLockException e) {
+            activationFailure = e;
+        }
+        return new PrepareAndActivateResult(new PrepareResult(sessionId, deployment.configChangeActions(), logger), activationFailure);
     }
 
     /**
@@ -537,7 +544,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     static void checkIfActiveHasChanged(Session session, Session activeSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, () -> activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
-        if (activeSessionAtCreate == 0) return; // No active session at create time
 
         long sessionId = session.getSessionId();
         long activeSessionSessionId = activeSession.getSessionId();
@@ -545,10 +551,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                             ", current active session=" + activeSessionSessionId);
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
-            String errMsg = activeSession.logPre() + "Cannot activate session " +
-                            sessionId + " because the currently active session (" +
-                            activeSessionSessionId + ") has changed since session " + sessionId +
-                            " was created (was " + activeSessionAtCreate + " at creation time)";
+            String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
+                            " because the currently active session (" + activeSessionSessionId +
+                            ") has changed since session " + sessionId + " was created (was " +
+                            (activeSessionAtCreate == 0 ? "empty" : activeSessionAtCreate) + " at creation time)";
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
             } else {
