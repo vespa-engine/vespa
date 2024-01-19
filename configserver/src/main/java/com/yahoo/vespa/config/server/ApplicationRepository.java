@@ -544,6 +544,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     static void checkIfActiveHasChanged(Session session, Session activeSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, () -> activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        if (activeSessionAtCreate == 0) return; // No active session at create time, or session created for indeterminate app.
 
         long sessionId = session.getSessionId();
         long activeSessionSessionId = activeSession.getSessionId();
@@ -554,7 +555,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
                             " because the currently active session (" + activeSessionSessionId +
                             ") has changed since session " + sessionId + " was created (was " +
-                            (activeSessionAtCreate == 0 ? "empty" : activeSessionAtCreate) + " at creation time)";
+                            activeSessionAtCreate + " at creation time)";
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
             } else {

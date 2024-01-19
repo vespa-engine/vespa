@@ -212,15 +212,34 @@ class ApplicationApiHandlerTest {
 
     @Test
     void testActivationFailuresAndRetries() throws Exception {
-        // Prepare session 2, but fail on hosts; this session will be activated later.
+        // Prepare session 2, and activate it successfully.
+        verifyResponse(post(minimalPrepareParams, zip(appPackage), Map.of()),
+                       200,
+                       """
+                       {
+                         "log": [ ],
+                         "message": "Session 2 for tenant 'test' prepared and activated.",
+                         "session-id": "2",
+                         "activated": true,
+                         "tenant": "test",
+                         "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
+                         "configChangeActions": {
+                           "restart": [ ],
+                           "refeed": [ ],
+                           "reindex": [ ]
+                         }
+                       }
+                       """);
+
+        // Prepare session 3, but fail on hosts; this session will be activated later.
         provisioner.activationFailure(new ParentHostUnavailableException("host still booting"));
         verifyResponse(post(minimalPrepareParams, zip(appPackage), Map.of()),
                        200,
                        """
                        {
                          "log": [ ],
-                         "message": "Session 2 for tenant 'test' prepared, but activation failed: host still booting",
-                         "session-id": "2",
+                         "message": "Session 3 for tenant 'test' prepared, but activation failed: host still booting",
+                         "session-id": "3",
                          "activated": false,
                          "tenant": "test",
                          "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
@@ -232,15 +251,15 @@ class ApplicationApiHandlerTest {
                        }
                        """);
 
-        // Prepare session 3, but fail on lock; this session will become outdated later.
+        // Prepare session 4, but fail on lock; this session will become outdated later.
         provisioner.activationFailure(new ApplicationLockException("lock timeout"));
         verifyResponse(post(minimalPrepareParams, zip(appPackage), Map.of()),
                        200,
                        """
                        {
                          "log": [ ],
-                         "message": "Session 3 for tenant 'test' prepared, but activation failed: lock timeout",
-                         "session-id": "3",
+                         "message": "Session 4 for tenant 'test' prepared, but activation failed: lock timeout",
+                         "session-id": "4",
                          "activated": false,
                          "tenant": "test",
                          "url": "http://host:123/application/v2/tenant/test/application/default/environment/prod/region/default/instance/default",
@@ -263,9 +282,9 @@ class ApplicationApiHandlerTest {
                        }
                        """);
 
-        // Retry only activation of session 2, but fail again with hosts.
+        // Retry only activation of session 3, but fail again with hosts.
         provisioner.activationFailure(new ParentHostUnavailableException("host still booting"));
-        verifyResponse(put(2, Map.of()),
+        verifyResponse(put(3, Map.of()),
                        409,
                        """
                        {
@@ -274,9 +293,9 @@ class ApplicationApiHandlerTest {
                        }
                        """);
 
-        // Retry only activation of session 2, but fail again with lock.
+        // Retry only activation of session 3, but fail again with lock.
         provisioner.activationFailure(new ApplicationLockException("lock timeout"));
-        verifyResponse(put(2, Map.of()),
+        verifyResponse(put(3, Map.of()),
                        500,
                        """
                        {
@@ -285,33 +304,33 @@ class ApplicationApiHandlerTest {
                        }
                        """);
 
-        // Retry only activation of session 2, and succeed!
+        // Retry only activation of session 3, and succeed!
         provisioner.activationFailure(null);
-        verifyResponse(put(2, Map.of()),
+        verifyResponse(put(3, Map.of()),
                        200,
                        """
                        {
-                         "message": "Session 2 for test.default.default activated"
+                         "message": "Session 3 for test.default.default activated"
                        }
                        """);
 
-        // Retry only activation of session 3, but fail because it is now based on an outdated session.
-        verifyResponse(put(3, Map.of()),
+        // Retry only activation of session 4, but fail because it is now based on an outdated session.
+        verifyResponse(put(4, Map.of()),
                        409,
                        """
                        {
                          "error-code": "ACTIVATION_CONFLICT",
-                         "message": "app:test.default.default Cannot activate session 3 because the currently active session (2) has changed since session 3 was created (was empty at creation time)"
+                         "message": "app:test.default.default Cannot activate session 4 because the currently active session (3) has changed since session 4 was created (was 2 at creation time)"
                        }
                        """);
 
-        // Retry activation of session 2 again, and fail.
-        verifyResponse(put(2, Map.of()),
+        // Retry activation of session 3 again, and fail.
+        verifyResponse(put(3, Map.of()),
                        400,
                        """
                        {
                          "error-code": "BAD_REQUEST",
-                         "message": "app:test.default.default Session 2 is already active"
+                         "message": "app:test.default.default Session 3 is already active"
                        }
                        """);
     }
