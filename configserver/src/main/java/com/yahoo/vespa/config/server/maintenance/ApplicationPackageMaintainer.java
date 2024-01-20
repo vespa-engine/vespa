@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -53,17 +54,22 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int attempts = 0;
         int failures = 0;
 
-        for (var applicationId : applicationRepository.listApplications()) {
+        for (TenantName tenantName : applicationRepository.tenantRepository().getAllTenantNames())
+            for (Session session : applicationRepository.tenantRepository().getTenant(tenantName).getSessionRepository().getRemoteSessions()) {
             if (shuttingDown())
                 break;
-            
-            log.finest(() -> "Verifying application package for " + applicationId);
-            Optional<Session> session = applicationRepository.getActiveSession(applicationId);
-            if (session.isEmpty()) continue; // App might be deleted after call to listApplications() or not activated yet (bootstrap phase)
 
-            Optional<FileReference> appFileReference = session.get().getApplicationPackageReference();
+            switch (session.getStatus()) {
+                case PREPARE, ACTIVATE: break;
+                default: continue;
+            }
+
+            var applicationId = session.getApplicationId();
+            log.finest(() -> "Verifying application package for " + applicationId);
+
+            Optional<FileReference> appFileReference = session.getApplicationPackageReference();
             if (appFileReference.isPresent()) {
-                long sessionId = session.get().getSessionId();
+                long sessionId = session.getSessionId();
                 attempts++;
                 if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference.get())) {
                     log.fine(() -> "Downloading application package with file reference " + appFileReference +
