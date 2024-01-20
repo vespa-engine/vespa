@@ -88,6 +88,7 @@ public interface Embedder {
         private Language language = Language.UNKNOWN;
         private String destination;
         private String embedderId = "unknown";
+        private Map<String, String> contextValues;
 
         public Context(String destination) {
             this.destination = destination;
@@ -138,6 +139,15 @@ public interface Embedder {
             this.embedderId = embedderId;
             return this;
         }
+
+        /** Returns a read-only map of context key-values which can be looked up during conversion. */
+        public Map<String, String> getContextValues() { return contextValues; }
+
+        public Context setContextValues(Map<String, String> contextValues) {
+            this.contextValues = contextValues;
+            return this;
+        }
+
     }
 
     class FailingEmbedder implements Embedder {
