@@ -28,6 +28,7 @@ import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -101,67 +102,64 @@ class TensorConverter {
         throw new IllegalArgumentException("OnnxEvaluator does not currently support value type " + onnxTensorInfo.type);
     }
 
+    interface Short2Float {
+        float convert(short value);
+    }
+    
+    private static void extractTensor(FloatBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+    private static void extractTensor(DoubleBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+    private static void extractTensor(ByteBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+    private static void extractTensor(ShortBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+    private static void extractTensor(ShortBuffer buffer, Short2Float converter, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, converter.convert(buffer.get(i)));
+    }
+    private static void extractTensor(IntBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+    private static void extractTensor(LongBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
+        for (int i = 0; i < totalSize; i++)
+            builder.cellByDirectIndex(i, buffer.get(i));
+    }
+
     static Tensor toVespaTensor(OnnxValue onnxValue) {
         if ( ! (onnxValue instanceof OnnxTensor onnxTensor)) {
             throw new IllegalArgumentException("ONNX value is not a tensor: maps and sequences are not yet supported");
         }
         TensorInfo tensorInfo = onnxTensor.getInfo();
-
         TensorType type = toVespaType(onnxTensor.getInfo());
-        DimensionSizes sizes = sizesFromType(type);
-
+        DimensionSizes sizes = DimensionSizes.of(type);
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder) Tensor.Builder.of(type, sizes);
-        long totalSize = sizes.totalSize();
-        if (tensorInfo.type == OnnxJavaType.FLOAT) {
-            FloatBuffer buffer = onnxTensor.getFloatBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
+        long totalSizeAsLong = sizes.totalSize();
+        if (totalSizeAsLong > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("TotalSize=" + totalSizeAsLong + " currently limited at INTEGER.MAX_VALUE");
         }
-        else if (tensorInfo.type == OnnxJavaType.DOUBLE) {
-            DoubleBuffer buffer = onnxTensor.getDoubleBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
-        }
-        else if (tensorInfo.type == OnnxJavaType.INT8) {
-            ByteBuffer buffer = onnxTensor.getByteBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
-        }
-        else if (tensorInfo.type == OnnxJavaType.INT16) {
-            ShortBuffer buffer = onnxTensor.getShortBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
-        }
-        else if (tensorInfo.type == OnnxJavaType.INT32) {
-            IntBuffer buffer = onnxTensor.getIntBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
-        }
-        else if (tensorInfo.type == OnnxJavaType.INT64) {
-            LongBuffer buffer = onnxTensor.getLongBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, buffer.get());
-        }
-        else if (tensorInfo.type == OnnxJavaType.FLOAT16) {
-            ShortBuffer buffer = onnxTensor.getShortBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, Fp16Conversions.fp16ToFloat(buffer.get()));
-        }
-        else if (tensorInfo.type == OnnxJavaType.BFLOAT16) {
-            ShortBuffer buffer = onnxTensor.getShortBuffer();
-            for (long i = 0; i < totalSize; i++)
-                builder.cellByDirectIndex(i, Fp16Conversions.bf16ToFloat((buffer.get())));
-        }
-        else {
-            throw new IllegalArgumentException("OnnxEvaluator does not currently support value type " + onnxTensor.getInfo().type);
-        }
-        return builder.build();
-    }
 
-    static private DimensionSizes sizesFromType(TensorType type) {
-        DimensionSizes.Builder builder = new DimensionSizes.Builder(type.dimensions().size());
-        for (int i = 0; i < type.dimensions().size(); i++)
-            builder.set(i, type.dimensions().get(i).size().get());
+        int totalSize = (int) totalSizeAsLong;
+        switch (tensorInfo.type) {
+            case FLOAT -> extractTensor(onnxTensor.getFloatBuffer(), builder, totalSize);
+            case DOUBLE -> extractTensor(onnxTensor.getDoubleBuffer(), builder, totalSize);
+            case INT8 -> extractTensor(onnxTensor.getByteBuffer(), builder, totalSize);
+            case INT16 -> extractTensor(onnxTensor.getShortBuffer(), builder, totalSize);
+            case INT32 -> extractTensor(onnxTensor.getIntBuffer(), builder, totalSize);
+            case INT64 -> extractTensor(onnxTensor.getLongBuffer(), builder, totalSize);
+            case FLOAT16 -> extractTensor(onnxTensor.getShortBuffer(), Fp16Conversions::fp16ToFloat, builder, totalSize);
+            case BFLOAT16 -> extractTensor(onnxTensor.getShortBuffer(), Fp16Conversions::bf16ToFloat, builder, totalSize);
+            default -> throw new IllegalArgumentException("OnnxEvaluator does not currently support value type " + onnxTensor.getInfo().type);
+        }
         return builder.build();
     }
 
