@@ -158,7 +158,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
             double maxValue = 0.0d;
             directAddress.setIndex(2, v);
             long increment = directAddress.getStride(1);
-            long directIndex = directAddress.getIndex();
+            long directIndex = directAddress.getDirectIndex();
             for (int s = 0; s < sequenceLength; s++) {
                 double value = modelOutput.get(directIndex + s * increment);
                 if (value > maxValue) {

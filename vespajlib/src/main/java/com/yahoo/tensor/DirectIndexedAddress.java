@@ -3,7 +3,7 @@ package com.yahoo.tensor;
 /**
  * Utility class for efficient access and iteration along dimensions in Indexed tensors.
  * Usage: Use setIndex to lock the indexes of the dimensions that don't change in this iteration.
- *        long base = addr.getIndex();
+ *        long base = addr.getDirectIndex();
  *        long stride = addr.getStride(dimension)
  *        i = 0...size_of_dimension
  *            double value = tensor.get(base + i * stride);
@@ -30,7 +30,7 @@ public final class DirectIndexedAddress {
         indexes[dimension] = index;
     }
     /** Retrieve the index that can be used for direct lookup in an indexed tensor. */
-    public long getIndex() { return directIndex; }
+    public long getDirectIndex() { return directIndex; }
     /** returns the stride to be used for the given dimension */
     public long getStride(int dimension) {
         return sizes.productOfDimensionsAfter(dimension);

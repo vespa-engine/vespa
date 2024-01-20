@@ -112,11 +112,11 @@ public class IndexedTensorTestCase {
         assertEquals(ySize*zSize, directAddress.getStride(2));
         assertEquals(zSize, directAddress.getStride(3));
         assertEquals(1, directAddress.getStride(4));
-        assertEquals(0, directAddress.getIndex());
+        assertEquals(0, directAddress.getDirectIndex());
         directAddress.setIndex(0,1);
-        assertEquals(1 * directAddress.getStride(0), directAddress.getIndex());
+        assertEquals(1 * directAddress.getStride(0), directAddress.getDirectIndex());
         directAddress.setIndex(1,1);
-        assertEquals(1 * directAddress.getStride(0) + 1 * directAddress.getStride(1), directAddress.getIndex());
+        assertEquals(1 * directAddress.getStride(0) + 1 * directAddress.getStride(1), directAddress.getDirectIndex());
         directAddress.setIndex(2,2);
         directAddress.setIndex(3,2);
         directAddress.setIndex(4,2);
@@ -125,7 +125,7 @@ public class IndexedTensorTestCase {
                 2 * directAddress.getStride(2) +
                 2 * directAddress.getStride(3) +
                 2 * directAddress.getStride(4);
-        assertEquals(expected, directAddress.getIndex());
+        assertEquals(expected, directAddress.getDirectIndex());
     }
 
     @Test

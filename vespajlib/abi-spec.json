@@ -729,7 +729,7 @@
     ],
     "methods" : [
       "public void setIndex(int, int)",
-      "public long getIndex()",
+      "public long getDirectIndex()",
       "public long getStride(int)"
     ],
     "fields" : [ ]
