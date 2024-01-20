@@ -10,9 +10,9 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import java.nio.file.Paths;
 import java.util.List;
@@ -152,10 +152,15 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         String dimension = tensorType.dimensions().get(0).name();
         //Iterate over the vocab dimension and find the max value for each sequence token
         long [] tokens = new long[1];
+        DirectIndexedAddress directAddress = modelOutput.directAddress();
+        directAddress.setIndex(0,0);
         for (int v = 0; v < vocabSize; v++) {
             double maxValue = 0.0d;
+            directAddress.setIndex(2, v);
+            long increment = directAddress.getStride(1);
+            long directIndex = directAddress.getDirectIndex();
             for (int s = 0; s < sequenceLength; s++) {
-                double value = modelOutput.get(0, s, v); // batch, sequence, vocab
+                double value = modelOutput.get(directIndex + s * increment);
                 if (value > maxValue) {
                     maxValue = value;
                 }

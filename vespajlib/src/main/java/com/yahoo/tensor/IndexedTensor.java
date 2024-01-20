@@ -93,6 +93,10 @@ public abstract class IndexedTensor implements Tensor {
         return get(toValueIndex(indexes, dimensionSizes));
     }
 
+    public double get(DirectIndexedAddress address) {
+        return get(address.getDirectIndex());
+    }
+    public DirectIndexedAddress directAddress() { return DirectIndexedAddress.of(dimensionSizes); }
     /**
      * Returns the value at the given indexes as a float
      *
