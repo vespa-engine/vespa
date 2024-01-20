@@ -144,7 +144,7 @@ public interface Embedder {
         public Map<String, String> getContextValues() { return contextValues; }
 
         public Context setContextValues(Map<String, String> contextValues) {
-            this.contextValues = Map.copyOf(contextValues);
+            this.contextValues = contextValues;
             return this;
         }
 
