@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.compress.Hasher;
 import com.yahoo.tensor.impl.NumericTensorAddress;
 import com.yahoo.tensor.impl.StringTensorAddress;
 
@@ -28,9 +27,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static TensorAddress of(long ... labels) {
         return NumericTensorAddress.of(labels);
     }
-
-    // If the hash ends up as 0 it will be recalculated everytime, but that is not a practical issue.
-    private int cached_hash = 0;
 
     /** Returns the number of labels in this */
     public abstract int size();
@@ -66,18 +62,12 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     @Override
     public int hashCode() {
-        if (cached_hash != 0) return cached_hash;
-        Hasher hasher = Hasher.withSeed(0);
-        long hash = 0;
+        int result = 1;
         for (int i = 0; i < size(); i++) {
-            String label = label(i);
-            if (label != null) {
-                hash = hash ^ hasher.hash(label);
-            }
+            if (label(i) != null)
+                result = 31 * result + label(i).hashCode();
         }
-        int low = (int) hash;
-        int high = (int) (hash >> 32);
-        return cached_hash = low ^ high;
+        return result;
     }
 
     @Override
@@ -115,7 +105,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static class Builder {
 
         final TensorType type;
-        String[] labels;
+        final String[] labels;
 
         public Builder(TensorType type) {
             this(type, new String[type.dimensions().size()]);
@@ -172,9 +162,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         public TensorAddress build() {
             validate();
-            var address = StringTensorAddress.unsafeOf(labels);
-            labels = null;
-            return address;
+            return TensorAddress.of(labels);
         }
 
     }

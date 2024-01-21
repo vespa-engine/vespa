@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -309,7 +308,7 @@ public class MixedTensor implements Tensor {
     public static class BoundBuilder extends Builder {
 
         /** For each sparse partial address, hold a dense subspace */
-        private final Map<TensorAddress, double[]> denseSubspaceMap = new LinkedHashMap<>();
+        private final Map<TensorAddress, double[]> denseSubspaceMap = new HashMap<>();
         private final Index.Builder indexBuilder;
         private final Index index;
         private final TensorType denseSubtype;
