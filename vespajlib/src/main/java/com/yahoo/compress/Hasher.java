@@ -20,7 +20,7 @@ public class Hasher {
     private Hasher(LongHashFunction hasher) {
         this.hasher = hasher;
     }
-    public static Hasher of(long seed) {
+    public static Hasher withSeed(long seed) {
         return new Hasher(LongHashFunction.xx3(seed));
     }
     public long hash(long v) {

@@ -67,7 +67,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     @Override
     public int hashCode() {
         if (cached_hash != 0) return cached_hash;
-        Hasher hasher = Hasher.of(0);
+        Hasher hasher = Hasher.withSeed(0);
         long hash = 0;
         for (int i = 0; i < size(); i++) {
             String label = label(i);
