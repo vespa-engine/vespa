@@ -134,7 +134,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             return tensor;
         }
         else { // extend tensor with this dimension
-            if (tensor.type().dimensions().stream().anyMatch(d -> ! d.isIndexed()))
+            if (tensor.type().hasMappedDimensions())
                 throw new IllegalArgumentException("Concat requires an indexed tensor, " +
                                                    "but got a tensor with type " + tensor.type());
             Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder(combinedValueType)

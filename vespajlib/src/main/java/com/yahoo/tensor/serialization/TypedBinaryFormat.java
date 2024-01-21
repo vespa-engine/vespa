@@ -55,8 +55,8 @@ public class TypedBinaryFormat {
     }
 
     private static BinaryFormat getFormatEncoder(GrowableByteBuffer buffer, Tensor tensor) {
-        boolean hasMappedDimensions = tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
-        boolean hasIndexedDimensions = tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
+        boolean hasMappedDimensions = tensor.type().hasMappedDimensions();
+        boolean hasIndexedDimensions = tensor.type().hasIndexedDimensions();
         boolean isMixed = hasMappedDimensions && hasIndexedDimensions;
 
         // TODO: Encoding as indexed if the implementation is mixed is not yet supported so use mixed format instead

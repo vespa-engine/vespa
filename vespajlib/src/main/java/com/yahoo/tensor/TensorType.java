@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.text.Ascii7BitMatcher;
 
 import java.util.ArrayList;
@@ -86,16 +87,20 @@ public class TensorType {
 
     /** Sorted list of the dimensions of this */
     private final List<Dimension> dimensions;
+    private final Set<String> dimensionNames;
 
     private final TensorType mappedSubtype;
     private final TensorType indexedSubtype;
+    private final int indexedUnBoundCount;
 
     // only used to initialize the "empty" instance
     private TensorType() {
         this.valueType = Value.DOUBLE;
         this.dimensions = List.of();
+        this.dimensionNames = Set.of();
         this.mappedSubtype = this;
         this.indexedSubtype = this;
+        indexedUnBoundCount = 0;
     }
 
     public TensorType(Value valueType, Collection<Dimension> dimensions) {
@@ -103,12 +108,25 @@ public class TensorType {
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
         this.dimensions = List.copyOf(dimensionList);
+        ImmutableSet.Builder<String> namesbuilder = new ImmutableSet.Builder<>();
+        int indexedBoundCount = 0, indexedUnBoundCount = 0, mappedCount = 0;
+        for (Dimension dimension : dimensionList) {
+            namesbuilder.add(dimension.name());
+            Dimension.Type type = dimension.type();
+            switch (type) {
+                case indexedUnbound -> indexedUnBoundCount++;
+                case indexedBound -> indexedBoundCount++;
+                case mapped -> mappedCount++;
+            }
+        }
+        this.indexedUnBoundCount = indexedUnBoundCount;
+        dimensionNames = namesbuilder.build();
 
-        if (dimensionList.stream().allMatch(Dimension::isIndexed)) {
+        if (mappedCount == 0) {
             mappedSubtype = empty;
             indexedSubtype = this;
         }
-        else if (dimensionList.stream().noneMatch(Dimension::isIndexed)) {
+        else if ((indexedBoundCount + indexedUnBoundCount) == 0) {
             mappedSubtype = this;
             indexedSubtype = empty;
         }
@@ -117,6 +135,11 @@ public class TensorType {
             indexedSubtype = new TensorType(valueType, dimensions.stream().filter(Dimension::isIndexed).toList());
         }
     }
+
+    public boolean hasIndexedDimensions() { return indexedSubtype != empty; }
+    public boolean hasMappedDimensions() { return mappedSubtype != empty; }
+    public boolean hasOnlyIndexedBoundDimensions() { return !hasMappedDimensions() && ! hasIndexedUnboundDimensions(); }
+    boolean hasIndexedUnboundDimensions() { return indexedUnBoundCount > 0; }
 
     static public Value combinedValueType(TensorType ... types) {
         List<Value> valueTypes = new ArrayList<>();
@@ -161,7 +184,7 @@ public class TensorType {
 
     /** Returns an immutable set of the names of the dimensions of this */
     public Set<String> dimensionNames() {
-        return dimensions.stream().map(Dimension::name).collect(Collectors.toSet());
+        return dimensionNames;
     }
 
     /** Returns the dimension with this name, or empty if not present */

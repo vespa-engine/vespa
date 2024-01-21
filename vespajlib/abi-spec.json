@@ -1470,6 +1470,9 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType$Value, java.util.Collection)",
+      "public boolean hasIndexedDimensions()",
+      "public boolean hasMappedDimensions()",
+      "public boolean hasOnlyIndexedBoundDimensions()",
       "public static varargs com.yahoo.tensor.TensorType$Value combinedValueType(com.yahoo.tensor.TensorType[])",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",

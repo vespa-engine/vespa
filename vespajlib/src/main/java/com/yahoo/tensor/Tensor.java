@@ -113,7 +113,7 @@ public interface Tensor {
      * @throws IllegalStateException if this does not have zero dimensions and one value
      */
     default double asDouble() {
-        if (type().dimensions().size() > 0)
+        if (!type().dimensions().isEmpty())
             throw new IllegalStateException("Require a dimensionless tensor but has " + type());
         if (size() == 0) return Double.NaN;
         return valueIterator().next();
@@ -553,8 +553,8 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
-            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
+            boolean containsIndexed = type.hasIndexedDimensions();
+            boolean containsMapped = type.hasMappedDimensions();
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
             if (containsMapped)
@@ -565,8 +565,8 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type, DimensionSizes dimensionSizes) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
-            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
+            boolean containsIndexed = type.hasIndexedDimensions();
+            boolean containsMapped = type.hasMappedDimensions();
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
             if (containsMapped)
