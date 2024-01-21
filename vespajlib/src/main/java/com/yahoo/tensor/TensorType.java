@@ -136,9 +136,9 @@ public class TensorType {
         }
     }
 
-    boolean hasIndexedDimensions() { return indexedSubtype != empty; }
-    boolean hasMappedDimensions() { return mappedSubtype != empty; }
-    boolean hasOnlyIndexedBoundDimensions() { return !hasMappedDimensions() && ! hasIndexedUnboundDimensions(); }
+    public boolean hasIndexedDimensions() { return indexedSubtype != empty; }
+    public boolean hasMappedDimensions() { return mappedSubtype != empty; }
+    public boolean hasOnlyIndexedBoundDimensions() { return !hasMappedDimensions() && ! hasIndexedUnboundDimensions(); }
     boolean hasIndexedUnboundDimensions() { return indexedUnBoundCount > 0; }
 
     static public Value combinedValueType(TensorType ... types) {

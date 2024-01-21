@@ -92,11 +92,11 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
             return false;
         if ( ! (a instanceof IndexedTensor))
             return false;
-        if ( ! (a.type().dimensions().stream().allMatch(d -> d.type() == TensorType.Dimension.Type.indexedBound)))
+        if ( ! (a.type().hasOnlyIndexedBoundDimensions()))
             return false;
         if ( ! (b instanceof IndexedTensor))
             return false;
-        if ( ! (b.type().dimensions().stream().allMatch(d -> d.type() == TensorType.Dimension.Type.indexedBound)))
+        if ( ! (b.type().hasOnlyIndexedBoundDimensions()))
             return false;
 
         TensorType commonDimensions = dimensionsInCommon((IndexedTensor)a, (IndexedTensor)b);
