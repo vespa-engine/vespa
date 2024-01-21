@@ -83,6 +83,16 @@ public class MixedTensor implements Tensor {
     }
 
     @Override
+    public Double getAsDouble(TensorAddress address) {
+        var block = index.blockOf(address);
+        int denseOffset = index.denseOffsetOf(address);
+        if (block == null || denseOffset < 0 || denseOffset >= block.cells.length) {
+            return null;
+        }
+        return block.cells[denseOffset];
+    }
+
+    @Override
     public boolean has(TensorAddress address) {
         var block = index.blockOf(address);
         int denseOffset = index.denseOffsetOf(address);

@@ -121,10 +121,11 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
             var key = aCell.getKey();
-            if (! b.has(key)) {
+            Double bVal = b.getAsDouble(key);
+            if (bVal == null) {
                 builder.cell(key, aCell.getValue());
             } else if (combinator != null) {
-                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), bVal));
             }
         }
     }

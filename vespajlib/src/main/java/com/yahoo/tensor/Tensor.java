@@ -90,6 +90,8 @@ public interface Tensor {
 
     /** Returns true if this cell exists */
     boolean has(TensorAddress address);
+    /** null = no value present. More efficient that if (t.has(key)) t.get(key) */
+    Double getAsDouble(TensorAddress address);
 
     /**
      * Returns the cell of this in some undefined order.

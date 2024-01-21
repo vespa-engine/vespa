@@ -41,6 +41,9 @@ public class MappedTensor implements Tensor {
     public boolean has(TensorAddress address) { return cells.containsKey(address); }
 
     @Override
+    public Double getAsDouble(TensorAddress address) { return cells.get(address); }
+
+    @Override
     public Iterator<Cell> cellIterator() { return new CellIteratorAdaptor(cells.entrySet().iterator()); }
 
     @Override
