@@ -70,7 +70,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         Hasher hasher = Hasher.of(0);
         long hash = 0;
         for (int i = 0; i < size(); i++) {
-            hash = hash ^ hasher.hash(label(i));
+            String label = label(i);
+            if (label != null) {
+                hash = hash ^ hasher.hash(label);
+            }
         }
         int low = (int) hash;
         int high = (int) (hash >> 32);
