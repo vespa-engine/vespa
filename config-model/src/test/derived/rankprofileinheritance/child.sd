@@ -39,4 +39,15 @@ schema child {
 
   }
 
+  rank-profile profile5 inherits profile1 {
+    match-features {
+      attribute(field3)
+    }
+  }
+
+  rank-profile profile6 inherits profile1 {
+    summary-features { }
+    match-features { }
+  }
+
 }
