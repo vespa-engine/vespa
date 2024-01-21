@@ -12,6 +12,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.Iterator;
@@ -106,9 +107,8 @@ public class AnyParser extends SimpleParser {
             }
             return rank;
         } else if ((topLevelItem instanceof RankItem)
-                && (item instanceof RankItem)
+                && (item instanceof RankItem itemAsRank)
                 && (((RankItem) item).getItem(0) instanceof OrItem)) {
-            RankItem itemAsRank = (RankItem) item;
             OrItem or = (OrItem) itemAsRank.getItem(0);
 
             ((RankItem) topLevelItem).addItem(0, or);
@@ -139,8 +139,10 @@ public class AnyParser extends SimpleParser {
             if (root instanceof PhraseItem) {
                 root.setFilter(true);
             }
-            for (Iterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
-                markAllTermsAsFilters(i.next());
+            if (root instanceof CompositeItem composite) {
+                for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
+                    markAllTermsAsFilters(i.next());
+                }
             }
         }
     }
@@ -206,8 +208,7 @@ public class AnyParser extends SimpleParser {
             return root;
         }
 
-        if (root instanceof RankItem) {
-            RankItem rootAsRank = (RankItem) root;
+        if (root instanceof RankItem rootAsRank) {
             Item firstChild = rootAsRank.getItem(0);
 
             if (firstChild instanceof NotItem) {
@@ -228,7 +229,6 @@ public class AnyParser extends SimpleParser {
         }
 
         NotItem not = new NotItem();
-
         not.addPositiveItem(root);
         not.addNegativeItem(item);
         return not;

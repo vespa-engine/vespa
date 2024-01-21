@@ -79,6 +79,7 @@ abstract class SimpleParser extends StructuredParser {
                         not = new NotItem();
                         not.addNegativeItem(item);
                         topLevelItem = combineItems(topLevelItem, not);
+                        System.out.println("not : " + not + " not poisitve: " + not.getPositiveItem());
                     } else {
                         not.addNegativeItem(item);
                     }
@@ -130,14 +131,13 @@ abstract class SimpleParser extends StructuredParser {
             }
         }
         if (not != null && not.getPositiveItem() instanceof TrueItem) {
-            // Incomplete not, only negatives -
-
+            // Incomplete not, only negatives - simplify when possible
             if (topLevelItem != null && topLevelItem != not) {
                 // => neutral rank items becomes implicit positives
                 not.addPositiveItem(getItemAsPositiveItem(topLevelItem, not));
                 return not;
-            } else { // Only negatives - ignore them
-                return null;
+            } else {
+                return not;
             }
         }
         if (topLevelItem != null) {
