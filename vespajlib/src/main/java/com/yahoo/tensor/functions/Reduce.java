@@ -9,6 +9,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.Convert;
 import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
@@ -172,14 +173,15 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Iterator<Double> i = argument.valueIterator(); i.hasNext(); )
             valueAggregator.aggregate(i.next());
-        return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
+        return Tensor.Builder.of(TensorType.empty).cell(valueAggregator.aggregatedValue()).build();
     }
 
     private static Tensor reduceIndexedVector(IndexedTensor argument, Aggregator aggregator) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (int i = 0; i < argument.dimensionSizes().size(0); i++)
+        int dimensionSize = Convert.safe2Int(argument.dimensionSizes().size(0));
+        for (int i = 0; i < dimensionSize ; i++)
             valueAggregator.aggregate(argument.get(i));
-        return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
+        return Tensor.Builder.of(TensorType.empty).cell(valueAggregator.aggregatedValue()).build();
     }
 
     static abstract class ValueAggregator {
