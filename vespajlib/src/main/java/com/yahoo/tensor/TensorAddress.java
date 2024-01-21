@@ -3,7 +3,10 @@ package com.yahoo.tensor;
 
 import com.yahoo.tensor.impl.NumericTensorAddress;
 import com.yahoo.tensor.impl.StringTensorAddress;
+import net.jpountz.xxhash.XXHash32;
+import net.jpountz.xxhash.XXHashFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,6 +19,8 @@ import java.util.Optional;
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
+    private static final XXHash32 hasher = XXHashFactory.fastestJavaInstance().hash32();
+
     public static TensorAddress of(String[] labels) {
         return StringTensorAddress.of(labels);
     }
@@ -27,6 +32,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public static TensorAddress of(long ... labels) {
         return NumericTensorAddress.of(labels);
     }
+
+    private int cached_hash = 0;
 
     /** Returns the number of labels in this */
     public abstract int size();
@@ -62,12 +69,17 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     @Override
     public int hashCode() {
-        int result = 1;
+        if (cached_hash != 0) return cached_hash;
+
+        int hash = 0;
         for (int i = 0; i < size(); i++) {
-            if (label(i) != null)
-                result = 31 * result + label(i).hashCode();
+            String label = label(i);
+            if (label != null) {
+                byte [] buf = label.getBytes(StandardCharsets.UTF_8);
+                hash = hasher.hash(buf, 0, buf.length, hash);
+            }
         }
-        return result;
+        return cached_hash = hash;
     }
 
     @Override

@@ -9,8 +9,10 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 
 /**
  * Microbenchmark of tensor operations.
@@ -91,7 +93,7 @@ public class TensorFunctionBenchmark {
                         .value(random.nextDouble());
             }
         }
-        return Collections.singletonList(builder.build());
+        return List.of(builder.build());
     }
 
     private static TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {
@@ -136,22 +138,22 @@ public class TensorFunctionBenchmark {
         // ---------------- Mapped with extra space (sidesteps current special-case optimizations):
         time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
         System.out.printf("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
+
         time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
         System.out.printf("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
 
-        /** 2.4Ghz Intel Core i9, Macbook Pro 2019
+        /* 2.4Ghz Intel Core i9, Macbook Pro 2019
          * Indexed unbound vectors, time per join:    0,067 ms
          * Indexed unbound matrix,  time per join:    0,107 ms
          * Indexed bound vectors,   time per join:    0,068 ms
          * Indexed bound matrix,    time per join:    0,105 ms
-         * Mapped vectors,          time per join:    1,780 ms
-         * Mapped matrix,           time per join:    5,339 ms
+         * Mapped vectors,          time per join:    1,342 ms
+         * Mapped matrix,           time per join:    3,448 ms
          * Indexed vectors, x space time per join:    6,398 ms
          * Indexed matrix, x space  time per join:    3,220 ms
-         * Mapped vectors, x space  time per join:   13,026 ms
-         * Mapped matrix, x space   time per join:   28,259 ms
+         * Mapped vectors, x space  time per join:   14,984 ms
+         * Mapped matrix, x space   time per join:   19,873 ms
          */
-
     }
 
 }
