@@ -10,7 +10,6 @@ namespace search::streaming {
  * A weighted set query term for streaming search.
  */
 class WeightedSetTerm : public MultiTerm {
-    double _score_threshold;
 public:
     WeightedSetTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms);
     ~WeightedSetTerm() override;
