@@ -129,8 +129,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
             var key = aCell.getKey();
-            if (b.has(key)) {
-                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+            Double bVal = b.getAsDouble(key);
+            if (bVal != null) {
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), bVal));
             }
         }
         return builder.build();
@@ -206,11 +207,12 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
-            if (subspace.has(subaddress)) {
-                double subspaceValue = subspace.get(subaddress);
+            Double subspaceValue = subspace.getAsDouble(subaddress);
+            if (subspaceValue != null) {
                 builder.cell(supercell.getKey(),
-                        reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
-                             : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+                        reversedArgumentOrder
+                                ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
+                                : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
             }
         }
         return builder.build();
