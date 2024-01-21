@@ -266,7 +266,7 @@ public class MixedTensor implements Tensor {
          * a temporary structure while finding dimension bounds.
          */
         public static Builder of(TensorType type) {
-            if (type.dimensions().stream().anyMatch(d -> d instanceof TensorType.IndexedUnboundDimension)) {
+            if (type.hasIndexedUnboundDimensions()) {
                 return new UnboundBuilder(type);
             } else {
                 return new BoundBuilder(type);

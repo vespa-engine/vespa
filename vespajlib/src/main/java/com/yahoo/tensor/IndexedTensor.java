@@ -164,9 +164,10 @@ public abstract class IndexedTensor implements Tensor {
 
         long valueIndex = 0;
         for (int i = 0; i < address.size(); i++) {
-            if (address.numericLabel(i) >= sizes.size(i))
+            long label = address.numericLabel(i);
+            if (label >= sizes.size(i))
                 throw new IllegalArgumentException(address + " is not within the bounds of " + type);
-            valueIndex += sizes.productOfDimensionsAfter(i) * address.numericLabel(i);
+            valueIndex += sizes.productOfDimensionsAfter(i) * label;
         }
         return valueIndex;
     }
@@ -281,7 +282,7 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         public static Builder of(TensorType type) {
-            if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
+            if (type.hasOnlyIndexedBoundDimensions())
                 return of(type, BoundBuilder.dimensionSizesOf(type));
             else
                 return new UnboundBuilder(type);
@@ -295,7 +296,7 @@ public abstract class IndexedTensor implements Tensor {
          *               must not be further mutated by the caller
          */
         public static Builder of(TensorType type, float[] values) {
-            if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
+            if (type.hasOnlyIndexedBoundDimensions())
                 return of(type, BoundBuilder.dimensionSizesOf(type), values);
             else
                 return new UnboundBuilder(type);
@@ -309,7 +310,7 @@ public abstract class IndexedTensor implements Tensor {
          *               must not be further mutated by the caller
          */
         public static Builder of(TensorType type, double[] values) {
-            if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
+            if (type.hasOnlyIndexedBoundDimensions())
                 return of(type, BoundBuilder.dimensionSizesOf(type), values);
             else
                 return new UnboundBuilder(type);
@@ -615,11 +616,11 @@ public abstract class IndexedTensor implements Tensor {
 
     private final class ValueIterator implements Iterator<Double> {
 
-        private long count = 0;
+        private int count = 0;
 
         @Override
         public boolean hasNext() {
-            return count < size();
+            return count < sizeAsInt();
         }
 
         @Override
