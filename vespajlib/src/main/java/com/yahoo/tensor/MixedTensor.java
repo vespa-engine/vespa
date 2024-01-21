@@ -3,6 +3,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.tensor.impl.NumericTensorAddress;
 import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
@@ -326,10 +327,12 @@ public class MixedTensor implements Tensor {
         }
 
         private double[] denseSubspace(TensorAddress sparseAddress) {
-            if (!denseSubspaceMap.containsKey(sparseAddress)) {
-                denseSubspaceMap.put(sparseAddress, new double[(int)denseSubspaceSize()]);
+            double [] values = denseSubspaceMap.get(sparseAddress);
+            if (values == null) {
+                values = new double[(int)denseSubspaceSize()];
+                denseSubspaceMap.put(sparseAddress, values);
             }
-            return denseSubspaceMap.get(sparseAddress);
+            return values;
         }
 
         public IndexedTensor.DirectIndexBuilder denseSubspaceBuilder(TensorAddress sparseAddress) {
@@ -520,7 +523,7 @@ public class MixedTensor implements Tensor {
             return builder.build();
         }
 
-        private TensorAddress denseOffsetToAddress(long denseOffset) {
+        private long[] denseOffsetToAddress(long denseOffset) {
             if (denseOffset < 0 || denseOffset > denseSubspaceSize) {
                 throw new IllegalArgumentException("Offset out of bounds");
             }
@@ -538,17 +541,17 @@ public class MixedTensor implements Tensor {
                 labels[i] = restSize / innerSize;
                 restSize %= innerSize;
             }
-            return TensorAddress.of(labels);
+            return labels;
         }
 
         TensorAddress fullAddressOf(TensorAddress sparsePart, long denseOffset) {
-            TensorAddress densePart = denseOffsetToAddress(denseOffset);
+            long [] densePart = denseOffsetToAddress(denseOffset);
             String[] labels = new String[type.dimensions().size()];
             int mappedIndex = 0;
             int indexedIndex = 0;
             for (TensorType.Dimension d : type.dimensions()) {
                 if (d.isIndexed()) {
-                    labels[mappedIndex + indexedIndex] = densePart.label(indexedIndex);
+                    labels[mappedIndex + indexedIndex] = NumericTensorAddress.asString(densePart[indexedIndex]);
                     indexedIndex++;
                 } else {
                     labels[mappedIndex + indexedIndex] = sparsePart.label(mappedIndex);
@@ -607,8 +610,7 @@ public class MixedTensor implements Tensor {
                     b.append(", ");
 
                 // start brackets
-                for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
-                    b.append("[");
+                b.append("[".repeat(Math.max(0, indexes.nextDimensionsAtStart())));
 
                 // value
                 switch (type.valueType()) {
@@ -621,8 +623,7 @@ public class MixedTensor implements Tensor {
                 }
 
                 // end bracket
-                for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
-                    b.append("]");
+                b.append("]".repeat(Math.max(0, indexes.nextDimensionsAtEnd())));
             }
             return index;
         }
@@ -656,27 +657,16 @@ public class MixedTensor implements Tensor {
         }
     }
 
-    private static class DenseSubspaceBuilder implements IndexedTensor.DirectIndexBuilder {
-
-        private final TensorType type;
-        private final double[] values;
-
-        public DenseSubspaceBuilder(TensorType type, double[] values) {
-            this.type = type;
-            this.values = values;
-        }
-
-        @Override
-        public TensorType type() { return type; }
+    private record DenseSubspaceBuilder(TensorType type, double[] values) implements IndexedTensor.DirectIndexBuilder {
 
         @Override
         public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = value;
+            values[(int) index] = value;
         }
 
         @Override
         public void cellByDirectIndex(long index, float value) {
-            values[(int)index] = value;
+            values[(int) index] = value;
         }
 
     }
