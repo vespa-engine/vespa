@@ -394,8 +394,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     private static boolean mapContent(TensorAddress from, String[] to, int[] indexMap) {
         for (int i = 0; i < from.size(); i++) {
             int toIndex = indexMap[i];
-            if (to[toIndex] != null && ! to[toIndex].equals(from.label(i))) return false;
-            to[toIndex] = from.label(i);
+            String label = from.label(i);
+            if (to[toIndex] != null && ! to[toIndex].equals(label)) return false;
+            to[toIndex] = label;
         }
         return true;
     }
