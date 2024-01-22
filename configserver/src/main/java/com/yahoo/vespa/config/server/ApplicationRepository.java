@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
@@ -120,6 +121,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -957,28 +959,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void deleteExpiredLocalSessions() {
-        Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants()
-                        .forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
-
-        Set<ApplicationId> applicationIds = new HashSet<>();
-        sessionsPerTenant.values()
-                .forEach(sessionList -> sessionList.stream()
-                        .map(Session::getOptionalApplicationId)
-                        .filter(Optional::isPresent)
-                        .forEach(appId -> applicationIds.add(appId.get())));
-
-        Map<ApplicationId, Long> activeSessions = new HashMap<>();
-        applicationIds.forEach(applicationId -> getActiveSession(applicationId).ifPresent(session -> activeSessions.put(applicationId, session.getSessionId())));
-        sessionsPerTenant.keySet().forEach(tenant -> tenant.getSessionRepository().deleteExpiredSessions(activeSessions));
+        for (Tenant tenant : tenantRepository.getAllTenants()) {
+            tenant.getSessionRepository().deleteExpiredSessions(session -> sessionIsActiveForItsApplication(tenant, session));
+        }
     }
 
     public int deleteExpiredRemoteSessions(Clock clock) {
         return tenantRepository.getAllTenants()
                 .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock))
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, session -> sessionIsActiveForItsApplication(tenant, session)))
                 .mapToInt(i -> i)
                 .sum();
+    }
+
+    private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {
+        Optional<ApplicationId> owner = session.getOptionalApplicationId();
+        if (owner.isEmpty()) return true; // Chicken out ~(˘▾˘)~
+        return tenant.getApplicationRepo().activeSessionOf(owner.get()).equals(Optional.of(session.getSessionId()));
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------

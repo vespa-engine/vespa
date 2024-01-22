@@ -58,14 +58,16 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int[] failures = new int[1];
 
         List<Runnable> futureDownloads = new ArrayList<>();
-        for (TenantName tenantName : applicationRepository.tenantRepository().getAllTenantNames())
+        for (TenantName tenantName : applicationRepository.tenantRepository().getAllTenantNames()) {
             for (Session session : applicationRepository.tenantRepository().getTenant(tenantName).getSessionRepository().getRemoteSessions()) {
                 if (shuttingDown())
                     break;
 
                 switch (session.getStatus()) {
-                    case PREPARE, ACTIVATE: break;
-                    default: continue;
+                    case PREPARE, ACTIVATE:
+                        break;
+                    default:
+                        continue;
                 }
 
                 var applicationId = session.getApplicationId();
@@ -102,10 +104,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                     }
                 }
             }
+        }
 
         futureDownloads.forEach(Runnable::run);
 
-        return  asSuccessFactorDeviation(attempts, failures[0]);
+        return asSuccessFactorDeviation(attempts, failures[0]);
     }
 
     private static FileDownloader createFileDownloader(ApplicationRepository applicationRepository,
