@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "query.h"
+#include "hit_iterator_pack.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <cassert>
@@ -238,66 +239,45 @@ PhraseQueryNode::addChild(QueryNode::UP child) {
     AndQueryNode::addChild(std::move(child));
 }
 
-namespace {
-
-// TODO: Remove when rewriting PhraseQueryNode::evaluateHits
-uint32_t legacy_pos(const Hit& hit) {
-    return ((hit.position() & 0xffffff) | ((hit.field_id() & 0xff) << 24));
-}
-
-}
-
 const HitList &
 PhraseQueryNode::evaluateHits(HitList & hl) const
 {
     hl.clear();
     _fieldInfo.clear();
-    if ( ! AndQueryNode::evaluate()) return hl;
-
-    HitList tmpHL;
-    const auto & children = getChildren();
-    unsigned int fullPhraseLen = children.size();
-    unsigned int currPhraseLen = 0;
-    std::vector<unsigned int> indexVector(fullPhraseLen, 0);
-    auto curr = static_cast<const QueryTerm *> (children[currPhraseLen].get());
-    bool exhausted( curr->evaluateHits(tmpHL).empty());
-    for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm *>(children[currPhraseLen+1].get());
-        unsigned int & currIndex = indexVector[currPhraseLen];
-        unsigned int & nextIndex = indexVector[currPhraseLen+1];
-
-        const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
-        size_t firstPosition = legacy_pos(currHit);
-        uint32_t currElemId = currHit.element_id();
-        uint32_t curr_field_id = currHit.field_id();
-
-        const HitList & nextHL = next->evaluateHits(tmpHL);
-
-        int diff(0);
-        size_t nextIndexMax = nextHL.size();
-        while ((nextIndex < nextIndexMax) &&
-              ((nextHL[nextIndex].field_id() < curr_field_id) ||
-               ((nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].element_id() <= currElemId))) &&
-               ((diff = legacy_pos(nextHL[nextIndex])-firstPosition) < 1))
-        {
-            nextIndex++;
-        }
-        if ((diff == 1) && (nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].element_id() == currElemId)) {
-            currPhraseLen++;
-            if ((currPhraseLen+1) == fullPhraseLen) {
-                Hit h = nextHL[indexVector[currPhraseLen]];
-                hl.push_back(h);
-                const QueryTerm::FieldInfo & fi = next->getFieldInfo(h.field_id());
-                updateFieldInfo(h.field_id(), hl.size() - 1, fi.getFieldLength());
-                currPhraseLen = 0;
-                indexVector[0]++;
+    HitIteratorPack itr_pack(getChildren());
+    if (!itr_pack.all_valid()) {
+        return hl;
+    }
+    auto& last_child = dynamic_cast<const QueryTerm&>(*(*this)[size() - 1]);
+    while (itr_pack.seek_to_matching_field_element()) {
+        uint32_t first_position = itr_pack.front()->position();
+        bool retry_element = true;
+        while (retry_element) {
+            uint32_t position_offset = 0;
+            bool match = true;
+            for (auto& it : itr_pack) {
+                if (!it.seek_in_field_element(first_position + position_offset, itr_pack.get_field_element_ref())) {
+                    retry_element = false;
+                    match = false;
+                    break;
+                }
+                if (it->position() > first_position + position_offset) {
+                    first_position = it->position() - position_offset;
+                    match = false;
+                    break;
+                }
+                ++position_offset;
             }
-        } else {
-            currPhraseLen = 0;
-            indexVector[currPhraseLen]++;
+            if (match) {
+                auto h = *itr_pack.back();
+                hl.push_back(h);
+                auto& fi = last_child.getFieldInfo(h.field_id());
+                updateFieldInfo(h.field_id(), hl.size() - 1, fi.getFieldLength());
+                if (!itr_pack.front().step_in_field_element(itr_pack.get_field_element_ref())) {
+                    retry_element = false;
+                }
+            }
         }
-        curr = static_cast<const QueryTerm *>(children[currPhraseLen].get());
-        exhausted = (nextIndex >= nextIndexMax) || (indexVector[currPhraseLen] >= curr->evaluateHits(tmpHL).size());
     }
     return hl;
 }
