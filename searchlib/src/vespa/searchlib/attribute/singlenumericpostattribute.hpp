@@ -150,11 +150,22 @@ SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 
+namespace {
+
+bool is_integer_type(attribute::BasicType type) {
+    return (type == attribute::BasicType::INT8) ||
+           (type == attribute::BasicType::INT16) ||
+           (type == attribute::BasicType::INT32) ||
+           (type == attribute::BasicType::INT64);
+}
+
+}
+
 template <typename B>
 const IDocidPostingStore*
 SingleValueNumericPostingAttribute<B>::as_docid_posting_store() const
 {
-    if (this->getConfig().basicType().is_integer_type()) {
+    if (is_integer_type(this->getBasicType())) {
         return &_posting_store_adapter;
     }
     return nullptr;
