@@ -5,7 +5,6 @@ import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
@@ -44,6 +43,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprintsClient;
 import com.yahoo.vespa.config.server.application.Application;
@@ -55,7 +55,6 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
-import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -112,7 +111,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +119,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -137,7 +134,6 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * The API for managing applications.
