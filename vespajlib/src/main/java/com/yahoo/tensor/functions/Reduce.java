@@ -137,9 +137,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress reducedAddress = reduceDimensions(indexesToKeep, cell.getKey());
-            ValueAggregator aggr = aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
-            if (aggr == null)
-                aggr = aggregatingCells.get(reducedAddress);
+            ValueAggregator aggr = aggregatingCells.computeIfAbsent(reducedAddress, (key) ->ValueAggregator.ofType(aggregator));
             aggr.aggregate(cell.getValue());
         }
         Tensor.Builder reducedBuilder = Tensor.Builder.of(reducedType);

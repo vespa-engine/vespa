@@ -200,7 +200,7 @@ public class TensorType {
         return Optional.empty();
     }
     /** Returns the 0-base index of this dimension, or empty if it is not present */
-    int indexOfDimensionAsInt(String dimension) {
+    public int indexOfDimensionAsInt(String dimension) {
         for (int i = 0; i < dimensions.size(); i++)
             if (dimensions.get(i).name().equals(dimension))
                 return i;

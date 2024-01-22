@@ -9,7 +9,6 @@ import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -306,12 +305,7 @@ public class MixedTensor implements Tensor {
         }
 
         private double[] denseSubspace(TensorAddress sparseAddress) {
-            double [] values = denseSubspaceMap.get(sparseAddress);
-            if (values == null) {
-                values = new double[(int)denseSubspaceSize()];
-                denseSubspaceMap.put(sparseAddress, values);
-            }
-            return values;
+            return denseSubspaceMap.computeIfAbsent(sparseAddress, (key) -> new double[(int)denseSubspaceSize()]);
         }
 
         public IndexedTensor.DirectIndexBuilder denseSubspaceBuilder(TensorAddress sparseAddress) {

@@ -1487,6 +1487,7 @@
       "public java.util.Set dimensionNames()",
       "public java.util.Optional dimension(java.lang.String)",
       "public java.util.Optional indexOfDimension(java.lang.String)",
+      "public int indexOfDimensionAsInt(java.lang.String)",
       "public java.util.Optional sizeOfDimension(java.lang.String)",
       "public boolean isAssignableTo(com.yahoo.tensor.TensorType)",
       "public boolean isConvertibleTo(com.yahoo.tensor.TensorType)",
