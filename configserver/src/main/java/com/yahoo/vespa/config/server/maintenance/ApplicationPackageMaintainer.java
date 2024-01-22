@@ -98,7 +98,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(applicationRepository.configserverConfig());
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
         ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
-        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(300));
+        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(60));
     }
 
     @Override
