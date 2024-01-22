@@ -108,8 +108,7 @@ template <typename B, typename T>
 const IDocidWithWeightPostingStore*
 MultiValueStringPostingAttributeT<B, T>::as_docid_with_weight_posting_store() const
 {
-    // TODO: Add support for handling bit vectors too, and lift restriction on isFilter.
-    if (this->hasWeightedSetType() && this->isStringType()) {
+    if (this->isStringType()) {
         return &_posting_store_adapter;
     }
     return nullptr;
