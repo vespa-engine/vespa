@@ -9,7 +9,6 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
