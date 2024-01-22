@@ -729,6 +729,14 @@ TEST("utf8 flexible searcher handles regexes with explicit anchoring") {
     TEST_DO(assertString(fs, "#^foo$", "oo",   Hits()));
 }
 
+TEST("utf8 flexible searcher regex matching treats field as 1 word") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // Match case
+    TEST_DO(assertFieldInfo(fs, "#.*", "foo bar baz", QTFieldInfo(0, 1, 1)));
+    // Mismatch case
+    TEST_DO(assertFieldInfo(fs, "#^zoid$", "foo bar baz", QTFieldInfo(0, 0, 1)));
+}
+
 TEST("utf8 flexible searcher handles fuzzy search in uncased mode") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // Term syntax (only applies to these tests):
@@ -817,6 +825,14 @@ TEST("utf8 flexible searcher caps oversized fuzzy prefix length to term length")
     TEST_DO(assertString(fs, "%{0,9001}zoid", "zoid", Hits().add(0)));
     TEST_DO(assertString(fs, "%{5,9001}zoid", "zoid", Hits().add(0)));
     TEST_DO(assertString(fs, "%{5,9001}zoid", "boid", Hits()));
+}
+
+TEST("utf8 flexible searcher fuzzy matching treats field as 1 word") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    // Match case
+    TEST_DO(assertFieldInfo(fs, "%{1}foo bar baz", "foo jar baz", QTFieldInfo(0, 1, 1)));
+    // Mismatch case
+    TEST_DO(assertFieldInfo(fs, "%{1}foo", "foo bar baz", QTFieldInfo(0, 0, 1)));
 }
 
 TEST("bool search") {
