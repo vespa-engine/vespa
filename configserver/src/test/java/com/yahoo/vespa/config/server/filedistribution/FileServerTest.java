@@ -206,7 +206,7 @@ public class FileServerTest {
             super(FileDownloader.emptyConnectionPool(),
                   new Supervisor(new Transport("mock")).setDropEmptyBuffers(true),
                   downloadDirectory,
-                  Duration.ofMillis(100),
+                  Duration.ofMillis(1000),
                   Duration.ofMillis(100));
         }
 
