@@ -79,7 +79,6 @@ abstract class SimpleParser extends StructuredParser {
                         not = new NotItem();
                         not.addNegativeItem(item);
                         topLevelItem = combineItems(topLevelItem, not);
-                        System.out.println("not : " + not + " not poisitve: " + not.getPositiveItem());
                     } else {
                         not.addNegativeItem(item);
                     }
