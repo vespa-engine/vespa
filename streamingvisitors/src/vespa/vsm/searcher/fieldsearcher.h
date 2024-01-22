@@ -106,7 +106,7 @@ protected:
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
      **/
     void addHit(search::streaming::QueryTerm & qt, uint32_t pos) const {
-        qt.add(_words + pos, field(), _currentElementId, _currentElementWeight);
+        qt.add(field(), _currentElementId, _currentElementWeight, _words + pos);
     }
 public:
     static search::byte _foldLowCase[256];

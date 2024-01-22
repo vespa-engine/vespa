@@ -400,7 +400,8 @@ assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv
         EXPECT_EQUAL(hl.size(), exp[i].size());
         ASSERT_TRUE(hl.size() == exp[i].size());
         for (size_t j = 0; j < hl.size(); ++j) {
-            EXPECT_EQUAL((size_t)hl[j].pos(), exp[i][j]);
+            EXPECT_EQUAL(0u, hl[j].field_id());
+            EXPECT_EQUAL((size_t)hl[j].position(), exp[i][j]);
         }
     }
 }

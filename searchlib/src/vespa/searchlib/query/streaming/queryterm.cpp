@@ -162,9 +162,9 @@ void QueryTerm::resizeFieldId(size_t fieldNo)
     }
 }
 
-void QueryTerm::add(unsigned pos, unsigned context, uint32_t elemId, int32_t weight_)
+void QueryTerm::add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position)
 {
-    _hitList.emplace_back(pos, context, elemId, weight_);
+    _hitList.emplace_back(field_id, element_id, element_weight, position);
 }
 
 NearestNeighborQueryNode*

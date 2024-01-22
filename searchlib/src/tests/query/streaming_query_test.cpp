@@ -23,10 +23,11 @@ using TermType = QueryTerm::Type;
 using search::fef::SimpleTermData;
 using search::fef::MatchData;
 
-void assertHit(const Hit & h, size_t expWordpos, size_t exp_field_id, int32_t weight) {
-    EXPECT_EQ(h.wordpos(), expWordpos);
+void assertHit(const Hit & h, uint32_t exp_field_id, uint32_t exp_element_id, int32_t exp_element_weight, size_t exp_position) {
     EXPECT_EQ(h.field_id(), exp_field_id);
-    EXPECT_EQ(h.weight(), weight);
+    EXPECT_EQ(h.element_id(), exp_element_id);
+    EXPECT_EQ(h.element_weight(), exp_element_weight);
+    EXPECT_EQ(h.position(), exp_position);
 }
 
 
@@ -449,65 +450,69 @@ TEST(StreamingQueryTest, test_phrase_evaluate)
     }
 
     // field 0
-    terms[0]->add(0, 0, 0, 1);
-    terms[1]->add(1, 0, 0, 1);
-    terms[2]->add(2, 0, 0, 1);
-    terms[0]->add(7, 0, 0, 1);
-    terms[1]->add(8, 0, 1, 1);
-    terms[2]->add(9, 0, 0, 1);
+    terms[0]->add(0, 0, 1, 0);
+    terms[1]->add(0, 0, 1, 1);
+    terms[2]->add(0, 0, 1, 2);
+    terms[0]->add(0, 0, 1, 7);
+    terms[1]->add(0, 1, 1, 8);
+    terms[2]->add(0, 0, 1, 9);
     // field 1
-    terms[0]->add(4, 1, 0, 1);
-    terms[1]->add(5, 1, 0, 1);
-    terms[2]->add(6, 1, 0, 1);
+    terms[0]->add(1, 0, 1, 4);
+    terms[1]->add(1, 0, 1, 5);
+    terms[2]->add(1, 0, 1, 6);
     // field 2 (not complete match)
-    terms[0]->add(1, 2, 0, 1);
-    terms[1]->add(2, 2, 0, 1);
-    terms[2]->add(4, 2, 0, 1);
+    terms[0]->add(2, 0, 1, 1);
+    terms[1]->add(2, 0, 1, 2);
+    terms[2]->add(2, 0, 1, 4);
     // field 3
-    terms[0]->add(0, 3, 0, 1);
-    terms[1]->add(1, 3, 0, 1);
-    terms[2]->add(2, 3, 0, 1);
+    terms[0]->add(3, 0, 1, 0);
+    terms[1]->add(3, 0, 1, 1);
+    terms[2]->add(3, 0, 1, 2);
     // field 4 (not complete match)
-    terms[0]->add(1, 4, 0, 1);
-    terms[1]->add(2, 4, 0, 1);
+    terms[0]->add(4, 0, 1, 1);
+    terms[1]->add(4, 0, 1, 2);
     // field 5 (not complete match)
-    terms[0]->add(2, 5, 0, 1);
-    terms[1]->add(1, 5, 0, 1);
-    terms[2]->add(0, 5, 0, 1);
+    terms[0]->add(5, 0, 1, 2);
+    terms[1]->add(5, 0, 1, 1);
+    terms[2]->add(5, 0, 1, 0);
     HitList hits;
     auto * p = static_cast<PhraseQueryNode *>(phrases[0]);
     p->evaluateHits(hits);
     ASSERT_EQ(3u, hits.size());
-    EXPECT_EQ(hits[0].wordpos(), 2u);
-    EXPECT_EQ(hits[0].field_id(), 0u);
-    EXPECT_EQ(hits[1].wordpos(), 6u);
-    EXPECT_EQ(hits[1].field_id(), 1u);
-    EXPECT_EQ(hits[2].wordpos(), 2u);
-    EXPECT_EQ(hits[2].field_id(), 3u);
+    EXPECT_EQ(0u, hits[0].field_id());
+    EXPECT_EQ(0u, hits[0].element_id());
+    EXPECT_EQ(2u, hits[0].position());
+    EXPECT_EQ(1u, hits[1].field_id());
+    EXPECT_EQ(0u, hits[1].element_id());
+    EXPECT_EQ(6u, hits[1].position());
+    EXPECT_EQ(3u, hits[2].field_id());
+    EXPECT_EQ(0u, hits[2].element_id());
+    EXPECT_EQ(2u, hits[2].position());
     ASSERT_EQ(4u, p->getFieldInfoSize());
-    EXPECT_EQ(p->getFieldInfo(0).getHitOffset(), 0u);
-    EXPECT_EQ(p->getFieldInfo(0).getHitCount(),  1u);
-    EXPECT_EQ(p->getFieldInfo(1).getHitOffset(), 1u);
-    EXPECT_EQ(p->getFieldInfo(1).getHitCount(),  1u);
-    EXPECT_EQ(p->getFieldInfo(2).getHitOffset(), 0u); // invalid, but will never be used
-    EXPECT_EQ(p->getFieldInfo(2).getHitCount(),  0u);
-    EXPECT_EQ(p->getFieldInfo(3).getHitOffset(), 2u);
-    EXPECT_EQ(p->getFieldInfo(3).getHitCount(),  1u);
+    EXPECT_EQ(0u, p->getFieldInfo(0).getHitOffset());
+    EXPECT_EQ(1u, p->getFieldInfo(0).getHitCount());
+    EXPECT_EQ(1u, p->getFieldInfo(1).getHitOffset());
+    EXPECT_EQ(1u, p->getFieldInfo(1).getHitCount());
+    EXPECT_EQ(0u, p->getFieldInfo(2).getHitOffset()); // invalid, but will never be used
+    EXPECT_EQ(0u, p->getFieldInfo(2).getHitCount());
+    EXPECT_EQ(2u, p->getFieldInfo(3).getHitOffset());
+    EXPECT_EQ(1u, p->getFieldInfo(3).getHitCount());
     EXPECT_TRUE(p->evaluate());
 }
 
 TEST(StreamingQueryTest, test_hit)
 {
-    // positions (0 - (2^24-1))
-    assertHit(Hit(0,        0, 0, 0),        0, 0, 0);
-    assertHit(Hit(256,      0, 0, 1),      256, 0, 1);
-    assertHit(Hit(16777215, 0, 0, -1), 16777215, 0, -1);
-    assertHit(Hit(16777216, 0, 0, 1),        0, 1, 1); // overflow
+    // field id
+    assertHit(Hit(  1, 0, 1, 0),   1, 0, 1, 0);
+    assertHit(Hit(255, 0, 1, 0), 255, 0, 1, 0);
+    assertHit(Hit(256, 0, 1, 0), 256, 0, 1, 0);
 
-    // contexts (0 - 255)
-    assertHit(Hit(0,   1, 0, 1), 0,   1, 1);
-    assertHit(Hit(0, 255, 0, 1), 0, 255, 1);
-    assertHit(Hit(0, 256, 0, 1), 0,   0, 1); // overflow
+    // positions
+    assertHit(Hit(0, 0,  0,        0), 0, 0,  0,        0);
+    assertHit(Hit(0, 0,  1,      256), 0, 0,  1,      256);
+    assertHit(Hit(0, 0, -1, 16777215), 0, 0, -1, 16777215);
+    assertHit(Hit(0, 0,  1, 16777216), 0, 0,  1, 16777216);
+
 }
 
 void assertInt8Range(const std::string &term, bool expAdjusted, int64_t expLow, int64_t expHigh) {
@@ -824,47 +829,47 @@ TEST(StreamingQueryTest, test_same_element_evaluate)
     }
 
     // field 0
-    terms[0]->add(1, 0, 0, 10);
-    terms[0]->add(2, 0, 1, 20);
-    terms[0]->add(3, 0, 2, 30);
-    terms[0]->add(4, 0, 3, 40);
-    terms[0]->add(5, 0, 4, 50);
-    terms[0]->add(6, 0, 5, 60);
+    terms[0]->add(0, 0, 10, 1);
+    terms[0]->add(0, 1, 20, 2);
+    terms[0]->add(0, 2, 30, 3);
+    terms[0]->add(0, 3, 40, 4);
+    terms[0]->add(0, 4, 50, 5);
+    terms[0]->add(0, 5, 60, 6);
 
-    terms[1]->add(7, 1, 0, 70);
-    terms[1]->add(8, 1, 1, 80);
-    terms[1]->add(9, 1, 2, 90);
-    terms[1]->add(10, 1, 4, 100);
-    terms[1]->add(11, 1, 5, 110);
-    terms[1]->add(12, 1, 6, 120);
+    terms[1]->add(1, 0, 70, 7);
+    terms[1]->add(1, 1, 80, 8);
+    terms[1]->add(1, 2, 90, 9);
+    terms[1]->add(1, 4, 100, 10);
+    terms[1]->add(1, 5, 110, 11);
+    terms[1]->add(1, 6, 120, 12);
 
-    terms[2]->add(13, 2, 0, 130);
-    terms[2]->add(14, 2, 2, 140);
-    terms[2]->add(15, 2, 4, 150);
-    terms[2]->add(16, 2, 5, 160);
-    terms[2]->add(17, 2, 6, 170);
+    terms[2]->add(2, 0, 130, 13);
+    terms[2]->add(2, 2, 140, 14);
+    terms[2]->add(2, 4, 150, 15);
+    terms[2]->add(2, 5, 160, 16);
+    terms[2]->add(2, 6, 170, 17);
     HitList hits;
     sameElem->evaluateHits(hits);
     EXPECT_EQ(4u, hits.size());
-    EXPECT_EQ(0u, hits[0].wordpos());
     EXPECT_EQ(2u, hits[0].field_id());
-    EXPECT_EQ(0u, hits[0].elemId());
-    EXPECT_EQ(130,  hits[0].weight());
+    EXPECT_EQ(0u, hits[0].element_id());
+    EXPECT_EQ(130, hits[0].element_weight());
+    EXPECT_EQ(0u, hits[0].position());
 
-    EXPECT_EQ(0u, hits[1].wordpos());
     EXPECT_EQ(2u, hits[1].field_id());
-    EXPECT_EQ(2u, hits[1].elemId());
-    EXPECT_EQ(140,  hits[1].weight());
+    EXPECT_EQ(2u, hits[1].element_id());
+    EXPECT_EQ(140, hits[1].element_weight());
+    EXPECT_EQ(0u, hits[1].position());
 
-    EXPECT_EQ(0u, hits[2].wordpos());
     EXPECT_EQ(2u, hits[2].field_id());
-    EXPECT_EQ(4u, hits[2].elemId());
-    EXPECT_EQ(150,  hits[2].weight());
+    EXPECT_EQ(4u, hits[2].element_id());
+    EXPECT_EQ(150, hits[2].element_weight());
+    EXPECT_EQ(0u, hits[2].position());
 
-    EXPECT_EQ(0u, hits[3].wordpos());
     EXPECT_EQ(2u, hits[3].field_id());
-    EXPECT_EQ(5u, hits[3].elemId());
-    EXPECT_EQ(160,  hits[3].weight());
+    EXPECT_EQ(5u, hits[3].element_id());
+    EXPECT_EQ(160, hits[3].element_weight());
+    EXPECT_EQ(0u, hits[3].position());
     EXPECT_TRUE(sameElem->evaluate());
 }
 
@@ -917,8 +922,8 @@ TEST(StreamingQueryTest, test_in_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q = *term.get_terms().front();
-    q.add(0, 11, 0, 1);
-    q.add(0, 12, 0, 1);
+    q.add(11, 0, 1, 0);
+    q.add(12, 0, 1, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -944,11 +949,11 @@ TEST(StreamingQueryTest, dot_product_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, -13);
-    q0.add(0, 12, 0, -17);
+    q0.add(11, 0, -13, 0);
+    q0.add(12, 0, -17, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 4);
-    q1.add(0, 12, 0, 9);
+    q1.add(11, 0, 4, 0);
+    q1.add(12, 0, 9, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -989,11 +994,11 @@ check_wand_term(double limit, const vespalib::string& label)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, 17);
-    q0.add(0, 12, 0, 13);
+    q0.add(11, 0, 17, 0);
+    q0.add(12, 0, 13, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 9);
-    q1.add(0, 12, 0, 4);
+    q1.add(11, 0, 9, 0);
+    q1.add(12, 0, 4, 0);
     EXPECT_EQ(limit < exp_wand_score_field_11, term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -1043,11 +1048,11 @@ TEST(StreamingQueryTest, weighted_set_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, 10);
-    q0.add(0, 12, 0, 10);
+    q0.add(11, 0, 10, 0);
+    q0.add(12, 0, 10, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 10);
-    q1.add(0, 12, 0, 10);
+    q1.add(11, 0, 10, 0);
+    q1.add(12, 0, 10, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);

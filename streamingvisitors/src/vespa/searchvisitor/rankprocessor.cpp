@@ -335,8 +335,8 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                     }
                     if (tmd != nullptr) {
                         // adjust so that the position for phrase terms equals the match for the first term
-                        TermFieldMatchDataPosition pos(hit.elemId(), hit.wordpos() - term.getPosAdjust(),
-                                                       hit.weight(), fieldLen);
+                        TermFieldMatchDataPosition pos(hit.element_id(), hit.position() - term.getPosAdjust(),
+                                                       hit.element_weight(), fieldLen);
                         tmd->appendPosition(pos);
                         LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
                                    pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
