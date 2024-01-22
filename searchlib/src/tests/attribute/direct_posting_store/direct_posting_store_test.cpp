@@ -142,7 +142,11 @@ TEST(DirectPostingStoreApiTest, attributes_do_not_support_IDocidPostingStore_int
 
 TEST(DirectPostingStoreApiTest, attributes_support_IDocidWithWeightPostingStore_interface) {
     expect_docid_with_weight_posting_store(BasicType::INT64, CollectionType::WSET, true);
+    expect_docid_with_weight_posting_store(BasicType::INT32, CollectionType::WSET, true);
     expect_docid_with_weight_posting_store(BasicType::STRING, CollectionType::WSET, true);
+    expect_docid_with_weight_posting_store(BasicType::INT64, CollectionType::ARRAY, true);
+    expect_docid_with_weight_posting_store(BasicType::INT32, CollectionType::ARRAY, true);
+    expect_docid_with_weight_posting_store(BasicType::STRING, CollectionType::ARRAY, true);
 }
 
 TEST(DirectPostingStoreApiTest, attributes_do_not_support_IDocidWithWeightPostingStore_interface) {
@@ -150,13 +154,11 @@ TEST(DirectPostingStoreApiTest, attributes_do_not_support_IDocidWithWeightPostin
     expect_not_docid_with_weight_posting_store(BasicType::INT64, CollectionType::ARRAY, false);
     expect_not_docid_with_weight_posting_store(BasicType::INT64, CollectionType::WSET, false);
     expect_not_docid_with_weight_posting_store(BasicType::INT64, CollectionType::SINGLE, true);
-    expect_not_docid_with_weight_posting_store(BasicType::INT64, CollectionType::ARRAY, true);
     expect_not_docid_with_weight_posting_store(BasicType::STRING, CollectionType::SINGLE, false);
     expect_not_docid_with_weight_posting_store(BasicType::STRING, CollectionType::ARRAY, false);
     expect_not_docid_with_weight_posting_store(BasicType::STRING, CollectionType::WSET, false);
     expect_not_docid_with_weight_posting_store(BasicType::STRING, CollectionType::SINGLE, true);
-    expect_not_docid_with_weight_posting_store(BasicType::STRING, CollectionType::ARRAY, true);
-    expect_not_docid_with_weight_posting_store(BasicType::INT32, CollectionType::WSET, true);
+    expect_not_docid_with_weight_posting_store(BasicType::DOUBLE, CollectionType::ARRAY, true);
     expect_not_docid_with_weight_posting_store(BasicType::DOUBLE, CollectionType::WSET, true);
 }
 
