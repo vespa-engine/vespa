@@ -79,6 +79,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -369,7 +370,7 @@ public class SessionRepository {
         return session;
     }
 
-    public int deleteExpiredRemoteSessions(Clock clock) {
+    public int deleteExpiredRemoteSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
         Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
@@ -377,11 +378,11 @@ public class SessionRepository {
         int deleted = 0;
         // Avoid deleting too many in one run
         int deleteMax = (int) Math.min(1000, Math.max(50, remoteSessionsFromZooKeeper.size() * 0.05));
-        for (long sessionId : remoteSessionsFromZooKeeper) {
+        for (Long sessionId : remoteSessionsFromZooKeeper) {
             Session session = remoteSessionCache.get(sessionId);
             if (session == null)
                 session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
-            if (session.getStatus() == Session.Status.ACTIVATE) continue;
+            if (session.getStatus() == Session.Status.ACTIVATE && sessionIsActiveForApplication.test(session)) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 deleteRemoteSessionFromZooKeeper(session);
@@ -616,7 +617,7 @@ public class SessionRepository {
 
     // ---------------- Common stuff ----------------------------------------------------------------
 
-    public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
+    public void deleteExpiredSessions(Predicate<Session> sessionIsActiveForApplication) {
         log.log(Level.FINE, () -> "Deleting expired local sessions for tenant '" + tenantName + "'");
         Set<Long> sessionIdsToDelete = new HashSet<>();
         Set<Long> newSessions = findNewSessionsInFileSystem();
@@ -650,8 +651,7 @@ public class SessionRepository {
                     Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
                     if (applicationId.isEmpty()) continue;
 
-                    Long activeSession = activeSessions.get(applicationId.get());
-                    if (activeSession == null || activeSession != sessionId) {
+                    if ( ! sessionIsActiveForApplication.test(session)) {
                         sessionIdsToDelete.add(sessionId);
                         log.log(Level.FINE, () -> "Will delete inactive session " + sessionId + " created " +
                                 createTime + " for '" + applicationId + "'");

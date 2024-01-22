@@ -43,6 +43,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
+import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprintsClient;
 import com.yahoo.vespa.config.server.application.Application;
@@ -54,7 +55,6 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
-import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -111,7 +111,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +134,6 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * The API for managing applications.
@@ -957,28 +955,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void deleteExpiredLocalSessions() {
-        Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants()
-                        .forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
-
-        Set<ApplicationId> applicationIds = new HashSet<>();
-        sessionsPerTenant.values()
-                .forEach(sessionList -> sessionList.stream()
-                        .map(Session::getOptionalApplicationId)
-                        .filter(Optional::isPresent)
-                        .forEach(appId -> applicationIds.add(appId.get())));
-
-        Map<ApplicationId, Long> activeSessions = new HashMap<>();
-        applicationIds.forEach(applicationId -> getActiveSession(applicationId).ifPresent(session -> activeSessions.put(applicationId, session.getSessionId())));
-        sessionsPerTenant.keySet().forEach(tenant -> tenant.getSessionRepository().deleteExpiredSessions(activeSessions));
+        for (Tenant tenant : tenantRepository.getAllTenants()) {
+            tenant.getSessionRepository().deleteExpiredSessions(session -> sessionIsActiveForItsApplication(tenant, session));
+        }
     }
 
     public int deleteExpiredRemoteSessions(Clock clock) {
         return tenantRepository.getAllTenants()
                 .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock))
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, session -> sessionIsActiveForItsApplication(tenant, session)))
                 .mapToInt(i -> i)
                 .sum();
+    }
+
+    private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {
+        Optional<ApplicationId> owner = session.getOptionalApplicationId();
+        if (owner.isEmpty()) return true; // Chicken out ~(˘▾˘)~
+        return tenant.getApplicationRepo().activeSessionOf(owner.get()).equals(Optional.of(session.getSessionId()));
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
