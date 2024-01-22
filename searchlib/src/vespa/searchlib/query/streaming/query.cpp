@@ -31,7 +31,7 @@ const HitList &
 QueryConnector::evaluateHits(HitList & hl) const
 {
     if (evaluate()) {
-        hl.emplace_back(1, 0, 0, 1);
+        hl.emplace_back(0, 0, 1, 1);
     }
     return hl;
 }
@@ -196,19 +196,19 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
         unsigned int & nextIndex = indexVector[currMatchCount+1];
 
         const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
-        uint32_t currElemId = currHit.elemId();
+        uint32_t currElemId = currHit.element_id();
 
         const HitList & nextHL = next->evaluateHits(tmpHL);
 
         size_t nextIndexMax = nextHL.size();
-        while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].elemId() < currElemId)) {
+        while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() < currElemId)) {
             nextIndex++;
         }
-        if ((nextIndex < nextIndexMax) && (nextHL[nextIndex].elemId() == currElemId)) {
+        if ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() == currElemId)) {
             currMatchCount++;
             if ((currMatchCount+1) == numFields) {
                 Hit h = nextHL[indexVector[currMatchCount]];
-                hl.emplace_back(0, h.field_id(), h.elemId(), h.weight());
+                hl.emplace_back(h.field_id(), h.element_id(), h.element_weight(), 0);
                 currMatchCount = 0;
                 indexVector[0]++;
             }
@@ -238,6 +238,15 @@ PhraseQueryNode::addChild(QueryNode::UP child) {
     AndQueryNode::addChild(std::move(child));
 }
 
+namespace {
+
+// TODO: Remove when rewriting PhraseQueryNode::evaluateHits
+uint32_t legacy_pos(const Hit& hit) {
+    return ((hit.position() & 0xffffff) | ((hit.field_id() & 0xff) << 24));
+}
+
+}
+
 const HitList &
 PhraseQueryNode::evaluateHits(HitList & hl) const
 {
@@ -258,8 +267,8 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
         unsigned int & nextIndex = indexVector[currPhraseLen+1];
 
         const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
-        size_t firstPosition = currHit.pos();
-        uint32_t currElemId = currHit.elemId();
+        size_t firstPosition = legacy_pos(currHit);
+        uint32_t currElemId = currHit.element_id();
         uint32_t curr_field_id = currHit.field_id();
 
         const HitList & nextHL = next->evaluateHits(tmpHL);
@@ -268,12 +277,12 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
         size_t nextIndexMax = nextHL.size();
         while ((nextIndex < nextIndexMax) &&
               ((nextHL[nextIndex].field_id() < curr_field_id) ||
-               ((nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].elemId() <= currElemId))) &&
-             ((diff = nextHL[nextIndex].pos()-firstPosition) < 1))
+               ((nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].element_id() <= currElemId))) &&
+               ((diff = legacy_pos(nextHL[nextIndex])-firstPosition) < 1))
         {
             nextIndex++;
         }
-        if ((diff == 1) && (nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].elemId() == currElemId)) {
+        if ((diff == 1) && (nextHL[nextIndex].field_id() == curr_field_id) && (nextHL[nextIndex].element_id() == currElemId)) {
             currPhraseLen++;
             if ((currPhraseLen+1) == fullPhraseLen) {
                 Hit h = nextHL[indexVector[currPhraseLen]];

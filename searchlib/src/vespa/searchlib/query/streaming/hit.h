@@ -8,21 +8,21 @@ namespace search::streaming {
 
 class Hit
 {
-public:
-    Hit(uint32_t pos_, uint32_t field_id_, uint32_t elemId_, int32_t weight_) noexcept
-        : _position(pos_ | (field_id_<<24)),
-          _elemId(elemId_),
-          _weight(weight_)
-    { }
-    int32_t weight() const { return _weight; }
-    uint32_t pos()     const { return _position; }
-    uint32_t wordpos() const { return _position & 0xffffff; }
-    uint32_t field_id() const noexcept { return _position >> 24; }
-    uint32_t elemId() const { return _elemId; }
-private:
+    uint32_t _field_id;
+    uint32_t _element_id;
+    int32_t  _element_weight;
     uint32_t _position;
-    uint32_t _elemId;
-    int32_t  _weight;
+public:
+    Hit(uint32_t field_id_, uint32_t element_id_, int32_t element_weight_, uint32_t position_) noexcept
+        : _field_id(field_id_),
+          _element_id(element_id_),
+          _element_weight(element_weight_),
+          _position(position_)
+    { }
+    uint32_t field_id() const noexcept { return _field_id; }
+    uint32_t element_id() const { return _element_id; }
+    int32_t element_weight() const { return _element_weight; }
+    uint32_t position() const { return _position; }
 };
 
 using HitList = std::vector<Hit>;

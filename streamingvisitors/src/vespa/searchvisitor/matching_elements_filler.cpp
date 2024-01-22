@@ -109,7 +109,7 @@ Matcher::add_matching_elements(const vespalib::string& field_name, uint32_t doc_
 {
     _elements.clear();
     for (auto& hit : hit_list) {
-        _elements.emplace_back(hit.elemId());
+        _elements.emplace_back(hit.element_id());
     }
     if (_elements.size() > 1) {
         std::sort(_elements.begin(), _elements.end());
