@@ -199,6 +199,13 @@ public class TensorType {
                 return Optional.of(i);
         return Optional.empty();
     }
+    /** Returns the 0-base index of this dimension, or empty if it is not present */
+    int indexOfDimensionAsInt(String dimension) {
+        for (int i = 0; i < dimensions.size(); i++)
+            if (dimensions.get(i).name().equals(dimension))
+                return i;
+        return -1;
+    }
 
     /* Returns the bound of this dimension if it is present and bound in this, empty otherwise */
     public Optional<Long> sizeOfDimension(String dimension) {

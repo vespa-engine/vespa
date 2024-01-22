@@ -150,10 +150,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public Builder add(String dimension, String label) {
             Objects.requireNonNull(dimension, "dimension cannot be null");
             Objects.requireNonNull(label, "label cannot be null");
-            Optional<Integer> labelIndex = type.indexOfDimension(dimension);
-            if ( labelIndex.isEmpty())
+            int labelIndex = type.indexOfDimensionAsInt(dimension);
+            if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex.get()] = label;
+            labels[labelIndex] = label;
             return this;
         }
 
