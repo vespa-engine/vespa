@@ -37,7 +37,7 @@ UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef & f, search::stream
     if (regexp_term->regexp().partial_match({f.data(), f.size()})) {
         addHit(qt, 0);
     }
-    return countWords(f);
+    return 1;
 }
 
 size_t
@@ -50,7 +50,7 @@ UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef & f, search::streami
     if (fuzzy_term->is_match({f.data(), f.size()})) {
         addHit(qt, 0);
     }
-    return countWords(f);
+    return 1;
 }
 
 size_t
