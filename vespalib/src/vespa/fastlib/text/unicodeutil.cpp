@@ -11,15 +11,15 @@ namespace {
 class Initialize
 {
 public:
-    Initialize() { Fast_UnicodeUtil::InitTables(); }
+    Initialize() noexcept { Fast_UnicodeUtil::InitTables(); }
 };
 
-Initialize _G_Initializer;
+Initialize _g_initializer;
 
 }
 
 void
-Fast_UnicodeUtil::InitTables()
+Fast_UnicodeUtil::InitTables() noexcept
 {
     /**
      * Hack for Katakana accent marks (torgeir)
@@ -29,8 +29,7 @@ Fast_UnicodeUtil::InitTables()
 }
 
 char *
-Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src,
-                            int maxdst, int maxsrc)
+Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept
 {
     char * p = dst;
     char * edst = dst + maxdst;
@@ -83,7 +82,7 @@ Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src,
 
 
 int
-Fast_UnicodeUtil::utf8cmp(const char *s1, const ucs4_t *s2)
+Fast_UnicodeUtil::utf8cmp(const char *s1, const ucs4_t *s2) noexcept
 {
     ucs4_t i1;
     ucs4_t i2;
@@ -101,7 +100,7 @@ Fast_UnicodeUtil::utf8cmp(const char *s1, const ucs4_t *s2)
 }
 
 size_t
-Fast_UnicodeUtil::ucs4strlen(const ucs4_t *str)
+Fast_UnicodeUtil::ucs4strlen(const ucs4_t *str) noexcept
 {
     const ucs4_t *p = str;
     while (*p++ != 0) {
@@ -111,7 +110,7 @@ Fast_UnicodeUtil::ucs4strlen(const ucs4_t *str)
 }
 
 ucs4_t *
-Fast_UnicodeUtil::ucs4copy(ucs4_t *dst, const char *src)
+Fast_UnicodeUtil::ucs4copy(ucs4_t *dst, const char *src) noexcept
 {
     ucs4_t i;
     ucs4_t *p;
@@ -127,7 +126,7 @@ Fast_UnicodeUtil::ucs4copy(ucs4_t *dst, const char *src)
 }
 
 ucs4_t
-Fast_UnicodeUtil::GetUTF8CharNonAscii(unsigned const char *&src)
+Fast_UnicodeUtil::GetUTF8CharNonAscii(unsigned const char *&src) noexcept
 {
     ucs4_t retval;
 
@@ -222,7 +221,7 @@ Fast_UnicodeUtil::GetUTF8CharNonAscii(unsigned const char *&src)
 }
 
 ucs4_t
-Fast_UnicodeUtil::GetUTF8Char(unsigned const char *&src)
+Fast_UnicodeUtil::GetUTF8Char(unsigned const char *&src) noexcept
 {
     return (*src >= 0x80)
         ? GetUTF8CharNonAscii(src)
@@ -246,7 +245,7 @@ Fast_UnicodeUtil::GetUTF8Char(unsigned const char *&src)
 #define UTF8_STARTCHAR(c)  (!((c) & 0x80) || ((c) & 0x40))
 
 int Fast_UnicodeUtil::UTF8move(unsigned const char* start, size_t length,
-                               unsigned const char*& pos, off_t offset)
+                               unsigned const char*& pos, off_t offset) noexcept
 {
     int increment = offset > 0 ? 1 : -1;
     unsigned const char* p = pos;
