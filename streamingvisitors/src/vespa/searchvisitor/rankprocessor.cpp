@@ -114,7 +114,7 @@ RankProcessor::initQueryEnvironment()
 void
 RankProcessor::initHitCollector(size_t wantedHitCount)
 {
-    _hitCollector.reset(new HitCollector(wantedHitCount));
+    _hitCollector = std::make_unique<HitCollector>(wantedHitCount);
 }
 
 void
@@ -209,9 +209,8 @@ class RankProgramWrapper : public HitCollector::IRankProgram
 {
 private:
     MatchData &_match_data;
-
 public:
-    RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
+    explicit RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
     void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
         copyTermFieldMatchData(matchData, _match_data);

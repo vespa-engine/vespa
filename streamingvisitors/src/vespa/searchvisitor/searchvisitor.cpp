@@ -391,7 +391,17 @@ SearchVisitor::init(const Parameters & params)
     }
     _queryResult->getSearchResult().setWantedHitCount(wantedSummaryCount);
 
+    vespalib::stringref sortRef;
+    bool hasSortSpec = params.lookup("sort", sortRef);
+    vespalib::stringref groupingRef;
+    bool hasGrouping = params.lookup("aggregation", groupingRef);
+
     if (params.lookup("rankprofile", valueRef) ) {
+        if ( ! hasGrouping && (wantedSummaryCount == 0)) {
+            // If no hits and no grouping, just use unranked profile
+            // TODO, optional could also include check for if grouping needs rank
+            valueRef = "unranked";
+        }
         vespalib::string tmp(valueRef.data(), valueRef.size());
         _rankController.setRankProfile(tmp);
         LOG(debug, "Received rank profile: %s", _rankController.getRankProfile().c_str());
@@ -442,9 +452,9 @@ SearchVisitor::init(const Parameters & params)
     if (_env) {
         _init_called = true;
 
-        if ( params.lookup("sort", valueRef) ) {
+        if ( hasSortSpec ) {
             search::uca::UcaConverterFactory ucaFactory;
-            _sortSpec = search::common::SortSpec(vespalib::string(valueRef.data(), valueRef.size()), ucaFactory);
+            _sortSpec = search::common::SortSpec(vespalib::string(sortRef.data(), sortRef.size()), ucaFactory);
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 
@@ -494,10 +504,10 @@ SearchVisitor::init(const Parameters & params)
             LOG(warning, "No query received");
         }
 
-        if (params.lookup("aggregation", valueRef) ) {
+        if (hasGrouping) {
             std::vector<char> newAggrBlob;
-            newAggrBlob.resize(valueRef.size());
-            memcpy(&newAggrBlob[0], valueRef.data(), newAggrBlob.size());
+            newAggrBlob.resize(groupingRef.size());
+            memcpy(&newAggrBlob[0], groupingRef.data(), newAggrBlob.size());
             LOG(debug, "Received new aggregation blob of %zd bytes", newAggrBlob.size());
             setupGrouping(newAggrBlob);
         }
