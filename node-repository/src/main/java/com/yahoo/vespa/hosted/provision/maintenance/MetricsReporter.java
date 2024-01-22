@@ -408,7 +408,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set(ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.baseName(), emptyHosts, null);
     }
 
-    public static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {
+    static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {
         Map<String, String> dimensions = new HashMap<>(dimensions(application));
         dimensions.put("clusterid", cluster.value());
         return dimensions;

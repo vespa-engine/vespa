@@ -158,7 +158,15 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(from) + "\nto   " + toString(to));
         metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALED.baseName(), 1,
-                   metric.createContext(MetricsReporter.dimensions(application, clusterNodes.clusterSpec().id())));
+                   metric.createContext(dimensions(application, clusterNodes.clusterSpec())));
+    }
+
+    private static Map<String, String> dimensions(ApplicationId application, ClusterSpec clusterSpec) {
+        return Map.of("tenantName", application.tenant().value(),
+                      "applicationId", application.serializedForm().replace(':', '.'),
+                      "app", application.application().value() + "." + application.instance().value(),
+                      "clusterid", clusterSpec.id().value(),
+                      "clustertype", clusterSpec.type().name());
     }
 
     static String toString(ClusterResources r) {
