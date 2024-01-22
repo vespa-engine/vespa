@@ -16,7 +16,7 @@ using ucs4_t = uint32_t;
  * Used to examine properties of unicode characters, and
  * provide fast conversion methods between often used encodings.
  */
-class Fast_UnicodeUtil {
+class Fast_UnicodeUtil final {
 private:
     /**
      * Is true when the tables have been initialized. Is set by
@@ -46,9 +46,8 @@ private:
     };
 
 public:
-    virtual ~Fast_UnicodeUtil() { }
     /** Initialize the ISO 8859-1 static tables. */
-    static void InitTables();
+    static void InitTables() noexcept;
 
     /** Indicates an invalid UTF-8 character sequence. */
     enum { _BadUTF8Char = 0xfffffffeu };
@@ -64,7 +63,7 @@ public:
      * one or more of the properties alphabetic, ideographic,
      * combining char, decimal digit char, private use, extender.
      */
-    static bool IsWordChar(ucs4_t testchar) {
+    static bool IsWordChar(ucs4_t testchar) noexcept {
         return (testchar < 65536 &&
                 (_compCharProps[testchar >> 8][testchar & 255] &
                  _wordcharProp) != 0);
@@ -80,8 +79,8 @@ public:
      * @return The next UCS4 character, or _BadUTF8Char if the
      *         next character is invalid.
      */
-    static ucs4_t GetUTF8Char(const unsigned char *& src);
-    static ucs4_t GetUTF8Char(const char *& src) {
+    static ucs4_t GetUTF8Char(const unsigned char *& src) noexcept;
+    static ucs4_t GetUTF8Char(const char *& src) noexcept {
         const unsigned char *temp = reinterpret_cast<const unsigned char *>(src);
         ucs4_t res = GetUTF8Char(temp);
         src = reinterpret_cast<const char *>(temp);
@@ -94,7 +93,7 @@ public:
      * @param i The UCS4 character.
      * @return Pointer to the next position in dst after the putted byte(s).
      */
-    static char *utf8cput(char *dst, ucs4_t i) {
+    static char *utf8cput(char *dst, ucs4_t i) noexcept {
         if (i < 128)
             *dst++ = i;
         else if (i < 0x800) {
@@ -132,14 +131,14 @@ public:
      * @param src The UTF-8 source buffer.
      * @return A pointer to the destination string.
      */
-    static ucs4_t *ucs4copy(ucs4_t *dst, const char *src);
+    static ucs4_t *ucs4copy(ucs4_t *dst, const char *src) noexcept;
 
     /**
      * Get the length of the UTF-8 representation of an UCS4 character.
      * @param i The UCS4 character.
      * @return The number of bytes required for the UTF-8 representation.
      */
-    static size_t utf8clen(ucs4_t i) {
+    static size_t utf8clen(ucs4_t i) noexcept {
         if (i < 128)
             return 1;
         else if (i < 0x800)
@@ -159,7 +158,7 @@ public:
      * @param testchar The character to lowercase.
      * @return The lowercase of the input, if defined. Else the input character.
      */
-    static ucs4_t ToLower(ucs4_t testchar)
+    static ucs4_t ToLower(ucs4_t testchar) noexcept
     {
         ucs4_t ret;
         if (testchar < 65536) {
@@ -182,14 +181,14 @@ public:
      * @return Number of bytes moved, or -1 if out of range
      */
     static int UTF8move(unsigned const char* start, size_t length,
-                        unsigned const char*& pos, off_t offset);
+                        unsigned const char*& pos, off_t offset) noexcept;
 
     /**
      * Find the number of characters in an UCS4 string.
      * @param str The UCS4 string.
      * @return The number of characters.
      */
-    static size_t ucs4strlen(const ucs4_t *str);
+    static size_t ucs4strlen(const ucs4_t *str) noexcept;
 
     /**
      * Convert UCS4 to UTF-8, bounded by max lengths.
@@ -199,7 +198,7 @@ public:
      * @param maxsrc The maximum number of characters to convert from src.
      * @return A pointer to the destination.
      */
-    static char *utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc);
+    static char *utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept;
 
 
     /**
@@ -210,7 +209,7 @@ public:
      *        if s1 is, respectively, less than, matching, or greater than s2.
      * NB Only used in local test
      */
-    static int utf8cmp(const char *s1, const ucs4_t *s2);
+    static int utf8cmp(const char *s1, const ucs4_t *s2) noexcept;
 
     /**
      * Test for terminal punctuation.
@@ -218,7 +217,7 @@ public:
      * @return true if testchar is a terminal punctuation character,
      *    i.e. if it has the terminal punctuation char property.
      */
-    static bool IsTerminalPunctuationChar(ucs4_t testchar) {
+    static bool IsTerminalPunctuationChar(ucs4_t testchar) noexcept {
         return (testchar < 65536 &&
                 (_compCharProps[testchar >> 8][testchar & 255] &
                  _terminalPunctuationCharProp) != 0);
@@ -233,10 +232,10 @@ public:
      * @return The next UCS4 character, or _BadUTF8Char if the
      *         next character is invalid.
      */
-    static ucs4_t GetUTF8CharNonAscii(unsigned const char *&src);
+    static ucs4_t GetUTF8CharNonAscii(unsigned const char *&src) noexcept;
 
     // this is really an alias of the above function
-    static ucs4_t GetUTF8CharNonAscii(const char *&src) {
+    static ucs4_t GetUTF8CharNonAscii(const char *&src) noexcept {
         unsigned const char *temp = reinterpret_cast<unsigned const char *>(src);
         ucs4_t res = GetUTF8CharNonAscii(temp);
         src = reinterpret_cast<const char *>(temp);
