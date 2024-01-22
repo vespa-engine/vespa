@@ -579,7 +579,8 @@ private:
     const IDocidWithWeightPostingStore *_dwwps;
     vespalib::string _scratchPad;
 
-    bool has_always_btree_iterators_with_docid_and_weight() const {
+    bool use_docid_with_weight_posting_store() const {
+        // TODO: Relax requirement on always having weight iterator for query operators where that makes sense.
         return (_dwwps != nullptr) && (_dwwps->has_always_btree_iterator());
     }
 
@@ -598,7 +599,7 @@ public:
 
     template <class TermNode>
     void visitSimpleTerm(TermNode &n) {
-        if (has_always_btree_iterators_with_docid_and_weight() && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
+        if (use_docid_with_weight_posting_store() && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
             setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwwps, key));
         } else {
@@ -679,41 +680,32 @@ public:
         return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
     }
 
-    template <typename TermType, typename SearchType>
-    void visit_wset_or_in_term(TermType& n) {
-        if (_dps != nullptr) {
-            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidPostingStore, SearchType>
-                    (_field, _attr, *_dps, n.getNumTerms());
-            createDirectMultiTerm(bp, n);
-        } else if (_dwwps != nullptr) {
-            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, SearchType>
-                    (_field, _attr, *_dwwps, n.getNumTerms());
-            createDirectMultiTerm(bp, n);
+    void visit(query::WeightedSetTerm &n) override {
+        bool isSingleValue = !_attr.hasMultiValue();
+        bool isString = (_attr.isStringType() && _attr.hasEnum());
+        bool isInteger = _attr.isIntegerType();
+        if (isSingleValue && (isString || isInteger)) {
+            auto ws = std::make_unique<AttributeWeightedSetBlueprint>(_field, _attr);
+            SearchContextParams scParams = createContextParams();
+            for (size_t i = 0; i < n.getNumTerms(); ++i) {
+                auto term = n.getAsString(i);
+                ws->addToken(_attr.createSearchContext(extractTerm(term.first, isInteger), scParams), term.second.percent());
+            }
+            setResult(std::move(ws));
         } else {
-            bool isSingleValue = !_attr.hasMultiValue();
-            bool isString = (_attr.isStringType() && _attr.hasEnum());
-            bool isInteger = _attr.isIntegerType();
-            if (isSingleValue && (isString || isInteger)) {
-                auto ws = std::make_unique<AttributeWeightedSetBlueprint>(_field, _attr);
-                SearchContextParams scParams = createContextParams();
-                for (size_t i = 0; i < n.getNumTerms(); ++i) {
-                    auto term = n.getAsString(i);
-                    ws->addToken(_attr.createSearchContext(extractTerm(term.first, isInteger), scParams), term.second.percent());
-                }
-                setResult(std::move(ws));
+            if (use_docid_with_weight_posting_store()) {
+                auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::WeightedSetTermSearch>
+                        (_field, _attr, *_dwwps, n.getNumTerms());
+                createDirectMultiTerm(bp, n);
             } else {
-                auto* bp = new WeightedSetTermBlueprint(_field);
+                auto *bp = new WeightedSetTermBlueprint(_field);
                 createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
             }
         }
     }
 
-    void visit(query::WeightedSetTerm &n) override {
-        visit_wset_or_in_term<query::WeightedSetTerm, queryeval::WeightedSetTermSearch>(n);
-    }
-
     void visit(query::DotProduct &n) override {
-        if (has_always_btree_iterators_with_docid_and_weight()) {
+        if (use_docid_with_weight_posting_store()) {
             auto *bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, queryeval::DotProductSearch>
                     (_field, _attr, *_dwwps, n.getNumTerms());
             createDirectMultiTerm(bp, n);
@@ -724,7 +716,7 @@ public:
     }
 
     void visit(query::WandTerm &n) override {
-        if (has_always_btree_iterators_with_docid_and_weight()) {
+        if (use_docid_with_weight_posting_store()) {
             auto *bp = new DirectWandBlueprint(_field, *_dwwps,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
                                                n.getNumTerms());
@@ -739,7 +731,18 @@ public:
     }
 
     void visit(query::InTerm &n) override {
-        visit_wset_or_in_term<query::InTerm, attribute::InTermSearch>(n);
+        if (_dps != nullptr) {
+            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidPostingStore, attribute::InTermSearch>
+                    (_field, _attr, *_dps, n.getNumTerms());
+            createDirectMultiTerm(bp, n);
+        } else if (_dwwps != nullptr) {
+            auto* bp = new attribute::DirectMultiTermBlueprint<IDocidWithWeightPostingStore, attribute::InTermSearch>
+                    (_field, _attr, *_dwwps, n.getNumTerms());
+            createDirectMultiTerm(bp, n);
+        } else {
+            auto* bp = new WeightedSetTermBlueprint(_field);
+            createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
+        }
     }
 
     void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {

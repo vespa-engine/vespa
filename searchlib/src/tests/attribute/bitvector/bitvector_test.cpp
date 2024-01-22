@@ -430,8 +430,7 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
     sc = getSearch<VectorType>(tv, filter);
     checkSearch(v, std::move(sc), 2, 1022, 205, !filter, true);
     const auto* dww = v->as_docid_with_weight_posting_store();
-    if ((dww != nullptr) && (bt == BasicType::STRING)) {
-        // This way of doing lookup is only supported by string attributes.
+    if (dww != nullptr) {
         auto lres = dww->lookup(getSearchStr<VectorType>(), dww->get_dictionary_snapshot());
         using DWSI = search::queryeval::DocidWithWeightSearchIterator;
         TermFieldMatchData md;
