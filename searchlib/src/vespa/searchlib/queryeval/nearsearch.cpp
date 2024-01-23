@@ -3,7 +3,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <limits>
-#include <set>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".nearsearch");
@@ -16,13 +16,15 @@ using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPositionKey;
 
 template<typename T>
-void setup_fields(uint32_t window, std::vector<T> &matchers, const TermFieldMatchDataArray &in) {
-    std::set<uint32_t> fields;
+void setup_fields(uint32_t window, std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms) {
+    std::map<uint32_t,uint32_t> fields;
     for (size_t i = 0; i < in.size(); ++i) {
-        fields.insert(in[i]->getFieldId());
+        ++fields[in[i]->getFieldId()];
     }
-    for (const auto& elem : fields) {
-        matchers.push_back(T(window, elem, in));
+    for (auto [field, cnt]: fields) {
+        if (cnt == terms) {
+            matchers.push_back(T(window, field, in));
+        }
     }
 }
 
@@ -126,7 +128,7 @@ NearSearch::NearSearch(Children terms,
     : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
-    setup_fields(window, _matchers, data);
+    setup_fields(window, _matchers, data, getChildren().size());
 }
 
 namespace {
@@ -227,7 +229,7 @@ ONearSearch::ONearSearch(Children terms,
     : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
-    setup_fields(window, _matchers, data);
+    setup_fields(window, _matchers, data, getChildren().size());
 }
 
 bool
