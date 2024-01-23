@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.base.Preconditions;
+
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.function.Supplier;
 
 /**
  * Helper class to enable lookahead in the token stream.
@@ -17,73 +18,52 @@ import com.google.common.base.Preconditions;
  */
 public class TokenBuffer {
 
-    private final List<Token> tokens;
+    private final Deque<Token> tokens;
 
-    private int position = 0;
     private int nesting = 0;
 
     public TokenBuffer() {
-        this(new ArrayList<>());
-    }
-
-    public TokenBuffer(List<Token> tokens) {
-        this.tokens = tokens;
-        if (tokens.size() > 0)
-            updateNesting(tokens.get(position).token);
+        this.tokens = new ArrayDeque<>();
     }
 
     /** Returns whether any tokens are available in this */
-    public boolean isEmpty() { return remaining() == 0; }
+    public boolean isEmpty() { return tokens.isEmpty(); }
 
-    public JsonToken previous() {
-        updateNestingGoingBackwards(current());
-        position--;
-        return current();
-    }
-
-    /** Returns the current token without changing position, or null if none */
-    public JsonToken current() {
-        if (isEmpty()) return null;
-        Token token = tokens.get(position);
-        if (token == null) return null;
-        return token.token;
-    }
-
+    /** Returns the next token, or null, and updates the nesting count of this. */
     public JsonToken next() {
-        position++;
+        tokens.poll();
         JsonToken token = current();
         updateNesting(token);
         return token;
     }
 
-    /** Returns a given number of tokens ahead, or null if none */
-    public JsonToken peek(int ahead) {
-        if (tokens.size() <= position + ahead) return null;
-        return tokens.get(position + ahead).token;
+    /** Returns the current token without changing position, or null if none */
+    public JsonToken current() {
+        return isEmpty() ? null : tokens.peek().token;
     }
 
     /** Returns the current token name without changing position, or null if none */
     public String currentName() {
-        if (isEmpty()) return null;
-        Token token = tokens.get(position);
-        if (token == null) return null;
-        return token.name;
+        return isEmpty() ? null : tokens.peek().name;
     }
 
     /** Returns the current token text without changing position, or null if none */
     public String currentText() {
-        if (isEmpty()) return null;
-        Token token = tokens.get(position);
-        if (token == null) return null;
-        return token.text;
+        return isEmpty() ? null : tokens.peek().text;
     }
 
-    public int remaining() {
-        return tokens.size() - position;
+    /**
+     * Returns a sequence of remaining tokens in this, or nulls when none remain.
+     * This may fill the token buffer, but not otherwise modify it.
+     */
+    public Supplier<Token> lookahead() {
+        Iterator<Token> iterator = tokens.iterator();
+        if (iterator.hasNext()) iterator.next();
+        return () -> iterator.hasNext() ? iterator.next() : null;
     }
 
     private void add(JsonToken token, String name, String text) {
-        tokens.add(tokens.size(), new Token(token, name, text));
+        tokens.add(new Token(token, name, text));
     }
 
     public void bufferObject(JsonToken first, JsonParser tokens) {
@@ -96,7 +76,7 @@ public class TokenBuffer {
 
         Preconditions.checkArgument(first == firstToken,
                 "Expected %s, got %s.", firstToken.name(), t);
-        if (remaining() == 0) {
+        if (isEmpty()) {
             updateNesting(t);
         }
         localNesting = storeAndPeekNesting(t, localNesting, tokens);
@@ -142,23 +122,14 @@ public class TokenBuffer {
         nesting += nestingOffset(token);
     }
 
-    private void updateNestingGoingBackwards(JsonToken token) {
-        nesting -= nestingOffset(token);
-    }
-
     public int nesting() {
         return nesting;
     }
 
     public void skipToRelativeNesting(int relativeNesting) {
         int initialNesting = nesting();
-        do {
-            next();
-        } while ( nesting() > initialNesting + relativeNesting);
-    }
-
-    public List<Token> rest() {
-        return tokens.subList(position, tokens.size());
+        do next();
+        while (nesting() > initialNesting + relativeNesting);
     }
 
     public static final class Token {
