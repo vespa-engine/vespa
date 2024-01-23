@@ -95,6 +95,18 @@ public:
 };
 
 /**
+   N-ary RankWith operator
+*/
+class RankWithQueryNode : public QueryConnector
+{
+public:
+    RankWithQueryNode() noexcept : QueryConnector("RANK") { }
+    explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
+    bool evaluate() const override;
+};
+
+
+/**
    N-ary "EQUIV" operator that merges terms from nodes below.
 */
 class EquivQueryNode : public OrQueryNode

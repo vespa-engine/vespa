@@ -51,6 +51,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_SAME_ELEMENT:
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
+    case ParseItem::ITEM_RANK:
     {
         qn = QueryConnector::create(type);
         if (qn) {
@@ -172,17 +173,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qn = std::move(orqn);
             } else {
                 qn = std::move(qt);
-            }
-        }
-    }
-    break;
-    case ParseItem::ITEM_RANK:
-    {
-        if (arity >= 1) {
-            queryRep.next();
-            qn = Build(parent, factory, queryRep, false);
-            for (uint32_t skipCount = arity-1; (skipCount > 0) && queryRep.next(); skipCount--) {
-                skipCount += queryRep.getArity();
             }
         }
     }

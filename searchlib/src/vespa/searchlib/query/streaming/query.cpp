@@ -117,6 +117,7 @@ QueryConnector::create(ParseItem::ItemType type)
         case search::ParseItem::ITEM_SAME_ELEMENT: return std::make_unique<SameElementQueryNode>();
         case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>();
         case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>();
+        case search::ParseItem::ITEM_RANK:         return std::make_unique<RankWithQueryNode>();
         default: return nullptr;
     }
 }
@@ -162,6 +163,18 @@ OrQueryNode::evaluate() const {
     return false;
 }
 
+bool
+RankWithQueryNode::evaluate() const {
+    bool first = true;
+    bool firstOk = false;
+    for (const auto & qn : getChildren()) {
+        if (qn->evaluate()) {
+            if (first) firstOk = true;
+        }
+        first = false;
+    }
+    return firstOk;
+}
 
 bool
 EquivQueryNode::evaluate() const
