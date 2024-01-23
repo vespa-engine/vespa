@@ -86,16 +86,6 @@ public class DocumentParser {
     private void handleIdentLevelOne(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally)
             throws IOException {
         JsonToken currentToken = parser.getCurrentToken();
-        if (currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) {
-            try {
-                if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
-                    documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
-                    return;
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Got IO exception while parsing document", e);
-            }
-        }
         if ((currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) &&
                 CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
             documentParseInfo.create = Optional.of(currentToken == JsonToken.VALUE_TRUE);
