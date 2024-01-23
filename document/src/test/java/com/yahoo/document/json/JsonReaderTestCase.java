@@ -770,47 +770,74 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testNestedArrayMatch() {
-        // Supposed to work?
-        assertThrows(ClassCastException.class,
-                     () -> parseUpdate("""
-                                       {
-                                         "update": "id:unittest:testArrayOfArrayOfInt::whee",
-                                         "fields": {
-                                           "arrayOfArrayOfInt": {
-                                             "match": {
-                                               "element": 1,
-                                               "match": {
-                                                 "element": 2,
-                                                 "assign": 3
-                                               }
-                                             }
-                                           }
-                                         }
-                                       }
-                                       """));
+    public void testNestedArrayMatch() throws IOException {
+        DocumentUpdate nested = parseUpdate("""
+                                            {
+                                              "update": "id:unittest:testArrayOfArrayOfInt::whee",
+                                              "fields": {
+                                                "arrayOfArrayOfInt": {
+                                                  "match": {
+                                                    "element": 1,
+                                                    "match": {
+                                                      "element": 2,
+                                                      "assign": 3
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                            """);
+
+        DocumentUpdate equivalent = parseUpdate("""
+                                                {
+                                                  "update": "id:unittest:testArrayOfArrayOfInt::whee",
+                                                  "fields": {
+                                                    "arrayOfArrayOfInt": {
+                                                      "match": {
+                                                        "match": {
+                                                          "assign": 3,
+                                                          "element": 2
+                                                        },
+                                                        "element": 1
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                                """);
+
+        assertEquals(nested, equivalent);
+        assertEquals(1, nested.fieldUpdates().size());
+        FieldUpdate fu = nested.fieldUpdates().iterator().next();
+        assertEquals(1, fu.getValueUpdates().size());
+        MapValueUpdate mvu = (MapValueUpdate) fu.getValueUpdate(0);
+        assertEquals(new IntegerFieldValue(1), mvu.getValue());
+        MapValueUpdate nvu = (MapValueUpdate) mvu.getUpdate();
+        assertEquals(new IntegerFieldValue(2), nvu.getValue());
+        AssignValueUpdate avu = (AssignValueUpdate) nvu.getUpdate();
+        assertEquals(new IntegerFieldValue(3), avu.getValue());
     }
 
     @Test
     public void testMatchCannotUpdateNestedFields() {
         // Should this work? It doesn't.
-        assertThrows(ClassCastException.class,
-                     () -> parseUpdate("""
-                                       {
-                                         "update": "id:unittest:testMapStringToArrayOfInt::whee",
-                                         "fields": {
-                                           "actualMapStringToArrayOfInt": {
-                                             "match": {
-                                               "element": "bamse",
-                                               "match": {
-                                                 "element": 1,
-                                                 "assign": 4
-                                               }
-                                             }
-                                           }
-                                         }
-                                       }
-                                       """));
+        assertEquals("Field type Map<string,Array<int>> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                                      "fields": {
+                                                        "actualMapStringToArrayOfInt": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "match": {
+                                                              "element": 1,
+                                                              "assign": 4
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
     }
 
     @Test

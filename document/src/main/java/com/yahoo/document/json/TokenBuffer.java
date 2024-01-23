@@ -150,34 +150,6 @@ public class TokenBuffer {
         return nesting;
     }
 
-    public Token prefetchScalar(String name) {
-        int localNesting = nesting();
-        int nestingBarrier = localNesting;
-        Token toReturn = null;
-        Iterator<Token> i;
-
-        if (name.equals(currentName()) && current().isScalarValue()) {
-            toReturn = tokens.get(position);
-        } else {
-            i = rest().iterator();
-            i.next(); // just ignore the first value, as we know it's not what
-                      // we're looking for, and it's nesting effect is already
-                      // included
-            while (i.hasNext()) {
-                Token t = i.next();
-                if (localNesting == nestingBarrier && name.equals(t.name) && t.token.isScalarValue()) {
-                    toReturn = t;
-                    break;
-                }
-                localNesting += nestingOffset(t.token);
-                if (localNesting < nestingBarrier) {
-                    break;
-                }
-            }
-        }
-        return toReturn;
-    }
-
     public void skipToRelativeNesting(int relativeNesting) {
         int initialNesting = nesting();
         do {
