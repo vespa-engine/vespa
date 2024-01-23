@@ -113,10 +113,9 @@ public class DocumentParser {
 
     private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
         try {
-            JsonToken currentToken = parser.getCurrentToken();
             // "fields" opens a dictionary and is therefore on level two which might be surprising.
-            if (currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
-                documentParseInfo.fieldsBuffer.bufferObject(currentToken, parser);
+            if (parser.currentToken() == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
+                documentParseInfo.fieldsBuffer.bufferObject(parser);
                 processIndent();
             }
         } catch (IOException e) {

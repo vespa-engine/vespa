@@ -18,13 +18,11 @@ import java.util.function.Supplier;
  */
 public class TokenBuffer {
 
-    private final Deque<Token> tokens;
+    private final Deque<Token> tokens = new ArrayDeque<>();
 
     private int nesting = 0;
 
-    public TokenBuffer() {
-        this.tokens = new ArrayDeque<>();
-    }
+    public TokenBuffer() { }
 
     /** Returns whether any tokens are available in this */
     public boolean isEmpty() { return tokens.isEmpty(); }
@@ -66,29 +64,23 @@ public class TokenBuffer {
         tokens.add(new Token(token, name, text));
     }
 
-    public void bufferObject(JsonToken first, JsonParser tokens) {
-        bufferJsonStruct(first, tokens, JsonToken.START_OBJECT);
+    public void bufferObject(JsonParser parser) {
+        bufferJsonStruct(parser, JsonToken.START_OBJECT);
     }
 
-    private void bufferJsonStruct(JsonToken first, JsonParser tokens, JsonToken firstToken) {
-        int localNesting = 0;
-        JsonToken t = first;
+    private void bufferJsonStruct(JsonParser parser, JsonToken firstToken) {
+        JsonToken token = parser.currentToken();
+        Preconditions.checkArgument(token == firstToken,
+                                    "Expected %s, got %s.", firstToken.name(), token);
+        if (isEmpty()) updateNesting(token);
 
-        Preconditions.checkArgument(first == firstToken,
-                "Expected %s, got %s.", firstToken.name(), t);
-        if (isEmpty()) {
-            updateNesting(t);
+        try {
+            for (int nesting = addFromParser(parser); nesting > 0; nesting += addFromParser(parser))
+                parser.nextValue();
         }
-        localNesting = storeAndPeekNesting(t, localNesting, tokens);
-        while (localNesting > 0) {
-            t = nextValue(tokens);
-            localNesting = storeAndPeekNesting(t, localNesting, tokens);
+        catch (IOException e) {
+            throw new IllegalArgumentException(e);
         }
-    }
-
-    private int storeAndPeekNesting(JsonToken t, int nesting, JsonParser tokens) {
-        addFromParser(t, tokens);
-        return nesting + nestingOffset(t);
     }
 
     private int nestingOffset(JsonToken token) {
@@ -102,20 +94,9 @@ public class TokenBuffer {
         }
     }
 
-    private void addFromParser(JsonToken t, JsonParser tokens) {
-        try {
-            add(t, tokens.getCurrentName(), tokens.getText());
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    private JsonToken nextValue(JsonParser tokens) {
-        try {
-            return tokens.nextValue();
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
+    private int addFromParser(JsonParser tokens) throws IOException {
+        add(tokens.currentToken(), tokens.getCurrentName(), tokens.getText());
+        return nestingOffset(tokens.currentToken());
     }
 
     private void updateNesting(JsonToken token) {
