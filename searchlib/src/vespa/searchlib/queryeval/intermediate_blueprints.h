@@ -15,14 +15,15 @@ class AndNotBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self(OptimizePass pass, bool sort_by_cost) override;
+    void optimize_self(OptimizePass pass) override;
     AndNotBlueprint * asAndNot() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -43,14 +44,15 @@ class AndBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self(OptimizePass pass, bool sort_by_cost) override;
+    void optimize_self(OptimizePass pass) override;
     AndBlueprint * asAnd() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -69,14 +71,15 @@ class OrBlueprint : public IntermediateBlueprint
 public:
     ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self(OptimizePass pass, bool sort_by_cost) override;
+    void optimize_self(OptimizePass pass) override;
     OrBlueprint * asOr() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -97,11 +100,12 @@ private:
     std::vector<uint32_t> _weights;
 
 public:
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_on_cost) const override;
     bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
     WeakAndBlueprint * asWeakAnd() noexcept final { return this; }
@@ -128,12 +132,12 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    bool should_optimize_children() const override { return false; }
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
@@ -152,12 +156,12 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    bool should_optimize_children() const override { return false; }
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
@@ -173,13 +177,14 @@ public:
 class RankBlueprint final : public IntermediateBlueprint
 {
 public:
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void optimize_self(OptimizePass pass, bool sort_by_cost) override;
+    void optimize_self(OptimizePass pass) override;
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     bool isRank() const noexcept final { return true; }
     SearchIterator::UP
@@ -202,11 +207,12 @@ private:
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
-    double calculate_cost() const final;
     double calculate_relative_estimate() const final;
+    double calculate_cost() const final;
+    double calculate_strict_cost() const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool sort_by_cost) const override;
+    void sort(Children &children, bool strict, bool sort_by_cost) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
