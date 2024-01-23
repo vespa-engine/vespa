@@ -189,7 +189,7 @@ public class StorageClusterTest {
         var config = configFromProperties(new TestProperties());
         var limit = config.merge_throttling_memory_limit();
 
-        assertEquals(0L, limit.max_usage_bytes()); // TODO change default
+        assertEquals(0L, limit.max_usage_bytes());
         assertMergeAutoScaleConfigHasExpectedValues(limit);
     }
 
