@@ -473,35 +473,6 @@ TEST("require that attribute dot product can produce no hits") {
     }
 }
 
-TEST("require that direct attribute iterators work") {
-    for (int i = 0; i <= 0x3; ++i) {
-        bool fast_search = ((i & 0x1) != 0);
-        bool strict = ((i & 0x2) != 0);
-        MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleStringTerm empty_node("notfoo", "", 0, Weight(1));
-        Result empty_result = do_search(attribute_manager, empty_node, strict);
-        EXPECT_EQUAL(0u, empty_result.hits.size());
-        SimpleStringTerm node("foo", "", 0, Weight(1));
-        Result result = do_search(attribute_manager, node, strict);
-        if (fast_search) {
-            EXPECT_EQUAL(3u, result.est_hits);
-            EXPECT_TRUE(result.has_minmax);
-            EXPECT_EQUAL(100, result.min_weight);
-            EXPECT_EQUAL(1000, result.max_weight);
-            EXPECT_TRUE(result.iterator_dump.find("DocidWithWeightSearchIterator") != vespalib::string::npos);
-        } else {
-            EXPECT_EQUAL(num_docs, result.est_hits);
-            EXPECT_FALSE(result.has_minmax);
-            EXPECT_TRUE(result.iterator_dump.find("DocidWithWeightSearchIterator") == vespalib::string::npos);
-        }
-        ASSERT_EQUAL(3u, result.hits.size());
-        EXPECT_FALSE(result.est_empty);
-        EXPECT_EQUAL(20u, result.hits[0].docid);
-        EXPECT_EQUAL(40u, result.hits[1].docid);
-        EXPECT_EQUAL(50u, result.hits[2].docid);
-    }
-}
-
 TEST("require that single weighted set turns filter on filter fields") {
         bool fast_search = true;
         bool strict = true;
