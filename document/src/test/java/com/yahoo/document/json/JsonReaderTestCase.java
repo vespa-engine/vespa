@@ -31,6 +31,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
@@ -62,6 +63,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -82,6 +84,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -151,6 +154,13 @@ public class JsonReaderTestCase {
             types.registerDocumentType(x);
         }
         {
+            DocumentType x = new DocumentType("testArrayOfArrayOfInt");
+            DataType inner = new ArrayDataType(DataType.INT);
+            DataType outer = new ArrayDataType(inner);
+            x.addField(new Field("arrayOfArrayOfInt", outer));
+            types.registerDocumentType(x);
+        }
+        {
             DocumentType x = new DocumentType("testsinglepos");
             DataType d = PositionDataType.INSTANCE;
             x.addField(new Field("singlepos", d));
@@ -211,103 +221,110 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void readSingleDocumentPut() {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse'",
-                "  }",
-                "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
-                                                             "id:unittest:smoke::doc1").operation();
-        smokeTestDoc(put.getDocument());
+    public void readSingleDocumentPut() throws IOException {
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:smoke::doc1",
+                                     "fields": {
+                                       "something": "smoketest",
+                                       "flag": true,
+                                       "nalle": "bamse"
+                                     }
+                                   }
+                                   """);
+        smokeTestDoc(doc);
     }
 
     @Test
-    public final void readSingleDocumentUpdate() {
-        JsonReader r = createReader(inputJson("{ 'update': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'something': {",
-                "      'assign': 'orOther' }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee").operation();
+    public final void readSingleDocumentUpdate() throws IOException {
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:smoke::whee",
+                                           "fields": {
+                                             "something": {
+                                               "assign": "orOther"
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
+        assertEquals(new StringFieldValue("orOther"), f.getValueUpdate(0).getValue());
     }
 
     @Test
-    public void readClearField() {
-        JsonReader r = createReader(inputJson("{ 'update': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'int1': {",
-                "      'assign': null }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee").operation();
+    public void readClearField() throws IOException {
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:smoke::whee",
+                                           "fields": {
+                                             "int1": {
+                                               "assign": null
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
         assertNull(f.getValueUpdate(0).getValue());
     }
 
-
     @Test
     public void smokeTest() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse'",
-                "  }",
-                "}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        smokeTestDoc(put.getDocument());
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:smoke::doc1",
+                                     "fields": {
+                                       "something": "smoketest",
+                                       "flag": true,
+                                       "nalle": "bamse"
+                                     }
+                                   }
+                                   """);
+        smokeTestDoc(doc);
     }
 
     @Test
     public void docIdLookaheadTest() throws IOException {
-        JsonReader r = createReader(inputJson(
-                "{ 'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse'",
-                "  },",
-                "  'put': 'id:unittest:smoke::doc1'",
-                "  }",
-                "}"));
-
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        smokeTestDoc(put.getDocument());
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:smoke::doc1",
+                                     "fields": {
+                                       "something": "smoketest",
+                                       "flag": true,
+                                       "nalle": "bamse"
+                                     }
+                                   }
+                                   """);
+        smokeTestDoc(doc);
     }
-
 
     @Test
     public void emptyDocTest() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:smoke::whee', 'fields': {}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        assertEquals("id:unittest:smoke::whee", parseInfo.documentId.toString());
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:smoke::whee",
+                                     "fields": { }
+                                   }""");
+        assertEquals(new Document(types.getDocumentType("smoke"), new DocumentId("id:unittest:smoke::whee")),
+                     doc);
     }
 
     @Test
     public void testStruct() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:mirrors::whee',",
-                "  'fields': {",
-                "    'skuggsjaa': {",
-                "      'sandra': 'person',",
-                "      'cloud': 'another person' }}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:mirrors::whee",
+                                     "fields": {
+                                       "skuggsjaa": {
+                                         "sandra": "person",
+                                         "cloud": "another person"
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("skuggsjaa"));
         assertSame(Struct.class, f.getClass());
         Struct s = (Struct) f;
@@ -326,13 +343,20 @@ public class JsonReaderTestCase {
 
     @Test
     public void testStructUpdate() throws IOException {
-        DocumentUpdate put = parseUpdate(inputJson("{ 'update': 'id:unittest:mirrors:g=test:whee',",
-                "  'create': true,",
-                "  'fields': {",
-                "    'skuggsjaa': {",
-                "      'assign': {",
-                "        'sandra': 'person',",
-                "        'cloud': 'another person' }}}}"));
+        DocumentUpdate put = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:mirrors:g=test:whee",
+                                           "create": true,
+                                           "fields": {
+                                             "skuggsjaa": {
+                                               "assign": {
+                                                 "sandra": "person",
+                                                 "cloud": "another person"
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
         assertEquals(1, put.fieldUpdates().size());
         FieldUpdate fu = put.fieldUpdates().iterator().next();
         assertEquals(1, fu.getValueUpdates().size());
@@ -351,11 +375,17 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testEmptyStructUpdate() throws IOException {
-        DocumentUpdate put = parseUpdate(inputJson("{ 'update': 'id:unittest:mirrors:g=test:whee',",
-                "  'create': true,",
-                "  'fields': { ",
-                "    'skuggsjaa': {",
-                "      'assign': { } }}}"));
+        DocumentUpdate put = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:mirrors:g=test:whee",
+                                           "create": true,
+                                           "fields": {
+                                             "skuggsjaa": {
+                                               "assign": { }
+                                             }
+                                           }
+                                         }
+                                         """);
         assertEquals(1, put.fieldUpdates().size());
         FieldUpdate fu = put.fieldUpdates().iterator().next();
         assertEquals(1, fu.getValueUpdates().size());
@@ -373,23 +403,37 @@ public class JsonReaderTestCase {
 
     @Test
     public void testUpdateArray() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testarray::whee',",
-                "  'fields': {",
-                "    'actualarray': {",
-                "      'add': [",
-                "        'person',",
-                "        'another person' ]}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testarray::whee",
+                                           "fields": {
+                                             "actualarray": {
+                                               "add": [
+                                                 "person",
+                                                 "another person"
+                                               ]
+                                             }
+                                           }
+                                         }
+                                         """);
         checkSimpleArrayAdd(doc);
     }
 
     @Test
     public void testUpdateWeighted() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'add': {",
-                "        'person': 37,",
-                "        'another person': 41 }}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testset::whee",
+                                           "fields": {
+                                             "actualset": {
+                                               "add": {
+                                                 "person": 37,
+                                                 "another person": 41
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
 
         Map<String, Integer> weights = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -409,12 +453,34 @@ public class JsonReaderTestCase {
 
     @Test
     public void testUpdateMatch() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'match': {",
-                "        'element': 'person',",
-                "        'increment': 13 }}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testset::whee",
+                                           "fields": {
+                                             "actualset": {
+                                               "match": {
+                                                 "element": "person",
+                                                 "increment": 13
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
+
+        DocumentUpdate otherDoc = parseUpdate("""
+                                              {
+                                                "update": "id:unittest:testset::whee",
+                                                "fields": {
+                                                  "actualset": {
+                                                    "match": {
+                                                      "increment": 13,
+                                                      "element": "person"
+                                                    }
+                                                  }
+                                                }
+                                              }""");
+
+        assertEquals(doc, otherDoc);
 
         Map<String, Tuple2<Number, String>> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -437,21 +503,28 @@ public class JsonReaderTestCase {
     @Test
     public void testArithmeticOperators() throws IOException {
         Tuple2[] operations = new Tuple2[] {
-                new Tuple2<String, Operator>(UPDATE_DECREMENT,
-                        ArithmeticValueUpdate.Operator.SUB),
-                new Tuple2<String, Operator>(UPDATE_DIVIDE,
+                new Tuple2<>(UPDATE_DECREMENT,
+                             ArithmeticValueUpdate.Operator.SUB),
+                new Tuple2<>(UPDATE_DIVIDE,
                         ArithmeticValueUpdate.Operator.DIV),
-                new Tuple2<String, Operator>(UPDATE_INCREMENT,
+                new Tuple2<>(UPDATE_INCREMENT,
                         ArithmeticValueUpdate.Operator.ADD),
-                new Tuple2<String, Operator>(UPDATE_MULTIPLY,
+                new Tuple2<>(UPDATE_MULTIPLY,
                         ArithmeticValueUpdate.Operator.MUL) };
         for (Tuple2<String, Operator> operator : operations) {
-            DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
-                    "  'fields': {",
-                    "    'actualset': {",
-                    "      'match': {",
-                    "        'element': 'person',",
-                    "        '" + (String) operator.first + "': 13 }}}}"));
+            DocumentUpdate doc = parseUpdate("""
+                                             {
+                                               "update": "id:unittest:testset::whee",
+                                               "fields": {
+                                                 "actualset": {
+                                                   "match": {
+                                                     "element": "person",
+                                                     "%s": 13
+                                                   }
+                                                 }
+                                               }
+                                             }
+                                             """.formatted(operator.first));
 
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -475,12 +548,19 @@ public class JsonReaderTestCase {
     @SuppressWarnings("rawtypes")
     @Test
     public void testArrayIndexing() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testarray::whee',",
-                "  'fields': {",
-                "    'actualarray': {",
-                "      'match': {",
-                "        'element': 3,",
-                "        'assign': 'nalle' }}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testarray::whee",
+                                           "fields": {
+                                             "actualarray": {
+                                               "match": {
+                                                 "element": 3,
+                                                 "assign": "nalle"
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
 
         Map<Number, String> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualarray");
@@ -488,7 +568,7 @@ public class JsonReaderTestCase {
             MapValueUpdate adder = (MapValueUpdate) v;
             final Number key = ((IntegerFieldValue) adder.getValue())
                     .getNumber();
-            String op = ((StringFieldValue) ((AssignValueUpdate) adder.getUpdate())
+            String op = ((StringFieldValue) adder.getUpdate()
                     .getValue()).getString();
             matches.put(key, op);
         }
@@ -515,11 +595,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testWeightedSet() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'nalle': 2,",
-                "      'tralle': 7 }}}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testset::whee",
+                                     "fields": {
+                                       "actualset": {
+                                         "nalle": 2,
+                                         "tralle": 7
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("actualset"));
         assertSame(WeightedSet.class, f.getClass());
         WeightedSet<?> w = (WeightedSet<?>) f;
@@ -530,11 +616,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testArray() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testarray::whee',",
-                "  'fields': {",
-                "    'actualarray': [",
-                "      'nalle',",
-                "      'tralle' ]}}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testarray::whee",
+                                     "fields": {
+                                       "actualarray": [
+                                         "nalle",
+                                         "tralle"
+                                       ]
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("actualarray"));
         assertSame(Array.class, f.getClass());
         Array<?> a = (Array<?>) f;
@@ -545,11 +637,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testMap() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testmap::whee',",
-                        "  'fields': {",
-                        "    'actualmap': {",
-                        "      'nalle': 'kalle',",
-                        "      'tralle': 'skalle' }}}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testmap::whee",
+                                     "fields": {
+                                       "actualmap": {
+                                         "nalle": "kalle",
+                                         "tralle": "skalle"
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -560,11 +658,23 @@ public class JsonReaderTestCase {
 
     @Test
     public void testOldMap() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testmap::whee',",
-                "  'fields': {",
-                "    'actualmap': [",
-                "      { 'key': 'nalle', 'value': 'kalle'},",
-                "      { 'key': 'tralle', 'value': 'skalle'} ]}}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testmap::whee",
+                                     "fields": {
+                                       "actualmap": [
+                                         {
+                                           "key": "nalle",
+                                           "value": "kalle"
+                                         },
+                                         {
+                                           "key": "tralle",
+                                           "value": "skalle"
+                                         }
+                                       ]
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -575,9 +685,14 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionPositive() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'singlepos': 'N63.429722;E10.393333' }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "singlepos": "N63.429722;E10.393333"
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -586,9 +701,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionOld() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'singlepos': {'x':10393333,'y':63429722} }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "singlepos": {
+                                         "x": 10393333,
+                                         "y": 63429722
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -597,9 +720,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testGeoPosition() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'singlepos': {'lat':63.429722,'lng':10.393333} }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "singlepos": {
+                                         "lat": 63.429722,
+                                         "lng": 10.393333
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -608,9 +739,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testGeoPositionNoAbbreviations() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'singlepos': {'latitude':63.429722,'longitude':10.393333} }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "singlepos": {
+                                         "latitude": 63.429722,
+                                         "longitude": 10.393333
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -619,9 +758,14 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionGeoPos() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'geopos': 'N63.429722;E10.393333' }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "geopos": "N63.429722;E10.393333"
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("geopos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -631,9 +775,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionOldGeoPos() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'geopos': {'x':10393333,'y':63429722} }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "geopos": {
+                                         "x": 10393333,
+                                         "y": 63429722
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("geopos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -643,9 +795,17 @@ public class JsonReaderTestCase {
 
     @Test
     public void testGeoPositionGeoPos() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'geopos': {'lat':63.429722,'lng':10.393333} }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "geopos": {
+                                         "lat": 63.429722,
+                                         "lng": 10.393333
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("geopos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -656,9 +816,14 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionNegative() throws IOException {
-        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                "  'fields': {",
-                "    'singlepos': 'W46.63;S23.55' }}"));
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testsinglepos::bamf",
+                                     "fields": {
+                                       "singlepos": "W46.63;S23.55"
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(-46630000, PositionDataType.getXValue(f).getInteger());
@@ -682,14 +847,14 @@ public class JsonReaderTestCase {
     }
 
     private String fieldStringFromBase64RawContent(String base64data) throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testraw::whee',",
-                        "  'fields': {",
-                        "    'actualraw': '" + base64data + "' }}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testraw::whee",
+                                     "fields": {
+                                       "actualraw": "%s"
+                                     }
+                                   }
+                                   """.formatted(base64data));
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
         Raw s = (Raw) f;
@@ -698,15 +863,16 @@ public class JsonReaderTestCase {
 
     @Test
     public void testMapStringToArrayOfInt() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testMapStringToArrayOfInt::whee',",
-                "  'fields': {",
-                "    'actualMapStringToArrayOfInt': {",
-                "      'bamse': [1, 2, 3] }}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testMapStringToArrayOfInt::whee",
+                                     "fields": {
+                                       "actualMapStringToArrayOfInt": {
+                                         "bamse": [1, 2, 3]
+                                       }
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue("actualMapStringToArrayOfInt");
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -719,15 +885,19 @@ public class JsonReaderTestCase {
 
     @Test
     public void testOldMapStringToArrayOfInt() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testMapStringToArrayOfInt::whee',",
-                "  'fields': {",
-                "    'actualMapStringToArrayOfInt': [",
-                "      { 'key': 'bamse', 'value': [1, 2, 3] } ]}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testMapStringToArrayOfInt::whee",
+                                     "fields": {
+                                       "actualMapStringToArrayOfInt": [
+                                         {
+                                           "key": "bamse",
+                                           "value": [1, 2, 3]
+                                         }
+                                       ]
+                                     }
+                                   }
+                                   """);
         FieldValue f = doc.getFieldValue("actualMapStringToArrayOfInt");
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -740,10 +910,16 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignToString() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'something': {",
-                "      'assign': 'orOther' }}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:smoke::whee",
+                                           "fields": {
+                                             "something": {
+                                               "assign": "orOther"
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         AssignValueUpdate a = (AssignValueUpdate) f.getValueUpdate(0);
@@ -751,11 +927,189 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testNestedArrayMatch() throws IOException {
+        DocumentUpdate nested = parseUpdate("""
+                                            {
+                                              "update": "id:unittest:testArrayOfArrayOfInt::whee",
+                                              "fields": {
+                                                "arrayOfArrayOfInt": {
+                                                  "match": {
+                                                    "element": 1,
+                                                    "match": {
+                                                      "element": 2,
+                                                      "assign": 3
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                            """);
+
+        DocumentUpdate equivalent = parseUpdate("""
+                                                {
+                                                  "update": "id:unittest:testArrayOfArrayOfInt::whee",
+                                                  "fields": {
+                                                    "arrayOfArrayOfInt": {
+                                                      "match": {
+                                                        "match": {
+                                                          "assign": 3,
+                                                          "element": 2
+                                                        },
+                                                        "element": 1
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                                """);
+
+        assertEquals(nested, equivalent);
+        assertEquals(1, nested.fieldUpdates().size());
+        FieldUpdate fu = nested.fieldUpdates().iterator().next();
+        assertEquals(1, fu.getValueUpdates().size());
+        MapValueUpdate mvu = (MapValueUpdate) fu.getValueUpdate(0);
+        assertEquals(new IntegerFieldValue(1), mvu.getValue());
+        MapValueUpdate nvu = (MapValueUpdate) mvu.getUpdate();
+        assertEquals(new IntegerFieldValue(2), nvu.getValue());
+        AssignValueUpdate avu = (AssignValueUpdate) nvu.getUpdate();
+        assertEquals(new IntegerFieldValue(3), avu.getValue());
+
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testArrayOfArrayOfInt::whee",
+                                     "fields": {
+                                       "arrayOfArrayOfInt": [
+                                         [1, 2, 3],
+                                         [4, 5, 6]
+                                       ]
+                                     }
+                                   }
+                                   """);
+        nested.applyTo(doc);
+        Document expected = docFromJson("""
+                                        {
+                                          "put": "id:unittest:testArrayOfArrayOfInt::whee",
+                                          "fields": {
+                                            "arrayOfArrayOfInt": [
+                                              [1, 2, 3],
+                                              [4, 5, 3]
+                                            ]
+                                          }
+                                        }
+                                        """);
+        assertEquals(expected, doc);
+    }
+
+    @Test
+    public void testMatchCannotUpdateNestedFields() {
+        // Should this work? It doesn't.
+        assertEquals("Field type Map<string,Array<int>> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                                      "fields": {
+                                                        "actualMapStringToArrayOfInt": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "match": {
+                                                              "element": 1,
+                                                              "assign": 4
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
+    }
+
+    @Test
+    public void testMatchCannotAssignToNestedMap() {
+        // Unsupported value type for map value assign.
+        assertEquals("Field type Map<string,Array<int>> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                                      "fields": {
+                                                        "actualMapStringToArrayOfInt": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "assign": [1, 3, 4]
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
+    }
+
+    @Test
+    public void testMatchCannotAssignToMap() {
+        // Unsupported value type for map value assign.
+        assertEquals("Field type Map<string,string> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testmap::whee",
+                                                      "fields": {
+                                                        "actualmap": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "assign": "bar"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
+    }
+
+
+
+    @Test
+    public void testAssignInsideArrayInMap() throws IOException {
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testMapStringToArrayOfInt::whee",
+                                     "fields": {
+                                       "actualMapStringToArrayOfInt": {
+                                         "bamse": [1, 2, 3]
+                                       }
+                                     }
+                                   }""");
+
+        assertEquals(2, ((MapFieldValue<StringFieldValue, Array<IntegerFieldValue>>) doc.getFieldValue("actualMapStringToArrayOfInt"))
+                .get(StringFieldValue.getFactory().create("bamse")).get(1).getInteger());
+
+        DocumentUpdate update = parseUpdate("""
+                                            {
+                                              "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                              "fields": {
+                                                "actualMapStringToArrayOfInt{bamse}[1]": {
+                                                  "assign": 4
+                                                }
+                                              }
+                                            }
+                                            """);
+        assertEquals(1, update.fieldPathUpdates().size());
+
+        update.applyTo(doc);
+        assertEquals(4, ((MapFieldValue<StringFieldValue, Array<IntegerFieldValue>>) doc.getFieldValue("actualMapStringToArrayOfInt"))
+                .get(StringFieldValue.getFactory().create("bamse")).get(1).getInteger());
+    }
+
+    @Test
     public void testAssignToArray() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testMapStringToArrayOfInt::whee',",
-                "  'fields': {",
-                "    'actualMapStringToArrayOfInt': {",
-                "      'assign': { 'bamse': [1, 2, 3] }}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                           "fields": {
+                                             "actualMapStringToArrayOfInt": {
+                                               "assign": {
+                                                 "bamse": [1, 2, 3]
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -769,11 +1123,21 @@ public class JsonReaderTestCase {
 
     @Test
     public void testOldAssignToArray() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testMapStringToArrayOfInt::whee',",
-                "  'fields': {",
-                "    'actualMapStringToArrayOfInt': {",
-                "      'assign': [",
-                "        { 'key': 'bamse', 'value': [1, 2, 3] } ]}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                           "fields": {
+                                             "actualMapStringToArrayOfInt": {
+                                               "assign": [
+                                                 {
+                                                   "key": "bamse",
+                                                   "value": [1, 2, 3]
+                                                 }
+                                               ]
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -787,12 +1151,19 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignToWeightedSet() throws IOException {
-        DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'assign': {",
-                "        'person': 37,",
-                "        'another person': 41 }}}}"));
+        DocumentUpdate doc = parseUpdate("""
+                                         {
+                                           "update": "id:unittest:testset::whee",
+                                           "fields": {
+                                             "actualset": {
+                                               "assign": {
+                                                 "person": 37,
+                                                 "another person": 41
+                                               }
+                                             }
+                                           }
+                                         }
+                                         """);
         FieldUpdate x = doc.getFieldUpdate("actualset");
         assertEquals(1, x.size());
         AssignValueUpdate assign = (AssignValueUpdate) x.getValueUpdate(0);
@@ -805,41 +1176,66 @@ public class JsonReaderTestCase {
 
     @Test
     public void testCompleteFeed() {
-        JsonReader r = createReader(inputJson("[",
-                "{ 'put': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse' }},",
-                "{ 'update': 'id:unittest:testarray::whee',",
-                "  'fields': {",
-                "    'actualarray': {",
-                "      'add': [",
-                "        'person',",
-                "        'another person' ]}}},",
-                "{ 'remove': 'id:unittest:smoke::whee' }]"));
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "put": "id:unittest:smoke::whee",
+                                        "fields": {
+                                          "something": "smoketest",
+                                          "flag": true,
+                                          "nalle": "bamse"
+                                        }
+                                      },
+                                      {
+                                        "update": "id:unittest:testarray::whee",
+                                        "fields": {
+                                          "actualarray": {
+                                            "add": [
+                                              "person",
+                                              "another person"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "remove": "id:unittest:smoke::whee"
+                                      }
+                                    ]
+                                    """);
 
         controlBasicFeed(r);
     }
 
     @Test
     public void testCompleteFeedWithCreateAndCondition() {
-        JsonReader r = createReader(inputJson("[",
-                "{ 'put': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse' }},",
-                "{",
-                "  'condition':'bla',",
-                "  'update': 'id:unittest:testarray::whee',",
-                "  'create':true,",
-                "  'fields': {",
-                "    'actualarray': {",
-                "      'add': [",
-                "        'person',",
-                "        'another person' ]}}},",
-                "{ 'remove': 'id:unittest:smoke::whee' }]"));
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "put": "id:unittest:smoke::whee",
+                                        "fields": {
+                                          "something": "smoketest",
+                                          "flag": true,
+                                          "nalle": "bamse"
+                                        }
+                                      },
+                                      {
+                                        "condition":"bla",
+                                        "update": "id:unittest:testarray::whee",
+                                        "create":true,
+                                        "fields": {
+                                          "actualarray": {
+                                            "add": [
+                                              "person",
+                                              "another person"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "remove": "id:unittest:smoke::whee"
+                                      }
+                                    ]
+                                    """);
 
         DocumentOperation d = r.next();
         Document doc = ((DocumentPut) d).getDocument();
@@ -860,7 +1256,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void testUpdateWithConditionAndCreateInDifferentOrdering() {
-        int  documentsCreated = 106;
+        int documentsCreated = 106;
         List<String> parts = Arrays.asList(
                 "\"condition\":\"bla\"",
                 "\"update\": \"id:unittest:testarray::whee\"",
@@ -876,8 +1272,7 @@ public class JsonReaderTestCase {
             }
         }
         documents.append("]");
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes(documents.toString()));
+        InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(documents.toString()));
 
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
 
@@ -886,7 +1281,6 @@ public class JsonReaderTestCase {
             checkSimpleArrayAdd(update);
             assertTrue(update.getCreateIfNonExistent());
             assertEquals("bla", update.getCondition().getSelection());
-
         }
 
         assertNull(r.next());
@@ -895,13 +1289,18 @@ public class JsonReaderTestCase {
 
     @Test
     public void testCreateIfNonExistentInPut() {
-        JsonReader r = createReader(inputJson("[{",
-                "  'create':true,",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'nalle': 'bamse' },",
-                "  'put': 'id:unittest:smoke::whee'",
-                "}]"));
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "create":true,
+                                        "fields": {
+                                          "something": "smoketest",
+                                          "nalle": "bamse"
+                                        },
+                                        "put": "id:unittest:smoke::whee"
+                                      }
+                                    ]
+                                    """);
         var op = r.next();
         var put = (DocumentPut) op;
         assertTrue(put.getCreateIfNonExistent());
@@ -909,23 +1308,32 @@ public class JsonReaderTestCase {
 
     @Test
     public void testCompleteFeedWithIdAfterFields() {
-        JsonReader r = createReader(inputJson("[",
-                "{",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse' },",
-                "  'put': 'id:unittest:smoke::whee'",
-                "},",
-                "{",
-                "  'fields': {",
-                "    'actualarray': {",
-                "      'add': [",
-                "        'person',",
-                "        'another person' ]}},",
-                "  'update': 'id:unittest:testarray::whee'",
-                "},",
-                "{ 'remove': 'id:unittest:smoke::whee' }]"));
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "fields": {
+                                          "something": "smoketest",
+                                          "flag": true,
+                                          "nalle": "bamse"
+                                        },
+                                        "put": "id:unittest:smoke::whee"
+                                      },
+                                      {
+                                        "fields": {
+                                          "actualarray": {
+                                            "add": [
+                                              "person",
+                                              "another person"
+                                            ]
+                                          }
+                                        },
+                                        "update": "id:unittest:testarray::whee"
+                                      },
+                                      {
+                                        "remove": "id:unittest:smoke::whee"
+                                      }
+                                    ]
+                                    """);
 
         controlBasicFeed(r);
     }
@@ -949,10 +1357,21 @@ public class JsonReaderTestCase {
 
     @Test
     public void testCompleteFeedWithEmptyDoc() {
-        JsonReader r = createReader(inputJson("[",
-                "{ 'put': 'id:unittest:smoke::whee', 'fields': {} },",
-                "{ 'update': 'id:unittest:testarray::whee', 'fields': {} },",
-                "{ 'remove': 'id:unittest:smoke::whee' }]"));
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "put": "id:unittest:smoke::whee",
+                                        "fields": {}
+                                      },
+                                      {
+                                        "update": "id:unittest:testarray::whee",
+                                        "fields": {}
+                                      },
+                                      {
+                                        "remove": "id:unittest:smoke::whee"
+                                      }
+                                    ]
+                                    """);
 
         DocumentOperation d = r.next();
         Document doc = ((DocumentPut) d).getDocument();
@@ -994,45 +1413,53 @@ public class JsonReaderTestCase {
 
     @Test
     public void nonExistingFieldCausesException() throws IOException {
-        JsonReader r = createReader(inputJson(
-                "{ 'put': 'id:unittest:smoke::whee',",
-                "  'fields': {",
-                "    'smething': 'smoketest',",
-                "    'nalle': 'bamse' }}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-
-        try {
-            new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("No field 'smething' in the structure of type 'smoke'"));
-        }
+        Exception expected = assertThrows(IllegalArgumentException.class,
+                                          () -> docFromJson("""
+                                                            {
+                                                              "put": "id:unittest:smoke::whee",
+                                                              "fields": {
+                                                                "smething": "smoketest",
+                                                                "nalle": "bamse"
+                                                              }
+                                                            }
+                                                            """));
+        assertTrue(expected.getMessage().startsWith("No field 'smething' in the structure of type 'smoke'"));
     }
 
     @Test
     public void nonExistingFieldsCanBeIgnoredInPut() throws IOException {
-        JsonReader r = createReader(inputJson(
-                "{ ",
-                "  'put': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'nonexisting1': 'ignored value',",
-                "    'field1': 'value1',",
-                "    'nonexisting2': {",
-                "      'blocks':{",
-                "        'a':[2.0,3.0],",
-                "        'b':[4.0,5.0]",
-                "      }",
-                "    },",
-                "    'field2': 'value2',",
-                "    'nonexisting3': {",
-                "      'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
-                "    },",
-                "    'tensor1': {'cells': {'x1': 1.0}},",
-                "    'nonexisting4': 'ignored value'",
-                "  }",
-                "}"));
+        JsonReader r = createReader("""
+                                    {
+                                      "put": "id:unittest:smoke::doc1",
+                                      "fields": {
+                                        "nonexisting1": "ignored value",
+                                        "field1": "value1",
+                                        "nonexisting2": {
+                                          "blocks": {
+                                            "a": [2.0, 3.0],
+                                            "b": [4.0, 5.0]
+                                          }
+                                        },
+                                        "field2": "value2",
+                                        "nonexisting3": {
+                                          "cells": [
+                                            {
+                                              "address": {
+                                                "x": "x1"
+                                              },
+                                              "value": 1.0
+                                            }
+                                          ]
+                                        },
+                                        "tensor1": {
+                                          "cells": {
+                                            "x1": 1.0
+                                          }
+                                        },
+                                        "nonexisting4": "ignored value"
+                                      }
+                                    }
+                                    """);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
@@ -1049,30 +1476,31 @@ public class JsonReaderTestCase {
 
     @Test
     public void nonExistingFieldsCanBeIgnoredInUpdate()  throws IOException{
-        JsonReader r = createReader(inputJson(
-                "{ ",
-                "  'update': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'nonexisting1': { 'assign': 'ignored value' },",
-                "    'field1': { 'assign': 'value1' },",
-                "    'nonexisting2': { " +
-                "      'assign': {",
-                "        'blocks': {",
-                "          'a':[2.0,3.0],",
-                "          'b':[4.0,5.0]",
-                "        }",
-                "      }",
-                "    },",
-                "    'field2': { 'assign': 'value2' },",
-                "    'nonexisting3': {",
-                "      'assign' : {",
-                "        'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
-                "      }",
-                "    },",
-                "    'tensor1': {'assign': { 'cells': {'x1': 1.0} } },",
-                "    'nonexisting4': { 'assign': 'ignored value' }",
-                "  }",
-                "}"));
+        JsonReader r = createReader("""
+                                    {
+                                      "update": "id:unittest:smoke::doc1",
+                                      "fields": {
+                                        "nonexisting1": { "assign": "ignored value" },
+                                        "field1": { "assign": "value1" },
+                                        "nonexisting2": {
+                                          "assign": {
+                                            "blocks": {
+                                              "a":[2.0,3.0],
+                                              "b":[4.0,5.0]
+                                            }
+                                          }
+                                        },
+                                        "field2": { "assign": "value2" },
+                                        "nonexisting3": {
+                                          "assign" : {
+                                            "cells": [{"address": {"x": "x1"}, "value": 1.0}]
+                                          }
+                                        },
+                                        "tensor1": {"assign": { "cells": {"x1": 1.0} } },
+                                        "nonexisting4": { "assign": "ignored value" }
+                                      }
+                                    }
+                                    """);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate update = new DocumentUpdate(docType, parseInfo.documentId);
@@ -1089,26 +1517,44 @@ public class JsonReaderTestCase {
 
     @Test
     public void feedWithBasicErrorTest() {
-        JsonReader r = createReader(inputJson("[",
-                "  { 'put': 'id:test:smoke::0', 'fields': { 'something': 'foo' } },",
-                "  { 'put': 'id:test:smoke::1', 'fields': { 'something': 'foo' } },",
-                "  { 'put': 'id:test:smoke::2', 'fields': { 'something': 'foo' } },",
-                "]"));
-        try {
-            while (r.next() != null) ;
-            fail();
-        } catch (RuntimeException e) {
-            assertTrue(e.getMessage().contains("JsonParseException"));
-        }
+        JsonReader r = createReader("""
+                                    [
+                                      {
+                                        "put": "id:test:smoke::0",
+                                        "fields": {
+                                          "something": "foo"
+                                        }
+                                      },
+                                      {
+                                        "put": "id:test:smoke::1",
+                                        "fields": {
+                                          "something": "foo"
+                                        }
+                                      },
+                                      {
+                                        "put": "id:test:smoke::2",
+                                        "fields": {
+                                          "something": "foo"
+                                        }
+                                      },
+                                    ]"""); // Trailing comma in array ...
+        assertTrue(assertThrows(RuntimeException.class,
+                                () -> { while (r.next() != null); })
+                           .getMessage().contains("JsonParseException"));
     }
 
     @Test
     public void idAsAliasForPutTest()  throws IOException{
-        JsonReader r = createReader(inputJson("{ 'id': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'something': 'smoketest',",
-                "    'flag': true,",
-                "    'nalle': 'bamse' }}"));
+        JsonReader r = createReader("""
+                                    {
+                                      "id": "id:unittest:smoke::doc1",
+                                      "fields": {
+                                        "something": "smoketest",
+                                        "flag": true,
+                                        "nalle": "bamse"
+                                      }
+                                    }
+                                    """);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
@@ -1138,147 +1584,146 @@ public class JsonReaderTestCase {
 
     @Test
     public void testFeedWithTestAndSetConditionOrderingOne() {
-        testFeedWithTestAndSetCondition(
-                inputJson("[",
-                        "      {",
-                        "          'put': 'id:unittest:smoke::whee',",
-                        "          'condition': 'smoke.something == \\'smoketest\\'',",
-                        "          'fields': {",
-                        "              'something': 'smoketest',",
-                        "              'nalle': 'bamse'",
-                        "          }",
-                        "      },",
-                        "      {",
-                        "          'update': 'id:unittest:testarray::whee',",
-                        "          'condition': 'smoke.something == \\'smoketest\\'',",
-                        "          'fields': {",
-                        "              'actualarray': {",
-                        "                  'add': [",
-                        "                      'person',",
-                        "                      'another person'",
-                        "                   ]",
-                        "              }",
-                        "          }",
-                        "      },",
-                        "      {",
-                        "          'remove': 'id:unittest:smoke::whee',",
-                        "          'condition': 'smoke.something == \\'smoketest\\''",
-                        "      }",
-                        "]"
-                ));
+        testFeedWithTestAndSetCondition("""
+                                        [
+                                          {
+                                            "put": "id:unittest:smoke::whee",
+                                            "condition": "smoke.something == \\"smoketest\\"",
+                                            "fields": {
+                                              "something": "smoketest",
+                                              "nalle": "bamse"
+                                            }
+                                          },
+                                          {
+                                            "update": "id:unittest:testarray::whee",
+                                            "condition": "smoke.something == \\"smoketest\\"",
+                                            "fields": {
+                                              "actualarray": {
+                                                "add": [
+                                                  "person",
+                                                  "another person"
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "remove": "id:unittest:smoke::whee",
+                                            "condition": "smoke.something == \\"smoketest\\""
+                                          }
+                                        ]
+                                        """);
     }
 
     @Test
     public void testFeedWithTestAndSetConditionOrderingTwo() {
-        testFeedWithTestAndSetCondition(
-                inputJson("[",
-                        "      {",
-                        "          'condition': 'smoke.something == \\'smoketest\\'',",
-                        "          'put': 'id:unittest:smoke::whee',",
-                        "          'fields': {",
-                        "              'something': 'smoketest',",
-                        "              'nalle': 'bamse'",
-                        "          }",
-                        "      },",
-                        "      {",
-                        "          'condition': 'smoke.something == \\'smoketest\\'',",
-                        "          'update': 'id:unittest:testarray::whee',",
-                        "          'fields': {",
-                        "              'actualarray': {",
-                        "                  'add': [",
-                        "                      'person',",
-                        "                      'another person'",
-                        "                   ]",
-                        "              }",
-                        "          }",
-                        "      },",
-                        "      {",
-                        "          'condition': 'smoke.something == \\'smoketest\\'',",
-                        "          'remove': 'id:unittest:smoke::whee'",
-                        "      }",
-                        "]"
-                ));
+        testFeedWithTestAndSetCondition("""
+                                        [
+                                          {
+                                            "condition": "smoke.something == \\"smoketest\\"",
+                                            "put": "id:unittest:smoke::whee",
+                                            "fields": {
+                                              "something": "smoketest",
+                                              "nalle": "bamse"
+                                            }
+                                          },
+                                          {
+                                            "condition": "smoke.something == \\"smoketest\\"",
+                                            "update": "id:unittest:testarray::whee",
+                                            "fields": {
+                                              "actualarray": {
+                                                "add": [
+                                                  "person",
+                                                  "another person"
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "condition": "smoke.something == \\"smoketest\\"",
+                                            "remove": "id:unittest:smoke::whee"
+                                          }
+                                        ]
+                                        """);
     }
 
     @Test
     public void testFeedWithTestAndSetConditionOrderingThree() {
-        testFeedWithTestAndSetCondition(
-                inputJson("[",
-                        "      {",
-                        "          'put': 'id:unittest:smoke::whee',",
-                        "          'fields': {",
-                        "              'something': 'smoketest',",
-                        "              'nalle': 'bamse'",
-                        "          },",
-                        "          'condition': 'smoke.something == \\'smoketest\\''",
-                        "      },",
-                        "      {",
-                        "          'update': 'id:unittest:testarray::whee',",
-                        "          'fields': {",
-                        "              'actualarray': {",
-                        "                  'add': [",
-                        "                      'person',",
-                        "                      'another person'",
-                        "                   ]",
-                        "              }",
-                        "          },",
-                        "          'condition': 'smoke.something == \\'smoketest\\''",
-                        "      },",
-                        "      {",
-                        "          'remove': 'id:unittest:smoke::whee',",
-                        "          'condition': 'smoke.something == \\'smoketest\\''",
-                        "      }",
-                        "]"
-                ));
+        testFeedWithTestAndSetCondition("""
+                                        [
+                                          {
+                                            "put": "id:unittest:smoke::whee",
+                                            "fields": {
+                                              "something": "smoketest",
+                                              "nalle": "bamse"
+                                            },
+                                            "condition": "smoke.something == \\"smoketest\\""
+                                          },
+                                          {
+                                            "update": "id:unittest:testarray::whee",
+                                            "fields": {
+                                              "actualarray": {
+                                                "add": [
+                                                  "person",
+                                                  "another person"
+                                                ]
+                                              }
+                                            },
+                                            "condition": "smoke.something == \\"smoketest\\""
+                                          },
+                                          {
+                                            "remove": "id:unittest:smoke::whee",
+                                            "condition": "smoke.something == \\"smoketest\\""
+                                          }
+                                        ]
+                                        """);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidFieldAfterFieldsFieldShouldFailParse() {
-        final String jsonData = inputJson(
-                "[",
-                "      {",
-                "          'put': 'id:unittest:smoke::whee',",
-                "          'fields': {",
-                "              'something': 'smoketest',",
-                "              'nalle': 'bamse'",
-                "          },",
-                "          'bjarne': 'stroustrup'",
-                "      }",
-                "]");
+        String jsonData = """
+                          [
+                            {
+                              "put": "id:unittest:smoke::whee",
+                              "fields": {
+                                "something": "smoketest",
+                                "nalle": "bamse"
+                              },
+                              "bjarne": "stroustrup"
+                            }
+                          ]""";
 
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidFieldBeforeFieldsFieldShouldFailParse() {
-        final String jsonData = inputJson(
-                "[",
-                "      {",
-                "          'update': 'id:unittest:testarray::whee',",
-                "          'what is this': 'nothing to see here',",
-                "          'fields': {",
-                "              'actualarray': {",
-                "                  'add': [",
-                "                      'person',",
-                "                      'another person'",
-                "                   ]",
-                "              }",
-                "          }",
-                "      }",
-                "]");
-
+        String jsonData = """
+                          [
+                            {
+                              "update": "id:unittest:testarray::whee",
+                              "what is this": "nothing to see here",
+                              "fields": {
+                                "actualarray": {
+                                  "add": [
+                                    "person",
+                                    "another person"
+                                  ]
+                                }
+                              }
+                            }
+                          ]""";
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidFieldWithoutFieldsFieldShouldFailParse() {
-        String jsonData = inputJson(
-                "[",
-                "      {",
-                "          'remove': 'id:unittest:smoke::whee',",
-                "          'what is love': 'baby, do not hurt me... much'",
-                "      }",
-                "]");
+        String jsonData = """
+                          [
+                            {
+                              "remove": "id:unittest:smoke::whee",
+                              "what is love": "baby, do not hurt me... much
+                            }
+                          ]""";
 
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
@@ -1286,19 +1731,19 @@ public class JsonReaderTestCase {
     @Test
     public void testMissingOperation() {
         try {
-            String jsonData = inputJson(
-                    "[",
-                    "      {",
-                    "          'fields': {",
-                    "              'actualarray': {",
-                    "                  'add': [",
-                    "                      'person',",
-                    "                      'another person'",
-                    "                   ]",
-                    "              }",
-                    "          }",
-                    "      }",
-                    "]");
+            String jsonData = """
+                              [
+                                {
+                                  "fields": {
+                                    "actualarray": {
+                                      "add": [
+                                        "person",
+                                        "another person"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]""";
 
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
             fail("Expected exception");
@@ -1311,12 +1756,12 @@ public class JsonReaderTestCase {
     @Test
     public void testMissingFieldsMapInPut() {
         try {
-            String jsonData = inputJson(
-                    "[",
-                    "      {",
-                    "          'put': 'id:unittest:smoke::whee'",
-                    "      }",
-                    "]");
+            String jsonData = """
+                              [
+                                {
+                                  "put": "id:unittest:smoke::whee"
+                                }
+                              ]""";
 
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
             fail("Expected exception");
@@ -1329,12 +1774,12 @@ public class JsonReaderTestCase {
     @Test
     public void testMissingFieldsMapInUpdate() {
         try {
-            String jsonData = inputJson(
-                    "[",
-                    "      {",
-                    "          'update': 'id:unittest:smoke::whee'",
-                    "      }",
-                    "]");
+            String jsonData = """
+                              [
+                                {
+                                  "update": "id:unittest:smoke::whee"
+                                }
+                              ]""";
 
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
             fail("Expected exception");
@@ -1345,20 +1790,20 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testNullValues() {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testnull::doc1',",
-                "  'fields': {",
-                "    'intfield': null,",
-                "    'stringfield': null,",
-                "    'arrayfield': null,",
-                "    'weightedsetfield': null,",
-                "    'mapfield': null,",
-                "    'tensorfield': null",
-                "  }",
-                "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
-                                                             "id:unittest:testnull::doc1").operation();
-        Document doc = put.getDocument();
+    public void testNullValues() throws IOException {
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testnull::doc1",
+                                     "fields": {
+                                       "intfield": null,
+                                       "stringfield": null,
+                                       "arrayfield": null,
+                                       "weightedsetfield": null,
+                                       "mapfield": null,
+                                       "tensorfield": null
+                                     }
+                                   }
+                                   """);
         assertFieldValueNull(doc, "intfield");
         assertFieldValueNull(doc, "stringfield");
         assertFieldValueNull(doc, "arrayfield");
@@ -1368,13 +1813,15 @@ public class JsonReaderTestCase {
     }
 
     @Test(expected=JsonReaderException.class)
-    public void testNullArrayElement() {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testnull::doc1',",
-                "  'fields': {",
-                "    'arrayfield': [ null ]",
-                "  }",
-                "}"));
-        r.readSingleDocument(DocumentOperationType.PUT, "id:unittest:testnull::doc1");
+    public void testNullArrayElement() throws IOException {
+        docFromJson("""
+                     {
+                       "put": "id:unittest:testnull::doc1",
+                       "fields": {
+                         "arrayfield": [ null ]
+                       }
+                     }
+                     """);
         fail();
     }
 
@@ -1429,30 +1876,31 @@ public class JsonReaderTestCase {
     @Test
     public void testParsingOfSparseTensorWithCells() {
         Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                createPutWithSparseTensor(
-                                        """
-                                                    {
-                                                      "type": "tensor(x{},y{})",
-                                                      "cells": [
-                                                        { "address": { "x": "a", "y": "b" }, "value": 2.0 },
-                                                        { "address": { "x": "c", "y": "b" }, "value": 3.0 }
-                                                      ]
-                                                    }
-                                                    """));
+                                createPutWithSparseTensor("""
+                                                          {
+                                                            "type": "tensor(x{},y{})",
+                                                            "cells": [
+                                                              { "address": { "x": "a", "y": "b" }, "value": 2.0 },
+                                                              { "address": { "x": "c", "y": "b" }, "value": 3.0 }
+                                                            ]
+                                                          }
+                                                          """));
         assertTrue(tensor instanceof MappedTensor); // any functional instance is fine
     }
 
     @Test
     public void testParsingOfDenseTensorWithCells() {
         Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}}",
-                           createPutWithTensor(inputJson("{",
-                                   "  'cells': [",
-                                   "    { 'address': { 'x': '0', 'y': '0' },",
-                                   "      'value': 2.0 },",
-                                   "    { 'address': { 'x': '1', 'y': '0' },",
-                                   "      'value': 3.0 }",
-                                   "  ]",
-                                   "}"), "dense_unbound_tensor"), "dense_unbound_tensor");
+                                          createPutWithTensor("""
+                                                              {
+                                                                "cells": [
+                                                                  { "address": { "x": 0, "y": 0 }, "value": 2.0 },
+                                                                  { "address": { "x": 1, "y": 0 }, "value": 3.0 }
+                                                                ]
+                                                              }
+                                                              """,
+                                                              "dense_unbound_tensor"),
+                                          "dense_unbound_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
@@ -1468,9 +1916,10 @@ public class JsonReaderTestCase {
         Tensor expected = builder.build();
 
         Tensor tensor = assertTensorField(expected,
-                                          createPutWithTensor(inputJson("{",
-                                                                        "  'values': [2.0, 3.0, 4.0, 'inf', 6.0, 7.0]",
-                                                                        "}"), "dense_tensor"), "dense_tensor");
+                                          createPutWithTensor("""
+                                                              {
+                                                                "values": [2.0, 3.0, 4.0, "inf", 6.0, 7.0]
+                                                              }""", "dense_tensor"), "dense_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
@@ -1485,9 +1934,10 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
         Tensor tensor = assertTensorField(expected,
-                                          createPutWithTensor(inputJson("{",
-                                                                        "  'values': \"020304050607\"",
-                                                                        "}"), "dense_int8_tensor"), "dense_int8_tensor");
+                                          createPutWithTensor("""
+                                                              {
+                                                                "values": "020304050607"
+                                                              }""", "dense_int8_tensor"), "dense_int8_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
@@ -1501,10 +1951,14 @@ public class JsonReaderTestCase {
         builder.cell().label("x", "bar").label("y", 1).value(6.0);
         builder.cell().label("x", "bar").label("y", 2).value(7.0);
         Tensor expected = builder.build();
-        String mixedJson = "{\"blocks\":[" +
-                           "{\"address\":{\"x\":\"foo\"},\"values\":\"400040404080\"}," +
-                           "{\"address\":{\"x\":\"bar\"},\"values\":\"40A040C040E0\"}" +
-                           "]}";
+        String mixedJson = """
+                           {
+                             "blocks":[
+                               {"address":{"x":"foo"},"values":"400040404080"},
+                               {"address":{"x":"bar"},"values":"40A040C040E0"}
+                             ]
+                           }
+                           """;
         var put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
         Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
     }
@@ -1587,10 +2041,14 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
 
-        String mixedJson = "{\"blocks\":{" +
-                           "\"0\":[2.0,3.0,4.0]," +
-                           "\"1\":[5.0,6.0,7.0]" +
-                           "}}";
+        String mixedJson = """
+                           {
+                             "blocks":{
+                               "0":[2.0,3.0,4.0],
+                               "1":[5.0,6.0,7.0]
+                             }
+                           }
+                           """;
         Tensor tensor = assertTensorField(expected,
                                           createPutWithTensor(inputJson(mixedJson), "mixed_tensor"), "mixed_tensor");
         assertTrue(tensor instanceof MixedTensor); // this matters for performance
@@ -1599,12 +2057,14 @@ public class JsonReaderTestCase {
     @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
         assertSparseTensorField("{{x:a,y:b}:2.0}",
-                                createPutWithSparseTensor(inputJson("{",
-                                        "  'cells': [",
-                                        "    { 'value': 2.0,",
-                                        "      'address': { 'x': 'a', 'y': 'b' } }",
-                                        "  ]",
-                                        "}")));
+                                createPutWithSparseTensor("""
+                                                          {
+                                                            "cells": [
+                                                              { "value": 2.0,
+                                                                "address": { "x": "a", "y": "b" } }
+                                                            ]
+                                                          }
+                                                          """));
     }
 
     @Test
@@ -1634,23 +2094,27 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfTensorWithCells() {
         assertTensorAssignUpdateSparseField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                            createAssignUpdateWithSparseTensor(inputJson("{",
-                        "  'cells': [",
-                        "    { 'address': { 'x': 'a', 'y': 'b' },",
-                        "      'value': 2.0 },",
-                        "    { 'address': { 'x': 'c', 'y': 'b' },",
-                        "      'value': 3.0 }",
-                        "  ]",
-                        "}")));
+                                            createAssignUpdateWithSparseTensor("""
+                                                                               {
+                                                                                "cells": [
+                                                                                  { "address": { "x": "a", "y": "b" },
+                                                                                    "value": 2.0 },
+                                                                                  { "address": { "x": "c", "y": "b" },
+                                                                                    "value": 3.0 }
+                                                                                ]
+                                                                              }
+                                                                              """));
     }
 
     @Test
     public void testAssignUpdateOfTensorDenseShortForm() {
         assertTensorAssignUpdateDenseField("tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]",
-                                            createAssignUpdateWithTensor(inputJson("{",
-                                                                        "  'values': [1,2,3,4,5,6]",
-                                                                        "}"),
-                                                              "dense_tensor"));
+                                           createAssignUpdateWithTensor("""
+                                                                        {
+                                                                          "values": [1,2,3,4,5,6]
+                                                                        }
+                                                                        """,
+                                                                        "dense_tensor"));
     }
 
     @Test

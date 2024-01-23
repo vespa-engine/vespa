@@ -90,45 +90,39 @@ public class MapReader {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static ValueUpdate createMapUpdate(TokenBuffer buffer,
                                               DataType currentLevel,
-                                              FieldValue keyParent,
-                                              FieldValue topLevelKey,
                                               boolean ignoreUndefinedFields) {
-        TokenBuffer.Token element = buffer.prefetchScalar(UPDATE_ELEMENT);
+        if ( ! JsonToken.START_OBJECT.equals(buffer.current()))
+            throw new IllegalArgumentException("Expected object for match update, got " + buffer.current());
+        buffer.next();
+
+        FieldValue key = null;
+        ValueUpdate update;
+
         if (UPDATE_ELEMENT.equals(buffer.currentName())) {
+            key = keyTypeForMapUpdate(buffer.currentText(), currentLevel);
             buffer.next();
         }
 
-        FieldValue key = keyTypeForMapUpdate(element, currentLevel);
-        if (keyParent != null) {
-            ((CollectionFieldValue) keyParent).add(key);
+        update = UPDATE_MATCH.equals(buffer.currentName()) ? createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), ignoreUndefinedFields)
+                                                           : readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields);
+        buffer.next();
+
+        if (key == null) {
+            if ( ! UPDATE_ELEMENT.equals(buffer.currentName()))
+                throw new IllegalArgumentException("Expected match element, got " + buffer.current());
+            key = keyTypeForMapUpdate(buffer.currentText(), currentLevel);
+            buffer.next();
         }
-        // structure is: [(match + element)*, (element + action)]
-        // match will always have element, and either match or action
-        if (!UPDATE_MATCH.equals(buffer.currentName())) {
-            // we have reached an action...
-            if (topLevelKey == null) {
-                return ValueUpdate.createMap(key, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields));
-            } else {
-                return ValueUpdate.createMap(topLevelKey, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields));
-            }
-        } else {
-            // next level of matching
-            if (topLevelKey == null) {
-                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, key, ignoreUndefinedFields);
-            } else {
-                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, topLevelKey, ignoreUndefinedFields);
-            }
-        }
+
+        if ( ! JsonToken.END_OBJECT.equals(buffer.current()))
+            throw new IllegalArgumentException("Expected object end for match update, got " + buffer.current());
+
+        return ValueUpdate.createMap(key, update);
     }
 
     @SuppressWarnings("rawtypes")
     public static ValueUpdate createMapUpdate(TokenBuffer buffer, Field field, boolean ignoreUndefinedFields) {
-        buffer.next();
-        MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null, ignoreUndefinedFields);
-        buffer.next();
-        // must generate the field value in parallell with the actual
-        return m;
-
+        return MapReader.createMapUpdate(buffer, field.getDataType(), ignoreUndefinedFields);
     }
 
     private static DataType valueTypeForMapUpdate(DataType parentType) {
@@ -143,14 +137,14 @@ public class MapReader {
         }
     }
 
-    private static FieldValue keyTypeForMapUpdate(TokenBuffer.Token element, DataType expectedType) {
+    private static FieldValue keyTypeForMapUpdate(String elementText, DataType expectedType) {
         FieldValue v;
         if (expectedType instanceof ArrayDataType) {
-            v = new IntegerFieldValue(Integer.valueOf(element.text));
+            v = new IntegerFieldValue(Integer.valueOf(elementText));
         } else if (expectedType instanceof WeightedSetDataType) {
-            v = ((WeightedSetDataType) expectedType).getNestedType().createFieldValue(element.text);
+            v = ((WeightedSetDataType) expectedType).getNestedType().createFieldValue(elementText);
         } else if (expectedType instanceof MapDataType) {
-            v = ((MapDataType) expectedType).getKeyType().createFieldValue(element.text);
+            v = ((MapDataType) expectedType).getKeyType().createFieldValue(elementText);
         } else {
             throw new IllegalArgumentException("Container type " + expectedType + " not supported for match update.");
         }
