@@ -20,7 +20,7 @@ using search::streaming::QueryNodeRefList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTermList;
 
-TEST(StreamingQueryTest, test_phrase_evaluate)
+TEST(PhraseQueryNodeTest, test_phrase_evaluate)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addPhrase(3, "", 0, Weight(0));
