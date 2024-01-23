@@ -3,6 +3,7 @@
 #include "matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vdslib/container/searchresult.h>

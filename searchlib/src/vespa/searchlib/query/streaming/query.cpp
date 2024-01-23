@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "query.h"
-#include "hit_iterator_pack.h"
+#include "near_query_node.h"
+#include "onear_query_node.h"
+#include "phrase_query_node.h"
+#include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <cassert>
@@ -164,157 +167,6 @@ bool
 EquivQueryNode::evaluate() const
 {
     return OrQueryNode::evaluate();
-}
-
-bool
-SameElementQueryNode::evaluate() const {
-    HitList hl;
-    return ! evaluateHits(hl).empty();
-}
-
-void
-SameElementQueryNode::addChild(QueryNode::UP child) {
-    assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
-    AndQueryNode::addChild(std::move(child));
-}
-
-const HitList &
-SameElementQueryNode::evaluateHits(HitList & hl) const
-{
-    hl.clear();
-    if ( !AndQueryNode::evaluate()) return hl;
-
-    HitList tmpHL;
-    const auto & children = getChildren();
-    unsigned int numFields = children.size();
-    unsigned int currMatchCount = 0;
-    std::vector<unsigned int> indexVector(numFields, 0);
-    auto curr = static_cast<const QueryTerm *> (children[currMatchCount].get());
-    bool exhausted( curr->evaluateHits(tmpHL).empty());
-    for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm *>(children[currMatchCount+1].get());
-        unsigned int & currIndex = indexVector[currMatchCount];
-        unsigned int & nextIndex = indexVector[currMatchCount+1];
-
-        const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
-        uint32_t currElemId = currHit.element_id();
-
-        const HitList & nextHL = next->evaluateHits(tmpHL);
-
-        size_t nextIndexMax = nextHL.size();
-        while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() < currElemId)) {
-            nextIndex++;
-        }
-        if ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() == currElemId)) {
-            currMatchCount++;
-            if ((currMatchCount+1) == numFields) {
-                Hit h = nextHL[indexVector[currMatchCount]];
-                hl.emplace_back(h.field_id(), h.element_id(), h.element_weight(), 0);
-                currMatchCount = 0;
-                indexVector[0]++;
-            }
-        } else {
-            currMatchCount = 0;
-            indexVector[currMatchCount]++;
-        }
-        curr = static_cast<const QueryTerm *>(children[currMatchCount].get());
-        exhausted = (nextIndex >= nextIndexMax) || (indexVector[currMatchCount] >= curr->evaluateHits(tmpHL).size());
-    }
-    return hl;
-}
-
-bool
-PhraseQueryNode::evaluate() const
-{
-  HitList hl;
-  return ! evaluateHits(hl).empty();
-}
-
-void PhraseQueryNode::getPhrases(QueryNodeRefList & tl)            { tl.push_back(this); }
-void PhraseQueryNode::getPhrases(ConstQueryNodeRefList & tl) const { tl.push_back(this); }
-
-void
-PhraseQueryNode::addChild(QueryNode::UP child) {
-    assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
-    AndQueryNode::addChild(std::move(child));
-}
-
-const HitList &
-PhraseQueryNode::evaluateHits(HitList & hl) const
-{
-    hl.clear();
-    _fieldInfo.clear();
-    HitIteratorPack itr_pack(getChildren());
-    if (!itr_pack.all_valid()) {
-        return hl;
-    }
-    auto& last_child = dynamic_cast<const QueryTerm&>(*(*this)[size() - 1]);
-    while (itr_pack.seek_to_matching_field_element()) {
-        uint32_t first_position = itr_pack.front()->position();
-        bool retry_element = true;
-        while (retry_element) {
-            uint32_t position_offset = 0;
-            bool match = true;
-            for (auto& it : itr_pack) {
-                if (!it.seek_in_field_element(first_position + position_offset, itr_pack.get_field_element_ref())) {
-                    retry_element = false;
-                    match = false;
-                    break;
-                }
-                if (it->position() > first_position + position_offset) {
-                    first_position = it->position() - position_offset;
-                    match = false;
-                    break;
-                }
-                ++position_offset;
-            }
-            if (match) {
-                auto h = *itr_pack.back();
-                hl.push_back(h);
-                auto& fi = last_child.getFieldInfo(h.field_id());
-                updateFieldInfo(h.field_id(), hl.size() - 1, fi.getFieldLength());
-                if (!itr_pack.front().step_in_field_element(itr_pack.get_field_element_ref())) {
-                    retry_element = false;
-                }
-            }
-        }
-    }
-    return hl;
-}
-
-void
-PhraseQueryNode::updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) const
-{
-    if (fid >= _fieldInfo.size()) {
-        _fieldInfo.resize(fid + 1);
-        // only set hit offset and field length the first time
-        QueryTerm::FieldInfo & fi = _fieldInfo[fid];
-        fi.setHitOffset(offset);
-        fi.setFieldLength(fieldLength);
-    }
-    QueryTerm::FieldInfo & fi = _fieldInfo[fid];
-    fi.setHitCount(fi.getHitCount() + 1);
-}
-
-bool
-NearQueryNode::evaluate() const
-{
-    return AndQueryNode::evaluate();
-}
-
-void
-NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    AndQueryNode::visitMembers(visitor);
-    visit(visitor, "distance", static_cast<uint64_t>(_distance));
-}
-
-
-bool
-ONearQueryNode::evaluate() const
-{
-  bool ok(NearQueryNode::evaluate());
-  return ok;
 }
 
 Query::Query() = default;

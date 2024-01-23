@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/query/streaming/phrase_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/querynode.h>
 

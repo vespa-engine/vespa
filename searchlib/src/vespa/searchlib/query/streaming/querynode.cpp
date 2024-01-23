@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fuzzy_term.h"
+#include "near_query_node.h"
 #include "nearest_neighbor_query_node.h"
+#include "phrase_query_node.h"
 #include "query.h"
 #include "regexp_term.h"
+#include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
