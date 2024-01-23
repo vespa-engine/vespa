@@ -189,7 +189,7 @@ public class StorageClusterTest {
         var config = configFromProperties(new TestProperties());
         var limit = config.merge_throttling_memory_limit();
 
-        assertEquals(-1L, limit.max_usage_bytes()); // TODO change default
+        assertEquals(0L, limit.max_usage_bytes()); // TODO change default
         assertMergeAutoScaleConfigHasExpectedValues(limit);
     }
 
@@ -197,21 +197,6 @@ public class StorageClusterTest {
         assertEquals(128L*1024*1024,    limit.auto_lower_bound_bytes());
         assertEquals(2L*1024*1024*1024, limit.auto_upper_bound_bytes());
         assertEquals(0.03,              limit.auto_phys_mem_scale_factor(), 0.000001);
-    }
-
-    @Test
-    void merge_throttler_memory_limit_is_controlled_by_feature_flag() {
-        var config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(-1));
-        assertEquals(-1L, config.merge_throttling_memory_limit().max_usage_bytes());
-
-        config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(0));
-        assertEquals(0L, config.merge_throttling_memory_limit().max_usage_bytes());
-
-        config = configFromProperties(new TestProperties().setMergingMaxMemoryUsagePerNode(1_234_456_789));
-        assertEquals(1_234_456_789L, config.merge_throttling_memory_limit().max_usage_bytes());
-
-        // Feature flag should not affect the other config values
-        assertMergeAutoScaleConfigHasExpectedValues(config.merge_throttling_memory_limit());
     }
 
     @Test
@@ -353,24 +338,6 @@ public class StorageClusterTest {
         assertEquals(-1, config.async_operation_throttler().max_window_size()); // <=0 implies +inf
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
         assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
-    }
-
-    private void verifyUsePerDocumentThrottledDeleteBucket(boolean expected, Boolean enabled) {
-        var props = new TestProperties();
-        if (enabled != null) {
-            props.setUsePerDocumentThrottledDeleteBucket(enabled);
-        }
-        var config = filestorConfigFromProducer(simpleCluster(props));
-        assertEquals(expected, config.use_per_document_throttled_delete_bucket());
-    }
-
-    @Test
-    void delete_bucket_throttling_is_controlled_by_feature_flag() {
-        // TODO update default once rolled out and tested
-        verifyUsePerDocumentThrottledDeleteBucket(false, null);
-
-        verifyUsePerDocumentThrottledDeleteBucket(false, false);
-        verifyUsePerDocumentThrottledDeleteBucket(true, true);
     }
 
     @Test

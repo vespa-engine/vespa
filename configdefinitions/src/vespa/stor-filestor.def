@@ -121,4 +121,4 @@ async_operation_dynamic_throttling_window_increment int default=20 restart
 ## first place.
 ##
 ## This is a live config.
-use_per_document_throttled_delete_bucket bool default=false
+use_per_document_throttled_delete_bucket bool default=true
