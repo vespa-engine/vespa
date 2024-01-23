@@ -40,13 +40,6 @@ public final class NumericTensorAddress extends TensorAddress {
     public long numericLabel(int i) { return labels[i]; }
 
     @Override
-    public TensorAddress withLabel(int index, long label) {
-        long[] labels = Arrays.copyOf(this.labels, this.labels.length);
-        labels[index] = label;
-        return new NumericTensorAddress(labels);
-    }
-
-    @Override
     public String toString() {
         return "cell address (" + Arrays.stream(labels).mapToObj(NumericTensorAddress::asString).collect(Collectors.joining(",")) + ")";
     }

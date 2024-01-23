@@ -52,8 +52,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
      */
     public abstract long numericLabel(int i);
 
-    public abstract TensorAddress withLabel(int labelIndex, long label);
-
     public final boolean isEmpty() { return size() == 0; }
 
     @Override

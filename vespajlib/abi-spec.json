@@ -1312,7 +1312,6 @@
       "public abstract int size()",
       "public abstract java.lang.String label(int)",
       "public abstract long numericLabel(int)",
-      "public abstract com.yahoo.tensor.TensorAddress withLabel(int, long)",
       "public final boolean isEmpty()",
       "public int compareTo(com.yahoo.tensor.TensorAddress)",
       "public int hashCode()",

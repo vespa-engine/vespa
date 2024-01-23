@@ -37,14 +37,6 @@ public final class StringTensorAddress extends TensorAddress {
     }
 
     @Override
-    public TensorAddress withLabel(int index, long label) {
-        String[] labels = Arrays.copyOf(this.labels, this.labels.length);
-        labels[index] = NumericTensorAddress.asString(label);
-        return new StringTensorAddress(labels);
-    }
-
-
-    @Override
     public String toString() {
         return "cell address (" + String.join(",", labels) + ")";
     }
