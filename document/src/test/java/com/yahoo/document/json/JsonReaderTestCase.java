@@ -889,9 +889,12 @@ public class JsonReaderTestCase {
                                    {
                                      "put": "id:unittest:testMapStringToArrayOfInt::whee",
                                      "fields": {
-                                       "actualMapStringToArrayOfInt": {
-                                         "bamse": [1, 2, 3]
-                                       }
+                                       "actualMapStringToArrayOfInt": [
+                                         {
+                                           "key": "bamse",
+                                           "value": [1, 2, 3]
+                                         }
+                                       ]
                                      }
                                    }
                                    """);
