@@ -31,6 +31,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
@@ -62,6 +63,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -82,6 +84,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -410,11 +413,20 @@ public class JsonReaderTestCase {
     @Test
     public void testUpdateMatch() throws IOException {
         DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'match': {",
-                "        'element': 'person',",
-                "        'increment': 13 }}}}"));
+                                                   "  'fields': {",
+                                                   "    'actualset': {",
+                                                   "      'match': {",
+                                                   "        'element': 'person',",
+                                                   "        'increment': 13 }}}}"));
+
+        DocumentUpdate otherDoc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
+                                                        "  'fields': {",
+                                                        "    'actualset': {",
+                                                        "      'match': {",
+                                                        "        'increment': 13,",
+                                                        "        'element': 'person' }}}}"));
+
+        assertEquals(doc, otherDoc);
 
         Map<String, Tuple2<Number, String>> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -437,13 +449,13 @@ public class JsonReaderTestCase {
     @Test
     public void testArithmeticOperators() throws IOException {
         Tuple2[] operations = new Tuple2[] {
-                new Tuple2<String, Operator>(UPDATE_DECREMENT,
-                        ArithmeticValueUpdate.Operator.SUB),
-                new Tuple2<String, Operator>(UPDATE_DIVIDE,
+                new Tuple2<>(UPDATE_DECREMENT,
+                             ArithmeticValueUpdate.Operator.SUB),
+                new Tuple2<>(UPDATE_DIVIDE,
                         ArithmeticValueUpdate.Operator.DIV),
-                new Tuple2<String, Operator>(UPDATE_INCREMENT,
+                new Tuple2<>(UPDATE_INCREMENT,
                         ArithmeticValueUpdate.Operator.ADD),
-                new Tuple2<String, Operator>(UPDATE_MULTIPLY,
+                new Tuple2<>(UPDATE_MULTIPLY,
                         ArithmeticValueUpdate.Operator.MUL) };
         for (Tuple2<String, Operator> operator : operations) {
             DocumentUpdate doc = parseUpdate(inputJson("{ 'update': 'id:unittest:testset::whee',",
@@ -451,7 +463,7 @@ public class JsonReaderTestCase {
                     "    'actualset': {",
                     "      'match': {",
                     "        'element': 'person',",
-                    "        '" + (String) operator.first + "': 13 }}}}"));
+                    "        '" + operator.first + "': 13 }}}}"));
 
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -488,7 +500,7 @@ public class JsonReaderTestCase {
             MapValueUpdate adder = (MapValueUpdate) v;
             final Number key = ((IntegerFieldValue) adder.getValue())
                     .getNumber();
-            String op = ((StringFieldValue) ((AssignValueUpdate) adder.getUpdate())
+            String op = ((StringFieldValue) adder.getUpdate()
                     .getValue()).getString();
             matches.put(key, op);
         }
@@ -748,6 +760,81 @@ public class JsonReaderTestCase {
         assertEquals(1, f.size());
         AssignValueUpdate a = (AssignValueUpdate) f.getValueUpdate(0);
         assertEquals(new StringFieldValue("orOther"), a.getValue());
+    }
+
+    @Test
+    public void testMatchCannotUpdateNestedFields() {
+        // Should this work? It doesn't.
+        assertThrows(ClassCastException.class,
+                     () -> parseUpdate("""
+                                       {
+                                         "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                         "fields": {
+                                           "actualMapStringToArrayOfInt": {
+                                             "match": {
+                                               "element": "bamse",
+                                               "match": {
+                                                 "element": 1,
+                                                 "assign": 4
+                                               }
+                                             }
+                                           }
+                                         }
+                                       }
+                                       """));
+    }
+
+    @Test
+    public void testMatchCannotAssignToMap() {
+        // Unsupported value type for map value assign.
+        assertEquals("Field type Map<string,Array<int>> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                                      "fields": {
+                                                        "actualMapStringToArrayOfInt": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "assign": [1, 3, 4]
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
+    }
+
+
+    @Test
+    public void testAssignInsideArrayInMap() throws IOException {
+        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testMapStringToArrayOfInt::whee',",
+                                              "  'fields': {",
+                                              "    'actualMapStringToArrayOfInt': {",
+                                              "      'bamse': [1, 2, 3] }}}"));
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
+        new VespaJsonDocumentReader(false).readPut(parseInfo.fieldsBuffer, put);
+        Document doc = put.getDocument();
+
+        assertEquals(2, ((MapFieldValue<StringFieldValue, Array<IntegerFieldValue>>) doc.getFieldValue("actualMapStringToArrayOfInt"))
+                .get(StringFieldValue.getFactory().create("bamse")).get(1).getInteger());
+
+        DocumentUpdate update = parseUpdate("""
+                                            {
+                                              "update": "id:unittest:testMapStringToArrayOfInt::whee",
+                                              "fields": {
+                                                "actualMapStringToArrayOfInt{bamse}[1]": {
+                                                  "assign": 4
+                                                }
+                                              }
+                                            }
+                                            """);
+        assertEquals(1, update.fieldPathUpdates().size());
+
+        update.applyTo(doc);
+        assertEquals(4, ((MapFieldValue<StringFieldValue, Array<IntegerFieldValue>>) doc.getFieldValue("actualMapStringToArrayOfInt"))
+                .get(StringFieldValue.getFactory().create("bamse")).get(1).getInteger());
     }
 
     @Test

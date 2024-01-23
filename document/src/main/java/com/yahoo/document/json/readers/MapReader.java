@@ -126,9 +126,8 @@ public class MapReader {
         buffer.next();
         MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null, ignoreUndefinedFields);
         buffer.next();
-        // must generate the field value in parallell with the actual
+        // must generate the field value in parallel with the actual
         return m;
-
     }
 
     private static DataType valueTypeForMapUpdate(DataType parentType) {
