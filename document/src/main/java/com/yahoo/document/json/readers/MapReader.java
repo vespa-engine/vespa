@@ -97,8 +97,8 @@ public class MapReader {
 
         FieldValue key = null;
         ValueUpdate update;
-        boolean elementFirst = UPDATE_ELEMENT.equals(buffer.currentName());
-        if (elementFirst) {
+
+        if (UPDATE_ELEMENT.equals(buffer.currentName())) {
             key = keyTypeForMapUpdate(buffer.currentText(), currentLevel);
             buffer.next();
         }
@@ -107,7 +107,9 @@ public class MapReader {
                                                            : readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields);
         buffer.next();
 
-        if ( ! elementFirst) {
+        if (key == null) {
+            if ( ! UPDATE_ELEMENT.equals(buffer.currentName()))
+                throw new IllegalArgumentException("Expected match element, got " + buffer.current());
             key = keyTypeForMapUpdate(buffer.currentText(), currentLevel);
             buffer.next();
         }
