@@ -190,6 +190,7 @@ vespa_define_module(
     src/tests/postinglistbm
     src/tests/predicate
     src/tests/query
+    src/tests/query/streaming
     src/tests/queryeval
     src/tests/queryeval/blueprint
     src/tests/queryeval/dot_product
