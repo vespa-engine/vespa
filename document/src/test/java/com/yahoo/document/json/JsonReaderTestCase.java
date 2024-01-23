@@ -815,6 +815,31 @@ public class JsonReaderTestCase {
         assertEquals(new IntegerFieldValue(2), nvu.getValue());
         AssignValueUpdate avu = (AssignValueUpdate) nvu.getUpdate();
         assertEquals(new IntegerFieldValue(3), avu.getValue());
+
+        Document doc = docFromJson("""
+                                   {
+                                     "put": "id:unittest:testArrayOfArrayOfInt::whee",
+                                     "fields": {
+                                       "arrayOfArrayOfInt": [
+                                         [1, 2, 3],
+                                         [4, 5, 6]
+                                       ]
+                                     }
+                                   }
+                                   """);
+        nested.applyTo(doc);
+        Document expected = docFromJson("""
+                                        {
+                                          "put": "id:unittest:testArrayOfArrayOfInt::whee",
+                                          "fields": {
+                                            "arrayOfArrayOfInt": [
+                                              [1, 2, 3],
+                                              [4, 5, 3]
+                                            ]
+                                          }
+                                        }
+                                        """);
+        assertEquals(expected, doc);
     }
 
     @Test
