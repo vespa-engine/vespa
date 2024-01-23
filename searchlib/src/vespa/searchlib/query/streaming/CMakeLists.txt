@@ -6,11 +6,15 @@ vespa_add_library(searchlib_query_streaming OBJECT
     hit_iterator_pack.cpp
     in_term.cpp
     multi_term.cpp
+    near_query_node.cpp
     nearest_neighbor_query_node.cpp
+    onear_query_node.cpp
+    phrase_query_node.cpp
     query.cpp
     querynode.cpp
     querynoderesultbase.cpp
     queryterm.cpp
+    same_element_query_node.cpp
     wand_term.cpp
     weighted_set_term.cpp
     regexp_term.cpp
