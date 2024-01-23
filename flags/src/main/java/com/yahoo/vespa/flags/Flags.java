@@ -422,7 +422,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundLongFlag MERGING_MAX_MEMORY_USAGE_PER_NODE = defineLongFlag(
-            "merging-max-memory-usage-per-node", -1,
+            "merging-max-memory-usage-per-node", 0,
             List.of("vekterli"), "2023-11-03", "2024-03-01",
             "Soft limit of the maximum amount of memory that can be used across merge operations on a content node. " +
             "Value semantics: < 0: unlimited (legacy behavior), == 0: auto-deduced from node HW and config," +
@@ -431,7 +431,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_PER_DOCUMENT_THROTTLED_DELETE_BUCKET = defineFeatureFlag(
-            "use-per-document-throttled-delete-bucket", false,
+            "use-per-document-throttled-delete-bucket", true,
             List.of("vekterli"), "2023-11-13", "2024-03-01",
             "If set, DeleteBucket operations are internally expanded to an individually persistence-" +
             "throttled remove per document stored in the bucket. This makes the cost model of " +
