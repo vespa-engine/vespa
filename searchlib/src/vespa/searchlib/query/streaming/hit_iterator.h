@@ -33,6 +33,13 @@ public:
         }
         return false;
     }
+    /*
+     * Step iterator forwards within the scope of the same field
+     * element. Return true if iterator is valid and with the same
+     * field element, otherwise return false but update field_element
+     * if iterator is valid to prepare for hit iterator pack seeking
+     * to next matching field element.
+     */
     bool step_in_field_element(FieldElement& field_element) noexcept {
         ++_cur;
         if (!valid()) {
@@ -45,8 +52,15 @@ public:
         }
         return true;
     }
-    bool seek_in_field_element(uint32_t word_pos, FieldElement& field_element) {
-        while (_cur->position() < word_pos) {
+    /*
+     * Seek to position within the scope of the same field element.
+     * Return true if iterator is valid and with the same field
+     * element, otherwise return false but update field element if
+     * iterator is valid to prepare for hit iterator pack seeking to
+     * next matching field element.
+     */
+    bool seek_in_field_element(uint32_t position, FieldElement& field_element) {
+        while (_cur->position() < position) {
             if (!step_in_field_element(field_element)) {
                 return false;
             }
