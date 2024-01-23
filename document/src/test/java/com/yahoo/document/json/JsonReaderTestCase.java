@@ -154,6 +154,13 @@ public class JsonReaderTestCase {
             types.registerDocumentType(x);
         }
         {
+            DocumentType x = new DocumentType("testArrayOfArrayOfInt");
+            DataType inner = new ArrayDataType(DataType.INT);
+            DataType outer = new ArrayDataType(inner);
+            x.addField(new Field("arrayOfArrayOfInt", outer));
+            types.registerDocumentType(x);
+        }
+        {
             DocumentType x = new DocumentType("testsinglepos");
             DataType d = PositionDataType.INSTANCE;
             x.addField(new Field("singlepos", d));
@@ -763,6 +770,28 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testNestedArrayMatch() {
+        // Supposed to work?
+        assertThrows(ClassCastException.class,
+                     () -> parseUpdate("""
+                                       {
+                                         "update": "id:unittest:testArrayOfArrayOfInt::whee",
+                                         "fields": {
+                                           "arrayOfArrayOfInt": {
+                                             "match": {
+                                               "element": 1,
+                                               "match": {
+                                                 "element": 2,
+                                                 "assign": 3
+                                               }
+                                             }
+                                           }
+                                         }
+                                       }
+                                       """));
+    }
+
+    @Test
     public void testMatchCannotUpdateNestedFields() {
         // Should this work? It doesn't.
         assertThrows(ClassCastException.class,
@@ -785,7 +814,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testMatchCannotAssignToMap() {
+    public void testMatchCannotAssignToNestedMap() {
         // Unsupported value type for map value assign.
         assertEquals("Field type Map<string,Array<int>> not supported.",
                      assertThrows(UnsupportedOperationException.class,
@@ -803,6 +832,27 @@ public class JsonReaderTestCase {
                                                     }
                                                     """)).getMessage());
     }
+
+    @Test
+    public void testMatchCannotAssignToMap() {
+        // Unsupported value type for map value assign.
+        assertEquals("Field type Map<string,string> not supported.",
+                     assertThrows(UnsupportedOperationException.class,
+                                  () -> parseUpdate("""
+                                                    {
+                                                      "update": "id:unittest:testmap::whee",
+                                                      "fields": {
+                                                        "actualmap": {
+                                                          "match": {
+                                                            "element": "bamse",
+                                                            "assign": "bar"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                    """)).getMessage());
+    }
+
 
 
     @Test
