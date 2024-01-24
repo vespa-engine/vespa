@@ -15,7 +15,7 @@ public:
     SameElementQueryNode() noexcept : AndQueryNode("SAME_ELEMENT") { }
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType) const override { return false; }
     void addChild(QueryNode::UP child) override;
 };
 

@@ -21,7 +21,7 @@ public:
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType) const override { return false; }
 private:
     size_t _distance;
 };
