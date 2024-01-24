@@ -1154,6 +1154,7 @@
       "public void addItem(int, com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
       "public java.util.Optional extractSingleChild()",
+      "public void setWeight(int)",
       "public com.yahoo.prelude.query.WordItem getWordItem(int)",
       "public com.yahoo.prelude.query.BlockItem getBlockItem(int)",
       "protected void encodeThis(java.nio.ByteBuffer)",
