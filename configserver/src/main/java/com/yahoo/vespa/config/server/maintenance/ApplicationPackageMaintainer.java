@@ -69,7 +69,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                         continue;
                 }
 
-                var applicationId = session.getApplicationId();
+                ApplicationId applicationId = session.getOptionalApplicationId().orElse(null);
+                if (applicationId == null) // dry-run sessions have no application id
+                    continue;
+                
                 log.finest(() -> "Verifying application package for " + applicationId);
 
                 Optional<FileReference> appFileReference = session.getApplicationPackageReference();
