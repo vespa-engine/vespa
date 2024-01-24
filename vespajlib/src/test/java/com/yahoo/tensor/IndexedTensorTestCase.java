@@ -46,12 +46,7 @@ public class IndexedTensorTestCase {
 
     @Test
     public void testNegativeLabels() {
-        TensorAddress numeric = TensorAddress.of(-1, 0, 1, 1234567, -1234567);
-        assertEquals("-1", numeric.label(0));
-        assertEquals("0", numeric.label(1));
-        assertEquals("1", numeric.label(2));
-        assertEquals("1234567", numeric.label(3));
-        assertEquals("-1234567", numeric.label(4));
+        assertThrows(IndexOutOfBoundsException.class, () ->TensorAddress.of(-1, 0, 1, 1234567, -1234567));
     }
 
     private void verifyFloat(String spec) {

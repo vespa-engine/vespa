@@ -204,7 +204,7 @@ public class TensorType {
         for (int i = 0; i < dimensions.size(); i++)
             if (dimensions.get(i).name().equals(dimension))
                 return i;
-        return -1;
+        return Tensor.INVALID_INDEX;
     }
 
     /* Returns the bound of this dimension if it is present and bound in this, empty otherwise */

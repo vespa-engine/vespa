@@ -10,7 +10,6 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -173,7 +172,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                            TensorType concatType, long concatOffset, String concatDimension) {
         long[] combinedLabels = new long[concatType.dimensions().size()];
-        Arrays.fill(combinedLabels, -1);
+        Arrays.fill(combinedLabels, Tensor.INVALID_INDEX);
         int concatDimensionIndex = concatType.indexOfDimension(concatDimension).get();
         mapContent(a, combinedLabels, aToIndexes, concatDimensionIndex, concatOffset); // note: This sets a nonsensical value in the concat dimension
         boolean compatible = mapContent(b, combinedLabels, bToIndexes, concatDimensionIndex, concatOffset); // ... which is overwritten by the right value here
@@ -192,7 +191,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     private int[] mapIndexes(TensorType fromType, TensorType toType) {
         int[] toIndexes = new int[fromType.dimensions().size()];
         for (int i = 0; i < fromType.dimensions().size(); i++)
-            toIndexes[i] = toType.indexOfDimension(fromType.dimensions().get(i).name()).orElse(-1);
+            toIndexes[i] = toType.indexOfDimension(fromType.dimensions().get(i).name()).orElse(Tensor.INVALID_INDEX);
         return toIndexes;
     }
 
@@ -209,7 +208,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                 to[toIndex] = from.numericLabel(i) + concatOffset;
             }
             else {
-                if (to[toIndex] != -1 && to[toIndex] != from.numericLabel(i)) return false;
+                if (to[toIndex] != Tensor.INVALID_INDEX && to[toIndex] != from.numericLabel(i)) return false;
                 to[toIndex] = from.numericLabel(i);
             }
         }
@@ -369,7 +368,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }
-            return StringTensorAddress.unsafeOf(labels);
+            return TensorAddress.of(labels);
         }
 
         Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {
