@@ -153,7 +153,11 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	if err := s.CurlWriter.print(request, s.TLSOptions, timeout); err != nil {
 		return nil, err
 	}
-	return s.httpClient.Do(request, timeout)
+	resp, err := s.httpClient.Do(request, timeout)
+	if isTLSAlert(err) {
+		return nil, fmt.Errorf("%w: %s", errAuth, err)
+	}
+	return resp, err
 }
 
 // SetClient sets a custom HTTP client that this service should use.

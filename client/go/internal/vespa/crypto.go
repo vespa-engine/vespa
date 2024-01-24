@@ -13,6 +13,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -219,4 +220,16 @@ func contentHash(r io.Reader) (string, io.Reader, error) {
 func randomSerialNumber() (*big.Int, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	return rand.Int(rand.Reader, serialNumberLimit)
+}
+
+// isTLSAlert returns whether err contains a TLS alert error.
+func isTLSAlert(err error) bool {
+	for ; err != nil; err = errors.Unwrap(err) {
+		// This is ugly, but alert types are currently not exposed:
+		// https://github.com/golang/go/issues/35234
+		if fmt.Sprintf("%T", err) == "tls.alert" {
+			return true
+		}
+	}
+	return false
 }
