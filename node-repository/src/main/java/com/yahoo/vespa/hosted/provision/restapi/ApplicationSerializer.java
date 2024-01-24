@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
-import com.yahoo.config.provision.IntRange;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -15,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -40,6 +43,13 @@ public class ApplicationSerializer {
                                 URI applicationUri) {
         object.setString("url", applicationUri.toString());
         object.setString("id", application.id().toFullString());
+        Version version = applicationNodes.stream()
+                                          .map(node -> node.status().vespaVersion()
+                                                           .orElse(node.allocation().get().membership().cluster().vespaVersion()))
+                                          .min(Comparator.naturalOrder())
+                                          .get();
+        object.setString("version", version.toFullString());
+        object.setString("cloudAccount", applicationNodes.stream().findFirst().map(Node::cloudAccount).get().value());
         clustersToSlime(application, applicationNodes, nodeRepository, object.setObject("clusters"));
     }
 

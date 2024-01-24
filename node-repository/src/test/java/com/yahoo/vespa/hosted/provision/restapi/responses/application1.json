@@ -1,6 +1,8 @@
 {
   "url" : "http://localhost:8080/nodes/v2/applications/tenant1.application1.instance1",
   "id" : "tenant1.application1.instance1",
+  "cloudAccount": "aws:111222333444",
+  "version": "5.104.142",
   "clusters" : {
     "id1" : {
       "type": "container",
