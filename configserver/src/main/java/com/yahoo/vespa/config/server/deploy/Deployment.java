@@ -177,7 +177,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                    nodesToRestart.size(), nodesToRestart.stream().sorted().collect(joining(", "))));
         log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d: %s",
                                session.logPre(), nodesToRestart.size(), session.getSessionId(), nodesToRestart.stream().sorted().collect(joining(", "))));
-        this.configChangeActions = configChangeActions.withRestartActions(new RestartActions());
+        configChangeActions = configChangeActions == null ? null : configChangeActions.withRestartActions(new RestartActions());
     }
 
     private void storeReindexing(ApplicationId applicationId) {
