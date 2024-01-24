@@ -56,7 +56,7 @@ merge_throttling_policy.window_size_increment double default=2.0
 ##    > 0  explicit limit in bytes
 ##   == 0  limit automatically deduced by content node
 ##    < 0  unlimited (legacy behavior)
-merge_throttling_memory_limit.max_usage_bytes long default=-1
+merge_throttling_memory_limit.max_usage_bytes long default=0
 
 ## If merge_throttling_memory_limit.max_usage_bytes == 0, this factor is used
 ## as a multiplier to automatically deduce a memory limit for merges on the

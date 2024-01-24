@@ -112,8 +112,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs"}, removeAfter = "8.289") default boolean dynamicHeapSize() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default long mergingMaxMemoryUsagePerNode() { return -1; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default boolean usePerDocumentThrottledDeleteBucket() { return false; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default long mergingMaxMemoryUsagePerNode() { return 0; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default boolean usePerDocumentThrottledDeleteBucket() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
