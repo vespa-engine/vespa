@@ -95,7 +95,7 @@ public class NodePatcher {
     }
 
     private void unifiedPatch(String hostname, InputStream json, boolean untrustedTenantHost) {
-        Inspector root = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(json.readAllBytes())).get();
+        Inspector root = Exceptions.uncheck(() -> SlimeUtils.jsonToSlimeOrThrow(json.readAllBytes())).get();
         Map<String, Inspector> fields = new HashMap<>();
         root.traverse(fields::put);
 
