@@ -35,4 +35,13 @@ BasicType::asType(const vespalib::string &t)
     return NONE;
 }
 
+bool
+BasicType::is_integer_type() const noexcept
+{
+    return (_type == INT8) ||
+           (_type == INT16) ||
+           (_type == INT32) ||
+           (_type == INT64);
+}
+
 }

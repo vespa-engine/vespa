@@ -89,7 +89,7 @@ template <typename B, typename M>
 const IDocidWithWeightPostingStore*
 MultiValueNumericPostingAttribute<B, M>::as_docid_with_weight_posting_store() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64)) {
+    if (this->getConfig().basicType().is_integer_type()) {
         return &_posting_store_adapter;
     }
     return nullptr;
