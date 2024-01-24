@@ -20,7 +20,7 @@ public:
     void getPhrases(ConstQueryNodeRefList & tl) const override;
     const QueryTerm::FieldInfo & getFieldInfo(size_t fid) const { return _fieldInfo[fid]; }
     size_t getFieldInfoSize() const { return _fieldInfo.size(); }
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType) const override { return false; }
     void addChild(QueryNode::UP child) override;
 private:
     mutable std::vector<QueryTerm::FieldInfo> _fieldInfo;

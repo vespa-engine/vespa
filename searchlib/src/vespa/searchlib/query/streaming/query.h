@@ -76,7 +76,7 @@ class AndNotQueryNode : public QueryConnector
 public:
     AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
     bool evaluate() const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType) const override { return false; }
 };
 
 /**
