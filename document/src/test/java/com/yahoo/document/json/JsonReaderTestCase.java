@@ -2687,6 +2687,14 @@ public class JsonReaderTestCase {
         return createPutWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
+        JsonReader streaming = createReader("""
+                                         {
+                                           "fields": {
+                                             "%s": %s
+                                           }
+                                         }
+                                         """.formatted(tensorFieldName, inputTensor));
+        DocumentPut lazyParsed = (DocumentPut) streaming.readSingleDocumentStreaming(DocumentOperationType.PUT, TENSOR_DOC_ID).operation();
         JsonReader reader = createReader("""
                                          [
                                            {
@@ -2696,7 +2704,9 @@ public class JsonReaderTestCase {
                                              }
                                            }
                                          ]""".formatted(TENSOR_DOC_ID, tensorFieldName, inputTensor));
-        return (DocumentPut) reader.next();
+        DocumentPut bufferParsed = (DocumentPut) reader.next();
+        assertEquals(lazyParsed, bufferParsed);
+        return bufferParsed;
     }
 
     private DocumentUpdate createAssignUpdateWithSparseTensor(String inputTensor) {
@@ -2783,6 +2793,15 @@ public class JsonReaderTestCase {
     }
 
     private DocumentUpdate createTensorUpdate(String operation, String tensorJson, String tensorFieldName) {
+        JsonReader streaming = createReader("""
+                                            {
+                                              "fields": {
+                                                "%s": {
+                                                   "%s": %s
+                                                }
+                                              }
+                                            }""".formatted(tensorFieldName, operation, tensorJson));
+        DocumentUpdate lazyParsed = (DocumentUpdate) streaming.readSingleDocumentStreaming(DocumentOperationType.UPDATE, TENSOR_DOC_ID).operation();
         JsonReader reader = createReader("""
                                          [
                                            {
@@ -2794,7 +2813,9 @@ public class JsonReaderTestCase {
                                              }
                                            }
                                          ]""".formatted(TENSOR_DOC_ID, tensorFieldName, operation, tensorJson));
-        return (DocumentUpdate) reader.next();
+        DocumentUpdate bufferParsed = (DocumentUpdate) reader.next();
+        assertEquals(lazyParsed, bufferParsed);
+        return bufferParsed;
     }
 
     private void assertTensorAddUpdate(String expectedTensor, String tensorFieldName, String tensorJson) {

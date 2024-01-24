@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  */
 public class TokenBuffer {
 
-    private final Deque<Token> tokens = new ArrayDeque<>();
+    final Deque<Token> tokens = new ArrayDeque<>();
 
     private int nesting = 0;
 
@@ -29,10 +29,14 @@ public class TokenBuffer {
 
     /** Returns the next token, or null, and updates the nesting count of this. */
     public JsonToken next() {
-        tokens.poll();
+        advance();
         JsonToken token = current();
         updateNesting(token);
         return token;
+    }
+
+    void advance() {
+        tokens.poll();
     }
 
     /** Returns the current token without changing position, or null if none */
@@ -72,7 +76,7 @@ public class TokenBuffer {
         JsonToken token = parser.currentToken();
         Preconditions.checkArgument(token == firstToken,
                                     "Expected %s, got %s.", firstToken.name(), token);
-        if (isEmpty()) updateNesting(token);
+        updateNesting(token);
 
         try {
             for (int nesting = addFromParser(parser); nesting > 0; nesting += addFromParser(parser))
@@ -83,7 +87,7 @@ public class TokenBuffer {
         }
     }
 
-    private int nestingOffset(JsonToken token) {
+    int nestingOffset(JsonToken token) {
         if (token == null) return 0;
         if (token.isStructStart()) {
             return 1;
@@ -94,12 +98,12 @@ public class TokenBuffer {
         }
     }
 
-    private int addFromParser(JsonParser tokens) throws IOException {
+    int addFromParser(JsonParser tokens) throws IOException {
         add(tokens.currentToken(), tokens.getCurrentName(), tokens.getText());
         return nestingOffset(tokens.currentToken());
     }
 
-    private void updateNesting(JsonToken token) {
+    void updateNesting(JsonToken token) {
         nesting += nestingOffset(token);
     }
 
