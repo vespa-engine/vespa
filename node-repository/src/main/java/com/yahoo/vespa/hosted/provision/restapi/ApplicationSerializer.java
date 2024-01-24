@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.slime.Cursor;
@@ -47,9 +49,9 @@ public class ApplicationSerializer {
                                           .map(node -> node.status().vespaVersion()
                                                            .orElse(node.allocation().get().membership().cluster().vespaVersion()))
                                           .min(Comparator.naturalOrder())
-                                          .get();
+                                          .orElse(Vtag.currentVersion);
         object.setString("version", version.toFullString());
-        object.setString("cloudAccount", applicationNodes.stream().findFirst().map(Node::cloudAccount).get().value());
+        object.setString("cloudAccount", applicationNodes.stream().findFirst().map(Node::cloudAccount).orElse(CloudAccount.empty).value());
         clustersToSlime(application, applicationNodes, nodeRepository, object.setObject("clusters"));
     }
 
