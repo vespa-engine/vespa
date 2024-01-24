@@ -136,28 +136,28 @@ TEST_P(NearTest, test_near_fail_field)
                                      { { 1, 0, 10, 4} } }));
 }
 
-TEST_P(NearTest, test_near_sucess_after_step_first_term)
+TEST_P(NearTest, test_near_success_after_step_first_term)
 {
     EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 0, 0, 10, 2} },
                                     { { 0, 0, 10, 3} },
                                     { { 0, 0, 10, 5} } }));
 }
 
-TEST_P(NearTest, test_near_sucess_after_step_second_term)
+TEST_P(NearTest, test_near_success_after_step_second_term)
 {
     EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 2} },
                                     { { 0, 0, 10, 0}, {0, 0, 10, 3} },
                                     { { 0, 0, 10, 5} } }));
 }
 
-TEST_P(NearTest, test_near_sucess_in_second_element)
+TEST_P(NearTest, test_near_success_in_second_element)
 {
     EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 0, 1, 10, 0} },
                                     { { 0, 0, 10, 2}, { 0, 1, 10, 2} },
                                     { { 0, 0, 10, 5}, { 0, 1, 10, 4} } }));
 }
 
-TEST_P(NearTest, test_near_sucess_in_second_field)
+TEST_P(NearTest, test_near_success_in_second_field)
 {
     EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 1, 0, 10, 0} },
                                     { { 0, 0, 10, 2}, { 1, 0, 10, 2} },

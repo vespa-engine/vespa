@@ -6,8 +6,9 @@
 
 namespace search::streaming {
 
+template <bool ordered>
 bool
-NearQueryNode::evaluate() const
+NearQueryNode::evaluate_helper() const
 {
     HitIteratorPack itr_pack(getChildren());
     if (!itr_pack.all_valid()) {
@@ -21,8 +22,9 @@ NearQueryNode::evaluate() const
         bool retry_element = true;
         while (retry_element) {
             bool match = true;
+            uint32_t min_next_position = min_position;
             for (auto& it : itr_pack) {
-                if (!it.seek_in_field_element(min_position, itr_pack.get_field_element_ref())) {
+                if (!it.seek_in_field_element(min_next_position, itr_pack.get_field_element_ref())) {
                     retry_element = false;
                     match = false;
                     break;
@@ -31,6 +33,9 @@ NearQueryNode::evaluate() const
                     min_position = it->position() - distance();
                     match = false;
                     break;
+                }
+                if constexpr (ordered) {
+                    min_next_position = it->position() + 1;
                 }
             }
             if (match) {
@@ -41,11 +46,20 @@ NearQueryNode::evaluate() const
     return false;
 }
 
+bool
+NearQueryNode::evaluate() const
+{
+    return evaluate_helper<false>();
+}
+
 void
 NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AndQueryNode::visitMembers(visitor);
     visit(visitor, "distance", static_cast<uint64_t>(_distance));
 }
+
+template bool NearQueryNode::evaluate_helper<false>() const;
+template bool NearQueryNode::evaluate_helper<true>() const;
 
 }

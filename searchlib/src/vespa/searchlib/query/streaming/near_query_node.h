@@ -11,6 +11,9 @@ namespace search::streaming {
 */
 class NearQueryNode : public AndQueryNode
 {
+protected:
+    template <bool ordered>
+    bool evaluate_helper() const;
 public:
     NearQueryNode() noexcept : AndQueryNode("NEAR"), _distance(0) { }
     explicit NearQueryNode(const char * opName) noexcept : AndQueryNode(opName), _distance(0) { }
