@@ -141,6 +141,7 @@ public class ApplicationSerializer {
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         toSlime(cluster.groupSize(), clusterObject.setObject(groupSizeKey));
         clusterObject.setBool(requiredKey, cluster.required());
+        // TODO(olaa): Remove 'suggested' once API clients migrate to suggestion list
         toSlime(cluster.suggested(), clusterObject.setObject(suggestedKey));
         toSlime(cluster.suggestions(), clusterObject.setArray(suggestionsKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));

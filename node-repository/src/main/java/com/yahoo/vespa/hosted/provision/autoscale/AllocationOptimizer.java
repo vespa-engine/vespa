@@ -47,8 +47,8 @@ public class AllocationOptimizer {
      * Searches the space of possible allocations given a target relative load
      * and (optionally) cluster limits and returns the best alternative.
      *
-     * @return the best allocations sorted by preference, if there are any possible legal allocations, fulfilling the target
-     *         fully or partially, within the limits
+     * @return the best allocations, if there are any possible legal allocations, fulfilling the target
+     *         fully or partially, within the limits. The list contains the three best allocations, sorted from most to least preferred.
      */
     public List<AllocatableResources> findBestAllocations(Load loadAdjustment,
                                                          ClusterModel model,
