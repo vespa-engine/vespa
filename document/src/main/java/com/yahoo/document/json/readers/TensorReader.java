@@ -39,7 +39,7 @@ public class TensorReader {
         Tensor.Builder builder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectOneOf(buffer.current(), JsonToken.START_OBJECT, JsonToken.START_ARRAY);
         int initNesting = buffer.nesting();
-        while ( ! buffer.isEmpty()) {
+        while (true) {
             Supplier<Token> lookahead = buffer.lookahead();
             Token next = lookahead.get();
             if (TENSOR_CELLS.equals(next.name) && ! primitiveContent(next.token, lookahead.get().token)) {
@@ -67,9 +67,6 @@ public class TensorReader {
                 break;
             }
         }
-        if (buffer.nesting() + 1 != initNesting)
-            throw new IllegalArgumentException("incomplete JSON structure for " + tensorFieldValue);
-
         expectOneOf(buffer.current(), JsonToken.END_OBJECT, JsonToken.END_ARRAY);
         tensorFieldValue.assign(builder.build());
     }
