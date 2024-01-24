@@ -40,12 +40,14 @@ struct MyInvCmp {
 
 struct Timer {
     double minTime;
-    vespalib::Timer timer;
-    Timer() : minTime(1.0e10), timer() {}
-    void start() { timer = vespalib::Timer(); }
+    vespalib::steady_time start_time;
+    Timer() : minTime(1.0e10), start_time() {}
+    void start() {
+        start_time = vespalib::steady_clock::now();
+    }
     void stop() {
-        double ms = vespalib::count_ms(timer.elapsed());
-        minTime = std::min(minTime, ms);
+        std::chrono::duration<double,std::milli> elapsed = vespalib::steady_clock::now() - start_time;
+        minTime = std::min(minTime, elapsed.count());
     }
 };
 
