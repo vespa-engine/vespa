@@ -453,7 +453,8 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     auto& repo = _node->getComponentRegister().getBucketSpaceRepo();
     {
         bucketdb::StorageBucketInfo entry;
-        api::BucketInfo info(50, 100, 200);
+        // checksum, doc count, doc size, meta count, total bucket size (incl meta)
+        api::BucketInfo info(50, 100, 200, 101, 211);
         info.setReady(true);
         entry.setBucketInfo(info);
         repo.get(document::FixedBucketSpaces::default_space()).bucketDatabase()
@@ -461,7 +462,7 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     }
     {
         bucketdb::StorageBucketInfo entry;
-        api::BucketInfo info(60, 150, 300);
+        api::BucketInfo info(60, 150, 300, 153, 307);
         info.setActive(true);
         entry.setBucketInfo(info);
         repo.get(document::FixedBucketSpaces::global_space()).bucketDatabase()
@@ -475,6 +476,7 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     auto default_m = spaces.find(document::FixedBucketSpaces::default_space());
     ASSERT_TRUE(default_m != spaces.end());
     EXPECT_EQ(1,   default_m->second->buckets_total.getLast());
+    EXPECT_EQ(101, default_m->second->entries.getLast());
     EXPECT_EQ(100, default_m->second->docs.getLast());
     EXPECT_EQ(200, default_m->second->bytes.getLast());
     EXPECT_EQ(0,   default_m->second->active_buckets.getLast());
@@ -485,6 +487,7 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     auto global_m = spaces.find(document::FixedBucketSpaces::global_space());
     ASSERT_TRUE(global_m != spaces.end());
     EXPECT_EQ(1,   global_m->second->buckets_total.getLast());
+    EXPECT_EQ(153, global_m->second->entries.getLast());
     EXPECT_EQ(150, global_m->second->docs.getLast());
     EXPECT_EQ(300, global_m->second->bytes.getLast());
     EXPECT_EQ(1,   global_m->second->active_buckets.getLast());
@@ -499,7 +502,11 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     jsonStream << End();
     EXPECT_EQ(std::string("{\"values\":["
               "{\"name\":\"vds.datastored.bucket_space.buckets_total\",\"values\":{\"last\":1},\"dimensions\":{\"bucketSpace\":\"global\"}},"
+              "{\"name\":\"vds.datastored.bucket_space.entries\",\"values\":{\"last\":153},\"dimensions\":{\"bucketSpace\":\"global\"}},"
+              "{\"name\":\"vds.datastored.bucket_space.docs\",\"values\":{\"last\":150},\"dimensions\":{\"bucketSpace\":\"global\"}},"
               "{\"name\":\"vds.datastored.bucket_space.buckets_total\",\"values\":{\"last\":1},\"dimensions\":{\"bucketSpace\":\"default\"}},"
+              "{\"name\":\"vds.datastored.bucket_space.entries\",\"values\":{\"last\":101},\"dimensions\":{\"bucketSpace\":\"default\"}},"
+              "{\"name\":\"vds.datastored.bucket_space.docs\",\"values\":{\"last\":100},\"dimensions\":{\"bucketSpace\":\"default\"}},"
               "{\"name\":\"vds.datastored.alldisks.docs\",\"values\":{\"last\":250}},"
               "{\"name\":\"vds.datastored.alldisks.bytes\",\"values\":{\"last\":500}},"
               "{\"name\":\"vds.datastored.alldisks.buckets\",\"values\":{\"last\":2}}"

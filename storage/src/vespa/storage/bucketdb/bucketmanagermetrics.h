@@ -34,6 +34,7 @@ struct ContentBucketDbMetrics : metrics::MetricSet {
 struct BucketSpaceMetrics : metrics::MetricSet {
     // Superficially very similar to DataStoredMetrics, but metric naming and dimensions differ
     metrics::LongValueMetric buckets_total;
+    metrics::LongValueMetric entries;
     metrics::LongValueMetric docs;
     metrics::LongValueMetric bytes;
     metrics::LongValueMetric active_buckets;
