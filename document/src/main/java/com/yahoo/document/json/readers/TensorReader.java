@@ -209,7 +209,7 @@ public class TensorReader {
         if (buffer.current() != JsonToken.START_ARRAY) return false;
         Supplier<Token> lookahead = buffer.lookahead();
         Token next;
-        while ((next = lookahead.get()).token == JsonToken.START_ARRAY);
+        while ((next = lookahead.get()).token == JsonToken.START_ARRAY) { }
         return next.token == JsonToken.START_OBJECT;
     }
 

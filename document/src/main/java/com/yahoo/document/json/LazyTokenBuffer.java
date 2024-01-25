@@ -39,7 +39,10 @@ public class LazyTokenBuffer extends TokenBuffer {
                     return null;
 
                 Token token = buffered.get();
-                if (token == null) tokens.add(token = nextToken());
+                if (token == null) {
+                    token = nextToken();
+                    tokens.add(token);
+                }
                 localNesting += nestingOffset(token.token);
                 return token;
             }
