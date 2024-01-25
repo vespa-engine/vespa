@@ -238,7 +238,7 @@ public class VespaJsonDocumentReader {
                                  "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.current());
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
-        Preconditions.checkState(buffer.remaining() == 0, "Dangling data at end of operation");
+        Preconditions.checkState(buffer.isEmpty(), "Dangling data at end of operation");
     }
 
 }

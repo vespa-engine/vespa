@@ -778,7 +778,7 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST, "");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"Could not read document, no document?\"" +
+                       "  \"message\": \"expected start of root object, got null\"" +
                        "}",
                        response.readAll());
         assertEquals(400, response.getStatus());
@@ -791,7 +791,8 @@ public class DocumentV1ApiTest {
                                       "}");
         Inspector responseRoot = SlimeUtils.jsonToSlime(response.readAll()).get();
         assertEquals("/document/v1/space/music/number/1/two", responseRoot.field("pathId").asString());
-        assertTrue(responseRoot.field("message").asString().startsWith("Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name"));
+        assertTrue(responseRoot.field("message").asString(),
+                   responseRoot.field("message").asString().startsWith("failed parsing document: Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name"));
         assertEquals(400, response.getStatus());
 
         // PUT on a unknown document type is a 400
