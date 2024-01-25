@@ -11,7 +11,7 @@ import com.yahoo.messagebus.Message;
  */
 public enum DocumentOperationType {
 
-    PUT, REMOVE, UPDATE, ERROR;
+    GET, PUT, REMOVE, UPDATE, ERROR;
 
     public static DocumentOperationType fromMessage(Message msg) {
         if (msg instanceof PutDocumentMessage) {
