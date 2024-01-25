@@ -7,9 +7,10 @@ import ai.vespa.metrics.ContainerMetrics;
  * Place to store the metric names so where the metrics are logged can be found
  * more easily in an IDE.
  *
- * @author steinar
+ * @author Steinar Knutsen
  */
 public final class MetricNames {
+
     public static final String NUM_OPERATIONS = ContainerMetrics.HTTPAPI_NUM_OPERATIONS.baseName();
     public static final String NUM_PUTS = ContainerMetrics.HTTPAPI_NUM_PUTS.baseName();
     public static final String NUM_REMOVES = ContainerMetrics.HTTPAPI_NUM_REMOVES.baseName();
@@ -26,7 +27,6 @@ public final class MetricNames {
     public static final String FAILED_TIMEOUT = ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.baseName();
     public static final String FAILED_INSUFFICIENT_STORAGE = ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.baseName();
 
-    private MetricNames() {
-    }
+    private MetricNames() { }
 
 }
