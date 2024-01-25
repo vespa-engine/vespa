@@ -58,7 +58,7 @@ void GeoPosFieldSearcher::onStructValue(const document::StructFieldValue & fv) {
             addHit(*_qtl[j], 0);
         }
     }
-    ++_words;
+    set_element_length(1);
 }
 
 bool GeoPosFieldSearcher::GeoPosInfo::cmp(const document::StructFieldValue & sfv) const {

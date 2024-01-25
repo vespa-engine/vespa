@@ -25,22 +25,28 @@ void StrChrFieldSearcher::onValue(const document::FieldValue & fv)
 
 bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
 {
+    size_t element_length = 0;
+    bool need_count_words = false;
     if (_qtl.size() > 1) {
         size_t mintsz = shortestTerm();
         if (fieldRef.size() >= mintsz) {
-            _words += matchTerms(fieldRef, mintsz);
+            element_length = matchTerms(fieldRef, mintsz);
         } else {
-            _words += countWords(fieldRef);
+            need_count_words = true;
         }
     } else {
         for (auto qt : _qtl) {
             if (fieldRef.size() >= qt->termLen() || qt->isRegex() || qt->isFuzzy()) {
-                _words += matchTerm(fieldRef, *qt);
+                element_length = std::max(element_length, matchTerm(fieldRef, *qt));
             } else {
-                _words += countWords(fieldRef);
+                need_count_words = true;
             }
         }
     }
+    if (need_count_words) {
+        element_length = std::max(element_length, countWords(fieldRef));
+    }
+    set_element_length(element_length);
     return true;
 }
 

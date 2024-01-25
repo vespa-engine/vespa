@@ -162,9 +162,18 @@ void QueryTerm::resizeFieldId(size_t fieldNo)
     }
 }
 
-void QueryTerm::add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position)
+uint32_t
+QueryTerm::add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position)
 {
+    uint32_t idx = _hitList.size();
     _hitList.emplace_back(field_id, element_id, element_weight, position);
+    return idx;
+}
+
+void
+QueryTerm::set_element_length(uint32_t hitlist_idx, uint32_t element_length)
+{
+    _hitList[hitlist_idx].set_element_length(element_length);
 }
 
 NearestNeighborQueryNode*

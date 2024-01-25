@@ -11,18 +11,22 @@ class Hit
     uint32_t _field_id;
     uint32_t _element_id;
     int32_t  _element_weight;
+    uint32_t _element_length;
     uint32_t _position;
 public:
     Hit(uint32_t field_id_, uint32_t element_id_, int32_t element_weight_, uint32_t position_) noexcept
         : _field_id(field_id_),
           _element_id(element_id_),
           _element_weight(element_weight_),
+          _element_length(0),
           _position(position_)
     { }
     uint32_t field_id() const noexcept { return _field_id; }
     uint32_t element_id() const { return _element_id; }
     int32_t element_weight() const { return _element_weight; }
+    uint32_t element_length() const { return _element_length; }
     uint32_t position() const { return _position; }
+    void set_element_length(uint32_t value) { _element_length = value; }
 };
 
 using HitList = std::vector<Hit>;
