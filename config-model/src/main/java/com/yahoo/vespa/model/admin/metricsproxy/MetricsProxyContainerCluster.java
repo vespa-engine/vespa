@@ -160,7 +160,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
         builder.consumer.add(toConsumerBuilder(newDefaultConsumer()));
-        if (isHostedVespa()) builder.consumer.add(toConsumerBuilder(MetricsConsumer.vespa9));
+        if (isHostedVespa()) {
+            var amendedVespa9Consumer = addMetrics(MetricsConsumer.vespa9, getAdditionalDefaultMetrics().getMetrics());
+            builder.consumer.add(toConsumerBuilder(amendedVespa9Consumer));
+        }
         getAdmin()
                 .map(Admin::getAmendedMetricsConsumers)
                 .map(consumers -> consumers.stream().map(ConsumersConfigGenerator::toConsumerBuilder).toList())

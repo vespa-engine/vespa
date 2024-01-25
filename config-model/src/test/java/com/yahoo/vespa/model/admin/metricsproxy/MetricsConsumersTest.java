@@ -23,6 +23,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -69,15 +70,21 @@ public class MetricsConsumersTest {
 
     @Test
     void vespa_consumer_can_be_amended_via_admin_object() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+        VespaModel model = getModel(servicesWithAdminOnly(), hosted);
         var additionalMetric = new Metric("additional-metric");
         model.getAdmin().setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
 
         ConsumersConfig config = consumersConfigFromModel(model);
         assertEquals(numMetricsForVespaConsumer + 1, config.consumer(0).metric().size());
 
-        ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
+        ConsumersConfig.Consumer vespaConsumer = requireConsumer(config, MetricsConsumer.vespa);
         assertTrue(checkMetric(vespaConsumer, additionalMetric), "Did not contain additional metric");
+
+        ConsumersConfig.Consumer defaultConsumer = requireConsumer(config, MetricsConsumer.defaultConsumer);
+        assertFalse(checkMetric(defaultConsumer, additionalMetric), "Contained additional metric");
+
+        ConsumersConfig.Consumer vespa9Consumer = requireConsumer(config, MetricsConsumer.vespa9);
+        assertTrue(checkMetric(vespa9Consumer, additionalMetric), "Did not contain additional metric");
     }
 
     @Test
@@ -247,6 +254,13 @@ public class MetricsConsumersTest {
 
         Metric customMetric = new Metric("my.extra.metric");
         assertTrue(checkMetric(consumer, customMetric), "Did not contain metric: " + customMetric);
+    }
+
+    private ConsumersConfig.Consumer requireConsumer(ConsumersConfig config, MetricsConsumer consumer) {
+        return config.consumer()
+                .stream()
+                .filter(c -> c.name().equals(consumer.id()))
+                .findFirst().orElseThrow();
     }
 
 }
