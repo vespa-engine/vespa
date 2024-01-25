@@ -108,7 +108,7 @@ protected:
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
      **/
     void addHit(search::streaming::QueryTerm & qt, uint32_t pos) {
-        _element_length_fixups.emplace_back(&qt, qt.add(field(), _currentElementId, _currentElementWeight, _words + pos));
+        _element_length_fixups.emplace_back(&qt, qt.add(field(), _currentElementId, _currentElementWeight, pos));
     }
     void set_element_length(uint32_t element_length);
 public:
