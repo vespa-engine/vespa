@@ -2,6 +2,7 @@
 #include "utf8flexiblestringfieldsearcher.h"
 #include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
+#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -24,7 +25,7 @@ UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t min
     (void) mintsz;
     size_t words = 0;
     for (auto qt : _qtl) {
-        words = matchTerm(f, *qt);
+        words = std::max(words, matchTerm(f, *qt));
     }
     return words;
 }
