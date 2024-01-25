@@ -2120,93 +2120,69 @@ public class JsonReaderTestCase {
     @Test
     public void tensor_modify_update_with_replace_operation() {
         assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_add_operation() {
         assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, "sparse_tensor",
-                                 """
-                                 {
-                                   "operation": "add",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_multiply_operation() {
         assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "sparse_tensor",
-                                 """
-                                 {
-                                   "operation": "multiply",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'multiply',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_create_non_existing_cells_true() {
         assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, true, "sparse_tensor",
-                                 """
-                                 {
-                                   "operation": "add",
-                                   "create": true,
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'create': true,",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_create_non_existing_cells_false() {
         assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, false, "sparse_tensor",
-                                 """
-                                 {
-                                   "operation": "add",
-                                   "create": false,
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'create': false,",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
         // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
         assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
-                                 TensorModifyUpdate.Operation.REPLACE, "dense_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "cells": [
-                                     { "address": { "x": "0", "y": "0" }, "value": 2.0 },
-                                     { "address": { "x": "1", "y": "2" }, "value": 3.0 }
-                                   ]
-                                 }""");
+                TensorModifyUpdate.Operation.REPLACE, "dense_tensor",
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': '1', 'y': '2' }, 'value': 3.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_on_non_tensor_field_throws() {
         try {
-            JsonReader reader = createReader("""
-                                             {
-                                               "update": "id:unittest:smoke::doc1",
-                                               "fields": {
-                                                 "something": {
-                                                   "modify": {}
-                                                 }
-                                               }
-                                             }
-                                             """);
+            JsonReader reader = createReader(inputJson("{ 'update': 'id:unittest:smoke::doc1',",
+                                                       "  'fields': {",
+                                                       "    'something': {",
+                                                       "      'modify': {} }}}"));
             reader.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::doc1");
             fail("Expected exception");
         }
@@ -2220,125 +2196,95 @@ public class JsonReaderTestCase {
     public void tensor_modify_update_on_dense_unbound_tensor_throws() {
         illegalTensorModifyUpdate("Error in 'dense_unbound_tensor': A modify update cannot be applied to tensor types with indexed unbound dimensions. Field 'dense_unbound_tensor' has unsupported tensor type 'tensor(x[],y[])'",
                                   "dense_unbound_tensor",
-                                  """
-                                  {
-                                    "operation": "replace",
-                                    "cells": [
-                                      { "address": { "x": "0", "y": "0" }, "value": 2.0 }
-                                    ]
-                                  }""");
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_modify_update_on_sparse_tensor_with_single_dimension_short_form() {
-        assertTensorModifyUpdate("{{x:a}:2.0, {x:c}: 3.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_single_dimension_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "cells": {
-                                     "a": 2.0,
-                                     "c": 3.0
-                                   }
-                                 }""");
+        assertTensorModifyUpdate("{{x:a}:2.0, {x:c}: 3.0}",  TensorModifyUpdate.Operation.REPLACE, "sparse_single_dimension_tensor",
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'cells': {",
+                                           "    'a': 2.0,",
+                                           "    'c': 3.0 }}"));
     }
 
     @Test
     public void tensor_modify_update_with_replace_operation_mixed() {
         assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "0" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'replace',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_replace_operation_mixed_block_short_form_array() {
         assertTensorModifyUpdate("{{x:a,y:0}:1,{x:a,y:1}:2,{x:a,y:2}:3}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "blocks": [
-                                     { "address": { "x": "a" }, "values": [1,2,3] }
-                                   ]
-                                 }""");
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'blocks': [",
+                                           "    { 'address': { 'x': 'a' }, 'values': [1,2,3] } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_replace_operation_mixed_block_short_form_must_specify_full_subspace() {
         illegalTensorModifyUpdate("Error in 'mixed_tensor': At {x:a}: Expected 3 values, but got 2",
-                                  "mixed_tensor",
-                                  """
-                                  {
-                                    "operation": "replace",
-                                    "blocks": {
-                                      "a": [2,3]
-                                    }
-                                  }""");
+                                   "mixed_tensor",
+                                  inputJson("{",
+                                            "  'operation': 'replace',",
+                                            "  'blocks': {",
+                                            "    'a': [2,3] } }"));
     }
 
     @Test
     public void tensor_modify_update_with_replace_operation_mixed_block_short_form_map() {
         assertTensorModifyUpdate("{{x:a,y:0}:1,{x:a,y:1}:2,{x:a,y:2}:3}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
-                                 """
-                                 {
-                                   "operation": "replace",
-                                   "blocks": {
-                                     "a": [1,2,3]
-                                   }
-                                 }""");
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'blocks': {",
+                                           "    'a': [1,2,3] } }"));
     }
 
     @Test
     public void tensor_modify_update_with_add_operation_mixed() {
         assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.ADD, "mixed_tensor",
-                                 """
-                                 {
-                                   "operation": "add",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "0" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_multiply_operation_mixed() {
         assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.MULTIPLY, "mixed_tensor",
-                                 """
-                                 {
-                                   "operation": "multiply",
-                                   "cells": [
-                                     { "address": { "x": "a", "y": "0" }, "value": 2.0 }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'operation': 'multiply',",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
     }
 
     @Test
     public void tensor_modify_update_with_out_of_bound_cells_throws() {
         illegalTensorModifyUpdate("Error in 'dense_tensor': Dimension 'y' has label '3' but type is tensor(x[2],y[3])",
                                   "dense_tensor",
-                                  """
-                                  {
-                                    "operation": "replace",
-                                    "cells": [
-                                      { "address": { "x": "0", "y": "3" }, "value": 2.0 }
-                                    ]
-                                  }""");
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_modify_update_with_out_of_bound_cells_throws_mixed() {
         illegalTensorModifyUpdate("Error in 'mixed_tensor': Dimension 'y' has label '3' but type is tensor(x{},y[3])",
                                   "mixed_tensor",
-                                  """
-                                  {
-                                    "operation": "replace",
-                                    "cells": [
-                                      { "address": { "x": "0", "y": "3" }, "value": 2.0 }
-                                    ]
-                                  }""");
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
 
@@ -2346,113 +2292,87 @@ public class JsonReaderTestCase {
     public void tensor_modify_update_with_unknown_operation_throws() {
         illegalTensorModifyUpdate("Error in 'sparse_tensor': Unknown operation 'unknown' in modify update for field 'sparse_tensor'",
                                   "sparse_tensor",
-                                  """
-                                  {
-                                    "operation": "unknown",
-                                    "cells": [
-                                      { "address": { "x": "a", "y": "b" }, "value": 2.0 }
-                                    ]
-                                  }""");
+                                  "{",
+                                  "  'operation': 'unknown',",
+                                   "  'cells': [",
+                                   "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_modify_update_without_operation_throws() {
         illegalTensorModifyUpdate("Error in 'sparse_tensor': Modify update for field 'sparse_tensor' does not contain an operation",
                                   "sparse_tensor",
-                                  """
-                                  {
-                                    "cells": []
-                                  }""");
+                                  "{",
+                                  "  'cells': [] }");
     }
 
     @Test
     public void tensor_modify_update_without_cells_throws() {
         illegalTensorModifyUpdate("Error in 'sparse_tensor': Modify update for field 'sparse_tensor' does not contain tensor cells",
                                   "sparse_tensor",
-                                  """
-                                  {
-                                    "operation": "replace"
-                                  }""");
+                                  "{",
+                                  "  'operation': 'replace' }");
     }
 
     @Test
     public void tensor_modify_update_with_unknown_content_throws() {
         illegalTensorModifyUpdate("Error in 'sparse_tensor': Unknown JSON string 'unknown' in modify update for field 'sparse_tensor'",
                                   "sparse_tensor",
-                                  """
-                                  {
-                                    "unknown": "here"
-                                  }""");
+                                  "{",
+                                  "  'unknown': 'here' }");
     }
 
     @Test
     public void tensor_add_update_on_sparse_tensor() {
         assertTensorAddUpdate("{{x:a,y:b}:2.0, {x:c,y:d}: 3.0}", "sparse_tensor",
-                              """
-                              {
-                                "cells": [
-                                  { "address": { "x": "a", "y": "b" }, "value": 2.0 },
-                                  { "address": { "x": "c", "y": "d" }, "value": 3.0 }
-                                ]
-                              }""");
+                inputJson("{",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': 'c', 'y': 'd' }, 'value': 3.0 } ]}"));
     }
 
     @Test
     public void tensor_add_update_on_sparse_tensor_with_single_dimension_short_form() {
         assertTensorAddUpdate("{{x:a}:2.0, {x:c}: 3.0}", "sparse_single_dimension_tensor",
-                              """
-                              {
-                                "cells": {
-                                  "a": 2.0,
-                                  "c": 3.0
-                                }
-                              }""");
+                              inputJson("{",
+                                        "  'cells': {",
+                                        "    'a': 2.0,",
+                                        "    'c': 3.0 }}"));
     }
 
     @Test
     public void tensor_add_update_on_mixed_tensor() {
         assertTensorAddUpdate("{{x:a,y:0}:2.0, {x:a,y:1}:3.0, {x:a,y:2}:0.0}", "mixed_tensor",
-                              """
-                              {
-                                "cells": [
-                                  { "address": { "x": "a", "y": "0" }, "value": 2.0 },
-                                  { "address": { "x": "a", "y": "1" }, "value": 3.0 }
-                                ]
-                              }""");
+                inputJson("{",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 },",
+                        "    { 'address': { 'x': 'a', 'y': '1' }, 'value': 3.0 } ]}"));
     }
 
     @Test
     public void tensor_add_update_on_mixed_with_out_of_bound_dense_cells_throws() {
         illegalTensorAddUpdate("Error in 'mixed_tensor': Index 3 out of bounds for length 3",
                                "mixed_tensor",
-                               """
-                               {
-                                 "cells": [
-                                   { "address": { "x": "0", "y": "3" }, "value": 2.0 }
-                                 ]
-                               }""");
+                               "{",
+                               "  'cells': [",
+                               "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_add_update_on_dense_tensor_throws() {
         illegalTensorAddUpdate("Error in 'dense_tensor': An add update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'",
                                "dense_tensor",
-                               """
-                               {
-                                 "cells": [ ]
-                               }""");
+                               "{",
+                               "  'cells': [] }");
     }
 
     @Test
     public void tensor_add_update_on_not_fully_specified_cell_throws() {
         illegalTensorAddUpdate("Error in 'sparse_tensor': Missing a label for dimension 'y' for tensor(x{},y{})",
                                "sparse_tensor",
-                               """
-                               {
-                                 "cells": [
-                                   { "address": { "x": "a" }, "value": 2.0 }
-                                 ]
-                               }""");
+                               "{",
+                               "  'cells': [",
+                               "    { 'address': { 'x': 'a' }, 'value': 2.0 } ]}");
     }
 
     @Test
@@ -2468,176 +2388,146 @@ public class JsonReaderTestCase {
     @Test
     public void tensor_remove_update_on_sparse_tensor() {
         assertTensorRemoveUpdate("{{x:a,y:b}:1.0,{x:c,y:d}:1.0}", "sparse_tensor",
-                                 """
-                                 {
-                                   "addresses": [
-                                     { "x": "a", "y": "b" },
-                                     { "x": "c", "y": "d" }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': 'a', 'y': 'b' },",
+                        "    { 'x': 'c', 'y': 'd' } ]}"));
     }
 
     @Test
     public void tensor_remove_update_on_mixed_tensor() {
         assertTensorRemoveUpdate("{{x:1}:1.0,{x:2}:1.0}", "mixed_tensor",
-                                 """
-                                 {
-                                   "addresses": [
-                                     { "x": "1" },
-                                     { "x": "2" }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1' },",
+                        "    { 'x': '2' } ]}"));
     }
 
     @Test
     public void tensor_remove_update_on_sparse_tensor_with_not_fully_specified_address() {
         assertTensorRemoveUpdate("{{y:b}:1.0,{y:d}:1.0}", "sparse_tensor",
-                                 """
-                                 {
-                                   "addresses": [
-                                     { "y": "b" },
-                                     { "y": "d" }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'y': 'b' },",
+                        "    { 'y': 'd' } ]}"));
     }
 
     @Test
     public void tensor_remove_update_on_mixed_tensor_with_not_fully_specified_address() {
         assertTensorRemoveUpdate("{{x:1,z:a}:1.0,{x:2,z:b}:1.0}", "mixed_tensor_adv",
-                                 """
-                                 {
-                                   "addresses": [
-                                     { "x": "1", "z": "a" },
-                                     { "x": "2", "z": "b" }
-                                   ]
-                                 }""");
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1', 'z': 'a' },",
+                        "    { 'x': '2', 'z': 'b' } ]}"));
     }
 
     @Test
     public void tensor_remove_update_on_mixed_tensor_with_dense_addresses_throws() {
         illegalTensorRemoveUpdate("Error in 'mixed_tensor': Indexed dimension address 'y' should not be specified in remove update",
                                   "mixed_tensor",
-                                  """
-                                  {
-                                    "addresses": [
-                                      { "x": "1", "y": "0" },
-                                      { "x": "2", "y": "0" }
-                                    ]
-                                  }""");
+                                  "{",
+                                  "  'addresses': [",
+                                  "    { 'x': '1', 'y': '0' },",
+                                  "    { 'x': '2', 'y': '0' } ]}");
     }
 
     @Test
     public void tensor_remove_update_on_dense_tensor_throws() {
         illegalTensorRemoveUpdate("Error in 'dense_tensor': A remove update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'",
                                   "dense_tensor",
-                                  """
-                                  {
-                                    "addresses": []
-                                  }""");
+                                  "{",
+                                  "  'addresses': [] }");
     }
 
     @Test
     public void tensor_remove_update_with_stray_dimension_throws() {
         illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{},y{}) does not contain dimension 'foo'",
-                                  "sparse_tensor",
-                                  """
-                                  {
-                                    "addresses": [
-                                      { "x": "a", "foo": "b" }
-                                    ]
-                                  }""");
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
 
         illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{}) does not contain dimension 'foo'",
-                                  "sparse_tensor",
-                                  """
-                                  {
-                                    "addresses": [
-                                      { "x": "c" },
-                                      { "x": "a", "foo": "b" }
-                                    ]
-                                  }""");
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'c' },",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
     }
 
     @Test
     public void tensor_remove_update_without_cells_throws() {
         illegalTensorRemoveUpdate("Error in 'sparse_tensor': Remove update for field 'sparse_tensor' does not contain tensor addresses",
                                   "sparse_tensor",
-                                  """
-                                  {
-                                    "addresses": []
-                                  }""");
+                                  "{'addresses': [] }");
 
         illegalTensorRemoveUpdate("Error in 'mixed_tensor': Remove update for field 'mixed_tensor' does not contain tensor addresses",
                                   "mixed_tensor",
-                                  """
-                                  {
-                                    "addresses": []
-                                  }""");
+                                  "{'addresses': [] }");
     }
 
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +
-                "line 1:10 no viable alternative at character '>'",
-                """
-                [
-                  {
-                    "fields": {
-                      "boolean": "timestamp > 9000"
-                    },
-                    "put": "id:unittest:testpredicate::0"
-                  }
-                ]
-                """);
+                        "line 1:10 no viable alternative at character '>'",
+
+                "[",
+                "      {",
+                "          'fields': {",
+                "              'boolean': 'timestamp > 9000'",
+                "          },",
+                "          'put': 'id:unittest:testpredicate::0'",
+                "      }",
+                "]"
+        );
     }
 
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_string_as_int() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testint::0' - could not parse field 'integerfield' of type 'int': " +
-                "For input string: \" 1\"",
-                """
-                [
-                  {
-                    "fields": {
-                      "integerfield": " 1"
-                    },
-                    "put": "id:unittest:testint::0"
-                  }
-                ]
-                """);
+                        "For input string: \" 1\"",
+
+                "[",
+                "      {",
+                "          'fields': {",
+                "              'integerfield': ' 1'",
+                "          },",
+                "          'put': 'id:unittest:testint::0'",
+                "      }",
+                "]"
+        );
     }
 
     @Test
     public void require_that_parser_propagates_datatype_parser_errors_overflowing_int() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testint::0' - could not parse field 'integerfield' of type 'int': " +
-                "For input string: \"281474976710656\"",
-                """
-                [
-                  {
-                    "fields": {
-                      "integerfield": 281474976710656
-                    },
-                    "put": "id:unittest:testint::0"
-                  }
-                ]
-                """);
+                        "For input string: \"281474976710656\"",
+
+                "[",
+                "      {",
+                "          'fields': {",
+                "              'integerfield': 281474976710656",
+                "          },",
+                "          'put': 'id:unittest:testint::0'",
+                "      }",
+                "]"
+        );
     }
 
     @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
-        String jsonData = """
-                          [
-                            {
-                              "put": "id:ns:walrus::walrus1",
-                              "fields": {
-                                "aField": 42
-                              }
-                            }
-                          ]
-                          """;
+        final String jsonData = inputJson(
+                "[",
+                "      {",
+                "          'put': 'id:ns:walrus::walrus1',",
+                "          'fields': {",
+                "              'aField': 42",
+                "          }",
+                "      }",
+                "]");
         try {
             new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
             fail();
@@ -2687,40 +2577,30 @@ public class JsonReaderTestCase {
         return createPutWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
-        JsonReader streaming = createReader("""
-                                         {
-                                           "fields": {
-                                             "%s": %s
-                                           }
-                                         }
-                                         """.formatted(tensorFieldName, inputTensor));
-        DocumentPut lazyParsed = (DocumentPut) streaming.readSingleDocumentStreaming(DocumentOperationType.PUT, TENSOR_DOC_ID).operation();
-        JsonReader reader = createReader("""
-                                         [
-                                           {
-                                             "put": "%s",
-                                             "fields": {
-                                               "%s": %s
-                                             }
-                                           }
-                                         ]""".formatted(TENSOR_DOC_ID, tensorFieldName, inputTensor));
-        DocumentPut bufferParsed = (DocumentPut) reader.next();
-        assertEquals(lazyParsed, bufferParsed);
-        return bufferParsed;
+        JsonReader reader = createReader(inputJson("[",
+                "{ 'put': '" + TENSOR_DOC_ID + "',",
+                "  'fields': {",
+                "    '" + tensorFieldName + "': " + inputTensor + "  }}]"));
+        return (DocumentPut) reader.next();
     }
 
     private DocumentUpdate createAssignUpdateWithSparseTensor(String inputTensor) {
         return createAssignUpdateWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentUpdate createAssignUpdateWithTensor(String inputTensor, String tensorFieldName) {
-        return createTensorUpdate("assign", inputTensor, tensorFieldName);
+        JsonReader reader = createReader(inputJson("[",
+                "{ 'update': '" + TENSOR_DOC_ID + "',",
+                "  'fields': {",
+                "    '" + tensorFieldName + "': {",
+                "      'assign': " + (inputTensor != null ? inputTensor : "null") + " } } } ]"));
+        return (DocumentUpdate) reader.next();
     }
 
     private static Tensor assertSparseTensorField(String expectedTensor, DocumentPut put) {
         return assertTensorField(expectedTensor, put, "sparse_tensor");
     }
     private Tensor assertTensorField(String expectedTensor, String fieldName, String inputJson) {
-        return assertTensorField(expectedTensor, createPutWithTensor(inputJson(inputJson), fieldName), fieldName);
+        return assertTensorField(expectedTensor, createPutWithTensor(inputJson, fieldName), fieldName);
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
         return assertTensorField(Tensor.from(expectedTensor), put, tensorFieldName);
@@ -2793,29 +2673,12 @@ public class JsonReaderTestCase {
     }
 
     private DocumentUpdate createTensorUpdate(String operation, String tensorJson, String tensorFieldName) {
-        JsonReader streaming = createReader("""
-                                            {
-                                              "fields": {
-                                                "%s": {
-                                                   "%s": %s
-                                                }
-                                              }
-                                            }""".formatted(tensorFieldName, operation, tensorJson));
-        DocumentUpdate lazyParsed = (DocumentUpdate) streaming.readSingleDocumentStreaming(DocumentOperationType.UPDATE, TENSOR_DOC_ID).operation();
-        JsonReader reader = createReader("""
-                                         [
-                                           {
-                                             "update": "%s",
-                                             "fields": {
-                                               "%s": {
-                                                 "%s": %s
-                                               }
-                                             }
-                                           }
-                                         ]""".formatted(TENSOR_DOC_ID, tensorFieldName, operation, tensorJson));
-        DocumentUpdate bufferParsed = (DocumentUpdate) reader.next();
-        assertEquals(lazyParsed, bufferParsed);
-        return bufferParsed;
+        JsonReader reader = createReader(inputJson("[",
+                "{ 'update': '" + TENSOR_DOC_ID + "',",
+                "  'fields': {",
+                "    '" + tensorFieldName + "': {",
+                "      '" + operation + "': " + tensorJson + " }}}]"));
+        return (DocumentUpdate) reader.next();
     }
 
     private void assertTensorAddUpdate(String expectedTensor, String tensorFieldName, String tensorJson) {
