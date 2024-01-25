@@ -1110,6 +1110,21 @@ TEST("counting of words") {
     assertString(fs, StringList().add("bb").add("not"), field, HitsList().add(Hits().add(2)).add(Hits()));
 }
 
+TEST("element lengths")
+{
+    UTF8StrChrFieldSearcher fs(0);
+    auto field = StringList().add("a").add("b a c").add("d a");
+    auto query = StringList().add("a");
+    auto qtv = performSearch(fs, query, getFieldValue(field));
+    EXPECT_EQUAL(1u, qtv.size());
+    auto& qt = *qtv[0];
+    auto& hl = qt.getHitList();
+    EXPECT_EQUAL(3u, hl.size());
+    EXPECT_EQUAL(1u, hl[0].element_length());
+    EXPECT_EQUAL(3u, hl[1].element_length());
+    EXPECT_EQUAL(2u, hl[2].element_length());
+}
+
 vespalib::string NormalizationInput = "test That Somehing happens with during NårmØlization";
 
 void

@@ -74,7 +74,8 @@ public:
     /// Gives you all phrases of this tree. Indicating that they are all const.
     void getPhrases(ConstQueryNodeRefList & tl) const override;
 
-    void                add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position);
+    uint32_t            add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position);
+    void                set_element_length(uint32_t hitlist_idx, uint32_t element_length);
     EncodingBitMap      encoding()                 const { return _encoding; }
     size_t              termLen()                  const { return getTermLen(); }
     const string      & index()                    const { return _index; }

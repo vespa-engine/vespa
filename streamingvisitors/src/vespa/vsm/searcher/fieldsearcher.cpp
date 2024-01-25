@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/query/streaming/multi_term.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.fieldsearcher");
@@ -55,6 +56,7 @@ FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) noexcept
       _maxFieldLength(0x100000),
       _currentElementId(0),
       _currentElementWeight(1),
+      _element_length_fixups(),
       _words(0),
       _badUtf8Count(0)
 {
@@ -70,6 +72,7 @@ FieldSearcher::search(const StorageDocument & doc)
         fInfo.setHitOffset(qt->getHitList().size());
     }
     onSearch(doc);
+    assert(_element_length_fixups.empty());
     for (auto qt : _qtl) {
         QueryTerm::FieldInfo & fInfo = qt->getFieldInfo(field());
         fInfo.setHitCount(qt->getHitList().size() - fInfo.getHitOffset());
@@ -274,6 +277,18 @@ FieldSearcher::IteratorHandler::onStructStart(const Content & c)
 {
     LOG(spam, "onStructStart: field value '%s'", c.getValue().toString().c_str());
     _searcher.onStructValue(static_cast<const document::StructFieldValue &>(c.getValue()));
+}
+
+void
+FieldSearcher::set_element_length(uint32_t element_length)
+{
+    _words += element_length;
+    if (!_element_length_fixups.empty()) {
+        for (auto& fixup : _element_length_fixups) {
+            fixup.first->set_element_length(fixup.second, element_length);
+        }
+        _element_length_fixups.clear();
+    }
 }
 
 }

@@ -6,6 +6,7 @@
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/util/array.h>
+#include <utility>
 
 namespace search::fef { class IQueryEnvironment; }
 
@@ -96,6 +97,7 @@ private:
     unsigned      _maxFieldLength;
     uint32_t      _currentElementId;
     int32_t       _currentElementWeight; // Contains the weight of the current item being evaluated.
+    std::vector<std::pair<search::streaming::QueryTerm*, uint32_t>> _element_length_fixups;
 protected:
     /// Number of terms searched.
     unsigned      _words;
@@ -105,9 +107,10 @@ protected:
      * Adds a hit to the given query term.
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
      **/
-    void addHit(search::streaming::QueryTerm & qt, uint32_t pos) const {
-        qt.add(field(), _currentElementId, _currentElementWeight, _words + pos);
+    void addHit(search::streaming::QueryTerm & qt, uint32_t pos) {
+        _element_length_fixups.emplace_back(&qt, qt.add(field(), _currentElementId, _currentElementWeight, _words + pos));
     }
+    void set_element_length(uint32_t element_length);
 public:
     static search::byte _foldLowCase[256];
     static search::byte _wordChar[256];
