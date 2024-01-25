@@ -80,7 +80,8 @@ public final class ApplicationMapper {
     }
 
     public List<Application> listApplications(ApplicationId applicationId) {
-        return requestHandlers.get(applicationId).applications();
+        var applicationVersions = requestHandlers.get(applicationId);
+        return applicationVersions == null ? List.of() : applicationVersions.applications();
     }
 
 }
