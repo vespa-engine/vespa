@@ -41,6 +41,7 @@ public class ApplicationSerializerTest {
                                  IntRange.empty(),
                                  true,
                                  Autoscaling.empty(),
+                                 List.of(),
                                  Autoscaling.empty(),
                                  ClusterInfo.empty(),
                                  BcpGroupInfo.empty(),
@@ -60,6 +61,14 @@ public class ApplicationSerializerTest {
                                                  new Load(0.1, 0.2, 0.3, 0.4, 0.5),
                                                  new Load(0.4, 0.5, 0.6, 0.7, 0.8),
                                                  new Autoscaling.Metrics(0.7, 0.8, 0.9)),
+                                 List.of(new Autoscaling(Autoscaling.Status.unavailable,
+                                                 "",
+                                                 Optional.of(new ClusterResources(20, 10,
+                                                         new NodeResources(0.5, 4, 14, 16))),
+                                                 Instant.ofEpochMilli(1234L),
+                                                 new Load(0.1, 0.2, 0.3, 0.4, 0.5),
+                                                 new Load(0.4, 0.5, 0.6, 0.7, 0.8),
+                                                 new Autoscaling.Metrics(0.7, 0.8, 0.9))),
                                  new Autoscaling(Autoscaling.Status.insufficient,
                                                  "Autoscaling status",
                                                  Optional.of(new ClusterResources(10, 5,
@@ -98,6 +107,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.groupSize(), serializedCluster.groupSize());
             assertEquals(originalCluster.required(), serializedCluster.required());
             assertEquals(originalCluster.suggested(), serializedCluster.suggested());
+            assertEquals(originalCluster.suggestions(), serializedCluster.suggestions());
             assertEquals(originalCluster.target(), serializedCluster.target());
             assertEquals(originalCluster.clusterInfo(), serializedCluster.clusterInfo());
             assertEquals(originalCluster.bcpGroupInfo(), serializedCluster.bcpGroupInfo());

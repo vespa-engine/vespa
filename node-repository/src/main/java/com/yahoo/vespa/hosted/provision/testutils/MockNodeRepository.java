@@ -233,6 +233,14 @@ public class MockNodeRepository extends NodeRepository {
                                                           Load.zero(),
                                                           Load.zero(),
                                                           Autoscaling.Metrics.zero()));
+        cluster1 = cluster1.withSuggestions(List.of(new Autoscaling(Autoscaling.Status.unavailable,
+                                                          "",
+                                                          Optional.of(new ClusterResources(6, 2,
+                                                                  new NodeResources(3, 20, 100, 1))),
+                                                          clock().instant(),
+                                                          Load.zero(),
+                                                          Load.zero(),
+                                                          Autoscaling.Metrics.zero())));
         cluster1 = cluster1.withTarget(new Autoscaling(Autoscaling.Status.unavailable,
                                                        "",
                                                        Optional.of(new ClusterResources(4, 1,
