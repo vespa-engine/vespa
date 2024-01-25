@@ -45,10 +45,15 @@ RankManager::Snapshot::addProperties(const vespa::config::search::RankProfilesCo
 FieldInfo::DataType
 to_data_type(VsmfieldsConfig::Fieldspec::Searchmethod search_method)
 {
-    if (search_method == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR) {
+    // detecting DataType from Searchmethod will not give correct results,
+    // we should probably use the document type
+    if (search_method == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR ||
+        search_method == VsmfieldsConfig::Fieldspec::Searchmethod::NONE)
+    {
         return FieldInfo::DataType::TENSOR;
     }
     // This is the default FieldInfo data type if not specified.
+    // Wrong in most cases.
     return FieldInfo::DataType::DOUBLE;
 }
 
