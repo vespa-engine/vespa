@@ -1058,7 +1058,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
             try {
-                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocumentStreaming(operation, docId);
+                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
             } catch (IllegalArgumentException e) {
                 incrementMetricParseError();
                 throw e;
