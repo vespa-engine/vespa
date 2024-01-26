@@ -8,6 +8,7 @@ import com.yahoo.document.json.TokenBuffer;
 import java.util.Optional;
 
 public class DocumentParseInfo {
+    public DocumentParseInfo() { }
     public DocumentId documentId;
     public Optional<Boolean> create = Optional.empty();
     public Optional<String> condition = Optional.empty();
