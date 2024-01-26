@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import static com.yahoo.document.json.JsonReader.ReaderState.END_OF_FEED;
+import static com.yahoo.document.json.document.DocumentParser.FIELDS;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 
 /**
@@ -60,7 +61,7 @@ public class JsonReader {
      * @param docIdString document ID
      * @return the parsed document operation
      */
-    public ParsedDocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
+    ParsedDocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo;
         try {
@@ -76,6 +77,54 @@ public class JsonReader {
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
         operation.operation().setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
+    }
+
+    /**
+     * Reads a JSON which is expected to contain only the "fields" object of a document,
+     * and where other parameters, like the document ID and operation type, are supplied by other means.
+     *
+     * @param operationType the type of operation (update or put)
+     * @param docIdString document ID
+     * @return the parsed document operation
+     */
+    public ParsedDocumentOperation readSingleDocumentStreaming(DocumentOperationType operationType, String docIdString) {
+        try {
+            DocumentId docId = new DocumentId(docIdString);
+            DocumentParseInfo documentParseInfo = new DocumentParseInfo();
+            documentParseInfo.documentId = docId;
+            documentParseInfo.operationType = operationType;
+
+            if (JsonToken.START_OBJECT != parser.nextValue())
+                throw new IllegalArgumentException("expected start of root object, got " + parser.currentToken());
+
+            parser.nextValue();
+            if ( ! FIELDS.equals(parser.getCurrentName()))
+                throw new IllegalArgumentException("expected field \"fields\", but got " + parser.getCurrentName());
+
+            if (JsonToken.START_OBJECT != parser.currentToken())
+                throw new IllegalArgumentException("expected start of \"fields\" object, got " + parser.currentToken());
+
+            documentParseInfo.fieldsBuffer = new LazyTokenBuffer(parser);
+            VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
+            ParsedDocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
+                    getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
+
+            if ( ! documentParseInfo.fieldsBuffer.isEmpty())
+                throw new IllegalArgumentException("expected all content to be consumed by document parsing, but " +
+                                                   documentParseInfo.fieldsBuffer.nesting() + " levels remain");
+
+            if (JsonToken.END_OBJECT != parser.currentToken())
+                throw new IllegalArgumentException("expected end of \"fields\" object, got " + parser.currentToken());
+            if (JsonToken.END_OBJECT != parser.nextToken())
+                throw new IllegalArgumentException("expected end of root object, got " + parser.currentToken());
+            if (null != parser.nextToken())
+                throw new IllegalArgumentException("expected end of input, got " + parser.currentToken());
+
+            return operation;
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("failed parsing document", e);
+        }
     }
 
     /** Returns the next document operation, or null if we have reached the end */
