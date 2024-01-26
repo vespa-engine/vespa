@@ -204,6 +204,7 @@ vespa_define_module(
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator
     src/tests/queryeval/nearest_neighbor
+    src/tests/queryeval/or_speed
     src/tests/queryeval/parallel_weak_and
     src/tests/queryeval/predicate
     src/tests/queryeval/profiled_iterator
