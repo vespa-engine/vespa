@@ -20,6 +20,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -218,6 +219,56 @@ public class JsonReaderTestCase {
     private JsonReader createReader(String jsonInput) {
         InputStream input = new ByteArrayInputStream(Utf8.toBytes(jsonInput));
         return new JsonReader(types, input, parserFactory);
+    }
+
+    @Test
+    public void readSingleDocumentsPutStreaming() throws IOException {
+        String json = """
+                      {
+                        "remove": "id:unittest:smoke::ignored",
+                        "ignored-extra-array": [{ "foo": null }, { }],
+                        "ignored-extra-object": { "foo": [null, { }], "bar": { } },
+                        "fields": {
+                          "something": "smoketest",
+                          "flag": true,
+                          "nalle": "bamse"
+                        },
+                        "id": "id:unittest:smoke::ignored",
+                        "create": false,
+                        "condition": "true"
+                      }
+                      """;
+        ParsedDocumentOperation operation = createReader(json).readSingleDocumentStreaming(DocumentOperationType.PUT,"id:unittest:smoke::doc1");
+        DocumentPut put = ((DocumentPut) operation.operation());
+        assertFalse(put.getCreateIfNonExistent());
+        assertEquals("true", put.getCondition().getSelection());
+        smokeTestDoc(put.getDocument());
+    }
+
+    @Test
+    public void readSingleDocumentsUpdateStreaming() throws IOException {
+        String json = """
+                      {
+                        "remove": "id:unittest:smoke::ignored",
+                        "ignored-extra-array": [{ "foo": null }, { }],
+                        "ignored-extra-object": { "foo": [null, { }], "bar": { } },
+                        "fields": {
+                          "something": { "assign": "smoketest" },
+                          "flag": { "assign": true },
+                          "nalle": { "assign": "bamse" }
+                        },
+                        "id": "id:unittest:smoke::ignored",
+                        "create": true,
+                        "condition": "false"
+                      }
+                      """;
+        ParsedDocumentOperation operation = createReader(json).readSingleDocumentStreaming(DocumentOperationType.UPDATE,"id:unittest:smoke::doc1");
+        Document doc = new Document(types.getDocumentType("smoke"), new DocumentId("id:unittest:smoke::doc1"));
+        DocumentUpdate update = ((DocumentUpdate) operation.operation());
+        update.applyTo(doc);
+        smokeTestDoc(doc);
+        assertTrue(update.getCreateIfNonExistent());
+        assertEquals("false", update.getCondition().getSelection());
     }
 
     @Test

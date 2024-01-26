@@ -6,8 +6,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
@@ -18,6 +20,8 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import static com.yahoo.document.json.JsonReader.ReaderState.END_OF_FEED;
+import static com.yahoo.document.json.document.DocumentParser.CONDITION;
+import static com.yahoo.document.json.document.DocumentParser.CREATE_IF_NON_EXISTENT;
 import static com.yahoo.document.json.document.DocumentParser.FIELDS;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 
@@ -80,7 +84,7 @@ public class JsonReader {
     }
 
     /**
-     * Reads a JSON which is expected to contain only the "fields" object of a document,
+     * Reads a JSON which is expected to contain a single document operation,
      * and where other parameters, like the document ID and operation type, are supplied by other means.
      *
      * @param operationType the type of operation (update or put)
@@ -97,28 +101,52 @@ public class JsonReader {
             if (JsonToken.START_OBJECT != parser.nextValue())
                 throw new IllegalArgumentException("expected start of root object, got " + parser.currentToken());
 
-            parser.nextValue();
-            if ( ! FIELDS.equals(parser.getCurrentName()))
-                throw new IllegalArgumentException("expected field \"fields\", but got " + parser.getCurrentName());
+            Boolean create = null;
+            String condition = null;
+            ParsedDocumentOperation operation = null;
+            while (JsonToken.END_OBJECT != parser.nextValue()) {
+                switch (parser.getCurrentName()) {
+                    case FIELDS -> {
+                        documentParseInfo.fieldsBuffer = new LazyTokenBuffer(parser);
+                        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
+                        operation = vespaJsonDocumentReader.createDocumentOperation(
+                                getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
 
-            if (JsonToken.START_OBJECT != parser.currentToken())
-                throw new IllegalArgumentException("expected start of \"fields\" object, got " + parser.currentToken());
+                        if ( ! documentParseInfo.fieldsBuffer.isEmpty())
+                            throw new IllegalArgumentException("expected all content to be consumed by document parsing, but " +
+                                                               documentParseInfo.fieldsBuffer.nesting() + " levels remain");
 
-            documentParseInfo.fieldsBuffer = new LazyTokenBuffer(parser);
-            VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
-            ParsedDocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
-                    getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
+                    }
+                    case CONDITION -> {
+                        if ( ! JsonToken.VALUE_STRING.equals(parser.currentToken()) && ! JsonToken.VALUE_NULL.equals(parser.currentToken()))
+                            throw new IllegalArgumentException("expected string value for condition, got " + parser.currentToken());
 
-            if ( ! documentParseInfo.fieldsBuffer.isEmpty())
-                throw new IllegalArgumentException("expected all content to be consumed by document parsing, but " +
-                                                   documentParseInfo.fieldsBuffer.nesting() + " levels remain");
+                        condition = parser.getValueAsString();
+                    }
+                    case CREATE_IF_NON_EXISTENT -> {
+                        create = parser.getBooleanValue(); // Throws if not boolean.
+                    }
+                    default -> {
+                        // We ignore stray fields, but need to ensure structural balance in doing do.
+                        if (parser.currentToken().isStructStart()) parser.skipChildren();
+                    }
+                }
+            }
 
-            if (JsonToken.END_OBJECT != parser.currentToken())
-                throw new IllegalArgumentException("expected end of \"fields\" object, got " + parser.currentToken());
-            if (JsonToken.END_OBJECT != parser.nextToken())
-                throw new IllegalArgumentException("expected end of root object, got " + parser.currentToken());
             if (null != parser.nextToken())
                 throw new IllegalArgumentException("expected end of input, got " + parser.currentToken());
+
+            assert null != operation: "VespaDocumentReader should throw on missing fields";
+
+            if (null != create) {
+                switch (operationType) {
+                    case PUT -> ((DocumentPut) operation.operation()).setCreateIfNonExistent(create);
+                    case UPDATE -> ((DocumentUpdate) operation.operation()).setCreateIfNonExistent(create);
+                    case REMOVE -> throw new IllegalArgumentException(CREATE_IF_NON_EXISTENT + " is not supported for remove operations");
+                }
+            }
+
+            operation.operation().setCondition(TestAndSetCondition.fromConditionString(Optional.ofNullable(condition)));
 
             return operation;
         }

@@ -20,7 +20,7 @@ public class DocumentParser {
     private static final String UPDATE = "update";
     private static final String PUT = "put";
     private static final String ID = "id";
-    private static final String CONDITION = "condition";
+    public static final String CONDITION = "condition";
     public static final String CREATE_IF_NON_EXISTENT = "create";
     public static final String FIELDS = "fields";
     public static final String REMOVE = "remove";

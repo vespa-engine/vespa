@@ -230,7 +230,7 @@ public class VespaJsonDocumentReader {
 
 
     private static boolean isFieldPath(String field) {
-        return field.matches("^.*?[.\\[\\{].*$");
+        return field.matches("^.*?[.\\[{].*$");
     }
 
     private static void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {

@@ -411,6 +411,7 @@ public class DocumentV1ApiTest {
             DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
             expectedUpdate.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
             expectedUpdate.setCondition(new TestAndSetCondition("true"));
+            expectedUpdate.setCreateIfNonExistent(true);
             assertEquals(expectedUpdate, update);
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
             assertEquals(parameters().withRoute("content"), parameters);
@@ -419,10 +420,16 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
                                       """
                                       {
+                                        "extra-ignored-field": { "foo": [{ }], "bar": null },
+                                        "another-ignored-field": [{ "foo": [{ }] }],
+                                        "remove": "id:ns:type::ignored",
+                                        "put": "id:ns:type::ignored",
                                         "fields": {
                                           "artist": { "assign": "Lisa Ekdahl" },
                                           "nonexisting": { "assign": "Ignored" }
-                                        }
+                                        },
+                                        "post": "id:ns:type::ignored",
+                                        "create": true
                                       }""");
         assertSameJson("""
                        {
