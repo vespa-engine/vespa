@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,9 @@ public class NodeStateChangeChecker {
 
     private static final Logger log = Logger.getLogger(NodeStateChangeChecker.class.getName());
     private static final String BUCKETS_METRIC_NAME = StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_BUCKETS_TOTAL.baseName();
-    private static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
+    private static final String ENTRIES_METRIC_NAME = StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_ENTRIES.baseName();
+    private static final String DOCS_METRIC_NAME    = StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_DOCS.baseName();
+    private static final Map<String, String> DEFAULT_SPACE_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
     private final int requiredRedundancy;
     private final HierarchicalGroupVisiting groupVisiting;
@@ -107,6 +110,45 @@ public class NodeStateChangeChecker {
                && Objects.equals(newWantedState.getDescription(), oldWantedState.getDescription());
     }
 
+    private static Optional<Result> checkZeroEntriesStoredOnContentNode(HostInfo hostInfo, int nodeIndex) {
+        var entriesMetric = hostInfo.getMetrics().getValueAt(ENTRIES_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
+        if (entriesMetric.isEmpty() || entriesMetric.get().getLast() == null) {
+            // To allow for rolling upgrades in clusters with content node versions that do not report
+            // an entry count, defer to legacy bucket count check if the entry metric can't be found.
+            return Optional.empty();
+        }
+        long lastEntries = entriesMetric.get().getLast();
+        if (lastEntries > 0) {
+            return Optional.of(disallow("The storage node stores %d document entries".formatted(lastEntries)));
+        }
+        // At this point we believe we have zero entries. Cross-check with visible doc count; it should
+        // always be present when an entry count of zero is present and transitively always be zero.
+        var docsMetric = hostInfo.getMetrics().getValueAt(DOCS_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
+        if (docsMetric.isEmpty() || docsMetric.get().getLast() == null) {
+            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports entry count but not document count".formatted(nodeIndex));
+            return Optional.of(disallow("The storage node host info reports stored entry count, but not document count"));
+        }
+        long lastDocs = docsMetric.get().getLast();
+        if (lastDocs > 0) {
+            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports 0 entries, but %d documents".formatted(nodeIndex, lastDocs));
+            return Optional.of(disallow("The storage node reports 0 entries, but %d documents".formatted(lastDocs)));
+        }
+        return Optional.of(allow());
+    }
+
+    private static Result checkLegacyZeroBucketsStoredOnContentNode(HostInfo hostInfo, int nodeIndex) {
+        var bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
+        if (bucketsMetric.isEmpty() || bucketsMetric.get().getLast() == null) {
+            return disallow("Missing last value of the " + BUCKETS_METRIC_NAME + " metric for storage node " + nodeIndex);
+        }
+
+        long lastBuckets = bucketsMetric.get().getLast();
+        if (lastBuckets > 0) {
+            return disallow("The storage node manages " + lastBuckets + " buckets");
+        }
+        return allow();
+    }
+
     private Result canSetStateDownPermanently(NodeInfo nodeInfo, ClusterState clusterState, String newDescription) {
         var result = checkIfStateSetWithDifferentDescription(nodeInfo, newDescription);
         if (result.notAllowed())
@@ -129,15 +171,14 @@ public class NodeStateChangeChecker {
                             " got info for storage node " + nodeIndex + " at a different version " +
                             hostInfoNodeVersion);
 
-        var bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
-        if (bucketsMetric.isEmpty() || bucketsMetric.get().getLast() == null)
-            return disallow("Missing last value of the " + BUCKETS_METRIC_NAME + " metric for storage node " + nodeIndex);
-
-        long lastBuckets = bucketsMetric.get().getLast();
-        if (lastBuckets > 0)
-            return disallow("The storage node manages " + lastBuckets + " buckets");
-
-        return allow();
+        // TODO should also ideally check merge pending from the distributors' perspectives.
+        //  - This goes in particular for the global space, as we only check for zero entries in
+        //    the _default_ space (as global entries are retained even for retired nodes).
+        //  - Due to global merges being prioritized above everything else, it is highly unlikely
+        //    that there will be any pending global merges, but the possibility still exists.
+        //  - Would need wiring of aggregated content cluster stats
+        var entriesCheckResult = checkZeroEntriesStoredOnContentNode(hostInfo, nodeIndex);
+        return entriesCheckResult.orElseGet(() -> checkLegacyZeroBucketsStoredOnContentNode(hostInfo, nodeIndex));
     }
 
     private Result canSetStateUp(NodeInfo nodeInfo, NodeState oldWantedState) {
