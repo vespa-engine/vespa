@@ -136,7 +136,8 @@ public class JsonReader {
             if (null != parser.nextToken())
                 throw new IllegalArgumentException("expected end of input, got " + parser.currentToken());
 
-            assert null != operation: "VespaDocumentReader should throw on missing fields";
+            if (null == operation)
+                throw new IllegalArgumentException("document is missing the required \"fields\" field");
 
             if (null != create) {
                 switch (operationType) {

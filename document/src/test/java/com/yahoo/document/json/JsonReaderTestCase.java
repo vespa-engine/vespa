@@ -222,6 +222,15 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void readDocumentWithMissingFieldsField() {
+        assertEquals("document is missing the required \"fields\" field",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> createReader("{ }").readSingleDocumentStreaming(DocumentOperationType.PUT,
+                                                                                        "id:unittest:testnull::whee"))
+                             .getMessage());
+    }
+
+    @Test
     public void readSingleDocumentsPutStreaming() throws IOException {
         String json = """
                       {
