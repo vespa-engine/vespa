@@ -171,10 +171,8 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     static long toValueIndex(TensorAddress address, DimensionSizes sizes, TensorType type) {
-        if (address.isEmpty()) return 0;
-
         long valueIndex = 0;
-        for (int i = 0; i < address.size(); i++) {
+        for (int i = 0, sz = address.size(); i < sz; i++) {
             long label = address.numericLabel(i);
             if (label >= sizes.size(i))
                 throw new IllegalArgumentException(address + " is not within the bounds of " + type);
@@ -893,8 +891,8 @@ public abstract class IndexedTensor implements Tensor {
 
         private static long computeSize(DimensionSizes sizes, List<Integer> iterateDimensions) {
             long size = 1;
-            for (int iterateDimension : iterateDimensions)
-                size *= sizes.size(iterateDimension);
+            for (int i = 0; i < iterateDimensions.size(); i++)
+                size *= sizes.size(iterateDimensions.get(i));
             return size;
         }
 
@@ -1060,7 +1058,7 @@ public abstract class IndexedTensor implements Tensor {
     /** In this case we can reuse the source index computation for the iteration index */
     private final static class EqualSizeMultiDimensionIndexes extends MultiDimensionIndexes {
 
-        private long lastComputedSourceValueIndex = -1;
+        private long lastComputedSourceValueIndex = Tensor.INVALID_INDEX;
 
         private EqualSizeMultiDimensionIndexes(DimensionSizes sizes, List<Integer> iterateDimensions, long[] initialIndexes, long size) {
             super(sizes, sizes, iterateDimensions, initialIndexes, size);

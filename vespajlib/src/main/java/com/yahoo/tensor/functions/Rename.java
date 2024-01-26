@@ -8,7 +8,6 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.impl.StringTensorAddress;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -123,7 +122,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         String[] reorderedLabels = new String[toIndexes.length];
         for (int i = 0; i < toIndexes.length; i++)
             reorderedLabels[toIndexes[i]] = address.label(i);
-        return StringTensorAddress.unsafeOf(reorderedLabels);
+        return TensorAddress.of(reorderedLabels);
     }
 
     private String toVectorString(List<String> elements) {

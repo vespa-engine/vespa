@@ -20,7 +20,7 @@ import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
 import com.yahoo.tensor.functions.Expand;
-import com.yahoo.tensor.impl.NumericTensorAddress;
+import com.yahoo.tensor.impl.Label;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +55,7 @@ import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
  * @author bratseth
  */
 public interface Tensor {
+    int INVALID_INDEX = -1;
 
     // ----------------- Accessors
 
@@ -506,7 +507,7 @@ public interface Tensor {
          * This is for optimizations mapping between tensors where this is possible without creating a
          * TensorAddress.
          */
-        long getDirectIndex() { return -1; }
+        long getDirectIndex() { return INVALID_INDEX; }
 
         /** Returns the value as a double */
         @Override
@@ -626,7 +627,7 @@ public interface Tensor {
             public TensorType type() { return tensorBuilder.type(); }
 
             public CellBuilder label(String dimension, long label) {
-                return label(dimension, NumericTensorAddress.asString(label));
+                return label(dimension, Label.fromNumber(label));
             }
 
             public Builder value(double cellValue) {
