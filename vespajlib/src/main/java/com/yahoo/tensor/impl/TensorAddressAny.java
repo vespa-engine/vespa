@@ -18,6 +18,7 @@ import static com.yahoo.tensor.impl.Label.fromNumber;
  * @author baldersheim
  */
 abstract public class TensorAddressAny extends TensorAddress {
+
     @Override
     public String label(int i) {
         return fromNumber((int)numericLabel(i));
@@ -26,37 +27,47 @@ abstract public class TensorAddressAny extends TensorAddress {
     public static TensorAddress of() {
         return TensorAddressEmpty.empty;
     }
+
     public static TensorAddress of(String label) {
         return new TensorAddressAny1(toNumber(label));
     }
+
     public static TensorAddress of(String label0, String label1) {
         return new TensorAddressAny2(toNumber(label0), toNumber(label1));
     }
+
     public static TensorAddress of(String label0, String label1, String label2) {
         return new TensorAddressAny3(toNumber(label0), toNumber(label1), toNumber(label2));
     }
+
     public static TensorAddress of(String label0, String label1, String label2, String label3) {
         return new TensorAddressAny4(toNumber(label0), toNumber(label1), toNumber(label2), toNumber(label3));
     }
-    public static TensorAddress of(String [] labels) {
-        int [] labelsAsInt = new int[labels.length];
+
+    public static TensorAddress of(String[] labels) {
+        int[] labelsAsInt = new int[labels.length];
         for (int i = 0; i < labels.length; i++) {
             labelsAsInt[i] = toNumber(labels[i]);
         }
         return ofUnsafe(labelsAsInt);
     }
+
     public static TensorAddress of(int label) {
         return new TensorAddressAny1(sanitize(label));
     }
+
     public static TensorAddress of(int label0, int label1) {
         return new TensorAddressAny2(sanitize(label0), sanitize(label1));
     }
+
     public static TensorAddress of(int label0, int label1, int label2) {
         return new TensorAddressAny3(sanitize(label0), sanitize(label1), sanitize(label2));
     }
+
     public static TensorAddress of(int label0, int label1, int label2, int label3) {
         return new TensorAddressAny4(sanitize(label0), sanitize(label1), sanitize(label2), sanitize(label3));
     }
+
     public static TensorAddress of(int ... labels) {
         return switch (labels.length) {
             case 0 -> of();
@@ -72,6 +83,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             }
         };
     }
+
     public static TensorAddress of(long label) {
         return of(safe2Int(label));
     }
@@ -96,7 +108,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             case 3 -> ofUnsafe(safe2Int(labels[0]), safe2Int(labels[1]), safe2Int(labels[2]));
             case 4 -> ofUnsafe(safe2Int(labels[0]), safe2Int(labels[1]), safe2Int(labels[2]), safe2Int(labels[3]));
             default -> {
-                int [] labelsAsInt = new int[labels.length];
+                int[] labelsAsInt = new int[labels.length];
                 for (int i = 0; i < labels.length; i++) {
                     labelsAsInt[i] = safe2Int(labels[i]);
                 }
@@ -108,15 +120,19 @@ abstract public class TensorAddressAny extends TensorAddress {
     private static TensorAddress ofUnsafe(int label) {
         return new TensorAddressAny1(label);
     }
+
     private static TensorAddress ofUnsafe(int label0, int label1) {
         return new TensorAddressAny2(label0, label1);
     }
+
     private static TensorAddress ofUnsafe(int label0, int label1, int label2) {
         return new TensorAddressAny3(label0, label1, label2);
     }
+
     private static TensorAddress ofUnsafe(int label0, int label1, int label2, int label3) {
         return new TensorAddressAny4(label0, label1, label2, label3);
     }
+
     public static TensorAddress ofUnsafe(int ... labels) {
         return switch (labels.length) {
             case 0 -> of();
@@ -127,10 +143,12 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> new TensorAddressAnyN(labels);
         };
     }
+
     private static int sanitize(int label) {
-        if (label < Tensor.INVALID_INDEX) {
+        if (label < Tensor.invalidIndex) {
             throw new IndexOutOfBoundsException("cell label " + label + " must be positive");
         }
         return label;
     }
+
 }

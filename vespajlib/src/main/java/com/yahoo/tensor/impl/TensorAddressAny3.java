@@ -7,11 +7,14 @@ import com.yahoo.tensor.TensorAddress;
 import static java.lang.Math.abs;
 
 /**
- * 3 dimensional address
+ * A three-dimensional address.
+ *
  * @author baldersheim
  */
 final class TensorAddressAny3 extends TensorAddressAny {
+
     private final int label0, label1, label2;
+
     TensorAddressAny3(int label0, int label1, int label2) {
         this.label0 = label0;
         this.label1 = label1;
@@ -54,4 +57,5 @@ final class TensorAddressAny3 extends TensorAddressAny {
                 (label1 == any.label1) &&
                 (label2 == any.label2);
     }
+
 }

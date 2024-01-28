@@ -107,27 +107,30 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Cell> cellIterator() {
         return new Iterator<>() {
+
             final Iterator<DenseSubspace> blockIterator = index.denseSubspaces.iterator();
-            DenseSubspace currBlock = null;
             final int[] labels = new int[index.indexedDimensions.size()];
+            DenseSubspace currentBlock = null;
             int currOffset = index.denseSubspaceSize;
             int prevOffset = -1;
+
             @Override
             public boolean hasNext() {
                 return (currOffset < index.denseSubspaceSize || blockIterator.hasNext());
             }
+
             @Override
             public Cell next() {
                 if (currOffset == index.denseSubspaceSize) {
-                    currBlock = blockIterator.next();
+                    currentBlock = blockIterator.next();
                     currOffset = 0;
                 }
                 if (currOffset != prevOffset) { // Optimization for index.denseSubspaceSize == 1
                     index.denseOffsetToAddress(currOffset, labels);
                 }
-                TensorAddress fullAddr = currBlock.sparseAddress.fullAddressOf(index.type.dimensions(), labels);
+                TensorAddress fullAddr = currentBlock.sparseAddress.fullAddressOf(index.type.dimensions(), labels);
                 prevOffset = currOffset;
-                double value = currBlock.cells[currOffset++];
+                double value = currentBlock.cells[currOffset++];
                 return new Cell(fullAddr, value);
             }
         };
@@ -140,20 +143,23 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Double> valueIterator() {
         return new Iterator<>() {
+
             final Iterator<DenseSubspace> blockIterator = index.denseSubspaces.iterator();
-            double[] currBlock = null;
+            double[] currentBlock = null;
             int currOffset = index.denseSubspaceSize;
+
             @Override
             public boolean hasNext() {
                 return (currOffset < index.denseSubspaceSize || blockIterator.hasNext());
             }
+
             @Override
             public Double next() {
                 if (currOffset == index.denseSubspaceSize) {
-                    currBlock = blockIterator.next().cells;
+                    currentBlock = blockIterator.next().cells;
                     currOffset = 0;
                 }
-                return currBlock[currOffset++];
+                return currentBlock[currOffset++];
             }
         };
     }
@@ -319,7 +325,7 @@ public class MixedTensor implements Tensor {
 
         @Override
         public Tensor.Builder cell(TensorAddress address, double value) {
-            TensorAddress sparsePart = address.sparsePartialAddress(index.sparseType, index.type.dimensions());
+            TensorAddress sparsePart = address.mappedPartialAddress(index.sparseType, index.type.dimensions());
             int denseOffset = index.denseOffsetOf(address);
             double[] denseSubspace = denseSubspace(sparsePart);
             denseSubspace[denseOffset] = value;
@@ -438,7 +444,7 @@ public class MixedTensor implements Tensor {
         private final TensorType denseType;
         private final List<TensorType.Dimension> mappedDimensions;
         private final List<TensorType.Dimension> indexedDimensions;
-        private final int [] indexedDimensionsSize;
+        private final int[] indexedDimensionsSize;
 
         private ImmutableMap<TensorAddress, Integer> sparseMap;
         private List<DenseSubspace> denseSubspaces;
@@ -473,7 +479,7 @@ public class MixedTensor implements Tensor {
         }
 
         private DenseSubspace blockOf(TensorAddress address) {
-            TensorAddress sparsePart = address.sparsePartialAddress(sparseType, type.dimensions());
+            TensorAddress sparsePart = address.mappedPartialAddress(sparseType, type.dimensions());
             Integer blockNum = sparseMap.get(sparsePart);
             if (blockNum == null || blockNum >= denseSubspaces.size()) {
                 return null;

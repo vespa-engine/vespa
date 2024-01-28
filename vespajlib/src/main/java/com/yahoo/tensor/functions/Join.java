@@ -378,7 +378,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     private static TensorAddress joinAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                                TensorType joinedType) {
         int[] joinedLabels = new int[joinedType.dimensions().size()];
-        Arrays.fill(joinedLabels, Tensor.INVALID_INDEX);
+        Arrays.fill(joinedLabels, Tensor.invalidIndex);
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
@@ -392,10 +392,10 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
      *         occupied by a different value
      */
     private static boolean mapContent(TensorAddress from, int[] to, int[] indexMap) {
-        for (int i = 0, sz = from.size(); i < sz; i++) {
+        for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
             int label = Convert.safe2Int(from.numericLabel(i));
-            if (to[toIndex] != Tensor.INVALID_INDEX && to[toIndex] != label)
+            if (to[toIndex] != Tensor.invalidIndex && to[toIndex] != label)
                 return false;
             to[toIndex] = label;
         }
