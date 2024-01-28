@@ -78,9 +78,6 @@ class IndexedDoubleTensor extends IndexedTensor {
 
         @Override
         public Builder cell(TensorAddress address, double value) {
-            if (address == null) {
-                return null;
-            }
             values[(int)toValueIndex(address, sizes(), type)] = value;
             return this;
         }

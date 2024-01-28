@@ -4,13 +4,13 @@ package com.yahoo.tensor;
 import com.yahoo.tensor.impl.Label;
 
 /**
- * An address to a subset of a tensors' cells, specifying a label for some but not necessarily all of the tensors
+ * An address to a subset of a tensors' cells, specifying a label for some, but not necessarily all, of the tensors
  * dimensions.
  *
  * @author bratseth
  */
 // Implementation notes:
-// - These are created in inner (though not inner-most) loops so they are implemented with minimal allocation.
+// - These are created in inner (though not innermost) loops, so they are implemented with minimal allocation.
 //   We also avoid non-essential error checking.
 // - We can add support for string labels later without breaking the API
 public class PartialAddress {
@@ -36,7 +36,7 @@ public class PartialAddress {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
                 return labels[i];
-        return Tensor.INVALID_INDEX;
+        return Tensor.invalidIndex;
     }
 
     /** Returns the label of this dimension, or null if no label is specified for it */
@@ -68,7 +68,7 @@ public class PartialAddress {
         long[] numericLabels = new long[labels.length];
         for (int i = 0; i < type.dimensions().size(); i++) {
             long label = numericLabel(type.dimensions().get(i).name());
-            if (label == Tensor.INVALID_INDEX)
+            if (label == Tensor.invalidIndex)
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
             numericLabels[i] = label;
         }

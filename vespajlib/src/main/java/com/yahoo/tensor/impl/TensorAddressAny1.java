@@ -5,11 +5,14 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.TensorAddress;
 
 /**
- * Single dimension
+ * A one-dimensional address.
+ *
  * @author baldersheim
  */
 final class TensorAddressAny1 extends TensorAddressAny {
+
     private final int label;
+
     TensorAddressAny1(int label) { this.label = label; }
 
     @Override public int size() { return 1; }
@@ -34,4 +37,5 @@ final class TensorAddressAny1 extends TensorAddressAny {
     public boolean equals(Object o) {
         return (o instanceof TensorAddressAny1 any) && (label == any.label);
     }
+
 }

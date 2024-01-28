@@ -38,16 +38,12 @@ public class RankProperties implements Cloneable {
 
     /** Adds a property by full name to a value */
     public void put(String name, Object value) {
-        List<Object> list = properties.get(name);
-        if (list == null) {
-            list = new ArrayList<>();
-            properties.put(name, list);
-        }
+        List<Object> list = properties.computeIfAbsent(name, k -> new ArrayList<>());
         list.add(value);
     }
 
     /**
-     * Returns a read-only list of properties properties by full name.
+     * Returns a read-only list of properties by full name.
      * If this is not set, null is returned. If this is explicitly set to
      * have no values, and empty list is returned.
      */

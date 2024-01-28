@@ -7,11 +7,14 @@ import com.yahoo.tensor.TensorAddress;
 import static java.lang.Math.abs;
 
 /**
- * 4 dimensional address
+ * A four-dimensional address.
+ *
  * @author baldersheim
  */
 final class TensorAddressAny4 extends TensorAddressAny {
+
     private final int label0, label1, label2, label3;
+
     TensorAddressAny4(int label0, int label1, int label2, int label3) {
         this.label0 = label0;
         this.label1 = label1;
@@ -59,4 +62,5 @@ final class TensorAddressAny4 extends TensorAddressAny {
                 (label2 == any.label2) &&
                 (label3 == any.label3);
     }
+
 }

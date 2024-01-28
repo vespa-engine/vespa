@@ -7,19 +7,25 @@ package com.yahoo.tensor;
  *        long stride = addr.getStride(dimension)
  *        i = 0...size_of_dimension
  *            double value = tensor.get(base + i * stride);
+ *
+ * @author baldersheim
  */
 public final class DirectIndexedAddress {
+
     private final DimensionSizes sizes;
-    private final int [] indexes;
+    private final int[] indexes;
     private long directIndex;
+
     private DirectIndexedAddress(DimensionSizes sizes) {
         this.sizes = sizes;
         indexes = new int[sizes.dimensions()];
         directIndex = 0;
     }
+
     static DirectIndexedAddress of(DimensionSizes sizes) {
         return new DirectIndexedAddress(sizes);
     }
+
     /** Sets the current index of a dimension */
     public void setIndex(int dimension, int index) {
         if (index < 0 || index >= sizes.size(dimension)) {
@@ -29,10 +35,13 @@ public final class DirectIndexedAddress {
         directIndex += getStride(dimension) * diff;
         indexes[dimension] = index;
     }
+
     /** Retrieve the index that can be used for direct lookup in an indexed tensor. */
     public long getDirectIndex() { return directIndex; }
+
     /** returns the stride to be used for the given dimension */
     public long getStride(int dimension) {
         return sizes.productOfDimensionsAfter(dimension);
     }
+
 }

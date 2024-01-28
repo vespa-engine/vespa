@@ -1266,7 +1266,7 @@
       "public static com.yahoo.tensor.Tensor from(double)"
     ],
     "fields" : [
-      "public static final int INVALID_INDEX"
+      "public static final int invalidIndex"
     ]
   },
   "com.yahoo.tensor.TensorAddress$Builder" : {
@@ -1324,7 +1324,7 @@
       "public static java.lang.String labelToString(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress partialCopy(int[])",
       "public com.yahoo.tensor.TensorAddress fullAddressOf(java.util.List, int[])",
-      "public com.yahoo.tensor.TensorAddress sparsePartialAddress(com.yahoo.tensor.TensorType, java.util.List)",
+      "public com.yahoo.tensor.TensorAddress mappedPartialAddress(com.yahoo.tensor.TensorType, java.util.List)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields" : [ ]

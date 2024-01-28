@@ -7,11 +7,14 @@ import com.yahoo.tensor.TensorAddress;
 import static java.lang.Math.abs;
 
 /**
- * 2 dimensional address
+ * A two-dimensional address.
+ *
  * @author baldersheim
  */
 final class TensorAddressAny2 extends TensorAddressAny {
+
     private final int label0, label1;
+
     TensorAddressAny2(int label0, int label1) {
         this.label0 = label0;
         this.label1 = label1;
@@ -46,4 +49,5 @@ final class TensorAddressAny2 extends TensorAddressAny {
     public boolean equals(Object o) {
         return (o instanceof TensorAddressAny2 any) && (label0 == any.label0) && (label1 == any.label1);
     }
+
 }

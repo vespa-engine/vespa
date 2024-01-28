@@ -9,22 +9,26 @@ import java.util.Arrays;
 import static java.lang.Math.abs;
 
 /**
- * N dimensional address
+ * An n-dimensional address.
+ *
  * @author baldersheim
  */
 final class TensorAddressAnyN extends TensorAddressAny {
-    private final int [] labels;
-    TensorAddressAnyN(int [] labels) {
+
+    private final int[] labels;
+
+    TensorAddressAnyN(int[] labels) {
         if (labels.length < 1) throw new IllegalArgumentException("Need at least 1 label");
         this.labels = labels;
     }
 
     @Override public int size() { return labels.length; }
+
     @Override public long numericLabel(int i) { return labels[i]; }
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        int [] copy = Arrays.copyOf(labels, labels.length);
+        int[] copy = Arrays.copyOf(labels, labels.length);
         copy[labelIndex] = Convert.safe2Int(label);
         return new TensorAddressAnyN(copy);
     }
@@ -45,4 +49,5 @@ final class TensorAddressAnyN extends TensorAddressAny {
         }
         return true;
     }
+
 }

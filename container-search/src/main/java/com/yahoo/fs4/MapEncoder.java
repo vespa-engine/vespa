@@ -20,7 +20,7 @@ public class MapEncoder {
 
     // TODO: Time to refactor
 
-    private static byte [] getUtf8(Object value) {
+    private static byte[] getUtf8(Object value) {
         if (value == null) {
             return Utf8.toBytes("");
         } else if (value instanceof Tensor) {
@@ -62,7 +62,7 @@ public class MapEncoder {
     public static int encodeMap(String mapName, Map<String,?> map, ByteBuffer buffer) {
         if (map.isEmpty()) return 0;
 
-        byte [] utf8 = Utf8.toBytes(mapName);
+        byte[] utf8 = Utf8.toBytes(mapName);
         buffer.putInt(utf8.length);
         buffer.put(utf8);
         buffer.putInt(map.size());
