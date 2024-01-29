@@ -211,7 +211,7 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2024-02-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2024-04-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -272,7 +272,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2024-02-01",
+            List.of("tokle"), "2022-05-09", "2024-04-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             INSTANCE_ID);
@@ -410,7 +410,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
+            List.of("mpolden", "tokle"), "2023-10-06", "2024-06-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -427,13 +427,6 @@ public class Flags {
             "Whether to enable the new billing flow",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
-
-    public static final UnboundBooleanFlag CENTRALIZED_AUTHZ = defineFeatureFlag(
-            "centralized-authz", true,
-            List.of("mortent"), "2023-11-27", "2024-02-01",
-            "Use centralized authorization checks",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES = defineFeatureFlag(
             "restart-on-deploy-when-onnx-model-changes", false,
