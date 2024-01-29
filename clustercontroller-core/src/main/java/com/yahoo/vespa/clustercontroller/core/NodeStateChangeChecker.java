@@ -11,6 +11,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
@@ -110,41 +111,46 @@ public class NodeStateChangeChecker {
                && Objects.equals(newWantedState.getDescription(), oldWantedState.getDescription());
     }
 
-    private static Optional<Result> checkZeroEntriesStoredOnContentNode(HostInfo hostInfo, int nodeIndex) {
-        var entriesMetric = hostInfo.getMetrics().getValueAt(ENTRIES_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
-        if (entriesMetric.isEmpty() || entriesMetric.get().getLast() == null) {
+    private record NodeDataMetrics(Optional<Metrics.Value> buckets,
+                                   Optional<Metrics.Value> entries,
+                                   Optional<Metrics.Value> docs) {}
+
+    private static NodeDataMetrics dataMetricsFromHostInfo(HostInfo hostInfo) {
+        return new NodeDataMetrics(
+                hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS),
+                hostInfo.getMetrics().getValueAt(ENTRIES_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS),
+                hostInfo.getMetrics().getValueAt(DOCS_METRIC_NAME,    DEFAULT_SPACE_METRIC_DIMENSIONS));
+    }
+
+    private static Optional<Result> checkZeroEntriesStoredOnContentNode(NodeDataMetrics metrics, int nodeIndex) {
+        if (metrics.entries.isEmpty() || metrics.entries.get().getLast() == null) {
             // To allow for rolling upgrades in clusters with content node versions that do not report
             // an entry count, defer to legacy bucket count check if the entry metric can't be found.
             return Optional.empty();
         }
-        long lastEntries = entriesMetric.get().getLast();
-        if (lastEntries > 0) {
-            return Optional.of(disallow("The storage node stores %d document entries".formatted(lastEntries)));
-        }
-        // At this point we believe we have zero entries. Cross-check with visible doc count; it should
-        // always be present when an entry count of zero is present and transitively always be zero.
-        var docsMetric = hostInfo.getMetrics().getValueAt(DOCS_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
-        if (docsMetric.isEmpty() || docsMetric.get().getLast() == null) {
+        if (metrics.docs.isEmpty() || metrics.docs.get().getLast() == null) {
             log.log(Level.WARNING, "Host info inconsistency: storage node %d reports entry count but not document count".formatted(nodeIndex));
             return Optional.of(disallow("The storage node host info reports stored entry count, but not document count"));
         }
-        long lastDocs = docsMetric.get().getLast();
-        if (lastDocs > 0) {
+        long lastEntries = metrics.entries.get().getLast();
+        long lastDocs    = metrics.docs.get().getLast();
+        if (lastEntries != 0) {
+            long buckets    = metrics.buckets.orElseThrow().getLast();
+            long tombstones = lastEntries - lastDocs; // docs are a subset of entries, so |docs| <= |entries|
+            return Optional.of(disallow("The storage node stores %d documents and %d tombstones across %d buckets".formatted(lastDocs, tombstones, buckets)));
+        }
+        // At this point we believe we have zero entries. Cross-check with visible doc count; it should
+        // always be present when an entry count of zero is present and transitively always be zero.
+        if (lastDocs != 0) {
             log.log(Level.WARNING, "Host info inconsistency: storage node %d reports 0 entries, but %d documents".formatted(nodeIndex, lastDocs));
             return Optional.of(disallow("The storage node reports 0 entries, but %d documents".formatted(lastDocs)));
         }
         return Optional.of(allow());
     }
 
-    private static Result checkLegacyZeroBucketsStoredOnContentNode(HostInfo hostInfo, int nodeIndex) {
-        var bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, DEFAULT_SPACE_METRIC_DIMENSIONS);
-        if (bucketsMetric.isEmpty() || bucketsMetric.get().getLast() == null) {
-            return disallow("Missing last value of the " + BUCKETS_METRIC_NAME + " metric for storage node " + nodeIndex);
-        }
-
-        long lastBuckets = bucketsMetric.get().getLast();
-        if (lastBuckets > 0) {
-            return disallow("The storage node manages " + lastBuckets + " buckets");
+    private static Result checkLegacyZeroBucketsStoredOnContentNode(long lastBuckets) {
+        if (lastBuckets != 0) {
+            return disallow("The storage node manages %d buckets".formatted(lastBuckets));
         }
         return allow();
     }
@@ -171,14 +177,20 @@ public class NodeStateChangeChecker {
                             " got info for storage node " + nodeIndex + " at a different version " +
                             hostInfoNodeVersion);
 
+        var metrics = dataMetricsFromHostInfo(hostInfo);
+        // Bucket count metric should always be present
+        if (metrics.buckets.isEmpty() || metrics.buckets.get().getLast() == null) {
+            return disallow("Missing last value of the " + BUCKETS_METRIC_NAME + " metric for storage node " + nodeIndex);
+        }
+
         // TODO should also ideally check merge pending from the distributors' perspectives.
         //  - This goes in particular for the global space, as we only check for zero entries in
         //    the _default_ space (as global entries are retained even for retired nodes).
         //  - Due to global merges being prioritized above everything else, it is highly unlikely
         //    that there will be any pending global merges, but the possibility still exists.
         //  - Would need wiring of aggregated content cluster stats
-        var entriesCheckResult = checkZeroEntriesStoredOnContentNode(hostInfo, nodeIndex);
-        return entriesCheckResult.orElseGet(() -> checkLegacyZeroBucketsStoredOnContentNode(hostInfo, nodeIndex));
+        var entriesCheckResult = checkZeroEntriesStoredOnContentNode(metrics, nodeIndex);
+        return entriesCheckResult.orElseGet(() -> checkLegacyZeroBucketsStoredOnContentNode(metrics.buckets.get().getLast()));
     }
 
     private Result canSetStateUp(NodeInfo nodeInfo, NodeState oldWantedState) {

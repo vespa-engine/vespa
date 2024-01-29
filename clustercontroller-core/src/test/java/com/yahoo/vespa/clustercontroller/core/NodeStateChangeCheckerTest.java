@@ -737,11 +737,11 @@ public class NodeStateChangeCheckerTest {
                 // Non-zero bucket count, and no entry/doc count metrics
                 new MetricsAndMessage(new HostInfoMetrics(1, null, null), "The storage node manages 1 buckets"),
                 // Non-zero bucket count and non-zero entries (note that we prefer reporting the entry count over the bucket count)
-                new MetricsAndMessage(new HostInfoMetrics(1, 2, 1), "The storage node stores 2 document entries"),
+                new MetricsAndMessage(new HostInfoMetrics(1, 2, 1), "The storage node stores 1 documents and 1 tombstones across 1 buckets"),
 
                 // These are cases that should not normally happen, but we test them nevertheless:
                 // Bucket count should never be zero if the entry count is > 0
-                new MetricsAndMessage(new HostInfoMetrics(0, 2, 1), "The storage node stores 2 document entries"),
+                new MetricsAndMessage(new HostInfoMetrics(0, 2, 1), "The storage node stores 1 documents and 1 tombstones across 0 buckets"),
                 // Entry count should never be zero if the document count is > 0
                 new MetricsAndMessage(new HostInfoMetrics(0, 0, 2), "The storage node reports 0 entries, but 2 documents"),
                 // Document count should always be present alongside entry count
