@@ -46,7 +46,7 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
                     .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
                             .id(x.id())
                             .certificates(x.certificates().stream().map(X509CertificateUtils::toPem).toList())
-                            .permissions(x.permissions()))
+                            .permissions(x.permissions().stream().map(Client.Permission::asString).sorted().toList()))
                     .toList();
             builder.clients(clientsCfg).legacyMode(false);
         }

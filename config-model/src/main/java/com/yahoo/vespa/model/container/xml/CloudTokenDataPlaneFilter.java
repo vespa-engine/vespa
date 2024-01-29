@@ -44,7 +44,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
                 .map(x -> new CloudTokenDataPlaneFilterConfig.Clients.Builder()
                         .id(x.id())
                         .tokens(tokensConfig(x.tokens()))
-                        .permissions(x.permissions()))
+                        .permissions(x.permissions().stream().map(Client.Permission::asString).sorted().toList()))
                 .toList();
         builder.clients(clientsCfg).tokenContext(tokenContext);
     }
