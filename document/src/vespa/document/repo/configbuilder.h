@@ -17,8 +17,8 @@ struct DatatypeConfig : DocumenttypesConfig::Documenttype::Datatype {
     std::vector<DatatypeConfig> nested_types;
 
     DatatypeConfig();
-
     DatatypeConfig(const DatatypeConfig&);
+    ~DatatypeConfig();
     DatatypeConfig& operator=(const DatatypeConfig&);
 
     DatatypeConfig &setId(int32_t i) { id = i; return *this; }

@@ -19,6 +19,7 @@ DatatypeConfig::DatatypeConfig() {
 }
 
 DatatypeConfig::DatatypeConfig(const DatatypeConfig&) = default;
+DatatypeConfig::~DatatypeConfig() = default;
 DatatypeConfig& DatatypeConfig::operator=(const DatatypeConfig&) = default;
 
 void DatatypeConfig::addNestedType(const TypeOrId &t) {
