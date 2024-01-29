@@ -135,7 +135,7 @@ public class NodeStateChangeChecker {
         long lastEntries = metrics.entries.get().getLast();
         long lastDocs    = metrics.docs.get().getLast();
         if (lastEntries != 0) {
-            long buckets    = metrics.buckets.orElseThrow().getLast();
+            long buckets    = metrics.buckets.map(Metrics.Value::getLast).orElse(-1L);
             long tombstones = lastEntries - lastDocs; // docs are a subset of entries, so |docs| <= |entries|
             return Optional.of(disallow("The storage node stores %d documents and %d tombstones across %d buckets".formatted(lastDocs, tombstones, buckets)));
         }
