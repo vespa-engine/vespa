@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import io.questdb.Metrics;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -102,7 +101,7 @@ public class Autoscaling {
 
     @Override
     public String toString() {
-        return (resources.isPresent() ? "Autoscaling to " + resources : "Don't autoscale") +
+        return resources.map(r -> "Autoscaling to " + r).orElse("Don't autoscale") +
                (description.isEmpty() ? "" : ": " + description);
     }
 
