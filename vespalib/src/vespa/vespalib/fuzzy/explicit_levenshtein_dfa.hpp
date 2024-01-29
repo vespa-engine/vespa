@@ -94,6 +94,9 @@ struct ExplicitDfaMatcher {
 };
 
 template <uint8_t MaxEdits>
+ExplicitLevenshteinDfaImpl<MaxEdits>::~ExplicitLevenshteinDfaImpl() = default;
+
+template <uint8_t MaxEdits>
 LevenshteinDfa::MatchResult
 ExplicitLevenshteinDfaImpl<MaxEdits>::match(std::string_view u8str) const {
     ExplicitDfaMatcher<MaxEdits> matcher(_nodes, _is_cased);
