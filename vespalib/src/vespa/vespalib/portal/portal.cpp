@@ -4,6 +4,7 @@
 #include "http_connection.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <algorithm>
 #include <cassert>
 
 namespace vespalib {
