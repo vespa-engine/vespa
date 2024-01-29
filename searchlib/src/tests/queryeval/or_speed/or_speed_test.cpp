@@ -7,6 +7,7 @@
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
@@ -18,6 +19,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::OrSearch;
 using search::queryeval::UnpackInfo;
 using TMD = search::fef::TermFieldMatchData;
+using vespalib::make_string_short::fmt;
 
 double budget = 0.25;
 size_t bench_docs = 1000;
@@ -169,30 +171,98 @@ struct OrSetup {
         }
         return std::make_pair(hits, timer.min_time() * 1000.0);
     }
+    void verify_not_match(uint32_t docid) {
+        for (size_t i = 0; i < match_data.size(); ++i) {
+            EXPECT_FALSE(child_hits[i]->testBit(docid));
+        }
+    }
+    void verify_match(uint32_t docid, bool unpacked, bool check_skipped_unpack) {
+        bool match = false;
+        for (size_t i = 0; i < match_data.size(); ++i) {
+            if (child_hits[i]->testBit(docid)) {
+                match = true;
+                if (unpacked) {
+                    if (!match_data[i]->isNotNeeded()) {
+                        EXPECT_EQ(match_data[i]->getDocId(), docid) << "unpack was needed";
+                    } else if (check_skipped_unpack) {
+                        EXPECT_NE(match_data[i]->getDocId(), docid) << "unpack was not needed";
+                    }
+                } else {
+                    EXPECT_NE(match_data[i]->getDocId(), docid) << "document was not unpacked";
+                }
+            } else {
+                EXPECT_NE(match_data[i]->getDocId(), docid) << "document was not a match";
+            }
+        }
+        EXPECT_TRUE(match);
+    }
+    void reset_match_data() {
+        // this is needed since we re-search the same docid space
+        // multiple times and may end up finding a result we are not
+        // unpacking that was unpacked in the last iteration thus
+        // breaking the "document was not unpacked" test condition.
+        for (auto &tmd: match_data) {
+            tmd->resetOnlyDocId(0);
+        }
+    }
+    void verify_seek_unpack(bool check_skipped_unpack = false, bool optimized = false) {
+        auto search_up = make_or(optimized);
+        SearchIterator &search = *search_up;
+        for (size_t unpack_nth: {1, 3}) {
+            for (size_t skip: {1, 31}) {
+                uint32_t hits = 0;
+                uint32_t check_at = 1;
+                search.initRange(1, docid_limit);
+                uint32_t docid = search.seekFirst(1);
+                while (docid < docid_limit) {
+                    for (; check_at < docid; ++check_at) {
+                        verify_not_match(check_at);
+                    }
+                    if (++hits % unpack_nth == 0) {
+                        search.unpack(docid);
+                        verify_match(check_at, true, check_skipped_unpack);
+                    } else {
+                        verify_match(check_at, false, check_skipped_unpack);
+                    }
+                    check_at = docid + skip;
+                    docid = search.seekNext(docid + skip);
+                }
+                for (; check_at < docid_limit; ++check_at) {
+                    verify_not_match(check_at);
+                }
+                reset_match_data();
+            }
+        }
+    }
     ~OrSetup();
 };
 OrSetup::~OrSetup() = default;
 
-TEST(OrSpeed, array_iterator) {
-    TMD match_data;
-    auto bv = make_bitvector(100, 10);
-    auto arr = std::make_unique<ArrayIterator>(*bv, match_data);
-    EXPECT_EQ(arr->my_limit, 100);
-    EXPECT_EQ(arr->my_hits.size(), 10);
-    EXPECT_EQ(match_data.getDocId(), 0);
-    for (int i = 0; i < 3; ++i) {
-        arr->initRange(1, 100);
-        EXPECT_EQ(arr->getDocId(), 0);
-        uint32_t hits = 0;
-        uint32_t docid = arr->seekFirst(1);
-        while (docid < 100) {
-            ++hits;
-            EXPECT_TRUE(bv->testBit(docid));
-            arr->unpack(docid);
-            EXPECT_EQ(match_data.getDocId(), docid);
-            docid = arr->seekNext(docid + 1);
+TEST(OrSpeed, array_iterator_seek_unpack) {
+    OrSetup setup(100);
+    setup.add(10, true, true);
+    setup.verify_seek_unpack();
+}
+
+TEST(OrSpeed, or_seek_unpack) {
+    for (bool optimize: {false, true}) {
+        for (double target: {0.1, 0.5, 1.0, 10.0}) {
+            for (int unpack: {0,1,2}) {
+                OrSetup setup(1000);
+                size_t part = setup.per_child(target, 13);
+                SCOPED_TRACE(fmt("optimize: %s, part: %zu, unpack: %d",
+                                 optimize ? "true" : "false", part, unpack));
+                for (size_t i = 0; i < 13; ++i) {
+                    bool use_array = (i/2)%2 == 0;
+                    bool need_unpack = unpack > 0;
+                    if (unpack == 2 && i % 2 == 0) {
+                        need_unpack = false;
+                    }
+                    setup.add(part, use_array, need_unpack);
+                }
+                setup.verify_seek_unpack(true, optimize);
+            }
         }
-        EXPECT_EQ(hits, 10);
     }
 }
 
