@@ -1,9 +1,0 @@
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=vespa.config.content.core
-
-## Number of elements to retrieve in one bucket info chunk
-bucketinfobatchsize int default=128 restart
-
-## Chunk level. Set what level of the path which defines one chunk.
-## (See doxygen info in bucketmanager.h for more info)
-chunklevel int default=1 restart
