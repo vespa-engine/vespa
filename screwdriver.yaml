@@ -537,34 +537,6 @@ jobs:
       - cleanup: |
           screwdriver/delete-old-cloudsmith-artifacts.sh
 
-  mirror-copr-rpms-to-artifactory:
-    image: docker.io/almalinux:8
-    annotations:
-      screwdriver.cd/cpu: LOW
-      screwdriver.cd/ram: LOW
-      screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 60
-      screwdriver.cd/buildPeriodically: H 6 * * *
-    secrets:
-      - JFROG_API_TOKEN
-    steps:
-      - install: |
-          dnf install -y dnf-plugins-core
-      - mirror: |
-          screwdriver/publish-unpublished-rpms-to-jfrog-cloud.sh
-
-  delete-old-versions-on-artifactory:
-    annotations:
-      screwdriver.cd/cpu: LOW
-      screwdriver.cd/ram: LOW
-      screwdriver.cd/timeout: 10
-      screwdriver.cd/buildPeriodically: H 6 * * 1
-    secrets:
-      - JFROG_API_TOKEN
-    steps:
-      - cleanup: |
-          screwdriver/delete-old-artifactory-artifacts.sh
-
   link-check:
     image: ruby:3.1
     annotations:
