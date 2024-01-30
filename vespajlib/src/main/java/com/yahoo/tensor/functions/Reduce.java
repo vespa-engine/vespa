@@ -10,6 +10,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.impl.Convert;
+import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -135,7 +136,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>(argument.sizeAsInt());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress reducedAddress = reduceDimensions(indexesToKeep, cell.getKey());
+            TensorAddress reducedAddress = cell.getKey().partialCopy(indexesToKeep);
             ValueAggregator aggr = aggregatingCells.computeIfAbsent(reducedAddress, (key) ->ValueAggregator.ofType(aggregator));
             aggr.aggregate(cell.getValue());
         }
@@ -156,14 +157,6 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                 indexesToKeep[toKeepIndex++] = i;
         }
         return indexesToKeep;
-    }
-
-    private static TensorAddress reduceDimensions(int[] indexesToKeep, TensorAddress address) {
-        String[] reducedLabels = new String[indexesToKeep.length];
-        int reducedLabelIndex = 0;
-        for (int toKeep : indexesToKeep)
-            reducedLabels[reducedLabelIndex++] = address.label(toKeep);
-        return TensorAddress.of(reducedLabels);
     }
 
     private static Tensor reduceAllGeneral(Tensor argument, Aggregator aggregator) {
