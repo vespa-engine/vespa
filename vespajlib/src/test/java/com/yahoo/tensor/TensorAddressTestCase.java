@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Test for tensor address.
@@ -38,6 +39,7 @@ public class TensorAddressTestCase {
     void testInEquality() {
         notEqual(ofLabels("1"), ofLabels("2"));
         notEqual(of(1), of(2));
+        notEqual(ofLabels("1"), ofLabels("01"));
     }
     @Test
     void testDimensionsEffectsEqualityAndHash() {
@@ -50,7 +52,7 @@ public class TensorAddressTestCase {
         TensorAddress s2 = ofLabels("1", "2");
         assertNotEquals(s1, s2);
         assertEquals(-1, s1.numericLabel(1));
-        assertEquals(null, s1.label(1));
+        assertNull(s1.label(1));
     }
 
     private static void verifyWithLabel(int dimensions) {
