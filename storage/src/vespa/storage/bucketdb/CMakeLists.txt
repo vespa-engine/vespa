@@ -13,5 +13,3 @@ vespa_add_library(storage_bucketdb OBJECT
     striped_btree_lockable_map.cpp
     DEPENDS
 )
-vespa_generate_config(storage_bucketdb stor-bucketdb.def)
-install_config_definition(stor-bucketdb.def vespa.config.content.core.stor-bucketdb.def)
