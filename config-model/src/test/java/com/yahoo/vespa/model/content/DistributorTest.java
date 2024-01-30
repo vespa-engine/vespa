@@ -52,20 +52,6 @@ public class DistributorTest {
     }
 
     @Test
-    void testRevertDefaultOffForSearch() {
-        StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-        parse("<cluster id=\"storage\">\n" +
-                "  <redundancy>3</redundancy>" +
-                "  <documents/>" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>").getConfig(builder);
-        StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
-        assertFalse(conf.enable_revert());
-    }
-
-    @Test
     void testSplitAndJoin() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
