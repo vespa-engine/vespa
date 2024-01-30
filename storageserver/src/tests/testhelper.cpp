@@ -41,7 +41,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config = &dc.addConfig("stor-communicationmanager");
     config->set("rpcport", "0");
     config->set("mbusport", "0");
-    config->set("chunklevel", "0");
     config = &dc.addConfig("stor-distributormanager");
     config = &dc.addConfig("stor-filestor");
     // Easier to see what goes wrong with only 1 thread per disk.
@@ -88,8 +87,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     return dc;
 }
 
-void addSlobrokConfig(vdstestlib::DirConfig& dc,
-                          const mbus::Slobrok& slobrok)
+void addSlobrokConfig(vdstestlib::DirConfig& dc, const mbus::Slobrok& slobrok)
 {
     std::ostringstream ost;
     ost << "tcp/localhost:" << slobrok.port();

@@ -59,7 +59,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config = &dc.addConfig("stor-communicationmanager");
     config->set("rpcport", "0");
     config->set("mbusport", "0");
-    config->set("chunklevel", "0");
     config = &dc.addConfig("stor-distributormanager");
     config->set("splitcount", "1000");
     config->set("splitsize", "10000000");
