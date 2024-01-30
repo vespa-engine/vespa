@@ -1,5 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.impl;
-
 
 import com.yahoo.tensor.Tensor;
 
@@ -48,7 +48,7 @@ public class Label {
     }
 
     private static boolean validNumericIndex(String s) {
-        if ((s.length() == 0) || (s.length() > 1 && s.charAt(0) == '0')) return false;
+        if (s.isEmpty() || ((s.length() > 1) && (s.charAt(0) == '0'))) return false;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if ((c < '0') || (c > '9')) return false;
