@@ -51,10 +51,6 @@ inlinebucketsplitting bool default=true
 ## GarbageCollection
 blockedstatecheckers[] string restart
 
-## Whether or not distributor should issue reverts when operations partially
-## fail.
-enable_revert bool default=true
-
 ## Maximum nodes involved in a merge operation. Currently, this can not be more
 ## than 16 nodes due to protocol limitations. However, decreasing the max may
 ## be useful if 16 node merges ends up too expensive.
@@ -68,12 +64,6 @@ start_distributor_thread bool default=true restart
 ## set higher than 10 for the distributor to improve speed of bucket iterations
 ## while still keep CPU load low/moderate.
 ticks_before_wait int default=10
-
-## The sleep time between ticks if there are no more queued tasks.
-ticks_wait_time_ms int default=1
-
-## Max processing time used by deadlock detector.
-max_process_time_ms int default=5000
 
 ## Allow overriding default priorities of certain maintenance operations.
 ## This is an advanced feature, do not touch this unless you have a very good
@@ -205,11 +195,6 @@ allow_stale_reads_during_cluster_state_transitions bool default=false
 ## Setting any of these values only makes sense for testing!
 simulated_db_pruning_latency_msec int default=0
 simulated_db_merging_latency_msec int default=0
-
-## Whether to use a B-tree data structure for the distributor bucket database instead
-## of the legacy database. Setting this option may trigger alternate code paths for
-## read only operations, as the B-tree database is thread safe for concurrent reads.
-use_btree_database bool default=true restart
 
 ## If a bucket is inconsistent and an Update operation is received, a two-phase
 ## write-repair path is triggered in which a Get is sent to all diverging replicas.

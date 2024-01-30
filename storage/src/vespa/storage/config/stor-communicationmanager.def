@@ -41,16 +41,6 @@ mbus.num_network_threads int default=1 restart
 ## The number of events in the queue of a network (FNET) thread before it is woken up.
 mbus.events_before_wakeup int default=1 restart
 
-## Enable to use above thread pool for encoding replies
-## False will use network(fnet) thread
-## Deprecated and void
-mbus.dispatch_on_encode bool default=true restart
-
-## Enable to use above thread pool for decoding replies
-## False will use network(fnet) thread
-## Deprecated and void
-mbus.dispatch_on_decode bool default=true restart
-
 ## The number of network (FNET) threads used by the shared rpc resource.
 rpc.num_network_threads int default=2 restart
 
