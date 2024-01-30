@@ -143,7 +143,7 @@ public class Autoscaling {
 
     public enum Status {
 
-        /** No status is available: Aautoscaling is disabled, or a brand new application. */
+        /** No status is available: Autoscaling is disabled, or a brand new application. */
         unavailable,
 
         /** Autoscaling is not taking any action at the moment due to recent changes or a lack of data */
