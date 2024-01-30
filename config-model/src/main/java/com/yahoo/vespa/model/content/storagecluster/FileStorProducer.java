@@ -74,7 +74,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.num_response_threads(responseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
-        builder.use_per_document_throttled_delete_bucket(true);
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
         builder.async_operation_throttler(throttleBuilder);
     }

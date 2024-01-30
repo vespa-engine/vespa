@@ -225,29 +225,6 @@ AsyncHandler::on_delete_bucket_complete(const document::Bucket& bucket) const {
     }
 }
 
-MessageTracker::UP
-AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.deleteBuckets);
-    LOG(debug, "DeletingBucket(%s)", cmd.getBucketId().toString().c_str());
-    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
-        _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
-                                               api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
-    }
-    spi::Bucket bucket(cmd.getBucket());
-    if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
-        return tracker;
-    }
-
-    auto task = makeResultTask([this, tracker = std::move(tracker), bucket = cmd.getBucket()]([[maybe_unused]] spi::Result::UP ignored) {
-        // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
-        on_delete_bucket_complete(bucket);
-        tracker->sendReply();
-    });
-    _spi.deleteBucketAsync(bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    return tracker;
-}
-
 namespace {
 
 class GatherBucketMetadata : public BucketProcessor::EntryProcessor {

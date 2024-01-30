@@ -93,32 +93,3 @@ async_operation_throttler.resize_rate double default=3.0
 ## level, i.e. per ApplyBucketDiff message, regardless of how many document operations
 ## are contained within.
 async_operation_throttler.throttle_individual_merge_feed_ops bool default=true
-
-## Specify throttling used for async persistence operations. This throttling takes place
-## before operations are dispatched to Proton and serves as a limiter for how many
-## operations may be in flight in Proton's internal queues.
-##
-##  - UNLIMITED is, as it says on the tin, unlimited. Offers no actual throttling, but
-##    has near zero overhead and never blocks.
-##  - DYNAMIC uses DynamicThrottlePolicy under the hood and will block if the window
-##    is full (if a blocking throttler API call is invoked).
-##
-## TODO deprecate in favor of the async_operation_throttler struct instead.
-async_operation_throttler_type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
-
-## Specifies the extent the throttling window is increased by when the async throttle
-## policy has decided that more concurrent operations are desirable. Also affects the
-## _minimum_ size of the throttling window; its size is implicitly set to max(this config
-## value, number of threads).
-##
-## Only applies if async_operation_throttler_type == DYNAMIC.
-## DEPRECATED! use the async_operation_throttler struct instead
-async_operation_dynamic_throttling_window_increment int default=20 restart
-
-## If set, DeleteBucket operations are internally expanded to an individually persistence-
-## throttled remove per document stored in the bucket. This makes the cost model of
-## executing a DeleteBucket symmetrical with feeding the documents to the bucket in the
-## first place.
-##
-## This is a live config.
-use_per_document_throttled_delete_bucket bool default=true

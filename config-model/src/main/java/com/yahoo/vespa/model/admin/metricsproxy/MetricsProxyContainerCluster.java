@@ -203,7 +203,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     private Optional<String> getSystemName() {
         Monitoring monitoring = getMonitoringService();
-        return monitoring != null && ! monitoring.getClustername().equals("") ?
+        return monitoring != null && !monitoring.getClustername().isEmpty() ?
                 Optional.of(monitoring.getClustername()) : Optional.empty();
     }
 

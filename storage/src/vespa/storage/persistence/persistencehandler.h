@@ -38,14 +38,12 @@ public:
     const SimpleMessageHandler & simpleMessageHandler() const { return _simpleHandler; }
 
     void set_throttle_merge_feed_ops(bool throttle) noexcept;
-    void set_use_per_document_throttled_delete_bucket(bool throttle) noexcept;
 private:
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker) const;
     MessageTracker::UP handleReply(api::StorageReply&, MessageTracker::UP) const;
 
     MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const;
-    [[nodiscard]] bool use_per_op_throttled_delete_bucket() const noexcept;
 
     const framework::Clock  & _clock;
     PersistenceUtil           _env;
@@ -54,7 +52,6 @@ private:
     AsyncHandler              _asyncHandler;
     SplitJoinHandler          _splitJoinHandler;
     SimpleMessageHandler      _simpleHandler;
-    std::atomic<bool>         _use_per_op_throttled_delete_bucket;
 };
 
 } // storage
