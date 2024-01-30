@@ -5,6 +5,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/config/common/exceptions.h>
+#include <memory>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -92,16 +93,16 @@ struct FileStorTestBase : Test {
     std::unique_ptr<vdstestlib::DirConfig> config;
     std::unique_ptr<vdstestlib::DirConfig> config2;
     std::unique_ptr<vdstestlib::DirConfig> smallConfig;
-    const uint32_t _waitTime;
+    const int32_t _waitTime;
     const document::DocumentType* _testdoctype1;
 
-    FileStorTestBase() : _node(), _waitTime(LONG_WAITTIME) {}
+    FileStorTestBase();
     ~FileStorTestBase() override;
 
     void SetUp() override;
     void TearDown() override;
 
-    void createBucket(document::BucketId bid) {
+    void createBucket(document::BucketId bid) const {
         _node->getPersistenceProvider().createBucket(makeSpiBucket(bid));
 
         StorBucketDatabase::WrappedEntry entry(
@@ -110,13 +111,13 @@ struct FileStorTestBase : Test {
         entry.write();
     }
 
-    document::Document::UP createDocument(const std::string& content, const std::string& id) {
+    document::Document::UP createDocument(const std::string& content, const std::string& id) const {
         return _node->getTestDocMan().createDocument(content, id);
     }
 
     std::shared_ptr<api::PutCommand> make_put_command(StorageMessage::Priority pri = 20,
                                                       const std::string& docid = "id:foo:testdoctype1::bar",
-                                                      Timestamp timestamp = 100) {
+                                                      Timestamp timestamp = 100) const {
         Document::SP doc(createDocument("my content", docid));
         auto bucket = make_bucket_for_doc(doc->getId());
         auto cmd = std::make_shared<api::PutCommand>(bucket, std::move(doc), timestamp);
@@ -124,7 +125,7 @@ struct FileStorTestBase : Test {
         return cmd;
     }
 
-    std::shared_ptr<api::GetCommand> make_get_command(StorageMessage::Priority pri,
+    static std::shared_ptr<api::GetCommand> make_get_command(StorageMessage::Priority pri,
                                                       const std::string& docid = "id:foo:testdoctype1::bar") {
         document::DocumentId did(docid);
         auto bucket = make_bucket_for_doc(did);
@@ -139,12 +140,11 @@ struct FileStorTestBase : Test {
         auto clusterStateBundle = _node->getStateUpdater().getClusterStateBundle();
         const auto &clusterState = *clusterStateBundle->getBaselineClusterState();
         uint16_t distributor(
-                _node->getDistribution()->getIdealDistributorNode(
-                        clusterState, bucket));
+                _node->getDistribution()->getIdealDistributorNode(clusterState, bucket));
         return distributor == distributorIndex;
     }
     
-    document::BucketId getFirstBucketNotOwnedByDistributor(uint16_t distributor) {
+    document::BucketId getFirstBucketNotOwnedByDistributor(uint16_t distributor) const {
         for (int i = 0; i < 1000; ++i) {
             if (!ownsBucket(distributor, document::BucketId(16, i))) {
                 return document::BucketId(16, i);
@@ -153,28 +153,25 @@ struct FileStorTestBase : Test {
         return document::BucketId(0);
     }
 
-    spi::dummy::DummyPersistence& getDummyPersistence() {
+    spi::dummy::DummyPersistence& getDummyPersistence() const {
         return dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
     }
 
-    void setClusterState(const std::string& state) {
-        _node->getStateUpdater().setClusterState(
-                lib::ClusterState::CSP(
-                        new lib::ClusterState(state)));
+    void setClusterState(const std::string& state) const {
+        _node->getStateUpdater().setClusterState(lib::ClusterState::CSP(new lib::ClusterState(state)));
     }
 
     void setupDisks() {
         std::string rootOfRoot = "filestormanagertest";
-        config.reset(new vdstestlib::DirConfig(getStandardConfig(true, rootOfRoot)));
+        config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, rootOfRoot));
 
-        config2.reset(new vdstestlib::DirConfig(*config));
+        config2 = std::make_unique<vdstestlib::DirConfig>(*config);
         config2->getConfig("stor-server").set("root_folder", rootOfRoot + "-vdsroot.2");
         config2->getConfig("stor-devices").set("root_folder", rootOfRoot + "-vdsroot.2");
         config2->getConfig("stor-server").set("node_index", "1");
 
-        smallConfig.reset(new vdstestlib::DirConfig(*config));
-        vdstestlib::DirConfig::Config& c(
-                smallConfig->getConfig("stor-filestor", true));
+        smallConfig = std::make_unique<vdstestlib::DirConfig>(*config);
+        vdstestlib::DirConfig::Config& c(smallConfig->getConfig("stor-filestor", true));
         c.set("initial_index_read", "128");
         c.set("use_direct_io", "false");
         c.set("maximum_gap_to_read_through", "64");
@@ -202,11 +199,16 @@ struct FileStorTestBase : Test {
                                  std::shared_ptr<api::StorageMessage> cmd,
                                  const Metric& metric);
 
-    auto& thread_metrics_of(FileStorManager& manager) {
+    static auto& thread_metrics_of(FileStorManager& manager) {
         return manager.get_metrics().threads[0];
     }
 };
 
+FileStorTestBase::FileStorTestBase()
+    : _node(),
+      _waitTime(LONG_WAITTIME),
+      _testdoctype1(nullptr)
+{}
 FileStorTestBase::~FileStorTestBase() = default;
 
 std::unique_ptr<DiskThread>
@@ -243,7 +245,8 @@ struct FileStorHandlerComponents {
     FileStorMetrics metrics;
     std::unique_ptr<FileStorHandler> filestorHandler;
 
-    FileStorHandlerComponents(FileStorTestBase& test, uint32_t threadsPerDisk = 1)
+    explicit FileStorHandlerComponents(FileStorTestBase& test) : FileStorHandlerComponents(test, 1) {}
+    FileStorHandlerComponents(FileStorTestBase& test, uint32_t threadsPerDisk)
         : top(),
           dummyManager(new DummyStorageLink),
           messageSender(*dummyManager),
@@ -269,7 +272,7 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
     BucketOwnershipNotifier bucketOwnershipNotifier;
     std::unique_ptr<PersistenceHandler> persistenceHandler;
 
-    PersistenceHandlerComponents(FileStorTestBase& test)
+    explicit PersistenceHandlerComponents(FileStorTestBase& test)
         : FileStorHandlerComponents(test),
           executor(test._node->executor()),
           component(test._node->getComponentRegister(), "test"),
@@ -311,7 +314,6 @@ FileStorTestBase::TearDown()
 }
 
 struct FileStorManagerTest : public FileStorTestBase {
-    void do_test_delete_bucket(bool use_throttled_delete);
 };
 
 TEST_F(FileStorManagerTest, header_only_put) {
@@ -767,8 +769,8 @@ TEST_F(FileStorManagerTest, priority) {
     document::BucketIdFactory factory;
 
     // Create buckets in separate, initial pass to avoid races with puts
-    for (uint32_t i=0; i<documents.size(); ++i) {
-        document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
+    for (const auto & document : documents) {
+        document::BucketId bucket(16, factory.getBucketId(document->getId()).getRawId());
         _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket));
     }
 
@@ -980,9 +982,9 @@ TEST_F(FileStorManagerTest, split_single_group) {
         }
 
         // Test that the documents are all still there
-        for (uint32_t i=0; i<documents.size(); ++i) {
+        for (const auto & document : documents) {
             document::BucketId bucket(17, state ? 0x10001 : 0x00001);
-            auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bucket), documents[i]->getId(), document::AllFields::NAME);
+            auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bucket), document->getId(), document::AllFields::NAME);
             cmd->setAddress(_storage3);
             filestorHandler.schedule(cmd);
             filestorHandler.flush(true);
@@ -1159,8 +1161,8 @@ TEST_F(FileStorManagerTest, join) {
         // Perform a join, check that other files are gone
         {
             auto cmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(document::BucketId(16, 1)));
-            cmd->getSourceBuckets().emplace_back(document::BucketId(17, 0x00001));
-            cmd->getSourceBuckets().emplace_back(document::BucketId(17, 0x10001));
+            cmd->getSourceBuckets().emplace_back(17, 0x00001);
+            cmd->getSourceBuckets().emplace_back(17, 0x10001);
             filestorHandler.schedule(cmd);
             filestorHandler.flush(true);
             ASSERT_EQ(1, top.getNumReplies());
@@ -1371,12 +1373,11 @@ TEST_F(FileStorManagerTest, remove_location) {
     }
 }
 
-void FileStorManagerTest::do_test_delete_bucket(bool use_throttled_delete) {
+TEST_F(FileStorManagerTest, delete_bucket) {
     TestFileStorComponents c(*this);
 
     auto config_uri = config::ConfigUri(config->getConfigId());
     StorFilestorConfigBuilder my_config(*config_from<StorFilestorConfig>(config_uri));
-    my_config.usePerDocumentThrottledDeleteBucket = use_throttled_delete;
     c.manager->on_configure(my_config);
 
     auto& top = c.top;
@@ -1421,23 +1422,12 @@ void FileStorManagerTest::do_test_delete_bucket(bool use_throttled_delete) {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
         EXPECT_FALSE(entry.exists());
     }
-    if (use_throttled_delete) {
-        auto& metrics = thread_metrics_of(*c.manager)->remove_by_gid;
-        EXPECT_EQ(metrics.failed.getValue(), 0);
-        EXPECT_EQ(metrics.count.getValue(), 1);
-        // We can't reliably test the actual latency here without wiring mock clock bumping into
-        // the async remove by GID execution, but we can at least test that we updated the metric.
-        EXPECT_EQ(metrics.latency.getCount(), 1);
-    }
-}
-
-// TODO remove once throttled behavior is the default
-TEST_F(FileStorManagerTest, delete_bucket_legacy) {
-    do_test_delete_bucket(false);
-}
-
-TEST_F(FileStorManagerTest, delete_bucket_throttled) {
-    do_test_delete_bucket(true);
+    auto& metrics = thread_metrics_of(*c.manager)->remove_by_gid;
+    EXPECT_EQ(metrics.failed.getValue(), 0);
+    EXPECT_EQ(metrics.count.getValue(), 1);
+    // We can't reliably test the actual latency here without wiring mock clock bumping into
+    // the async remove by GID execution, but we can at least test that we updated the metric.
+    EXPECT_EQ(metrics.latency.getCount(), 1);
 }
 
 TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {

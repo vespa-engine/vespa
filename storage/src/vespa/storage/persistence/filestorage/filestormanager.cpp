@@ -248,7 +248,6 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         std::lock_guard guard(_lock);
         for (auto& ph : _persistenceHandlers) {
             ph->set_throttle_merge_feed_ops(throttle_merge_feed_ops);
-            ph->set_use_per_document_throttled_delete_bucket(config.usePerDocumentThrottledDeleteBucket);
         }
     }
 }
