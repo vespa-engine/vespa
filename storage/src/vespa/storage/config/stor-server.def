@@ -21,14 +21,6 @@ is_distributor bool restart
 ## other nodes.
 node_capacity double default=1.0 restart
 
-## Capacity of the disks on this node. How much data and load will each disk
-## get relative to the other disks on this node.
-disk_capacity[] double restart
-
-## Reliability of this node. How much of the cluster redundancy factor can this
-## node make up for.
-node_reliability int default=1 restart
-
 ## The upper bound of merges that any storage node can have active.
 ## A merge operation will be chained through all nodes involved in the
 ## merge, only actually starting the operation when every node has
@@ -109,18 +101,9 @@ enable_dead_lock_detector_warnings bool default=true
 ## allow for more slack before dead lock detector kicks in. The value is in seconds.
 dead_lock_detector_timeout_slack double default=240
 
-## If set to 0, storage will attempt to auto-detect the number of VDS mount
-## points to use. If set to a number, force this number. This number only makes
-## sense on a storage node of course
-disk_count int default=0  restart
-
 ## Configure persistence provider. Temporary here to test.
 persistence_provider.type enum {STORAGE, DUMMY, RPC } default=STORAGE restart
 persistence_provider.rpc.connectspec string default="tcp/localhost:27777" restart
-
-## Whether or not to use the new metadata flow implementation. Default to not
-## as it is currently in development and not even functional
-switch_new_meta_data_flow bool default=false restart
 
 ## When the content layer receives a set of changed buckets from the persistence
 ## layer, it must recheck all of these. Each such recheck results in an
@@ -134,10 +117,6 @@ bucket_rechecking_chunk_size int default=100
 ## full bucket info requests. The latency is added per batch of operations processed.
 ## Only useful for testing!
 simulated_bucket_request_latency_msec int default=0
-
-## If set, content node processes will use a B-tree backed bucket database implementation
-## instead of the legacy Judy-based implementation.
-use_content_node_btree_bucket_db bool default=true restart
 
 ## If non-zero, the bucket DB will be striped into 2^bits sub-databases, each handling
 ## a disjoint subset of the node's buckets, in order to reduce locking contention.
