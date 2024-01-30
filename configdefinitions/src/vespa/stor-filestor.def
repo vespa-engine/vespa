@@ -1,14 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.content
 
-## DETECT FAILURE PARAMETERS
-
-## Deprecated and unused - will soon go away
-fail_disk_after_error_count int default=1 restart
-
-## Deprecated and unused - will soon go away
-disk_operation_timeout int default=0 restart
-
 ## PERFORMANCE PARAMETERS
 
 ## Number of threads to use for each mountpoint.
@@ -41,15 +33,6 @@ common_merge_chain_optimalization_minimum_size int default=64 restart
 ##
 ## Should follow stor-distributormanager:splitsize (16MB).
 bucket_merge_chunk_size int default=16772216 restart
-
-## When merging, it is possible to send more metadata than needed in order to
-## let local nodes in merge decide which entries fits best to add this time
-## based on disk location. Toggle this option on to use it. Note that memory
-## consumption might increase in a 4.1 to 4.2 upgrade due to this, as 4.1
-## dont support to only fill in part of the metadata provided and will always
-## fill all.
-## NB unused and will be removed shortly.
-enable_merge_local_node_choose_docs_optimalization bool default=true restart
 
 ## Whether or not to enable the multibit split optimalization. This is useful
 ## if splitting is expensive, but listing document identifiers is fairly cheap.
