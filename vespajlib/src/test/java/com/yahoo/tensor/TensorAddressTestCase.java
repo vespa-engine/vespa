@@ -33,6 +33,7 @@ public class TensorAddressTestCase {
     }
     @Test
     void testStringVersusNumericAddressEquality() {
+        equal(ofLabels("0"), of(0));
         equal(ofLabels("1"), of(1));
     }
     @Test
@@ -40,6 +41,7 @@ public class TensorAddressTestCase {
         notEqual(ofLabels("1"), ofLabels("2"));
         notEqual(of(1), of(2));
         notEqual(ofLabels("1"), ofLabels("01"));
+        notEqual(ofLabels("0"), ofLabels("00"));
     }
     @Test
     void testDimensionsEffectsEqualityAndHash() {
