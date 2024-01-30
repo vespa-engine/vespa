@@ -23,6 +23,7 @@ struct GeoGcd
     }
 
     double km_great_circle_distance(double lat, double lng) const;
+    static double km_to_internal(double km);
 private:
     double _latitude_radians;
     double _longitude_radians;
