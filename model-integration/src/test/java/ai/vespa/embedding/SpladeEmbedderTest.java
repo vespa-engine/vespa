@@ -48,12 +48,12 @@ public class SpladeEmbedderTest {
     public void testPerformanceNotTerrible() {
         String text = "what was the manhattan project in this context it was a secret project to develop a nuclear weapon in world war" +
                 " ii the project was led by the united states with the support of the united kingdom and canada";
-        Long now = System.currentTimeMillis();
-        int n = 1000; // Takes around 7s on Intel core i9 2.4Ghz (macbook pro, 2019)
+        long now = System.currentTimeMillis();
+        int n = 1000; // 7s on Intel core i9 2.4Ghz (macbook pro, 2019) using custom reduce, 8s if using generic reduce
         for (int i = 0; i < n; i++) {
             assertEmbed("tensor<float>(t{})", text, indexingContext);
         }
-        Long elapsed = System.currentTimeMillis() - now;
+        long elapsed = System.currentTimeMillis() - now;
         System.out.println("Elapsed time: " + elapsed + " ms");
     }
 
@@ -72,9 +72,11 @@ public class SpladeEmbedderTest {
 
     static {
         indexingContext = new Embedder.Context("schema.indexing");
-        spladeEmbedder = getEmbedder();
+        // Custom reduce is 14% faster than generic reduce and the default.
+        // Keeping as option for performance testing
+        spladeEmbedder = getEmbedder(false);
     }
-    private static Embedder getEmbedder() {
+    private static Embedder getEmbedder(boolean useCustomReduce) {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/dummy_transformer_mlm.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
@@ -83,6 +85,6 @@ public class SpladeEmbedderTest {
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.termScoreThreshold(scoreThreshold);
         builder.transformerGpuDevice(-1);
-        return  new SpladeEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return  new SpladeEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
     }
 }
