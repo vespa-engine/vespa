@@ -68,8 +68,8 @@ public class ValidateSortingSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        ErrorMessage e = validate(query);
         if (indexingMode != QrSearchersConfig.Searchcluster.Indexingmode.STREAMING) {
-            ErrorMessage e = validate(query);
             if (e != null) {
                 Result r = new Result(query);
                 r.hits().addError(e);
