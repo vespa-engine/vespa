@@ -9,6 +9,10 @@ stop_external_load_when_cluster_down bool default=true
 ## in.
 stop_all_load_when_nodestate_not_in string default="uri"
 
+## Sets whether to just use (self) reported node state or to use wanted state
+## if wanted state is worse than the current reported state.
+use_wanted_state_if_possible bool default=true
+
 ## The maximum clock skew allowed in the system. Any messages received 
 ## that have a timestamp longer in the future than this will be failed.
 max_clock_skew_seconds int default=5

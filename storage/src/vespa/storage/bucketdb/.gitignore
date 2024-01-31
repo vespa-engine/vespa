@@ -6,3 +6,4 @@
 .deps
 .libs
 Makefile
+config-stor-bucketdb.*

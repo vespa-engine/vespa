@@ -127,6 +127,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
                     .selectiontoremove("not (" + gc.selection + ")")
                     .interval(gc.interval));
         }
+        builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
         builder.enable_condition_probing(true);
