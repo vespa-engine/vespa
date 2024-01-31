@@ -46,6 +46,14 @@ class CloudAccountTest {
     }
 
     @Test
+    void azure_account() {
+        CloudAccount account = CloudAccount.from("azure:248ace13-1234-abcd-89ad-123456789abc");
+        assertEquals("248ace13-1234-abcd-89ad-123456789abc", account.account());
+        assertEquals(CloudName.AZURE, account.cloudName());
+        assertEquals("azure:248ace13-1234-abcd-89ad-123456789abc", account.value());
+    }
+
+    @Test
     void default_accounts() {
         CloudAccount variant1 = CloudAccount.from("");
         CloudAccount variant2 = CloudAccount.from("default");
@@ -65,7 +73,7 @@ class CloudAccountTest {
         assertInvalidAccount("aws:123", "Invalid cloud account 'aws:123': Account ID must match '[0-9]{12}'");
         assertInvalidAccount("gcp:123", "Invalid cloud account 'gcp:123': Project ID must match '[a-z][a-z0-9-]{4,28}[a-z0-9]'");
         assertInvalidAccount("$something", "Invalid cloud account '$something': Must be on format '<cloud-name>:<account>' or 'default'");
-        assertInvalidAccount("unknown:account", "Invalid cloud account 'unknown:account': Cloud name must be one of: aws, gcp");
+        assertInvalidAccount("unknown:account", "Invalid cloud account 'unknown:account': Cloud name must be one of: aws, azure, gcp");
     }
 
     private static void assertInvalidAccount(String account, String message) {
