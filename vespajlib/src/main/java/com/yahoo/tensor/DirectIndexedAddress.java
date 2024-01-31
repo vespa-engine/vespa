@@ -22,7 +22,7 @@ public final class DirectIndexedAddress {
         directIndex = 0;
     }
 
-    static DirectIndexedAddress of(DimensionSizes sizes) {
+    public static DirectIndexedAddress of(DimensionSizes sizes) {
         return new DirectIndexedAddress(sizes);
     }
 
@@ -38,6 +38,14 @@ public final class DirectIndexedAddress {
 
     /** Retrieve the index that can be used for direct lookup in an indexed tensor. */
     public long getDirectIndex() { return directIndex; }
+
+    public long [] getIndexes() {
+        long[] asLong = new long[indexes.length];
+        for (int i=0; i < indexes.length; i++) {
+            asLong[i] = indexes[i];
+        }
+        return asLong;
+    }
 
     /** returns the stride to be used for the given dimension */
     public long getStride(int dimension) {
