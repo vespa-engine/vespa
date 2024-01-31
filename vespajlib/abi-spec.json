@@ -728,8 +728,10 @@
       "final"
     ],
     "methods" : [
+      "public static com.yahoo.tensor.DirectIndexedAddress of(com.yahoo.tensor.DimensionSizes)",
       "public void setIndex(int, int)",
       "public long getDirectIndex()",
+      "public long[] getIndexes()",
       "public long getStride(int)"
     ],
     "fields" : [ ]
