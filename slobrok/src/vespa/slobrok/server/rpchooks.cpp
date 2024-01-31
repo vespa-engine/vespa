@@ -77,14 +77,6 @@ RPCHooks::RPCHooks(SBEnv &env)
 RPCHooks::~RPCHooks() = default;
 
 void RPCHooks::reportMetrics() {
-    EV_COUNT("heartbeats_failed", _cnts.heartBeatFails);
-    EV_COUNT("register_reqs", _cnts.registerReqs);
-    EV_COUNT("mirror_reqs", _cnts.mirrorReqs);
-    EV_COUNT("wantadd_reqs", _cnts.wantAddReqs);
-    EV_COUNT("doadd_reqs", _cnts.doAddReqs);
-    EV_COUNT("doremove_reqs", _cnts.doRemoveReqs);
-    EV_COUNT("admin_reqs", _cnts.adminReqs);
-    EV_COUNT("other_reqs", _cnts.otherReqs);
 }
 
 void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
