@@ -4,10 +4,14 @@
 #include "orlikesearch.h"
 #include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/util/left_right_heap.h>
 
 namespace search::queryeval {
 
 namespace {
+
+using vespalib::LeftArrayHeap;
+using vespalib::LeftHeap;
 
 class FullUnpack
 {
@@ -22,6 +26,11 @@ public:
             if (__builtin_expect(children[i]->getDocId() == docid, false)) {
                 children[i]->doUnpack(docid);
             }
+        }
+    }
+    void each(auto &&f, size_t n) {
+        for (size_t i = 0; i < n; ++i) {
+            f(i);
         }
     }
     void onRemove(size_t index) { (void) index; }
@@ -47,6 +56,9 @@ public:
                     }
                 }, children.size());
     }
+    void each(auto &&f, size_t n) {
+        _unpackInfo.each(std::forward<decltype(f)>(f), n);
+    }
     void onRemove(size_t index) {
         _unpackInfo.remove(index);
     }
@@ -59,6 +71,20 @@ public:
 private:
     UnpackInfo _unpackInfo;
 };
+
+template <typename Unpack>
+SearchIterator::UP create_strict_or(std::vector<SearchIterator::UP> children, const Unpack &unpack, OrSearch::StrictImpl strict_impl) {
+    if (strict_impl == OrSearch::StrictImpl::HEAP) {
+        if (children.size() <= 0xff) {
+            return std::make_unique<StrictHeapOrSearch<Unpack,LeftArrayHeap,uint8_t>>(std::move(children), unpack);
+        } else if (children.size() <= 0xffff) {
+            return std::make_unique<StrictHeapOrSearch<Unpack,LeftHeap,uint16_t>>(std::move(children), unpack);
+        } else {
+            return std::make_unique<StrictHeapOrSearch<Unpack,LeftHeap,uint32_t>>(std::move(children), unpack);
+        }
+    }
+    return std::make_unique<OrLikeSearch<true,Unpack>>(std::move(children), unpack);
+}
 
 }
 
@@ -82,21 +108,23 @@ SearchIterator::UP
 OrSearch::create(ChildrenIterators children, bool strict) {
     UnpackInfo unpackInfo;
     unpackInfo.forceAll();
-    return create(std::move(children), strict, unpackInfo);
+    return create(std::move(children), strict, unpackInfo, StrictImpl::PLAIN);
 }
 
 SearchIterator::UP
 OrSearch::create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo) {
+    return create(std::move(children), strict, unpackInfo, StrictImpl::PLAIN);
+}
+
+SearchIterator::UP
+OrSearch::create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo, StrictImpl strict_impl) {
     if (strict) {
         if (unpackInfo.unpackAll()) {
-            using MyOr = OrLikeSearch<true, FullUnpack>;
-            return std::make_unique<MyOr>(std::move(children), FullUnpack());
+            return create_strict_or(std::move(children), FullUnpack(), strict_impl);
         } else if(unpackInfo.empty()) {
-            using MyOr = OrLikeSearch<true, NoUnpack>;
-            return std::make_unique<MyOr>(std::move(children), NoUnpack());
+            return create_strict_or(std::move(children), NoUnpack(), strict_impl);
         } else {
-            using MyOr = OrLikeSearch<true, SelectiveUnpack>;
-            return std::make_unique<MyOr>(std::move(children), SelectiveUnpack(unpackInfo));
+            return create_strict_or(std::move(children), SelectiveUnpack(unpackInfo), strict_impl);
         }
     } else {
         if (unpackInfo.unpackAll()) {
