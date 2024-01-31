@@ -20,11 +20,21 @@ using search::queryeval::OrSearch;
 using search::queryeval::UnpackInfo;
 using TMD = search::fef::TermFieldMatchData;
 using vespalib::make_string_short::fmt;
+using Impl = OrSearch::StrictImpl;
 
 double budget = 0.25;
 size_t bench_docs = 1000;
 constexpr uint32_t default_seed = 5489u;
 std::mt19937 gen(default_seed);
+
+const char *impl_str(Impl impl) {
+    if (impl == Impl::PLAIN) { return "plain"; }
+    if (impl == Impl::HEAP)  { return " heap"; }
+    return "unknown";
+}
+const char *bool_str(bool bit) { return bit ? "true" : "false"; }
+const char *leaf_str(bool array) { return array ? "A" : "B"; }
+const char *opt_str(bool optimize) { return optimize ? "OPT" : "std"; }
 
 BitVector::UP make_bitvector(size_t size, size_t num_bits) {
     EXPECT_GT(size, num_bits);
@@ -120,7 +130,7 @@ struct OrSetup {
             return BitVectorIterator::create(child_hits[i].get(), *match_data[i], true);
         }
     }
-    SearchIterator::UP make_or(bool optimize = false) {
+    SearchIterator::UP make_or(Impl impl, bool optimize) {
         assert(!child_hits.empty());
         if (child_hits.size() == 1) {
             // use child directly if there is only one
@@ -140,7 +150,7 @@ struct OrSetup {
                 }
             }
         }
-        auto result = OrSearch::create(std::move(children), true, unpack);
+        auto result = OrSearch::create(std::move(children), true, unpack, impl);
         if (optimize) {
             result = queryeval::MultiBitVectorIteratorBase::optimize(std::move(result));
         }
@@ -152,8 +162,8 @@ struct OrSetup {
         }
         return *this;
     }
-    std::pair<size_t,double> bm_search_ms(bool optimized = false) {
-        auto search_up = make_or(optimized);
+    std::pair<size_t,double> bm_search_ms(Impl impl, bool optimized) {
+        auto search_up = make_or(impl, optimized);
         SearchIterator &search = *search_up;
         size_t hits = 0;
         BenchmarkTimer timer(budget);
@@ -205,8 +215,8 @@ struct OrSetup {
             tmd->resetOnlyDocId(0);
         }
     }
-    void verify_seek_unpack(bool check_skipped_unpack = false, bool optimized = false) {
-        auto search_up = make_or(optimized);
+    void verify_seek_unpack(Impl impl, bool check_skipped_unpack, bool optimized) {
+        auto search_up = make_or(impl, optimized);
         SearchIterator &search = *search_up;
         for (size_t unpack_nth: {1, 3}) {
             for (size_t skip: {1, 31}) {
@@ -241,7 +251,7 @@ OrSetup::~OrSetup() = default;
 TEST(OrSpeed, array_iterator_seek_unpack) {
     OrSetup setup(100);
     setup.add(10, true, true);
-    setup.verify_seek_unpack();
+    setup.verify_seek_unpack(Impl::PLAIN, true, false);
 }
 
 TEST(OrSpeed, or_seek_unpack) {
@@ -250,8 +260,6 @@ TEST(OrSpeed, or_seek_unpack) {
             for (int unpack: {0,1,2}) {
                 OrSetup setup(1000);
                 size_t part = setup.per_child(target, 13);
-                SCOPED_TRACE(fmt("optimize: %s, part: %zu, unpack: %d",
-                                 optimize ? "true" : "false", part, unpack));
                 for (size_t i = 0; i < 13; ++i) {
                     bool use_array = (i/2)%2 == 0;
                     bool need_unpack = unpack > 0;
@@ -260,7 +268,11 @@ TEST(OrSpeed, or_seek_unpack) {
                     }
                     setup.add(part, use_array, need_unpack);
                 }
-                setup.verify_seek_unpack(true, optimize);
+                for (auto impl: {Impl::PLAIN, Impl::HEAP}) {
+                    SCOPED_TRACE(fmt("impl: %s, optimize: %s, part: %zu, unpack: %d",
+                                     impl_str(impl), bool_str(optimize), part, unpack));
+                    setup.verify_seek_unpack(impl, true, optimize);
+                }
             }
         }
     }
@@ -274,23 +286,30 @@ TEST(OrSpeed, bm_array_vs_bitvector) {
         setup.add(hits, false, false);
         for (bool use_array: {false, true}) {
             setup.use_array[0] = use_array;
-            auto result = setup.bm_search_ms();
-            fprintf(stderr, "LEAF(%s): (one of %4zu) hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n", use_array
-                    ? "    array"
-                    : "bitvector", one_of, result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
+            auto result = setup.bm_search_ms(Impl::PLAIN, false);
+            fprintf(stderr, "LEAF(%s): (one of %4zu) hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n",
+                    leaf_str(use_array), one_of, result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
         }
     }
 }
 
 TEST(OrSpeed, bm_strict_or) {
     for (double target: {0.001, 0.01, 0.1, 1.0, 10.0}) {
-        for (size_t child_cnt: {5, 10, 100, 1000}) {
-            OrSetup setup(bench_docs);
-            size_t part = setup.per_child(target, child_cnt);
-            if (part > 0) {
-                auto result = setup.prepare_bm(child_cnt, part).bm_search_ms();
-                fprintf(stderr, "OR bench(children: %4zu, hits_per_child: %8zu): total_hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n",
-                        child_cnt, part, result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
+        for (size_t child_cnt: {2, 5, 10, 100, 1000}) {
+            for (bool optimize: {false, true}) {
+                OrSetup setup(bench_docs);
+                size_t part = setup.per_child(target, child_cnt);
+                bool use_array = setup.should_use_array(part);
+                if (part > 0 && (!use_array || !optimize)) {
+                    setup.prepare_bm(child_cnt, part);
+                    for (auto impl: {Impl::PLAIN, Impl::HEAP}) {
+                        auto result = setup.bm_search_ms(impl, optimize);
+                        fprintf(stderr, "OR bench(%s, %s, children: %4zu, hits_per_child: %8zu %s): "
+                                "total_hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n",
+                                impl_str(impl), opt_str(optimize), child_cnt, part, leaf_str(use_array),
+                                result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
+                    }
+                }
             }
         }
     }
