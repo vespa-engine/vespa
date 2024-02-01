@@ -918,27 +918,40 @@ Test::testDistance()
             assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5",  10, -20);
             assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), "5:-5", -10, -20);
             assert2DZDistance(static_cast<feature_t>(std::sqrt(850.0f)), "5:-5", -10,  20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5",  15, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(325.0f)), "5:-5",  15, -20, 0x80000000); // 2^31
         }
 
         { // test 2D multi location (zcurve)
-            vespalib::string positions = "5:-5,35:0,5:40,35:-40";
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  10,  20, 0, 2);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  10, -20, 0, 0);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -10, -20, 0, 0);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -10,  20, 0, 2);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, -20, 0x80000000, 0); // 2^31
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, -20, 0x80000000, 1); // 2^31
+            // note: "aspect" is ignored now, computed from "y", and cos(60 degrees) = 0.5
+            vespalib::string positions = "5:59999995," "35:60000000," "5:60000040," "35:59999960";
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 59999995, 0, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 60000000, 0x10000000, 1));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 60000040, 0x20000000, 2));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 59999960, 0x30000000, 3));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0x40000000, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  -5, 59999980, 0x50000000, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 59999985, 0x60000000, 1));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 60000015, 0x70000000, 1));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  15, 60000020, 0x80000000, 2));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  -5, 60000020, 0x90000000, 2));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999955, 0xa0000000, 3));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999965, 0xb0000000, 3));
+
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -25, 59999980, 0xc0000000, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -25, 60000060, 0xd0000000, 2));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0xe0000000, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, 59999980, 0xf0000000, 1));
         }
 
         { // test geo multi location (zcurve)
-            vespalib::string positions = "0:0,100:100,-200:200,-300:-300,400:-400";
-            assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0,    0, 0x40000000, 0);
-            assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100,  101, 0x40000000, 1);
-            assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200,  200, 0x40000000, 2);
-            assert2DZDistance(static_cast<feature_t>(13.0f), positions, -320, -312, 0x40000000, 3);
-            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  416, -403, 0x40000000, 4);
-            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  112,  104, 0x40000000, 1);
+            // note: cos(70.528779 degrees) = 1/3
+            vespalib::string positions = "0:70528779," "100:70528879," "-200:70528979," "-300:70528479," "400:70528379";
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0, 70528779 +   0, 0, 0));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100, 70528779 + 101, 0x20000000, 1));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200, 70528779 + 200, 0x40000000, 2));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(13.0f), positions, -315, 70528779  -312, 0x80000000, 3));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  412, 70528779  -403, 0xB0000000, 4));
+            TEST_DO(assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  109, 70528779 + 104, 0xF0000000, 1));
         }
 
         { // test default distance
@@ -1031,15 +1044,15 @@ Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
     GeoLocation::Aspect aspect{xAspect};
     ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", {p, aspect}});
     ASSERT_TRUE(ft.setup());
-    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
                            addScore("distance(pos)", exp)));
-    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
                            addScore("distance(pos).km", exp * 0.00011119508023)));
-    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).
                            addScore("distance(pos).index", hit_index)));
-    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
                            addScore("distance(pos).latitude", pos[hit_index].second * 1e-6)));
-    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
                            addScore("distance(pos).longitude", pos[hit_index].first * 1e-6)));
 }
 

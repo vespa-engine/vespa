@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -69,79 +70,103 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
     outputs().set_number(0, min_distance);
 }
 
+const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
 
-feature_t
-DistanceExecutor::calculateDistance(uint32_t docId)
-{
-    _best_index = -1.0;
-    _best_x = -180.0 * 1.0e6;
-    _best_y = 90.0 * 1.0e6;
-    if ((! _locations.empty()) && (_pos != nullptr)) {
-        LOG(debug, "calculate 2D Z-distance from %zu locations", _locations.size());
-        return calculate2DZDistance(docId);
+/**
+ * Implements the executor for the great circle distance feature.
+ */
+class GeoGCDExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<search::common::GeoGcd> _locations;
+    const attribute::IAttributeVector * _pos;
+    attribute::IntegerContent           _intBuf;
+    feature_t                           _best_index;
+    feature_t                           _best_lat;
+    feature_t                           _best_lng;
+
+    feature_t calculateGeoGCD(uint32_t docId);
+public:
+    /**
+     * Constructs an executor for the GeoGCD feature.
+     *
+     * @param locations location objects associated with the query environment.
+     * @param pos the attribute to use for positions (expects zcurve encoding).
+     */
+    GeoGCDExecutor(GeoLocationSpecPtrs locations, const attribute::IAttributeVector * pos);
+    void execute(uint32_t docId) override;
+};
+
+
+feature_t GeoGCDExecutor::calculateGeoGCD(uint32_t docId) {
+    feature_t dist = std::numeric_limits<feature_t>::max();
+    _best_index = -1;
+    _best_lat = 90.0;
+    _best_lng = -180.0;
+    if (_locations.empty()) {
+        return dist;
     }
-    return DEFAULT_DISTANCE;
-}
-
-
-feature_t
-DistanceExecutor::calculate2DZDistance(uint32_t docId)
-{
     _intBuf.fill(*_pos, docId);
     uint32_t numValues = _intBuf.size();
-    uint64_t sqabsdist = std::numeric_limits<uint64_t>::max();
     int32_t docx = 0;
     int32_t docy = 0;
     for (auto loc : _locations) {
-        assert(loc);
-        assert(loc->location.valid());
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
-            uint64_t sqdist = loc->location.sq_distance_to({docx, docy});
-            if (sqdist < sqabsdist) {
+            double lat = docy / 1.0e6;
+            double lng = docx / 1.0e6;
+            double d = loc.km_great_circle_distance(lat, lng);
+            if (d < dist) {
+                dist = d;
                 _best_index = i;
-		_best_x = docx;
-		_best_y = docy;
-                sqabsdist = sqdist;
+                _best_lat = lat;
+                _best_lng = lng;
             }
         }
     }
-    return static_cast<feature_t>(std::sqrt(static_cast<feature_t>(sqabsdist)));
+    return dist;
 }
 
-DistanceExecutor::DistanceExecutor(GeoLocationSpecPtrs locations,
-                                   const search::attribute::IAttributeVector * pos) :
-    FeatureExecutor(),
-    _locations(locations),
-    _pos(pos),
-    _intBuf()
+GeoGCDExecutor::GeoGCDExecutor(GeoLocationSpecPtrs locations, const attribute::IAttributeVector * pos)
+    : FeatureExecutor(),
+      _locations(),
+      _pos(pos),
+      _intBuf()
 {
-    if (_pos != nullptr) {
-        _intBuf.allocate(_pos->getMaxValueCount());
+    if (_pos == nullptr) {
+        return;
+    }
+    _intBuf.allocate(_pos->getMaxValueCount());
+    for (const auto * p : locations) {
+        if (p && p->location.valid() && p->location.has_point) {
+            double lat = p->location.point.y / 1.0e6;
+            double lng = p->location.point.x / 1.0e6;
+            _locations.emplace_back(search::common::GeoGcd{lat, lng});
+        }
     }
 }
 
+
 void
-DistanceExecutor::execute(uint32_t docId)
+GeoGCDExecutor::execute(uint32_t docId)
 {
-    static constexpr double earth_mean_radius = 6371.0088;
-    static constexpr double deg_to_rad = M_PI / 180.0;
-    static constexpr double km_from_internal = 1.0e-6 * deg_to_rad * earth_mean_radius;
-    feature_t internal_d = calculateDistance(docId);
-    outputs().set_number(0, internal_d);
+    double dist_km = calculateGeoGCD(docId);
+    double micro_degrees = search::common::GeoGcd::km_to_internal(dist_km);
+    if (_best_index < 0) {
+        dist_km = 40000.0;
+        micro_degrees = DistanceExecutor::DEFAULT_DISTANCE;
+    }
+    outputs().set_number(0, micro_degrees);
     outputs().set_number(1, _best_index);
-    outputs().set_number(2, _best_y * 1.0e-6); // latitude
-    outputs().set_number(3, _best_x * 1.0e-6); // longitude
-    outputs().set_number(4, internal_d * km_from_internal); // km
+    outputs().set_number(2, _best_lat); // latitude
+    outputs().set_number(3, _best_lng); // longitude
+    outputs().set_number(4, dist_km);
 }
-
-const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
-
 
 DistanceBlueprint::DistanceBlueprint() :
     Blueprint("distance"),
     _field_name(),
-    _arg_string(),
+    _label_name(),
+    _attr_name(),
     _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
     _use_geo_pos(false),
     _use_nns_tensor(false),
@@ -166,7 +191,7 @@ DistanceBlueprint::createInstance() const
 bool
 DistanceBlueprint::setup_geopos(const vespalib::string &attr)
 {
-    _arg_string = attr;
+    _attr_name = attr;
     _use_geo_pos = true;
     describeOutput("out", "The euclidean distance from the query position.");
     describeOutput("index", "Index in array of closest point");
@@ -179,7 +204,7 @@ DistanceBlueprint::setup_geopos(const vespalib::string &attr)
 bool
 DistanceBlueprint::setup_nns(const vespalib::string &attr)
 {
-    _arg_string = attr;
+    _attr_name = attr;
     _use_nns_tensor = true;
     describeOutput("out", "The euclidean distance from the query position.");
     return true;
@@ -195,7 +220,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         // params[0] = field / label
         // params[1] = attribute name / label value
         if (arg == "label") {
-            _arg_string = params[1].getValue();
+            _label_name = params[1].getValue();
             _use_item_label = true;
             describeOutput("out", "The euclidean distance from the labeled query item.");
             return true;
@@ -241,7 +266,7 @@ DistanceBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IO
         DistanceCalculatorBundle::prepare_shared_state(env, store, _attr_id, "distance");
     }
     if (_use_item_label) {
-        DistanceCalculatorBundle::prepare_shared_state(env, store, _arg_string, "distance");
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _label_name, "distance");
     }
 }
 
@@ -252,7 +277,7 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
         return stash.create<ConvertRawscoreToDistance>(env, _attr_id);
     }
     if (_use_item_label) {
-        return stash.create<ConvertRawscoreToDistance>(env, _arg_string);
+        return stash.create<ConvertRawscoreToDistance>(env, _label_name);
     }
     // expect geo pos:
     const search::attribute::IAttributeVector * pos = nullptr;
@@ -261,42 +286,41 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
 
     for (auto loc_ptr : env.getAllLocations()) {
         if (_use_geo_pos && loc_ptr && loc_ptr->location.valid()) {
-            if (loc_ptr->field_name == _arg_string ||
+            if (loc_ptr->field_name == _attr_name ||
                 loc_ptr->field_name == _field_name)
             {
-                LOG(debug, "found loc from query env matching '%s'", _arg_string.c_str());
+                LOG(debug, "found loc from query env matching '%s'", _attr_name.c_str());
                 matching_locs.push_back(loc_ptr);
             } else {
                 LOG(debug, "found loc(%s) from query env not matching arg(%s)",
-                    loc_ptr->field_name.c_str(), _arg_string.c_str());
+                    loc_ptr->field_name.c_str(), _attr_name.c_str());
                 other_locs.push_back(loc_ptr);
             }
         }
     }
     if (matching_locs.empty() && other_locs.empty()) {
         LOG(debug, "createExecutor: no valid locations");
-        return stash.create<DistanceExecutor>(matching_locs, nullptr);
+        return stash.create<GeoGCDExecutor>(matching_locs, nullptr);
     }
-    LOG(debug, "createExecutor: valid location, attribute='%s'", _arg_string.c_str());
-
+    LOG(debug, "createExecutor: valid location, attribute='%s'", _attr_name.c_str());
     if (_use_geo_pos) {
-        pos = env.getAttributeContext().getAttribute(_arg_string);
+        pos = env.getAttributeContext().getAttribute(_attr_name);
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
-                Issue::report("distance feature: The position attribute '%s' is not an integer attribute. Will use default distance.",
+                Issue::report("distance feature: The position attribute '%s' is not an integer attribute.",
                               pos->getName().c_str());
                 pos = nullptr;
             } else if (pos->getCollectionType() == attribute::CollectionType::WSET) {
-                Issue::report("distance feature: The position attribute '%s' is a weighted set attribute. Will use default distance.",
+                Issue::report("distance feature: The position attribute '%s' is a weighted set attribute.",
                               pos->getName().c_str());
                 pos = nullptr;
             }
         } else {
-            Issue::report("distance feature: The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
+            Issue::report("distance feature: The position attribute '%s' was not found.", _attr_name.c_str());
         }
     }
     LOG(debug, "use '%s' locations with pos=%p", matching_locs.empty() ? "other" : "matching", pos);
-    return stash.create<DistanceExecutor>(matching_locs.empty() ? other_locs : matching_locs, pos);
+    return stash.create<GeoGCDExecutor>(matching_locs.empty() ? other_locs : matching_locs, pos);
 }
 
 }

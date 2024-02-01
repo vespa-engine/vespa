@@ -12,6 +12,11 @@ static constexpr double earth_mean_radius = 6371.0088;
 
 static constexpr double degrees_to_radians = M_PI / 180.0;
 
+static constexpr double internal_from_km = (1.0e6 * 180.0) / (M_PI * earth_mean_radius);
+
+double greatCircleDistance(double theta_A, double phi_A,
+                           double theta_B, double phi_B) __attribute__((noinline));
+
 // with input in radians
 double greatCircleDistance(double theta_A, double phi_A,
                            double theta_B, double phi_B)
@@ -45,6 +50,10 @@ double GeoGcd::km_great_circle_distance(double lat, double lng) const {
     double theta_B = lat * degrees_to_radians;
     double phi_B   = lng * degrees_to_radians;
     return  greatCircleDistance(theta_A, phi_A, theta_B, phi_B);
+}
+
+double GeoGcd::km_to_internal(double km) {
+    return km * internal_from_km;
 }
 
 } // namespace search::common
