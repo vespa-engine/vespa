@@ -192,6 +192,8 @@ Visitor::Visitor(StorageComponent& component)
       _hitCounter(),
       _trace(DEFAULT_TRACE_MEMORY_LIMIT),
       _messageHandler(nullptr),
+      _messageSession(),
+      _documentPriority(documentapi::Priority::PRI_NORMAL_1),
       _id(),
       _controlDestination(),
       _dataDestination(),
@@ -990,7 +992,7 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
             != _visitorTarget._pendingMessages.end())
         {
             out << "<i>pending</i>";
-        };
+        }
         auto queued = idToSendTime.find(idAndMeta.first);
         if (queued != idToSendTime.end()) {
             out << "Scheduled for sending at timestamp "

@@ -1032,7 +1032,7 @@ TEST_F(VisitorManagerTest, status_page) {
     EXPECT_THAT(str, HasSubstr("Running 1 visitors")); // 1 active
     EXPECT_THAT(str, HasSubstr("waiting visitors 1")); // 1 queued
     EXPECT_THAT(str, HasSubstr("Visitor thread 0"));
-    EXPECT_THAT(str, HasSubstr("Disconnected visitor timeout")); // verbose per thread
+    EXPECT_THAT(str, HasSubstr("Iterators per bucket")); // verbose per thread
     EXPECT_THAT(str, HasSubstr("Message #1 <b>putdocumentmessage</b>")); // 1 active
 
     for (uint32_t session = 0; session < 2 ; ++session){

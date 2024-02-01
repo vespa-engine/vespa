@@ -8,7 +8,6 @@
 #include "recoveryvisitor.h"
 #include "reindexing_visitor.h"
 #include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/storage/common/statusmessages.h>
@@ -117,11 +116,6 @@ void
 VisitorManager::on_configure(const vespa::config::content::core::StorVisitorConfig& config)
 {
     std::lock_guard sync(_visitorLock);
-    if (config.defaultdocblocksize % 512 != 0) {
-        throw config::InvalidConfigException(
-                "The default docblock size needs to be a multiple of the "
-                "disk block size. (512b)");
-    }
 
     // Do some sanity checking of input. Cannot haphazardly mix and match
     // old and new max concurrency config values

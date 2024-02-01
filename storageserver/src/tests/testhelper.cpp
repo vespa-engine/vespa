@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/testhelper.h>
-#include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testhelper");
