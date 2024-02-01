@@ -348,13 +348,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-02-01",
+            List.of("hmusum"), "2023-07-19", "2024-03-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-02-01",
+            List.of("hmusum"), "2023-07-19", "2024-03-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -396,7 +396,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-02-01",
+            List.of("hmusum"), "2023-09-25", "2024-03-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -430,7 +430,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES = defineFeatureFlag(
             "restart-on-deploy-when-onnx-model-changes", false,
-            List.of("hmusum"), "2023-12-04", "2024-02-01",
+            List.of("hmusum"), "2023-12-04", "2024-03-01",
             "If set, restart on deploy if onnx model or onnx model options used by a container cluster change",
             "Takes effect at redeployment",
             INSTANCE_ID);
