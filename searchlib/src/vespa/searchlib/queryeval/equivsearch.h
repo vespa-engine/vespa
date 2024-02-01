@@ -13,7 +13,7 @@ namespace search::queryeval {
 /**
  * A simple implementation of the Equiv search operation.
  **/
-class EquivSearch : public SearchIterator
+class EquivSearch
 {
 public:
     using Children = MultiSearch::Children;
