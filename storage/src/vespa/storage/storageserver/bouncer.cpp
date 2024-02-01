@@ -2,16 +2,13 @@
 
 #include "bouncer.h"
 #include "bouncer_metrics.h"
-#include "config_logging.h"
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configfetcher.hpp>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
@@ -62,7 +59,6 @@ Bouncer::onClose()
 void
 Bouncer::on_configure(const vespa::config::content::core::StorBouncerConfig& config)
 {
-    validateConfig(config);
     auto new_config = std::make_unique<StorBouncerConfig>(config);
     std::lock_guard lock(_lock);
     _config = std::move(new_config);
@@ -70,27 +66,6 @@ Bouncer::on_configure(const vespa::config::content::core::StorBouncerConfig& con
 
 const BouncerMetrics& Bouncer::metrics() const noexcept {
     return *_metrics;
-}
-
-void
-Bouncer::validateConfig(const vespa::config::content::core::StorBouncerConfig& newConfig) const
-{
-    if (newConfig.feedRejectionPriorityThreshold != -1) {
-        if (newConfig.feedRejectionPriorityThreshold
-            > std::numeric_limits<api::StorageMessage::Priority>::max())
-        {
-            throw config::InvalidConfigException(
-                    "feed_rejection_priority_threshold config value exceeds "
-                    "maximum allowed value");
-        }
-        if (newConfig.feedRejectionPriorityThreshold
-            < std::numeric_limits<api::StorageMessage::Priority>::min())
-        {
-            throw config::InvalidConfigException(
-                    "feed_rejection_priority_threshold config value lower than "
-                    "minimum allowed value");
-        }
-    }
 }
 
 void Bouncer::append_node_identity(std::ostream& target_stream) const {
@@ -101,8 +76,7 @@ void
 Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg, const lib::State& state)
 {
     // If we're not up or retired, fail due to this nodes state.
-    std::shared_ptr<api::StorageReply> reply(
-            static_cast<api::StorageCommand&>(msg).makeReply());
+    std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
     std::ostringstream ost;
     ost << "We don't allow command of type " << msg.getType()
         << " when node is in state " << state.toString(true);
@@ -235,18 +209,14 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     const lib::State* state;
     int maxClockSkewInSeconds;
     bool isInAvailableState;
-    bool abortLoadWhenClusterDown;
     bool closed;
     const lib::State* cluster_state;
-    int feedPriorityLowerBound;
     {
         std::lock_guard lock(_lock);
         state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
         maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
-        abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
         cluster_state            = _clusterState;
-        isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
-        feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
+        isInAvailableState       = state->oneOf("uri");
         closed                   = _closed;
     }
     const api::MessageType& type = msg->getType();
@@ -292,13 +262,6 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     if (!externalLoad) {
         return false;
     }
-    if (priorityRejectionIsEnabled(feedPriorityLowerBound)
-        && isExternalWriteOperation(type)
-        && (msg->getPriority() > feedPriorityLowerBound))
-    {
-        rejectDueToInsufficientPriority(*msg, feedPriorityLowerBound);
-        return true;
-    }
 
     uint64_t timestamp = extractMutationTimestampIfAny(*msg);
     if (timestamp != 0) {
@@ -311,7 +274,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     }
 
     // If cluster state is not up, fail external load
-    if (abortLoadWhenClusterDown && !clusterIsUp(*cluster_state)) {
+    if (!clusterIsUp(*cluster_state)) {
         abortCommandDueToClusterDown(*msg, *cluster_state);
         return true;
     }
