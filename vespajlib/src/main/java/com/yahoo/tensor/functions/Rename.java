@@ -89,7 +89,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         for (int i = 0; i < tensor.type().dimensions().size(); i++) {
             String dimensionName = tensor.type().dimensions().get(i).name();
             String newDimensionName = fromToMap.getOrDefault(dimensionName, dimensionName);
-            toIndexes[i] = renamedType.indexOfDimension(newDimensionName).get();
+            toIndexes[renamedType.indexOfDimension(newDimensionName).get()] = i;
         }
 
         // avoid building a new tensor if dimensions can simply be renamed
@@ -100,7 +100,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Tensor.Builder builder = Tensor.Builder.of(renamedType);
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
+            TensorAddress renamedAddress = cell.getKey().partialCopy(toIndexes);
             builder.cell(renamedAddress, cell.getValue());
         }
         return builder.build();
@@ -116,10 +116,6 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             }
         }
         return true;
-    }
-
-    private static TensorAddress rename(TensorAddress address, int[] toIndexes) {
-        return address.partialCopy(toIndexes);
     }
 
     private String toVectorString(List<String> elements) {
