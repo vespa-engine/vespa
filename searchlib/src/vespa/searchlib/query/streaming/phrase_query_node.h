@@ -25,10 +25,6 @@ public:
 private:
     mutable std::vector<QueryTerm::FieldInfo> _fieldInfo;
     void updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) const;
-#if WE_EVER_NEED_TO_CACHE_THIS_WE_MIGHT_WANT_SOME_CODE_HERE
-    HitList _cachedHitList;
-    bool    _evaluated;
-#endif
 };
 
 }
