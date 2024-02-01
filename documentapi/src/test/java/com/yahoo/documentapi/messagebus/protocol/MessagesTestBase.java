@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.documentapi.messagebus.protocol.test;
+package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.component.Version;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.test.TestFileUtil;
 import com.yahoo.messagebus.Routable;
 import org.junit.Test;
 
@@ -20,7 +21,7 @@ import static org.junit.Assert.*;
  */
 public abstract class MessagesTestBase {
 
-    protected enum Language {
+    public enum Language {
         JAVA,
         CPP
     }

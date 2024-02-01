@@ -104,6 +104,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>http-utils</artifactId>
         </exclusion>

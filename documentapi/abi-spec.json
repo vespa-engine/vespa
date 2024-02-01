@@ -2078,6 +2078,7 @@
       "public void <init>(com.yahoo.document.DocumentId, long, boolean)",
       "public void <init>(com.yahoo.document.GlobalId, long, boolean)",
       "public void <init>(com.yahoo.vespa.objects.Deserializer)",
+      "public boolean hasDocId()",
       "public com.yahoo.document.DocumentId getDocId()",
       "public com.yahoo.document.GlobalId getGid()",
       "public long getTimestamp()",
@@ -2509,11 +2510,13 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String)",
       "public java.lang.String getDocumentSelection()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()",
-      "public com.yahoo.document.BucketId getBucketId()"
+      "public com.yahoo.document.BucketId getBucketId()",
+      "public java.lang.String getBucketSpace()"
     ],
     "fields" : [ ]
   },
@@ -3072,6 +3075,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void <init>(java.lang.String)",
       "public java.lang.String getResults()",
       "public void setResults(java.lang.String)"
     ],

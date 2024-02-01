@@ -39,6 +39,8 @@ public class DocumentState implements Comparable<DocumentState> {
         removeEntry = buf.getByte(null)>0;
     }
 
+    public boolean hasDocId() { return docId != null; }
+
     public DocumentId getDocId() {
         return docId;
     }

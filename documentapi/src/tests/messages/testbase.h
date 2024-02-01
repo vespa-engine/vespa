@@ -36,8 +36,8 @@ protected:
     };
 
     TestBase();
-    virtual ~TestBase() { /* empty */ }
-    virtual const vespalib::Version getVersion() const = 0;
+    ~TestBase() override;
+    virtual vespalib::Version getVersion() const = 0;
     virtual bool shouldTestCoverage() const = 0;
     TestBase &putTest(uint32_t type, TEST_METHOD_PT test);
     int Main() override;

@@ -9,6 +9,11 @@ public class StatBucketReply extends DocumentReply {
         super(DocumentProtocol.REPLY_STATBUCKET);
     }
 
+    public StatBucketReply(String results) {
+        super(DocumentProtocol.REPLY_STATBUCKET);
+        this.results = results;
+    }
+
     public String getResults() {
         return results;
     }

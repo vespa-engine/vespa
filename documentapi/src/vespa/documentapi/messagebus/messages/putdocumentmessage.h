@@ -30,8 +30,8 @@ public:
      *
      * @param document The document to put.
      */
-    PutDocumentMessage(DocumentSP document);
-    ~PutDocumentMessage();
+    explicit PutDocumentMessage(DocumentSP document);
+    ~PutDocumentMessage() override;
 
     /**
      * Returns the document to put.
@@ -39,7 +39,7 @@ public:
      * @return The document.
      */
     const DocumentSP & getDocumentSP() const { return _document; }
-    DocumentSP stealDocument() { return std::move(_document); }
+    [[nodiscard]] DocumentSP stealDocument() { return std::move(_document); }
     const document::Document & getDocument() const { return *_document; }
 
     /**
@@ -68,7 +68,7 @@ public:
     string toString() const override { return "putdocumentmessage"; }
 
     void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
-    bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
+    [[nodiscard]] bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 };
 
 }

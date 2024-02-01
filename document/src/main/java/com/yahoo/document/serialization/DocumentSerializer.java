@@ -15,6 +15,6 @@ public interface DocumentSerializer extends DocumentWriter, SpanNodeWriter, Anno
     /**
      * Returns the underlying buffer used for serialization.
      */
-    public GrowableByteBuffer getBuf();
+    GrowableByteBuffer getBuf();
 }
 

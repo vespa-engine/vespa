@@ -294,6 +294,10 @@ public:
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;
     mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef data) const override;
+
+private:
+    void add_legacy_v6_factories();
+    void add_v8_factories();
 };
 
 }

@@ -37,6 +37,13 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- documentapi needs protobuf runtime, and it's not provided from the container -->
+    <!-- TODO: Remove this when we have a better solution for protobuf -->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>

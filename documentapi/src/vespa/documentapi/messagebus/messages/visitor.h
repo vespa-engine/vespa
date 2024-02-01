@@ -74,12 +74,16 @@ public:
     const vdslib::Parameters& getParameters() const { return _params; }
     vdslib::Parameters& getParameters() { return _params; }
     void setParameters(const vdslib::Parameters& params) { _params = params; }
+    void setParameters(vdslib::Parameters&& params) noexcept { _params = std::move(params); }
 
     uint32_t getMaximumPendingReplyCount() const { return _maxPendingReplyCount; }
     void setMaximumPendingReplyCount(uint32_t count) { _maxPendingReplyCount = count; }
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
     std::vector<document::BucketId>& getBuckets() { return _buckets; }
+    void setBuckets(std::vector<document::BucketId> buckets) noexcept {
+        _buckets = std::move(buckets);
+    }
 
     const document::BucketId getBucketId() const { return *_buckets.begin(); }
 
@@ -196,6 +200,9 @@ public:
 
     std::vector<document::BucketId>& getFinishedBuckets() { return _finishedBuckets; }
     const std::vector<document::BucketId>& getFinishedBuckets() const { return _finishedBuckets; }
+    void setFinishedBuckets(std::vector<document::BucketId> buckets) noexcept {
+        _finishedBuckets = std::move(buckets);
+    }
 
     const string& getErrorMessage() const { return _errorMessage; }
     void setErrorMessage(const string& errorMessage) { _errorMessage = errorMessage; };
@@ -224,6 +231,7 @@ public:
 
     vdslib::Parameters& getData() { return _data; };
     const vdslib::Parameters& getData() const { return _data; };
+    void setData(vdslib::Parameters&& data) noexcept { _data = std::move(data); }
 
     uint32_t getApproxSize() const override;
     uint32_t getType() const override;
@@ -246,9 +254,9 @@ public:
         Entry(const Entry& other);
         Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf);
 
-        int64_t getTimestamp() { return _timestamp; }
-        const DocumentSP & getDocument() { return _document; }
-        bool isRemoveEntry() { return _removeEntry; }
+        int64_t getTimestamp() const noexcept { return _timestamp; }
+        const DocumentSP & getDocument() const noexcept { return _document; }
+        bool isRemoveEntry() const noexcept { return _removeEntry; }
 
         void serialize(vespalib::GrowableByteBuffer& buf) const;
     private:

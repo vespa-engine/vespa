@@ -46,6 +46,11 @@ public:
     explicit Parameters(document::ByteBuffer& buffer);
     ~Parameters() override;
 
+    Parameters(const Parameters&);
+    Parameters& operator=(const Parameters&);
+    Parameters(Parameters&&) noexcept;
+    Parameters& operator=(Parameters&&) noexcept;
+
     bool operator==(const Parameters &other) const;
 
     size_t getSerializedSize() const;

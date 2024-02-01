@@ -19,6 +19,12 @@ Parameters::Parameters(document::ByteBuffer& buffer)
     deserialize(buffer);
 }
 
+Parameters::Parameters(const Parameters&) = default;
+Parameters& Parameters::operator=(const Parameters&) = default;
+
+Parameters::Parameters(Parameters&&) noexcept = default;
+Parameters& Parameters::operator=(Parameters&&) noexcept = default;
+
 Parameters::~Parameters() = default;
 
 size_t Parameters::getSerializedSize() const
