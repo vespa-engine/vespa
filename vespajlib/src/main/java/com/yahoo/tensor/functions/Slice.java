@@ -131,7 +131,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         for (int i = 0; i < address.size(); i++) {
             String dimension = type.dimensions().get(i).name();
             if (subspaceType.dimension(type.dimensions().get(i).name()).isPresent())
-                b.add(dimension, address.label(i));
+                b.add(dimension, (int)address.numericLabel(i));
         }
         return b.build();
     }

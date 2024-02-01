@@ -275,7 +275,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         }
     }
 
-    private static PartialAddress empty = new PartialAddress.Builder(0).build();
+    private static final PartialAddress empty = new PartialAddress.Builder(0).build();
     private static PartialAddress partialAddress(TensorType addressType, TensorAddress address,
                                                  Set<String> retainDimensions, int sharedDimensionSize) {
         PartialAddress.Builder builder = new PartialAddress.Builder(sharedDimensionSize);

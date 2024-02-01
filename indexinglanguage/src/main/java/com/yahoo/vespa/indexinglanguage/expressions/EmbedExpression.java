@@ -97,7 +97,7 @@ public class EmbedExpression extends Expression  {
                 Tensor.Cell cell = cells.next();
                 builder.cell()
                        .label(targetType.mappedSubtype().dimensions().get(0).name(), i)
-                       .label(targetType.indexedSubtype().dimensions().get(0).name(), cell.getKey().label(0))
+                       .label(targetType.indexedSubtype().dimensions().get(0).name(), cell.getKey().numericLabel(0))
                        .value(cell.getValue());
             }
         }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.impl.Convert;
 import com.yahoo.tensor.impl.Label;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
@@ -102,7 +103,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return "'" + label + "'";
     }
 
-    /** Returns an address with only some of the dimension */
+    /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
     public TensorAddress partialCopy(int[] indexMap) {
         int[] labels = new int[indexMap.length];
         for (int i = 0; i < labels.length; ++i) {
@@ -196,6 +197,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
             labels[labelIndex] = Label.toNumber(label);
             return this;
+        }
+
+        public Builder add(String dimension, long label) {
+            return add(dimension, Convert.safe2Int(label));
         }
         public Builder add(String dimension, int label) {
             Objects.requireNonNull(dimension, "dimension cannot be null");

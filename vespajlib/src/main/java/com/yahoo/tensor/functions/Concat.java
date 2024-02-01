@@ -10,6 +10,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -354,21 +355,21 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         }
 
         TensorAddress combine(TensorAddress match, TensorAddress leftOnly, TensorAddress rightOnly, int concatDimIdx) {
-            String[] labels = new String[plan.resultType.rank()];
+            int[] labels = new int[plan.resultType.rank()];
             int out = 0;
             int m = 0;
             int a = 0;
             int b = 0;
             for (var how : plan.combineHow) {
                 switch (how) {
-                    case left -> labels[out++] = leftOnly.label(a++);
-                    case right -> labels[out++] = rightOnly.label(b++);
-                    case both -> labels[out++] = match.label(m++);
-                    case concat -> labels[out++] = String.valueOf(concatDimIdx);
+                    case left -> labels[out++] = (int) leftOnly.numericLabel(a++);
+                    case right -> labels[out++] = (int) rightOnly.numericLabel(b++);
+                    case both -> labels[out++] =   (int) match.numericLabel(m++);
+                    case concat -> labels[out++] = concatDimIdx;
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }
-            return TensorAddress.of(labels);
+            return TensorAddressAny.ofUnsafe(labels);
         }
 
         Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {
@@ -398,8 +399,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         CellVectorMapMap decompose(Tensor input, SplitHow how) {
             var iter = input.cellIterator();
-            String[] commonLabels = new String[(int)how.numCommon()];
-            String[] separateLabels = new String[(int)how.numSeparate()];
+            int[] commonLabels = new int[(int)how.numCommon()];
+            int[] separateLabels = new int[(int)how.numSeparate()];
             CellVectorMapMap result = new CellVectorMapMap();
             while (iter.hasNext()) {
                 var cell = iter.next();
@@ -409,14 +410,14 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                 int separateIdx = 0;
                 for (int i = 0; i < how.handleDims.size(); i++) {
                     switch (how.handleDims.get(i)) {
-                        case common -> commonLabels[commonIdx++] = addr.label(i);
-                        case separate -> separateLabels[separateIdx++] = addr.label(i);
+                        case common -> commonLabels[commonIdx++] = (int) addr.numericLabel(i);
+                        case separate -> separateLabels[separateIdx++] = (int) addr.numericLabel(i);
                         case concat -> ccDimIndex = addr.numericLabel(i);
                         default -> throw new IllegalArgumentException("cannot handle: " + how.handleDims.get(i));
                     }
                 }
-                TensorAddress commonAddr = TensorAddress.of(commonLabels);
-                TensorAddress separateAddr = TensorAddress.of(separateLabels);
+                TensorAddress commonAddr = TensorAddressAny.ofUnsafe(commonLabels);
+                TensorAddress separateAddr = TensorAddressAny.ofUnsafe(separateLabels);
                 result.lookupCreate(commonAddr).lookupCreate(separateAddr).setValue((int)ccDimIndex, cell.getValue());
             }
             return result;

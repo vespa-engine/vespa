@@ -16,13 +16,7 @@ import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.Name;
-import com.yahoo.tensor.functions.ConstantTensor;
-import com.yahoo.tensor.functions.Slice;
-
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Writes tensors on the JSON format used in Vespa tensor document fields:
@@ -140,9 +134,9 @@ public class JsonFormat {
     }
 
     private static void encodeBlocks(MixedTensor tensor, Cursor cursor) {
-        var mappedDimensions = tensor.type().dimensions().stream().filter(d -> d.isMapped())
+        var mappedDimensions = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped)
                 .map(d -> TensorType.Dimension.mapped(d.name())).toList();
-        if (mappedDimensions.size() < 1) {
+        if (mappedDimensions.isEmpty()) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }
 
@@ -174,23 +168,6 @@ public class JsonFormat {
             cursor.setLong(field, (long)value);
         else
             cursor.setDouble(field, value);
-    }
-
-    private static TensorAddress subAddress(TensorAddress address, TensorType subType, TensorType origType) {
-        TensorAddress.Builder builder = new TensorAddress.Builder(subType);
-        for (TensorType.Dimension dim : subType.dimensions()) {
-            builder.add(dim.name(), address.label(origType.indexOfDimension(dim.name()).
-                    orElseThrow(() -> new IllegalStateException("Could not find mapped dimension index"))));
-        }
-        return builder.build();
-    }
-
-    private static Tensor sliceSubAddress(Tensor tensor, TensorAddress subAddress, TensorType subType) {
-        List<Slice.DimensionValue<Name>> sliceDims = new ArrayList<>(subAddress.size());
-        for (int i = 0; i < subAddress.size(); ++i) {
-            sliceDims.add(new Slice.DimensionValue<>(subType.dimensions().get(i).name(), subAddress.label(i)));
-        }
-        return new Slice<>(new ConstantTensor<>(tensor), sliceDims).evaluate();
     }
 
     /** Deserializes the given tensor from JSON format */
@@ -420,9 +397,7 @@ public class JsonFormat {
             if (decoded.length == 0) {
                 throw new IllegalArgumentException("The block value string does not contain any values");
             }
-            for (int i = 0; i < decoded.length; i++) {
-                values[i] = decoded[i];
-            }
+            System.arraycopy(decoded, 0, values, 0, decoded.length);
         } else {
             throw new IllegalArgumentException("Expected a block to contain an array of values");
         }

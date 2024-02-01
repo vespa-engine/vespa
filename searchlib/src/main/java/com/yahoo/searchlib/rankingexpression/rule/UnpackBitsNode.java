@@ -11,11 +11,9 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 import java.util.Objects;
 
 /**
@@ -26,7 +24,7 @@ import java.util.Objects;
 @Beta
 public class UnpackBitsNode extends CompositeNode {
 
-    private static String operationName = "unpack_bits";
+    private static final String operationName = "unpack_bits";
     private enum EndianNess {
         BIG_ENDIAN("big"), LITTLE_ENDIAN("little");
 
@@ -121,9 +119,9 @@ public class UnpackBitsNode extends CompositeNode {
                     var dim = inputType.dimensions().get(i);
                     if (dim.name().equals(meta.unpackDimension())) {
                         long newIdx = oldAddr.numericLabel(i) * 8 + bitIdx;
-                        addrBuilder.add(dim.name(), String.valueOf(newIdx));
+                        addrBuilder.add(dim.name(), newIdx);
                     } else {
-                        addrBuilder.add(dim.name(), oldAddr.label(i));
+                        addrBuilder.add(dim.name(), (int) oldAddr.numericLabel(i));
                     }
                 }
                 var newAddr = addrBuilder.build();
@@ -152,7 +150,6 @@ public class UnpackBitsNode extends CompositeNode {
         if (lastDim.size().isEmpty()) {
             throw new IllegalArgumentException("bad " + operationName + "; last indexed dimension must be bound, but type was: " + inputType);
         }
-        List<TensorType.Dimension> outputDims = new ArrayList<>();
         var ttBuilder = new TensorType.Builder(targetCellType);
         for (var dim : inputType.dimensions()) {
             if (dim.name().equals(lastDim.name())) {
