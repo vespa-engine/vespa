@@ -5,34 +5,10 @@ namespace=vespa.config.content.core
 ## Keep in sync with #stor-filestor:num_visitor_threads
 visitorthreads int default=16 restart
 
-## Default timeout of visitors that loses contact with client (in seconds)
-disconnectedvisitortimeout int default=0 restart
-
-## Time period (in seconds) in which to ignore requests to visitors that doesnt
-## exist anymore. (Normal for visitors to get some messages right after
-## aborting, logging them as faults instead after this timeout has passed.)
-ignorenonexistingvisitortimelimit int default=300 restart
-
 ## The number of buckets that are visited in parallel in a visitor visiting
 ## multiple buckets. Default is 8, meaning if you send a create visitor to visit
 ## 100 buckets, 8 of them will be visited in parallel.
 defaultparalleliterators int default=8
-
-## Default number of maximum client replies pending.
-defaultpendingmessages int default=32
-
-## Default size of docblocks used to transfer visitor data.
-defaultdocblocksize int default=4190208
-
-## Default docblock timeout in ms used to transfer visitor data.
-## Currently defaults to a day. This is to avoid slow visitor target problems,
-## getting data resent faster than it can process, and since there are very few
-## reasons to actually time out
-defaultdocblocktimeout int default=180000
-
-## Default timeout of visitor info messages: Progress and error reports.
-## If these time out, the visitor will be aborted on the storage node.
-defaultinfotimeout int default=60000
 
 ## Max concurrent visitors (legacy)
 maxconcurrentvisitors int default=64
