@@ -193,7 +193,7 @@ Visitor::Visitor(StorageComponent& component)
       _trace(DEFAULT_TRACE_MEMORY_LIMIT),
       _messageHandler(nullptr),
       _messageSession(),
-      _documentPriority(documentapi::Priority::PRI_NORMAL_1),
+      _documentPriority(documentapi::Priority::PRI_NORMAL_3),
       _id(),
       _controlDestination(),
       _dataDestination(),
@@ -209,7 +209,7 @@ Visitor::~Visitor()
 void
 Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
 {
-    assert(cmd.get());
+    assert(cmd);
     if (!isRunning()) return;
     cmd->setRoute(*_dataDestination);
 
@@ -263,10 +263,10 @@ Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
 void
 Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd)
 {
-    assert(cmd.get());
+    assert(cmd);
     if (!isRunning()) return;
 
-    if (_controlDestination->toString().length()) {
+    if (!_controlDestination->toString().empty()) {
         cmd->setRoute(*_controlDestination);
         cmd->setPriority(_documentPriority);
         cmd->setTimeRemaining(_visitorInfoTimeout);
@@ -336,7 +336,7 @@ Visitor::forceClose()
 void
 Visitor::sendReplyOnce()
 {
-    assert(_initiatingCmd.get());
+    assert(_initiatingCmd);
     if (!_hasSentReply) {
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
@@ -523,7 +523,7 @@ Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
 {
     _priority = initiatingCmd->getPriority();
     _timeToDie = capped_future(_component.getClock().getMonotonicTime(), timeout);
-    if (_initiatingCmd.get()) {
+    if (_initiatingCmd) {
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
         reply->setResult(api::ReturnCode::ABORTED);
         _messageHandler->send(reply);
@@ -925,7 +925,7 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
         }
         out << "</td></tr>\n";
         out << "<tr><td>Document selection</td><td>";
-        if (_documentSelection.get()) {
+        if (_documentSelection) {
             out << xml_content_escaped(_documentSelection->toString());
         } else {
             out << "nil";
