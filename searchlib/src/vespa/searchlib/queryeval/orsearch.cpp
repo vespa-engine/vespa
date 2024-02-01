@@ -75,8 +75,10 @@ private:
 template <typename Unpack>
 SearchIterator::UP create_strict_or(std::vector<SearchIterator::UP> children, const Unpack &unpack, OrSearch::StrictImpl strict_impl) {
     if (strict_impl == OrSearch::StrictImpl::HEAP) {
-        if (children.size() <= 0xff) {
+        if (children.size() <= 0x70) {
             return std::make_unique<StrictHeapOrSearch<Unpack,LeftArrayHeap,uint8_t>>(std::move(children), unpack);
+        } else if (children.size() <= 0xff) {
+            return std::make_unique<StrictHeapOrSearch<Unpack,LeftHeap,uint8_t>>(std::move(children), unpack);
         } else if (children.size() <= 0xffff) {
             return std::make_unique<StrictHeapOrSearch<Unpack,LeftHeap,uint16_t>>(std::move(children), unpack);
         } else {

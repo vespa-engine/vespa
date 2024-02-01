@@ -22,8 +22,9 @@ using TMD = search::fef::TermFieldMatchData;
 using vespalib::make_string_short::fmt;
 using Impl = OrSearch::StrictImpl;
 
-double budget = 0.25;
-size_t bench_docs = 1000;
+double budget = 5.0;
+size_t bench_docs = 10'000'000;
+bool bench_mode = false;
 constexpr uint32_t default_seed = 5489u;
 std::mt19937 gen(default_seed);
 
@@ -279,6 +280,10 @@ TEST(OrSpeed, or_seek_unpack) {
 }
 
 TEST(OrSpeed, bm_array_vs_bitvector) {
+    if (!bench_mode) {
+        fprintf(stdout, "[ SKIPPING ] run with 'bench' parameter to activate\n");
+        return;
+    }
     for (size_t one_of: {16, 32, 64}) {
         double target = 1.0 / one_of;
         size_t hits = target * bench_docs;
@@ -294,8 +299,12 @@ TEST(OrSpeed, bm_array_vs_bitvector) {
 }
 
 TEST(OrSpeed, bm_strict_or) {
-    for (double target: {0.001, 0.01, 0.1, 1.0, 10.0}) {
-        for (size_t child_cnt: {2, 5, 10, 100, 1000}) {
+    if (!bench_mode) {
+        fprintf(stdout, "[ SKIPPING ] run with 'bench' parameter to activate\n");
+        return;
+    }
+    for (double target: {0.001, 0.01, 0.1, 0.5, 1.0, 10.0}) {
+        for (size_t child_cnt: {2, 3, 4, 5, 10, 100, 250, 500, 1000}) {
             for (bool optimize: {false, true}) {
                 OrSetup setup(bench_docs);
                 size_t part = setup.per_child(target, child_cnt);
@@ -317,9 +326,8 @@ TEST(OrSpeed, bm_strict_or) {
 
 int main(int argc, char **argv) {
     if (argc > 1 && (argv[1] == std::string("bench"))) {
-        budget = 5.0;
-        bench_docs = 10'000'000;
         fprintf(stderr, "running in benchmarking mode\n");
+        bench_mode = true;
         ++argv;
         --argc;
     }
