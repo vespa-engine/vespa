@@ -118,11 +118,8 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return true;
     }
 
-    private TensorAddress rename(TensorAddress address, int[] toIndexes) {
-        String[] reorderedLabels = new String[toIndexes.length];
-        for (int i = 0; i < toIndexes.length; i++)
-            reorderedLabels[toIndexes[i]] = address.label(i);
-        return TensorAddress.of(reorderedLabels);
+    private static TensorAddress rename(TensorAddress address, int[] toIndexes) {
+        return address.partialCopy(toIndexes);
     }
 
     private String toVectorString(List<String> elements) {

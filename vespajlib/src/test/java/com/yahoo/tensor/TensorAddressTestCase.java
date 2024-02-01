@@ -73,4 +73,11 @@ public class TensorAddressTestCase {
         }
     }
 
+    @Test
+    void testPartialCopy() {
+        var abcd = ofLabels("a", "b", "c", "d");
+        int[] o_1_3_2 = {1,3,2};
+        equal(ofLabels("b", "d", "c"), abcd.partialCopy(o_1_3_2));
+    }
+
 }
