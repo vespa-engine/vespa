@@ -27,6 +27,7 @@ response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE re
 ## When merging, if we find more than this number of documents that exist on all
 ## of the same copies, send a separate apply bucket diff with these entries
 ## to an optimized merge chain that guarantuees minimum data transfer.
+## TODO GC and hardcode
 common_merge_chain_optimalization_minimum_size int default=64 restart
 
 ## Chunksize to use while merging buckets between nodes.
@@ -37,6 +38,7 @@ bucket_merge_chunk_size int default=16772216 restart
 ## Whether or not to enable the multibit split optimalization. This is useful
 ## if splitting is expensive, but listing document identifiers is fairly cheap.
 ## This is true for memfile persistence layer, but not for vespa search.
+## TODO verify its usage
 enable_multibit_split_optimalization bool default=true restart
 
 ## Whether or not to use async message handling when scheduling storage messages from FileStorManager.
@@ -71,8 +73,3 @@ async_operation_throttler.window_size_backoff double default=0.95
 async_operation_throttler.min_window_size int default=20
 async_operation_throttler.max_window_size int default=-1 # < 0 implies INT_MAX
 async_operation_throttler.resize_rate double default=3.0
-## If true, each put/remove contained within a merge is individually throttled as if it
-## were a put/remove from a client. If false, merges are throttled at a persistence thread
-## level, i.e. per ApplyBucketDiff message, regardless of how many document operations
-## are contained within.
-async_operation_throttler.throttle_individual_merge_feed_ops bool default=true

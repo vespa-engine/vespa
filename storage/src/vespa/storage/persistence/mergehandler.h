@@ -20,7 +20,6 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/storageframework/generic/clock/time.h>
-#include <atomic>
 
 namespace vespalib { class ISequencedTaskExecutor; }
 namespace document { class Document; }
@@ -82,15 +81,6 @@ public:
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
     void drain_async_writes();
 
-    // Thread safe, as it's set during live reconfig from the main filestor manager.
-    void set_throttle_merge_feed_ops(bool throttle) noexcept {
-        _throttle_merge_feed_ops.store(throttle, std::memory_order_relaxed);
-    }
-
-    [[nodiscard]] bool throttle_merge_feed_ops() const noexcept {
-        return _throttle_merge_feed_ops.load(std::memory_order_relaxed);
-    }
-
 private:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
     const framework::Clock   &_clock;
@@ -101,7 +91,6 @@ private:
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
     vespalib::ISequencedTaskExecutor& _executor;
-    std::atomic<bool>         _throttle_merge_feed_ops;
 
     MessageTrackerUP handleGetBucketDiffStage2(api::GetBucketDiffCommand&, MessageTrackerUP) const;
     /** Returns a reply if merge is complete */

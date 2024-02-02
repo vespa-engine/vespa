@@ -2,7 +2,6 @@
 
 #include "mergehandler.h"
 #include "persistenceutil.h"
-#include "shared_operation_throttler.h"
 #include "apply_bucket_diff_entry_complete.h"
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
@@ -37,8 +36,7 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
-      _executor(executor),
-      _throttle_merge_feed_ops(true)
+      _executor(executor)
 {
 }
 
@@ -511,8 +509,7 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
                              const api::ApplyBucketDiffCommand::Entry& e,
                              const document::DocumentTypeRepo& repo) const
 {
-    auto throttle_token = throttle_merge_feed_ops() ? _env._fileStorHandler.operation_throttler().blocking_acquire_one()
-                                                    : vespalib::SharedOperationThrottler::Token();
+    auto throttle_token = _env._fileStorHandler.operation_throttler().blocking_acquire_one();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
