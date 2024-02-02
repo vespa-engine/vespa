@@ -25,9 +25,12 @@ import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGES
 /**
  * A SPLADE embedder that is embedding text to a 1-d mapped tensor. For interpretability, the tensor labels
  * are the subword strings from the wordpiece vocabulary that has a score above a threshold (default 0.0).
+ *
+ * @author bergum
  */
 @Beta
 public class SpladeEmbedder extends AbstractComponent implements Embedder {
+
     private final Embedder.Runtime runtime;
     private final String inputIdsName;
     private final String attentionMaskName;
@@ -110,7 +113,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
     public Tensor embed(String text, Context context, TensorType tensorType) {
         if (!verifyTensorType(tensorType)) {
             throw new IllegalArgumentException("Invalid splade embedder tensor destination. " +
-                    "Wanted a mapped 1-d tensor, got " + tensorType);
+                                               "Wanted a mapped 1-d tensor, got " + tensorType);
         }
         var start = System.nanoTime();
 
@@ -132,17 +135,17 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         return spladeTensor;
     }
 
-
     /**
      * Sparsify the output tensor by applying a threshold on the log of the relu of the output.
      * This uses generic tensor reduce+map, and is slightly slower than a custom unrolled variant.
+     *
      * @param modelOutput the model output tensor of shape d1,dim where d1 is the sequence length and dim is size
-     *                of the vocabulary
+     *                    of the vocabulary
      * @param tensorType the type of the destination tensor
      * @return A mapped tensor with the terms from the vocab that has a score above the threshold
      */
     private Tensor sparsifyReduce(Tensor modelOutput, TensorType tensorType) {
-        //Remove batch dim, batch size of 1
+        // Remove batch dim, batch size of 1
         Tensor output = modelOutput.reduce(Reduce.Aggregator.max, "d0", "d1");
         Tensor logOfRelu = output.map((x) -> Math.log(1 + (x > 0 ? x : 0)));
         IndexedTensor vocab = (IndexedTensor) logOfRelu;
@@ -227,6 +230,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         }
         return builder.build();
     }
+
     @Override
     public void deconstruct() {
         evaluator.close();

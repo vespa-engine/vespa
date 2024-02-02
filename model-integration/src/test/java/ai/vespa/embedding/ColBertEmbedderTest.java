@@ -19,6 +19,9 @@ import java.util.Set;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
+/**
+ * @author bergum
+ */
 public class ColBertEmbedderTest {
 
     @Test
@@ -67,23 +70,24 @@ public class ColBertEmbedderTest {
         assertEmbed("tensor<float>(qt{},x[128])", "this is a query", queryContext);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            //throws because int8 is not supported for query context
+            // throws because int8 is not supported for query context
             assertEmbed("tensor<int8>(qt{},x[16])", "this is a query", queryContext);
         });
+
         assertThrows(IllegalArgumentException.class, () -> {
-            //throws because 16 is less than model output (128) and we want float
+            // throws because 16 is less than model output (128) and we want float
             assertEmbed("tensor<float>(qt{},x[16])", "this is a query", queryContext);
         });
 
         assertThrows(IllegalArgumentException.class, () -> {
-            //throws because 128/8 does not fit into 15
+            // throws because 128/8 does not fit into 15
             assertEmbed("tensor<int8>(qt{},x[15])", "this is a query", indexingContext);
         });
     }
 
     @Test
     public void testInputTensorsWordPiece() {
-        //wordPiece tokenizer("this is a query !") -> [2023, 2003, 1037, 23032, 999]
+        // wordPiece tokenizer("this is a query !") -> [2023, 2003, 1037, 23032, 999]
         List<Long> tokens = List.of(2023L, 2003L, 1037L, 23032L, 999L);
         ColBertEmbedder.TransformerInput input = embedder.buildTransformerInput(tokens,10,true);
         assertEquals(10,input.inputIds().size());
@@ -100,7 +104,7 @@ public class ColBertEmbedderTest {
 
     @Test
     public void testInputTensorsSentencePiece() {
-        //Sentencepiece tokenizer("this is a query !") -> [903, 83, 10, 41, 1294, 711]
+        // Sentencepiece tokenizer("this is a query !") -> [903, 83, 10, 41, 1294, 711]
         // ! is mapped to 711 and is a punctuation character
         List<Long> tokens = List.of(903L, 83L, 10L, 41L, 1294L, 711L);
         ColBertEmbedder.TransformerInput input = multiLingualEmbedder.buildTransformerInput(tokens,10,true);
@@ -109,7 +113,7 @@ public class ColBertEmbedderTest {
         assertEquals(List.of(0L, 3L, 903L, 83L, 10L, 41L, 1294L, 711L, 2L, 250001L),input.inputIds());
         assertEquals(List.of(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 0L),input.attentionMask());
 
-        //NO padding for document side and 711 (punctuation) is now filtered out
+        // NO padding for document side and 711 (punctuation) is now filtered out
         input = multiLingualEmbedder.buildTransformerInput(tokens,10,false);
         assertEquals(8,input.inputIds().size());
         assertEquals(8,input.attentionMask().size());
@@ -156,12 +160,12 @@ public class ColBertEmbedderTest {
             sb.append(" ");
         }
         String text = sb.toString();
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         int n = 1000;
         for (int i = 0; i < n; i++) {
             assertEmbed("tensor<float>(dt{},x[128])", text, indexingContext);
         }
-        Long elapsed = (System.currentTimeMillis() - now);
+        long elapsed = (System.currentTimeMillis() - now);
         System.out.println("Elapsed time: " + elapsed + " ms");
     }
 
@@ -170,7 +174,7 @@ public class ColBertEmbedderTest {
         Tensor result = embedder.embed(text, context, destType);
         assertEquals(destType,result.type());
         MixedTensor mixedTensor = (MixedTensor) result;
-        if(context == queryContext) {
+        if (context == queryContext) {
             assertEquals(32*mixedTensor.denseSubspaceSize(),mixedTensor.size());
         }
         return result;
@@ -200,12 +204,14 @@ public class ColBertEmbedderTest {
     static final ColBertEmbedder multiLingualEmbedder;
     static final Embedder.Context indexingContext;
     static final Embedder.Context queryContext;
+
     static {
         indexingContext = new Embedder.Context("schema.indexing");
         queryContext = new Embedder.Context("query(qt)");
         embedder = getEmbedder();
         multiLingualEmbedder = getMultiLingualEmbedder();
     }
+
     private static ColBertEmbedder getEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
@@ -235,4 +241,5 @@ public class ColBertEmbedderTest {
 
         return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
+
 }

@@ -61,5 +61,6 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
     }
+
 }
 

@@ -634,6 +634,7 @@ public interface Tensor {
             public Builder value(double cellValue) {
                 return tensorBuilder.cell(addressBuilder.build(), cellValue);
             }
+
             public Builder value(float cellValue) {
                 return tensorBuilder.cell(addressBuilder.build(), cellValue);
             }
