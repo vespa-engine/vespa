@@ -6,13 +6,14 @@
 #include "bucketownership.h"
 #include "operation_routing_snapshot.h"
 #include <vespa/document/bucket/bucketspace.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storageapi/defs.h>
 
-namespace document { class Bucket; }
+namespace document {
+    class Bucket;
+    class DocumentId;
+}
 namespace storage::lib { class ClusterStateBundle; }
-
+namespace storage { class DistributorConfiguration; }
 namespace storage::distributor {
 
 class PendingMessageTracker;

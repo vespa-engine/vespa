@@ -2,7 +2,6 @@
 #pragma once
 
 #include "replica_counting_mode.h"
-#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/time.h>
 
 namespace vespa::config::content::core::internal {
@@ -11,6 +10,8 @@ namespace vespa::config::content::core::internal {
 }
 
 namespace storage {
+
+class StorageComponent;
 
 class DistributorConfiguration {
 public:

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorconfiguration.h"
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/document/select/parser.h>

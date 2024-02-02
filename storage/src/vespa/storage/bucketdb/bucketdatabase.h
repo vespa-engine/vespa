@@ -8,7 +8,6 @@
 #include "read_guard.h"
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/storage/bucketdb/bucketinfo.h>
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage {
