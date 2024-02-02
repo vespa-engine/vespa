@@ -174,12 +174,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_enable_two_phase_garbage_collection(bool use_two_phase) {
-        configure_stripe_with([&](auto& builder) {
-            builder.enableTwoPhaseGarbageCollection = use_two_phase;
-        });
-    }
-
     void configure_enable_condition_probing(bool enable_probing) {
         configure_stripe_with([&](auto& builder) {
             builder.enableConditionProbing = enable_probing;
@@ -947,19 +941,6 @@ TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
     _stripe->flush_and_close();
     ASSERT_EQ(1, _sender.replies().size());
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
-}
-
-TEST_F(DistributorStripeTest, enable_two_phase_gc_config_is_propagated_to_internal_config)
-{
-    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    EXPECT_TRUE(getConfig().enable_two_phase_garbage_collection());
-
-    configure_enable_two_phase_garbage_collection(true);
-    EXPECT_TRUE(getConfig().enable_two_phase_garbage_collection());
-
-    configure_enable_two_phase_garbage_collection(false);
-    EXPECT_FALSE(getConfig().enable_two_phase_garbage_collection());
 }
 
 TEST_F(DistributorStripeTest, enable_condition_probing_config_is_propagated_to_internal_config)
