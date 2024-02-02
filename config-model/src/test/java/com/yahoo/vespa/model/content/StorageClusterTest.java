@@ -232,7 +232,6 @@ public class StorageClusterTest {
             var config = filestorConfigFromProducer(stc);
 
             assertEquals(7, config.num_threads());
-            assertFalse(config.enable_multibit_split_optimalization());
             assertEquals(2, config.num_response_threads());
         }
         {
@@ -276,7 +275,6 @@ public class StorageClusterTest {
             var config = filestorConfigFromProducer(stc);
 
             assertEquals(4, config.num_threads());
-            assertFalse(config.enable_multibit_split_optimalization());
         }
         {
             assertEquals(1, stc.getChildren().size());

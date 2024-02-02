@@ -70,7 +70,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         if (numThreads != null) {
             builder.num_threads(numThreads);
         }
-        builder.enable_multibit_split_optimalization(cluster.getPersistence().enableMultiLevelSplitting());
         builder.num_response_threads(responseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
