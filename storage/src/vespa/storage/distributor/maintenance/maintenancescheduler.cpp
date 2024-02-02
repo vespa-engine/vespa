@@ -19,8 +19,7 @@ MaintenanceScheduler::MaintenanceScheduler(
     : _operationGenerator(operationGenerator),
       _priorityDb(priorityDb),
       _pending_window_checker(pending_window_checker),
-      _operationStarter(operationStarter),
-      _implicitly_clear_priority_on_schedule(false)
+      _operationStarter(operationStarter)
 {
 }
 
@@ -46,7 +45,7 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     // maintenance scheduling until we're able to schedule the next possible bucket.
     // The inverse is the case for other maintenance operations.
     const bool is_activation = has_bucket_activation_priority(mostImportant);
-    if (_implicitly_clear_priority_on_schedule && !is_activation) {
+    if (!is_activation) {
         // If we can't start the operation, move on to the next bucket. Bucket will be
         // re-prioritized when the distributor stripe next scans it.
         clearPriority(mostImportant);
@@ -54,7 +53,7 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     if (!startOperation(mostImportant)) {
         return WaitTimeMs(1);
     }
-    if (!_implicitly_clear_priority_on_schedule || is_activation) {
+    if (is_activation) {
         clearPriority(mostImportant);
     }
     return WaitTimeMs(0);
@@ -68,9 +67,7 @@ MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
         return false;
     }
     // If pending window is full nothing of equal or lower priority can be scheduled, so no point in trying.
-    if (_implicitly_clear_priority_on_schedule &&
-        !_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority())))
-    {
+    if (!_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority()))) {
         return false;
     }
     if (currentMode == RECOVERY_SCHEDULING_MODE) {
@@ -81,8 +78,7 @@ MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
 }
 
 bool
-MaintenanceScheduler::possibleToScheduleInEmergency(
-        const PrioritizedBucket& bucket) const
+MaintenanceScheduler::possibleToScheduleInEmergency(const PrioritizedBucket& bucket) const
 {
     return bucket.moreImportantThan(MaintenancePriority::VERY_HIGH);
 }
@@ -90,8 +86,7 @@ MaintenanceScheduler::possibleToScheduleInEmergency(
 void
 MaintenanceScheduler::clearPriority(const PrioritizedBucket& bucket)
 {
-    _priorityDb.setPriority(PrioritizedBucket(bucket.getBucket(),
-                                              MaintenancePriority::NO_MAINTENANCE_NEEDED));
+    _priorityDb.setPriority(PrioritizedBucket(bucket.getBucket(), MaintenancePriority::NO_MAINTENANCE_NEEDED));
 }
 
 OperationStarter::Priority
@@ -122,8 +117,7 @@ MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
     if (!operation) {
         return true;
     }
-    OperationStarter::Priority operationPriority(
-            convertToOperationPriority(bucket.getPriority()));
+    OperationStarter::Priority operationPriority(convertToOperationPriority(bucket.getPriority()));
     return _operationStarter.start(operation, operationPriority);
 }
 

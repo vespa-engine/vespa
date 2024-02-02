@@ -172,12 +172,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_implicitly_clear_priority_on_schedule(bool implicitly_clear) {
-        configure_stripe_with([&](auto& builder) {
-            builder.implicitlyClearBucketPriorityOnSchedule = implicitly_clear;
-        });
-    }
-
     void configure_use_unordered_merge_chaining(bool use_unordered) {
         configure_stripe_with([&](auto& builder) {
             builder.useUnorderedMergeChaining = use_unordered;
@@ -200,10 +194,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         configure_stripe_with([&](auto& builder) {
             builder.enableOperationCancellation = enable_cancellation;
         });
-    }
-
-    [[nodiscard]] bool scheduler_has_implicitly_clear_priority_on_schedule_set() const noexcept {
-        return _stripe->_scheduler->implicitly_clear_priority_on_schedule();
     }
 
     [[nodiscard]] bool distributor_owns_bucket_in_current_and_pending_states(document::BucketId bucket_id) const {
@@ -901,17 +891,6 @@ TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config
 
     configure_max_activation_inhibited_out_of_sync_groups(0);
     EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
-}
-
-TEST_F(DistributorStripeTest, implicitly_clear_priority_on_schedule_config_is_propagated_to_scheduler)
-{
-    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    configure_implicitly_clear_priority_on_schedule(true);
-    EXPECT_TRUE(scheduler_has_implicitly_clear_priority_on_schedule_set());
-
-    configure_implicitly_clear_priority_on_schedule(false);
-    EXPECT_FALSE(scheduler_has_implicitly_clear_priority_on_schedule_set());
 }
 
 TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)

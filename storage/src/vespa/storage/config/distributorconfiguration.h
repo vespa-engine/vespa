@@ -230,9 +230,6 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
-    [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
-        return _implicitly_clear_priority_on_schedule;
-    }
     void set_use_unordered_merge_chaining(bool unordered) noexcept {
         _use_unordered_merge_chaining = unordered;
     }
@@ -301,7 +298,6 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
-    bool _implicitly_clear_priority_on_schedule;
     bool _use_unordered_merge_chaining;
     bool _inhibit_default_merges_when_global_merges_pending;
     bool _enable_two_phase_garbage_collection;
