@@ -37,7 +37,6 @@ import com.yahoo.language.Linguistics;
 
 /**
  * @author Simon Thoresen Hult
- * @version $Id$
  */
 public class IndexingParser {
 
@@ -386,11 +385,16 @@ Expression echoExp() : { }
 
 Expression embedExp() :
 {
-    String val = "";
+    String embedderId = "";
+    String embedderArgument;
+    List<String> embedderArguments = new ArrayList<String>();
 }
 {
-    ( <EMBED> [ LOOKAHEAD(2) val = identifier() ] )
-    { return new EmbedExpression(embedders, val); }
+    (
+      <EMBED> [ LOOKAHEAD(2) embedderId = identifier() ]
+      ( LOOKAHEAD(2) embedderArgument = identifier() { embedderArguments.add(embedderArgument); } )*
+    )
+    { return new EmbedExpression(embedders, embedderId, embedderArguments); }
 }
 
 Expression exactExp() : { }

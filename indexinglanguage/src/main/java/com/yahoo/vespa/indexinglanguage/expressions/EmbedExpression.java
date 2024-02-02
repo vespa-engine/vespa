@@ -27,6 +27,7 @@ public class EmbedExpression extends Expression  {
 
     private final Embedder embedder;
     private final String embedderId;
+    private final List<String> embedderArguments;
 
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
@@ -34,21 +35,22 @@ public class EmbedExpression extends Expression  {
     /** The target type we are embedding into. */
     private TensorType targetType;
 
-    public EmbedExpression(Map<String, Embedder> embedders, String embedderId) {
+    public EmbedExpression(Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         super(null);
         this.embedderId = embedderId;
+        this.embedderArguments = List.copyOf(embedderArguments);
 
-        boolean embedderIdProvided = embedderId != null && embedderId.length() > 0;
+        boolean embedderIdProvided = embedderId != null && !embedderId.isEmpty();
 
         if (embedders.size() == 0) {
             throw new IllegalStateException("No embedders provided");  // should never happen
         }
+        else if (embedders.size() == 1 && ! embedderIdProvided) {
+            this.embedder = embedders.entrySet().stream().findFirst().get().getValue();
+        }
         else if (embedders.size() > 1 && ! embedderIdProvided) {
             this.embedder = new Embedder.FailingEmbedder("Multiple embedders are provided but no embedder id is given. " +
                                                          "Valid embedders are " + validEmbedders(embedders));
-        }
-        else if (embedders.size() == 1 && ! embedderIdProvided) {
-            this.embedder = embedders.entrySet().stream().findFirst().get().getValue();
         }
         else if ( ! embedders.containsKey(embedderId)) {
             this.embedder = new Embedder.FailingEmbedder("Can't find embedder '" + embedderId + "'. " +
@@ -91,17 +93,51 @@ public class EmbedExpression extends Expression  {
     private Tensor embedArrayValue(ExecutionContext context) {
         var input = (Array<StringFieldValue>)context.getValue();
         var builder = Tensor.Builder.of(targetType);
+        if (targetType.rank() == 2)
+            embedArrayValueToRank2Tensor(input, builder, context);
+        else
+            embedArrayValueToRank3Tensor(input, builder, context);
+        return builder.build();
+    }
+
+    private void embedArrayValueToRank2Tensor(Array<StringFieldValue> input,
+                                              Tensor.Builder builder,
+                                              ExecutionContext context) {
+        String mappedDimension = targetType.mappedSubtype().dimensions().get(0).name();
+        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
         for (int i = 0; i < input.size(); i++) {
             Tensor tensor = embed(input.get(i).getString(), targetType.indexedSubtype(), context);
             for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
                 Tensor.Cell cell = cells.next();
                 builder.cell()
-                       .label(targetType.mappedSubtype().dimensions().get(0).name(), i)
-                       .label(targetType.indexedSubtype().dimensions().get(0).name(), cell.getKey().numericLabel(0))
+                       .label(mappedDimension, i)
+                       .label(indexedDimension, cell.getKey().numericLabel(0))
                        .value(cell.getValue());
             }
         }
-        return builder.build();
+    }
+
+    private void embedArrayValueToRank3Tensor(Array<StringFieldValue> input,
+                                              Tensor.Builder builder,
+                                              ExecutionContext context) {
+        String outerMappedDimension = embedderArguments.get(0);
+        String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
+        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
+        long indexedDimensionSize = targetType.indexedSubtype().dimensions().get(0).size().get();
+        var innerType = new TensorType.Builder().mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
+        int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
+        int indexedDimensionIndex = innerType.indexOfDimensionAsInt(indexedDimension);
+        for (int i = 0; i < input.size(); i++) {
+            Tensor tensor = embed(input.get(i).getString(), innerType, context);
+            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
+                Tensor.Cell cell = cells.next();
+                builder.cell()
+                       .label(outerMappedDimension, i)
+                       .label(innerMappedDimension, cell.getKey().label(innerMappedDimensionIndex))
+                       .label(indexedDimension, cell.getKey().numericLabel(indexedDimensionIndex))
+                       .value(cell.getValue());
+            }
+        }
     }
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
@@ -120,7 +156,17 @@ public class EmbedExpression extends Expression  {
         targetType = toTargetTensor(context.getInputType(this, outputField));
         if ( ! validTarget(targetType))
             throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor," +
-                                                  "an array of dense 1d tensors, or a mixed 2d tensor");
+                                                  "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
+        if (targetType.rank() == 3) {
+            if (embedderArguments.size() != 1)
+                throw new VerificationException(this, "When the embedding target field is a 3d tensor " +
+                                                      "the name of the tensor dimension that corresponds to the input array elements must " +
+                                                      "be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...");
+            if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0)))
+                throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
+                                                      "is not a sparse dimension of the target type " + targetType);
+        }
+
         context.setValueType(createdOutputType());
     }
 
@@ -137,11 +183,12 @@ public class EmbedExpression extends Expression  {
     }
 
     private boolean validTarget(TensorType target) {
-        if (target.dimensions().size() == 1) //indexed or mapped 1d tensor
+        if (target.rank() == 1) // indexed or mapped 1d tensor
             return true;
-        if (target.dimensions().size() == 2 && target.indexedSubtype().rank() == 1
-                && target.mappedSubtype().rank() == 1)
-            return true; //mixed mapped-indexed 2d tensor
+        if (target.rank() == 2 && target.indexedSubtype().rank() == 1)
+            return true; // mixed 2d tensor
+        if (target.rank() == 3 && target.indexedSubtype().rank() == 1)
+            return true; // mixed 3d tensor
         return false;
     }
 
