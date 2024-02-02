@@ -47,7 +47,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
-      _prioritize_global_bucket_merges(true),
       _implicitly_clear_priority_on_schedule(false),
       _use_unordered_merge_chaining(false),
       _inhibit_default_merges_when_global_merges_pending(false),
@@ -171,7 +170,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
-    _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _implicitly_clear_priority_on_schedule = config.implicitlyClearBucketPriorityOnSchedule;
     _use_unordered_merge_chaining = config.useUnorderedMergeChaining;

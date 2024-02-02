@@ -807,9 +807,7 @@ SynchronizeAndMoveStateChecker::check(const Context &c) const
                                                    c.distributorConfig.getMaxNodesPerMerge());
         op->setDetailedReason(result.reason());
         MaintenancePriority::Priority schedPri;
-        if ((c.getBucketSpace() == document::FixedBucketSpaces::default_space())
-            || !c.distributorConfig.prioritize_global_bucket_merges())
-        {
+        if (c.getBucketSpace() == document::FixedBucketSpaces::default_space()) {
             schedPri = (result.needsMoveOnly() ? MaintenancePriority::LOW : MaintenancePriority::MEDIUM);
             op->setPriority(result.priority());
         } else {

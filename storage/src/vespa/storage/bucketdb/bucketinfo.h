@@ -91,7 +91,7 @@ public:
     /**
      * Returns the number of nodes this entry has.
      */
-    uint32_t getNodeCount() const noexcept { return static_cast<uint32_t>(_nodes.size()); }
+    uint16_t getNodeCount() const noexcept { return static_cast<uint16_t>(_nodes.size()); }
 
     /**
      * Returns a list of the nodes this entry has.
