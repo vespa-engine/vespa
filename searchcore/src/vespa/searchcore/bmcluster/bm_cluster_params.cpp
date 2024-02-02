@@ -18,7 +18,6 @@ BmClusterParams::BmClusterParams()
       _indexing_sequencer(),
       _max_merges_per_node(16),     // Same default as in stor-server.def
       _max_merge_queue_size(1024),  // Same default as in stor-server.def
-      _max_pending_idealstate_operations(100), // Same default as in stor-distributormanager.def
       _mbus_distributor_node_max_pending_count(),
       _num_nodes(1),
       _nodes_per_group(1),

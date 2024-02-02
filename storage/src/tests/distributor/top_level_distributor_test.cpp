@@ -290,7 +290,6 @@ TEST_F(TopLevelDistributorTest, metric_update_hook_updates_pending_maintenance_m
     setup_distributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // To ensure we count all operations, not just those fitting within the pending window.
     auto cfg = current_distributor_config();
-    cfg.maxpendingidealstateoperations = 1; // FIXME STRIPE this does not actually seem to be used...!
     reconfigure(cfg);
 
     // 1 bucket must be merged, 1 must be split, 1 should be activated.

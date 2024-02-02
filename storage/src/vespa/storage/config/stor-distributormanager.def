@@ -1,9 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.content.core
 
-## Maximum number of ideal state operations scheduled by a distributor.
-maxpendingidealstateoperations int default=100
-
 ## The total size of unique documents in a bucket before we split it due to
 ## being too big. By default this is now 16 MB. Should be kept in sync with stor-filestor.def:bucket_merge_chunk_size.
 splitsize int default=16772216
