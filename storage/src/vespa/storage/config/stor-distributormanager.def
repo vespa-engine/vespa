@@ -39,18 +39,6 @@ garbagecollection.interval int default=0
 ## If false, dont do splits inline with feeding.
 inlinebucketsplitting bool default=true
 
-## List of state checkers (ideal state generators) that should be ignored in the cluster.
-## One or more of the following (case insensitive):
-##
-## SynchronizeAndMove
-## DeleteExtraCopies
-## JoinBuckets
-## SplitBucket
-## SplitInconsistentBuckets
-## SetBucketState
-## GarbageCollection
-blockedstatecheckers[] string restart
-
 ## Maximum nodes involved in a merge operation. Currently, this can not be more
 ## than 16 nodes due to protocol limitations. However, decreasing the max may
 ## be useful if 16 node merges ends up too expensive.
@@ -59,60 +47,6 @@ maximum_nodes_per_merge int default=16
 ## For internal in process debugging, it may be useful to not start the
 ## distributor thread to be able to call tick() manually and run single threaded
 start_distributor_thread bool default=true restart
-
-## The number of ticks calls done before a wait is done.  This can be
-## set higher than 10 for the distributor to improve speed of bucket iterations
-## while still keep CPU load low/moderate.
-ticks_before_wait int default=10
-
-## Allow overriding default priorities of certain maintenance operations.
-## This is an advanced feature, do not touch this unless you have a very good
-## reason to do so! Configuring these values wrongly may cause starvation of
-## important operations, leading to unpredictable behavior and/or data loss.
-##
-## Merge used to move data to ideal location
-priority_merge_move_to_ideal_node int default=165
-
-## Merge for copies that have gotten out of sync with each other
-priority_merge_out_of_sync_copies int default=120
-
-## Merge for restoring redundancy of copies
-priority_merge_too_few_copies int default=120
-
-## Merge that involves a global bucket. There are generally significantly fewer such
-## buckets than default-space buckets, and searches to documents in the default space
-## may depend on the presence of (all) global documents. Consequently, this priority
-## should be higher (i.e. numerically smaller) than that of regular merges.
-priority_merge_global_buckets int default=115
-
-## Copy activation when there are no other active copies (likely causing
-## lack of search coverage for that bucket)
-priority_activate_no_existing_active int default=100
-
-## Copy activation when there is already an active copy for the bucket.
-priority_activate_with_existing_active int default=100
-
-## Deletion of bucket copy.
-priority_delete_bucket_copy int default=120
-
-## Joining caused by bucket siblings getting sufficiently small to fit into a
-## single bucket.
-priority_join_buckets int default=155
-
-## Splitting caused by system increasing its minimum distribution bit count.
-priority_split_distribution_bits int default=200
-
-## Splitting due to bucket exceeding max document count or byte size (see
-## splitcount and splitsize config values)
-priority_split_large_bucket int default=175
-
-## Splitting due to buckets being inconsistently split. Should be higher
-## priority than the vast majority of external load.
-priority_split_inconsistent_bucket int default=110
-
-## Background garbage collection. Should be lower priority than external load
-## and other ideal state operations (aside from perhaps minimum bit splitting).
-priority_garbage_collection int default=200
 
 ## The distributor can send joins that "lift" a bucket without any siblings
 ## higher up in the bucket tree hierarchy. The assumption is that if this
@@ -236,15 +170,6 @@ enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=true
 ## This is to reduce the amount of CPU spent on ideal state calculations and bucket DB
 ## accesses when the distributor is heavily loaded with feed operations.
 max_consecutively_inhibited_maintenance_ticks int default=20
-
-## If set, pending merges to buckets in the global bucket space will be prioritized
-## higher than merges to buckets in the default bucket space. This ensures that global
-## documents will be kept in sync without being starved by non-global documents.
-## Note that enabling this feature risks starving default bucket space merges if a
-## resource exhaustion case prevents global merges from completing.
-## This is a live config for that reason, i.e. it can be disabled in an emergency
-## situation if needed.
-prioritize_global_bucket_merges bool default=true
 
 ## If set, activation of bucket replicas is limited to only those replicas that have
 ## bucket info consistent with a majority of the other replicas for that bucket.

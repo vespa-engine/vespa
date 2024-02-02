@@ -10,21 +10,20 @@
 namespace storage {
 
 class DistributorConfiguration {
-public: 
+public:
+    DistributorConfiguration(const DistributorConfiguration& other) = delete;
+    DistributorConfiguration& operator=(const DistributorConfiguration& other) = delete;
     explicit DistributorConfiguration(StorageComponent& component);
     ~DistributorConfiguration();
 
-    struct MaintenancePriorities
-    {
-        // Defaults for these are chosen as those used as the current (non-
-        // configurable) values at the time of implementation.
-        uint8_t mergeMoveToIdealNode {120};
+    struct MaintenancePriorities {
+        uint8_t mergeMoveToIdealNode {165};
         uint8_t mergeOutOfSyncCopies {120};
         uint8_t mergeTooFewCopies {120};
         uint8_t mergeGlobalBuckets {115};
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
-        uint8_t deleteBucketCopy {100};
+        uint8_t deleteBucketCopy {120};
         uint8_t joinBuckets {155};
         uint8_t splitDistributionBits {200};
         uint8_t splitLargeBucket {175};
@@ -53,14 +52,6 @@ public:
 
     void setLastGarbageCollectionChangeTime(vespalib::steady_time lastChangeTime) {
         _lastGarbageCollectionChange = lastChangeTime;
-    }
-
-    bool stateCheckerIsActive(vespalib::stringref stateCheckerName) const {
-        return _blockedStateCheckers.find(stateCheckerName) == _blockedStateCheckers.end();
-    }
-
-    void disableStateChecker(vespalib::stringref stateCheckerName) {
-        _blockedStateCheckers.insert(stateCheckerName);
     }
 
     void setDoInlineSplit(bool value) {
@@ -243,10 +234,6 @@ public:
         return _max_consecutively_inhibited_maintenance_ticks;
     }
 
-    bool prioritize_global_bucket_merges() const noexcept {
-        return _prioritize_global_bucket_merges;
-    }
-
     void set_max_activation_inhibited_out_of_sync_groups(uint32_t max_groups) noexcept {
         _max_activation_inhibited_out_of_sync_groups = max_groups;
     }
@@ -287,9 +274,6 @@ public:
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
-    DistributorConfiguration(const DistributorConfiguration& other);
-    DistributorConfiguration& operator=(const DistributorConfiguration& other);
-    
     StorageComponent& _component;
     
     uint32_t _byteCountSplitLimit;
@@ -309,8 +293,6 @@ private:
 
     uint32_t _minPendingMaintenanceOps;
     uint32_t _maxPendingMaintenanceOps;
-
-    vespalib::hash_set<vespalib::string> _blockedStateCheckers;
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
@@ -332,7 +314,6 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
-    bool _prioritize_global_bucket_merges;
     bool _implicitly_clear_priority_on_schedule;
     bool _use_unordered_merge_chaining;
     bool _inhibit_default_merges_when_global_merges_pending;
@@ -341,9 +322,6 @@ private:
     bool _enable_operation_cancellation;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
-
-    void configureMaintenancePriorities(
-            const vespa::config::content::core::StorDistributormanagerConfig&);
 };
 
 }

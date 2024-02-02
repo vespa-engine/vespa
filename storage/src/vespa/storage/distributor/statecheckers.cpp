@@ -721,7 +721,7 @@ checkForNodesMissingFromIdealState(const StateChecker::Context& c)
                 if (c.idealState().size() > c.entry()->getNodeCount()) {
                     ret.markMissingReplica(node, mp.mergeTooFewCopies);
                 } else {
-                    ret.markMoveToIdealLocation(node,mp.mergeMoveToIdealNode);
+                    ret.markMoveToIdealLocation(node, mp.mergeMoveToIdealNode);
                 }
                 c.stats.incCopyingIn(node, c.getBucketSpace());
                 hasMissingReplica = true;
@@ -807,9 +807,7 @@ SynchronizeAndMoveStateChecker::check(const Context &c) const
                                                    c.distributorConfig.getMaxNodesPerMerge());
         op->setDetailedReason(result.reason());
         MaintenancePriority::Priority schedPri;
-        if ((c.getBucketSpace() == document::FixedBucketSpaces::default_space())
-            || !c.distributorConfig.prioritize_global_bucket_merges())
-        {
+        if (c.getBucketSpace() == document::FixedBucketSpaces::default_space()) {
             schedPri = (result.needsMoveOnly() ? MaintenancePriority::LOW : MaintenancePriority::MEDIUM);
             op->setPriority(result.priority());
         } else {

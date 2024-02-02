@@ -45,7 +45,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
-      _prioritize_global_bucket_merges(true),
       _implicitly_clear_priority_on_schedule(false),
       _use_unordered_merge_chaining(false),
       _inhibit_default_merges_when_global_merges_pending(false),
@@ -94,25 +93,6 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
     return visitor.hasCurrentTime;
 }
 
-void
-DistributorConfiguration::configureMaintenancePriorities(
-        const vespa::config::content::core::StorDistributormanagerConfig& cfg)
-{
-    MaintenancePriorities& mp(_maintenancePriorities);
-    mp.mergeMoveToIdealNode       = cfg.priorityMergeMoveToIdealNode;
-    mp.mergeOutOfSyncCopies       = cfg.priorityMergeOutOfSyncCopies;
-    mp.mergeTooFewCopies          = cfg.priorityMergeTooFewCopies;
-    mp.mergeGlobalBuckets         = cfg.priorityMergeGlobalBuckets;
-    mp.activateNoExistingActive   = cfg.priorityActivateNoExistingActive;
-    mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
-    mp.deleteBucketCopy           = cfg.priorityDeleteBucketCopy;
-    mp.joinBuckets                = cfg.priorityJoinBuckets;
-    mp.splitDistributionBits      = cfg.prioritySplitDistributionBits;
-    mp.splitLargeBucket           = cfg.prioritySplitLargeBucket;
-    mp.splitInconsistentBucket    = cfg.prioritySplitInconsistentBucket;
-    mp.garbageCollection          = cfg.priorityGarbageCollection;
-}
-
 void 
 DistributorConfiguration::configure(const vespa::config::content::core::StorDistributormanagerConfig& config) 
 {
@@ -152,11 +132,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
       _garbageCollectionInterval = vespalib::duration::zero();
     }
 
-    _blockedStateCheckers.clear();
-    for (uint32_t i = 0; i < config.blockedstatecheckers.size(); ++i) {
-        _blockedStateCheckers.insert(config.blockedstatecheckers[i]);
-    }
-
     _doInlineSplit = config.inlinebucketsplitting;
     _enableJoinForSiblingLessBuckets = config.enableJoinForSiblingLessBuckets;
     _enableInconsistentJoin = config.enableInconsistentJoin;
@@ -169,7 +144,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
-    _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _implicitly_clear_priority_on_schedule = config.implicitlyClearBucketPriorityOnSchedule;
     _use_unordered_merge_chaining = config.useUnorderedMergeChaining;
@@ -177,10 +151,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _enable_two_phase_garbage_collection = config.enableTwoPhaseGarbageCollection;
     _enable_condition_probing = config.enableConditionProbing;
     _enable_operation_cancellation = config.enableOperationCancellation;
-
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
-
-    configureMaintenancePriorities(config);
 
     if (config.maxClusterClockSkewSec >= 0) {
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);
