@@ -264,7 +264,6 @@ private:
     uint32_t _byteCountJoinLimit;
     uint32_t _docCountJoinLimit;
     uint32_t _minimalBucketSplit;
-    uint32_t _maxIdealStateOperations;
     uint32_t _maxNodesPerMerge;
     uint32_t _max_consecutively_inhibited_maintenance_ticks;
     uint32_t _max_activation_inhibited_out_of_sync_groups;

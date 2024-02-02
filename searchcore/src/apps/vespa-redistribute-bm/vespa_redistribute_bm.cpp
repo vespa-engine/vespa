@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -511,7 +510,6 @@ App::get_options(int argc, char **argv)
         { "max-merges-per-node", 1, nullptr, 0 },
         { "max-merge-queue-size", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
-        { "max-pending-idealstate-operations", 1, nullptr, 0 },
         { "mbus-distributor-node-max-pending-count", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
         { "nodes-per-group", 1, nullptr, 0 },
@@ -540,7 +538,6 @@ App::get_options(int argc, char **argv)
         LONGOPT_MAX_MERGES_PER_NODE,
         LONGOPT_MAX_MERGE_QUEUE_SIZE,
         LONGOPT_MAX_PENDING,
-        LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS,
         LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT,
         LONGOPT_MODE,
         LONGOPT_NODES_PER_GROUP,
@@ -599,9 +596,6 @@ App::get_options(int argc, char **argv)
                 break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(optarg));
-                break;
-            case LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS:
-                _bm_params.set_max_pending_idealstate_operations(atoi(optarg));
                 break;
             case LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT:
                 _bm_params.set_mbus_distributor_node_max_pending_count(atoi(optarg));

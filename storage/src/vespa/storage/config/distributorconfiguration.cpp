@@ -22,7 +22,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _byteCountJoinLimit(0),
       _docCountJoinLimit(0),
       _minimalBucketSplit(16),
-      _maxIdealStateOperations(100),
       _maxNodesPerMerge(16),
       _max_consecutively_inhibited_maintenance_ticks(20),
       _max_activation_inhibited_out_of_sync_groups(0),
@@ -118,7 +117,6 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     
-    _maxIdealStateOperations = config.maxpendingidealstateoperations;
     _byteCountSplitLimit = config.splitsize;
     _docCountSplitLimit = config.splitcount;
     _byteCountJoinLimit = config.joinsize;
@@ -172,16 +170,14 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "
         "Join limits: %d docs/%d bytes. Minimal bucket split %d. "
-        "Documents to garbage collect: %s (check every %d seconds). "
-        "Maximum pending ideal state operations: %d",
+        "Documents to garbage collect: %s (check every %d seconds). ",
         (int)_docCountSplitLimit,
         (int)_byteCountSplitLimit,
         (int)_docCountJoinLimit,
         (int)_byteCountJoinLimit,
         (int)_minimalBucketSplit,
         _garbageCollectionSelection.c_str(),
-        (int)vespalib::to_s(_garbageCollectionInterval),
-        (int)_maxIdealStateOperations);
+        (int)vespalib::to_s(_garbageCollectionInterval));
 }
 
 void 

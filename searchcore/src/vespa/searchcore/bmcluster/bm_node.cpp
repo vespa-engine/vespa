@@ -386,7 +386,6 @@ struct DistributorConfigSet : public StorageConfigSet
           stor_visitordispatcher()
     {
         stor_distributormanager.inhibitMergeSendingOnBusyNodeDurationSec = params.get_distributor_merge_busy_wait();
-        stor_distributormanager.maxpendingidealstateoperations = params.get_max_pending_idealstate_operations();
         stor_distributormanager.numDistributorStripes = params.get_distributor_stripes();
     }
 
