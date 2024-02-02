@@ -50,8 +50,6 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
       _trace(_updateCmd->getTrace().getLevel()),
       _single_get_latency_timer(),
       _fast_path_repair_source_node(0xffff),
-      _use_initial_cheap_metadata_fetch_phase(
-            _op_ctx.distributor_config().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
       _replySent(false)
 {
     document::BucketIdFactory idFactory;
@@ -170,9 +168,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorStripeMessageSender& sen
     _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
     op.start(intermediate, _node_ctx.clock().getSystemTime());
 
-    transitionTo(_use_initial_cheap_metadata_fetch_phase
-                 ? SendState::METADATA_GETS_SENT
-                 : SendState::FULL_GETS_SENT);
+    transitionTo(SendState::METADATA_GETS_SENT);
 
     if (intermediate._reply.get()) {
         assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
@@ -188,7 +184,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorStripeMessageSender& sen
 std::shared_ptr<GetOperation>
 TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
-    const char* field_set = _use_initial_cheap_metadata_fetch_phase ? document::NoFields::NAME : document::AllFields::NAME;
+    const char* field_set = document::NoFields::NAME;
     auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), field_set);
     copyMessageSettings(*_updateCmd, *get);
     // Metadata-only Gets just look at the data in the meta-store, not any fields.
@@ -196,13 +192,10 @@ TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
     // so all the information we need is guaranteed to be consistent even with a
     // weak read. But since weak reads allow the Get operation to bypass commit
     // queues, latency may be greatly reduced in contended situations.
-    auto read_consistency = (_use_initial_cheap_metadata_fetch_phase
-                             ? api::InternalReadConsistency::Weak
-                             : api::InternalReadConsistency::Strong);
-    LOG(debug, "Update(%s) safe path: sending Get commands with field set '%s' "
-               "and internal read consistency %s",
+    auto read_consistency = api::InternalReadConsistency::Weak;
+    LOG(debug, "Update(%s) safe path: sending Get commands with field set '%s' and internal read consistency %s",
                update_doc_id().c_str(), field_set, api::to_string(read_consistency));
-    auto& get_metric = (_use_initial_cheap_metadata_fetch_phase ? _metadata_get_metrics : _getMetric);
+    auto& get_metric = _metadata_get_metrics;
     return std::make_shared<GetOperation>(
             _node_ctx, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(),
             get, get_metric, read_consistency);

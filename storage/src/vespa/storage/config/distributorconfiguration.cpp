@@ -44,7 +44,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _update_fast_path_restart_enabled(false),
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
-      _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _enable_operation_cancellation(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
@@ -148,7 +147,6 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
-    _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _enable_operation_cancellation = config.enableOperationCancellation;
     _minimumReplicaCountingMode = deriveReplicaCountingMode(config.minimumReplicaCountingMode);

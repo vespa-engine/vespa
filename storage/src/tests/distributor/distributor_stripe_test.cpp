@@ -162,12 +162,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_metadata_update_phase_enabled(bool enabled) {
-        configure_stripe_with([&](auto& builder) {
-            builder.enableMetadataOnlyFetchPhaseForInconsistentUpdates = enabled;
-        });
-    }
-
     void configure_max_activation_inhibited_out_of_sync_groups(uint32_t n_groups) {
         configure_stripe_with([&](auto& builder) {
             builder.maxActivationInhibitedOutOfSyncGroups = n_groups;
@@ -827,17 +821,6 @@ TEST_F(DistributorStripeTest, merge_disabling_config_is_propagated_to_internal_c
 
     configure_merge_operations_disabled(false);
     EXPECT_FALSE(getConfig().merge_operations_disabled());
-}
-
-TEST_F(DistributorStripeTest, metadata_update_phase_config_is_propagated_to_internal_config)
-{
-    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    configure_metadata_update_phase_enabled(true);
-    EXPECT_TRUE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
-
-    configure_metadata_update_phase_enabled(false);
-    EXPECT_FALSE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
 }
 
 TEST_F(DistributorStripeTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs)

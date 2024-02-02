@@ -49,10 +49,7 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
         createLinks();
         setTypeRepo(_repo);
         getClock().setAbsoluteTimeInSeconds(200);
-        // TODO, rewrite test to handle enable_metadata_only_fetch_phase_for_inconsistent_updates=true as default
-        auto cfg = make_config();
-        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(false);
-        configure_stripe(cfg);
+        configure_stripe(make_config());
     }
 
     void TearDown() override {
@@ -153,15 +150,13 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
 
     void do_update_fails_if_cancelled_prior_to_safe_path_metadata_get_completion(bool in_sync_replicas);
 
-    void enable_3phase_updates(bool enable = true) {
-        auto cfg = make_config();
-        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(enable);
-        configure_stripe(cfg);
+    void enable_3phase_updates() {
+        configure_stripe(make_config());
     }
 
-    std::shared_ptr<TwoPhaseUpdateOperation> set_up_2_inconsistent_replicas_and_start_update(bool enable_3phase = true) {
+    std::shared_ptr<TwoPhaseUpdateOperation> set_up_2_inconsistent_replicas_and_start_update() {
         setup_stripe(2, 2, "storage:2 distributor:1");
-        enable_3phase_updates(enable_3phase);
+        enable_3phase_updates();
         auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
         cb->start(_sender);
         return cb;
@@ -323,7 +318,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     assert(id == _bucket_id);
     document::BucketId id2 = document::BucketId(id.getUsedBits() + 1, id.getRawId());
 
-    if (bucketState.length()) {
+    if (!bucketState.empty()) {
         addNodesToBucketDB(id, bucketState);
     }
 
@@ -1392,9 +1387,7 @@ TEST_F(ThreePhaseUpdateTest, metadata_get_phase_fails_if_any_replicas_return_fai
 
 TEST_F(ThreePhaseUpdateTest, update_failed_with_transient_error_code_if_replica_set_changed_after_metadata_gets) {
     setup_stripe(3, 3, "storage:3 distributor:1");
-    auto cfg = make_config();
-    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // 2 replicas, room for 1 more.
     cb->start(_sender);
     // Add new replica to deterministic test bucket after gets have been sent
@@ -1415,7 +1408,6 @@ TEST_F(ThreePhaseUpdateTest, update_failed_with_transient_error_code_if_replica_
 TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
-    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
@@ -1476,9 +1468,7 @@ TEST_F(ThreePhaseUpdateTest, update_aborted_if_ownership_changed_between_gets_an
 
 TEST_F(ThreePhaseUpdateTest, safe_mode_is_implicitly_triggered_if_no_replicas_exist) {
     setup_stripe(1, 1, "storage:1 distributor:1");
-    auto cfg = make_config();
-    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
     cb->start(_sender);
 
@@ -1535,7 +1525,6 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_reply_received_after_close_is_no_op
 TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_create) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
-    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4");
@@ -1559,7 +1548,6 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_cre
 TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_create) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
-    cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));

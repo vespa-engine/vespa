@@ -159,7 +159,6 @@ private:
     ReplicaState                        _replicas_at_get_send_time;
     std::optional<framework::MilliSecTimer> _single_get_latency_timer;
     uint16_t                            _fast_path_repair_source_node;
-    bool                                _use_initial_cheap_metadata_fetch_phase;
     bool                                _replySent;
 };
 

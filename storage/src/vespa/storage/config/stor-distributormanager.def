@@ -137,15 +137,6 @@ merge_operations_disabled bool default=false
 ## This is mostly useful in a system that is effectively read-only.
 use_weak_internal_read_consistency_for_client_gets bool default=false
 
-## If true, adds an initial metadata-only fetch phase to updates that touch buckets
-## with inconsistent replicas. Metadata timestamps are compared and a single full Get
-## is sent _only_ to one node with the highest timestamp. Without a metadata phase,
-## full gets would be sent to _all_ nodes.
-## Setting this option to true always implicitly enables the fast update restart
-## feature, so it's not required to set that config to true, nor will setting it
-## to false actually disable the feature.
-enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=true
-
 ## If a distributor main thread tick is constantly processing requests or responses
 ## originating from other nodes, setting this value above zero will prevent implicit
 ## maintenance scans from being done as part of the tick for up to N rounds of ticking.
