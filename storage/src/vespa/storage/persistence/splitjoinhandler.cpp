@@ -14,11 +14,10 @@ LOG_SETUP(".persistence.splitjoinhandler");
 namespace storage {
 
 SplitJoinHandler::SplitJoinHandler(PersistenceUtil & env, spi::PersistenceProvider & spi,
-                                   BucketOwnershipNotifier & notifier, bool enableMultibitSplitOptimalization)
+                                   BucketOwnershipNotifier & notifier)
     : _env(env),
       _spi(spi),
-      _bucketOwnershipNotifier(notifier),
-      _enableMultibitSplitOptimalization(enableMultibitSplitOptimalization)
+      _bucketOwnershipNotifier(notifier)
 {
 }
 
@@ -42,11 +41,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
 
     spi::Bucket spiBucket(cmd.getBucket());
     SplitBitDetector::Result targetInfo;
-    if (_enableMultibitSplitOptimalization) {
-        targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(),
-                                                   tracker->context(), cmd.getMinDocCount(), cmd.getMinByteSize());
-    }
-    if (targetInfo.empty() || !_enableMultibitSplitOptimalization) {
+    {
         document::BucketId src(cmd.getBucketId());
         document::BucketId target1(src.getUsedBits() + 1, src.getId());
         document::BucketId target2(src.getUsedBits() + 1, src.getId() | (uint64_t(1) << src.getUsedBits()));
@@ -88,8 +83,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
         assert(target.getBucketId().getRawId() != 0);
         targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace()).get(
                 target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
-                StorBucketDatabase::CREATE_IF_NONEXISTING),
-                             FileStorHandler::RemapInfo(target));
+                StorBucketDatabase::CREATE_IF_NONEXISTING), FileStorHandler::RemapInfo(target));
         targets.back().first->setBucketInfo(_env.getBucketInfo(target));
     }
     if (LOG_WOULD_LOG(spam)) {
