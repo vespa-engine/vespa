@@ -174,12 +174,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_use_unordered_merge_chaining(bool use_unordered) {
-        configure_stripe_with([&](auto& builder) {
-            builder.useUnorderedMergeChaining = use_unordered;
-        });
-    }
-
     void configure_enable_two_phase_garbage_collection(bool use_two_phase) {
         configure_stripe_with([&](auto& builder) {
             builder.enableTwoPhaseGarbageCollection = use_two_phase;
@@ -953,17 +947,6 @@ TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
     _stripe->flush_and_close();
     ASSERT_EQ(1, _sender.replies().size());
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
-}
-
-TEST_F(DistributorStripeTest, use_unordered_merge_chaining_config_is_propagated_to_internal_config)
-{
-    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    configure_use_unordered_merge_chaining(true);
-    EXPECT_TRUE(getConfig().use_unordered_merge_chaining());
-
-    configure_use_unordered_merge_chaining(false);
-    EXPECT_FALSE(getConfig().use_unordered_merge_chaining());
 }
 
 TEST_F(DistributorStripeTest, enable_two_phase_gc_config_is_propagated_to_internal_config)

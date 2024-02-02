@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorconfiguration.h"
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/document/select/parser.h>
@@ -44,7 +45,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
-      _use_unordered_merge_chaining(false),
       _enable_two_phase_garbage_collection(false),
       _enable_condition_probing(false),
       _enable_operation_cancellation(false),
@@ -152,7 +152,6 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
-    _use_unordered_merge_chaining = config.useUnorderedMergeChaining;
     _enable_two_phase_garbage_collection = config.enableTwoPhaseGarbageCollection;
     _enable_condition_probing = config.enableConditionProbing;
     _enable_operation_cancellation = config.enableOperationCancellation;

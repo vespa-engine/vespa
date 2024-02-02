@@ -147,8 +147,7 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
         auto msg = std::make_shared<api::MergeBucketCommand>(getBucket(), _mnodes,
                                                              _manager->operation_context().generate_unique_timestamp(),
                                                              clusterState.getVersion());
-        const bool may_send_unordered = (_manager->operation_context().distributor_config().use_unordered_merge_chaining()
-                                         && all_involved_nodes_support_unordered_merge_chaining());
+        const bool may_send_unordered = all_involved_nodes_support_unordered_merge_chaining();
         if (!may_send_unordered) {
             // Due to merge forwarding/chaining semantics, we must always send
             // the merge command to the lowest indexed storage node involved in
@@ -364,12 +363,10 @@ bool MergeOperation::is_global_bucket_merge() const noexcept {
 
 bool MergeOperation::all_involved_nodes_support_unordered_merge_chaining() const noexcept {
     const auto& features_repo = _manager->operation_context().node_supported_features_repo();
-    for (uint16_t node : getNodes()) {
-        if (!features_repo.node_supported_features(node).unordered_merge_chaining) {
-            return false;
-        }
-    }
-    return true;
+    const auto & nodes = getNodes();
+    return std::all_of(nodes.begin(), nodes.end(), [&features_repo](uint16_t node) {
+        return features_repo.node_supported_features(node).unordered_merge_chaining;
+    });
 }
 
 uint32_t MergeOperation::estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetaData>& nodes) const noexcept {
