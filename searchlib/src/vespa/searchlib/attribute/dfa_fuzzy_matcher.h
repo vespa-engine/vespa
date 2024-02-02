@@ -27,9 +27,14 @@ private:
     const char* skip_prefix(const char* word) const;
 public:
     DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
+    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased); // Defaults to table-based DFA
     ~DfaFuzzyMatcher();
 
-    bool is_match(const char *word) const;
+    [[nodiscard]] static constexpr bool supports_max_edits(uint8_t edits) noexcept {
+        return (edits == 1 || edits == 2);
+    }
+
+    [[nodiscard]] bool is_match(std::string_view word) const;
 
     /*
      * If prefix size is nonzero then this variant of is_match()
@@ -40,7 +45,7 @@ public:
      * functionality in the dictionary.
      */
     template <typename DictionaryConstIteratorType>
-    bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store);
+    [[nodiscard]] bool is_match(const char* word, DictionaryConstIteratorType& itr, const DfaStringComparator::DataStoreType& data_store);
 };
 
 }

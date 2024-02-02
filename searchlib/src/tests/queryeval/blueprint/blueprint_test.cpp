@@ -23,11 +23,14 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
-    double calculate_cost() const final {
-        return OrFlow::cost_of(get_children());
-    }
     double calculate_relative_estimate() const final {
         return OrFlow::estimate_of(get_children());
+    }
+    double calculate_cost() const final {
+        return OrFlow::cost_of(get_children(), false);
+    }
+    double calculate_strict_cost() const final {
+        return OrFlow::cost_of(get_children(), true);
     }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
@@ -37,7 +40,7 @@ public:
         return mixChildrenFields();
     }
 
-    void sort(Children &children, bool) const override {
+    void sort(Children &children, bool, bool) const override {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 
@@ -446,7 +449,7 @@ TEST_F("testChildAndNotCollapsing", Fixture)
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize(std::move(unsorted), true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -486,7 +489,7 @@ TEST_F("testChildAndCollapsing", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize(std::move(unsorted), true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -525,7 +528,10 @@ TEST_F("testChildOrCollapsing", Fixture)
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize(std::move(unsorted), true);
+    // we sort non-strict here since the default costs of 1/est for
+    // non-strict/strict leaf iterators makes the order of iterators
+    // under a strict OR irrelevant.
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), false, true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -569,7 +575,7 @@ TEST_F("testChildSorting", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize(std::move(unsorted), true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -650,12 +656,13 @@ getExpectedBlueprint()
            "    estimate: HitEstimate {\n"
            "        empty: false\n"
            "        estHits: 9\n"
-           "        relative_estimate: 0.5\n"
            "        cost_tier: 1\n"
            "        tree_size: 2\n"
            "        allow_termwise_eval: false\n"
            "    }\n"
-           "    cost: 1\n"
+           "    relative_estimate: 0\n"
+           "    cost: 0\n"
+           "    strict_cost: 0\n"
            "    sourceId: 4294967295\n"
            "    docid_limit: 0\n"
            "    children: std::vector {\n"
@@ -671,12 +678,13 @@ getExpectedBlueprint()
            "            estimate: HitEstimate {\n"
            "                empty: false\n"
            "                estHits: 9\n"
-           "                relative_estimate: 0.5\n"
            "                cost_tier: 1\n"
            "                tree_size: 1\n"
            "                allow_termwise_eval: true\n"
            "            }\n"
-           "            cost: 1\n"
+           "            relative_estimate: 0\n"
+           "            cost: 0\n"
+           "            strict_cost: 0\n"
            "            sourceId: 4294967295\n"
            "            docid_limit: 0\n"
            "        }\n"
@@ -702,12 +710,13 @@ getExpectedSlimeBlueprint() {
            "        '[type]': 'HitEstimate',"
            "        empty: false,"
            "        estHits: 9,"
-           "        relative_estimate: 0.5,"
            "        cost_tier: 1,"
            "        tree_size: 2,"
            "        allow_termwise_eval: false"
            "    },"
-           "    cost: 1.0,"
+           "    relative_estimate: 0.0,"
+           "    cost: 0.0,"
+           "    strict_cost: 0.0,"
            "    sourceId: 4294967295,"
            "    docid_limit: 0,"
            "    children: {"
@@ -728,12 +737,13 @@ getExpectedSlimeBlueprint() {
            "                '[type]': 'HitEstimate',"
            "                empty: false,"
            "                estHits: 9,"
-           "                relative_estimate: 0.5,"
            "                cost_tier: 1,"
            "                tree_size: 1,"
            "                allow_termwise_eval: true"
            "            },"
-           "            cost: 1.0,"
+           "            relative_estimate: 0.0,"
+           "            cost: 0.0,"
+           "            strict_cost: 0.0,"
            "            sourceId: 4294967295,"
            "            docid_limit: 0"
            "        }"
@@ -786,9 +796,9 @@ TEST("requireThatDocIdLimitInjectionWorks")
 }
 
 TEST("Control object sizes") {
-    EXPECT_EQUAL(40u, sizeof(Blueprint::State));
-    EXPECT_EQUAL(40u, sizeof(Blueprint));
-    EXPECT_EQUAL(80u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(32u, sizeof(Blueprint::State));
+    EXPECT_EQUAL(56u, sizeof(Blueprint));
+    EXPECT_EQUAL(96u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {

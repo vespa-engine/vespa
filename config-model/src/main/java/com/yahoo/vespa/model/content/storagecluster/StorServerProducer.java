@@ -29,7 +29,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
     private final String clusterName;
     private Integer maxMergesPerNode;
     private Integer queueSize;
-    private Long mergingMaxMemoryUsagePerNode;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
         if (value != null) {
@@ -46,7 +45,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
 
     StorServerProducer(String clusterName, ModelContext.FeatureFlags featureFlags) {
         this.clusterName = clusterName;
-        this.mergingMaxMemoryUsagePerNode = featureFlags.mergingMaxMemoryUsagePerNode();
     }
 
     @Override
@@ -63,10 +61,8 @@ public class StorServerProducer implements StorServerConfig.Producer {
         if (queueSize != null) {
             builder.max_merge_queue_size(queueSize);
         }
-        if (mergingMaxMemoryUsagePerNode != null) {
-            builder.merge_throttling_memory_limit(
-                    new StorServerConfig.Merge_throttling_memory_limit.Builder()
-                            .max_usage_bytes(mergingMaxMemoryUsagePerNode));
-        }
+        builder.merge_throttling_memory_limit(
+                new StorServerConfig.Merge_throttling_memory_limit.Builder()
+                        .max_usage_bytes(0));
     }
 }

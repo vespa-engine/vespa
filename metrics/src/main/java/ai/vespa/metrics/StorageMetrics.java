@@ -152,6 +152,7 @@ public enum StorageMetrics implements VespaMetrics {
     VDS_DATASTORED_BUCKET_SPACE_BUCKET_DB_MEMORY_USAGE_ONHOLD_BYTES("vds.datastored.bucket_space.bucket_db.memory_usage.onhold_bytes", Unit.BYTE, "The number of bytes on hold"),
     VDS_DATASTORED_BUCKET_SPACE_BUCKET_DB_MEMORY_USAGE_USED_BYTES("vds.datastored.bucket_space.bucket_db.memory_usage.used_bytes", Unit.BYTE, "The number of used bytes (<= allocated_bytes)"),
     VDS_DATASTORED_BUCKET_SPACE_BUCKETS_TOTAL("vds.datastored.bucket_space.buckets_total", Unit.BUCKET, "Total number buckets present in the bucket space (ready + not ready)"),
+    VDS_DATASTORED_BUCKET_SPACE_ENTRIES("vds.datastored.bucket_space.entries", Unit.DOCUMENT, "Number of entries (documents + tombstones) stored in the bucket space"),
     VDS_DATASTORED_BUCKET_SPACE_BYTES("vds.datastored.bucket_space.bytes", Unit.BYTE, "Bytes stored across all documents in the bucket space"),
     VDS_DATASTORED_BUCKET_SPACE_DOCS("vds.datastored.bucket_space.docs", Unit.DOCUMENT, "Documents stored in the bucket space"),
     VDS_DATASTORED_BUCKET_SPACE_READY_BUCKETS("vds.datastored.bucket_space.ready_buckets", Unit.BUCKET, "Number of ready buckets in the bucket space"),

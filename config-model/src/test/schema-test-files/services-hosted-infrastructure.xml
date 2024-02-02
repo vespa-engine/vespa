@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<services version="1.0" application-type="hosted-infrastructure">
+<services version="1.0" application-type="hosted-infrastructure" minimum-required-vespa-version="8.0.0">
 
   <admin version="4.0">
     <slobroks><nodes count="3" flavor="small"/></slobroks>

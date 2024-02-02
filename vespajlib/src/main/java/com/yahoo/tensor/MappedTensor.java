@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.DoubleBinaryOperator;
 
 /**
  * A sparse implementation of a tensor backed by a Map of cells to values.
@@ -31,11 +30,18 @@ public class MappedTensor implements Tensor {
     @Override
     public long size() { return cells.size(); }
 
+    /** Once we can store more cells than an int we should drop this. */
+    @Override
+    public int sizeAsInt() { return cells.size(); }
+
     @Override
     public double get(TensorAddress address) { return cells.getOrDefault(address, 0.0); }
 
     @Override
     public boolean has(TensorAddress address) { return cells.containsKey(address); }
+
+    @Override
+    public Double getAsDouble(TensorAddress address) { return cells.get(address); }
 
     @Override
     public Iterator<Cell> cellIterator() { return new CellIteratorAdaptor(cells.entrySet().iterator()); }
@@ -79,7 +85,7 @@ public class MappedTensor implements Tensor {
 
     @Override
     public String toAbbreviatedString(boolean withType, boolean shortForms) {
-        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() + 1)));
     }
 
     private String toString(boolean withType, boolean shortForms, long maxCells) {

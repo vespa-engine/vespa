@@ -102,9 +102,8 @@ do_limit(AttributeLimiter &limiter_factory, SearchIterator::UP search, double ma
     return search;
 }
 
-// When hitrate is below 1% limiting the query is often far more expensive than not.
-// TODO This limit should probably be a lot higher.
-constexpr double MIN_HIT_RATE_LIMIT = 0.01;
+// When hitrate is below 0.2% limiting the query is often far more expensive than not.
+constexpr double MIN_HIT_RATE_LIMIT = 0.002;
 
 } // namespace proton::matching::<unnamed>
 

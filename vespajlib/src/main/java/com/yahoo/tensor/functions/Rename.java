@@ -35,7 +35,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
-        if (fromDimensions.size() < 1)
+        if (fromDimensions.isEmpty())
             throw new IllegalArgumentException("from dimensions is empty, must rename at least one dimension");
         if (fromDimensions.size() != toDimensions.size())
             throw new IllegalArgumentException("Rename from and to dimensions must be equal, was " +
@@ -89,7 +89,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         for (int i = 0; i < tensor.type().dimensions().size(); i++) {
             String dimensionName = tensor.type().dimensions().get(i).name();
             String newDimensionName = fromToMap.getOrDefault(dimensionName, dimensionName);
-            toIndexes[i] = renamedType.indexOfDimension(newDimensionName).get();
+            toIndexes[renamedType.indexOfDimension(newDimensionName).get()] = i;
         }
 
         // avoid building a new tensor if dimensions can simply be renamed
@@ -100,7 +100,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         Tensor.Builder builder = Tensor.Builder.of(renamedType);
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
+            TensorAddress renamedAddress = cell.getKey().partialCopy(toIndexes);
             builder.cell(renamedAddress, cell.getValue());
         }
         return builder.build();
@@ -116,13 +116,6 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             }
         }
         return true;
-    }
-
-    private TensorAddress rename(TensorAddress address, int[] toIndexes) {
-        String[] reorderedLabels = new String[toIndexes.length];
-        for (int i = 0; i < toIndexes.length; i++)
-            reorderedLabels[toIndexes[i]] = address.label(i);
-        return TensorAddress.of(reorderedLabels);
     }
 
     private String toVectorString(List<String> elements) {

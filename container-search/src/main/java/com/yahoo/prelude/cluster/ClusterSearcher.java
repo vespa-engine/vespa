@@ -172,6 +172,21 @@ public class ClusterSearcher extends Searcher {
     }
 
     @Override
+    public Result search(Query query, Execution execution) {
+        validateQueryTimeout(query);
+        validateQueryCache(query);
+        Searcher searcher = server;
+        if (searcher == null) {
+            return new Result(query, ErrorMessage.createNoBackendsInService("Could not search"));
+        }
+        if (query.getTimeLeft() <= 0) {
+            return new Result(query, ErrorMessage.createTimeout("No time left for searching"));
+        }
+
+        return doSearch(searcher, query, execution);
+    }
+
+    @Override
     public void fill(com.yahoo.search.Result result, String summaryClass, Execution execution) {
         Query query = result.getQuery();
 
@@ -190,21 +205,6 @@ public class ClusterSearcher extends Searcher {
                 result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill result"));
             }
         }
-    }
-
-    @Override
-    public Result search(Query query, Execution execution) {
-        validateQueryTimeout(query);
-        validateQueryCache(query);
-        Searcher searcher = server;
-        if (searcher == null) {
-            return new Result(query, ErrorMessage.createNoBackendsInService("Could not search"));
-        }
-        if (query.getTimeLeft() <= 0) {
-            return new Result(query, ErrorMessage.createTimeout("No time left for searching"));
-        }
-
-        return doSearch(searcher, query, execution);
     }
 
     private void validateQueryTimeout(Query query) {

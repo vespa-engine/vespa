@@ -84,7 +84,7 @@ RankProcessorTest::test_unpack_match_data_for_term_node(bool interleaved_feature
     EXPECT_EQ(invalid_id, tfmd->getDocId());
     RankProcessor::unpack_match_data(1, *md, *_query_wrapper);
     EXPECT_EQ(invalid_id, tfmd->getDocId());
-    node->add(0, field_id, 0, 1);
+    node->add(field_id, 0, 1, 0);
     auto& field_info = node->getFieldInfo(field_id);
     field_info.setHitCount(mock_num_occs);
     field_info.setFieldLength(mock_field_length);

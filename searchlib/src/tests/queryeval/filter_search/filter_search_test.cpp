@@ -48,7 +48,10 @@ concept ChildCollector = requires(T a, std::unique_ptr<Blueprint> bp) {
 // inherit Blueprint to capture the default filter factory
 struct DefaultBlueprint : Blueprint {
     double calculate_relative_estimate() const override { abort(); }
-    void optimize(Blueprint* &, OptimizePass, bool) override { abort(); }
+    double calculate_cost() const override { abort(); }
+    double calculate_strict_cost() const override { abort(); }
+    void optimize(Blueprint* &, OptimizePass) override { abort(); }
+    void sort(bool, bool) override { abort(); }
     const State &getState() const override { abort(); }
     void fetchPostings(const ExecuteInfo &) override { abort(); }
     void freeze() override { abort(); }

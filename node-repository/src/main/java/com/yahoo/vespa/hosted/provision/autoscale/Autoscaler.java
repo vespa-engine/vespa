@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -39,8 +40,14 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Autoscaling suggest(Application application, Cluster cluster, NodeList clusterNodes) {
-        return autoscale(application, cluster, clusterNodes, Limits.empty());
+    public List<Autoscaling> suggest(Application application, Cluster cluster, NodeList clusterNodes) {
+        var model = model(application, cluster, clusterNodes);
+        if (model.isEmpty() || ! model.isStable(nodeRepository)) return List.of();
+
+        var targets = allocationOptimizer.findBestAllocations(model.loadAdjustment(), model, Limits.empty());
+        return targets.stream()
+                .map(target -> toAutoscaling(target, model))
+                .toList();
     }
 
     /**
@@ -50,18 +57,8 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
-        return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
-    }
-
-    private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        var model = new ClusterModel(nodeRepository,
-                                     application,
-                                     clusterNodes.not().retired().clusterSpec(),
-                                     cluster,
-                                     clusterNodes,
-                                     new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
-                                     nodeRepository.metricsDb(),
-                                     nodeRepository.clock());
+        var limits = Limits.of(cluster);
+        var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
 
         if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
@@ -78,18 +75,33 @@ public class Autoscaler {
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
 
-        if (target.get().nodes() == 1)
+       return toAutoscaling(target.get(), model);
+    }
+
+    private ClusterModel model(Application application, Cluster cluster, NodeList clusterNodes) {
+        return new ClusterModel(nodeRepository,
+                application,
+                clusterNodes.not().retired().clusterSpec(),
+                cluster,
+                clusterNodes,
+                new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
+                nodeRepository.metricsDb(),
+                nodeRepository.clock());
+    }
+
+    private Autoscaling toAutoscaling(AllocatableResources target, ClusterModel model) {
+        if (target.nodes() == 1)
             return Autoscaling.dontScale(Status.unavailable, "Autoscaling is disabled in single node clusters", model);
 
-        if (! worthRescaling(model.current().realResources(), target.get().realResources())) {
-            if (target.get().fulfilment() < 0.9999999)
+        if (! worthRescaling(model.current().realResources(), target.realResources())) {
+            if (target.fulfilment() < 0.9999999)
                 return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", model);
             else if ( ! model.safeToScaleDown() && model.idealLoad().any(v -> v < 1.0))
                 return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", model);
             else
                 return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within configured limits)", model);
         }
-        return Autoscaling.scaleTo(target.get().advertisedResources(), model);
+        return Autoscaling.scaleTo(target.advertisedResources(), model);
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */

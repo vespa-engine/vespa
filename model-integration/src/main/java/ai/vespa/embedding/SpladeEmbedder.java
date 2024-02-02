@@ -10,9 +10,12 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.functions.Reduce;
+
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -31,17 +34,22 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
     private final String tokenTypeIdsName;
     private final String outputName;
     private final double termScoreThreshold;
+    private final boolean useCustomReduce;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
 
     @Inject
     public SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig config) {
+        this(onnx, runtime, config, true);
+    }
+    SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig config, boolean useCustomReduce) {
         this.runtime = runtime;
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         outputName = config.transformerOutput();
         tokenTypeIdsName = config.transformerTokenTypeIds();
         termScoreThreshold = config.termScoreThreshold();
+        this.useCustomReduce = useCustomReduce;
 
         var tokenizerPath = Paths.get(config.tokenizerPath().toString());
         var builder = new HuggingFaceTokenizer.Builder()
@@ -116,20 +124,54 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         Map<String, Tensor> inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
                 attentionMaskName, attentionMask.expand("d0"),
                 tokenTypeIdsName, tokenTypeIds.expand("d0"));
-        Tensor spladeTensor = sparsify((IndexedTensor) evaluator.evaluate(inputs).get(outputName), tensorType);
+        IndexedTensor output = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
+        Tensor spladeTensor = useCustomReduce
+                ? sparsifyCustomReduce(output, tensorType)
+                : sparsifyReduce(output, tensorType);
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return spladeTensor;
     }
 
 
     /**
-     * Sparsify the model output tensor.
+     * Sparsify the output tensor by applying a threshold on the log of the relu of the output.
+     * This uses generic tensor reduce+map, and is slightly slower than a custom unrolled variant.
+     * @param modelOutput the model output tensor of shape d1,dim where d1 is the sequence length and dim is size
+     *                of the vocabulary
+     * @param tensorType the type of the destination tensor
+     * @return A mapped tensor with the terms from the vocab that has a score above the threshold
+     */
+    private Tensor sparsifyReduce(Tensor modelOutput, TensorType tensorType) {
+        //Remove batch dim, batch size of 1
+        Tensor output = modelOutput.reduce(Reduce.Aggregator.max, "d0", "d1");
+        Tensor logOfRelu = output.map((x) -> Math.log(1 + (x > 0 ? x : 0)));
+        IndexedTensor vocab = (IndexedTensor) logOfRelu;
+        var builder = Tensor.Builder.of(tensorType);
+        long[] tokens = new long[1];
+        for (int i = 0; i < vocab.size(); i++) {
+            var score = vocab.get(i);
+            if (score > termScoreThreshold) {
+                tokens[0] = i;
+                String term = tokenizer.decode(tokens);
+                builder.cell().
+                        label(tensorType.dimensions().get(0).name(), term)
+                        .value(score);
+            }
+        }
+        return builder.build();
+    }
+
+
+
+    /**
+     * Sparsify the model output tensor.This uses an unrolled custom reduce and is 15-20% faster than the using
+     * generic tensor reduce.
      *
      * @param modelOutput the model output tensor of type tensorType
      * @param tensorType the type of the destination tensor
      * @return A mapped tensor with the terms from the vocab that has a score above the threshold
      */
-    public Tensor sparsify(IndexedTensor modelOutput, TensorType tensorType) {
+    public Tensor sparsifyCustomReduce(IndexedTensor modelOutput, TensorType tensorType) {
         var builder = Tensor.Builder.of(tensorType);
         long[] shape = modelOutput.shape();
         if(shape.length != 3) {
@@ -139,24 +181,38 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         if (batch != 1) {
             throw new IllegalArgumentException("Batch size must be 1");
         }
-        long sequenceLength = shape[1];
-        long vocabSize = shape[2];
+        if (shape[1] > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("sequenceLength=" + shape[1] + " larger than an int");
+        }
+        if (shape[2] > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("vocabSize=" + shape[2] + " larger than an int");
+        }
+        int sequenceLength = (int) shape[1];
+        int vocabSize = (int) shape[2];
 
+        String dimension = tensorType.dimensions().get(0).name();
         //Iterate over the vocab dimension and find the max value for each sequence token
-        for(int v = 0; v < vocabSize; v++) {
-            double maxLogOfRelu = Double.MIN_VALUE;
-            for(int s = 0; s < sequenceLength; s++) {
-                double value = modelOutput.get(0, s, v); // batch, sequence, vocab
-                double logOfRelu = Math.log(1 + Math.max(0, value));
-                if(logOfRelu > maxLogOfRelu) {
-                    maxLogOfRelu = logOfRelu;
+        long [] tokens = new long[1];
+        DirectIndexedAddress directAddress = modelOutput.directAddress();
+        directAddress.setIndex(0,0);
+        for (int v = 0; v < vocabSize; v++) {
+            double maxValue = 0.0d;
+            directAddress.setIndex(2, v);
+            long increment = directAddress.getStride(1);
+            long directIndex = directAddress.getDirectIndex();
+            for (int s = 0; s < sequenceLength; s++) {
+                double value = modelOutput.get(directIndex + s * increment);
+                if (value > maxValue) {
+                    maxValue = value;
                 }
             }
-            if (maxLogOfRelu > termScoreThreshold) {
-                String term = tokenizer.decode(List.of((long) v));
-                builder.cell().
-                        label(tensorType.dimensions().get(0).name(), term)
-                        .value(maxLogOfRelu);
+            double logOfRelu = Math.log(1 + maxValue);
+            if (logOfRelu > termScoreThreshold) {
+                tokens[0] = v;
+                String term = tokenizer.decode(tokens);
+                builder.cell()
+                        .label(dimension, term)
+                        .value(logOfRelu);
             }
         }
         return builder.build();

@@ -2,12 +2,13 @@
 
 package com.yahoo.tensor;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,7 +29,6 @@ public class MixedTensor implements Tensor {
 
     /** The dimension specification for this tensor */
     private final TensorType type;
-    private final int denseSubspaceSize;
 
     // XXX consider using "record" instead
     /** only exposed for internal use; subject to change without notice */
@@ -50,45 +50,15 @@ public class MixedTensor implements Tensor {
         }
     }
 
-    /** The cells in the tensor */
-    private final List<DenseSubspace> denseSubspaces;
-
     /** only exposed for internal use; subject to change without notice */
-    public List<DenseSubspace> getInternalDenseSubspaces() { return denseSubspaces; }
+    public List<DenseSubspace> getInternalDenseSubspaces() { return index.denseSubspaces; }
 
     /** An index structure over the cell list */
     private final Index index;
 
-    private MixedTensor(TensorType type, List<DenseSubspace> denseSubspaces, Index index) {
+    private MixedTensor(TensorType type, Index index) {
         this.type = type;
-        this.denseSubspaceSize = index.denseSubspaceSize();
-        this.denseSubspaces = List.copyOf(denseSubspaces);
         this.index = index;
-        if (this.denseSubspaceSize < 1) {
-            throw new IllegalStateException("invalid dense subspace size: " + denseSubspaceSize);
-        }
-        long count = 0;
-        for (var block : this.denseSubspaces) {
-            if (index.sparseMap.get(block.sparseAddress) != count) {
-                throw new IllegalStateException("map vs list mismatch: block #"
-                                                + count
-                                                + " address maps to #"
-                                                + index.sparseMap.get(block.sparseAddress));
-            }
-            if (block.cells.length != denseSubspaceSize) {
-                throw new IllegalStateException("dense subspace size mismatch, expected "
-                                                + denseSubspaceSize
-                                                + " cells, but got: "
-                                                + block.cells.length);
-            }
-            ++count;
-        }
-        if (count != index.sparseMap.size()) {
-            throw new IllegalStateException("mismatch: list size is "
-                                            + count
-                                            + " but map size is "
-                                            + index.sparseMap.size());
-        }
     }
 
     /** Returns the tensor type */
@@ -97,32 +67,34 @@ public class MixedTensor implements Tensor {
 
     /** Returns the size of the tensor measured in number of cells */
     @Override
-    public long size() { return denseSubspaces.size() * denseSubspaceSize; }
+    public long size() { return index.denseSubspaces.size() * index.denseSubspaceSize; }
 
     /** Returns the value at the given address */
     @Override
     public double get(TensorAddress address) {
-        int blockNum = index.blockIndexOf(address);
-        if (blockNum < 0 || blockNum > denseSubspaces.size()) {
-            return 0.0;
-        }
+        var block = index.blockOf(address);
         int denseOffset = index.denseOffsetOf(address);
-        var block = denseSubspaces.get(blockNum);
-        if (denseOffset < 0 || denseOffset >= block.cells.length) {
+        if (block == null || denseOffset < 0 || denseOffset >= block.cells.length) {
             return 0.0;
         }
         return block.cells[denseOffset];
     }
 
     @Override
-    public boolean has(TensorAddress address) {
-        int blockNum = index.blockIndexOf(address);
-        if (blockNum < 0 || blockNum > denseSubspaces.size()) {
-            return false;
-        }
+    public Double getAsDouble(TensorAddress address) {
+        var block = index.blockOf(address);
         int denseOffset = index.denseOffsetOf(address);
-        var block = denseSubspaces.get(blockNum);
-        return (denseOffset >= 0 && denseOffset < block.cells.length);
+        if (block == null || denseOffset < 0 || denseOffset >= block.cells.length) {
+            return null;
+        }
+        return block.cells[denseOffset];
+    }
+
+    @Override
+    public boolean has(TensorAddress address) {
+        var block = index.blockOf(address);
+        int denseOffset = index.denseOffsetOf(address);
+        return (block != null && denseOffset >= 0 && denseOffset < block.cells.length);
     }
 
     /**
@@ -135,21 +107,30 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Cell> cellIterator() {
         return new Iterator<>() {
-            final Iterator<DenseSubspace> blockIterator = denseSubspaces.iterator();
-            DenseSubspace currBlock = null;
-            int currOffset = denseSubspaceSize;
+
+            final Iterator<DenseSubspace> blockIterator = index.denseSubspaces.iterator();
+            final int[] labels = new int[index.indexedDimensions.size()];
+            DenseSubspace currentBlock = null;
+            int currOffset = index.denseSubspaceSize;
+            int prevOffset = -1;
+
             @Override
             public boolean hasNext() {
-                return (currOffset < denseSubspaceSize || blockIterator.hasNext());
+                return (currOffset < index.denseSubspaceSize || blockIterator.hasNext());
             }
+
             @Override
             public Cell next() {
-                if (currOffset == denseSubspaceSize) {
-                    currBlock = blockIterator.next();
+                if (currOffset == index.denseSubspaceSize) {
+                    currentBlock = blockIterator.next();
                     currOffset = 0;
                 }
-                TensorAddress fullAddr = index.fullAddressOf(currBlock.sparseAddress, currOffset);
-                double value = currBlock.cells[currOffset++];
+                if (currOffset != prevOffset) { // Optimization for index.denseSubspaceSize == 1
+                    index.denseOffsetToAddress(currOffset, labels);
+                }
+                TensorAddress fullAddr = currentBlock.sparseAddress.fullAddressOf(index.type.dimensions(), labels);
+                prevOffset = currOffset;
+                double value = currentBlock.cells[currOffset++];
                 return new Cell(fullAddr, value);
             }
         };
@@ -162,20 +143,23 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Double> valueIterator() {
         return new Iterator<>() {
-            final Iterator<DenseSubspace> blockIterator = denseSubspaces.iterator();
-            double[] currBlock = null;
-            int currOffset = denseSubspaceSize;
+
+            final Iterator<DenseSubspace> blockIterator = index.denseSubspaces.iterator();
+            double[] currentBlock = null;
+            int currOffset = index.denseSubspaceSize;
+
             @Override
             public boolean hasNext() {
-                return (currOffset < denseSubspaceSize || blockIterator.hasNext());
+                return (currOffset < index.denseSubspaceSize || blockIterator.hasNext());
             }
+
             @Override
             public Double next() {
-                if (currOffset == denseSubspaceSize) {
-                    currBlock = blockIterator.next().cells;
+                if (currOffset == index.denseSubspaceSize) {
+                    currentBlock = blockIterator.next().cells;
                     currOffset = 0;
                 }
-                return currBlock[currOffset++];
+                return currentBlock[currOffset++];
             }
         };
     }
@@ -197,24 +181,22 @@ public class MixedTensor implements Tensor {
             throw new IllegalArgumentException("MixedTensor.withType: types are not compatible. Current type: '" +
                                                this.type + "', requested type: '" + type + "'");
         }
-        return new MixedTensor(other, denseSubspaces, index);
+        return new MixedTensor(other, index);
     }
 
     @Override
     public Tensor remove(Set<TensorAddress> addresses) {
         var indexBuilder = new Index.Builder(type);
-        List<DenseSubspace> list = new ArrayList<>();
-        for (var block : denseSubspaces) {
+        for (var block : index.denseSubspaces) {
             if ( ! addresses.contains(block.sparseAddress)) {  // assumption: addresses only contain the sparse part
-                indexBuilder.addBlock(block.sparseAddress, list.size());
-                list.add(block);
+                indexBuilder.addBlock(block);
             }
         }
-        return new MixedTensor(type, list, indexBuilder.build());
+        return new MixedTensor(type, indexBuilder.build());
     }
 
     @Override
-    public int hashCode() { return Objects.hash(type, denseSubspaces); }
+    public int hashCode() { return Objects.hash(type, index.denseSubspaces); }
 
     @Override
     public String toString() {
@@ -249,13 +231,14 @@ public class MixedTensor implements Tensor {
 
     /** Returns the size of dense subspaces */
     public long denseSubspaceSize() {
-        return denseSubspaceSize;
+        return index.denseSubspaceSize;
     }
 
     /**
      * Base class for building mixed tensors.
      */
     public abstract static class Builder implements Tensor.Builder {
+        static final int INITIAL_HASH_CAPACITY = 1000;
 
         final TensorType type;
 
@@ -265,10 +248,11 @@ public class MixedTensor implements Tensor {
          * a temporary structure while finding dimension bounds.
          */
         public static Builder of(TensorType type) {
-            if (type.dimensions().stream().anyMatch(d -> d instanceof TensorType.IndexedUnboundDimension)) {
-                return new UnboundBuilder(type);
+            //TODO Wire in expected map size to avoid expensive resize
+            if (type.hasIndexedUnboundDimensions()) {
+                return new UnboundBuilder(type, INITIAL_HASH_CAPACITY);
             } else {
-                return new BoundBuilder(type);
+                return new BoundBuilder(type, INITIAL_HASH_CAPACITY);
             }
         }
 
@@ -306,13 +290,14 @@ public class MixedTensor implements Tensor {
     public static class BoundBuilder extends Builder {
 
         /** For each sparse partial address, hold a dense subspace */
-        private final Map<TensorAddress, double[]> denseSubspaceMap = new HashMap<>();
+        private final Map<TensorAddress, double[]> denseSubspaceMap;
         private final Index.Builder indexBuilder;
         private final Index index;
         private final TensorType denseSubtype;
 
-        private BoundBuilder(TensorType type) {
+        private BoundBuilder(TensorType type, int expectedSize) {
             super(type);
+            denseSubspaceMap = new LinkedHashMap<>(expectedSize, 0.5f);
             indexBuilder = new Index.Builder(type);
             index = indexBuilder.index();
             denseSubtype = new TensorType(type.valueType(),
@@ -324,10 +309,7 @@ public class MixedTensor implements Tensor {
         }
 
         private double[] denseSubspace(TensorAddress sparseAddress) {
-            if (!denseSubspaceMap.containsKey(sparseAddress)) {
-                denseSubspaceMap.put(sparseAddress, new double[(int)denseSubspaceSize()]);
-            }
-            return denseSubspaceMap.get(sparseAddress);
+            return denseSubspaceMap.computeIfAbsent(sparseAddress, (key) -> new double[(int)denseSubspaceSize()]);
         }
 
         public IndexedTensor.DirectIndexBuilder denseSubspaceBuilder(TensorAddress sparseAddress) {
@@ -343,7 +325,7 @@ public class MixedTensor implements Tensor {
 
         @Override
         public Tensor.Builder cell(TensorAddress address, double value) {
-            TensorAddress sparsePart = index.sparsePartialAddress(address);
+            TensorAddress sparsePart = address.mappedPartialAddress(index.sparseType, index.type.dimensions());
             int denseOffset = index.denseOffsetOf(address);
             double[] denseSubspace = denseSubspace(sparsePart);
             denseSubspace[denseOffset] = value;
@@ -362,19 +344,20 @@ public class MixedTensor implements Tensor {
 
         @Override
         public MixedTensor build() {
-            List<DenseSubspace> list = new ArrayList<>();
-            for (Map.Entry<TensorAddress, double[]> entry : denseSubspaceMap.entrySet()) {
+            //TODO This can be solved more efficiently with a single map.
+            Set<Map.Entry<TensorAddress, double[]>> entrySet = denseSubspaceMap.entrySet();
+            for (Map.Entry<TensorAddress, double[]> entry : entrySet) {
                 TensorAddress sparsePart = entry.getKey();
                 double[] denseSubspace = entry.getValue();
                 var block = new DenseSubspace(sparsePart, denseSubspace);
-                indexBuilder.addBlock(sparsePart, list.size());
-                list.add(block);
+                indexBuilder.addBlock(block);
             }
-            return new MixedTensor(type, list, indexBuilder.build());
+            return new MixedTensor(type, indexBuilder.build());
         }
 
         public static BoundBuilder of(TensorType type) {
-            return new BoundBuilder(type);
+            //TODO Wire in expected map size to avoid expensive resize
+            return new BoundBuilder(type, INITIAL_HASH_CAPACITY);
         }
     }
 
@@ -391,9 +374,9 @@ public class MixedTensor implements Tensor {
         private final Map<TensorAddress, Double> cells;
         private final long[] dimensionBounds;
 
-        private UnboundBuilder(TensorType type) {
+        private UnboundBuilder(TensorType type, int expectedSize) {
             super(type);
-            cells = new HashMap<>();
+            cells = new LinkedHashMap<>(expectedSize, 0.5f);
             dimensionBounds = new long[type.dimensions().size()];
         }
 
@@ -412,7 +395,7 @@ public class MixedTensor implements Tensor {
         @Override
         public MixedTensor build() {
             TensorType boundType = createBoundType();
-            BoundBuilder builder = new BoundBuilder(boundType);
+            BoundBuilder builder = new BoundBuilder(boundType, cells.size());
             for (Map.Entry<TensorAddress, Double> cell : cells.entrySet()) {
                 builder.cell(cell.getKey(), cell.getValue());
             }
@@ -443,7 +426,8 @@ public class MixedTensor implements Tensor {
         }
 
         public static UnboundBuilder of(TensorType type) {
-            return new UnboundBuilder(type);
+            //TODO Wire in expected map size to avoid expensive resize
+            return new UnboundBuilder(type, INITIAL_HASH_CAPACITY);
         }
     }
 
@@ -460,8 +444,10 @@ public class MixedTensor implements Tensor {
         private final TensorType denseType;
         private final List<TensorType.Dimension> mappedDimensions;
         private final List<TensorType.Dimension> indexedDimensions;
+        private final int[] indexedDimensionsSize;
 
         private ImmutableMap<TensorAddress, Integer> sparseMap;
+        private List<DenseSubspace> denseSubspaces;
         private final int denseSubspaceSize;
 
         static private int computeDSS(List<TensorType.Dimension> dimensions) {
@@ -477,17 +463,31 @@ public class MixedTensor implements Tensor {
             this.type = type;
             this.mappedDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).toList();
             this.indexedDimensions = type.dimensions().stream().filter(TensorType.Dimension::isIndexed).toList();
+            this.indexedDimensionsSize = new int[indexedDimensions.size()];
+            for (int i = 0; i < indexedDimensions.size(); i++) {
+                long dimensionSize = indexedDimensions.get(i).size().orElseThrow(() ->
+                        new IllegalArgumentException("Unknown size of indexed dimension."));
+                indexedDimensionsSize[i] = (int)dimensionSize;
+            }
+
             this.sparseType = createPartialType(type.valueType(), mappedDimensions);
             this.denseType = createPartialType(type.valueType(), indexedDimensions);
             this.denseSubspaceSize = computeDSS(this.indexedDimensions);
+            if (this.denseSubspaceSize < 1) {
+                throw new IllegalStateException("invalid dense subspace size: " + denseSubspaceSize);
+            }
         }
 
-        int blockIndexOf(TensorAddress address) {
-            TensorAddress sparsePart = sparsePartialAddress(address);
-            return sparseMap.getOrDefault(sparsePart, -1);
+        private DenseSubspace blockOf(TensorAddress address) {
+            TensorAddress sparsePart = address.mappedPartialAddress(sparseType, type.dimensions());
+            Integer blockNum = sparseMap.get(sparsePart);
+            if (blockNum == null || blockNum >= denseSubspaces.size()) {
+                return null;
+            }
+            return denseSubspaces.get(blockNum);
         }
 
-        int denseOffsetOf(TensorAddress address) {
+        private int denseOffsetOf(TensorAddress address) {
             long innerSize = 1;
             long offset = 0;
             for (int i = type.dimensions().size(); --i >= 0; ) {
@@ -506,54 +506,19 @@ public class MixedTensor implements Tensor {
             return denseSubspaceSize;
         }
 
-        private TensorAddress sparsePartialAddress(TensorAddress address) {
-            if (type.dimensions().size() != address.size())
-                throw new IllegalArgumentException("Tensor type of " + this + " is not the same size as " + address);
-            TensorAddress.Builder builder = new TensorAddress.Builder(sparseType);
-            for (int i = 0; i < type.dimensions().size(); ++i) {
-                TensorType.Dimension dimension = type.dimensions().get(i);
-                if ( ! dimension.isIndexed())
-                    builder.add(dimension.name(), address.label(i));
-            }
-            return builder.build();
-        }
-
-        private TensorAddress denseOffsetToAddress(long denseOffset) {
+        private void denseOffsetToAddress(long denseOffset, int [] labels) {
             if (denseOffset < 0 || denseOffset > denseSubspaceSize) {
                 throw new IllegalArgumentException("Offset out of bounds");
             }
 
             long restSize = denseOffset;
             long innerSize = denseSubspaceSize;
-            long[] labels = new long[indexedDimensions.size()];
 
             for (int i = 0; i < labels.length; ++i) {
-                TensorType.Dimension dimension = indexedDimensions.get(i);
-                long dimensionSize = dimension.size().orElseThrow(() ->
-                        new IllegalArgumentException("Unknown size of indexed dimension."));
-
-                innerSize /= dimensionSize;
-                labels[i] = restSize / innerSize;
+                innerSize /= indexedDimensionsSize[i];
+                labels[i] = (int) (restSize / innerSize);
                 restSize %= innerSize;
             }
-            return TensorAddress.of(labels);
-        }
-
-        TensorAddress fullAddressOf(TensorAddress sparsePart, long denseOffset) {
-            TensorAddress densePart = denseOffsetToAddress(denseOffset);
-            String[] labels = new String[type.dimensions().size()];
-            int mappedIndex = 0;
-            int indexedIndex = 0;
-            for (TensorType.Dimension d : type.dimensions()) {
-                if (d.isIndexed()) {
-                    labels[mappedIndex + indexedIndex] = densePart.label(indexedIndex);
-                    indexedIndex++;
-                } else {
-                    labels[mappedIndex + indexedIndex] = sparsePart.label(mappedIndex);
-                    mappedIndex++;
-                }
-            }
-            return TensorAddress.of(labels);
         }
 
         @Override
@@ -563,7 +528,7 @@ public class MixedTensor implements Tensor {
 
         private String contentToString(MixedTensor tensor, long maxCells) {
             if (mappedDimensions.size() > 1) throw new IllegalStateException("Should be ensured by caller");
-            if (mappedDimensions.size() == 0) {
+            if (mappedDimensions.isEmpty()) {
                 StringBuilder b = new StringBuilder();
                 int cellsWritten = denseSubspaceToString(tensor, 0, maxCells, b);
                 if (cellsWritten == maxCells && cellsWritten < tensor.size())
@@ -605,8 +570,7 @@ public class MixedTensor implements Tensor {
                     b.append(", ");
 
                 // start brackets
-                for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
-                    b.append("[");
+                b.append("[".repeat(Math.max(0, indexes.nextDimensionsAtStart())));
 
                 // value
                 switch (type.valueType()) {
@@ -619,32 +583,38 @@ public class MixedTensor implements Tensor {
                 }
 
                 // end bracket
-                for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
-                    b.append("]");
+                b.append("]".repeat(Math.max(0, indexes.nextDimensionsAtEnd())));
             }
             return index;
         }
 
         private double getDouble(int subspaceIndex, int denseOffset, MixedTensor tensor) {
-            return tensor.denseSubspaces.get(subspaceIndex).cells[denseOffset];
+            return tensor.index.denseSubspaces.get(subspaceIndex).cells[denseOffset];
         }
 
-        static class Builder {
+        private static class Builder {
 
             private final Index index;
-            private final ImmutableMap.Builder<TensorAddress, Integer> builder;
+            private final ImmutableMap.Builder<TensorAddress, Integer> builder = new ImmutableMap.Builder<>();
+            private final ImmutableList.Builder<DenseSubspace> listBuilder = new ImmutableList.Builder<>();
+            private int count = 0;
 
             Builder(TensorType type) {
                 index = new Index(type);
-                builder = new ImmutableMap.Builder<>();
             }
 
-            void addBlock(TensorAddress address, int sz) {
-                builder.put(address, sz);
+            void addBlock(DenseSubspace block) {
+                if (block.cells.length != index.denseSubspaceSize) {
+                    throw new IllegalStateException("dense subspace size mismatch, expected " + index.denseSubspaceSize
+                            + " cells, but got: " + block.cells.length);
+                }
+                builder.put(block.sparseAddress, count++);
+                listBuilder.add(block);
             }
 
             Index build() {
                 index.sparseMap = builder.build();
+                index.denseSubspaces = listBuilder.build();
                 return index;
             }
 
@@ -654,27 +624,16 @@ public class MixedTensor implements Tensor {
         }
     }
 
-    private static class DenseSubspaceBuilder implements IndexedTensor.DirectIndexBuilder {
-
-        private final TensorType type;
-        private final double[] values;
-
-        public DenseSubspaceBuilder(TensorType type, double[] values) {
-            this.type = type;
-            this.values = values;
-        }
-
-        @Override
-        public TensorType type() { return type; }
+    private record DenseSubspaceBuilder(TensorType type, double[] values) implements IndexedTensor.DirectIndexBuilder {
 
         @Override
         public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = value;
+            values[(int) index] = value;
         }
 
         @Override
         public void cellByDirectIndex(long index, float value) {
-            values[(int)index] = value;
+            values[(int) index] = value;
         }
 
     }

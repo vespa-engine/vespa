@@ -627,7 +627,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
                              bool allAttributes, OnWriteDoneType onWriteDone)
 {
     for (const auto &wc : _writeContexts) {
-        if (wc.use_two_phase_put()) {
+        if (allAttributes && wc.use_two_phase_put()) {
             assert(wc.getFields().size() == 1);
             wc.consider_build_field_paths(doc);
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, wc, doc);

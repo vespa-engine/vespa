@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -15,6 +14,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vdslib.state.NodeType.DISTRIBUTOR;
 import static com.yahoo.vdslib.state.NodeType.STORAGE;
@@ -709,6 +710,10 @@ public class NodeStateChangeCheckerTest {
         assertFalse(result.isAlreadySet());
     }
 
+    private record HostInfoMetrics(int bucketCount, Integer entryCountOrNull, Integer docCountOrNull) {
+        static HostInfoMetrics zero() { return new HostInfoMetrics(0, 0, 0); }
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {-1, 1})
     void testDownDisallowedByNonRetiredState(int maxNumberOfGroupsAllowedToBeDown) {
@@ -716,25 +721,43 @@ public class NodeStateChangeCheckerTest {
                 defaultAllUpClusterState(),
                 UP,
                 currentClusterStateVersion,
-                0,
+                HostInfoMetrics.zero(),
                 maxNumberOfGroupsAllowedToBeDown);
         assertFalse(result.allowed());
         assertFalse(result.isAlreadySet());
         assertEquals("Only retired nodes are allowed to be set to DOWN in safe mode - is Up", result.reason());
     }
 
+    private record MetricsAndMessage(HostInfoMetrics hostInfoMetrics, String expectedMessage) {}
+
     @ParameterizedTest
     @ValueSource(ints = {-1, 1})
-    void testDownDisallowedByBuckets(int maxNumberOfGroupsAllowedToBeDown) {
-        Result result = evaluateDownTransition(
-                retiredClusterStateSuffix(),
-                UP,
-                currentClusterStateVersion,
-                1,
-                maxNumberOfGroupsAllowedToBeDown);
-        assertFalse(result.allowed());
-        assertFalse(result.isAlreadySet());
-        assertEquals("The storage node manages 1 buckets", result.reason());
+    void down_disallowed_by_host_info_metrics_implying_node_still_stores_data(int maxNumberOfGroupsAllowedToBeDown) {
+        var disallowCases = List.of(
+                // Non-zero bucket count, and no entry/doc count metrics
+                new MetricsAndMessage(new HostInfoMetrics(1, null, null), "The storage node manages 1 buckets"),
+                // Non-zero bucket count and non-zero entries (note that we prefer reporting the entry count over the bucket count)
+                new MetricsAndMessage(new HostInfoMetrics(1, 2, 1), "The storage node stores 1 documents and 1 tombstones across 1 buckets"),
+
+                // These are cases that should not normally happen, but we test them nevertheless:
+                // Bucket count should never be zero if the entry count is > 0
+                new MetricsAndMessage(new HostInfoMetrics(0, 2, 1), "The storage node stores 1 documents and 1 tombstones across 0 buckets"),
+                // Entry count should never be zero if the document count is > 0
+                new MetricsAndMessage(new HostInfoMetrics(0, 0, 2), "The storage node reports 0 entries, but 2 documents"),
+                // Document count should always be present alongside entry count
+                new MetricsAndMessage(new HostInfoMetrics(0, 0, null), "The storage node host info reports stored entry count, but not document count")
+        );
+        for (var dc : disallowCases) {
+            Result result = evaluateDownTransition(
+                    retiredClusterStateSuffix(),
+                    UP,
+                    currentClusterStateVersion,
+                    dc.hostInfoMetrics,
+                    maxNumberOfGroupsAllowedToBeDown);
+            assertFalse(result.allowed());
+            assertFalse(result.isAlreadySet());
+            assertEquals(dc.expectedMessage, result.reason());
+        }
     }
 
     @ParameterizedTest
@@ -744,7 +767,7 @@ public class NodeStateChangeCheckerTest {
                 retiredClusterStateSuffix(),
                 INITIALIZING,
                 currentClusterStateVersion,
-                0,
+                HostInfoMetrics.zero(),
                 maxNumberOfGroupsAllowedToBeDown);
         assertFalse(result.allowed());
         assertFalse(result.isAlreadySet());
@@ -758,7 +781,7 @@ public class NodeStateChangeCheckerTest {
                 retiredClusterStateSuffix(),
                 UP,
                 currentClusterStateVersion - 1,
-                0,
+                HostInfoMetrics.zero(),
                 maxNumberOfGroupsAllowedToBeDown);
         assertFalse(result.allowed());
         assertFalse(result.isAlreadySet());
@@ -766,14 +789,42 @@ public class NodeStateChangeCheckerTest {
                 result.reason());
     }
 
+    // Legacy fallback when the content node does not report stored entry count (docs + tombstones)
     @ParameterizedTest
     @ValueSource(ints = {-1, 1})
-    void testAllowedToSetDown(int maxNumberOfGroupsAllowedToBeDown) {
+    void allowed_to_set_down_when_no_buckets_without_entry_metrics(int maxNumberOfGroupsAllowedToBeDown) {
         Result result = evaluateDownTransition(
                 retiredClusterStateSuffix(),
                 UP,
                 currentClusterStateVersion,
-                0,
+                new HostInfoMetrics(0, null, null),
+                maxNumberOfGroupsAllowedToBeDown);
+        assertTrue(result.allowed());
+        assertFalse(result.isAlreadySet());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 1})
+    void allowed_to_set_down_when_no_stored_entries_or_buckets(int maxNumberOfGroupsAllowedToBeDown) {
+        Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                UP,
+                currentClusterStateVersion,
+                HostInfoMetrics.zero(),
+                maxNumberOfGroupsAllowedToBeDown);
+        assertTrue(result.allowed());
+        assertFalse(result.isAlreadySet());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 1})
+    void allowed_to_set_down_when_no_stored_entries_but_empty_buckets_are_present(int maxNumberOfGroupsAllowedToBeDown) {
+        Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                UP,
+                currentClusterStateVersion,
+                // The node has (orphaned) buckets, but nothing is stored in them
+                new HostInfoMetrics(100, 0, 0),
                 maxNumberOfGroupsAllowedToBeDown);
         assertTrue(result.allowed());
         assertFalse(result.isAlreadySet());
@@ -782,14 +833,14 @@ public class NodeStateChangeCheckerTest {
     private Result evaluateDownTransition(ClusterState clusterState,
                                           State reportedState,
                                           int hostInfoClusterStateVersion,
-                                          int lastAlldisksBuckets,
+                                          HostInfoMetrics hostInfoMetrics,
                                           int maxNumberOfGroupsAllowedToBeDown) {
         ContentCluster cluster = createCluster(4, maxNumberOfGroupsAllowedToBeDown);
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
         StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
         nodeInfo.setReportedState(new NodeState(STORAGE, reportedState), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(hostInfoClusterStateVersion, lastAlldisksBuckets));
+        nodeInfo.setHostInfo(createHostInfoWithMetrics(hostInfoClusterStateVersion, hostInfoMetrics));
 
         return nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, clusterState, SAFE,
@@ -802,90 +853,68 @@ public class NodeStateChangeCheckerTest {
                 nodeStorage.getIndex()));
     }
 
-    private static HostInfo createHostInfoWithMetrics(int clusterStateVersion, int lastAlldisksBuckets) {
-        return HostInfo.createHostInfo(String.format("{\n" +
-                        "  \"metrics\":\n" +
-                        "  {\n" +
-                        "    \"snapshot\":\n" +
-                        "    {\n" +
-                        "      \"from\":1494940706,\n" +
-                        "      \"to\":1494940766\n" +
-                        "    },\n" +
-                        "    \"values\":\n" +
-                        "    [\n" +
-                        "      {\n" +
-                        "        \"name\":\"vds.datastored.alldisks.buckets\",\n" +
-                        "        \"description\":\"buckets managed\",\n" +
-                        "        \"values\":\n" +
-                        "        {\n" +
-                        "          \"average\":262144.0,\n" +
-                        "          \"count\":1,\n" +
-                        "          \"rate\":0.016666,\n" +
-                        "          \"min\":262144,\n" +
-                        "          \"max\":262144,\n" +
-                        "          \"last\":%d\n" +
-                        "        },\n" +
-                        "        \"dimensions\":\n" +
-                        "        {\n" +
-                        "        }\n" +
-                        "      },\n" +
-                        "      {\n" +
-                        "        \"name\":\"vds.datastored.alldisks.docs\",\n" +
-                        "        \"description\":\"documents stored\",\n" +
-                        "        \"values\":\n" +
-                        "        {\n" +
-                        "          \"average\":154689587.0,\n" +
-                        "          \"count\":1,\n" +
-                        "          \"rate\":0.016666,\n" +
-                        "          \"min\":154689587,\n" +
-                        "          \"max\":154689587,\n" +
-                        "          \"last\":154689587\n" +
-                        "        },\n" +
-                        "        \"dimensions\":\n" +
-                        "        {\n" +
-                        "        }\n" +
-                        "      },\n" +
-                        "      {\n" +
-                        "        \"name\":\"vds.datastored.bucket_space.buckets_total\",\n" +
-                        "        \"description\":\"Total number buckets present in the bucket space (ready + not ready)\",\n" +
-                        "        \"values\":\n" +
-                        "        {\n" +
-                        "          \"average\":0.0,\n" +
-                        "          \"sum\":0.0,\n" +
-                        "          \"count\":1,\n" +
-                        "          \"rate\":0.016666,\n" +
-                        "          \"min\":0,\n" +
-                        "          \"max\":0,\n" +
-                        "          \"last\":0\n" +
-                        "        },\n" +
-                        "        \"dimensions\":\n" +
-                        "        {\n" +
-                        "          \"bucketSpace\":\"global\"\n" +
-                        "        }\n" +
-                        "      },\n" +
-                        "      {\n" +
-                        "        \"name\":\"vds.datastored.bucket_space.buckets_total\",\n" +
-                        "        \"description\":\"Total number buckets present in the bucket space (ready + not ready)\",\n" +
-                        "        \"values\":\n" +
-                        "        {\n" +
-                        "          \"average\":129.0,\n" +
-                        "          \"sum\":129.0,\n" +
-                        "          \"count\":1,\n" +
-                        "          \"rate\":0.016666,\n" +
-                        "          \"min\":129,\n" +
-                        "          \"max\":129,\n" +
-                        "          \"last\":%d\n" +
-                        "        },\n" +
-                        "        \"dimensions\":\n" +
-                        "        {\n" +
-                        "          \"bucketSpace\":\"default\"\n" +
-                        "        }\n" +
-                        "      }\n" +
-                        "    ]\n" +
-                        "  },\n" +
-                        "  \"cluster-state-version\":%d\n" +
-                        "}",
-                lastAlldisksBuckets, lastAlldisksBuckets, clusterStateVersion));
+    private static String bucketSpacesMetricJsonIfNonNull(String metric, Integer lastValueOrNull) {
+        if (lastValueOrNull != null) {
+            // We fake the value for the global space; its actual value does not matter, as global
+            // document [entry] count is not taken into consideration for node removals (they are never
+            // moved away during retirement). We just want a unique value to test that we don't
+            // accidentally use the wrong dimension.
+            return Stream.of("default", "global")
+                    .map(bucketSpace ->
+                        """
+                        {
+                            "name":"vds.datastored.bucket_space.%s",
+                            "values":{"last":%d},
+                            "dimensions":{"bucketSpace":"%s"}
+                        },""".formatted(metric, (lastValueOrNull + (bucketSpace.equals("default") ? 0 : 123)), bucketSpace))
+                    .collect(Collectors.joining("\n"));
+        }
+        return "";
+    }
+
+    private static HostInfo createHostInfoWithMetrics(int clusterStateVersion, HostInfoMetrics hostInfoMetrics) {
+        return HostInfo.createHostInfo(String.format("""
+                        {
+                          "metrics":
+                          {
+                            "snapshot":
+                            {
+                              "from":1494940706,
+                              "to":1494940766
+                            },
+                            "values":
+                            [
+                              %s
+                              %s
+                              %s
+                              {
+                                "name":"vds.datastored.alldisks.buckets",
+                                "values":
+                                {
+                                  "last":%d
+                                },
+                                "dimensions":
+                                {
+                                }
+                              },
+                              {
+                                "name":"vds.datastored.alldisks.docs",
+                                "values":
+                                {
+                                  "last":154689587
+                                },
+                                "dimensions":
+                                {
+                                }
+                              }
+                            ]
+                          },
+                          "cluster-state-version":%d
+                        }""",
+                bucketSpacesMetricJsonIfNonNull("buckets_total", hostInfoMetrics.bucketCount),
+                bucketSpacesMetricJsonIfNonNull("entries",       hostInfoMetrics.entryCountOrNull),
+                bucketSpacesMetricJsonIfNonNull("docs",          hostInfoMetrics.docCountOrNull),
+                hostInfoMetrics.bucketCount, clusterStateVersion));
     }
 
     private List<ConfiguredNode> createNodes(int count) {

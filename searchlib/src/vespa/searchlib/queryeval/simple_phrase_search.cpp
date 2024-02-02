@@ -8,7 +8,6 @@
 
 using search::fef::TermFieldMatchData;
 using std::unique_ptr;
-using std::transform;
 using std::vector;
 using vespalib::ObjectVisitor;
 

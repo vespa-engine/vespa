@@ -59,15 +59,12 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config = &dc.addConfig("stor-communicationmanager");
     config->set("rpcport", "0");
     config->set("mbusport", "0");
-    config = &dc.addConfig("stor-bucketdb");
-    config->set("chunklevel", "0");
     config = &dc.addConfig("stor-distributormanager");
     config->set("splitcount", "1000");
     config->set("splitsize", "10000000");
     config->set("joincount", "500");
     config->set("joinsize", "5000000");
     config->set("max_clock_skew_sec", "0");
-    config = &dc.addConfig("stor-opslogger");
     config = &dc.addConfig("persistence");
     config->set("abort_operations_with_changed_bucket_ownership", "true");
     config = &dc.addConfig("stor-filestor");

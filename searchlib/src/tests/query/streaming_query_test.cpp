@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
+#include <vespa/searchlib/query/streaming/phrase_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/wand_term.h>
@@ -23,10 +24,11 @@ using TermType = QueryTerm::Type;
 using search::fef::SimpleTermData;
 using search::fef::MatchData;
 
-void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weight) {
-    EXPECT_EQ(h.wordpos(), expWordpos);
-    EXPECT_EQ(h.context(), expContext);
-    EXPECT_EQ(h.weight(), weight);
+void assertHit(const Hit & h, uint32_t exp_field_id, uint32_t exp_element_id, int32_t exp_element_weight, size_t exp_position) {
+    EXPECT_EQ(h.field_id(), exp_field_id);
+    EXPECT_EQ(h.element_id(), exp_element_id);
+    EXPECT_EQ(h.element_weight(), exp_element_weight);
+    EXPECT_EQ(h.position(), exp_position);
 }
 
 
@@ -427,87 +429,19 @@ TEST(StreamingQueryTest, test_get_query_parts)
     }
 }
 
-TEST(StreamingQueryTest, test_phrase_evaluate)
-{
-    QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.addPhrase(3, "", 0, Weight(0));
-    {
-        builder.addStringTerm("a", "", 0, Weight(0));
-        builder.addStringTerm("b", "", 0, Weight(0));
-        builder.addStringTerm("c", "", 0, Weight(0));
-    }
-    Node::UP node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
-    QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
-    QueryNodeRefList phrases;
-    q.getPhrases(phrases);
-    QueryTermList terms;
-    q.getLeaves(terms);
-    for (QueryTerm * qt : terms) {
-        qt->resizeFieldId(1);
-    }
-
-    // field 0
-    terms[0]->add(0, 0, 0, 1);
-    terms[1]->add(1, 0, 0, 1);
-    terms[2]->add(2, 0, 0, 1);
-    terms[0]->add(7, 0, 0, 1);
-    terms[1]->add(8, 0, 1, 1);
-    terms[2]->add(9, 0, 0, 1);
-    // field 1
-    terms[0]->add(4, 1, 0, 1);
-    terms[1]->add(5, 1, 0, 1);
-    terms[2]->add(6, 1, 0, 1);
-    // field 2 (not complete match)
-    terms[0]->add(1, 2, 0, 1);
-    terms[1]->add(2, 2, 0, 1);
-    terms[2]->add(4, 2, 0, 1);
-    // field 3
-    terms[0]->add(0, 3, 0, 1);
-    terms[1]->add(1, 3, 0, 1);
-    terms[2]->add(2, 3, 0, 1);
-    // field 4 (not complete match)
-    terms[0]->add(1, 4, 0, 1);
-    terms[1]->add(2, 4, 0, 1);
-    // field 5 (not complete match)
-    terms[0]->add(2, 5, 0, 1);
-    terms[1]->add(1, 5, 0, 1);
-    terms[2]->add(0, 5, 0, 1);
-    HitList hits;
-    auto * p = static_cast<PhraseQueryNode *>(phrases[0]);
-    p->evaluateHits(hits);
-    ASSERT_EQ(3u, hits.size());
-    EXPECT_EQ(hits[0].wordpos(), 2u);
-    EXPECT_EQ(hits[0].context(), 0u);
-    EXPECT_EQ(hits[1].wordpos(), 6u);
-    EXPECT_EQ(hits[1].context(), 1u);
-    EXPECT_EQ(hits[2].wordpos(), 2u);
-    EXPECT_EQ(hits[2].context(), 3u);
-    ASSERT_EQ(4u, p->getFieldInfoSize());
-    EXPECT_EQ(p->getFieldInfo(0).getHitOffset(), 0u);
-    EXPECT_EQ(p->getFieldInfo(0).getHitCount(),  1u);
-    EXPECT_EQ(p->getFieldInfo(1).getHitOffset(), 1u);
-    EXPECT_EQ(p->getFieldInfo(1).getHitCount(),  1u);
-    EXPECT_EQ(p->getFieldInfo(2).getHitOffset(), 0u); // invalid, but will never be used
-    EXPECT_EQ(p->getFieldInfo(2).getHitCount(),  0u);
-    EXPECT_EQ(p->getFieldInfo(3).getHitOffset(), 2u);
-    EXPECT_EQ(p->getFieldInfo(3).getHitCount(),  1u);
-    EXPECT_TRUE(p->evaluate());
-}
-
 TEST(StreamingQueryTest, test_hit)
 {
-    // positions (0 - (2^24-1))
-    assertHit(Hit(0,        0, 0, 0),        0, 0, 0);
-    assertHit(Hit(256,      0, 0, 1),      256, 0, 1);
-    assertHit(Hit(16777215, 0, 0, -1), 16777215, 0, -1);
-    assertHit(Hit(16777216, 0, 0, 1),        0, 1, 1); // overflow
+    // field id
+    assertHit(Hit(  1, 0, 1, 0),   1, 0, 1, 0);
+    assertHit(Hit(255, 0, 1, 0), 255, 0, 1, 0);
+    assertHit(Hit(256, 0, 1, 0), 256, 0, 1, 0);
 
-    // contexts (0 - 255)
-    assertHit(Hit(0,   1, 0, 1), 0,   1, 1);
-    assertHit(Hit(0, 255, 0, 1), 0, 255, 1);
-    assertHit(Hit(0, 256, 0, 1), 0,   0, 1); // overflow
+    // positions
+    assertHit(Hit(0, 0,  0,        0), 0, 0,  0,        0);
+    assertHit(Hit(0, 0,  1,      256), 0, 0,  1,      256);
+    assertHit(Hit(0, 0, -1, 16777215), 0, 0, -1, 16777215);
+    assertHit(Hit(0, 0,  1, 16777216), 0, 0,  1, 16777216);
+
 }
 
 void assertInt8Range(const std::string &term, bool expAdjusted, int64_t expLow, int64_t expHigh) {
@@ -769,105 +703,6 @@ TEST(StreamingQueryTest, require_that_we_do_not_break_the_stack_on_bad_query)
     EXPECT_FALSE(term.isValid());
 }
 
-TEST(StreamingQueryTest, a_unhandled_sameElement_stack)
-{
-    const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
-    vespalib::stringref stackDump(stack);
-    EXPECT_EQ(85u, stackDump.size());
-    AllowRewrite empty("");
-    const Query q(empty, stackDump);
-    EXPECT_TRUE(q.valid());
-    const QueryNode & root = q.getRoot();
-    auto sameElement = dynamic_cast<const SameElementQueryNode *>(&root);
-    EXPECT_TRUE(sameElement != nullptr);
-    EXPECT_EQ(2u, sameElement->size());
-    EXPECT_EQ("xyz_abcdefghij_xyzxyzx", sameElement->getIndex());
-    auto term0 = dynamic_cast<const QueryTerm *>((*sameElement)[0].get());
-    EXPECT_TRUE(term0 != nullptr);
-    auto term1 = dynamic_cast<const QueryTerm *>((*sameElement)[1].get());
-    EXPECT_TRUE(term1 != nullptr);
-}
-
-namespace {
-    void verifyQueryTermNode(const vespalib::string & index, const QueryNode *node) {
-        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(node) != nullptr);
-        EXPECT_EQ(index, node->getIndex());
-    }
-}
-
-TEST(StreamingQueryTest, test_same_element_evaluate)
-{
-    QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.addSameElement(3, "field", 0, Weight(0));
-    {
-        builder.addStringTerm("a", "f1", 0, Weight(0));
-        builder.addStringTerm("b", "f2", 1, Weight(0));
-        builder.addStringTerm("c", "f3", 2, Weight(0));
-    }
-    Node::UP node = builder.build();
-    vespalib::string stackDump = StackDumpCreator::create(*node);
-    QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
-    auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
-    EXPECT_TRUE(sameElem != nullptr);
-    EXPECT_EQ("field", sameElem->getIndex());
-    EXPECT_EQ(3u, sameElem->size());
-    verifyQueryTermNode("field.f1", (*sameElem)[0].get());
-    verifyQueryTermNode("field.f2", (*sameElem)[1].get());
-    verifyQueryTermNode("field.f3", (*sameElem)[2].get());
-
-    QueryTermList terms;
-    q.getLeaves(terms);
-    EXPECT_EQ(3u, terms.size());
-    for (QueryTerm * qt : terms) {
-        qt->resizeFieldId(3);
-    }
-
-    // field 0
-    terms[0]->add(1, 0, 0, 10);
-    terms[0]->add(2, 0, 1, 20);
-    terms[0]->add(3, 0, 2, 30);
-    terms[0]->add(4, 0, 3, 40);
-    terms[0]->add(5, 0, 4, 50);
-    terms[0]->add(6, 0, 5, 60);
-
-    terms[1]->add(7, 1, 0, 70);
-    terms[1]->add(8, 1, 1, 80);
-    terms[1]->add(9, 1, 2, 90);
-    terms[1]->add(10, 1, 4, 100);
-    terms[1]->add(11, 1, 5, 110);
-    terms[1]->add(12, 1, 6, 120);
-
-    terms[2]->add(13, 2, 0, 130);
-    terms[2]->add(14, 2, 2, 140);
-    terms[2]->add(15, 2, 4, 150);
-    terms[2]->add(16, 2, 5, 160);
-    terms[2]->add(17, 2, 6, 170);
-    HitList hits;
-    sameElem->evaluateHits(hits);
-    EXPECT_EQ(4u, hits.size());
-    EXPECT_EQ(0u, hits[0].wordpos());
-    EXPECT_EQ(2u, hits[0].context());
-    EXPECT_EQ(0u, hits[0].elemId());
-    EXPECT_EQ(130,  hits[0].weight());
-
-    EXPECT_EQ(0u, hits[1].wordpos());
-    EXPECT_EQ(2u, hits[1].context());
-    EXPECT_EQ(2u, hits[1].elemId());
-    EXPECT_EQ(140,  hits[1].weight());
-
-    EXPECT_EQ(0u, hits[2].wordpos());
-    EXPECT_EQ(2u, hits[2].context());
-    EXPECT_EQ(4u, hits[2].elemId());
-    EXPECT_EQ(150,  hits[2].weight());
-
-    EXPECT_EQ(0u, hits[3].wordpos());
-    EXPECT_EQ(2u, hits[3].context());
-    EXPECT_EQ(5u, hits[3].elemId());
-    EXPECT_EQ(160,  hits[3].weight());
-    EXPECT_TRUE(sameElem->evaluate());
-}
-
 TEST(StreamingQueryTest, test_nearest_neighbor_query_node)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
@@ -917,8 +752,8 @@ TEST(StreamingQueryTest, test_in_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q = *term.get_terms().front();
-    q.add(0, 11, 0, 1);
-    q.add(0, 12, 0, 1);
+    q.add(11, 0, 1, 0);
+    q.add(12, 0, 1, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -944,11 +779,11 @@ TEST(StreamingQueryTest, dot_product_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, -13);
-    q0.add(0, 12, 0, -17);
+    q0.add(11, 0, -13, 0);
+    q0.add(12, 0, -17, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 4);
-    q1.add(0, 12, 0, 9);
+    q1.add(11, 0, 4, 0);
+    q1.add(12, 0, 9, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -989,11 +824,11 @@ check_wand_term(double limit, const vespalib::string& label)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, 17);
-    q0.add(0, 12, 0, 13);
+    q0.add(11, 0, 17, 0);
+    q0.add(12, 0, 13, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 9);
-    q1.add(0, 12, 0, 4);
+    q1.add(11, 0, 9, 0);
+    q1.add(12, 0, 4, 0);
     EXPECT_EQ(limit < exp_wand_score_field_11, term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);
@@ -1043,11 +878,11 @@ TEST(StreamingQueryTest, weighted_set_term)
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
     auto& q0 = *term.get_terms()[0];
-    q0.add(0, 11, 0, 10);
-    q0.add(0, 12, 0, 10);
+    q0.add(11, 0, 10, 0);
+    q0.add(12, 0, 10, 0);
     auto& q1 = *term.get_terms()[1];
-    q1.add(0, 11, 0, 10);
-    q1.add(0, 12, 0, 10);
+    q1.add(11, 0, 10, 0);
+    q1.add(12, 0, 10, 0);
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     term.unpack_match_data(23, td, md);

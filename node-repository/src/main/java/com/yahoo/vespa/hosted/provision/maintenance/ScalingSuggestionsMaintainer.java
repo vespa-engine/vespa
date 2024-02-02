@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -63,13 +64,13 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Application application = applications().get(applicationId).orElse(Application.empty(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
-        var suggestion = autoscaler.suggest(application, cluster.get(), clusterNodes);
-        if (suggestion.status() == Autoscaling.Status.waiting) return true;
-        if ( ! shouldUpdateSuggestion(cluster.get().suggested(), suggestion)) return true;
+        var suggestions = autoscaler.suggest(application, cluster.get(), clusterNodes);
 
+        if ( ! shouldUpdateSuggestion(cluster.get().suggestions(), suggestions))
+            return true;
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().applications().lock(applicationId, Duration.ofSeconds(1))) {
-            applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestion, clusterId, a, lock));
+            applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestions, clusterId, a, lock));
             return true;
         }
         catch (ApplicationLockException e) {
@@ -77,19 +78,28 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    private boolean shouldUpdateSuggestion(Autoscaling currentSuggestion, Autoscaling newSuggestion) {
-        return currentSuggestion.resources().isEmpty()
-               || currentSuggestion.at().isBefore(nodeRepository().clock().instant().minus(Duration.ofDays(7)))
-               || (newSuggestion.resources().isPresent() && isHigher(newSuggestion.resources().get(), currentSuggestion.resources().get()));
+    private boolean shouldUpdateSuggestion(List<Autoscaling> currentSuggestions, List<Autoscaling> newSuggestions) {
+        // Only compare previous best suggestion with current best suggestion
+        var currentSuggestion = currentSuggestions.stream().findFirst();
+        var newSuggestion = newSuggestions.stream().findFirst();
+
+        if (currentSuggestion.isEmpty()) return true;
+        if (newSuggestion.isEmpty()) return false;
+
+        return newSuggestion.get().status() != Autoscaling.Status.waiting
+               && (currentSuggestion.get().resources().isEmpty()
+               || currentSuggestion.get().at().isBefore(nodeRepository().clock().instant().minus(Duration.ofDays(7)))
+               || (newSuggestion.get().resources().isPresent() && isHigher(newSuggestion.get().resources().get(), currentSuggestion.get().resources().get())));
     }
 
-    private void updateSuggestion(Autoscaling autoscaling,
+    private void updateSuggestion(List<Autoscaling> suggestions,
                                   ClusterSpec.Id clusterId,
                                   Application application,
                                   Mutex lock) {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        applications().put(application.with(cluster.get().withSuggested(autoscaling)), lock);
+        applications().put(application.with(cluster.get().withSuggestions(suggestions)
+                .withSuggested(suggestions.stream().findFirst().orElse(Autoscaling.empty()))), lock);
     }
 
     private boolean isHigher(ClusterResources r1, ClusterResources r2) {

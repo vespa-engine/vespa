@@ -59,6 +59,7 @@ struct NoUnpack {
         (void) docid;
         (void) search;
     }
+    void each(auto &&f, size_t n) { (void) f; (void) n; }
     void onRemove(size_t index) { (void) index; }
     void onInsert(size_t index) { (void) index; }
     bool needUnpack(size_t index) const { (void) index; return false; }

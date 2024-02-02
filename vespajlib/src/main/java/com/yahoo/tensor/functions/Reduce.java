@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.DimensionSizes;
+import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -9,16 +11,15 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.Convert;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * The <i>reduce</i> tensor operation returns a tensor produced from the argument tensor where some dimensions
@@ -112,32 +113,84 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     static Tensor evaluate(Tensor argument, List<String> dimensions, Aggregator aggregator) {
-        if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
+        if (!dimensions.isEmpty() && !argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " +
-                                               dimensions + ": Not all those dimensions are present in this tensor");
+                    dimensions + ": Not all those dimensions are present in this tensor");
 
         // Special case: Reduce all
-        if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
+        if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size()) {
             if (argument.isEmpty())
                 return Tensor.from(0.0);
             else if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
-                return reduceIndexedVector((IndexedTensor)argument, aggregator);
+                return reduceIndexedVector((IndexedTensor) argument, aggregator);
             else
                 return reduceAllGeneral(argument, aggregator);
+        }
 
         TensorType reducedType = outputType(argument.type(), dimensions);
+        int[] indexesToReduce = createIndexesToReduce(argument.type(), dimensions);
+        int[] indexesToKeep = createIndexesToKeep(argument.type(), indexesToReduce);
+        if (argument instanceof IndexedTensor indexedTensor && reducedType.hasOnlyIndexedBoundDimensions()) {
+            return reduceIndexedTensor(indexedTensor, reducedType, indexesToKeep, indexesToReduce, aggregator);
+        } else {
+            return reduceGeneral(argument, reducedType, indexesToKeep, aggregator);
+        }
+    }
 
-        // Reduce cells
-        int[] indexesToKeep = createIndexesToKeep(argument.type(), dimensions);
+    private static void reduce(IndexedTensor argument, ValueAggregator aggregator, DirectIndexedAddress address, int[] reduce, int reduceIndex) {
+        int currentIndex = reduce[reduceIndex];
+        int dimSize = Convert.safe2Int(argument.dimensionSizes().size(currentIndex));
+        if (reduceIndex + 1  < reduce.length) {
+            int nextDimension = reduceIndex + 1;
+            for (int i = 0; i < dimSize; i++) {
+                address.setIndex(currentIndex, i);
+                reduce(argument, aggregator, address, reduce, nextDimension);
+            }
+        } else {
+            address.setIndex(currentIndex, 0);
+            long increment = address.getStride(currentIndex);
+            long directIndex = address.getDirectIndex();
+            for (int i = 0; i < dimSize; i++) {
+                aggregator.aggregate(argument.get(directIndex + i * increment));
+            }
+        }
+    }
+
+    private static void reduce(IndexedTensor.Builder builder, DirectIndexedAddress destAddress, IndexedTensor argument, Aggregator aggregator, DirectIndexedAddress address, int[] toKeep, int keepIndex, int[] toReduce) {
+        if (keepIndex < toKeep.length) {
+            int currentIndex = toKeep[keepIndex];
+            int dimSize = Convert.safe2Int(argument.dimensionSizes().size(currentIndex));
+
+            int nextKeep = keepIndex + 1;
+            for (int i = 0; i < dimSize; i++) {
+                address.setIndex(currentIndex, i);
+                destAddress.setIndex(keepIndex, i);
+                reduce(builder, destAddress, argument, aggregator, address, toKeep, nextKeep, toReduce);
+            }
+        } else {
+            ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
+            reduce(argument, valueAggregator, address, toReduce, 0);
+            builder.cell(valueAggregator.aggregatedValue(), destAddress.getIndexes());
+        }
+
+    }
+
+    private static Tensor reduceIndexedTensor(IndexedTensor argument, TensorType reducedType, int[] indexesToKeep, int[] indexesToReduce, Aggregator aggregator) {
+
+        var reducedBuilder = IndexedTensor.Builder.of(reducedType);
+        DirectIndexedAddress reducedAddress = DirectIndexedAddress.of(DimensionSizes.of(reducedType));
+        reduce(reducedBuilder, reducedAddress, argument, aggregator, argument.directAddress(), indexesToKeep, 0, indexesToReduce);
+        return reducedBuilder.build();
+    }
+
+    private static Tensor reduceGeneral(Tensor argument, TensorType reducedType, int[] indexesToKeep, Aggregator aggregator) {
         // TODO cells.size() is most likely an overestimate, and might need a better heuristic
         // But the upside is larger than the downside.
-        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>((int)argument.size());
+        Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>(argument.sizeAsInt());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress reducedAddress = reduceDimensions(indexesToKeep, cell.getKey());
-            ValueAggregator aggr = aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
-            if (aggr == null)
-                aggr = aggregatingCells.get(reducedAddress);
+            TensorAddress reducedAddress = cell.getKey().partialCopy(indexesToKeep);
+            ValueAggregator aggr = aggregatingCells.computeIfAbsent(reducedAddress, (key) ->ValueAggregator.ofType(aggregator));
             aggr.aggregate(cell.getValue());
         }
         Tensor.Builder reducedBuilder = Tensor.Builder.of(reducedType);
@@ -146,39 +199,43 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         return reducedBuilder.build();
     }
-    private static int[] createIndexesToKeep(TensorType argumentType, List<String> dimensions) {
-        Set<Integer> indexesToRemove = new HashSet<>(dimensions.size()*2);
-        for (String dimensionToRemove : dimensions)
-            indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
-        int[] indexesToKeep = new int[argumentType.rank() - indexesToRemove.size()];
+
+    private static int[] createIndexesToReduce(TensorType tensorType, List<String> dimensions) {
+        int[] indexesToReduce = new int[dimensions.size()];
+        for (int i = 0; i < dimensions.size(); i++) {
+            indexesToReduce[i] = tensorType.indexOfDimension(dimensions.get(i)).get();
+        }
+        return indexesToReduce;
+    }
+    private static int[] createIndexesToKeep(TensorType argumentType, int[] indexesToReduce) {
+        int[] indexesToKeep = new int[argumentType.rank() - indexesToReduce.length];
         int toKeepIndex = 0;
         for (int i = 0; i < argumentType.rank(); i++) {
-            if ( ! indexesToRemove.contains(i))
+            if ( ! contains(indexesToReduce, i))
                 indexesToKeep[toKeepIndex++] = i;
         }
         return indexesToKeep;
     }
-
-    private static TensorAddress reduceDimensions(int[] indexesToKeep, TensorAddress address) {
-        String[] reducedLabels = new String[indexesToKeep.length];
-        int reducedLabelIndex = 0;
-        for (int toKeep : indexesToKeep)
-            reducedLabels[reducedLabelIndex++] = address.label(toKeep);
-        return TensorAddress.of(reducedLabels);
+    private static boolean contains(int[] list, int key) {
+        for (int candidate : list) {
+            if (candidate == key) return true;
+        }
+        return false;
     }
 
     private static Tensor reduceAllGeneral(Tensor argument, Aggregator aggregator) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Iterator<Double> i = argument.valueIterator(); i.hasNext(); )
             valueAggregator.aggregate(i.next());
-        return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
+        return Tensor.Builder.of(TensorType.empty).cell(valueAggregator.aggregatedValue()).build();
     }
 
     private static Tensor reduceIndexedVector(IndexedTensor argument, Aggregator aggregator) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (int i = 0; i < argument.dimensionSizes().size(0); i++)
+        int dimensionSize = Convert.safe2Int(argument.dimensionSizes().size(0));
+        for (int i = 0; i < dimensionSize ; i++)
             valueAggregator.aggregate(argument.get(i));
-        return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
+        return Tensor.Builder.of(TensorType.empty).cell(valueAggregator.aggregatedValue()).build();
     }
 
     static abstract class ValueAggregator {

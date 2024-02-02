@@ -4,6 +4,7 @@
 #include "i_enum_store.h"
 #include "i_enum_store_dictionary.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <algorithm>
 
 namespace search::enumstore {
 

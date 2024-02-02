@@ -1,30 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.content.core
 
-## Whether or not the bouncer should stop external load from
-## entering node when the cluster state is down.
-stop_external_load_when_cluster_down bool default=true
-
-## Sets what node states the node will allow incoming commands
-## in.
-stop_all_load_when_nodestate_not_in string default="uri"
-
-## Sets whether to just use (self) reported node state or to use wanted state
-## if wanted state is worse than the current reported state.
-use_wanted_state_if_possible bool default=true
-
 ## The maximum clock skew allowed in the system. Any messages received 
 ## that have a timestamp longer in the future than this will be failed.
 max_clock_skew_seconds int default=5
-
-## If this config value is != -1, the node will reject any external feed
-## operations with a priority lower than that specified here. Note that since
-## we map priorities in such a way that 0 is the _highest_ priority and 255 the
-## _lowest_ priority, for two operations A and B, if B has a lower priority
-## than A it will have a higher priority _integer_ value.
-##
-## Only mutating external feed operations will be blocked. Read-only operations
-## and internal operations are always let through.
-##
-## Default is -1 (i.e. rejection is disabled and load is allowed through)
-feed_rejection_priority_threshold int default=-1

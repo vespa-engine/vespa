@@ -16,7 +16,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
-import com.yahoo.processing.response.Data;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -41,14 +40,14 @@ import static com.yahoo.vespa.model.container.xml.CloudDataPlaneFilterTest.creat
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase {
 
     private static final String servicesXmlTemplate = """
             <container version='1.0'>
               <clients>
-                <client id="foo" permissions="read,write">
+                <client id="foo" permissions="read, write">
                     <certificate file="%s"/>
                 </client>
                 <client id="bar" permissions="read">
@@ -143,6 +142,24 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         ConnectorConfig connectorConfig8444 = connectorConfig(8444);
         assertEquals(List.of("token"),connectorConfig8444.serverName().known());
 
+    }
+
+    @Test
+    void fails_on_unknown_permission() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var servicesXml = """
+                <container version='1.0'>
+                  <clients>
+                    <client id="foo" permissions="read,unknown-permission">
+                        <certificate file="%s"/>
+                    </client>
+                  </clients>
+                </container>
+                """.formatted(applicationFolder.toPath().relativize(certFile).toString());
+        var clusterElem = DomBuilderTest.parse(servicesXml);
+        createCertificate(certFile);
+        var exception = assertThrows(IllegalArgumentException.class, () -> buildModel(Set.of(mtlsEndpoint), defaultTokens, clusterElem));
+        assertEquals("Invalid permission 'unknown-permission'. Valid values are 'read' and 'write'.", exception.getMessage());
     }
 
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(

@@ -11,6 +11,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -79,8 +80,8 @@ public class AllParser extends SimpleParser {
         // Combine the items
         Item topLevel = and;
 
-        if (not != null && topLevel != null) {
-            not.setPositiveItem(topLevel);
+        if (not != null) {
+            not.setPositiveItem(topLevel != null ? topLevel : new TrueItem());
             topLevel = not;
         }
 
@@ -130,6 +131,7 @@ public class AllParser extends SimpleParser {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
             var itemAndExplicitIndex = indexableItem();
+
             item = itemAndExplicitIndex.getFirst();
             boolean explicitIndex = itemAndExplicitIndex.getSecond();
             if (item == null) {

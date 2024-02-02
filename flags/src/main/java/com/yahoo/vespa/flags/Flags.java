@@ -211,7 +211,7 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2024-02-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2024-04-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -272,7 +272,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2024-02-01",
+            List.of("tokle"), "2022-05-09", "2024-04-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             INSTANCE_ID);
@@ -316,7 +316,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2024-02-01",
+            List.of("vekterli"), "2022-11-03", "2024-06-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -348,40 +348,40 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-02-01",
+            List.of("hmusum"), "2023-07-19", "2024-03-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-02-01",
+            List.of("hmusum"), "2023-07-19", "2024-03-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2024-01-24",
+            List.of("andreer"), "2023-08-21", "2024-02-24",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2024-01-24",
+            List.of("andreer"), "2023-08-28", "2024-02-24",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2024-01-24",
+            List.of("andreer"), "2023-08-28", "2024-02-24",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 0,
-            List.of("vekterli"), "2022-09-12", "2024-02-01",
+            List.of("vekterli"), "2022-09-12", "2024-06-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -396,7 +396,7 @@ public class Flags {
 
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
-            List.of("hmusum"), "2023-09-25", "2024-02-01",
+            List.of("hmusum"), "2023-09-25", "2024-03-01",
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -410,7 +410,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("mpolden", "tokle"), "2023-10-06", "2024-02-01",
+            List.of("mpolden", "tokle"), "2023-10-06", "2024-06-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -421,25 +421,6 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
-    public static final UnboundLongFlag MERGING_MAX_MEMORY_USAGE_PER_NODE = defineLongFlag(
-            "merging-max-memory-usage-per-node", -1,
-            List.of("vekterli"), "2023-11-03", "2024-03-01",
-            "Soft limit of the maximum amount of memory that can be used across merge operations on a content node. " +
-            "Value semantics: < 0: unlimited (legacy behavior), == 0: auto-deduced from node HW and config," +
-            " > 0: explicit memory usage limit in bytes.",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_PER_DOCUMENT_THROTTLED_DELETE_BUCKET = defineFeatureFlag(
-            "use-per-document-throttled-delete-bucket", false,
-            List.of("vekterli"), "2023-11-13", "2024-03-01",
-            "If set, DeleteBucket operations are internally expanded to an individually persistence-" +
-            "throttled remove per document stored in the bucket. This makes the cost model of " +
-            "executing a DeleteBucket symmetrical with feeding the documents to the bucket in the " +
-            "first place.",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag ENABLE_NEW_PAYMENT_METHOD_FLOW = defineFeatureFlag(
             "enable-new-payment-method-flow", false,
             List.of("bjorncs"), "2023-11-29", "2024-03-01",
@@ -447,16 +428,9 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
-    public static final UnboundBooleanFlag CENTRALIZED_AUTHZ = defineFeatureFlag(
-            "centralized-authz", true,
-            List.of("mortent"), "2023-11-27", "2024-02-01",
-            "Use centralized authorization checks",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
-
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES = defineFeatureFlag(
             "restart-on-deploy-when-onnx-model-changes", true,
-            List.of("hmusum"), "2023-12-04", "2024-02-01",
+            List.of("hmusum"), "2023-12-04", "2024-03-01",
             "If set, restart on deploy if onnx model or onnx model options used by a container cluster change",
             "Takes effect at redeployment",
             INSTANCE_ID);

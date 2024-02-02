@@ -18,9 +18,11 @@ class IndexedFloatTensor extends IndexedTensor {
     }
 
     @Override
-    public long size() {
-        return values.length;
-    }
+    public long size() { return values.length; }
+
+    /** Once we can store more cells than an int we should drop this. */
+    @Override
+    public int sizeAsInt() { return values.length; }
 
     @Override
     public double get(long valueIndex) { return getFloat(valueIndex); }

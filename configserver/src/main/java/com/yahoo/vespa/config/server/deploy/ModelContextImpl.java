@@ -201,13 +201,11 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_events_before_wakeup;
         private final int heapPercentage;
         private final String summaryDecodePolicy;
-        private boolean sortBlueprintsByCost;
+        private final boolean sortBlueprintsByCost;
         private final boolean alwaysMarkPhraseExpensive;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
-        private final long mergingMaxMemoryUsagePerNode;
-        private final boolean usePerDocumentThrottledDeleteBucket;
         private final boolean restartOnDeployWhenOnnxModelChanges;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
@@ -249,8 +247,6 @@ public class ModelContextImpl implements ModelContext {
             this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
             this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
             this.searchHandlerThreadpool = flagValue(source, appId, version, Flags.SEARCH_HANDLER_THREADPOOL);
-            this.mergingMaxMemoryUsagePerNode = flagValue(source, appId, version, Flags.MERGING_MAX_MEMORY_USAGE_PER_NODE);
-            this.usePerDocumentThrottledDeleteBucket = flagValue(source, appId, version, Flags.USE_PER_DOCUMENT_THROTTLED_DELETE_BUCKET);
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
             this.restartOnDeployWhenOnnxModelChanges = flagValue(source, appId, version, Flags.RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES);
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
@@ -303,8 +299,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
-        @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
-        @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
         @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
 

@@ -84,8 +84,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<DataplaneToken> dataplaneTokens;
     private int contentLayerMetadataFeatureLevel = 0;
     private boolean dynamicHeapSize = false;
-    private long mergingMaxMemoryUsagePerNode = -1;
-    private boolean usePerDocumentThrottledDeleteBucket = false;
     private boolean restartOnDeployWhenOnnxModelChanges = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -144,8 +142,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean dynamicHeapSize() { return dynamicHeapSize; }
-    @Override public long mergingMaxMemoryUsagePerNode() { return mergingMaxMemoryUsagePerNode; }
-    @Override public boolean usePerDocumentThrottledDeleteBucket() { return usePerDocumentThrottledDeleteBucket; }
     @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
@@ -378,16 +374,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setDynamicHeapSize(boolean b) { this.dynamicHeapSize = b; return this; }
-
-    public TestProperties setMergingMaxMemoryUsagePerNode(long maxUsage) {
-        this.mergingMaxMemoryUsagePerNode = maxUsage;
-        return this;
-    }
-
-    public TestProperties setUsePerDocumentThrottledDeleteBucket(boolean enableThrottling) {
-        this.usePerDocumentThrottledDeleteBucket = enableThrottling;
-        return this;
-    }
 
     public TestProperties setRestartOnDeployForOnnxModelChanges(boolean enable) {
         this.restartOnDeployWhenOnnxModelChanges = enable;

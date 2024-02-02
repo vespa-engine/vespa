@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <algorithm>
 
 using search::FoldedStringCompare;
 using vespalib::LowerCase;

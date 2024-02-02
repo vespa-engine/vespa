@@ -58,15 +58,15 @@
         <antlr4.vespa.version>4.13.1</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
-        <apache.httpclient5.vespa.version>5.3</apache.httpclient5.vespa.version>
+        <apache.httpclient5.vespa.version>5.3.1</apache.httpclient5.vespa.version>
         <apache.httpcore5.vespa.version>5.2.4</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.6</asm.vespa.version>
-        <assertj.vespa.version>3.25.1</assertj.vespa.version>
+        <assertj.vespa.version>3.25.2</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.vespa.version>1.11.49</athenz.vespa.version>
-        <aws-sdk.vespa.version>1.12.638</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.649</aws-sdk.vespa.version>
+        <athenz.vespa.version>1.11.51</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -90,7 +90,7 @@
         <commons-compress.vespa.version>1.25.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.6.0</commons-cli.vespa.version>
         <curator.vespa.version>5.6.0</curator.vespa.version>
-        <dropwizard.metrics.vespa.version>4.2.23</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
+        <dropwizard.metrics.vespa.version>4.2.25</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
         <eclipse-sisu.vespa.version>0.9.0.M2</eclipse-sisu.vespa.version>
         <failureaccess.vespa.version>1.0.2</failureaccess.vespa.version>
@@ -105,7 +105,7 @@
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.4</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>11.0.19</jetty.vespa.version>
+        <jetty.vespa.version>11.0.20</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
@@ -114,13 +114,13 @@
         <junit.platform.vespa.version>1.10.1</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <luben.zstd.vespa.version>1.5.5-11</luben.zstd.vespa.version>
-        <lucene.vespa.version>9.9.1</lucene.vespa.version>
+        <lucene.vespa.version>9.9.2</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
-        <mockito.vespa.version>5.9.0</mockito.vespa.version>
+        <mockito.vespa.version>5.10.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.105.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.106.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.62.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.16.3</onnxruntime.vespa.version>
         <opennlp.vespa.version>2.3.1</opennlp.vespa.version>
@@ -130,7 +130,7 @@
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
         <protobuf.vespa.version>3.25.2</protobuf.vespa.version>
-        <questdb.vespa.version>7.3.7</questdb.vespa.version>
+        <questdb.vespa.version>7.3.9</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <spotbugs.vespa.version>4.8.3</spotbugs.vespa.version> <!-- Must match major version in https://github.com/apache/zookeeper/blob/master/pom.xml -->
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
@@ -152,7 +152,7 @@
         <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
-        <clover-maven-plugin.vespa.version>4.5.1</clover-maven-plugin.vespa.version>
+        <clover-maven-plugin.vespa.version>4.5.2</clover-maven-plugin.vespa.version>
         <maven-antrun-plugin.vespa.version>3.1.0</maven-antrun-plugin.vespa.version>
         <maven-assembly-plugin.vespa.version>3.6.0</maven-assembly-plugin.vespa.version>
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>

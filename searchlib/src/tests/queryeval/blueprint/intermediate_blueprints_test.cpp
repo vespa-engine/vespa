@@ -77,7 +77,7 @@ void check_sort_order(IntermediateBlueprint &self, BlueprintVector children, std
         unordered.push_back(child.get());
     }
     // TODO: sort by cost (requires both setDocIdLimit and optimize to be called)
-    self.sort(children, false);
+    self.sort(children, true, false);
     for (size_t i = 0; i < children.size(); ++i) {
         EXPECT_EQUAL(children[i].get(), unordered[order[i]]);
     }
@@ -130,8 +130,8 @@ TEST("test AndNot Blueprint") {
 }
 
 template <typename BP>
-void optimize(std::unique_ptr<BP> &ref) {
-    auto optimized = Blueprint::optimize(std::move(ref), true);
+void optimize(std::unique_ptr<BP> &ref, bool strict) {
+    auto optimized = Blueprint::optimize_and_sort(std::move(ref), strict, true);
     ref.reset(dynamic_cast<BP*>(optimized.get()));
     ASSERT_TRUE(ref);
     optimized.release();
@@ -144,7 +144,7 @@ TEST("test And propagates updated histestimate") {
     bp->addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->setDocIdLimit(5000);
-    optimize(bp);
+    optimize(bp, true);
     bp->fetchPostings(ExecuteInfo::TRUE);
     EXPECT_EQUAL(3u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
@@ -164,7 +164,10 @@ TEST("test Or propagates updated histestimate") {
     bp->addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->setDocIdLimit(5000);
-    optimize(bp);
+    // sort OR as non-strict to get expected order. With strict OR,
+    // the order would be irrelevant since we use the relative
+    // estimate as strict_cost for leafs.
+    optimize(bp, false);
     bp->fetchPostings(ExecuteInfo::TRUE);
     EXPECT_EQUAL(4u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
@@ -519,15 +522,17 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
     auto cmp_hook = [expect_eq](const auto &path, const auto &a, const auto &b) {
                         if (!path.empty() && std::holds_alternative<vespalib::stringref>(path.back())) {
                             vespalib::stringref field = std::get<vespalib::stringref>(path.back());
-                            if (field == "cost") {
+                            // ignore these fields to enable comparing optimized with unoptimized trees
+                            if (field == "relative_estimate" || field == "cost" || field == "strict_cost") {
+                                auto check_value = [&](double value){
+                                                       if ((value > 0.0 && value < 1e-6) || (value > 0.0 && value < 1e-6)) {
+                                                           fprintf(stderr, "  small value at %s: %g\n", path_to_str(path).c_str(),
+                                                                   value);
+                                                       }
+                                                   };
+                                check_value(a.asDouble());
+                                check_value(b.asDouble());
                                 return true;
-                            }
-                            if (field == "relative_estimate") {
-                                double a_val = a.asDouble();
-                                double b_val = b.asDouble();
-                                if (a_val != 0.0 && b_val != 0.0 && vespalib::approx_equal(a_val, b_val)) {
-                                    return true;
-                                }
                             }
                         }
                         if (expect_eq) {
@@ -548,13 +553,13 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
 }
 
 void
-optimize_and_compare(Blueprint::UP top, Blueprint::UP expect, bool sort_by_cost = true) {
+optimize_and_compare(Blueprint::UP top, Blueprint::UP expect, bool strict = true, bool sort_by_cost = true) {
     top->setDocIdLimit(1000);
     expect->setDocIdLimit(1000);
     TEST_DO(compare(*top, *expect, false));
-    top = Blueprint::optimize(std::move(top), sort_by_cost);
+    top = Blueprint::optimize_and_sort(std::move(top), strict, sort_by_cost);
     TEST_DO(compare(*top, *expect, true));
-    expect = Blueprint::optimize(std::move(expect), sort_by_cost);
+    expect = Blueprint::optimize_and_sort(std::move(expect), strict, sort_by_cost);
     TEST_DO(compare(*expect, *top, true));
 }
 
@@ -614,7 +619,8 @@ TEST_F("test SourceBlender below OR partial optimization", SourceBlenderTestFixt
     expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
     addLeafs(*expect, {3, 2, 1});
 
-    optimize_and_compare(std::move(top), std::move(expect));
+    // NOTE: use non-strict cost based sorting for expected order
+    optimize_and_compare(std::move(top), std::move(expect), false);
 }
 
 TEST_F("test OR replaced by source blender after full optimization", SourceBlenderTestFixture) {
@@ -626,7 +632,8 @@ TEST_F("test OR replaced by source blender after full optimization", SourceBlend
     expect->addChild(addLeafsWithSourceId(2, std::make_unique<OrBlueprint>(), {{2000, 2}, {200,  2}, {20,   2}}));
     expect->addChild(addLeafsWithSourceId(1, std::make_unique<OrBlueprint>(), {{1000, 1}, {100,  1}, {10,   1}}));
 
-    optimize_and_compare(std::move(top), std::move(expect));
+    // NOTE: use non-strict cost based sorting for expected order
+    optimize_and_compare(std::move(top), std::move(expect), false);
 }
 
 TEST_F("test SourceBlender below AND_NOT optimization", SourceBlenderTestFixture) {
@@ -681,11 +688,11 @@ TEST("test empty root node optimization and safeness") {
 
     //-------------------------------------------------------------------------
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top1), true)->asString());
-    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top2), true)->asString());
-    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top3), true)->asString());
-    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top4), true)->asString());
-    EXPECT_EQUAL(expect_up->asString(), Blueprint::optimize(std::move(top5), true)->asString());
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top1), true, true), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top2), true, true), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top3), true, true), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top4), true, true), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top5), true, true), true);
 }
 
 TEST("and with one empty child is optimized away") {
@@ -693,11 +700,11 @@ TEST("and with one empty child is optimized away") {
     Blueprint::UP top = ap((new SourceBlenderBlueprint(*selector))->
                            addChild(ap(MyLeafSpec(10).create())).
                            addChild(addLeafs(std::make_unique<AndBlueprint>(), {{0, true}, 10, 20})));
-    top = Blueprint::optimize(std::move(top), true);
+    top = Blueprint::optimize_and_sort(std::move(top), true, true);
     Blueprint::UP expect_up(ap((new SourceBlenderBlueprint(*selector))->
                           addChild(ap(MyLeafSpec(10).create())).
                           addChild(std::make_unique<EmptyBlueprint>())));
-    EXPECT_EQUAL(expect_up->asString(), top->asString());
+    compare(*expect_up, *top, true);
 }
 
 struct make {
@@ -731,7 +738,7 @@ struct make {
         return std::move(*this);
     }
     make &&leaf(uint32_t estimate) && {
-        std::unique_ptr<LeafBlueprint> bp(MyLeafSpec(estimate).create());
+        std::unique_ptr<MyLeaf> bp(MyLeafSpec(estimate).create());
         if (cost_tag != invalid_cost) {
             bp->set_cost(cost_tag);
             cost_tag = invalid_cost;
@@ -763,7 +770,8 @@ TEST("AND AND collapsing") {
 TEST("OR OR collapsing") {
     Blueprint::UP top = make::OR().leafs({1,3,5}).add(make::OR().leafs({2,4}));
     Blueprint::UP expect = make::OR().leafs({5,4,3,2,1});
-    optimize_and_compare(std::move(top), std::move(expect));
+    // NOTE: use non-strict cost based sorting for expected order
+    optimize_and_compare(std::move(top), std::move(expect), false);
 }
 
 TEST("AND_NOT AND_NOT collapsing") {
@@ -841,7 +849,8 @@ TEST("test single child optimization") {
 TEST("test empty OR child optimization") {
     Blueprint::UP top = addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 20, {0, true}, 10, {0, true}, 0, 30, {0, true}});
     Blueprint::UP expect = addLeafs(std::make_unique<OrBlueprint>(), {30, 20, 10, 0});
-    optimize_and_compare(std::move(top), std::move(expect));
+    // NOTE: use non-strict cost based sorting for expected order
+    optimize_and_compare(std::move(top), std::move(expect), false);
 }
 
 TEST("test empty AND_NOT child optimization") {
@@ -868,10 +877,10 @@ TEST("require that replaced blueprints retain source id") {
                              addChild(ap(MyLeafSpec(30).create()->setSourceId(55)))));
     Blueprint::UP expect2_up(ap(MyLeafSpec(30).create()->setSourceId(42)));
     //-------------------------------------------------------------------------
-    top1_up = Blueprint::optimize(std::move(top1_up), true);
-    top2_up = Blueprint::optimize(std::move(top2_up), true);
-    EXPECT_EQUAL(expect1_up->asString(), top1_up->asString());
-    EXPECT_EQUAL(expect2_up->asString(), top2_up->asString());
+    top1_up = Blueprint::optimize_and_sort(std::move(top1_up), true, true);
+    top2_up = Blueprint::optimize_and_sort(std::move(top2_up), true, true);
+    compare(*expect1_up, *top1_up, true);
+    compare(*expect2_up, *top2_up, true);
     EXPECT_EQUAL(13u, top1_up->getSourceId());
     EXPECT_EQUAL(42u, top2_up->getSourceId());
 }
@@ -1181,45 +1190,25 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     }
 }
 
-TEST("require that children of near are not optimized") {
-    auto top_up = ap((new NearBlueprint(10))->
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
-    auto expect_up = ap((new NearBlueprint(10))->
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
-    top_up = Blueprint::optimize(std::move(top_up), true);
-    TEST_DO(compare(*top_up, *expect_up, true));
-}
-
-TEST("require that children of onear are not optimized") {
-    auto top_up = ap((new ONearBlueprint(10))->
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
-    auto expect_up = ap((new ONearBlueprint(10))->
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {20, {0, true}})).
-            addChild(addLeafs(std::make_unique<OrBlueprint>(), {{0, true}, 30})));
-    top_up = Blueprint::optimize(std::move(top_up), true);
-    TEST_DO(compare(*top_up, *expect_up, true));
-}
-
 TEST("require that ANDNOT without children is optimized to empty search") {
     Blueprint::UP top_up = std::make_unique<AndNotBlueprint>();
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    top_up = Blueprint::optimize(std::move(top_up), true);
-    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    top_up = Blueprint::optimize_and_sort(std::move(top_up), true, true);
+    compare(*expect_up, *top_up, true);
 }
 
 TEST("require that highest cost tier sorts last for OR") {
     Blueprint::UP top = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {30, 3}, {20, 2}, {10, 1}});
     Blueprint::UP expect = addLeafsWithCostTier(std::make_unique<OrBlueprint>(), {{50, 1}, {10, 1}, {20, 2}, {30, 3}});
-    optimize_and_compare(std::move(top), std::move(expect), false);
+    // cost-based sorting would ignore cost tier
+    optimize_and_compare(std::move(top), std::move(expect), true, false);
 }
 
 TEST("require that highest cost tier sorts last for AND") {
     Blueprint::UP top = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {20, 3}, {30, 2}, {50, 1}});
     Blueprint::UP expect = addLeafsWithCostTier(std::make_unique<AndBlueprint>(), {{10, 1}, {50, 1}, {30, 2}, {20, 3}});
-    optimize_and_compare(std::move(top), std::move(expect), false);
+    // cost-based sorting would ignore cost tier
+    optimize_and_compare(std::move(top), std::move(expect), true, false);
 }
 
 template<typename BP>
@@ -1292,6 +1281,7 @@ void verify_relative_estimate(make &&mk, double expect) {
     EXPECT_EQUAL(mk.making->estimate(), 0.0);
     Blueprint::UP bp = std::move(mk).leafs({200,300,950});
     bp->setDocIdLimit(1000);
+    bp = Blueprint::optimize(std::move(bp));
     EXPECT_EQUAL(bp->estimate(), expect);
 }
 
@@ -1329,15 +1319,17 @@ TEST("relative estimate for WEAKAND") {
     verify_relative_estimate(make::WEAKAND(50), 0.05);
 }
 
-void verify_cost(make &&mk, double expect) {
-    EXPECT_EQUAL(mk.making->cost(), 1.0);
+void verify_cost(make &&mk, double expect, double expect_strict) {
+    EXPECT_EQUAL(mk.making->cost(), 0.0);
+    EXPECT_EQUAL(mk.making->strict_cost(), 0.0);
     Blueprint::UP bp = std::move(mk)
-        .cost(1.1).leaf(200)
-        .cost(1.2).leaf(300)
-        .cost(1.3).leaf(500);
+        .cost(1.1).leaf(200)  // strict_cost: 0.2*1.1
+        .cost(1.2).leaf(300)  // strict_cost: 0.3*1.2
+        .cost(1.3).leaf(950); // rel_est: 0.5, strict_cost: 1.3
     bp->setDocIdLimit(1000);
-    bp = Blueprint::optimize(std::move(bp), true);
+    bp = Blueprint::optimize(std::move(bp));
     EXPECT_EQUAL(bp->cost(), expect);
+    EXPECT_EQUAL(bp->strict_cost(), expect_strict);
 }
 
 double calc_cost(std::vector<std::pair<double,double>> list) {
@@ -1351,36 +1343,48 @@ double calc_cost(std::vector<std::pair<double,double>> list) {
 }
 
 TEST("cost for OR") {
-    verify_cost(make::OR(), calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}));
+    verify_cost(make::OR(),
+                calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
+                calc_cost({{0.2*1.1, 0.8},{0.3*1.2, 0.7},{1.3, 0.5}}));
 }
 
 TEST("cost for AND") {
-    verify_cost(make::AND(), calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+    verify_cost(make::AND(),
+                calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
+                calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
 }
 
 TEST("cost for RANK") {
-    verify_cost(make::RANK(), 1.1); // first
+    verify_cost(make::RANK(), 1.1, 0.2*1.1); // first
 }
 
 TEST("cost for ANDNOT") {
-    verify_cost(make::ANDNOT(), calc_cost({{1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}));
+    verify_cost(make::ANDNOT(),
+                calc_cost({{1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}),
+                calc_cost({{0.2*1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}));
 }
 
 TEST("cost for SB") {
     InvalidSelector sel;
-    verify_cost(make::SB(sel), 1.3); // max
+    verify_cost(make::SB(sel), 1.3, 1.3); // max
 }
 
 TEST("cost for NEAR") {
-    verify_cost(make::NEAR(1), 3.0 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+    verify_cost(make::NEAR(1),
+                0.2*0.3*0.5 * 3 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
+                0.2*0.3*0.5 * 3 + calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
 }
 
 TEST("cost for ONEAR") {
-    verify_cost(make::ONEAR(1), 3.0 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+    verify_cost(make::ONEAR(1),
+                0.2*0.3*0.5 * 3 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
+                0.2*0.3*0.5 * 3 + calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
 }
 
 TEST("cost for WEAKAND") {
-    verify_cost(make::WEAKAND(1000), calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}));
+    verify_cost(make::WEAKAND(1000),
+                calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
+                calc_cost({{0.2*1.1, 0.8},{0.3*1.2, 0.7},{1.3, 0.5}}));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

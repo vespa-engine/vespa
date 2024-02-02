@@ -9,8 +9,7 @@ namespace search::attribute {
 /**
  * Filter iterator on top of low-level posting list iterators or regular search iterators with OR semantics.
  *
- * Used during calculation of global filter for InTerm, WeightedSetTerm, DotProduct and WandTerm,
- * or when ranking is not needed for InTerm and WeightedSetTerm.
+ * Used during calculation of global filter for DotProduct and WandTerm.
  */
 class MultiTermOrFilterSearch : public queryeval::SearchIterator
 {

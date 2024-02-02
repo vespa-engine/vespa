@@ -3,6 +3,7 @@
 #pragma once
 
 #include "unique_store_hash_dictionary_read_snapshot.h"
+#include <algorithm>
 
 namespace vespalib::datastore {
 

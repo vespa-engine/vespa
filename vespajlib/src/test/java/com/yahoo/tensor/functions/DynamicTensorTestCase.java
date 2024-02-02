@@ -33,7 +33,7 @@ public class DynamicTensorTestCase {
     public void testDynamicMappedRank1TensorFunction() {
         TensorType sparse = TensorType.fromSpec("tensor(x{})");
         DynamicTensor<Name>  t2 = DynamicTensor.from(sparse,
-                                                     Collections.singletonMap(new TensorAddress.Builder(sparse).add("x", "a").build(),
+                                                     java.util.Map.of(new TensorAddress.Builder(sparse).add("x", "a").build(),
                                                                               new Constant(5)));
         assertEquals(Tensor.from(sparse, "{{x:a}:5}"), t2.evaluate());
         assertEquals("tensor(x{}):{{x:a}:5.0}", t2.toString());

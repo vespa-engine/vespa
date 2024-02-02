@@ -89,7 +89,6 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
 
 Blueprint::State::State() noexcept
     : _fields(),
-      _relative_estimate(0.0),
       _estimateHits(0),
       _tree_size(1),
       _estimateEmpty(true),
@@ -106,7 +105,6 @@ Blueprint::State::State(FieldSpecBase field) noexcept
 
 Blueprint::State::State(FieldSpecBaseList fields_in) noexcept
     : _fields(std::move(fields_in)),
-      _relative_estimate(0.0),
       _estimateHits(0),
       _tree_size(1),
       _estimateEmpty(true),
@@ -120,7 +118,9 @@ Blueprint::State::~State() = default;
 
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
-      _cost(1.0),
+      _relative_estimate(0.0),
+      _cost(0.0),
+      _strict_cost(0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
       _frozen(false)
@@ -130,15 +130,15 @@ Blueprint::Blueprint() noexcept
 Blueprint::~Blueprint() = default;
 
 Blueprint::UP
-Blueprint::optimize(Blueprint::UP bp, bool sort_by_cost) {
+Blueprint::optimize(Blueprint::UP bp) {
     Blueprint *root = bp.release();
-    root->optimize(root, OptimizePass::FIRST, sort_by_cost);
-    root->optimize(root, OptimizePass::LAST, sort_by_cost);
+    root->optimize(root, OptimizePass::FIRST);
+    root->optimize(root, OptimizePass::LAST);
     return Blueprint::UP(root);
 }
 
 void
-Blueprint::optimize_self(OptimizePass, bool)
+Blueprint::optimize_self(OptimizePass)
 {
 }
 
@@ -353,12 +353,13 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.openStruct("estimate", "HitEstimate");
     visitor.visitBool("empty", state.estimate().empty);
     visitor.visitInt("estHits", state.estimate().estHits);
-    visitor.visitFloat("relative_estimate", state.relative_estimate());
     visitor.visitInt("cost_tier", state.cost_tier());
     visitor.visitInt("tree_size", state.tree_size());
     visitor.visitBool("allow_termwise_eval", state.allow_termwise_eval());
     visitor.closeStruct();
+    visitor.visitFloat("relative_estimate", _relative_estimate);
     visitor.visitFloat("cost", _cost);
+    visitor.visitFloat("strict_cost", _strict_cost);
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
 }
@@ -518,7 +519,6 @@ IntermediateBlueprint::calculateState() const
 {
     State state(exposeFields());
     state.estimate(calculateEstimate());
-    state.relative_estimate(calculate_relative_estimate());
     state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
     state.want_global_filter(infer_want_global_filter());
@@ -548,22 +548,30 @@ IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double 
 }
 
 void
-IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost)
+IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 {
     assert(self == this);
-    if (should_optimize_children()) {
-        for (auto &child : _children) {
-            auto *child_ptr = child.release();
-            child_ptr->optimize(child_ptr, pass, sort_by_cost);
-            child.reset(child_ptr);
-        }
+    for (auto &child : _children) {
+        auto *child_ptr = child.release();
+        child_ptr->optimize(child_ptr, pass);
+        child.reset(child_ptr);
     }
-    optimize_self(pass, sort_by_cost);
+    optimize_self(pass);
     if (pass == OptimizePass::LAST) {
-        sort(_children, sort_by_cost);
+        set_relative_estimate(calculate_relative_estimate());
         set_cost(calculate_cost());
+        set_strict_cost(calculate_strict_cost());
     }
     maybe_eliminate_self(self, get_replacement());
+}
+
+void
+IntermediateBlueprint::sort(bool strict, bool sort_by_cost)
+{
+    sort(_children, strict, sort_by_cost);
+    for (size_t i = 0; i < _children.size(); ++i) {
+        _children[i]->sort(strict && inheritStrict(i), sort_by_cost);
+    }
 }
 
 void
@@ -710,23 +718,32 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 //-----------------------------------------------------------------------------
 
-void
-LeafBlueprint::setDocIdLimit(uint32_t limit) noexcept {
-    Blueprint::setDocIdLimit(limit);
-    _state.relative_estimate(calculate_relative_estimate());
-    notifyChange();
-}
-
 double
 LeafBlueprint::calculate_relative_estimate() const
 {
     double rel_est = abs_to_rel_est(_state.estimate().estHits, get_docid_limit());
     if (rel_est > 0.9) {
         // Assume we do not really know how much we are matching when
-        // we claim to match 'everything'
+        // we claim to match 'everything'. Also assume we are not able
+        // to skip documents efficiently when strict.
+        _can_skip = false;
         return 0.5;
+    } else {
+        _can_skip = true;
+        return rel_est;
     }
-    return rel_est;
+}
+
+double
+LeafBlueprint::calculate_cost() const
+{
+    return 1.0;
+}
+
+double
+LeafBlueprint::calculate_strict_cost() const
+{
+    return _can_skip ? estimate() * cost() : cost();
 }
 
 void
@@ -758,11 +775,21 @@ LeafBlueprint::getRange(vespalib::string &, vespalib::string &) const {
 }
 
 void
-LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass, bool sort_by_cost)
+LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 {
     assert(self == this);
-    optimize_self(pass, sort_by_cost);
+    optimize_self(pass);
+    if (pass == OptimizePass::LAST) {
+        set_relative_estimate(calculate_relative_estimate());
+        set_cost(calculate_cost());
+        set_strict_cost(calculate_strict_cost());
+    }
     maybe_eliminate_self(self, get_replacement());
+}
+
+void
+LeafBlueprint::sort(bool, bool)
+{
 }
 
 void

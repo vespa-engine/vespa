@@ -55,7 +55,7 @@ void FloatFieldSearcherT<T>::onValue(const document::FieldValue & fv)
             addHit(*_qtl[j], 0);
         }
     }
-    ++_words;
+    set_element_length(1);
 }
 
 template<typename T>

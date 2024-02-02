@@ -204,6 +204,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
+            if (result.domains == null) return List.of();
             return result.domains.stream().map(AthenzDomain::new).toList();
         });
     }
@@ -216,6 +217,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
+            if (result.domains == null) return List.of();
             return result.domains.stream().map(AthenzDomain::new).toList();
         });
     }

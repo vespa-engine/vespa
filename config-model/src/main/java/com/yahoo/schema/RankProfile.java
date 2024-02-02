@@ -615,18 +615,6 @@ public class RankProfile implements Cloneable {
                 .orElse(Set.of());
     }
 
-    private void addSummaryFeature(ReferenceNode feature) {
-        if (summaryFeatures == null)
-            summaryFeatures = new LinkedHashSet<>();
-        summaryFeatures.add(feature);
-    }
-
-    private void addMatchFeature(ReferenceNode feature) {
-        if (matchFeatures == null)
-            matchFeatures = new LinkedHashSet<>();
-        matchFeatures.add(feature);
-    }
-
     private void addImplicitMatchFeatures(List<FeatureList> list) {
         if (hiddenMatchFeatures == null)
             hiddenMatchFeatures = new LinkedHashSet<>();
@@ -642,15 +630,19 @@ public class RankProfile implements Cloneable {
 
     /** Adds the content of the given feature list to the internal list of summary features. */
     public void addSummaryFeatures(FeatureList features) {
+        if (summaryFeatures == null)
+            summaryFeatures = new LinkedHashSet<>();
         for (ReferenceNode feature : features) {
-            addSummaryFeature(feature);
+            summaryFeatures.add(feature);
         }
     }
 
     /** Adds the content of the given feature list to the internal list of match features. */
     public void addMatchFeatures(FeatureList features) {
+        if (matchFeatures == null)
+            matchFeatures = new LinkedHashSet<>();
         for (ReferenceNode feature : features) {
-            addMatchFeature(feature);
+            matchFeatures.add(feature);
         }
     }
 
@@ -661,20 +653,16 @@ public class RankProfile implements Cloneable {
                 .orElse(Set.of());
     }
 
-    private void addRankFeature(ReferenceNode feature) {
-        if (rankFeatures == null)
-            rankFeatures = new LinkedHashSet<>();
-        rankFeatures.add(feature);
-    }
-
     /**
      * Adds the content of the given feature list to the internal list of rank features.
      *
      * @param features The features to add.
      */
     public void addRankFeatures(FeatureList features) {
+        if (rankFeatures == null)
+            rankFeatures = new LinkedHashSet<>();
         for (ReferenceNode feature : features) {
-            addRankFeature(feature);
+            rankFeatures.add(feature);
         }
     }
 

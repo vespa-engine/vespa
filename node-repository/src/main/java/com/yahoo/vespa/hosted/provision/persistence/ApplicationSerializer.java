@@ -6,6 +6,7 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -56,6 +57,7 @@ public class ApplicationSerializer {
     private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
     private static final String suggestedKey = "suggested";
+    private static final String suggestionsKey = "suggestionsKey";
     private static final String clusterInfoKey = "clusterInfo";
     private static final String bcpDeadlineKey = "bcpDeadline";
     private static final String hostTTLKey = "hostTTL";
@@ -139,7 +141,9 @@ public class ApplicationSerializer {
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         toSlime(cluster.groupSize(), clusterObject.setObject(groupSizeKey));
         clusterObject.setBool(requiredKey, cluster.required());
+        // TODO(olaa): Remove 'suggested' once API clients migrate to suggestion list
         toSlime(cluster.suggested(), clusterObject.setObject(suggestedKey));
+        toSlime(cluster.suggestions(), clusterObject.setArray(suggestionsKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
         if (! cluster.clusterInfo().isEmpty())
             toSlime(cluster.clusterInfo(), clusterObject.setObject(clusterInfoKey));
@@ -156,10 +160,18 @@ public class ApplicationSerializer {
                            intRangeFromSlime(clusterObject.field(groupSizeKey)),
                            clusterObject.field(requiredKey).asBool(),
                            autoscalingFromSlime(clusterObject.field(suggestedKey)),
+                           suggestionsFromSlime(clusterObject.field(suggestionsKey)),
                            autoscalingFromSlime(clusterObject.field(targetKey)),
                            clusterInfoFromSlime(clusterObject.field(clusterInfoKey)),
                            bcpGroupInfoFromSlime(clusterObject.field(bcpGroupInfoKey)),
                            scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
+    }
+
+    private static void toSlime(List<Autoscaling> suggestions, Cursor suggestionsArray) {
+        suggestions.forEach(suggestion -> {
+            var suggestionObject = suggestionsArray.addObject();
+            toSlime(suggestion, suggestionObject);
+        });
     }
 
     private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {
@@ -225,6 +237,13 @@ public class ApplicationSerializer {
         return new Autoscaling.Metrics(metricsObject.field(queryRateKey).asDouble(),
                                        metricsObject.field(growthRateHeadroomKey).asDouble(),
                                        metricsObject.field(cpuCostPerQueryKey).asDouble());
+    }
+
+    private static List<Autoscaling> suggestionsFromSlime(Inspector suggestionsObject) {
+        var suggestions = new ArrayList<Autoscaling>();
+        if (!suggestionsObject.valid()) return suggestions;
+        suggestionsObject.traverse((ArrayTraverser) (id, suggestion) -> suggestions.add(autoscalingFromSlime(suggestion)));
+        return suggestions;
     }
 
     private static Autoscaling autoscalingFromSlime(Inspector autoscalingObject) {

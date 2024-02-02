@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -45,12 +46,7 @@ public class IndexedTensorTestCase {
 
     @Test
     public void testNegativeLabels() {
-        TensorAddress numeric = TensorAddress.of(-1, 0, 1, 1234567, -1234567);
-        assertEquals("-1", numeric.label(0));
-        assertEquals("0", numeric.label(1));
-        assertEquals("1", numeric.label(2));
-        assertEquals("1234567", numeric.label(3));
-        assertEquals("-1234567", numeric.label(4));
+        assertThrows(IndexOutOfBoundsException.class, () ->TensorAddress.of(-1, 0, 1, 1234567, -1234567));
     }
 
     private void verifyFloat(String spec) {
@@ -93,6 +89,38 @@ public class IndexedTensorTestCase {
                                                   .indexed("z", zSize)
                                                   .build();
         assertBuildingVWXYZ(type);
+    }
+
+    @Test
+    public void testDirectIndexedAddress() {
+        TensorType type = new TensorType.Builder().indexed("v", 3)
+                .indexed("w", wSize)
+                .indexed("x", xSize)
+                .indexed("y", ySize)
+                .indexed("z", zSize)
+                .build();
+        var directAddress = DirectIndexedAddress.of(DimensionSizes.of(type));
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> directAddress.getStride(5));
+        assertThrows(IndexOutOfBoundsException.class, () -> directAddress.setIndex(4, 7));
+        assertEquals(wSize*xSize*ySize*zSize, directAddress.getStride(0));
+        assertEquals(xSize*ySize*zSize, directAddress.getStride(1));
+        assertEquals(ySize*zSize, directAddress.getStride(2));
+        assertEquals(zSize, directAddress.getStride(3));
+        assertEquals(1, directAddress.getStride(4));
+        assertEquals(0, directAddress.getDirectIndex());
+        directAddress.setIndex(0,1);
+        assertEquals(1 * directAddress.getStride(0), directAddress.getDirectIndex());
+        directAddress.setIndex(1,1);
+        assertEquals(1 * directAddress.getStride(0) + 1 * directAddress.getStride(1), directAddress.getDirectIndex());
+        directAddress.setIndex(2,2);
+        directAddress.setIndex(3,2);
+        directAddress.setIndex(4,2);
+        long expected = 1 * directAddress.getStride(0) +
+                1 * directAddress.getStride(1) +
+                2 * directAddress.getStride(2) +
+                2 * directAddress.getStride(3) +
+                2 * directAddress.getStride(4);
+        assertEquals(expected, directAddress.getDirectIndex());
     }
 
     @Test

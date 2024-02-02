@@ -101,7 +101,7 @@ public:
     explicit ExplicitLevenshteinDfaImpl(bool is_cased) noexcept
         : _is_cased(is_cased)
     {}
-    ~ExplicitLevenshteinDfaImpl() override = default;
+    ~ExplicitLevenshteinDfaImpl() override;
 
     static constexpr uint8_t max_edits() noexcept { return MaxEdits; }
 

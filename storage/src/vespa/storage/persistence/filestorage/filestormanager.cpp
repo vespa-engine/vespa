@@ -212,8 +212,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
 
     _use_async_message_handling_on_schedule = config.useAsyncMessageHandlingOnSchedule;
     _host_info_reporter.set_noise_level(config.resourceUsageReporterNoiseLevel);
-    const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
-                                         (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
+    const bool use_dynamic_throttling = (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
     const bool throttle_merge_feed_ops = config.asyncOperationThrottler.throttleIndividualMergeFeedOps;
 
     if (!liveUpdate) {
@@ -248,7 +247,6 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         std::lock_guard guard(_lock);
         for (auto& ph : _persistenceHandlers) {
             ph->set_throttle_merge_feed_ops(throttle_merge_feed_ops);
-            ph->set_use_per_document_throttled_delete_bucket(config.usePerDocumentThrottledDeleteBucket);
         }
     }
 }

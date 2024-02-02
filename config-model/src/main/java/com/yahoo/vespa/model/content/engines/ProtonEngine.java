@@ -27,11 +27,6 @@ public class ProtonEngine {
         }
 
         @Override
-        public boolean supportRevert() {
-            return false;
-        }
-
-        @Override
         public boolean enableMultiLevelSplitting() {
             return false;
         }

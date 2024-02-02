@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <initializer_list>
 
 const char *prog = "../../../apps/verify_ranksetup/vespa-verify-ranksetup-bin";
@@ -24,6 +25,8 @@ using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 
 using vespalib::make_string_short::fmt;
+
+enum class SearchMode { INDEXED, STREAMING, BOTH };
 
 struct Writer {
     FILE *file;
@@ -145,6 +148,39 @@ struct Setup {
             out.fmt("indexfield[%zu].collectiontype %s\n", i, pos->second.second.c_str());
         }
     }
+    void write_vsmfield(const Writer &out, size_t idx, std::string name, std::string dataType) {
+        out.fmt("fieldspec[%zu].name \"%s\"\n", idx, name.c_str());
+        if (dataType == "STRING") {
+            out.fmt("fieldspec[%zu].searchmethod AUTOUTF8\n", idx);
+            out.fmt("fieldspec[%zu].normalize LOWERCASE\n", idx);
+        } else {
+            out.fmt("fieldspec[%zu].searchmethod %s\n", idx, dataType.c_str());
+        }
+    }
+    void write_vsmfields(const Writer &out) {
+        std::set<std::string> allFields;
+        size_t i = 0;
+        for (const auto & field : indexes) {
+            write_vsmfield(out, i, field.first, field.second.first);
+            out.fmt("fieldspec[%zu].fieldtype INDEX\n", i);
+            i++;
+            allFields.insert(field.first);
+        }
+        for (const auto & field : attributes) {
+            if (allFields.count(field.first) != 0) continue;
+            write_vsmfield(out, i, field.first, field.second.dataType);
+            out.fmt("fieldspec[%zu].fieldtype ATTRIBUTE\n", i);
+            i++;
+            allFields.insert(field.first);
+        }
+        out.fmt("documenttype[0].name \"foobar\"\n");
+        size_t j = 0;
+        for (const auto & field : allFields) {
+            out.fmt("documenttype[0].index[%zu].name \"%s\"\n", j, field.c_str());
+            out.fmt("documenttype[0].index[%zu].field[0].name \"%s\"\n", j, field.c_str());
+            j++;
+        }
+    }
     void write_rank_profiles(const Writer &out) {
         out.fmt("rankprofile[%zu]\n", extra_profiles.size() + 1);
         out.fmt("rankprofile[0].name \"default\"\n");
@@ -165,7 +201,7 @@ struct Setup {
         for (const auto &entry: constants) {
             out.fmt("constant[%zu].name \"%s\"\n", idx, entry.first.c_str());
             out.fmt("constant[%zu].fileref \"12345\"\n", idx);
-            out.fmt("constant[%zu].type \"%s\"\n", idx, entry.second.c_str());            
+            out.fmt("constant[%zu].type \"%s\"\n", idx, entry.second.c_str());
             ++idx;
         }
     }
@@ -215,32 +251,45 @@ struct Setup {
     void generate() {
         write_attributes(Writer(gen_dir + "/attributes.cfg"));
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
+        write_vsmfields(Writer(gen_dir + "/vsmfields.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
         write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
         write_ranking_expressions(Writer(gen_dir + "/ranking-expressions.cfg"));
         write_onnx_models(Writer(gen_dir + "/onnx-models.cfg"));
         write_self_cfg(Writer(gen_dir + "/verify-ranksetup.cfg"));
     }
-    bool verify() {
+    bool verify(SearchMode mode = SearchMode::BOTH) {
+        if (mode == SearchMode::BOTH) {
+            bool res_indexed = verify_mode(SearchMode::INDEXED);
+            bool res_streaming = verify_mode(SearchMode::STREAMING);
+            EXPECT_EQUAL(res_indexed, res_streaming);
+            return res_indexed;
+        } else {
+            return verify_mode(mode);
+        }
+    }
+    bool verify_mode(SearchMode mode) {
         generate();
-        vespalib::Process process(fmt("%s dir:%s", prog, gen_dir.c_str()), true);
+        vespalib::Process process(fmt("%s dir:%s%s", prog, gen_dir.c_str(),
+                                      (mode == SearchMode::STREAMING ? " -S" : "")),
+                                  true);
         for (auto line = process.read_line(); !line.empty(); line = process.read_line()) {
             fprintf(stderr, "> %s\n", line.c_str());
         }
         return (process.join() == 0);
     }
-    void verify_valid(std::initializer_list<std::string> features) {
+    void verify_valid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_TRUE(verify())) {
+            if (!EXPECT_TRUE(verify(mode))) {
                 fprintf(stderr, "--> feature '%s' was invalid (should be valid)\n", f.c_str());
             }
         }
     }
-    void verify_invalid(std::initializer_list<std::string> features) {
+    void verify_invalid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_TRUE(!verify())) {
+            if (!EXPECT_TRUE(!verify(mode))) {
                 fprintf(stderr, "--> feature '%s' was valid (should be invalid)\n", f.c_str());
             }
         }
@@ -346,12 +395,12 @@ TEST_F("require that dump features can break validation", SimpleSetup()) {
 //-----------------------------------------------------------------------------
 
 TEST_F("require that fieldMatch feature requires single value field", SimpleSetup()) {
-    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"});
+    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"}, SearchMode::INDEXED);
     f.verify_valid({"fieldMatch(title)"});
 }
 
 TEST_F("require that age feature requires attribute parameter", SimpleSetup()) {
-    f.verify_invalid({"age(unknown)", "age(title)"});
+    f.verify_invalid({"age(unknown)", "age(title)"}, SearchMode::INDEXED);
     f.verify_valid({"age(date)"});
 }
 
@@ -361,7 +410,7 @@ TEST_F("require that nativeRank can be used on any valid field", SimpleSetup()) 
 }
 
 TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleSetup()) {
-    f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"});
+    f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"}, SearchMode::INDEXED);
     f.verify_valid({"nativeAttributeMatch", "nativeAttributeMatch(date)"});
 }
 

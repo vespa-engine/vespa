@@ -49,7 +49,6 @@ public:
     const BouncerMetrics& metrics() const noexcept;
 
 private:
-    void validateConfig(const vespa::config::content::core::StorBouncerConfig&) const;
     void onClose() override;
     void abortCommandForUnavailableNode(api::StorageMessage&, const lib::State&);
     void rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds);
@@ -61,9 +60,7 @@ private:
     bool isDistributor() const;
     static bool isExternalLoad(const api::MessageType&) noexcept;
     static bool isExternalWriteOperation(const api::MessageType&) noexcept;
-    static bool priorityRejectionIsEnabled(int configuredPriority) noexcept {
-        return (configuredPriority != -1);
-    }
+
 
     /**
      * If msg is a command containing a mutating timestamp (put, remove or

@@ -20,6 +20,7 @@ import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
 import com.yahoo.tensor.functions.Expand;
+import com.yahoo.tensor.impl.Label;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
  * A multidimensional array which can be used in computations.
  * <p>
  * A tensor consists of a set of <i>dimension</i> names and a set of <i>cells</i> containing scalar <i>values</i>.
- * Each cell is is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
+ * Each cell is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
  * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
  * <p>
  * The size of the set of dimensions of a tensor is called its <i>rank</i>.
@@ -55,6 +56,9 @@ import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
  */
 public interface Tensor {
 
+    /** The constant signaling a nonexisting value in operations addressing tensor values by index. */
+    int invalidIndex = -1;
+
     // ----------------- Accessors
 
     TensorType type();
@@ -63,17 +67,34 @@ public interface Tensor {
     default boolean isEmpty() { return size() == 0; }
 
     /**
-     *  Returns the number of cells in this.
-     *  TODO Figure how to best return an int instead of a long
-     *  An int is large enough, and java is far better at int base loops than long
-     **/
-    long size();
+     *  Returns the number of cells in this, allowing for very large tensors.
+     *  Prefer sizeAsInt in implementations that cannot handle sizes outside the int range.
+     */
+    default long size() {
+        return sizeAsInt();
+    }
+
+    /**
+     * Returns the size of this as an int or throws an exception if it is too large to fit in an int.
+     * Prefer this over size() with implementations that only handle sizes in the int range.
+     *
+     * @throws IndexOutOfBoundsException if the size is too large to fit in an int
+     */
+    default int sizeAsInt() {
+        long size = size();
+        if (size > Integer.MAX_VALUE)
+            throw new IndexOutOfBoundsException("size = " + size + ", which is too large to fit in an int");
+        return (int) size;
+    }
 
     /** Returns the value of a cell, or 0.0 if this cell does not exist */
     double get(TensorAddress address);
 
     /** Returns true if this cell exists */
     boolean has(TensorAddress address);
+
+    /** Returns the value at this address, or null of it does not exist. */
+    Double getAsDouble(TensorAddress address);
 
     /**
      * Returns the cell of this in some undefined order.
@@ -97,7 +118,7 @@ public interface Tensor {
      * @throws IllegalStateException if this does not have zero dimensions and one value
      */
     default double asDouble() {
-        if (type().dimensions().size() > 0)
+        if (!type().dimensions().isEmpty())
             throw new IllegalStateException("Require a dimensionless tensor but has " + type());
         if (size() == 0) return Double.NaN;
         return valueIterator().next();
@@ -113,7 +134,7 @@ public interface Tensor {
     /**
      * Returns a new tensor where existing cells in this tensor have been
      * modified according to the given operation and cells in the given map.
-     * Cells in the map outside of existing cells are thus ignored.
+     * Cells in the map outside existing cells are thus ignored.
      *
      * @param op the modifying function
      * @param cells the cells to modify
@@ -132,9 +153,9 @@ public interface Tensor {
 
     /**
      * Returns a new tensor where existing cells in this tensor have been
-     * removed according to the given set of addresses. Only valid for sparse
+     * removed according to the given set of addresses. Only valid for mapped
      * or mixed tensors. For mixed tensors, addresses are assumed to only
-     * contain the sparse dimensions, as the entire dense subspace is removed.
+     * contain the mapped dimensions, as the entire indexed subspace is removed.
      *
      * @param addresses list of addresses to remove
      * @return a new tensor where cells have been removed
@@ -484,11 +505,10 @@ public interface Tensor {
         public TensorAddress getKey() { return address; }
 
         /**
-         * Returns the direct index which can be used to locate this cell, or -1 if not available.
-         * This is for optimizations mapping between tensors where this is possible without creating a
-         * TensorAddress.
+         * Returns the direct index which can be used to locate this cell, or Tensor.invalidIndex if not available.
+         * This is for optimizations mapping between tensors where this is possible without creating a TensorAddress.
          */
-        long getDirectIndex() { return -1; }
+        long getDirectIndex() { return invalidIndex; }
 
         /** Returns the value as a double */
         @Override
@@ -537,8 +557,8 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
-            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
+            boolean containsIndexed = type.hasIndexedDimensions();
+            boolean containsMapped = type.hasMappedDimensions();
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
             if (containsMapped)
@@ -549,8 +569,8 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type, DimensionSizes dimensionSizes) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
-            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
+            boolean containsIndexed = type.hasIndexedDimensions();
+            boolean containsMapped = type.hasMappedDimensions();
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
             if (containsMapped)
@@ -608,7 +628,7 @@ public interface Tensor {
             public TensorType type() { return tensorBuilder.type(); }
 
             public CellBuilder label(String dimension, long label) {
-                return label(dimension, String.valueOf(label));
+                return label(dimension, Label.fromNumber(label));
             }
 
             public Builder value(double cellValue) {

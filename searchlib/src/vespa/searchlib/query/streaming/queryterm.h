@@ -11,6 +11,7 @@
 
 namespace search::streaming {
 
+class FuzzyTerm;
 class NearestNeighborQueryNode;
 class MultiTerm;
 class RegexpTerm;
@@ -64,7 +65,7 @@ public:
     QueryTerm & operator = (QueryTerm &&) = delete;
     ~QueryTerm() override;
     bool evaluate() const override;
-    const HitList & evaluateHits(HitList & hl) const override;
+    const HitList & evaluateHits(HitList & hl) const final override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;
@@ -73,7 +74,8 @@ public:
     /// Gives you all phrases of this tree. Indicating that they are all const.
     void getPhrases(ConstQueryNodeRefList & tl) const override;
 
-    void                add(unsigned pos, unsigned context, uint32_t elemId, int32_t weight);
+    uint32_t            add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position);
+    void                set_element_length(uint32_t hitlist_idx, uint32_t element_length);
     EncodingBitMap      encoding()                 const { return _encoding; }
     size_t              termLen()                  const { return getTermLen(); }
     const string      & index()                    const { return _index; }
@@ -95,6 +97,7 @@ public:
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
     virtual MultiTerm* as_multi_term() noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
+    virtual FuzzyTerm* as_fuzzy_term() noexcept;
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;

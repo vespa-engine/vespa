@@ -21,6 +21,9 @@ using storage::api::ReturnCode;
 
 namespace storage {
 
+constexpr uint32_t DEFAULT_PENDING_MESSAGES = 32;
+constexpr uint32_t DEFAULT_DOCBLOCK_SIZE = 4_Mi;
+
 VisitorThread::Event::Event(Event&& other) noexcept
     : _visitorId(other._visitorId),
       _message(std::move(other._message)),
@@ -82,15 +85,9 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _messageSender(sender),
       _metrics(metrics),
       _threadIndex(threadIndex),
-      _disconnectedVisitorTimeout(0), // Need config to set values
-      _ignoreNonExistingVisitorTimeLimit(0),
       _defaultParallelIterators(0),
       _iteratorsPerBucket(1),
-      _defaultPendingMessages(0),
-      _defaultDocBlockSize(0),
       _visitorMemoryUsageLimit(UINT32_MAX),
-      _defaultDocBlockTimeout(180s),
-      _defaultVisitorInfoTimeout(60s),
       _timeBetweenTicks(1000),
       _component(componentRegister, getThreadName(threadIndex)),
       _messageSessionFactory(messageSessionFac),
@@ -402,11 +399,9 @@ validateDocumentSelection(const document::DocumentTypeRepo& repo,
 }
 
 bool
-VisitorThread::onCreateVisitor(
-        const std::shared_ptr<api::CreateVisitorCommand>& cmd)
+VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd)
 {
     metrics::MetricTimer visitorTimer;
-    assert(_defaultDocBlockSize); // Ensure we've gotten a config
     assert(_currentlyRunningVisitor == _visitors.end());
     ReturnCode result(ReturnCode::OK);
     std::unique_ptr<document::select::Node> docSelection;
@@ -437,7 +432,7 @@ VisitorThread::onCreateVisitor(
         if (cmd->getMaximumPendingReplyCount() != 0) {
             visitor->setMaxPending(cmd->getMaximumPendingReplyCount());
         } else {
-            visitor->setMaxPending(_defaultPendingMessages);
+            visitor->setMaxPending(DEFAULT_PENDING_MESSAGES);
         }
 
         visitor->setFieldSet(cmd->getFieldSet());
@@ -449,11 +444,11 @@ VisitorThread::onCreateVisitor(
         visitor->setMaxParallel(_defaultParallelIterators);
         visitor->setMaxParallelPerBucket(_iteratorsPerBucket);
 
-        visitor->setDocBlockSize(_defaultDocBlockSize);
+        visitor->setDocBlockSize(DEFAULT_DOCBLOCK_SIZE);
         visitor->setMemoryUsageLimit(_visitorMemoryUsageLimit);
 
-        visitor->setDocBlockTimeout(_defaultDocBlockTimeout);
-        visitor->setVisitorInfoTimeout(_defaultVisitorInfoTimeout);
+        visitor->setDocBlockTimeout(180s);
+        visitor->setVisitorInfoTimeout(60s);
         visitor->setOwnNodeIndex(_component.getIndex());
         visitor->setBucketSpace(cmd->getBucketSpace());
 
@@ -546,69 +541,25 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
         {
             auto& pcmd = dynamic_cast<PropagateVisitorConfig&>(*cmd);
             const vespa::config::content::core::StorVisitorConfig& config(pcmd.getConfig());
-            if (_defaultDocBlockSize != 0) { // Live update
-                LOG(config, "Updating visitor thread configuration in visitor "
-                            "thread %u: "
-                            "Current config(disconnectedVisitorTimeout %u,"
-                            " ignoreNonExistingVisitorTimeLimit %u,"
-                            " defaultParallelIterators %u,"
-                            " iteratorsPerBucket %u,"
-                            " defaultPendingMessages %u,"
-                            " defaultDocBlockSize %u,"
-                            " visitorMemoryUsageLimit %u,"
-                            " defaultDocBlockTimeout %" PRIu64 ","
-                            " defaultVisitorInfoTimeout %" PRIu64 ") "
-                            "New config(disconnectedVisitorTimeout %u,"
-                            " ignoreNonExistingVisitorTimeLimit %u,"
-                            " defaultParallelIterators %u,"
-                            " defaultPendingMessages %u,"
-                            " defaultDocBlockSize %u,"
-                            " visitorMemoryUsageLimit %u,"
-                            " defaultDocBlockTimeout %u,"
-                            " defaultVisitorInfoTimeout %u) ",
-                            _threadIndex,
-                            _disconnectedVisitorTimeout,
-                            _ignoreNonExistingVisitorTimeLimit,
-                            _defaultParallelIterators,
-                            _iteratorsPerBucket,
-                            _defaultPendingMessages,
-                            _defaultDocBlockSize,
-                            _visitorMemoryUsageLimit,
-                            vespalib::count_ms(_defaultDocBlockTimeout),
-                            vespalib::count_ms(_defaultVisitorInfoTimeout),
-                            config.disconnectedvisitortimeout,
-                            config.ignorenonexistingvisitortimelimit,
-                            config.defaultparalleliterators,
-                            config.defaultpendingmessages,
-                            config.defaultdocblocksize,
-                            config.visitorMemoryUsageLimit,
-                            config.defaultdocblocktimeout,
-                            config.defaultinfotimeout
-                   );
-            }
-            _disconnectedVisitorTimeout = config.disconnectedvisitortimeout;
-            _ignoreNonExistingVisitorTimeLimit = config.ignorenonexistingvisitortimelimit;
+            LOG(config, "Updating visitor thread configuration in visitor "
+                        "thread %u: "
+                        "Current config(defaultParallelIterators %u,"
+                        " iteratorsPerBucket %u,"
+                        " visitorMemoryUsageLimit %u)"
+                        "New config(defaultParallelIterators %u,"
+                        " visitorMemoryUsageLimit %u)",
+                        _threadIndex,
+                        _defaultParallelIterators,
+                        _iteratorsPerBucket,
+                        _visitorMemoryUsageLimit,
+                        config.defaultparalleliterators,
+                        config.visitorMemoryUsageLimit
+               );
             _defaultParallelIterators = config.defaultparalleliterators;
-            _defaultPendingMessages = config.defaultpendingmessages;
-            _defaultDocBlockSize = config.defaultdocblocksize;
             _visitorMemoryUsageLimit = config.visitorMemoryUsageLimit;
-            _defaultDocBlockTimeout = std::chrono::milliseconds(config.defaultdocblocktimeout);
-            _defaultVisitorInfoTimeout = std::chrono::milliseconds(config.defaultinfotimeout);
             if (_defaultParallelIterators < 1) {
                 LOG(config, "Cannot use value of defaultParallelIterators < 1");
                 _defaultParallelIterators = 1;
-            }
-            if (_defaultPendingMessages < 1) {
-                LOG(config, "Cannot use value of defaultPendingMessages < 1");
-                _defaultPendingMessages = 1;
-            }
-            if (_defaultDocBlockSize < 1024) {
-                LOG(config, "Refusing to use default block size less than 1k");
-                _defaultDocBlockSize = 1024;
-            }
-            if (_defaultDocBlockTimeout < 1ms) {
-                LOG(config, "Cannot use value of defaultDocBlockTimeout < 1");
-                _defaultDocBlockTimeout = 1ms;
             }
             break;
         }
@@ -695,20 +646,10 @@ VisitorThread::getStatus(vespalib::asciistream& out,
         out << "<h3>Current queue size: " << _queue.size() << "</h3>\n";
         out << "<h3>Config:</h3>\n"
             << "<table border=\"1\"><tr><td>Parameter</td><td>Value</td></tr>\n"
-            << "<tr><td>Disconnected visitor timeout</td><td>"
-            << _disconnectedVisitorTimeout << "</td></tr>\n"
-            << "<tr><td>Ignore non-existing visitor timelimit</td><td>"
-            << _ignoreNonExistingVisitorTimeLimit << "</td></tr>\n"
             << "<tr><td>Default parallel iterators</td><td>"
             << _defaultParallelIterators << "</td></tr>\n"
             << "<tr><td>Iterators per bucket</td><td>"
             << _iteratorsPerBucket << "</td></tr>\n"
-            << "<tr><td>Default pending messages</td><td>"
-            << _defaultPendingMessages << "</td></tr>\n"
-            << "<tr><td>Default DocBlock size</td><td>"
-            << _defaultDocBlockSize << "</td></tr>\n"
-            << "<tr><td>Default DocBlock timeout (ms)</td><td>"
-            << vespalib::count_ms(_defaultDocBlockTimeout) << "</td></tr>\n"
             << "<tr><td>Visitor memory usage limit</td><td>"
             << _visitorMemoryUsageLimit << "</td></tr>\n"
             << "</table>\n";

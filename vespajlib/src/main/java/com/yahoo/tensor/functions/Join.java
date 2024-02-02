@@ -12,8 +12,11 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.impl.Convert;
+import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -113,7 +116,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     private static Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type, DoubleBinaryOperator combinator) {
-        long joinedRank = Math.min(a.dimensionSizes().size(0), b.dimensionSizes().size(0));
+        int joinedRank = (int)Math.min(a.dimensionSizes().size(0), b.dimensionSizes().size(0));
         Iterator<Double> aIterator = a.valueIterator();
         Iterator<Double> bIterator = b.valueIterator();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new DimensionSizes.Builder(1).set(0, joinedRank).build());
@@ -128,8 +131,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
             var key = aCell.getKey();
-            if (b.has(key)) {
-                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+            Double bVal = b.getAsDouble(key);
+            if (bVal != null) {
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), bVal));
             }
         }
         return builder.build();
@@ -144,7 +148,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     private static Tensor indexedSubspaceJoin(IndexedTensor subspace, IndexedTensor superspace, TensorType joinedType, boolean reversedArgumentOrder, DoubleBinaryOperator combinator) {
-        if (subspace.size() == 0 || superspace.size() == 0) // special case empty here to avoid doing it when finding sizes
+        if (subspace.isEmpty() || superspace.isEmpty()) // special case empty here to avoid doing it when finding sizes
             return Tensor.Builder.of(joinedType, new DimensionSizes.Builder(joinedType.dimensions().size()).build()).build();
 
         DimensionSizes joinedSizes = joinedSize(joinedType, subspace, superspace);
@@ -169,7 +173,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
                                       Iterator<Tensor.Cell> superspace, long superspaceSize,
                                       boolean reversedArgumentOrder, IndexedTensor.Builder builder,
                                       DoubleBinaryOperator combinator) {
-        long joinedLength = Math.min(subspaceSize, superspaceSize);
+        int joinedLength = (int)Math.min(subspaceSize, superspaceSize);
         if (reversedArgumentOrder) {
             for (int i = 0; i < joinedLength; i++) {
                 Tensor.Cell supercell = superspace.next();
@@ -204,12 +208,13 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
         for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
-            TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
-            if (subspace.has(subaddress)) {
-                double subspaceValue = subspace.get(subaddress);
+            TensorAddress subaddress = supercell.getKey().partialCopy(subspaceIndexes);
+            Double subspaceValue = subspace.getAsDouble(subaddress);
+            if (subspaceValue != null) {
                 builder.cell(supercell.getKey(),
-                        reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
-                             : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+                        reversedArgumentOrder
+                                ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
+                                : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
             }
         }
         return builder.build();
@@ -221,13 +226,6 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (int i = 0; i < subtype.dimensions().size(); i++)
             subspaceIndexes[i] = supertype.indexOfDimension(subtype.dimensions().get(i).name()).get();
         return subspaceIndexes;
-    }
-
-    private static TensorAddress mapAddressToSubspace(TensorAddress superAddress, int[] subspaceIndexes) {
-        String[] subspaceLabels = new String[subspaceIndexes.length];
-        for (int i = 0; i < subspaceIndexes.length; i++)
-            subspaceLabels[i] = superAddress.label(subspaceIndexes[i]);
-        return TensorAddress.of(subspaceLabels);
     }
 
     /** Slow join which works for any two tensors */
@@ -250,8 +248,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     private static void joinTo(IndexedTensor a, IndexedTensor b, TensorType joinedType, DimensionSizes joinedSize,
                                int[] aToIndexes, int[] bToIndexes, Tensor.Builder builder,
                                DoubleBinaryOperator combinator) {
-        Set<String> sharedDimensions = Sets.intersection(a.type().dimensionNames(), b.type().dimensionNames());
-        Set<String> dimensionsOnlyInA = Sets.difference(a.type().dimensionNames(), b.type().dimensionNames());
+        Set<String> sharedDimensions = Set.copyOf(Sets.intersection(a.type().dimensionNames(), b.type().dimensionNames()));
+        int sharedDimensionSize = sharedDimensions.size();  // Expensive to compute size after intersection
+        Set<String> dimensionsOnlyInA = Set.copyOf(Sets.difference(a.type().dimensionNames(), b.type().dimensionNames()));
 
         DimensionSizes aIterateSize = joinedSizeOf(a.type(), joinedType, joinedSize);
         DimensionSizes bIterateSize = joinedSizeOf(b.type(), joinedType, joinedSize);
@@ -262,7 +261,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
             // for each combination of dimensions in a which is also in b
             while (aSubspace.hasNext()) {
                 Tensor.Cell aCell = aSubspace.next();
-                PartialAddress matchingBCells = partialAddress(a.type(), aSubspace.address(), sharedDimensions);
+                PartialAddress matchingBCells = sharedDimensionSize > 0
+                        ? partialAddress(a.type(), aSubspace.address(), sharedDimensions, sharedDimensionSize)
+                        : empty;
                 // for each matching combination of dimensions ony in b
                 for (IndexedTensor.SubspaceIterator bSubspace = b.cellIterator(matchingBCells, bIterateSize); bSubspace.hasNext(); ) {
                     Tensor.Cell bCell = bSubspace.next();
@@ -274,11 +275,15 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         }
     }
 
-    private static PartialAddress partialAddress(TensorType addressType, TensorAddress address, Set<String> retainDimensions) {
-        PartialAddress.Builder builder = new PartialAddress.Builder(retainDimensions.size());
-        for (int i = 0; i < addressType.dimensions().size(); i++)
-            if (retainDimensions.contains(addressType.dimensions().get(i).name()))
-                builder.add(addressType.dimensions().get(i).name(), address.numericLabel(i));
+    private static final PartialAddress empty = new PartialAddress.Builder(0).build();
+    private static PartialAddress partialAddress(TensorType addressType, TensorAddress address,
+                                                 Set<String> retainDimensions, int sharedDimensionSize) {
+        PartialAddress.Builder builder = new PartialAddress.Builder(sharedDimensionSize);
+        for (int i = 0; i < addressType.dimensions().size(); i++) {
+            String dimension = addressType.dimensions().get(i).name();
+            if (retainDimensions.contains(dimension))
+                builder.add(dimension, address.numericLabel(i));
+        }
         return builder.build();
     }
 
@@ -330,19 +335,18 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         int[] bIndexesInJoined = mapIndexes(b.type(), joinedType);
 
         // Iterate once through the smaller tensor and construct a hash map for common dimensions
-        Map<TensorAddress, List<Tensor.Cell>> aCellsByCommonAddress = new HashMap<>();
+        Map<TensorAddress, List<Tensor.Cell>> aCellsByCommonAddress = new HashMap<>(a.sizeAsInt());
         for (Iterator<Tensor.Cell> cellIterator = a.cellIterator(); cellIterator.hasNext(); ) {
             Tensor.Cell aCell = cellIterator.next();
-            TensorAddress partialCommonAddress = partialCommonAddress(aCell, aIndexesInCommon);
-            aCellsByCommonAddress.putIfAbsent(partialCommonAddress, new ArrayList<>());
-            aCellsByCommonAddress.get(partialCommonAddress).add(aCell);
+            TensorAddress partialCommonAddress = aCell.getKey().partialCopy(aIndexesInCommon);
+            aCellsByCommonAddress.computeIfAbsent(partialCommonAddress, (key) -> new ArrayList<>()).add(aCell);
         }
 
         // Iterate once through the larger tensor and use the hash map to find joinable cells
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
         for (Iterator<Tensor.Cell> cellIterator = b.cellIterator(); cellIterator.hasNext(); ) {
             Tensor.Cell bCell = cellIterator.next();
-            TensorAddress partialCommonAddress = partialCommonAddress(bCell, bIndexesInCommon);
+            TensorAddress partialCommonAddress = bCell.getKey().partialCopy(bIndexesInCommon);
             for (Tensor.Cell aCell : aCellsByCommonAddress.getOrDefault(partialCommonAddress, List.of())) {
                 TensorAddress combinedAddress = joinAddresses(aCell.getKey(), aIndexesInJoined,
                                                               bCell.getKey(), bIndexesInJoined, joinedType);
@@ -358,7 +362,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     /**
-     * Returns the an array having one entry in order for each dimension of fromType
+     * Returns an array having one entry in order for each dimension of fromType
      * containing the index at which toType contains the same dimension name.
      * That is, if the returned array contains n at index i then
      * fromType.dimensions().get(i).name.equals(toType.dimensions().get(n).name())
@@ -367,17 +371,18 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     static int[] mapIndexes(TensorType fromType, TensorType toType) {
         int[] toIndexes = new int[fromType.dimensions().size()];
         for (int i = 0; i < fromType.dimensions().size(); i++)
-            toIndexes[i] = toType.indexOfDimension(fromType.dimensions().get(i).name()).orElse(-1);
+            toIndexes[i] = toType.indexOfDimensionAsInt(fromType.dimensions().get(i).name());
         return toIndexes;
     }
 
     private static TensorAddress joinAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                                TensorType joinedType) {
-        String[] joinedLabels = new String[joinedType.dimensions().size()];
+        int[] joinedLabels = new int[joinedType.dimensions().size()];
+        Arrays.fill(joinedLabels, Tensor.invalidIndex);
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
-        return TensorAddress.of(joinedLabels);
+        return TensorAddressAny.ofUnsafe(joinedLabels);
     }
 
     /**
@@ -386,11 +391,13 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
      * @return true if the mapping was successful, false if one of the destination positions was
      *         occupied by a different value
      */
-    private static boolean mapContent(TensorAddress from, String[] to, int[] indexMap) {
-        for (int i = 0; i < from.size(); i++) {
+    private static boolean mapContent(TensorAddress from, int[] to, int[] indexMap) {
+        for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
-            if (to[toIndex] != null && ! to[toIndex].equals(from.label(i))) return false;
-            to[toIndex] = from.label(i);
+            int label = Convert.safe2Int(from.numericLabel(i));
+            if (to[toIndex] != Tensor.invalidIndex && to[toIndex] != label)
+                return false;
+            to[toIndex] = label;
         }
         return true;
     }
@@ -410,15 +417,6 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
             }
         }
         return typeBuilder.build();
-    }
-
-    private static TensorAddress partialCommonAddress(Tensor.Cell cell, int[] indexMap) {
-        TensorAddress address = cell.getKey();
-        String[] labels = new String[indexMap.length];
-        for (int i = 0; i < labels.length; ++i) {
-            labels[i] = address.label(indexMap[i]);
-        }
-        return TensorAddress.of(labels);
     }
 
 }

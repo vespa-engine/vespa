@@ -435,7 +435,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return ignoredContent;
     }
 
-    private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+    private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
+        ResponseHandler handler = new MeasuringResponseHandler(request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.GET, clock.instant());
         disallow(request, DRY_RUN);
         enqueueAndDispatch(request, handler, () -> {
             DocumentOperationParameters rawParameters = parametersFromRequest(request, CLUSTER, FIELD_SET);
@@ -1057,7 +1058,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
             try {
-                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocumentStreaming(operation, docId);
             } catch (IllegalArgumentException e) {
                 incrementMetricParseError();
                 throw e;

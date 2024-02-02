@@ -720,6 +720,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.DirectIndexedAddress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static com.yahoo.tensor.DirectIndexedAddress of(com.yahoo.tensor.DimensionSizes)",
+      "public void setIndex(int, int)",
+      "public long getDirectIndex()",
+      "public long[] getIndexes()",
+      "public long getStride(int)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.IndexedDoubleTensor$BoundDoubleBuilder" : {
     "superClass" : "com.yahoo.tensor.IndexedTensor$BoundBuilder",
     "interfaces" : [ ],
@@ -894,8 +910,11 @@
       "public java.util.Iterator subspaceIterator(java.util.Set, com.yahoo.tensor.DimensionSizes)",
       "public java.util.Iterator subspaceIterator(java.util.Set)",
       "public varargs double get(long[])",
+      "public double get(com.yahoo.tensor.DirectIndexedAddress)",
+      "public com.yahoo.tensor.DirectIndexedAddress directAddress()",
       "public varargs float getFloat(long[])",
       "public double get(com.yahoo.tensor.TensorAddress)",
+      "public java.lang.Double getAsDouble(com.yahoo.tensor.TensorAddress)",
       "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public abstract double get(long)",
       "public abstract float getFloat(long)",
@@ -949,8 +968,10 @@
     "methods" : [
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
+      "public int sizeAsInt()",
       "public double get(com.yahoo.tensor.TensorAddress)",
       "public boolean has(com.yahoo.tensor.TensorAddress)",
+      "public java.lang.Double getAsDouble(com.yahoo.tensor.TensorAddress)",
       "public java.util.Iterator cellIterator()",
       "public java.util.Iterator valueIterator()",
       "public java.util.Map cells()",
@@ -1031,6 +1052,7 @@
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
+      "public java.lang.Double getAsDouble(com.yahoo.tensor.TensorAddress)",
       "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public java.util.Iterator cellIterator()",
       "public java.util.Iterator valueIterator()",
@@ -1153,9 +1175,11 @@
     "methods" : [
       "public abstract com.yahoo.tensor.TensorType type()",
       "public boolean isEmpty()",
-      "public abstract long size()",
+      "public long size()",
+      "public int sizeAsInt()",
       "public abstract double get(com.yahoo.tensor.TensorAddress)",
       "public abstract boolean has(com.yahoo.tensor.TensorAddress)",
+      "public abstract java.lang.Double getAsDouble(com.yahoo.tensor.TensorAddress)",
       "public abstract java.util.Iterator cellIterator()",
       "public abstract java.util.Iterator valueIterator()",
       "public abstract java.util.Map cells()",
@@ -1243,7 +1267,9 @@
       "public static com.yahoo.tensor.Tensor from(java.lang.String)",
       "public static com.yahoo.tensor.Tensor from(double)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final int invalidIndex"
+    ]
   },
   "com.yahoo.tensor.TensorAddress$Builder" : {
     "superClass" : "java.lang.Object",
@@ -1255,6 +1281,8 @@
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, long)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, int)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
       "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.TensorAddress build()"
@@ -1287,16 +1315,19 @@
       "public static com.yahoo.tensor.TensorAddress of(java.lang.String[])",
       "public static varargs com.yahoo.tensor.TensorAddress ofLabels(java.lang.String[])",
       "public static varargs com.yahoo.tensor.TensorAddress of(long[])",
+      "public static varargs com.yahoo.tensor.TensorAddress of(int[])",
       "public abstract int size()",
       "public abstract java.lang.String label(int)",
       "public abstract long numericLabel(int)",
       "public abstract com.yahoo.tensor.TensorAddress withLabel(int, long)",
       "public final boolean isEmpty()",
       "public int compareTo(com.yahoo.tensor.TensorAddress)",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()",
       "public final java.lang.String toString(com.yahoo.tensor.TensorType)",
       "public static java.lang.String labelToString(java.lang.String)",
+      "public com.yahoo.tensor.TensorAddress partialCopy(int[])",
+      "public com.yahoo.tensor.TensorAddress fullAddressOf(java.util.List, int[])",
+      "public com.yahoo.tensor.TensorAddress mappedPartialAddress(com.yahoo.tensor.TensorType, java.util.List)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields" : [ ]
@@ -1452,6 +1483,9 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType$Value, java.util.Collection)",
+      "public boolean hasIndexedDimensions()",
+      "public boolean hasMappedDimensions()",
+      "public boolean hasOnlyIndexedBoundDimensions()",
       "public static varargs com.yahoo.tensor.TensorType$Value combinedValueType(com.yahoo.tensor.TensorType[])",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",
@@ -1462,6 +1496,7 @@
       "public java.util.Set dimensionNames()",
       "public java.util.Optional dimension(java.lang.String)",
       "public java.util.Optional indexOfDimension(java.lang.String)",
+      "public int indexOfDimensionAsInt(java.lang.String)",
       "public java.util.Optional sizeOfDimension(java.lang.String)",
       "public boolean isAssignableTo(com.yahoo.tensor.TensorType)",
       "public boolean isConvertibleTo(com.yahoo.tensor.TensorType)",

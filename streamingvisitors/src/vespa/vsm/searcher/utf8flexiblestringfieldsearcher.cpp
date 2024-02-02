@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8flexiblestringfieldsearcher.h"
+#include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
+#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -23,7 +25,7 @@ UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t min
     (void) mintsz;
     size_t words = 0;
     for (auto qt : _qtl) {
-        words = matchTerm(f, *qt);
+        words = std::max(words, matchTerm(f, *qt));
     }
     return words;
 }
@@ -36,7 +38,20 @@ UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef & f, search::stream
     if (regexp_term->regexp().partial_match({f.data(), f.size()})) {
         addHit(qt, 0);
     }
-    return countWords(f);
+    return 1;
+}
+
+size_t
+UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef & f, search::streaming::QueryTerm & qt)
+{
+    auto* fuzzy_term = qt.as_fuzzy_term();
+    assert(fuzzy_term != nullptr);
+    // TODO delegate to matchTermExact if max edits == 0?
+    //  - needs to avoid folding to have consistent normalization semantics
+    if (fuzzy_term->is_match({f.data(), f.size()})) {
+        addHit(qt, 0);
+    }
+    return 1;
 }
 
 size_t
@@ -57,6 +72,9 @@ UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
     } else if (qt.isRegex()) {
         LOG(debug, "Use regexp match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
         return match_regexp(f, qt);
+    } else if (qt.isFuzzy()) {
+        LOG(debug, "Use fuzzy match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
+        return match_fuzzy(f, qt);
     } else {
         if (substring()) {
             LOG(debug, "Use substring match for term '%s:%s'", qt.index().c_str(), qt.getTerm());

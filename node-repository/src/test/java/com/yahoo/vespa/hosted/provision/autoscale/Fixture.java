@@ -108,7 +108,7 @@ public class Fixture {
     }
 
     /** Compute an autoscaling suggestion for this. */
-    public Autoscaling suggest() {
+    public List<Autoscaling> suggest() {
         return tester().suggest(applicationId, clusterSpec.id(), capacity.minResources(), capacity.maxResources());
     }
 

@@ -1,6 +1,8 @@
 {
   "url" : "http://localhost:8080/nodes/v2/applications/tenant1.application1.instance1",
   "id" : "tenant1.application1.instance1",
+  "cloudAccount": "aws:111222333444",
+  "version": "5.104.142",
   "clusters" : {
     "id1" : {
       "type": "container",
@@ -80,6 +82,45 @@
           "cpuCostPerQuery" : 0.0
         }
       },
+      "suggestions": [
+        {
+          "at": 123,
+          "description": "",
+          "ideal": {
+            "cpu": 0.0,
+            "disk": 0.0,
+            "gpu": 0.0,
+            "gpuMemory": 0.0,
+            "memory": 0.0
+          },
+          "metrics": {
+            "cpuCostPerQuery": 0.0,
+            "growthRateHeadroom": 0.0,
+            "queryRate": 0.0
+          },
+          "peak": {
+            "cpu": 0.0,
+            "disk": 0.0,
+            "gpu": 0.0,
+            "gpuMemory": 0.0,
+            "memory": 0.0
+          },
+          "resources": {
+            "groups": 2,
+            "nodes": 6,
+            "resources": {
+              "architecture": "any",
+              "bandwidthGbps": 1.0,
+              "diskGb": 100.0,
+              "diskSpeed": "fast",
+              "memoryGb": 20.0,
+              "storageType": "any",
+              "vcpu": 3.0
+            }
+          },
+          "status": "unavailable"
+        }
+      ],
       "target" : {
         "status" : "unavailable",
         "description" : "",

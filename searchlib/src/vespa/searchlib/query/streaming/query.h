@@ -76,7 +76,7 @@ class AndNotQueryNode : public QueryConnector
 public:
     AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
     bool evaluate() const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType) const override { return false; }
 };
 
 /**
@@ -95,6 +95,18 @@ public:
 };
 
 /**
+   N-ary RankWith operator
+*/
+class RankWithQueryNode : public QueryConnector
+{
+public:
+    RankWithQueryNode() noexcept : QueryConnector("RANK") { }
+    explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
+    bool evaluate() const override;
+};
+
+
+/**
    N-ary "EQUIV" operator that merges terms from nodes below.
 */
 class EquivQueryNode : public OrQueryNode
@@ -105,69 +117,6 @@ public:
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_EQUIV);
     }
-};
-
-/**
-   N-ary phrase operator. All terms must be satisfied and have the correct order
-   with distance to next term equal to 1.
-*/
-class PhraseQueryNode : public AndQueryNode
-{
-public:
-    PhraseQueryNode() noexcept : AndQueryNode("PHRASE"), _fieldInfo(32) { }
-    bool evaluate() const override;
-    const HitList & evaluateHits(HitList & hl) const override;
-    void getPhrases(QueryNodeRefList & tl) override;
-    void getPhrases(ConstQueryNodeRefList & tl) const override;
-    const QueryTerm::FieldInfo & getFieldInfo(size_t fid) const { return _fieldInfo[fid]; }
-    size_t getFieldInfoSize() const { return _fieldInfo.size(); }
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
-    void addChild(QueryNode::UP child) override;
-private:
-    mutable std::vector<QueryTerm::FieldInfo> _fieldInfo;
-    void updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) const;
-#if WE_EVER_NEED_TO_CACHE_THIS_WE_MIGHT_WANT_SOME_CODE_HERE
-    HitList _cachedHitList;
-    bool    _evaluated;
-#endif
-};
-
-class SameElementQueryNode : public AndQueryNode
-{
-public:
-    SameElementQueryNode() noexcept : AndQueryNode("SAME_ELEMENT") { }
-    bool evaluate() const override;
-    const HitList & evaluateHits(HitList & hl) const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
-    void addChild(QueryNode::UP child) override;
-};
-
-/**
-   N-ary Near operator. All terms must be within the given distance.
-*/
-class NearQueryNode : public AndQueryNode
-{
-public:
-    NearQueryNode() noexcept : AndQueryNode("NEAR"), _distance(0) { }
-    explicit NearQueryNode(const char * opName) noexcept : AndQueryNode(opName), _distance(0) { }
-    bool evaluate() const override;
-    void distance(size_t dist)       { _distance = dist; }
-    size_t distance()          const { return _distance; }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
-private:
-    size_t _distance;
-};
-
-/**
-   N-ary Ordered near operator. The terms must be in order and the distance between
-   the first and last must not exceed the given distance.
-*/
-class ONearQueryNode : public NearQueryNode
-{
-public:
-    ONearQueryNode() noexcept : NearQueryNode("ONEAR") { }
-    bool evaluate() const override;
 };
 
 /**

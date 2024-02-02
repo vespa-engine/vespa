@@ -24,7 +24,7 @@ DotProductTerm::build_scores(Scores& scores) const
     for (const auto& term : _terms) {
         auto& hl = term->evaluateHits(hl_store);
         for (auto& hit : hl) {
-            scores[hit.context()] += ((int64_t)term->weight().percent()) * hit.weight();
+            scores[hit.field_id()] += ((int64_t)term->weight().percent()) * hit.element_weight();
         }
     }
 }

@@ -4,6 +4,7 @@
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
+#include <memory>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -41,18 +42,6 @@ struct BouncerTest : public Test {
 
     static constexpr int RejectionDisabledConfigValue = -1;
 
-    // Note: newThreshold is intentionally int (rather than Priority) in order
-    // to be able to test out of bounds values.
-    void configureRejectionThreshold(int newThreshold);
-
-    std::shared_ptr<api::StorageCommand> createDummyFeedMessage(
-            api::Timestamp timestamp,
-            Priority priority = 0);
-
-    std::shared_ptr<api::StorageCommand> createDummyFeedMessage(
-            api::Timestamp timestamp,
-            document::BucketSpace bucketSpace);
-
     void expectMessageBouncedWithRejection() const;
     void expect_message_bounced_with_node_down_abort() const;
     void expect_message_bounced_with_shutdown_abort() const;
@@ -70,11 +59,11 @@ BouncerTest::BouncerTest()
 void BouncerTest::setUpAsNode(const lib::NodeType& type) {
     vdstestlib::DirConfig config(getStandardConfig(type == lib::NodeType::STORAGE));
     if (type == lib::NodeType::STORAGE) {
-        _node.reset(new TestServiceLayerApp(NodeIndex(2), config.getConfigId()));
+        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2), config.getConfigId());
     } else {
-        _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
+        _node = std::make_unique<TestDistributorApp>(NodeIndex(2), config.getConfigId());
     }
-    _upper.reset(new DummyStorageLink());
+    _upper = std::make_unique<DummyStorageLink>();
     using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
     auto cfg_uri = config::ConfigUri(config.getConfigId());
     auto cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
@@ -104,8 +93,8 @@ BouncerTest::TearDown() {
 }
 
 std::shared_ptr<api::StorageCommand>
-BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
-                                    api::StorageMessage::Priority priority)
+createDummyFeedMessage(api::Timestamp timestamp,
+                       api::StorageMessage::Priority priority = 0)
 {
     auto cmd = std::make_shared<api::RemoveCommand>(
             makeDocumentBucket(document::BucketId(0)),
@@ -116,14 +105,14 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
 }
 
 std::shared_ptr<api::StorageCommand>
-BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
-                                    document::BucketSpace bucketSpace)
+createDummyFeedMessage(api::Timestamp timestamp,
+                       document::BucketSpace bucketSpace)
 {
     auto cmd = std::make_shared<api::RemoveCommand>(
             document::Bucket(bucketSpace, document::BucketId(0)),
             document::DocumentId("id:ns:foo::bar"),
             timestamp);
-    cmd->setPriority(Priority(0));
+    cmd->setPriority(BouncerTest::Priority(0));
     return cmd;
 }
 
@@ -226,58 +215,21 @@ BouncerTest::expectMessageNotBounced() const
     EXPECT_EQ(size_t(1), _lower->getNumCommands());
 }
 
-void
-BouncerTest::configureRejectionThreshold(int newThreshold)
-{
-    using Builder = vespa::config::content::core::StorBouncerConfigBuilder;
-    Builder config;
-    config.feedRejectionPriorityThreshold = newThreshold;
-    _manager->on_configure(config);
-}
-
-TEST_F(BouncerTest, reject_lower_prioritized_feed_messages_when_configured) {
-    configureRejectionThreshold(Priority(120));
-    _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(121)));
-    expectMessageBouncedWithRejection();
-}
-
-TEST_F(BouncerTest, do_not_reject_higher_prioritized_feed_messages_than_configured) {
-    configureRejectionThreshold(Priority(120));
-    _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(119)));
-    expectMessageNotBounced();
-}
-
-TEST_F(BouncerTest, priority_rejection_threshold_is_exclusive) {
-    configureRejectionThreshold(Priority(120));
-    _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(120)));
-    expectMessageNotBounced();
-}
-
-TEST_F(BouncerTest, only_priority_reject_feed_messages_when_configured) {
-    configureRejectionThreshold(RejectionDisabledConfigValue);
-    // A message with even the lowest priority should not be rejected.
-    _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
-    expectMessageNotBounced();
-}
-
 TEST_F(BouncerTest, priority_rejection_is_disabled_by_default_in_config) {
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
     expectMessageNotBounced();
 }
 
-TEST_F(BouncerTest, read_only_operations_are_not_priority_rejected) {
-    configureRejectionThreshold(Priority(1));
+TEST_F(BouncerTest, read_only_operations_are_not_rejected) {
     // StatBucket is an external operation, but it's not a mutating operation
     // and should therefore not be blocked.
-    auto cmd = std::make_shared<api::StatBucketCommand>(
-            makeDocumentBucket(document::BucketId(16, 5)), "");
+    auto cmd = std::make_shared<api::StatBucketCommand>(makeDocumentBucket(document::BucketId(16, 5)), "");
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
     expectMessageNotBounced();
 }
 
 TEST_F(BouncerTest, internal_operations_are_not_rejected) {
-    configureRejectionThreshold(Priority(1));
     document::BucketId bucket(16, 1234);
     api::BucketInfo info(0x1, 0x2, 0x3);
     auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
@@ -285,12 +237,6 @@ TEST_F(BouncerTest, internal_operations_are_not_rejected) {
     _upper->sendDown(cmd);
     expectMessageNotBounced();
 }
-
-TEST_F(BouncerTest, out_of_bounds_config_values_throw_exception) {
-    EXPECT_THROW(configureRejectionThreshold(256), config::InvalidConfigException);
-    EXPECT_THROW(configureRejectionThreshold(-2), config::InvalidConfigException);
-}
-
 
 namespace {
 

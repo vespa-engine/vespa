@@ -21,6 +21,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.query.parser.TestLinguistics;
@@ -262,17 +263,28 @@ public class ParseTestCase {
 
     @Test
     void testNotOnly() {
-        tester.assertParsed(null, "-foobar", Query.Type.ALL);
+        Item item = tester.assertParsed("-foobar", "-foobar", Query.Type.ALL);
+        assertTrue(item instanceof NotItem);
+        assertTrue(((NotItem) item).getPositiveItem() instanceof TrueItem);
     }
 
     @Test
-    void testMultipleNotsOnlt() {
-        tester.assertParsed(null, "-foo -bar -foobar", Query.Type.ALL);
+    void testNotOnlyAny() {
+        Item item = tester.assertParsed("-foobar", "-foobar", Query.Type.ANY);
+        assertTrue(item instanceof NotItem);
+        assertTrue(((NotItem) item).getPositiveItem() instanceof TrueItem);
+    }
+
+    @Test
+    void testMultipleNotsOnly() {
+        Item item = tester.assertParsed("-foo -bar -foobar", "-foo -bar -foobar", Query.Type.ALL);
+        assertTrue(item instanceof NotItem);
+        assertTrue(((NotItem) item).getPositiveItem() instanceof TrueItem);
     }
 
     @Test
     void testOnlyNotComposite() {
-        tester.assertParsed(null, "-(foo bar baz)", Query.Type.ALL);
+        tester.assertParsed("-(AND foo bar baz)", "-(foo bar baz)", Query.Type.ALL);
     }
 
     @Test
@@ -391,7 +403,7 @@ public class ParseTestCase {
 
     @Test
     void testMinusAndPluses() {
-        tester.assertParsed(null, "--test+-if", Query.Type.ANY);
+        tester.assertParsed("-(AND test if)", "--test+-if", Query.Type.ANY);
     }
 
     @Test
@@ -1305,7 +1317,9 @@ public class ParseTestCase {
 
     @Test
     void testNotFilterEmptyQuery() {
-        tester.assertParsed(null, "", "-foo", Query.Type.ANY);
+        Item item = tester.assertParsed("-|foo", "", "-foo", Query.Type.ANY);
+        assertTrue(item instanceof NotItem);
+        assertTrue(((NotItem) item).getPositiveItem() instanceof TrueItem);
     }
 
     @Test
@@ -1380,7 +1394,7 @@ public class ParseTestCase {
 
     @Test
     void testMultitermNotFilterEmptyQuery() {
-        tester.assertParsed(null, "", "-foo -foz", Query.Type.ANY);
+        tester.assertParsed("-|foo -|foz", "", "-foo -foz", Query.Type.ANY);
     }
 
     @Test
@@ -2320,17 +2334,19 @@ public class ParseTestCase {
 
     @Test
     void testNotOnlyWeb() {
-        tester.assertParsed(null, "-foobar", Query.Type.WEB);
+        Item item = tester.assertParsed("-foobar", "-foobar", Query.Type.WEB);
+        assertTrue(item instanceof NotItem);
+        assertTrue(((NotItem)item).getPositiveItem() instanceof TrueItem);
     }
 
     @Test
     void testMultipleNotsOnltWeb() {
-        tester.assertParsed(null, "-foo -bar -foobar", Query.Type.WEB);
+        tester.assertParsed("-foo -bar -foobar", "-foo -bar -foobar", Query.Type.WEB);
     }
 
     @Test
     void testOnlyNotCompositeWeb() {
-        tester.assertParsed(null, "-(foo bar baz)", Query.Type.WEB);
+        tester.assertParsed("-(AND foo bar baz)", "-(foo bar baz)", Query.Type.WEB);
     }
 
     @Test

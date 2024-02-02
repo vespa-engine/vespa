@@ -462,12 +462,12 @@ public class AutoscalingTest {
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.01, 0.01, 0.01, 0, 0), 120);
-        Autoscaling suggestion = fixture.suggest();
+        List<Autoscaling> suggestions = fixture.suggest();
         fixture.tester().assertResources("Choosing the remote disk flavor as it has less disk",
                                          2, 1, 3.0,  100.0, 10.0,
-                                         suggestion);
+                                         suggestions);
         assertEquals("Choosing the remote disk flavor as it has less disk",
-                     StorageType.remote, suggestion.resources().get().nodeResources().storageType());
+                     StorageType.remote, suggestions.stream().findFirst().flatMap(Autoscaling::resources).get().nodeResources().storageType());
     }
 
     @Test

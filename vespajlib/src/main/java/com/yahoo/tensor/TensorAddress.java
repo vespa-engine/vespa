@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.impl.Convert;
+import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.impl.TensorAddressAny;
+
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -14,18 +17,20 @@ import java.util.stream.Collectors;
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
-    private static final String [] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
-
     public static TensorAddress of(String[] labels) {
-        return new StringTensorAddress(labels);
+        return TensorAddressAny.of(labels);
     }
 
-    public static TensorAddress ofLabels(String ... labels) {
-        return new StringTensorAddress(labels);
+    public static TensorAddress ofLabels(String... labels) {
+        return TensorAddressAny.of(labels);
     }
 
-    public static TensorAddress of(long ... labels) {
-        return new NumericTensorAddress(labels);
+    public static TensorAddress of(long... labels) {
+        return TensorAddressAny.of(labels);
+    }
+
+    public static TensorAddress of(int... labels) {
+        return TensorAddressAny.of(labels);
     }
 
     /** Returns the number of labels in this */
@@ -61,27 +66,22 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     }
 
     @Override
-    public int hashCode() {
-        int result = 1;
-        for (int i = 0; i < size(); i++) {
-            if (label(i) != null)
-                result = 31 * result + label(i).hashCode();
+    public String toString() {
+        StringBuilder sb = new StringBuilder("cell address (");
+        int size = size();
+        if (size > 0) {
+            sb.append(label(0));
+            for (int i = 1; i < size; i++) {
+                sb.append(',').append(label(i));
+            }
         }
-        return result;
+
+        return sb.append(')').toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof TensorAddress other)) return false;
-        if (other.size() != this.size()) return false;
-        for (int i = 0; i < this.size(); i++)
-            if ( ! Objects.equals(this.label(i), other.label(i)))
-                return false;
-        return true;
-    }
-
-    /** Returns this as a string on the appropriate form given the type */
+    /**
+     * Returns this as a string on the appropriate form given the type
+     */
     public final String toString(TensorType type) {
         StringBuilder b = new StringBuilder("{");
         for (int i = 0; i < size(); i++) {
@@ -94,106 +94,78 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return b.toString();
     }
 
-    /** Returns a label as a string with appropriate quoting/escaping when necessary */
+    /**
+     * Returns a label as a string with appropriate quoting/escaping when necessary
+     */
     public static String labelToString(String label) {
         if (TensorType.labelMatcher.matches(label)) return label; // no quoting
         if (label.contains("'")) return "\"" + label + "\"";
         return "'" + label + "'";
     }
 
-    private static String[] createSmallIndexesAsStrings(int count) {
-        String [] asStrings = new String[count];
-        for (int i = 0; i < count; i++) {
-            asStrings[i] = String.valueOf(i);
+    /** Returns an address with only some of the dimension. Ordering will also be according to indexMap */
+    public TensorAddress partialCopy(int[] indexMap) {
+        int[] labels = new int[indexMap.length];
+        for (int i = 0; i < labels.length; ++i) {
+            labels[i] = (int)numericLabel(indexMap[i]);
         }
-        return asStrings;
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
-    private static String asString(long index) {
-        return ((index >= 0) && (index < SMALL_INDEXES.length)) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
-    }
-
-    private static final class StringTensorAddress extends TensorAddress {
-
-        private final String[] labels;
-
-        private StringTensorAddress(String ... labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
-        }
-
-        @Override
-        public int size() { return labels.length; }
-
-        @Override
-        public String label(int i) { return labels[i]; }
-
-        @Override
-        public long numericLabel(int i) {
-            try {
-                return Long.parseLong(labels[i]);
-            }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Expected an integer label in " + this + " at position " + i + " but got '" + labels[i] + "'");
+    /** Creates a complete address by taking the mapped dimmensions from this and the indexed from the indexedPart */
+    public TensorAddress fullAddressOf(List<TensorType.Dimension> dimensions, int[] densePart) {
+        int[] labels = new int[dimensions.size()];
+        int mappedIndex = 0;
+        int indexedIndex = 0;
+        for (int i = 0; i < labels.length; i++) {
+            TensorType.Dimension d = dimensions.get(i);
+            if (d.isIndexed()) {
+                labels[i] = densePart[indexedIndex];
+                indexedIndex++;
+            } else {
+                labels[i] = (int)numericLabel(mappedIndex);
+                mappedIndex++;
             }
         }
-
-        @Override
-        public TensorAddress withLabel(int index, long label) {
-            String[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = TensorAddress.asString(label);
-            return new StringTensorAddress(labels);
-        }
-
-
-        @Override
-        public String toString() {
-            return "cell address (" + String.join(",", labels) + ")";
-        }
-
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
-    private static final class NumericTensorAddress extends TensorAddress {
-
-        private final long[] labels;
-
-        private NumericTensorAddress(long[] labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
+    /**
+     * Returns an address containing the mapped dimensions of this.
+     *
+     * @param mappedType the type of the mapped subset of the type this is an address of;
+     *                   which is also the type of the returned address
+     * @param dimensions all the dimensions of the type this is an address of
+     */
+    public TensorAddress mappedPartialAddress(TensorType mappedType, List<TensorType.Dimension> dimensions) {
+        if (dimensions.size() != size())
+            throw new IllegalArgumentException("Tensor type of " + this + " is not the same size as " + this);
+        TensorAddress.Builder builder = new TensorAddress.Builder(mappedType);
+        for (int i = 0; i < dimensions.size(); ++i) {
+            TensorType.Dimension dimension = dimensions.get(i);
+            if ( ! dimension.isIndexed())
+                builder.add(dimension.name(), (int)numericLabel(i));
         }
-
-        @Override
-        public int size() { return labels.length; }
-
-        @Override
-        public String label(int i) { return TensorAddress.asString(labels[i]); }
-
-        @Override
-        public long numericLabel(int i) { return labels[i]; }
-
-        @Override
-        public TensorAddress withLabel(int index, long label) {
-            long[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = label;
-            return new NumericTensorAddress(labels);
-        }
-
-        @Override
-        public String toString() {
-            return "cell address (" + Arrays.stream(labels).mapToObj(TensorAddress::asString).collect(Collectors.joining(",")) + ")";
-        }
-
+        return builder.build();
     }
 
     /** Builder of a tensor address */
     public static class Builder {
 
         final TensorType type;
-        final String[] labels;
+        final int[] labels;
 
-        public Builder(TensorType type) {
-            this(type, new String[type.dimensions().size()]);
+        private static int[] createEmptyLabels(int size) {
+            int[] labels = new int[size];
+            Arrays.fill(labels, Tensor.invalidIndex);
+            return labels;
         }
 
-        private Builder(TensorType type, String[] labels) {
+        public Builder(TensorType type) {
+            this(type, createEmptyLabels(type.dimensions().size()));
+        }
+
+        private Builder(TensorType type, int[] labels) {
             this.type = type;
             this.labels = labels;
         }
@@ -207,7 +179,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             var mappedSubtype = type.mappedSubtype();
             if (mappedSubtype.rank() != 1)
                 throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " +
-                                                   type + ": Must have exactly one sparse dimension");
+                                                   type + ": Must have exactly one mapped dimension");
             add(mappedSubtype.dimensions().get(0).name(), label);
             return this;
         }
@@ -220,10 +192,22 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public Builder add(String dimension, String label) {
             Objects.requireNonNull(dimension, "dimension cannot be null");
             Objects.requireNonNull(label, "label cannot be null");
-            Optional<Integer> labelIndex = type.indexOfDimension(dimension);
-            if ( labelIndex.isEmpty())
+            int labelIndex = type.indexOfDimensionAsInt(dimension);
+            if ( labelIndex < 0)
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
-            labels[labelIndex.get()] = label;
+            labels[labelIndex] = Label.toNumber(label);
+            return this;
+        }
+
+        public Builder add(String dimension, long label) {
+            return add(dimension, Convert.safe2Int(label));
+        }
+        public Builder add(String dimension, int label) {
+            Objects.requireNonNull(dimension, "dimension cannot be null");
+            int labelIndex = type.indexOfDimensionAsInt(dimension);
+            if ( labelIndex < 0)
+                throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
+            labels[labelIndex] = label;
             return this;
         }
 
@@ -237,14 +221,14 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == null)
+                if (labels[i] == Tensor.invalidIndex)
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }
 
         public TensorAddress build() {
             validate();
-            return TensorAddress.of(labels);
+            return TensorAddressAny.ofUnsafe(labels);
         }
 
     }
@@ -256,7 +240,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             super(type);
         }
 
-        private PartialBuilder(TensorType type, String[] labels) {
+        private PartialBuilder(TensorType type, int[] labels) {
             super(type, labels);
         }
 

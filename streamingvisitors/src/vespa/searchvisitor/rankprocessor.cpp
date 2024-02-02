@@ -114,7 +114,7 @@ RankProcessor::initQueryEnvironment()
 void
 RankProcessor::initHitCollector(size_t wantedHitCount)
 {
-    _hitCollector.reset(new HitCollector(wantedHitCount));
+    _hitCollector = std::make_unique<HitCollector>(wantedHitCount);
 }
 
 void
@@ -209,9 +209,8 @@ class RankProgramWrapper : public HitCollector::IRankProgram
 {
 private:
     MatchData &_match_data;
-
 public:
-    RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
+    explicit RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
     void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
         copyTermFieldMatchData(matchData, _match_data);
@@ -300,7 +299,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
 
                 // optimize for hitlist giving all hits for a single field in one chunk
                 for (const Hit & hit : hitList) {
-                    uint32_t fieldId = hit.context();
+                    uint32_t fieldId = hit.field_id();
                     if (fieldId != lastFieldId) {
                         // reset to notfound/unknown values
                         tmd = nullptr;
@@ -335,8 +334,8 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                     }
                     if (tmd != nullptr) {
                         // adjust so that the position for phrase terms equals the match for the first term
-                        TermFieldMatchDataPosition pos(hit.elemId(), hit.wordpos() - term.getPosAdjust(),
-                                                       hit.weight(), fieldLen);
+                        TermFieldMatchDataPosition pos(hit.element_id(), hit.position() - term.getPosAdjust(),
+                                                       hit.element_weight(), hit.element_length());
                         tmd->appendPosition(pos);
                         LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
                                    pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());

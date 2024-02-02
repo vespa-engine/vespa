@@ -16,15 +16,7 @@ import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.Name;
-import com.yahoo.tensor.functions.ConstantTensor;
-import com.yahoo.tensor.functions.Slice;
-
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Writes tensors on the JSON format used in Vespa tensor document fields:
@@ -60,8 +52,7 @@ public class JsonFormat {
                 // Short form for a single mapped dimension
                 Cursor parent = root == null ? slime.setObject() : root.setObject("cells");
                 encodeSingleDimensionCells((MappedTensor) tensor, parent);
-            } else if (tensor instanceof MixedTensor &&
-                       tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped)) {
+            } else if (tensor instanceof MixedTensor && tensor.type().hasMappedDimensions()) {
                 // Short form for a mixed tensor
                 boolean singleMapped = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() == 1;
                 Cursor parent = root == null ? ( singleMapped ? slime.setObject() : slime.setArray() )
@@ -143,9 +134,9 @@ public class JsonFormat {
     }
 
     private static void encodeBlocks(MixedTensor tensor, Cursor cursor) {
-        var mappedDimensions = tensor.type().dimensions().stream().filter(d -> d.isMapped())
+        var mappedDimensions = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped)
                 .map(d -> TensorType.Dimension.mapped(d.name())).toList();
-        if (mappedDimensions.size() < 1) {
+        if (mappedDimensions.isEmpty()) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }
 
@@ -179,23 +170,6 @@ public class JsonFormat {
             cursor.setDouble(field, value);
     }
 
-    private static TensorAddress subAddress(TensorAddress address, TensorType subType, TensorType origType) {
-        TensorAddress.Builder builder = new TensorAddress.Builder(subType);
-        for (TensorType.Dimension dim : subType.dimensions()) {
-            builder.add(dim.name(), address.label(origType.indexOfDimension(dim.name()).
-                    orElseThrow(() -> new IllegalStateException("Could not find mapped dimension index"))));
-        }
-        return builder.build();
-    }
-
-    private static Tensor sliceSubAddress(Tensor tensor, TensorAddress subAddress, TensorType subType) {
-        List<Slice.DimensionValue<Name>> sliceDims = new ArrayList<>(subAddress.size());
-        for (int i = 0; i < subAddress.size(); ++i) {
-            sliceDims.add(new Slice.DimensionValue<>(subType.dimensions().get(i).name(), subAddress.label(i)));
-        }
-        return new Slice<>(new ConstantTensor<>(tensor), sliceDims).evaluate();
-    }
-
     /** Deserializes the given tensor from JSON format */
     // NOTE: This must be kept in sync with com.yahoo.document.json.readers.TensorReader in the document module
     public static Tensor decode(TensorType type, byte[] jsonTensorValue) {
@@ -204,7 +178,7 @@ public class JsonFormat {
 
         if (root.field("cells").valid() && ! primitiveContent(root.field("cells")))
             decodeCells(root.field("cells"), builder);
-        else if (root.field("values").valid() && builder.type().dimensions().stream().allMatch(d -> d.isIndexed()))
+        else if (root.field("values").valid() && ! builder.type().hasMappedDimensions())
             decodeValuesAtTop(root.field("values"), builder);
         else if (root.field("blocks").valid())
             decodeBlocks(root.field("blocks"), builder);
@@ -298,14 +272,14 @@ public class JsonFormat {
 
     /** Decodes a tensor value directly at the root, where the format is decided by the tensor type. */
     private static void decodeDirectValue(Inspector root, Tensor.Builder builder) {
-        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
-        boolean hasMapped = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
+        boolean hasIndexed = builder.type().hasIndexedDimensions();
+        boolean hasMapped = builder.type().hasMappedDimensions();
 
         if (isArrayOfObjects(root))
             decodeCells(root, builder);
         else if ( ! hasMapped)
             decodeValuesAtTop(root, builder);
-        else if (hasMapped && hasIndexed)
+        else if (hasIndexed)
             decodeBlocks(root, builder);
         else
             decodeCells(root, builder);
@@ -423,9 +397,7 @@ public class JsonFormat {
             if (decoded.length == 0) {
                 throw new IllegalArgumentException("The block value string does not contain any values");
             }
-            for (int i = 0; i < decoded.length; i++) {
-                values[i] = decoded[i];
-            }
+            System.arraycopy(decoded, 0, values, 0, decoded.length);
         } else {
             throw new IllegalArgumentException("Expected a block to contain an array of values");
         }

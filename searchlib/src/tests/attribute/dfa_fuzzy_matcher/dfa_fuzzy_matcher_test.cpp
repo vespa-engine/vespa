@@ -197,7 +197,7 @@ dfa_fuzzy_match_in_dictionary_no_skip(std::string_view target, const StringEnumS
     size_t seeks = 0;
     for (;itr.valid(); ++itr) {
         auto word = store.get_value(itr.getKey().load_relaxed());
-        if (matcher.is_match(word)) {
+        if (matcher.is_match(std::string_view(word))) {
             ++matches;
             if (collect_matches) {
                 matched_words.push_back(word);

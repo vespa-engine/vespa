@@ -9,8 +9,10 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 
 /**
  * Microbenchmark of tensor operations.
@@ -71,7 +73,7 @@ public class TensorFunctionBenchmark {
         for (int i = 0; i < vectorCount; i++) {
             Tensor.Builder builder = Tensor.Builder.of(type);
             for (int j = 0; j < vectorSize; j++) {
-                builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
+                builder.cell().label("x", j).value(random.nextDouble());
             }
             tensors.add(builder.build());
         }
@@ -86,12 +88,12 @@ public class TensorFunctionBenchmark {
         for (int i = 0; i < vectorCount; i++) {
             for (int j = 0; j < vectorSize; j++) {
                 builder.cell()
-                        .label("i", String.valueOf(i))
-                        .label("x", String.valueOf(j))
+                        .label("i", i)
+                        .label("x", j)
                         .value(random.nextDouble());
             }
         }
-        return Collections.singletonList(builder.build());
+        return List.of(builder.build());
     }
 
     private static TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {
@@ -107,45 +109,53 @@ public class TensorFunctionBenchmark {
     public static void main(String[] args) {
         double time = 0;
 
-        // ---------------- Mapped with extra space (sidesteps current special-case optimizations):
-        // 7.8 ms
-        time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
-        System.out.printf("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
-        // 7.7 ms
-        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
-        System.out.printf("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
-
-        // ---------------- Mapped:
-        // 2.1 ms
-        time = new TensorFunctionBenchmark().benchmark(5000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
-        System.out.printf("Mapped vectors,          time per join: %1$8.3f ms\n", time);
-        // 7.0 ms
-        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
-        System.out.printf("Mapped matrix,           time per join: %1$8.3f ms\n", time);
-
-        // ---------------- Indexed (unbound) with extra space (sidesteps current special-case optimizations):
-        // 14.5 ms
-        time = new TensorFunctionBenchmark().benchmark(500, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
-        System.out.printf("Indexed vectors, x space time per join: %1$8.3f ms\n", time);
-        // 8.9 ms
-        time = new TensorFunctionBenchmark().benchmark(500, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
-        System.out.printf("Indexed matrix, x space  time per join: %1$8.3f ms\n", time);
-
         // ---------------- Indexed unbound:
-        // 0.14 ms
+
         time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
         System.out.printf("Indexed unbound vectors, time per join: %1$8.3f ms\n", time);
-        // 0.44 ms
         time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, false);
         System.out.printf("Indexed unbound matrix,  time per join: %1$8.3f ms\n", time);
 
         // ---------------- Indexed bound:
-        // 0.32 ms
         time = new TensorFunctionBenchmark().benchmark(50000, vectors(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
         System.out.printf("Indexed bound vectors,   time per join: %1$8.3f ms\n", time);
-        // 0.44 ms
+
         time = new TensorFunctionBenchmark().benchmark(50000, matrix(100, 300, TensorType.Dimension.Type.indexedBound), TensorType.Dimension.Type.indexedBound, false);
         System.out.printf("Indexed bound matrix,    time per join: %1$8.3f ms\n", time);
+
+        // ---------------- Mapped:
+        time = new TensorFunctionBenchmark().benchmark(5000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
+        System.out.printf("Mapped vectors,          time per join: %1$8.3f ms\n", time);
+
+        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, false);
+        System.out.printf("Mapped matrix,           time per join: %1$8.3f ms\n", time);
+
+        // ---------------- Indexed (unbound) with extra space (sidesteps current special-case optimizations):
+        time = new TensorFunctionBenchmark().benchmark(500, vectors(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
+        System.out.printf("Indexed vectors, x space time per join: %1$8.3f ms\n", time);
+
+        time = new TensorFunctionBenchmark().benchmark(500, matrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound, true);
+        System.out.printf("Indexed matrix, x space  time per join: %1$8.3f ms\n", time);
+
+        // ---------------- Mapped with extra space (sidesteps current special-case optimizations):
+        time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+        System.out.printf("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
+
+        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+        System.out.printf("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
+
+        /* 2.4Ghz Intel Core i9, Macbook Pro 2019
+         Indexed unbound vectors, time per join:    0,066 ms
+         Indexed unbound matrix,  time per join:    0,108 ms
+         Indexed bound vectors,   time per join:    0,068 ms
+         Indexed bound matrix,    time per join:    0,106 ms
+         Mapped vectors,          time per join:    0,845 ms
+         Mapped matrix,           time per join:    1,779 ms
+         Indexed vectors, x space time per join:    5,778 ms
+         Indexed matrix, x space  time per join:    3,342 ms
+         Mapped vectors, x space  time per join:    8,184 ms
+         Mapped matrix, x space   time per join:   11,547 ms
+         */
     }
 
 }

@@ -74,7 +74,17 @@ public class FileDownloader implements AutoCloseable {
         }
     }
 
-    Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
+    /** Returns a future that times out if download takes too long, and return empty on unsuccessful download. */
+    public Future<Optional<File>> getFutureFileOrTimeout(FileReferenceDownload fileReferenceDownload) {
+        return getFutureFile(fileReferenceDownload)
+                .orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                .exceptionally(thrown -> {
+                    fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
+                    return Optional.empty();
+                });
+    }
+
+    CompletableFuture<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
 
         Optional<File> file = getFileFromFileSystem(fileReference);
@@ -135,7 +145,7 @@ public class FileDownloader implements AutoCloseable {
     }
 
     /** Start downloading, the future returned will be complete()d by receiving method in {@link FileReceiver} */
-    private synchronized Future<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
+    private synchronized CompletableFuture<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
         return fileReferenceDownloader.startDownload(fileReferenceDownload);
     }
 

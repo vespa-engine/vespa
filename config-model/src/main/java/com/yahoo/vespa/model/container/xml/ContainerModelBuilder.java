@@ -518,10 +518,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String clientId = XML.attribute("id", clientElement).orElseThrow();
         if (clientId.startsWith("_"))
             throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(clientId));
-        List<String> permissions = XML.attribute("permissions", clientElement)
-                .map(p -> p.split(",")).stream()
-                .flatMap(Arrays::stream)
-                .toList();
+        var permissions = XML.attribute("permissions", clientElement)
+                .map(Client.Permission::fromCommaSeparatedString).orElse(Set.of());
 
         var certificates = XML.getChildren(clientElement, "certificate").stream()
                 .flatMap(certElem -> {

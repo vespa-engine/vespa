@@ -44,7 +44,8 @@ public class RankProfileInputProperties extends Properties {
                     value = tensorConverter.convertTo(expectedType,
                                                       name.last(),
                                                       value,
-                                                      query.getModel().getLanguage());
+                                                      query.getModel().getLanguage(),
+                                                      context);
                 }
             }
             catch (IllegalArgumentException e) {
