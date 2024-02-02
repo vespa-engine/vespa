@@ -105,7 +105,6 @@ struct ExtRemoveOperationTest : public RemoveOperationTest {
 
 void ExtRemoveOperationTest::set_up_tas_remove_with_2_nodes(ReplicaState replica_state) {
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
-    config_enable_condition_probing(true);
     tag_content_node_supports_condition_probing(0, true);
     tag_content_node_supports_condition_probing(1, true);
 
@@ -134,8 +133,7 @@ TEST_F(RemoveOperationTest, simple) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 1",
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 1",
             _sender.getLastCommand());
 
     replyToMessage(*op, -1, 34);
@@ -150,8 +148,7 @@ TEST_F(RemoveOperationTest, not_found) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 1",
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 1",
               _sender.getLastCommand());
 
     replyToMessage(*op, -1, 0);
@@ -166,8 +163,7 @@ TEST_F(RemoveOperationTest, storage_failure) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 1",
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 1",
               _sender.getLastCommand());
 
     sendReply(*op, -1, api::ReturnCode::INTERNAL_FAILURE);
@@ -190,12 +186,9 @@ TEST_F(RemoveOperationTest, multiple_copies) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 1,"
-              "Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 2,"
-              "Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 3",
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 1,"
+              "Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 2,"
+              "Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 3",
               _sender.getCommands(true, true));
 
     replyToMessage(*op, 0, 34);
@@ -212,8 +205,7 @@ TEST_F(RemoveOperationTest, can_send_remove_when_all_replica_nodes_retired) {
     addNodesToBucketDB(bucketId, "0=123");
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
-              "timestamp 100) => 0",
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 0",
               _sender.getLastCommand());
 }
 
@@ -231,9 +223,7 @@ TEST_F(ExtRemoveOperationTest, conditional_removes_are_instantly_successful_when
     ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::NONE));
     ASSERT_EQ("", _sender.getCommands(true));
     ASSERT_EQ(_sender.replies().size(), 1);
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, not found) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, not found) "
               "ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -257,9 +247,7 @@ TEST_F(ExtRemoveOperationTest, matching_condition_probe_sends_unconditional_remo
     ASSERT_TRUE(_sender.replies().empty());
     reply_with(make_remove_reply(3, 50)); // remove from node 0
     ASSERT_EQ(_sender.replies().size(), 1);
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, removed doc from 50) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, removed doc from 50) "
               "ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -271,9 +259,7 @@ TEST_F(ExtRemoveOperationTest, mismatching_condition_probe_fails_op_with_tas_err
     reply_with(make_get_reply(1, 50, false, false));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, not found) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, not found) "
               "ReturnCode(TEST_AND_SET_CONDITION_FAILED, Condition did not match document)",
               _sender.getLastReply());
 }
@@ -286,9 +272,7 @@ TEST_F(ExtRemoveOperationTest, not_found_condition_probe_fails_op_with_tas_error
     reply_with(make_get_reply(1, 0, false, false));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, not found) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, not found) "
               "ReturnCode(TEST_AND_SET_CONDITION_FAILED, Document does not exist)",
               _sender.getLastReply());
 }
@@ -300,9 +284,7 @@ TEST_F(ExtRemoveOperationTest, failed_condition_probe_fails_op_with_returned_err
     reply_with(make_failure_reply(1));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, not found) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, not found) "
               "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
               "One or more replicas failed during test-and-set condition evaluation)",
               _sender.getLastReply());
@@ -319,9 +301,7 @@ TEST_F(ExtRemoveOperationTest, cancellation_during_condition_probe_fails_operati
     reply_with(make_get_reply(1, 50, false, true));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
-    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "id:test:test::uri, "
-              "timestamp 100, not found) "
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, timestamp 100, not found) "
               "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
               "Operation has been cancelled (likely due to a cluster state change))",
               _sender.getLastReply());

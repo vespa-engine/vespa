@@ -129,7 +129,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         }
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.enable_condition_probing(true);
         if (contentLayerMetadataFeatureLevel > 0) {
             builder.enable_operation_cancellation(true);
         }
