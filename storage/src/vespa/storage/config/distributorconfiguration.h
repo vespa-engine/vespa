@@ -231,12 +231,6 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
-    void set_enable_two_phase_garbage_collection(bool enable) noexcept {
-        _enable_two_phase_garbage_collection = enable;
-    }
-    [[nodiscard]] bool enable_two_phase_garbage_collection() const noexcept {
-        return _enable_two_phase_garbage_collection;
-    }
     void set_enable_condition_probing(bool enable) noexcept {
         _enable_condition_probing = enable;
     }
@@ -288,7 +282,6 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
-    bool _enable_two_phase_garbage_collection;
     bool _enable_condition_probing;
     bool _enable_operation_cancellation;
 

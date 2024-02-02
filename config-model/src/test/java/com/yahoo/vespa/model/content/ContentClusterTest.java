@@ -446,7 +446,6 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "bar/distributor/0");
             StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
             assertFalse(config.inlinebucketsplitting());
-            assertTrue(config.enable_two_phase_garbage_collection());
         }
 
         {
