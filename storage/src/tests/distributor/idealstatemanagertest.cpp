@@ -94,33 +94,6 @@ TEST_F(IdealStateManagerTest, status_page) {
               ost.str());
 }
 
-TEST_F(IdealStateManagerTest, disabled_state_checker) {
-    setup_stripe(1, 1, "distributor:1 storage:1");
-
-    auto cfg = make_config();
-    cfg->setSplitSize(100);
-    cfg->setSplitCount(1000000);
-    cfg->disableStateChecker("SplitBucket");
-    configure_stripe(cfg);
-
-    insertBucketInfo(document::BucketId(16, 5), 0, 0xff, 100, 200, true, true);
-    insertBucketInfo(document::BucketId(16, 2), 0, 0xff, 10, 10, true, true);
-
-    std::ostringstream ost;
-    getIdealStateManager().getBucketStatus(ost);
-
-    EXPECT_EQ(makeBucketStatusString(
-        "BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
-         "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
-         "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
-         "active=true,ready=false)]<br>\n"),
-         ost.str());
-
-    tick();
-    EXPECT_EQ("", active_ideal_state_operations());
-
-}
-
 TEST_F(IdealStateManagerTest, clear_active_on_node_down) {
     setSystemState(lib::ClusterState("distributor:1 storage:3"));
     for (int i = 1; i < 4; i++) {
