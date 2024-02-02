@@ -38,7 +38,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enableJoinForSiblingLessBuckets(false),
       _enableInconsistentJoin(false),
       _disableBucketActivation(false),
-      _sequenceMutatingOperations(true),
       _allowStaleReadsDuringClusterStateTransitions(false),
       _update_fast_path_restart_enabled(false),
       _merge_operations_disabled(false),
@@ -136,7 +135,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _enableInconsistentJoin = config.enableInconsistentJoin;
 
     _disableBucketActivation = config.disableBucketActivation;
-    _sequenceMutatingOperations = config.sequenceMutatingOperations;
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
     _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
