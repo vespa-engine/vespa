@@ -447,13 +447,6 @@ public class ContentClusterTest extends ContentBaseTest {
             StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
             assertFalse(config.inlinebucketsplitting());
         }
-
-        {
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            model.getConfig(builder, "bar/storage/0");
-            StorFilestorConfig config = new StorFilestorConfig(builder);
-            assertFalse(config.enable_multibit_split_optimalization());
-        }
     }
 
     @Test
