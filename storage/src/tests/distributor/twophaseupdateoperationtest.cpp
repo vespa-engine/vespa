@@ -1100,9 +1100,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_close_edge_sends_correct_reply) {
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_restarts_with_fast_path_if_enabled) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1126,32 +1124,9 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_re
     EXPECT_EQ(1, m.fast_path_restarts.getValue());
 }
 
-TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_does_not_restart_with_fast_path_if_disabled) {
-    setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(false);
-    configure_stripe(cfg);
-
-    auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender);
-
-    Timestamp old_timestamp = 500;
-    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
-    replyToGet(*cb, _sender, 0, old_timestamp);
-    replyToGet(*cb, _sender, 1, old_timestamp);
-
-    // Should _not_ be restarted with fast path, as it has been config disabled
-    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 2));
-
-    auto& m = metrics().updates;
-    EXPECT_EQ(0, m.fast_path_restarts.getValue());
-}
-
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_altered_between_get_send_and_receive) {
     setup_stripe(3, 3, "storage:3 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1175,9 +1150,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_alter
 
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_found_on_a_replica_node) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1193,9 +1166,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_foun
 // Buckets must be created from scratch by Put operations, updates alone cannot do this.
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_no_initial_replicas_exist) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(make_config());
 
     // No replicas, technically consistent but cannot use fast path.
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
@@ -1416,7 +1387,6 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1536,7 +1506,6 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_cre
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4");
     cb->start(_sender);
@@ -1560,7 +1529,6 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_crea
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));
     cb->start(_sender);

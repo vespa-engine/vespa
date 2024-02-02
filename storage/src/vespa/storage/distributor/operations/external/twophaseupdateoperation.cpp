@@ -93,9 +93,8 @@ TwoPhaseUpdateOperation::ensureUpdateReplyCreated()
 }
 
 void
-TwoPhaseUpdateOperation::sendReply(
-        DistributorStripeMessageSender& sender,
-        std::shared_ptr<api::UpdateReply> reply)
+TwoPhaseUpdateOperation::sendReply(DistributorStripeMessageSender& sender,
+                                   const std::shared_ptr<api::UpdateReply> & reply)
 {
     assert(!_replySent);
     reply->getTrace().addChild(std::move(_trace));
@@ -567,8 +566,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
 }
 
 bool TwoPhaseUpdateOperation::may_restart_with_fast_path(const api::GetReply& reply) {
-    return (_op_ctx.distributor_config().update_fast_path_restart_enabled() &&
-            !_replicas_at_get_send_time.empty() && // To ensure we send CreateBucket+Put if no replicas exist.
+    return (!_replicas_at_get_send_time.empty() && // To ensure we send CreateBucket+Put if no replicas exist.
             reply.had_consistent_replicas() &&
             replica_set_unchanged_after_get_operation());
 }
