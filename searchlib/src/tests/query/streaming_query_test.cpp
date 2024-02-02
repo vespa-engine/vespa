@@ -363,17 +363,15 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv[1].get()) != nullptr);
     {
         const auto & phrase = static_cast<const PhraseQueryNode &>(*equiv[1]);
-        EXPECT_EQ(2u, phrase.size());
-        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[0].get()) != nullptr);
-        {
-            const auto & qt = static_cast<const QueryTerm &>(*phrase[0]);
+        EXPECT_EQ(2u, phrase.get_terms().size());
+         {
+            const auto & qt = *phrase.get_terms()[0];
             EXPECT_EQ("c", qt.index());
             EXPECT_EQ(vespalib::stringref("1"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());
         }
-        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[1].get()) != nullptr);
         {
-            const auto & qt = static_cast<const QueryTerm &>(*phrase[1]);
+            const auto & qt = *phrase.get_terms()[1];
             EXPECT_EQ("c", qt.index());
             EXPECT_EQ(vespalib::stringref("0e"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());

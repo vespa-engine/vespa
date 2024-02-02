@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/query/streaming/phrase_query_node.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>

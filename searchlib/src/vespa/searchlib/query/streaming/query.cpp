@@ -2,7 +2,6 @@
 #include "query.h"
 #include "near_query_node.h"
 #include "onear_query_node.h"
-#include "phrase_query_node.h"
 #include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -113,7 +112,6 @@ QueryConnector::create(ParseItem::ItemType type)
         case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
         case search::ParseItem::ITEM_EQUIV:        return std::make_unique<EquivQueryNode>();
         case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
-        case search::ParseItem::ITEM_PHRASE:       return std::make_unique<PhraseQueryNode>();
         case search::ParseItem::ITEM_SAME_ELEMENT: return std::make_unique<SameElementQueryNode>();
         case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>();
         case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>();

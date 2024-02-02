@@ -65,7 +65,7 @@ public:
     QueryTerm & operator = (QueryTerm &&) = delete;
     ~QueryTerm() override;
     bool evaluate() const override;
-    const HitList & evaluateHits(HitList & hl) const final override;
+    const HitList & evaluateHits(HitList & hl) const override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;

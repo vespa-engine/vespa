@@ -19,6 +19,7 @@ class HitIteratorPack
     FieldElement _field_element;
 public:
     explicit HitIteratorPack(const QueryNodeList& children);
+    explicit HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children);
     ~HitIteratorPack();
     FieldElement& get_field_element_ref() noexcept { return _field_element; }
     HitIterator& front() noexcept { return _iterators.front(); }
