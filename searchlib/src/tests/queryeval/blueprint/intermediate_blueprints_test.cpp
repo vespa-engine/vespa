@@ -1166,7 +1166,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
+        EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::(anonymous namespace)::FullUnpack, vespalib::LeftArrayHeap, unsigned char>",
                      e.getChildren()[0]->getClassName());
     }
 
@@ -1175,7 +1175,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
+        EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::(anonymous namespace)::SelectiveUnpack, vespalib::LeftArrayHeap, unsigned char>",
                      e.getChildren()[0]->getClassName());
     }
 
@@ -1185,7 +1185,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::NoUnpack>",
+        EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char>",
                      e.getChildren()[0]->getClassName());
     }
 }

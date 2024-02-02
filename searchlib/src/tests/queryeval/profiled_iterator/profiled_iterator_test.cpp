@@ -182,7 +182,7 @@ TEST(ProfiledIteratorTest, iterator_tree_can_be_profiled) {
     auto counts = collect_counts(slime.get());
     print_counts(counts);
     EXPECT_EQ(counts["/AndSearchStrict/init"], 2);
-    EXPECT_EQ(counts["/0/OrLikeSearch/init"], 2);
+    EXPECT_EQ(counts["/0/StrictHeapOrSearch/init"], 2);
     EXPECT_EQ(counts["/0/0/SimpleSearch/init"], 2);
     EXPECT_EQ(counts["/0/1/SimpleSearch/init"], 2);
     EXPECT_EQ(counts["/1/SourceBlenderSearchNonStrict/init"], 2);

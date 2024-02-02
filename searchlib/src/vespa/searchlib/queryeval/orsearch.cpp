@@ -110,12 +110,12 @@ SearchIterator::UP
 OrSearch::create(ChildrenIterators children, bool strict) {
     UnpackInfo unpackInfo;
     unpackInfo.forceAll();
-    return create(std::move(children), strict, unpackInfo, StrictImpl::PLAIN);
+    return create(std::move(children), strict, unpackInfo);
 }
 
 SearchIterator::UP
 OrSearch::create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo) {
-    return create(std::move(children), strict, unpackInfo, StrictImpl::PLAIN);
+    return create(std::move(children), strict, unpackInfo, StrictImpl::HEAP);
 }
 
 SearchIterator::UP
