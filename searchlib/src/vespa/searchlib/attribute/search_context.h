@@ -32,7 +32,7 @@ public:
     SearchContext& operator=(SearchContext&&) noexcept = delete;
     ~SearchContext() override = default;
 
-    unsigned int approximateHits() const override;
+    HitEstimate calc_hit_estimate() const override;
     std::unique_ptr<queryeval::SearchIterator> createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
     void fetchPostings(const queryeval::ExecuteInfo& execInfo) override;
     bool valid() const override { return false; }

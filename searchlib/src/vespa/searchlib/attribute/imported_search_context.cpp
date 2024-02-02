@@ -97,21 +97,21 @@ ImportedSearchContext::calc_exact_hits() const
     return sum_hits;
 }
 
-unsigned int
-ImportedSearchContext::approximateHits() const
+HitEstimate
+ImportedSearchContext::calc_hit_estimate() const
 {
-    uint32_t target_approx_hits = _target_search_context->approximateHits();
-    if (target_approx_hits == 0) {
+    uint32_t target_est_hits = _target_search_context->calc_hit_estimate().est_hits();
+    if (target_est_hits == 0) {
         _zero_hits.store(true, std::memory_order_relaxed);
-        return 0;
+        return HitEstimate(0);
     }
     if (!_target_attribute.getIsFastSearch()) {
-        return _reference_attribute.getNumDocs();
+        return HitEstimate::unknown(_reference_attribute.getNumDocs());
     }
-    if (target_approx_hits >= MIN_TARGET_HITS_FOR_APPROXIMATION) {
-        return calc_approx_hits(target_approx_hits);
+    if (target_est_hits >= MIN_TARGET_HITS_FOR_APPROXIMATION) {
+        return HitEstimate(calc_approx_hits(target_est_hits));
     } else {
-        return calc_exact_hits();
+        return HitEstimate(calc_exact_hits());
     }
 }
 

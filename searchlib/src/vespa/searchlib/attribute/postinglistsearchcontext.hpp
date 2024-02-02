@@ -284,8 +284,8 @@ PostingListSearchContextT<DataT>::singleHits() const
 }
 
 template <typename DataT>
-unsigned int
-PostingListSearchContextT<DataT>::approximateHits() const
+HitEstimate
+PostingListSearchContextT<DataT>::calc_hit_estimate() const
 {
     size_t numHits = 0;
     if (_uniqueValues == 0u) {
@@ -294,9 +294,9 @@ PostingListSearchContextT<DataT>::approximateHits() const
     } else if (_dictionary.get_has_btree_dictionary()) {
         numHits = estimated_hits_in_range();
     } else {
-        numHits = _docIdLimit;
+        return HitEstimate::unknown(_docIdLimit);
     }
-    return std::min(numHits, size_t(std::numeric_limits<uint32_t>::max()));
+    return HitEstimate(std::min(numHits, size_t(std::numeric_limits<uint32_t>::max())));
 }
 
 template <typename DataT>

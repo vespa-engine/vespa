@@ -498,8 +498,10 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
     SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
-    size_t approx = sc->approximateHits();
-    EXPECT_EQ(numHits, approx);
+    auto est = sc->calc_hit_estimate();
+    uint32_t est_hits = est.est_hits();
+    EXPECT_FALSE(est.is_unknown());
+    EXPECT_EQ(numHits, est_hits);
     if (docBegin == 0) {
         // Approximation does not know about the special 0
         // But the iterator does....
@@ -523,7 +525,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
         hits++;
     }
     EXPECT_EQ(numHits, hits);
-    EXPECT_GE(approx, hits);
+    EXPECT_GE(est_hits, hits);
     EXPECT_EQ(docEnd, lastDocId+1);
 }
 

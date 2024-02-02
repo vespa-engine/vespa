@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcommon/attribute/hit_estimate.h>
 #include <memory>
 
 namespace search::queryeval {
@@ -30,7 +31,7 @@ protected:
 public:
     virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo) = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
-    virtual unsigned int approximateHits() const = 0;
+    virtual HitEstimate calc_hit_estimate() const = 0;
 };
 
 }

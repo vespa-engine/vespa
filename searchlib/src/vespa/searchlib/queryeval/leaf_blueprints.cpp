@@ -107,7 +107,7 @@ struct FakeContext : attribute::ISearchContext {
         int32_t ignore_weight;
         return onFind(docid, elem, ignore_weight);
     }
-    unsigned int approximateHits() const override { return 0; }
+    attribute::HitEstimate calc_hit_estimate() const override { return attribute::HitEstimate(0); }
     std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
     void fetchPostings(const ExecuteInfo &) override { }
     bool valid() const override { return true; }

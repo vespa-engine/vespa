@@ -18,6 +18,7 @@
 namespace search {
 
 using attribute::Config;
+using attribute::HitEstimate;
 
 SingleBoolAttribute::
 SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow, bool paged)
@@ -131,7 +132,7 @@ public:
     createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
-    unsigned int approximateHits() const override;
+    HitEstimate calc_hit_estimate() const override;
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
@@ -169,13 +170,13 @@ BitVectorSearchContext::createPostingIterator(fef::TermFieldMatchData *matchData
     return createFilterIterator(matchData, strict);
 }
 
-unsigned int
-BitVectorSearchContext::approximateHits() const {
+HitEstimate
+BitVectorSearchContext::calc_hit_estimate() const {
     return valid()
-        ? (_invert)
-            ? (_bv.size() - _bv.countTrueBits())
-            : _bv.countTrueBits()
-        : 0;
+        ? (_invert
+            ? HitEstimate(_bv.size() - _bv.countTrueBits())
+            : HitEstimate(_bv.countTrueBits()))
+        : HitEstimate(0);
 }
 
 uint32_t
