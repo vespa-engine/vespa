@@ -236,11 +236,6 @@ ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageComma
 }
 
 bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) const {
-    const auto& config(_op_ctx.distributor_config());
-    if (!config.getSequenceMutatingOperations()) {
-        // Sequencing explicitly disabled, so always allow.
-        return true;
-    }
     return handle.valid();
 }
 

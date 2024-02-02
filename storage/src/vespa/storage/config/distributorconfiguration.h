@@ -187,13 +187,6 @@ public:
         return _simulated_db_merging_latency;
     }
 
-    bool getSequenceMutatingOperations() const noexcept {
-        return _sequenceMutatingOperations;
-    }
-    void setSequenceMutatingOperations(bool sequenceMutations) noexcept {
-        _sequenceMutatingOperations = sequenceMutations;
-    }
-
     bool allowStaleReadsDuringClusterStateTransitions() const noexcept {
         return _allowStaleReadsDuringClusterStateTransitions;
     }
@@ -303,7 +296,6 @@ private:
     bool _enableJoinForSiblingLessBuckets;
     bool _enableInconsistentJoin;
     bool _disableBucketActivation;
-    bool _sequenceMutatingOperations;
     bool _allowStaleReadsDuringClusterStateTransitions;
     bool _update_fast_path_restart_enabled;
     bool _merge_operations_disabled;

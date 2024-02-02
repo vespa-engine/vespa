@@ -212,7 +212,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     }
 
     void configureMaxClusterClockSkew(int seconds);
-    void configure_mutation_sequencing(bool enabled);
     void configure_merge_busy_inhibit_duration(int seconds);
 
     void set_up_and_start_get_op_with_stale_reads_enabled(bool enabled);
@@ -671,30 +670,6 @@ auto makeDummyRemoveCommand() {
             api::Timestamp(0));
 }
 
-}
-
-void
-DistributorStripeTest::configure_mutation_sequencing(bool enabled)
-{
-    ConfigBuilder builder;
-    builder.sequenceMutatingOperations = enabled;
-    configure_stripe(builder);
-}
-
-TEST_F(DistributorStripeTest, sequencing_config_is_propagated_to_distributor_config)
-{
-    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-
-    // Should be enabled by default
-    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
-
-    // Explicitly disabled.
-    configure_mutation_sequencing(false);
-    EXPECT_FALSE(getConfig().getSequenceMutatingOperations());
-
-    // Explicitly enabled.
-    configure_mutation_sequencing(true);
-    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
 }
 
 void
