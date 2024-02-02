@@ -174,12 +174,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_enable_condition_probing(bool enable_probing) {
-        configure_stripe_with([&](auto& builder) {
-            builder.enableConditionProbing = enable_probing;
-        });
-    }
-
     void configure_enable_operation_cancellation(bool enable_cancellation) {
         configure_stripe_with([&](auto& builder) {
             builder.enableOperationCancellation = enable_cancellation;
@@ -943,19 +937,6 @@ TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
 }
 
-TEST_F(DistributorStripeTest, enable_condition_probing_config_is_propagated_to_internal_config)
-{
-    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    EXPECT_TRUE(getConfig().enable_condition_probing());
-
-    configure_enable_condition_probing(false);
-    EXPECT_FALSE(getConfig().enable_condition_probing());
-
-    configure_enable_condition_probing(true);
-    EXPECT_TRUE(getConfig().enable_condition_probing());
-}
-
 TEST_F(DistributorStripeTest, enable_operation_cancellation_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1023,7 +1004,6 @@ TEST_F(DistributorStripeTest, distribution_config_change_edge_cancels_pending_op
 void DistributorStripeTest::set_up_for_bucket_ownership_cancellation(uint32_t superbucket_idx) {
     setup_stripe(Redundancy(1), NodeCount(10), "version:1 distributor:2 storage:2");
     configure_stripe_with([](auto& builder) {
-        builder.enableConditionProbing = true;
         builder.enableOperationCancellation = true;
     });
 

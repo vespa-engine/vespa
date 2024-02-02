@@ -724,7 +724,6 @@ TEST_F(PutOperationTest, minority_failure_override_not_in_effect_for_non_tas_err
 
 void PutOperationTest::set_up_tas_put_with_2_inconsistent_replica_nodes(bool create) {
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
-    config_enable_condition_probing(true);
     tag_content_node_supports_condition_probing(0, true);
     tag_content_node_supports_condition_probing(1, true);
 
@@ -875,7 +874,6 @@ TEST_F(PutOperationTest, not_found_condition_probe_with_create_set_acts_as_if_ma
 
 TEST_F(PutOperationTest, conditional_put_no_replicas_case_with_create_set_acts_as_if_matched) {
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
-    config_enable_condition_probing(true);
     tag_content_node_supports_condition_probing(0, true);
     tag_content_node_supports_condition_probing(1, true);
 
