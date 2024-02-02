@@ -117,8 +117,15 @@ public:
     MyLeaf() : SimpleLeafBlueprint() {}
     MyLeaf(FieldSpecBaseList fields) : SimpleLeafBlueprint(std::move(fields)) {}
     void set_cost(double value) noexcept { _cost = value; }
-    double calculate_cost() const override { return _cost; }
-    
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        double rel_est = abs_to_rel_est(getState().estimate().estHits, docid_limit);
+        if (rel_est > 0.9) {
+            return {0.5, _cost, _cost};
+        } else {
+            return {rel_est, _cost, _cost * rel_est};
+        }
+    }
+
     MyLeaf &estimate(uint32_t hits, bool empty = false) {
         setEstimate(HitEstimate(hits, empty));
         return *this;

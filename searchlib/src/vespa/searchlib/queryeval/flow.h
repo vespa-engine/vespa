@@ -10,6 +10,14 @@
 
 namespace search::queryeval {
 
+struct FlowStats {
+    double estimate;
+    double cost;
+    double strict_cost;
+    constexpr FlowStats(double estimate_in, double cost_in, double strict_cost_in) noexcept
+      : estimate(estimate_in), cost(cost_in), strict_cost(strict_cost_in) {}
+};
+
 namespace flow {
 
 // the default adapter expects the shape of std::unique_ptr<Blueprint>

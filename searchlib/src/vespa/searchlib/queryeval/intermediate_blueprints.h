@@ -15,9 +15,7 @@ class AndNotBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -44,9 +42,7 @@ class AndBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -71,9 +67,7 @@ class OrBlueprint : public IntermediateBlueprint
 public:
     ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -100,9 +94,7 @@ private:
     std::vector<uint32_t> _weights;
 
 public:
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_on_cost) const override;
@@ -132,9 +124,7 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
@@ -156,9 +146,7 @@ private:
     uint32_t _window;
 
 public:
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
@@ -177,9 +165,7 @@ public:
 class RankBlueprint final : public IntermediateBlueprint
 {
 public:
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -207,9 +193,7 @@ private:
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
-    double calculate_relative_estimate() const final;
-    double calculate_cost() const final;
-    double calculate_strict_cost() const final;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;

@@ -118,9 +118,7 @@ Blueprint::State::~State() = default;
 
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
-      _relative_estimate(0.0),
-      _cost(0.0),
-      _strict_cost(0.0),
+      _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
       _frozen(false)
@@ -357,9 +355,9 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.visitInt("tree_size", state.tree_size());
     visitor.visitBool("allow_termwise_eval", state.allow_termwise_eval());
     visitor.closeStruct();
-    visitor.visitFloat("relative_estimate", _relative_estimate);
-    visitor.visitFloat("cost", _cost);
-    visitor.visitFloat("strict_cost", _strict_cost);
+    visitor.visitFloat("relative_estimate", estimate());
+    visitor.visitFloat("cost", cost());
+    visitor.visitFloat("strict_cost", strict_cost());
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
 }
@@ -558,9 +556,7 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     }
     optimize_self(pass);
     if (pass == OptimizePass::LAST) {
-        set_relative_estimate(calculate_relative_estimate());
-        set_cost(calculate_cost());
-        set_strict_cost(calculate_strict_cost());
+        update_flow_stats(get_docid_limit());
     }
     maybe_eliminate_self(self, get_replacement());
 }
@@ -718,32 +714,18 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 //-----------------------------------------------------------------------------
 
-double
-LeafBlueprint::calculate_relative_estimate() const
+FlowStats
+LeafBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    double rel_est = abs_to_rel_est(_state.estimate().estHits, get_docid_limit());
+    double rel_est = abs_to_rel_est(_state.estimate().estHits, docid_limit);
     if (rel_est > 0.9) {
         // Assume we do not really know how much we are matching when
         // we claim to match 'everything'. Also assume we are not able
         // to skip documents efficiently when strict.
-        _can_skip = false;
-        return 0.5;
+        return {0.5, 1.0, 1.0};
     } else {
-        _can_skip = true;
-        return rel_est;
+        return {rel_est, 1.0, rel_est};
     }
-}
-
-double
-LeafBlueprint::calculate_cost() const
-{
-    return 1.0;
-}
-
-double
-LeafBlueprint::calculate_strict_cost() const
-{
-    return _can_skip ? estimate() * cost() : cost();
 }
 
 void
@@ -780,9 +762,7 @@ LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     assert(self == this);
     optimize_self(pass);
     if (pass == OptimizePass::LAST) {
-        set_relative_estimate(calculate_relative_estimate());
-        set_cost(calculate_cost());
-        set_strict_cost(calculate_strict_cost());
+        update_flow_stats(get_docid_limit());
     }
     maybe_eliminate_self(self, get_replacement());
 }
