@@ -249,13 +249,6 @@ public:
         return _max_consecutively_inhibited_maintenance_ticks;
     }
 
-    void set_prioritize_global_bucket_merges(bool prioritize) noexcept {
-        _prioritize_global_bucket_merges = prioritize;
-    }
-    bool prioritize_global_bucket_merges() const noexcept {
-        return _prioritize_global_bucket_merges;
-    }
-
     void set_max_activation_inhibited_out_of_sync_groups(uint32_t max_groups) noexcept {
         _max_activation_inhibited_out_of_sync_groups = max_groups;
     }
@@ -350,7 +343,6 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
-    bool _prioritize_global_bucket_merges;
     bool _implicitly_clear_priority_on_schedule;
     bool _use_unordered_merge_chaining;
     bool _inhibit_default_merges_when_global_merges_pending;
