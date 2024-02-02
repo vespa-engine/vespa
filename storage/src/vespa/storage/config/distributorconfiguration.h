@@ -195,13 +195,6 @@ public:
         _allowStaleReadsDuringClusterStateTransitions = allow;
     }
 
-    bool update_fast_path_restart_enabled() const noexcept {
-        return _update_fast_path_restart_enabled;
-    }
-    void set_update_fast_path_restart_enabled(bool enabled) noexcept {
-        _update_fast_path_restart_enabled = enabled;
-    }
-
     bool merge_operations_disabled() const noexcept {
         return _merge_operations_disabled;
     }
@@ -264,7 +257,6 @@ private:
     bool _enableInconsistentJoin;
     bool _disableBucketActivation;
     bool _allowStaleReadsDuringClusterStateTransitions;
-    bool _update_fast_path_restart_enabled;
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_operation_cancellation;

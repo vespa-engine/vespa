@@ -41,7 +41,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enableInconsistentJoin(false),
       _disableBucketActivation(false),
       _allowStaleReadsDuringClusterStateTransitions(false),
-      _update_fast_path_restart_enabled(false),
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_operation_cancellation(false),
@@ -57,7 +56,7 @@ class TimeVisitor : public document::select::TraversingVisitor {
 public:
     bool hasCurrentTime;
 
-    TimeVisitor() : hasCurrentTime(false) {}
+    TimeVisitor() noexcept : hasCurrentTime(false) {}
 
     void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode&) override {
         hasCurrentTime = true;
@@ -144,7 +143,6 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
 
     _disableBucketActivation = config.disableBucketActivation;
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
-    _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;

@@ -112,17 +112,6 @@ allow_stale_reads_during_cluster_state_transitions bool default=false
 simulated_db_pruning_latency_msec int default=0
 simulated_db_merging_latency_msec int default=0
 
-## If a bucket is inconsistent and an Update operation is received, a two-phase
-## write-repair path is triggered in which a Get is sent to all diverging replicas.
-## Once received, the update is applied on the distributor and pushed out to the
-## content nodes as Puts.
-## Iff this config is set to true AND all Gets return the same timestamp from all
-## content nodes, the two-phase update path reverts back to the regular fast path.
-## Since all replicas of the document were in sync, applying the update in-place
-## shall be considered safe.
-## DEPRECATED -- always enabled with 3-phase updates.
-restart_with_fast_update_path_if_all_get_timestamps_are_consistent bool default=true
-
 ## If set, no merge operations may be generated for any reason by a distributor.
 ## This is ONLY intended for system testing of certain transient edge cases and
 ## MUST NOT be set to true in a production environment.
