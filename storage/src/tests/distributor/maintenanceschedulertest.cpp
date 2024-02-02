@@ -4,9 +4,6 @@
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <memory>
-#include <string>
-#include <sstream>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -31,10 +28,6 @@ struct MaintenanceSchedulerTest : TestWithParam<bool> {
           _pending_window_checker(),
           _scheduler(_operation_generator, _priority_db, _pending_window_checker, _operation_starter)
     {}
-
-    void SetUp() override {
-        _scheduler.set_implicitly_clear_priority_on_schedule(GetParam());
-    }
 };
 
 TEST_P(MaintenanceSchedulerTest, priority_cleared_after_scheduled) {
@@ -80,17 +73,6 @@ TEST_P(MaintenanceSchedulerTest, suppress_low_priorities_in_emergency_mode) {
               _priority_db.toString());
 }
 
-TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started) {
-    if (GetParam()) {
-        return; // Only works when implicit clearing is NOT enabled
-    }
-    _priority_db.setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGH));
-    _operation_starter.setShouldStartOperations(false);
-    WaitTimeMs waitMs(_scheduler.tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE));
-    EXPECT_EQ(WaitTimeMs(1), waitMs);
-    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGH)\n",
-              _priority_db.toString());
-}
 
 TEST_P(MaintenanceSchedulerTest, priority_cleared_if_operation_not_started_inside_pending_window) {
     if (!GetParam()) {

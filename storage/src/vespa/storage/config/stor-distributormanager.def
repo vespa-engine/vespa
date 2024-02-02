@@ -177,12 +177,6 @@ max_activation_inhibited_out_of_sync_groups int default=0
 ## Stripe counts must be a power of two.
 num_distributor_stripes int default=0 restart
 
-## If set, the maintenance scheduler will implicitly clear entries from its internal
-## bucket maintenance priority database even when no operation can be started for the
-## bucket due to being blocked by concurrent operations. This avoids potential head-of-line
-## blocking of later buckets in the priority database.
-implicitly_clear_bucket_priority_on_schedule bool default=true
-
 ## Enables sending merges that are forwarded between content nodes in ideal state node key
 ## order, instead of strictly increasing node key order (which is the default).
 ## Even if this config is set to true, unordered merges will only be sent if _all_ nodes

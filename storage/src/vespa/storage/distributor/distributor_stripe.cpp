@@ -885,7 +885,6 @@ DistributorStripe::propagate_config_snapshot_to_internal_components()
             getConfig().allowStaleReadsDuringClusterStateTransitions());
     _externalOperationHandler.set_use_weak_internal_read_consistency_for_gets(
             getConfig().use_weak_internal_read_consistency_for_client_gets());
-    _scheduler->set_implicitly_clear_priority_on_schedule(getConfig().implicitly_clear_priority_on_schedule());
 }
 
 void
