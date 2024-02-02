@@ -6,8 +6,8 @@ using namespace search::streaming;
 
 namespace streaming {
 
-QueryWrapper::PhraseList::PhraseList(Query & query) :
-    _phrases()
+QueryWrapper::PhraseList::PhraseList(Query & query)
+    : _phrases()
 {
     QueryNodeRefList phrases;
     query.getPhrases(phrases);
@@ -20,8 +20,9 @@ PhraseQueryNode *
 QueryWrapper::PhraseList::findPhrase(QueryTerm * term, size_t & index)
 {
     for (size_t i = 0; i < _phrases.size(); ++i) {
-        for (size_t j = 0; j < _phrases[i]->size(); ++j) {
-            if ((*_phrases[i])[j].get() == term) {
+        auto& terms = _phrases[i]->get_terms();
+        for (size_t j = 0; j < terms.size(); ++j) {
+            if (terms[j].get() == term) {
                 index = j;
                 return _phrases[i];
             }

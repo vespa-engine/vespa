@@ -17,6 +17,17 @@ HitIteratorPack::HitIteratorPack(const QueryNodeList& children)
     }
 }
 
+HitIteratorPack::HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children)
+    : _iterators(),
+      _field_element(std::make_pair(0, 0))
+{
+    auto num_children = children.size();
+    _iterators.reserve(num_children);
+    for (auto& child : children) {
+        _iterators.emplace_back(child->getHitList());
+    }
+}
+
 HitIteratorPack::~HitIteratorPack() = default;
 
 bool

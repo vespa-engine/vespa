@@ -47,7 +47,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_EQUIV:
     case ParseItem::ITEM_NOT:
-    case ParseItem::ITEM_PHRASE:
     case ParseItem::ITEM_SAME_ELEMENT:
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
@@ -163,10 +162,10 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
             if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
-                auto phrase = std::make_unique<PhraseQueryNode>();
+                auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), ssIndex, arity);
                 auto dotPos = ssTerm.find('.');
-                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD, normalize_mode));
-                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(dotPos + 1), ssIndex, TermType::WORD, normalize_mode));
+                phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD, normalize_mode));
+                phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(dotPos + 1), ssIndex, TermType::WORD, normalize_mode));
                 auto orqn = std::make_unique<EquivQueryNode>();
                 orqn->addChild(std::move(qt));
                 orqn->addChild(std::move(phrase));
@@ -192,6 +191,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         break;
     case ParseItem::ITEM_WEIGHTED_SET:
         qn = build_weighted_set_term(factory, queryRep);
+        break;
+    case ParseItem::ITEM_PHRASE:
+        qn = build_phrase_term(factory, queryRep);
         break;
     default:
         skip_unknown(queryRep);
@@ -279,6 +281,23 @@ QueryNode::build_weighted_set_term(const QueryNodeResultFactory& factory, Simple
     ws->setUniqueId(queryRep.getUniqueId());
     populate_multi_term(factory.normalizing_mode(ws->index()), *ws, queryRep);
     return ws;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+{
+    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    auto arity = queryRep.getArity();
+    for (size_t i = 0; i < arity; ++i) {
+        queryRep.next();
+        auto qn = Build(phrase.get(), factory, queryRep, false);
+        auto qtp = dynamic_cast<QueryTerm*>(qn.get());
+        assert(qtp != nullptr);
+        qn.release();
+        std::unique_ptr<QueryTerm> qt(qtp);
+        phrase->add_term(std::move(qt));
+    }
+    return phrase;
 }
 
 void
