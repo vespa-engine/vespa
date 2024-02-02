@@ -510,7 +510,6 @@ App::get_options(int argc, char **argv)
         { "max-merges-per-node", 1, nullptr, 0 },
         { "max-merge-queue-size", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
-        { "max-pending-idealstate-operations", 1, nullptr, 0 },
         { "mbus-distributor-node-max-pending-count", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
         { "nodes-per-group", 1, nullptr, 0 },
