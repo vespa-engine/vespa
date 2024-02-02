@@ -190,12 +190,6 @@ implicitly_clear_bucket_priority_on_schedule bool default=true
 ## that they support the unordered merge feature.
 use_unordered_merge_chaining bool default=true
 
-## If true, inhibits _all_ merges to buckets in the default bucket space if the current
-## cluster state bundle indicates that global merges are pending in the cluster, i.e.
-## one or more nodes is in maintenance mode in the default bucket space but marked up in
-## the global bucket space.
-inhibit_default_merges_when_global_merges_pending bool default=true
-
 ## If true, garbage collection is performed in two phases (metadata gathering and deletion)
 ## instead of just a single phase. Two-phase GC allows for ensuring the same set of documents
 ## is deleted across all nodes and explicitly takes write locks on the distributor to prevent

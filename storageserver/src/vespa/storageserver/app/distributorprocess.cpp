@@ -2,6 +2,8 @@
 
 #include "distributorprocess.h"
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/common/storagelink.h>
@@ -58,11 +60,8 @@ adjusted_num_distributor_stripes(int32_t cfg_n_stripes)
 void
 DistributorProcess::setupConfig(vespalib::duration subscribeTimeout)
 {
-    using vespa::config::content::core::StorDistributormanagerConfig;
-    using vespa::config::content::core::StorVisitordispatcherConfig;
-
-    _distributorConfigHandler = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
-    _visitDispatcherConfigHandler = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _distributorConfigHandler = _configSubscriber.subscribe<DistributorManagerConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _visitDispatcherConfigHandler = _configSubscriber.subscribe<VisitorDispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
 }
 

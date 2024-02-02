@@ -4,7 +4,7 @@
 
 #include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/replica_counting_mode.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
@@ -56,8 +56,6 @@ public:
          */
         void propagateMetrics(IdealStateMetricSet&, DistributorMetricSet&) const;
     };
-
-    using ReplicaCountingMode = vespa::config::content::core::StorDistributormanagerConfig::MinimumReplicaCountingMode;
 
 private:
     Stats               _workingStats;

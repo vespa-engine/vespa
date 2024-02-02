@@ -18,6 +18,7 @@
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>

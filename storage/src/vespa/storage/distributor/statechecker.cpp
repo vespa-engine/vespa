@@ -2,6 +2,7 @@
 #include "statechecker.h"
 #include "distributor_bucket_space.h"
 #include "distributor_stripe_component.h"
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <sstream>

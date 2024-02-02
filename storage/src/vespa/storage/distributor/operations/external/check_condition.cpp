@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/distributor_node_context.h>
 #include <vespa/storage/distributor/distributor_stripe_operation_context.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <cassert>

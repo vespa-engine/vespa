@@ -15,6 +15,7 @@
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/gtest/gtest.h>

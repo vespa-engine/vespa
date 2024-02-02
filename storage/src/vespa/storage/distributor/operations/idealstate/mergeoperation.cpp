@@ -6,6 +6,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>

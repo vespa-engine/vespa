@@ -52,8 +52,8 @@ public:
     const lib::NodeType& getNodeType() const override { return lib::NodeType::DISTRIBUTOR; }
     ResumeGuard pause() override;
 
-    void handleConfigChange(vespa::config::content::core::StorDistributormanagerConfig&);
-    void handleConfigChange(vespa::config::content::core::StorVisitordispatcherConfig&);
+    void handleConfigChange(DistributorManagerConfig &);
+    void handleConfigChange(VisitorDispatcherConfig&);
 
 private:
     void report(vespalib::JsonStream &) const override { /* no-op */ }

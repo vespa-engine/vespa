@@ -20,6 +20,7 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/storage/distributor/distributor_stripe_thread.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/metrics/updatehook.h>
 #include <thread>

@@ -9,11 +9,11 @@
 #include <vespa/storage/distributor/stripe_host_info_notifier.h>
 #include <vespa/storage/storageutil/utils.h>
 
-namespace storage {
+namespace storage::framework {
+    struct TickingThreadPool;
+}
 
-namespace framework { struct TickingThreadPool; }
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
@@ -179,7 +179,7 @@ public:
     void simulate_distribution_config_change(std::shared_ptr<lib::Distribution> new_config);
     static std::shared_ptr<lib::Distribution> make_default_distribution_config(uint16_t redundancy, uint16_t node_count);
 
-    using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
+    using ConfigBuilder = DistributorManagerConfig;
 
     std::shared_ptr<DistributorConfiguration> make_config() const;
     void configure_stripe(std::shared_ptr<const DistributorConfiguration> config);
@@ -265,7 +265,5 @@ protected:
     void enable_cluster_state(vespalib::stringref state);
     void enable_cluster_state(const lib::ClusterStateBundle& state);
 };
-
-}
 
 }

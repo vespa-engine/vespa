@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>

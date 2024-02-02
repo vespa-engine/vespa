@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorconfiguration.h"
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/persistence/spi/bucket_limits.h>
@@ -45,7 +47,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _implicitly_clear_priority_on_schedule(false),
       _use_unordered_merge_chaining(false),
-      _inhibit_default_merges_when_global_merges_pending(false),
       _enable_two_phase_garbage_collection(false),
       _enable_condition_probing(false),
       _enable_operation_cancellation(false),
@@ -91,8 +92,21 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
     return visitor.hasCurrentTime;
 }
 
+namespace {
+
+ReplicaCountingMode
+deriveReplicaCountingMode(DistributorConfiguration::DistributorManagerConfig::MinimumReplicaCountingMode mode) {
+    switch (mode) {
+        case vespa::config::content::core::internal::InternalStorDistributormanagerType::MinimumReplicaCountingMode::TRUSTED:
+            return ReplicaCountingMode::TRUSTED;
+        default:
+            return ReplicaCountingMode::ANY;
+    }
+}
+
+}
 void 
-DistributorConfiguration::configure(const vespa::config::content::core::StorDistributormanagerConfig& config) 
+DistributorConfiguration::configure(const DistributorManagerConfig & config)
 {
     if ((config.splitsize != 0 && config.joinsize > config.splitsize)
         || (config.splitcount != 0 && config.joincount > config.splitcount))
@@ -143,11 +157,10 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _implicitly_clear_priority_on_schedule = config.implicitlyClearBucketPriorityOnSchedule;
     _use_unordered_merge_chaining = config.useUnorderedMergeChaining;
-    _inhibit_default_merges_when_global_merges_pending = config.inhibitDefaultMergesWhenGlobalMergesPending;
     _enable_two_phase_garbage_collection = config.enableTwoPhaseGarbageCollection;
     _enable_condition_probing = config.enableConditionProbing;
     _enable_operation_cancellation = config.enableOperationCancellation;
-    _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
+    _minimumReplicaCountingMode = deriveReplicaCountingMode(config.minimumReplicaCountingMode);
 
     if (config.maxClusterClockSkewSec >= 0) {
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);
@@ -174,7 +187,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
 }
 
 void 
-DistributorConfiguration::configure(const vespa::config::content::core::StorVisitordispatcherConfig& config)
+DistributorConfiguration::configure(const VisitorDispatcherConfig & config)
 {
     _minBucketsPerVisitor = config.minbucketspervisitor;
     _maxVisitorsPerNodePerClientVisitor = config.maxvisitorspernodeperclientvisitor;

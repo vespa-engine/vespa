@@ -12,7 +12,6 @@
 #include <vespa/storage/common/nodestateupdater.h>
 
 namespace storage::lib {
-    class IdealNodeCalculatorConfigurable;
     class ClusterState;
 }
 
@@ -27,8 +26,8 @@ class DistributorComponentRegisterImpl
     std::vector<DistributorManagedComponent*> _components;
 
     UniqueTimeCalculator* _timeCalculator;
-    DistributorConfig _distributorConfig;
-    VisitorConfig _visitorConfig;
+    std::unique_ptr<DistributorManagerConfig> _distributorConfig;
+    std::unique_ptr<VisitorDispatcherConfig> _visitorConfig;
     std::shared_ptr<lib::ClusterState> _clusterState;
 
 public:
@@ -39,8 +38,8 @@ public:
 
     void registerDistributorComponent(DistributorManagedComponent&) override;
     void setTimeCalculator(UniqueTimeCalculator& calc);
-    void setDistributorConfig(const DistributorConfig&);
-    void setVisitorConfig(const VisitorConfig&);
+    void setDistributorConfig(const DistributorManagerConfig&);
+    void setVisitorConfig(const VisitorDispatcherConfig&);
 private:
     void handleNewState() noexcept override;
     void setNodeStateUpdater(NodeStateUpdater& updater) override;

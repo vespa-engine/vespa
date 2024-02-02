@@ -10,6 +10,7 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -159,12 +160,8 @@ equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
     }
     // Note: no assumptions are made on the ordering of the elements in
     // either vector.
-    for (uint16_t node : idealState) {
-        if (!dbEntry->getNode(node)) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(idealState.cbegin(), idealState.cend(),
+                       [&dbEntry](uint16_t node) { return dbEntry->getNode(node); });
 }
 
 bool
@@ -770,9 +767,7 @@ allCopiesAreInvalid(const StateChecker::Context& c)
 bool
 merging_effectively_disabled_for_state_checker(const StateChecker::Context& c) noexcept
 {
-    return (c.distributorConfig.merge_operations_disabled()
-            || (c.distributorConfig.inhibit_default_merges_when_global_merges_pending()
-                && c.merges_inhibited_in_bucket_space));
+    return c.distributorConfig.merge_operations_disabled() || c.merges_inhibited_in_bucket_space;
 }
 
 }
