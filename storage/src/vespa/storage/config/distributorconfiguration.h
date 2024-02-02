@@ -58,14 +58,6 @@ public:
         _lastGarbageCollectionChange = lastChangeTime;
     }
 
-    bool stateCheckerIsActive(vespalib::stringref stateCheckerName) const {
-        return _blockedStateCheckers.find(stateCheckerName) == _blockedStateCheckers.end();
-    }
-
-    void disableStateChecker(vespalib::stringref stateCheckerName) {
-        _blockedStateCheckers.insert(stateCheckerName);
-    }
-
     void setDoInlineSplit(bool value) {
         _doInlineSplit = value;
     }
@@ -325,8 +317,6 @@ private:
 
     uint32_t _minPendingMaintenanceOps;
     uint32_t _maxPendingMaintenanceOps;
-
-    vespalib::hash_set<vespalib::string> _blockedStateCheckers;
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;

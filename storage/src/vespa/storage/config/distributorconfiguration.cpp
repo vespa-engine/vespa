@@ -154,11 +154,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
       _garbageCollectionInterval = vespalib::duration::zero();
     }
 
-    _blockedStateCheckers.clear();
-    for (uint32_t i = 0; i < config.blockedstatecheckers.size(); ++i) {
-        _blockedStateCheckers.insert(config.blockedstatecheckers[i]);
-    }
-
     _doInlineSplit = config.inlinebucketsplitting;
     _enableJoinForSiblingLessBuckets = config.enableJoinForSiblingLessBuckets;
     _enableInconsistentJoin = config.enableInconsistentJoin;

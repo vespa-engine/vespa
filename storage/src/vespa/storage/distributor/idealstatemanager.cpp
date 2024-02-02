@@ -71,11 +71,6 @@ IdealStateManager::runStateCheckers(const StateChecker::Context& c) const
     // We go through _all_ active state checkers so that statistics can be
     // collected across all checkers, not just the ones that are highest pri.
     for (const auto & checker : _stateCheckers) {
-        if (!operation_context().distributor_config().stateCheckerIsActive(checker->getName())) {
-            LOG(spam, "Skipping state checker %s", checker->getName());
-            continue;
-        }
-
         auto result = checker->check(c);
         if (canOverwriteResult(highestPri, result)) {
             highestPri = std::move(result);
@@ -146,7 +141,7 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace, const Buck
     c.set_entry(e);
 
     IdealStateOperation::UP operation(_splitBucketStateChecker->check(c).createOperation());
-    if (operation.get()) {
+    if (operation) {
         operation->setPriority(pri);
         operation->setIdealStateManager(this);
     }
@@ -159,7 +154,7 @@ IdealStateManager::generate(const document::Bucket& bucket) const
 {
     NodeMaintenanceStatsTracker statsTracker;
     IdealStateOperation::SP op(generateHighestPriority(bucket, statsTracker).createOperation());
-    if (op.get()) {
+    if (op) {
         op->setIdealStateManager(const_cast<IdealStateManager*>(this));
     }
     return op;

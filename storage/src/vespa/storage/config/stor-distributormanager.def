@@ -39,18 +39,6 @@ garbagecollection.interval int default=0
 ## If false, dont do splits inline with feeding.
 inlinebucketsplitting bool default=true
 
-## List of state checkers (ideal state generators) that should be ignored in the cluster.
-## One or more of the following (case insensitive):
-##
-## SynchronizeAndMove
-## DeleteExtraCopies
-## JoinBuckets
-## SplitBucket
-## SplitInconsistentBuckets
-## SetBucketState
-## GarbageCollection
-blockedstatecheckers[] string restart
-
 ## Maximum nodes involved in a merge operation. Currently, this can not be more
 ## than 16 nodes due to protocol limitations. However, decreasing the max may
 ## be useful if 16 node merges ends up too expensive.
