@@ -18,6 +18,7 @@ mbus_distributor_node_max_pending_size int default=0
 mbus_content_node_max_pending_size int default=0
 
 # Minimum size of packets to compress (0 means no compression)
+## TODO Common compression config for mbus and rpc, and consider ZSTD as default
 mbus.compress.limit int default=1024 restart
 
 ## Compression level for packets
