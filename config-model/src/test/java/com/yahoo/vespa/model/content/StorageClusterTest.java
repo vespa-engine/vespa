@@ -337,7 +337,6 @@ public class StorageClusterTest {
         assertEquals(20, config.async_operation_throttler().min_window_size());
         assertEquals(-1, config.async_operation_throttler().max_window_size()); // <=0 implies +inf
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
-        assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
     }
 
     @Test
