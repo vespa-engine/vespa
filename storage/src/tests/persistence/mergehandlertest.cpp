@@ -170,11 +170,11 @@ struct MergeHandlerTest : PersistenceTestUtils {
 
     MergeHandler createHandler(size_t maxChunkSize = 0x400000) {
         return MergeHandler(getEnv(), getPersistenceProvider(),
-                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, maxChunkSize, 64);
+                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, maxChunkSize);
     }
     MergeHandler createHandler(spi::PersistenceProvider & spi) {
         return MergeHandler(getEnv(), spi,
-                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, 4190208, 64);
+                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, 4190208);
     }
 
     std::shared_ptr<api::StorageMessage> get_queued_reply() {
