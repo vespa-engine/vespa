@@ -196,20 +196,6 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
     EXPECT_EQ(goldenSlime, jsonSlime);
 }
 
-TEST_F(DistributorHostInfoReporterTest, no_report_generated_if_disabled) {
-    Fixture f;
-    f.reporter.enableReporting(false);
-
-    MinReplicaStats minReplica;
-    minReplica[0] = 2;
-    minReplica[5] = 9;
-    f.minReplicaProvider.minReplica = minReplica;
-
-    vespalib::Slime root;
-    util::reporterToSlime(f.reporter, root);
-    EXPECT_EQ(0, root.get().children());
-}
-
 TEST_F(DistributorHostInfoReporterTest, bucket_spaces_stats_are_reported) {
     Fixture f;
     PerNodeBucketSpacesStats stats;

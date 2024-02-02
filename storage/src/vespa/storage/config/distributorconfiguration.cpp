@@ -39,7 +39,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _doInlineSplit(true),
       _enableJoinForSiblingLessBuckets(false),
       _enableInconsistentJoin(false),
-      _enableHostInfoReporting(true),
       _disableBucketActivation(false),
       _sequenceMutatingOperations(true),
       _allowStaleReadsDuringClusterStateTransitions(false),
@@ -138,7 +137,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _enableJoinForSiblingLessBuckets = config.enableJoinForSiblingLessBuckets;
     _enableInconsistentJoin = config.enableInconsistentJoin;
 
-    _enableHostInfoReporting = config.enableHostInfoReporting;
     _disableBucketActivation = config.disableBucketActivation;
     _sequenceMutatingOperations = config.sequenceMutatingOperations;
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;

@@ -57,7 +57,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     using Redundancy = int;
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
-    std::string resolve_stripe_operation_routing(std::shared_ptr<api::StorageMessage> msg) {
+    std::string resolve_stripe_operation_routing(const std::shared_ptr<api::StorageMessage> & msg) {
         handle_top_level_message(msg);
 
         vespalib::asciistream posted_msgs;
@@ -106,7 +106,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _node->getNodeStateUpdater().explicit_node_state_reply_send_invocations();
     }
 
-    std::shared_ptr<api::RemoveCommand> make_dummy_remove_command() {
+    static std::shared_ptr<api::RemoveCommand> make_dummy_remove_command() {
         return std::make_shared<api::RemoveCommand>(
                 makeDocumentBucket(document::BucketId(0)),
                 document::DocumentId("id:foo:testdoctype1:n=1:foo"),
@@ -374,8 +374,8 @@ void TopLevelDistributorTest::reply_to_1_node_bucket_info_fetch_with_n_buckets(s
         if (bucket_req.getBucketSpace() == FixedBucketSpaces::default_space()) {
             auto& bucket_reply = dynamic_cast<api::RequestBucketInfoReply&>(*reply);
             for (size_t j = 1; j <= n; ++j) {
-                bucket_reply.getBucketInfo().push_back(api::RequestBucketInfoReply::Entry(
-                        document::BucketId(16, j), api::BucketInfo(20, 10, 12, 50, 60, true, true)));
+                bucket_reply.getBucketInfo().emplace_back(document::BucketId(16, j),
+                                                          api::BucketInfo(20, 10, 12, 50, 60, true, true));
             }
         }
         handle_top_level_message(std::move(reply));
@@ -472,19 +472,6 @@ TEST_F(TopLevelDistributorTest, non_bootstrap_host_info_send_request_delays_send
     tick_top_level_distributor_n_times(1);
     // But now it has
     EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
-}
-
-TEST_F(TopLevelDistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
-    setup_distributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-
-    // Default is enabled=true.
-    EXPECT_TRUE(distributor_host_info_reporter().isReportingEnabled());
-
-    auto cfg = current_distributor_config();
-    cfg.enableHostInfoReporting = false;
-    reconfigure(cfg);
-
-    EXPECT_FALSE(distributor_host_info_reporter().isReportingEnabled());
 }
 
 namespace {
