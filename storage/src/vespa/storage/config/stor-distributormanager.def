@@ -194,3 +194,6 @@ enable_condition_probing bool default=true
 ## change ownership between distributors will trigger an explicit cancellation of all pending
 ## requests partially or fully "invalidated" by such a change.
 enable_operation_cancellation bool default=false
+
+## TODO GC very soon, it has no effect.
+priority_merge_out_of_sync_copies int default=120
