@@ -9,8 +9,6 @@
 
 namespace storage {
 
-namespace distributor { struct LegacyDistributorTest; }
-
 class DistributorConfiguration {
 public: 
     explicit DistributorConfiguration(StorageComponent& component);
@@ -37,7 +35,6 @@ public:
     using DistrConfig = vespa::config::content::core::StorDistributormanagerConfig;
     
     void configure(const DistrConfig& config);
-
     void configure(const vespa::config::content::core::StorVisitordispatcherConfig& config);
 
 
@@ -227,9 +224,6 @@ public:
     bool merge_operations_disabled() const noexcept {
         return _merge_operations_disabled;
     }
-    void set_merge_operations_disabled(bool disabled) noexcept {
-        _merge_operations_disabled = disabled;
-    }
 
     void set_use_weak_internal_read_consistency_for_client_gets(bool use_weak) noexcept {
         _use_weak_internal_read_consistency_for_client_gets = use_weak;
@@ -249,9 +243,6 @@ public:
         return _max_consecutively_inhibited_maintenance_ticks;
     }
 
-    void set_prioritize_global_bucket_merges(bool prioritize) noexcept {
-        _prioritize_global_bucket_merges = prioritize;
-    }
     bool prioritize_global_bucket_merges() const noexcept {
         return _prioritize_global_bucket_merges;
     }
@@ -272,9 +263,7 @@ public:
     [[nodiscard]] bool use_unordered_merge_chaining() const noexcept {
         return _use_unordered_merge_chaining;
     }
-    void set_inhibit_default_merges_when_global_merges_pending(bool inhibit) noexcept {
-        _inhibit_default_merges_when_global_merges_pending = inhibit;
-    }
+
     [[nodiscard]] bool inhibit_default_merges_when_global_merges_pending() const noexcept {
         return _inhibit_default_merges_when_global_merges_pending;
     }
@@ -290,14 +279,10 @@ public:
     [[nodiscard]] bool enable_condition_probing() const noexcept {
         return _enable_condition_probing;
     }
-    void set_enable_operation_cancellation(bool enable) noexcept {
-        _enable_operation_cancellation = enable;
-    }
+
     [[nodiscard]] bool enable_operation_cancellation() const noexcept {
         return _enable_operation_cancellation;
     }
-
-    uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
     bool containsTimeStatement(const std::string& documentSelection) const;
     
@@ -313,7 +298,6 @@ private:
     uint32_t _docCountJoinLimit;
     uint32_t _minimalBucketSplit;
     uint32_t _maxIdealStateOperations;
-    uint32_t _idealStateChunkSize;
     uint32_t _maxNodesPerMerge;
     uint32_t _max_consecutively_inhibited_maintenance_ticks;
     uint32_t _max_activation_inhibited_out_of_sync_groups;
@@ -330,8 +314,6 @@ private:
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
-
-    uint32_t _num_distributor_stripes;
 
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;
@@ -360,7 +342,6 @@ private:
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 
-    friend struct distributor::LegacyDistributorTest;
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);
 };

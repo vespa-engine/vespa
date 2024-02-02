@@ -21,7 +21,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _docCountJoinLimit(0),
       _minimalBucketSplit(16),
       _maxIdealStateOperations(100),
-      _idealStateChunkSize(1000),
       _maxNodesPerMerge(16),
       _max_consecutively_inhibited_maintenance_ticks(20),
       _max_activation_inhibited_out_of_sync_groups(0),
@@ -31,7 +30,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxPendingMaintenanceOps(1000),
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
-      _num_distributor_stripes(0),
       _maxClusterClockSkew(0),
       _inhibitMergeSendingOnBusyNodeDuration(60s),
       _simulated_db_pruning_latency(0),
@@ -193,8 +191,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _simulated_db_pruning_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbPruningLatencyMsec));
     _simulated_db_merging_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbMergingLatencyMsec));
 
-    _num_distributor_stripes = std::max(0, config.numDistributorStripes); // TODO STRIPE test
-    
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "
         "Join limits: %d docs/%d bytes. Minimal bucket split %d. "
