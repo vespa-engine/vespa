@@ -721,7 +721,7 @@ checkForNodesMissingFromIdealState(const StateChecker::Context& c)
                 if (c.idealState().size() > c.entry()->getNodeCount()) {
                     ret.markMissingReplica(node, mp.mergeTooFewCopies);
                 } else {
-                    ret.markMoveToIdealLocation(node,mp.mergeMoveToIdealNode);
+                    ret.markMoveToIdealLocation(node, mp.mergeMoveToIdealNode);
                 }
                 c.stats.incCopyingIn(node, c.getBucketSpace());
                 hasMissingReplica = true;

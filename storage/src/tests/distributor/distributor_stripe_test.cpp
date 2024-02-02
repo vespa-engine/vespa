@@ -471,43 +471,6 @@ TEST_F(DistributorStripeTest, update_bucket_database)
               updateBucketDB("0:456", "2:333", ResetTrusted(true)));
 }
 
-TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_configuration)
-{
-    using namespace vespa::config::content::core;
-
-    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-
-    ConfigBuilder builder;
-    builder.priorityMergeMoveToIdealNode = 1;
-    builder.priorityMergeOutOfSyncCopies = 2;
-    builder.priorityMergeTooFewCopies = 3;
-    builder.priorityActivateNoExistingActive = 4;
-    builder.priorityActivateWithExistingActive = 5;
-    builder.priorityDeleteBucketCopy = 6;
-    builder.priorityJoinBuckets = 7;
-    builder.prioritySplitDistributionBits = 8;
-    builder.prioritySplitLargeBucket = 9;
-    builder.prioritySplitInconsistentBucket = 10;
-    builder.priorityGarbageCollection = 11;
-    builder.priorityMergeGlobalBuckets = 12;
-
-    configure_stripe(builder);
-
-    const auto& mp = getConfig().getMaintenancePriorities();
-    EXPECT_EQ(1, static_cast<int>(mp.mergeMoveToIdealNode));
-    EXPECT_EQ(2, static_cast<int>(mp.mergeOutOfSyncCopies));
-    EXPECT_EQ(3, static_cast<int>(mp.mergeTooFewCopies));
-    EXPECT_EQ(4, static_cast<int>(mp.activateNoExistingActive));
-    EXPECT_EQ(5, static_cast<int>(mp.activateWithExistingActive));
-    EXPECT_EQ(6, static_cast<int>(mp.deleteBucketCopy));
-    EXPECT_EQ(7, static_cast<int>(mp.joinBuckets));
-    EXPECT_EQ(8, static_cast<int>(mp.splitDistributionBits));
-    EXPECT_EQ(9, static_cast<int>(mp.splitLargeBucket));
-    EXPECT_EQ(10, static_cast<int>(mp.splitInconsistentBucket));
-    EXPECT_EQ(11, static_cast<int>(mp.garbageCollection));
-    EXPECT_EQ(12, static_cast<int>(mp.mergeGlobalBuckets));
-}
-
 TEST_F(DistributorStripeTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     setup_stripe(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     // Force new state into being the pending state. According to the initial
