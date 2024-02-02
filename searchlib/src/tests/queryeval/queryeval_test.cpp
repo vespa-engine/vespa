@@ -271,7 +271,7 @@ TEST(QueryEvalTest, test_or)
         EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
-        expect_match(dump, "OrLikeSearch.true.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+        expect_match(dump, "StrictHeapOrSearch.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
         filter_ab = or_b->createFilterSearch(false, lower_bound);
         dump = filter_ab->asString();
         expect_match(dump, "lower");
