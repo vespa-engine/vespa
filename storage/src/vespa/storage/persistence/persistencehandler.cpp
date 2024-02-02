@@ -175,10 +175,4 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     }
 }
 
-void
-PersistenceHandler::set_throttle_merge_feed_ops(bool throttle) noexcept
-{
-    _mergeHandler.set_throttle_merge_feed_ops(throttle);
-}
-
 }
