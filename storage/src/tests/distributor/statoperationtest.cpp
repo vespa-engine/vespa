@@ -6,6 +6,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>

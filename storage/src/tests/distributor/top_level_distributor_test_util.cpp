@@ -355,14 +355,14 @@ TopLevelDistributorTestUtil::tick(bool only_tick_top_level) {
     return did_work;
 }
 
-const DistributorConfig&
+const DistributorManagerConfig&
 TopLevelDistributorTestUtil::current_distributor_config() const
 {
     return _component->getDistributorConfig();
 }
 
 void
-TopLevelDistributorTestUtil::reconfigure(const DistributorConfig& cfg)
+TopLevelDistributorTestUtil::reconfigure(const DistributorManagerConfig& cfg)
 {
     _node->getComponentRegister().setDistributorConfig(cfg);
     tick(); // Config is propagated upon next top-level tick

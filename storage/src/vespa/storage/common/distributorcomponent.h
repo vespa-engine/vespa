@@ -26,16 +26,19 @@
 #pragma once
 
 #include "storagecomponent.h"
-#include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/config/distributorconfiguration.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storageapi/defs.h>
+
+namespace vespa::config::content::core::internal {
+    class InternalStorDistributormanagerType;
+    class InternalStorVisitordispatcherType;
+}
 
 namespace storage {
 
-using DistributorConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
-using VisitorConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
+class DistributorConfiguration;
+
+using DistributorManagerConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
+using VisitorDispatcherConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
 
 struct UniqueTimeCalculator {
     virtual ~UniqueTimeCalculator() = default;
@@ -47,8 +50,8 @@ struct DistributorManagedComponent
     virtual ~DistributorManagedComponent() = default;
 
     virtual void setTimeCalculator(UniqueTimeCalculator&) = 0;
-    virtual void setDistributorConfig(const DistributorConfig&)= 0;
-    virtual void setVisitorConfig(const VisitorConfig&) = 0;
+    virtual void setDistributorConfig(const DistributorManagerConfig&)= 0;
+    virtual void setVisitorConfig(const VisitorDispatcherConfig&) = 0;
 };
 
 struct DistributorComponentRegister : public virtual StorageComponentRegister
@@ -59,24 +62,16 @@ struct DistributorComponentRegister : public virtual StorageComponentRegister
 class DistributorComponent : public StorageComponent,
                              private DistributorManagedComponent
 {
-    mutable UniqueTimeCalculator* _timeCalculator;
-    DistributorConfig             _distributorConfig;
-    VisitorConfig                 _visitorConfig;
-    uint64_t                      _internal_config_generation; // Note: NOT related to config system generations
+    mutable UniqueTimeCalculator*                   _timeCalculator;
+    std::unique_ptr<DistributorManagerConfig>       _distributorConfig;
+    std::unique_ptr<VisitorDispatcherConfig>        _visitorConfig;
+    uint64_t                                        _internal_config_generation; // Note: NOT related to config system generations
     std::shared_ptr<const DistributorConfiguration> _config_snapshot;
 
     void setTimeCalculator(UniqueTimeCalculator& utc) override { _timeCalculator = &utc; }
-    void setDistributorConfig(const DistributorConfig& c) override {
-        _distributorConfig = c;
-        update_config_snapshot();
-    }
-    void setVisitorConfig(const VisitorConfig& c) override {
-        _visitorConfig = c;
-        update_config_snapshot();
-    }
-
+    void setDistributorConfig(const DistributorManagerConfig& c) override;
+    void setVisitorConfig(const VisitorDispatcherConfig& c) override;
     void update_config_snapshot();
-
 public:
     using UP = std::unique_ptr<DistributorComponent>;
 
@@ -86,12 +81,10 @@ public:
     [[nodiscard]] api::Timestamp getUniqueTimestamp() const {
         return _timeCalculator->generate_unique_timestamp();
     }
-    const DistributorConfig& getDistributorConfig() const {
-        return _distributorConfig;
+    const DistributorManagerConfig& getDistributorConfig() const {
+        return *_distributorConfig;
     }
-    const VisitorConfig& getVisitorConfig() const {
-        return _visitorConfig;
-    }
+
     uint64_t internal_config_generation() const noexcept {
         return _internal_config_generation;
     }

@@ -21,6 +21,7 @@
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>

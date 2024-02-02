@@ -67,14 +67,14 @@ DistributorNode::initializeNodeSpecific()
 }
 
 void
-DistributorNode::handleConfigChange(vespa::config::content::core::StorDistributormanagerConfig& c)
+DistributorNode::handleConfigChange(DistributorManagerConfig & c)
 {
     framework::TickingLockGuard guard(_threadPool->freezeAllTicks());
     _context.getComponentRegister().setDistributorConfig(c);
 }
 
 void
-DistributorNode::handleConfigChange(vespa::config::content::core::StorVisitordispatcherConfig& c)
+DistributorNode::handleConfigChange(VisitorDispatcherConfig & c)
 {
     framework::TickingLockGuard guard(_threadPool->freezeAllTicks());
     _context.getComponentRegister().setVisitorConfig(c);

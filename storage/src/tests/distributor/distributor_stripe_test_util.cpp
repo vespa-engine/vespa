@@ -10,6 +10,8 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/ideal_state_total_metrics.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
+#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>

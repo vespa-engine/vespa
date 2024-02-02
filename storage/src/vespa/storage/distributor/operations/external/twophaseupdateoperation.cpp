@@ -11,6 +11,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>

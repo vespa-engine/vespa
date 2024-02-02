@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <algorithm>

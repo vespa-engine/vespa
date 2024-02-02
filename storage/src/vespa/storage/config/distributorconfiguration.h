@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include "replica_counting_mode.h"
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/time.h>
+
+namespace vespa::config::content::core::internal {
+    class InternalStorDistributormanagerType;
+    class InternalStorVisitordispatcherType;
+}
 
 namespace storage {
 
@@ -30,12 +33,11 @@ public:
         uint8_t splitInconsistentBucket {110};
         uint8_t garbageCollection {200};
     };
+    using DistributorManagerConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
+    using VisitorDispatcherConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
 
-    using DistrConfig = vespa::config::content::core::StorDistributormanagerConfig;
-    
-    void configure(const DistrConfig& config);
-    void configure(const vespa::config::content::core::StorVisitordispatcherConfig& config);
-
+    void configure(const DistributorManagerConfig& config);
+    void configure(const VisitorDispatcherConfig& config);
 
     const std::string& getGarbageCollectionSelection() const {
         return _garbageCollectionSelection;
@@ -165,8 +167,6 @@ public:
         return _enableInconsistentJoin;
     }
 
-    using ReplicaCountingMode = DistrConfig::MinimumReplicaCountingMode;
-
     ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept {
         return _minimumReplicaCountingMode;
     }
@@ -237,9 +237,6 @@ public:
         return _use_unordered_merge_chaining;
     }
 
-    [[nodiscard]] bool inhibit_default_merges_when_global_merges_pending() const noexcept {
-        return _inhibit_default_merges_when_global_merges_pending;
-    }
     void set_enable_two_phase_garbage_collection(bool enable) noexcept {
         _enable_two_phase_garbage_collection = enable;
     }
@@ -299,12 +296,11 @@ private:
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     bool _use_unordered_merge_chaining;
-    bool _inhibit_default_merges_when_global_merges_pending;
     bool _enable_two_phase_garbage_collection;
     bool _enable_condition_probing;
     bool _enable_operation_cancellation;
 
-    DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
+    ReplicaCountingMode _minimumReplicaCountingMode;
 };
 
 }

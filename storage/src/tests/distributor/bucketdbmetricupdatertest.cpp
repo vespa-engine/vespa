@@ -316,8 +316,7 @@ TEST_F(BucketDBMetricUpdaterTest, min_bucket_replica_tracked_and_reported_per_no
 
 TEST_F(BucketDBMetricUpdaterTest, non_trusted_replicas_also_counted_in_mode_any) {
     BucketDBMetricUpdater metricUpdater;
-    using CountingMode = BucketDBMetricUpdater::ReplicaCountingMode;
-    metricUpdater.setMinimumReplicaCountingMode(CountingMode::ANY);
+    metricUpdater.setMinimumReplicaCountingMode(ReplicaCountingMode::ANY);
     visitBucketWith2Copies1Trusted(metricUpdater);
     visitBucketWith2CopiesBothTrusted(metricUpdater);
 
@@ -327,8 +326,7 @@ TEST_F(BucketDBMetricUpdaterTest, non_trusted_replicas_also_counted_in_mode_any)
 
 TEST_F(BucketDBMetricUpdaterTest, minimum_replica_count_returned_for_node_in_mode_any) {
     BucketDBMetricUpdater metricUpdater;
-    using CountingMode = BucketDBMetricUpdater::ReplicaCountingMode;
-    metricUpdater.setMinimumReplicaCountingMode(CountingMode::ANY);
+    metricUpdater.setMinimumReplicaCountingMode(ReplicaCountingMode::ANY);
     visitBucketWith2CopiesBothTrusted(metricUpdater);
     visitBucketWith1Copy(metricUpdater);
 

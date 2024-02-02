@@ -8,6 +8,8 @@
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -51,7 +53,7 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     using NodeCount = uint16_t;
     using Redundancy = uint16_t;
 
-    using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
+    using ConfigBuilder = DistributorManagerConfig;
 
     auto currentReplicaCountingMode() const noexcept {
         return _stripe->_bucketDBMetricUpdater.getMinimumReplicaCountingMode();
@@ -582,7 +584,7 @@ TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
 TEST_F(DistributorStripeTest, replica_counting_mode_is_configured_to_trusted_by_default)
 {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
+    EXPECT_EQ(ReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
 TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metric_updater)
@@ -591,7 +593,7 @@ TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metr
     ConfigBuilder builder;
     builder.minimumReplicaCountingMode = ConfigBuilder::MinimumReplicaCountingMode::ANY;
     configure_stripe(builder);
-    EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::ANY, currentReplicaCountingMode());
+    EXPECT_EQ(ReplicaCountingMode::ANY, currentReplicaCountingMode());
 }
 
 TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config)
@@ -636,19 +638,6 @@ TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor
 
     configureMaxClusterClockSkew(5);
     EXPECT_EQ(getConfig().getMaxClusterClockSkew(), std::chrono::seconds(5));
-}
-
-TEST_F(DistributorStripeTest, inhibit_default_merge_if_global_merges_pending_config_is_propagated)
-{
-    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    ConfigBuilder builder;
-    builder.inhibitDefaultMergesWhenGlobalMergesPending = true;
-    configure_stripe(builder);
-    EXPECT_TRUE(getConfig().inhibit_default_merges_when_global_merges_pending());
-
-    builder.inhibitDefaultMergesWhenGlobalMergesPending = false;
-    configure_stripe(builder);
-    EXPECT_FALSE(getConfig().inhibit_default_merges_when_global_merges_pending());
 }
 
 namespace {

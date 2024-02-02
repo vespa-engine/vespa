@@ -76,8 +76,8 @@ public:
 
     bool tick(bool only_tick_top_level = false);
 
-    const DistributorConfig& current_distributor_config() const;
-    void reconfigure(const DistributorConfig&);
+    const DistributorManagerConfig& current_distributor_config() const;
+    void reconfigure(const DistributorManagerConfig&);
 
     framework::defaultimplementation::FakeClock& fake_clock() noexcept {
         return _node->getClock();

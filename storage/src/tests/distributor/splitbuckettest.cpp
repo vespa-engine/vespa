@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/gtest/gtest.h>

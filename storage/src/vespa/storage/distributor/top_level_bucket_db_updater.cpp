@@ -12,6 +12,7 @@
 #include "stripe_access_guard.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vdslib/distribution/distribution.h>

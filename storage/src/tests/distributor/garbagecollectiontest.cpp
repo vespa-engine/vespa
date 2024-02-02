@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

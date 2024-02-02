@@ -11,6 +11,7 @@
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <gtest/gtest.h>

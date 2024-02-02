@@ -3,11 +3,15 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 
 namespace storage {
 
 DistributorComponentRegisterImpl::DistributorComponentRegisterImpl()
-    : _timeCalculator(0),
+    : _timeCalculator(nullptr),
+      _distributorConfig(std::make_unique<DistributorManagerConfig>()),
+      _visitorConfig(std::make_unique<VisitorDispatcherConfig>()),
       _clusterState(std::make_shared<lib::ClusterState>())
 {
 }
@@ -26,45 +30,43 @@ DistributorComponentRegisterImpl::registerDistributorComponent(DistributorManage
 {
     std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
-    if (_timeCalculator != 0) {
+    if (_timeCalculator != nullptr) {
         smc.setTimeCalculator(*_timeCalculator);
     }
-    smc.setDistributorConfig(_distributorConfig);
-    smc.setVisitorConfig(_visitorConfig);
+    smc.setDistributorConfig(*_distributorConfig);
+    smc.setVisitorConfig(*_visitorConfig);
 }
 
 void
 DistributorComponentRegisterImpl::setTimeCalculator(UniqueTimeCalculator& utc)
 {
     std::lock_guard lock(_componentLock);
-    if (_timeCalculator != 0) {
-        throw vespalib::IllegalStateException(
-                "Time calculator already set. Cannot be updated live",
-                VESPA_STRLOC);
+    if (_timeCalculator != nullptr) {
+        throw vespalib::IllegalStateException("Time calculator already set. Cannot be updated live", VESPA_STRLOC);
     }
     _timeCalculator = &utc;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setTimeCalculator(*_timeCalculator);
+    for (auto & component : _components) {
+        component->setTimeCalculator(*_timeCalculator);
     }
 }
 
 void
-DistributorComponentRegisterImpl::setDistributorConfig(const DistributorConfig& c)
+DistributorComponentRegisterImpl::setDistributorConfig(const DistributorManagerConfig& cfg)
 {
     std::lock_guard lock(_componentLock);
-    _distributorConfig = c;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setDistributorConfig(c);
+    _distributorConfig = std::make_unique<DistributorManagerConfig>(cfg);
+    for (auto & component : _components) {
+        component->setDistributorConfig(cfg);
     }
 }
 
 void
-DistributorComponentRegisterImpl::setVisitorConfig(const VisitorConfig& c)
+DistributorComponentRegisterImpl::setVisitorConfig(const VisitorDispatcherConfig& cfg)
 {
     std::lock_guard lock(_componentLock);
-    _visitorConfig = c;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setVisitorConfig(c);
+    _visitorConfig = std::make_unique<VisitorDispatcherConfig>(cfg);
+    for (auto & component : _components) {
+        component->setVisitorConfig(cfg);
     }
 }
 

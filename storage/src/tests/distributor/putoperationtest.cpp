@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
