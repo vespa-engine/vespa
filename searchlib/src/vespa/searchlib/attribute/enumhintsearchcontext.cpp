@@ -54,12 +54,12 @@ EnumHintSearchContext::createPostingIterator(TermFieldMatchData *, bool )
 }
 
 
-unsigned int
-EnumHintSearchContext::approximateHits() const
+HitEstimate
+EnumHintSearchContext::calc_hit_estimate() const
 {
     return (_uniqueValues == 0u)
-        ? 0u
-        : std::max(uint64_t(_docIdLimit), _numValues);
+        ? HitEstimate(0u)
+        : HitEstimate::unknown(std::max(uint64_t(_docIdLimit), _numValues));
 }
 
 }

@@ -110,7 +110,7 @@ AttributeWeightedSetBlueprint::~AttributeWeightedSetBlueprint()
 void
 AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context, int32_t weight)
 {
-    _estHits = std::min(_estHits + context->approximateHits(), _numDocs);
+    _estHits = std::min(_estHits + context->calc_hit_estimate().est_hits(), _numDocs);
     setEstimate(HitEstimate(_estHits, (_estHits == 0)));
     _weights.push_back(weight);
     _contexts.push_back(context.release());

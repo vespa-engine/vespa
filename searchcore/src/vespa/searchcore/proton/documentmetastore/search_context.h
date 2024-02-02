@@ -20,7 +20,7 @@ private:
     document::GlobalId _gid;
     uint32_t _docid_limit;
 
-    unsigned int approximateHits() const override;
+    search::attribute::HitEstimate calc_hit_estimate() const override;
     int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
     int32_t onFind(DocId docId, int32_t elemId) const override;
 

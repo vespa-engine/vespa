@@ -119,7 +119,7 @@ protected:
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
     unsigned int singleHits() const;
-    unsigned int approximateHits() const override;
+    HitEstimate calc_hit_estimate() const override;
     void applyRangeLimit(long rangeLimit);
     struct FillPart;
 };
@@ -217,11 +217,11 @@ private:
     void getIterators(bool shouldApplyRangeLimit);
     bool valid() const override { return this->isValid(); }
 
-    unsigned int approximateHits() const override {
-        const unsigned int estimate = PostingListSearchContextT<DataT>::approximateHits();
+    HitEstimate calc_hit_estimate() const override {
+        HitEstimate estimate = PostingListSearchContextT<DataT>::calc_hit_estimate();
         const unsigned int limit = std::abs(this->getRangeLimit());
-        return ((limit > 0) && (limit < estimate))
-            ? limit
+        return ((limit > 0) && (limit < estimate.est_hits()))
+            ? HitEstimate(limit)
             : estimate;
     }
     void fetchPostings(const ExecuteInfo & execInfo) override {

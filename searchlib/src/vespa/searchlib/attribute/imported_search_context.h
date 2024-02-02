@@ -63,10 +63,9 @@ public:
                           const attribute::IAttributeVector &target_attribute);
     ~ImportedSearchContext() override;
 
-
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
-    unsigned int approximateHits() const override;
+    HitEstimate calc_hit_estimate() const override;
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;

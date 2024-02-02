@@ -24,10 +24,10 @@ EmptySearchContext::onFind(DocId, int32_t) const
     return -1;
 }
 
-unsigned int
-EmptySearchContext::approximateHits() const
+HitEstimate
+EmptySearchContext::calc_hit_estimate() const
 {
-    return 0u;
+    return HitEstimate(0);
 }
 
 uint32_t

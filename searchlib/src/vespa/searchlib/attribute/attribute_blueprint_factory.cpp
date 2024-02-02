@@ -184,7 +184,7 @@ AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAtt
       _search_context(attribute.createSearchContext(std::move(term), params)),
       _type(OTHER)
 {
-    uint32_t estHits = _search_context->approximateHits();
+    uint32_t estHits = _search_context->calc_hit_estimate().est_hits();
     HitEstimate estimate(estHits, estHits == 0);
     setEstimate(estimate);
     if (attribute.isFloatingPointType()) {
@@ -235,7 +235,7 @@ public:
             query::SimpleRangeTerm rt(qr, "", 0, query::Weight(0));
             string stack(StackDumpCreator::create(rt));
             _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack), scParams));
-            estHits += _rangeSearches.back()->approximateHits();
+            estHits += _rangeSearches.back()->calc_hit_estimate().est_hits();
             LOG(debug, "Range '%s' estHits %" PRId64, qr.getRangeString().c_str(), estHits);
         }
         if (estHits > attr.getNumDocs()) {

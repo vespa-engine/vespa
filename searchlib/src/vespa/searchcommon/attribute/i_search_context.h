@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "hit_estimate.h"
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
@@ -27,7 +28,7 @@ private:
 public:
     virtual ~ISearchContext() = default;
 
-    virtual unsigned int approximateHits() const = 0;
+    virtual HitEstimate calc_hit_estimate() const = 0;
 
     /**
      * Creates an attribute search iterator associated with this

@@ -10,20 +10,20 @@ using search::queryeval::SearchIterator;
 
 namespace search::attribute {
 
-unsigned int
-SearchContext::approximateHits() const
+HitEstimate
+SearchContext::calc_hit_estimate() const
 {
     if (_plsc != nullptr) {
-        return _plsc->approximateHits();
+        return _plsc->calc_hit_estimate();
     }
-    return std::max(uint64_t(_attr.getNumDocs()), _attr.getStatus().getNumValues());
+    return HitEstimate::unknown(std::max(uint64_t(_attr.getNumDocs()), _attr.getStatus().getNumValues()));
 }
 
 std::unique_ptr<SearchIterator>
 SearchContext::createIterator(fef::TermFieldMatchData* matchData, bool strict)
 {
     if (_plsc != nullptr) {
-        std::unique_ptr<SearchIterator> res = _plsc->createPostingIterator(matchData, strict);
+        auto res = _plsc->createPostingIterator(matchData, strict);
         if (res) {
             return res;
         }
