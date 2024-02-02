@@ -165,10 +165,6 @@ public:
         return _enableInconsistentJoin;
     }
 
-    bool getEnableHostInfoReporting() const noexcept {
-        return _enableHostInfoReporting;
-    }
-
     using ReplicaCountingMode = DistrConfig::MinimumReplicaCountingMode;
 
     ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept {
@@ -306,7 +302,6 @@ private:
     bool _doInlineSplit;
     bool _enableJoinForSiblingLessBuckets;
     bool _enableInconsistentJoin;
-    bool _enableHostInfoReporting;
     bool _disableBucketActivation;
     bool _sequenceMutatingOperations;
     bool _allowStaleReadsDuringClusterStateTransitions;

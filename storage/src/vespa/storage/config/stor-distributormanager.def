@@ -63,16 +63,6 @@ enable_join_for_sibling_less_buckets bool default=false
 ## being joined into.
 enable_inconsistent_join bool default=false
 
-## The distributor host info reporter may be disabled entirely, in which case
-## no per-node statistics for merges, latencies or bucket replication factors
-## will be reported back to the cluster controller. Disabling this may make
-## sense in large clusters that do not make use of these reports directly or
-## indirectly, as it causes potentially significant processing overhead on the
-## cluster controller.
-## This host reporter must never be disabled on a Hosted Vespa system, or
-## automatic upgrades will stall.
-enable_host_info_reporting bool default=true
-
 ## For each available node, the distributor will report back to the cluster
 ## controller a value which indicates the minimum replication factor for any
 ## bucket contained on said node. This config exposes a way to alter how this

@@ -109,10 +109,9 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
     _bucket_db_status_delegate = std::make_unique<StatusReporterDelegate>(compReg, *this, *_bucket_db_updater);
     _bucket_db_status_delegate->registerStatusPage();
 
-    _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagate_default_distribution_thread_unsafe(_component.getDistribution()); // Stripes not started yet
-};
+}
 
 TopLevelDistributor::~TopLevelDistributor()
 {
@@ -437,7 +436,6 @@ TopLevelDistributor::enable_next_config_if_changed()
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             guard->update_total_distributor_config(_component.total_distributor_config_sp());
         }
-        _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
         _maintenance_safe_time_delay = _total_config->getMaxClusterClockSkew();
         _current_internal_config_generation = _component.internal_config_generation();
     }

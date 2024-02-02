@@ -17,8 +17,7 @@ DistributorHostInfoReporter::DistributorHostInfoReporter(
         MinReplicaProvider& minReplicaProvider,
         BucketSpacesStatsProvider& bucketSpacesStatsProvider)
     : _minReplicaProvider(minReplicaProvider),
-      _bucketSpacesStatsProvider(bucketSpacesStatsProvider),
-      _enabled(true)
+      _bucketSpacesStatsProvider(bucketSpacesStatsProvider)
 {
 }
 
@@ -80,19 +79,13 @@ outputStorageNodes(vespalib::JsonStream& output,
 void
 DistributorHostInfoReporter::report(vespalib::JsonStream& output)
 {
-    if (!isReportingEnabled()) {
-        return;
-    }
-
     auto minReplica = _minReplicaProvider.getMinReplica();
     auto bucketSpacesStats = _bucketSpacesStatsProvider.getBucketSpacesStats();
 
     output << "distributor" << Object();
     {
         output << "storage-nodes" << Array();
-
         outputStorageNodes(output, minReplica, bucketSpacesStats);
-
         output << End();
     }
     output << End();
