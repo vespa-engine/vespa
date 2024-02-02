@@ -230,13 +230,6 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
-    void set_use_unordered_merge_chaining(bool unordered) noexcept {
-        _use_unordered_merge_chaining = unordered;
-    }
-    [[nodiscard]] bool use_unordered_merge_chaining() const noexcept {
-        return _use_unordered_merge_chaining;
-    }
-
     void set_enable_two_phase_garbage_collection(bool enable) noexcept {
         _enable_two_phase_garbage_collection = enable;
     }
@@ -295,7 +288,6 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
-    bool _use_unordered_merge_chaining;
     bool _enable_two_phase_garbage_collection;
     bool _enable_condition_probing;
     bool _enable_operation_cancellation;

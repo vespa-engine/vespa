@@ -5,7 +5,6 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/top_level_bucket_db_updater.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/config/distributorconfiguration.h>
@@ -574,9 +573,7 @@ TEST_F(MergeOperationTest, unordered_merges_only_sent_iff_config_enabled_and_all
     set_node_supported_features(1, with_unordered);
     set_node_supported_features(2, with_unordered);
 
-    auto config = make_config();
-    config->set_use_unordered_merge_chaining(true);
-    configure_stripe(std::move(config));
+    configure_stripe(make_config());
 
     // Only nodes {1, 2} support unordered merging; merges should be ordered (sent to lowest index node 1).
     setup_simple_merge_op({1, 2, 3}); // Note: these will be re-ordered in ideal state order internally
@@ -593,17 +590,6 @@ TEST_F(MergeOperationTest, unordered_merges_only_sent_iff_config_enabled_and_all
               _sender.getLastCommand(true));
 
     _sender.clear();
-
-    config = make_config();
-    config->set_use_unordered_merge_chaining(false);
-    configure_stripe(std::move(config));
-
-    // If config is not enabled, should send ordered even if nodes support the feature.
-    setup_simple_merge_op({2, 1});
-    ASSERT_EQ("MergeBucketCommand(BucketId(0x4000000000000001), to time 10000002, "
-              "cluster state version: 0, nodes: [2, 1], chain: [], "
-              "estimated memory footprint: 2 bytes, reasons to start: ) => 1",
-              _sender.getLastCommand(true));
 }
 
 TEST_F(MergeOperationTest, delete_bucket_inherits_merge_priority) {
