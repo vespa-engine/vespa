@@ -24,12 +24,6 @@ num_network_threads int default=2 restart
 ## Type of sequenced thread executor use for persistence replies.
 response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE restart
 
-## When merging, if we find more than this number of documents that exist on all
-## of the same copies, send a separate apply bucket diff with these entries
-## to an optimized merge chain that guarantuees minimum data transfer.
-## TODO GC and hardcode
-common_merge_chain_optimalization_minimum_size int default=64 restart
-
 ## Chunksize to use while merging buckets between nodes.
 ##
 ## Should follow stor-distributormanager:splitsize (16MB).
