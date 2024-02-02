@@ -12,21 +12,20 @@ namespace storage {
 namespace distributor { struct LegacyDistributorTest; }
 
 class DistributorConfiguration {
-public: 
+public:
+    DistributorConfiguration(const DistributorConfiguration& other) = delete;
+    DistributorConfiguration& operator=(const DistributorConfiguration& other) = delete;
     explicit DistributorConfiguration(StorageComponent& component);
     ~DistributorConfiguration();
 
-    struct MaintenancePriorities
-    {
-        // Defaults for these are chosen as those used as the current (non-
-        // configurable) values at the time of implementation.
-        uint8_t mergeMoveToIdealNode {120};
+    struct MaintenancePriorities {
+        uint8_t mergeMoveToIdealNode {165};
         uint8_t mergeOutOfSyncCopies {120};
         uint8_t mergeTooFewCopies {120};
         uint8_t mergeGlobalBuckets {115};
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
-        uint8_t deleteBucketCopy {100};
+        uint8_t deleteBucketCopy {120};
         uint8_t joinBuckets {155};
         uint8_t splitDistributionBits {200};
         uint8_t splitLargeBucket {175};
@@ -287,9 +286,6 @@ public:
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
-    DistributorConfiguration(const DistributorConfiguration& other);
-    DistributorConfiguration& operator=(const DistributorConfiguration& other);
-    
     StorageComponent& _component;
     
     uint32_t _byteCountSplitLimit;
@@ -341,10 +337,6 @@ private:
     bool _enable_operation_cancellation;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
-
-    friend struct distributor::LegacyDistributorTest;
-    void configureMaintenancePriorities(
-            const vespa::config::content::core::StorDistributormanagerConfig&);
 };
 
 }

@@ -95,25 +95,6 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
     return visitor.hasCurrentTime;
 }
 
-void
-DistributorConfiguration::configureMaintenancePriorities(
-        const vespa::config::content::core::StorDistributormanagerConfig& cfg)
-{
-    MaintenancePriorities& mp(_maintenancePriorities);
-    mp.mergeMoveToIdealNode       = cfg.priorityMergeMoveToIdealNode;
-    mp.mergeOutOfSyncCopies       = cfg.priorityMergeOutOfSyncCopies;
-    mp.mergeTooFewCopies          = cfg.priorityMergeTooFewCopies;
-    mp.mergeGlobalBuckets         = cfg.priorityMergeGlobalBuckets;
-    mp.activateNoExistingActive   = cfg.priorityActivateNoExistingActive;
-    mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
-    mp.deleteBucketCopy           = cfg.priorityDeleteBucketCopy;
-    mp.joinBuckets                = cfg.priorityJoinBuckets;
-    mp.splitDistributionBits      = cfg.prioritySplitDistributionBits;
-    mp.splitLargeBucket           = cfg.prioritySplitLargeBucket;
-    mp.splitInconsistentBucket    = cfg.prioritySplitInconsistentBucket;
-    mp.garbageCollection          = cfg.priorityGarbageCollection;
-}
-
 void 
 DistributorConfiguration::configure(const vespa::config::content::core::StorDistributormanagerConfig& config) 
 {
@@ -172,10 +153,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _enable_two_phase_garbage_collection = config.enableTwoPhaseGarbageCollection;
     _enable_condition_probing = config.enableConditionProbing;
     _enable_operation_cancellation = config.enableOperationCancellation;
-
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
-
-    configureMaintenancePriorities(config);
 
     if (config.maxClusterClockSkewSec >= 0) {
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);
