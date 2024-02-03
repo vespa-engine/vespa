@@ -14,7 +14,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/config-stor-filestor.h>
 #include <filesystem>
 #include <thread>
 
@@ -44,6 +43,9 @@ struct ConfigReader : public T::Subscriber
     }
     void configure(const T& c) { config = c; }
 };
+
+constexpr bool ENABLE_MULTIBIT_SPLIT = true;
+constexpr uint32_t MERGE_CHUNK_SIZE = 4_Mi;
 
 }
 
@@ -111,8 +113,8 @@ PersistenceTestUtils::PersistenceTestUtils()
       _persistenceHandler()
 {
     setupExecutor(1);
-    vespa::config::content::StorFilestorConfig cfg;
-    _persistenceHandler = std::make_unique<PersistenceHandler>(*_sequenceTaskExecutor, _env->_component, cfg,
+    _persistenceHandler = std::make_unique<PersistenceHandler>(*_sequenceTaskExecutor, _env->_component,
+                                                               MERGE_CHUNK_SIZE, ENABLE_MULTIBIT_SPLIT,
                                                                getPersistenceProvider(), getEnv()._fileStorHandler,
                                                                _bucketOwnershipNotifier, getEnv()._metrics);
 }

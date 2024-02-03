@@ -11,7 +11,8 @@ namespace storage {
 
 PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
                                       const ServiceLayerComponent & component,
-                                      const vespa::config::content::StorFilestorConfig & cfg,
+                                      uint32_t bucketMergeChunkSize,
+                                      bool multibitSplit,
                                       spi::PersistenceProvider& provider,
                                       FileStorHandler& filestorHandler,
                                       BucketOwnershipNotifier & bucketOwnershipNotifier,
@@ -19,9 +20,9 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
     : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor, cfg.bucketMergeChunkSize),
+      _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor, bucketMergeChunkSize),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
-      _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
+      _splitJoinHandler(_env, provider, bucketOwnershipNotifier, multibitSplit),
       _simpleHandler(_env, provider, component.getBucketIdFactory())
 {
 }

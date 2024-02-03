@@ -12,6 +12,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/config-stor-filestor.h>
 #include <sstream>
 
 using storage::spi::test::makeSpiBucket;
@@ -75,7 +76,7 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
       manager(nullptr)
 {
     injector.inject(top);
-    using vespa::config::content::StorFilestorConfig;
+    using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
     auto config = config_from<StorFilestorConfig>(config::ConfigUri(fixture._config->getConfigId()));
     auto fsm = std::make_unique<FileStorManager>(*config, fixture._node->getPersistenceProvider(),
                                                  fixture._node->getComponentRegister(), *fixture._node, fixture._node->get_host_info());

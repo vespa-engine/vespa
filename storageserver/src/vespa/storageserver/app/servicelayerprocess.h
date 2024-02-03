@@ -2,14 +2,19 @@
 #pragma once
 
 #include "process.h"
-#include <vespa/config-persistence.h>
-#include <vespa/config-stor-filestor.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/storageserver/servicelayernodecontext.h>
-#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/vespalib/util/hw_info.h>
 
 namespace config { class ConfigUri; }
+
+namespace vespa::config::content::internal {
+    class InternalStorFilestorType;
+    class InternalPersistenceType;
+}
+namespace vespa::config::content::core::internal {
+    class InternalStorVisitorType;
+}
 
 namespace storage {
 
@@ -22,9 +27,9 @@ class ServiceLayerProcess : public Process {
 protected:
     VisitorFactory::Map _externalVisitors;
 private:
-    using PersistenceConfig  = vespa::config::content::PersistenceConfig;
-    using StorVisitorConfig  = vespa::config::content::core::StorVisitorConfig;
-    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
+    using PersistenceConfig  = vespa::config::content::internal::InternalPersistenceType;
+    using StorVisitorConfig  = vespa::config::content::core::internal::InternalStorVisitorType;
+    using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 
     std::unique_ptr<config::ConfigHandle<PersistenceConfig>>  _persistence_cfg_handle;
     std::unique_ptr<config::ConfigHandle<StorVisitorConfig>>  _visitor_cfg_handle;

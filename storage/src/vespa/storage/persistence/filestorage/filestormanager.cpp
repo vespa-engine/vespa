@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/config-stor-filestor.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 
@@ -180,6 +181,8 @@ computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfi
            1; // Async cluster state processing thread (might be a pessimization to include here...)
 }
 
+constexpr bool DISABLE_MULTIBIT_SPLIT = false;
+
 }
 
 PersistenceHandler &
@@ -189,8 +192,8 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
     size_t index = _persistenceHandlers.size();
     assert(index < _metrics->threads.size());
     _persistenceHandlers.push_back(
-            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
-                                                 *_config, *_provider, *_filestorHandler,
+            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component, _config->bucketMergeChunkSize,
+                                                 DISABLE_MULTIBIT_SPLIT, *_provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->threads[index]));
     return *_persistenceHandlers.back();
 }

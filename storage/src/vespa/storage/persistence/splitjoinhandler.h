@@ -33,6 +33,7 @@ private:
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     BucketOwnershipNotifier  &_bucketOwnershipNotifier;
+    // TODO Rewrite tests so below config can be removed. Hardcoded to false in production.
     bool                      _enableMultibitSplitOptimalization;
 };
 

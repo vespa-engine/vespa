@@ -6,13 +6,18 @@
 #include "servicelayernodecontext.h"
 #include "storagenode.h"
 #include "vespa/vespalib/util/jsonstream.h"
-#include <vespa/config-persistence.h>
-#include <vespa/config-stor-filestor.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/visitorfactory.h>
-#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/vespalib/util/hw_info.h>
+
+namespace vespa::config::content::internal {
+    class InternalStorFilestorType;
+    class InternalPersistenceType;
+}
+namespace vespa::config::content::core::internal {
+    class InternalStorVisitorType;
+}
 
 namespace storage {
 
@@ -33,9 +38,9 @@ class ServiceLayerNode
 
 {
 public:
-    using PersistenceConfig  = vespa::config::content::PersistenceConfig;
-    using StorVisitorConfig  = vespa::config::content::core::StorVisitorConfig;
-    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
+    using PersistenceConfig  = vespa::config::content::internal::InternalPersistenceType;
+    using StorVisitorConfig  = vespa::config::content::core::internal::InternalStorVisitorType;
+    using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 private:
     ServiceLayerNodeContext&            _context;
     spi::PersistenceProvider&           _persistenceProvider;

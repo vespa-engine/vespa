@@ -5,7 +5,6 @@
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -24,6 +23,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/config-stor-filestor.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -158,7 +158,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noD
         _bottom = bottom.get();
         _top->push_back(std::move(bottom));
     } else {
-        using vespa::config::content::StorFilestorConfig;
+        using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
         auto bottom = std::make_unique<FileStorManager>(*config_from<StorFilestorConfig>(config_uri),
                                                         _node->getPersistenceProvider(), _node->getComponentRegister(),
                                                         *_node, _node->get_host_info());
