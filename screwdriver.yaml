@@ -303,7 +303,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
-      IMAGE_NAME: "docker.io/vespaengine/vespa-generic-intel-x86_64"
+      IMAGE_NAME: "vespaengine/vespa-generic-intel-x86_64"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
@@ -357,7 +357,7 @@ jobs:
           $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-image: |
           if [[ -z $SD_PULL_REQUEST ]]; then
-            if curl -fsSL https://index.docker.io/v1/repositories/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
+            if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
               echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
             else
               OPT_STATE="$(set +o)"
@@ -382,7 +382,7 @@ jobs:
 
     environment:
       BASE_IMAGE: "el9"
-      IMAGE_NAME: "vespa-el9-preview"
+      IMAGE_NAME: "vespaengine/vespa-el9-preview"
 
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
@@ -418,14 +418,14 @@ jobs:
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
                 --tag docker.io/vespaengine/vespa:latest \
-                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
+                --tag docker.io/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
           # Run quick start guide
           $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-image: |
           if [[ -z $SD_PULL_REQUEST ]]; then
-            if curl -fsSL https://index.docker.io/v1/repositories/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
+            if curl -fsSL https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/$VESPA_VERSION/ &> /dev/null; then
               echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
             else
               OPT_STATE="$(set +o)"
@@ -439,9 +439,9 @@ jobs:
                 --build-arg VESPA_BASE_IMAGE=$BASE_IMAGE \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR \
-                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
+                --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+                --tag docker.io/$IMAGE_NAME:$VESPA_MAJOR \
+                --tag docker.io/$IMAGE_NAME:latest \
                 .
             fi
           fi
