@@ -41,7 +41,6 @@ private:
     uint16_t _readyCopies;
     bool     _activePerGroup;
     bool     _ensurePrimaryPersisted;
-    bool     _distributorAutoOwnershipTransferOnWholeGroupDown;
     vespalib::string _serialized;
 
     struct ResultGroup {
@@ -91,7 +90,7 @@ public:
     public:
         ConfigWrapper(ConfigWrapper && rhs) noexcept = default;
         ConfigWrapper & operator = (ConfigWrapper && rhs) noexcept = default;
-        ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept;
+        explicit ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept;
         ~ConfigWrapper();
         const DistributionConfig & get() const { return *_cfg; }
     private:
@@ -99,10 +98,10 @@ public:
     };
     Distribution();
     Distribution(const Distribution&);
-    Distribution(const ConfigWrapper & cfg);
-    Distribution(const DistributionConfig & cfg);
-    Distribution(const vespalib::string& serialized);
-    ~Distribution();
+    explicit Distribution(const ConfigWrapper & cfg);
+    explicit Distribution(const DistributionConfig & cfg);
+    explicit Distribution(const vespalib::string& serialized);
+    ~Distribution() override;
 
     Distribution& operator=(const Distribution&) = delete;
 
@@ -113,7 +112,6 @@ public:
     uint16_t getInitialRedundancy() const noexcept { return _initialRedundancy; }
     uint16_t getReadyCopies() const noexcept { return _readyCopies; }
     bool ensurePrimaryPersisted() const noexcept { return _ensurePrimaryPersisted; }
-    bool distributorAutoOwnershipTransferOnWholeGroupDown() const noexcept { return _distributorAutoOwnershipTransferOnWholeGroupDown; }
     bool activePerGroup() const noexcept { return _activePerGroup; }
 
     bool operator==(const Distribution& o) const noexcept { return (_serialized == o._serialized); }

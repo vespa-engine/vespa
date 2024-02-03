@@ -37,7 +37,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 3
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -91,7 +90,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 6
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -161,7 +159,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 4
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -231,7 +228,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 3
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1

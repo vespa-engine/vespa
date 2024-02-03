@@ -337,7 +337,7 @@ public class DistributionTestCase {
     @Test
     public void testDistributorGroupTakeover() throws Exception {
         test = new DistributionTestFactory("hierarchical-grouping-distributor-takeover")
-                .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3).distributor_auto_ownership_transfer_on_whole_group_down(true))
+                .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3))
                 .setNodeType(NodeType.DISTRIBUTOR)
                 .setClusterState(new ClusterState("distributor:2 storage:9"));
         for (BucketId bucket : getTestBuckets()) {

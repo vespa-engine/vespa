@@ -1580,18 +1580,6 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_with_group_down) {
                                  "distributor:6 .2.s:d storage:6"));
 }
 
-TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_with_group_down_and_no_handover) {
-    std::string config = dist_config_6_nodes_across_4_groups();
-    config += "distributor_auto_ownership_transfer_on_whole_group_down false\n";
-    set_distribution(config);
-
-    // Group is down, but config says to not do anything about it.
-    EXPECT_EQ(get_node_list({0, 1, 2, 3, 4, 5}, _bucket_spaces.size() - 1),
-              get_sent_nodes("distributor:6 storage:6",
-                             "distributor:6 .2.s:d .3.s:d storage:6"));
-}
-
-
 namespace {
 
 void

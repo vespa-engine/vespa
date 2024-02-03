@@ -22,7 +22,6 @@ struct Group {
 };
 
 void set_distribution_invariant_config_fields(DistributionConfigBuilder& builder) {
-    builder.distributorAutoOwnershipTransferOnWholeGroupDown = true;
     builder.activePerLeafGroup = true;
     // TODO consider how to best support n-of-m replication for global docs
     builder.ensurePrimaryPersisted = true;
