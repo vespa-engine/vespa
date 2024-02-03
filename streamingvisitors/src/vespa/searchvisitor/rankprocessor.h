@@ -31,6 +31,7 @@ private:
     QueryWrapper                   _query;
 
     QueryEnvironment                     _queryEnv;
+    const search::fef::Properties       &_featureOverrides;
     search::fef::MatchDataLayout         _mdLayout;
     search::fef::MatchData::UP           _match_data;
     search::fef::RankProgram::UP         _rankProgram;
@@ -62,7 +63,8 @@ public:
                   const vespalib::string &rankProfile,
                   search::streaming::Query & query,
                   const vespalib::string & location,
-                  search::fef::Properties & queryProperties,
+                  const search::fef::Properties & queryProperties,
+                  const search::fef::Properties & featureOverrides,
                   const search::IAttributeManager * attrMgr);
 
     void initForRanking(size_t wantedHitCount);
