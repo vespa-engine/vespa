@@ -93,9 +93,8 @@ TwoPhaseUpdateOperation::ensureUpdateReplyCreated()
 }
 
 void
-TwoPhaseUpdateOperation::sendReply(
-        DistributorStripeMessageSender& sender,
-        std::shared_ptr<api::UpdateReply> reply)
+TwoPhaseUpdateOperation::sendReply(DistributorStripeMessageSender& sender,
+                                   const std::shared_ptr<api::UpdateReply> & reply)
 {
     assert(!_replySent);
     reply->getTrace().addChild(std::move(_trace));

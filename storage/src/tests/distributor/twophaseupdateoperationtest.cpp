@@ -173,6 +173,20 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
                                              {}, {true, "full disk"}, false));
     }
 
+    static std::shared_ptr<DistributorConfiguration>
+    with_fast_path_restart(std::shared_ptr<DistributorConfiguration> cfg, bool value)
+    {
+        cfg->set_update_fast_path_restart_enabled(value);
+        return cfg;
+    }
+
+    static std::shared_ptr<DistributorConfiguration>
+    with_meta_only_fetch(std::shared_ptr<DistributorConfiguration> cfg, bool value)
+    {
+        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(value);
+        return cfg;
+    }
+
 };
 
 TwoPhaseUpdateOperationTest::TwoPhaseUpdateOperationTest() = default;
@@ -674,6 +688,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) 
 
 TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_all_empty_gets) {
     setup_stripe(3, 3, "storage:3 distributor:1");
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4", UpdateOptions().createIfNonExistent(true));
     cb->start(_sender);
 
@@ -705,6 +720,7 @@ TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_a
 
 TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_has_failed_put) {
     setup_stripe(3, 3, "storage:3 distributor:1");
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4", UpdateOptions().createIfNonExistent(true));
     cb->start(_sender);
 
@@ -990,6 +1006,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_with_illegal_params_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("langbein.headerval=1234"));
 
     cb->start(_sender);
@@ -1009,6 +1026,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_w
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==120"));
 
     cb->start(_sender);
@@ -1028,6 +1046,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_auto_create_sends_puts) {
     setup_stripe(2, 2, "storage:2 distributor:1");
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions()
                     .condition("testdoctype1.headerval==120")
                     .createIfNonExistent(true));
@@ -1100,9 +1119,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_close_edge_sends_correct_reply) {
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_restarts_with_fast_path_if_enabled) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), true));
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1128,9 +1145,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_re
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_does_not_restart_with_fast_path_if_disabled) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(false);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), false));
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1149,9 +1164,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_do
 
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_altered_between_get_send_and_receive) {
     setup_stripe(3, 3, "storage:3 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), true));
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1175,9 +1188,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_alter
 
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_found_on_a_replica_node) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(with_meta_only_fetch(make_config(), false), true));
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1193,9 +1204,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_foun
 // Buckets must be created from scratch by Put operations, updates alone cannot do this.
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_no_initial_replicas_exist) {
     setup_stripe(2, 2, "storage:2 distributor:1");
-    auto cfg = make_config();
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(make_config(), false));
 
     // No replicas, technically consistent but cannot use fast path.
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
@@ -1211,7 +1220,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_gets_are_sent_with_strong_consistency
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_use_weak_internal_read_consistency_for_client_gets(true);
-    configure_stripe(cfg);
+    configure_stripe(with_meta_only_fetch(std::move(cfg), false));
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
@@ -1416,8 +1425,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(std::move(cfg), true));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
     cb->start(_sender);
 
@@ -1536,8 +1544,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_cre
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(std::move(cfg), true));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4");
     cb->start(_sender);
 
@@ -1560,8 +1567,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_crea
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cfg = make_config();
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
-    cfg->set_update_fast_path_restart_enabled(true);
-    configure_stripe(cfg);
+    configure_stripe(with_fast_path_restart(std::move(cfg), true));
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));
     cb->start(_sender);
 
