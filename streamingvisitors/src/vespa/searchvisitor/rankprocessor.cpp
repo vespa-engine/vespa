@@ -120,7 +120,7 @@ RankProcessor::initHitCollector(size_t wantedHitCount)
 void
 RankProcessor::setupRankProgram(RankProgram &program)
 {
-    program.setup(*_match_data, _queryEnv, search::fef::Properties());
+    program.setup(*_match_data, _queryEnv, _featureOverrides);
 }
 
 void
@@ -153,13 +153,15 @@ RankProcessor::RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapsh
                              const vespalib::string &rankProfile,
                              Query & query,
                              const vespalib::string & location,
-                             Properties & queryProperties,
+                             const Properties & queryProperties,
+                             const Properties & featureOverrides,
                              const search::IAttributeManager * attrMgr) :
 
     _rankManagerSnapshot(std::move(snapshot)),
     _rankSetup(_rankManagerSnapshot->getRankSetup(rankProfile)),
     _query(query),
     _queryEnv(location, _rankManagerSnapshot->getIndexEnvironment(rankProfile), queryProperties, attrMgr),
+    _featureOverrides(featureOverrides),
     _mdLayout(),
     _match_data(),
     _rankProgram(),

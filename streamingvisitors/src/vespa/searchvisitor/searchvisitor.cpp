@@ -431,9 +431,18 @@ SearchVisitor::init(const Parameters & params)
                 LOG(debug, "Properties[%u]: name '%s', size '%u'", i, prop.getName(), prop.size());
                 if (strcmp(prop.getName(), "rank") == 0) { // pick up rank properties
                     for (uint32_t j = 0; j < prop.size(); ++j) {
-                        LOG(debug, "Properties[%u][%u]: key '%s' -> value '%s'", i, j, prop.getKey(j), prop.getValue(j));
-                        _rankController.getQueryProperties().add(vespalib::string(prop.getKey(j), prop.getKeyLen(j)),
-                                                                 vespalib::string(prop.getValue(j), prop.getValueLen(j)));
+                        vespalib::string k{prop.getKey(j), prop.getKeyLen(j)};
+                        vespalib::string v{prop.getValue(j), prop.getValueLen(j)};
+                        LOG(debug, "Properties[%u][%u]: key '%s' -> value '%s'", i, j, k.c_str(), v.c_str());
+                        _rankController.getQueryProperties().add(k, v);
+                    }
+                }
+                if (strcmp(prop.getName(), "feature") == 0) { // pick up feature overrides
+                    for (uint32_t j = 0; j < prop.size(); ++j) {
+                        vespalib::string k{prop.getKey(j), prop.getKeyLen(j)};
+                        vespalib::string v{prop.getValue(j), prop.getValueLen(j)};
+                        LOG(debug, "Feature override[%u][%u]: key '%s' -> value '%s'", i, j, k.c_str(), v.c_str());
+                        _rankController.getFeatureOverrides().add(k, v);
                     }
                 }
             }
@@ -647,6 +656,7 @@ SearchVisitor::RankController::RankController() :
     _rankManagerSnapshot(nullptr),
     _rankSetup(nullptr),
     _queryProperties(),
+    _featureOverrides(),
     _hasRanking(false),
     _rankProcessor(),
     _dumpFeatures(false),
@@ -664,13 +674,13 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    std::vector<AttrInfo> & attributeFields)
 {
     _rankSetup = &_rankManagerSnapshot->getRankSetup(_rankProfile);
-    _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
+    _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
     _rankProcessor->initForRanking(wantedHitCount);
     // register attribute vectors needed for ranking
     processAccessedAttributes(_rankProcessor->get_real_query_env(), true, attrMan, attributeFields);
 
     if (_dumpFeatures) {
-        _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
+        _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
         LOG(debug, "Initialize dump processor");
         _dumpProcessor->initForDumping(wantedHitCount);
         // register attribute vectors needed for dumping

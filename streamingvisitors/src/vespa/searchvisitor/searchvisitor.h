@@ -129,6 +129,7 @@ private:
         std::shared_ptr<const RankManager::Snapshot>  _rankManagerSnapshot;
         const search::fef::RankSetup * _rankSetup;
         search::fef::Properties        _queryProperties;
+        search::fef::Properties        _featureOverrides;
         bool                           _hasRanking;
         RankProcessor::UP              _rankProcessor;
         bool                           _dumpFeatures;
@@ -151,6 +152,7 @@ private:
         const vespalib::string &getRankProfile() const { return _rankProfile; }
         void setRankManagerSnapshot(const std::shared_ptr<const RankManager::Snapshot>& snapshot) { _rankManagerSnapshot = snapshot; }
         search::fef::Properties & getQueryProperties() { return _queryProperties; }
+        search::fef::Properties & getFeatureOverrides() { return _featureOverrides; }
         RankProcessor * getRankProcessor() { return _rankProcessor.get(); }
         void setDumpFeatures(bool dumpFeatures) { _dumpFeatures = dumpFeatures; }
         bool getDumpFeatures() const { return _dumpFeatures; }
