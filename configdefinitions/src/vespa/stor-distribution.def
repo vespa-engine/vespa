@@ -36,7 +36,7 @@ active_per_leaf_group bool default=false
 ## these cases they use many small groups to be able to scale. In such cases,
 ## where groups are small, having distributors able to take over when none are
 ## available in a group is useful.
-# TODO: Deprecated and unused, remove in Vespa 9
+# TODO: Deprecated and unused, remove in Vespa 9 GC and hardcode
 distributor_auto_ownership_transfer_on_whole_group_down bool default=true
 
 ## Hierarchical grouping divides the nodes into a tree of groups. Due to config
@@ -58,15 +58,3 @@ group[].nodes[].index int
 # The system will migrate all data away from retired nodes such that they can
 # eventually be removed without partial data loss
 group[].nodes[].retired bool default=false
-
-## Which disk distribution to use. From the current choices, we very much
-## recommend using MODULO_BID. The only reason to use any of the earlier one is
-## during an upgrade where you dont want to mess up the distribution in case you
-## want to revert the upgrade.
-##
-## MODULO old one (4.0)
-## MODULO_INDEX with node index in seed
-## MODULO_KNUTH with random(node index) in seed
-## MODULO_BID using all used bits, except count bits, and random(node index)
-## TODO: Deprecated and unused, remove in Vespa 9
-disk_distribution enum { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID } default=MODULO_BID

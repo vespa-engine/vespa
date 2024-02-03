@@ -4,7 +4,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.hpp>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vdslib/distribution/distribution_config_util.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
@@ -22,8 +21,7 @@ struct Group {
     std::map<uint16_t, std::unique_ptr<Group>> sub_groups;
 };
 
-void set_distribution_invariant_config_fields(DistributionConfigBuilder& builder, const DistributionConfig& source) {
-    builder.diskDistribution = source.diskDistribution;
+void set_distribution_invariant_config_fields(DistributionConfigBuilder& builder) {
     builder.distributorAutoOwnershipTransferOnWholeGroupDown = true;
     builder.activePerLeafGroup = true;
     // TODO consider how to best support n-of-m replication for global docs
@@ -155,14 +153,14 @@ void build_global_groups(DistributionConfigBuilder& builder, const DistributionC
 std::shared_ptr<DistributionConfig>
 GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConfig& source) {
     DistributionConfigBuilder builder;
-    set_distribution_invariant_config_fields(builder, source);
+    set_distribution_invariant_config_fields(builder);
     build_global_groups(builder, source);
     return std::make_shared<DistributionConfig>(builder);
 }
 
 std::shared_ptr<lib::Distribution>
 GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
-    const auto src_config = distr.serialize();
+    const auto & src_config = distr.serialize();
     auto global_config = convert_to_global(*string_to_config(src_config));
     return std::make_shared<lib::Distribution>(*global_config);
 }
