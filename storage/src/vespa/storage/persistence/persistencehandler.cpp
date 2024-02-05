@@ -19,9 +19,7 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
     : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor,
-                    cfg.bucketMergeChunkSize,
-                    cfg.commonMergeChainOptimalizationMinimumSize),
+      _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor, cfg.bucketMergeChunkSize),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _simpleHandler(_env, provider, component.getBucketIdFactory())
@@ -173,12 +171,6 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     if (tracker) {
         tracker->sendReply();
     }
-}
-
-void
-PersistenceHandler::set_throttle_merge_feed_ops(bool throttle) noexcept
-{
-    _mergeHandler.set_throttle_merge_feed_ops(throttle);
 }
 
 }

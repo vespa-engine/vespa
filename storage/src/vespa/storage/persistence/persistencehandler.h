@@ -36,8 +36,6 @@ public:
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }
     const SplitJoinHandler & splitjoinHandler() const { return _splitJoinHandler; }
     const SimpleMessageHandler & simpleMessageHandler() const { return _simpleHandler; }
-
-    void set_throttle_merge_feed_ops(bool throttle) noexcept;
 private:
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker) const;
