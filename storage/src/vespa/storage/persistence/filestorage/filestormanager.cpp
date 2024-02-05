@@ -885,8 +885,8 @@ namespace {
 bool
 FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
 {
-    for (auto& elem :  _component.getBucketSpaceRepo()) {
-        ContentBucketSpace& bucket_space = *elem.second;
+    for (const auto& elem :  _component.getBucketSpaceRepo()) {
+        const ContentBucketSpace& bucket_space = *elem.second;
         auto derived_cluster_state = bucket_space.getClusterState();
         if (!derived_cluster_state->getNodeState(node).getState().oneOf("m")) {
             return false;
