@@ -9,7 +9,7 @@
 #include "empty_dfw.h"
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
-#include "juniperdfw.h"
+#include "dynamicteaserdfw.h"
 #include "matched_elements_filter_dfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
@@ -45,7 +45,7 @@ void
 throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer,
                  const vespalib::string& command)
 {
-    if (writer.get() == nullptr) {
+    if ( ! writer) {
         throw IllegalArgumentException("Failed to create docsum field writer for command '" + command + "'.");
     }
 }
@@ -67,12 +67,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (command == command::dynamic_teaser) {
         if ( ! source.empty() ) {
-            auto fw = std::make_unique<DynamicTeaserDFW>(getEnvironment().getJuniper());
-            auto fw_ptr = fw.get();
-            fieldWriter = std::move(fw);
-            if (!fw_ptr->Init(field_name.c_str(), source, _query_term_filter_factory)) {
-                throw IllegalArgumentException("Failed to initialize DynamicTeaserDFW.");
-            }
+            fieldWriter = std::make_unique<DynamicTeaserDFW>(getEnvironment().getJuniper(), field_name.c_str(), source, _query_term_filter_factory);
         } else {
             throw_missing_source(command);
         }
