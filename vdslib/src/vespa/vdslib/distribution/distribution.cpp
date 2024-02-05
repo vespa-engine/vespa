@@ -44,6 +44,8 @@ Distribution::Distribution()
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
     auto config(getDefaultDistributionConfig(0, 0));
@@ -60,6 +62,8 @@ Distribution::Distribution(const Distribution& d)
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(d._serialized)
 {
@@ -84,6 +88,8 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
     vespalib::asciistream ost;
@@ -99,6 +105,8 @@ Distribution::Distribution(const vespalib::string& serialized)
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(serialized)
 {
@@ -332,7 +340,7 @@ bool
 Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
 {
     if (g.isLeafGroup()) {
-        for (unsigned short node : g.getNodes()) {
+        for (uint16_t node : g.getNodes()) {
             const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, node)));
             if (ns.getState().oneOf("ui")) return false;
         }
@@ -389,7 +397,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         tmpResults.reserve(groupRedundancy);
         tmpResults.clear();
         tmpResults.resize(groupRedundancy);
-        for (unsigned short node : nodes) {
+        for (uint16_t node : nodes) {
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.

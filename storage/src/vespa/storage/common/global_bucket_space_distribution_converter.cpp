@@ -159,7 +159,7 @@ GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConf
 
 std::shared_ptr<lib::Distribution>
 GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
-    const auto & src_config = distr.serialize();
+    const auto src_config = distr.serialize();
     auto global_config = convert_to_global(*string_to_config(src_config));
     return std::make_shared<lib::Distribution>(*global_config);
 }
