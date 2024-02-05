@@ -109,7 +109,7 @@
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
         <jna.vespa.version>5.14.0</jna.vespa.version>
-        <joda-time.vespa.version>2.12.6</joda-time.vespa.version>
+        <joda-time.vespa.version>2.12.7</joda-time.vespa.version>
         <junit.vespa.version>5.10.2</junit.vespa.version>
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
