@@ -258,24 +258,7 @@ void
 RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
 {
     for (QueryWrapper::Term & term: query.getTermList()) {
-        auto nn_node = term.getTerm()->as_nearest_neighbor_query_node();
-        if (nn_node != nullptr) {
-            auto raw_score = nn_node->get_raw_score();
-            if (raw_score.has_value()) {
-                auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
-                auto& td = qtd.getTermData();
-                if (td.numFields() == 1u) {
-                    auto tfd = td.field(0u);
-                    auto tmd = matchData.resolveTermField(tfd.getHandle());
-                    assert(tmd != nullptr);
-                    tmd->setRawScore(docid, raw_score.value());
-                }
-            }
-        } else if (auto multi_term = term.getTerm()->as_multi_term()) {
-            auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
-            auto& td = qtd.getTermData();
-            multi_term->unpack_match_data(docid, td, matchData);
-        } else if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
+        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
             bool isPhrase = term.isFirstPhraseTerm();
             QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
             const ITermData &td = qtd.getTermData();
