@@ -32,7 +32,6 @@ public:
     MultiTerm* as_multi_term() noexcept override { return this; }
     void reset() override;
     bool evaluate() const override;
-    virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data) = 0;
     const std::vector<std::unique_ptr<QueryTerm>>& get_terms() const noexcept { return _terms; }
 };
 

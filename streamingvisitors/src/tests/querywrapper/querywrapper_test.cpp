@@ -84,12 +84,6 @@ QueryWrapperTest::testQueryWrapper()
         EXPECT_TRUE( tl[2].isPhraseTerm());
         EXPECT_TRUE( tl[3].isPhraseTerm());
         EXPECT_TRUE(!tl[4].isPhraseTerm());
-
-        EXPECT_EQUAL(tl[0].getPosAdjust(), 0u);
-        EXPECT_EQUAL(tl[1].getPosAdjust(), 2u);
-        EXPECT_EQUAL(tl[2].getPosAdjust(), 2u);
-        EXPECT_EQUAL(tl[3].getPosAdjust(), 2u);
-        EXPECT_EQUAL(tl[4].getPosAdjust(), 0u);
     }
 }
 
