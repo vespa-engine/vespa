@@ -13,11 +13,12 @@ public enum Labels {
     CLUSTER("ai.vespa.cluster", "The name of a Vespa cluster."),
     CLUSTER_TYPE("ai.vespa.cluster_type", "The type of a Vespa cluster, typically one of 'admin', 'container', 'content'."),
     DEPLOYMENT_CLUSTER("ai.vespa.deployment_cluster", "Unique ID for a Vespa deployment cluster, in the format <tenant>.<application>.<instance>.<zone>.<cluster>."),
-    INSTANCE_ID("ai.vespa.instance_id", "The id of a Vespa application instance in the format <tenant>.<application>.<instance>."),
+    INSTANCE("ai.vespa.instance", "The id of a Vespa application instance in the format <tenant>.<application>.<instance>."),
     GROUP("ai.vespa.group", "The group id of a Vespa content node. Samples values are 'Group 1', 'Group 2', etc."),
     SYSTEM("ai.vespa.system", "The name of a managed Vespa system, sample values are 'public', 'publiccd'."),
     ZONE("ai.vespa.zone", "The name of a zone in managed Vespa, in the format <environment>.<region>. Sample name 'prod.aws-us-west-2a'."),
     PARENT("ai.vespa.parent", "The fully qualified name of the parent host on which a Vespa node is running."),
+    NODE("ai.vespa.node", "The fully qualified name of the Vespa node."),
 
     // Labels used for a subset of the metrics only:
     CHAIN("ai.vespa.chain", "The name of a search chain"),
