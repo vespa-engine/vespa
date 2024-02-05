@@ -53,7 +53,7 @@ public class ReservationExpirerTest {
         assertEquals(0, nodeRepository.nodes().list(Node.State.reserved).nodeType(NodeType.tenant).size());
         NodeList dirty = nodeRepository.nodes().list(Node.State.dirty).nodeType(NodeType.tenant);
         assertEquals(2, dirty.size());
-        assertEquals(2, metric.values.get("expired.reserved"));
+        assertEquals(2, metric.values.get("nodes.expired.reserved"));
     }
 
 }

@@ -56,6 +56,11 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NODES_NON_ACTIVE_FRACTION("nodes.nonActiveFraction", Unit.NODE, "The fraction of non-active nodes vs total nodes in a cluster"),
     NODES_EXCLUSIVE_SWITCH_FRACTION("nodes.exclusiveSwitchFraction", Unit.FRACTION, "The fraction of nodes in a cluster on exclusive network switches"),
     NODES_EMPTY_EXCLUSIVE("nodes.emptyExclusive", Unit.NODE, "The number of exclusive hosts that do not have any nodes allocated to them"),
+    NODES_EXPIRED_DEPROVISIONED("nodes.expired.deprovisioned", Unit.NODE, "The number of deprovisioned nodes that have expired"),
+    NODES_EXPIRED_DIRTY("nodes.expired.dirty", Unit.NODE, "The number of dirty nodes that have expired"),
+    NODES_EXPIRED_INACTIVE("nodes.expired.inactive", Unit.NODE, "The number of inactive nodes that have expired"),
+    NODES_EXPIRED_PROVISIONED("nodes.expired.provisioned", Unit.NODE, "The number of provisioned nodes that have expired"),
+    NODES_EXPIRED_RESERVED("nodes.expired.reserved", Unit.NODE, "The number of reserved nodes that have expired"),
 
     CLUSTER_COST("cluster.cost", Unit.DOLLAR_PER_HOUR, "The cost of the nodes allocated to a certain cluster, in $/hr"),
     CLUSTER_LOAD_IDEAL_CPU("cluster.load.ideal.cpu", Unit.FRACTION, "The ideal cpu load of a certain cluster"),

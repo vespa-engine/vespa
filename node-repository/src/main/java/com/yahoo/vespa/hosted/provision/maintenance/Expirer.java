@@ -47,7 +47,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
             expire(expired.asList());
         }
 
-        metric.add("expired." + fromState, expired.size(), null);
+        metric.add("nodes.expired." + fromState, expired.size(), null);
         return 1.0;
     }
 
