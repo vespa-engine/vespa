@@ -75,7 +75,7 @@ QueryParser::QueryParser(const char* query_string) :
     _op_to_type(),
     _query_string(query_string),
     _curtok(),
-    _v(NULL),
+    _v(nullptr),
     _exp(), _parse_errno(0), _reached_end(false)
 {
     _op_to_type["AND"]    = TOK_NORM_OP;
@@ -97,7 +97,7 @@ QueryParser::QueryParser(const char* query_string) :
     }
     else
     {
-        _exp = NULL;
+        _exp = nullptr;
         _parse_errno = 1;
         return;
     }
@@ -152,8 +152,9 @@ void QueryParser::trav(QueryItem* e_abstract) const
 {
     auto e = dynamic_cast<QueryParserQueryItem*>(e_abstract);
     assert(e != nullptr);
-    if (e->arity() == 0)
-        _v->VisitKeyword(e, e->_name.c_str(), e->_name.size(), e->_prefix);
+    if (e->arity() == 0) {
+        _v->visitKeyword(e, e->_name, e->_prefix, false);
+    }
     if      (e->_name.compare("AND")    == 0)  _v->VisitAND(e, e->arity());
     else if (e->_name.compare("OR")     == 0)  _v->VisitOR(e, e->arity());
     else if (e->_name.compare("ANY")    == 0)  _v->VisitANY(e, e->arity());
@@ -173,7 +174,7 @@ std::unique_ptr<QueryItem>
 QueryParser::ParseExpr()
 {
     int p1 = -1;
-    std::map<std::string, int>::iterator it = _op_to_type.find(_curtok);
+    auto it = _op_to_type.find(_curtok);
     if (it == _op_to_type.end())
         return ParseIndexTerm();
     std::string op = _curtok;
@@ -183,7 +184,7 @@ QueryParser::ParseExpr()
 	break;
     case TOK_PARAM1_OP:
 	next();
-	if (!match("/", true)) return NULL;
+	if (!match("/", true)) return nullptr;
 	next();
 	p1 = atoi(_curtok.c_str());
 	LOG(debug, "constraint operator %s - value %d", op.c_str(), p1);
@@ -192,11 +193,11 @@ QueryParser::ParseExpr()
         LOG_ABORT("should not reach here");
     }
     next();
-    if (!match("(", true)) return NULL;
+    if (!match("(", true)) return nullptr;
     auto e = std::make_unique<QueryParserQueryItem>(op.c_str(), p1);
     do
     {
-        if (ParseError()) return NULL;
+        if (ParseError()) return nullptr;
         next();
         auto ep = ParseExpr();
         if (!ep)

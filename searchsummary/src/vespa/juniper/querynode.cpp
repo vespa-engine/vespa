@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "querynode.h"
-#include "queryvisitor.h"
 #include "juniperdebug.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
@@ -14,26 +13,26 @@ LOG_SETUP(".juniper.querynode");
  */
 
 QueryExpr::QueryExpr(int weight, int arity) :
-    _options(0), _weight(weight), _arity(arity), _parent(NULL), _childno(0)
+    _options(0), _weight(weight), _arity(arity), _parent(nullptr), _childno(0)
 { }
 
 QueryExpr::QueryExpr(QueryExpr* e) :
     _options(e->_options),
     _weight(e->_weight),
     _arity(e->_arity),
-    _parent(NULL),
+    _parent(nullptr),
     _childno(0)
 { }
 
-QueryExpr::~QueryExpr() { }
+QueryExpr::~QueryExpr() = default;
 
 
 QueryTerm::QueryTerm(const char* t, int length, int ix, int wgt)
     : QueryExpr(wgt, 0), len(length),
       ucs4_len(0),
       total_match_cnt(0), exact_match_cnt(0),
-      idx(ix), rewriter(NULL), reduce_matcher(NULL), _rep(NULL),
-      _ucs4_term(NULL)
+      idx(ix), rewriter(nullptr), reduce_matcher(nullptr), _rep(nullptr),
+      _ucs4_term(nullptr)
 {
     if (len <= 0)
         len = strlen(t);
@@ -49,8 +48,8 @@ QueryTerm::QueryTerm(QueryTerm* t)
     : QueryExpr(t), len(t->len),
       ucs4_len(0),
       total_match_cnt(0), exact_match_cnt(0),
-      idx(-1), rewriter(NULL), reduce_matcher(NULL), _rep(NULL),
-      _ucs4_term(NULL)
+      idx(-1), rewriter(nullptr), reduce_matcher(nullptr), _rep(nullptr),
+      _ucs4_term(nullptr)
 {
     _rep = new char[len+1];
     strncpy(_rep, t->term(), len);         _rep[len] = '\0';
@@ -70,7 +69,7 @@ QueryTerm::~QueryTerm()
 
 QueryNode::QueryNode(int arity, int threshold, int weight) :
     QueryExpr(weight, arity), _threshold(threshold), _limit(0),
-    _children(NULL),
+    _children(nullptr),
     _nchild(0), _node_idx(-1)
 {
     assert(arity > 0);
@@ -82,7 +81,7 @@ QueryNode::QueryNode(QueryNode* n)
     : QueryExpr(n),
       _threshold(n->_threshold),
       _limit(n->_limit),
-      _children(NULL),
+      _children(nullptr),
       _nchild(0),
       _node_idx(n->_node_idx)
 {
@@ -104,7 +103,8 @@ int QueryNode::Limit() { return _options & X_LIMIT ? _limit : -1; }
 int QueryTerm::Limit() { return 0; }
 
 
-QueryNode* QueryTerm::AddChild(QueryExpr*)
+QueryNode*
+QueryTerm::AddChild(QueryExpr*)
 {
     LOG(warning, "stack inconsistency, attempt to add children to a terminal node");
 
@@ -114,7 +114,8 @@ QueryNode* QueryTerm::AddChild(QueryExpr*)
 }
 
 
-QueryNode* QueryNode::AddChild(QueryExpr* child)
+QueryNode*
+QueryNode::AddChild(QueryExpr* child)
 {
     if (!child)
         _arity--;
@@ -137,7 +138,8 @@ void QueryExpr::ComputeThreshold() {}
 
 // Compute threshold and constraint info
 
-void QueryNode::ComputeThreshold()
+void
+QueryNode::ComputeThreshold()
 {
     bool no_threshold = false;
     int th = 0;
@@ -163,14 +165,16 @@ void QueryNode::ComputeThreshold()
 }
 
 
-void QueryTerm::Dump(std::string& out)
+void
+QueryTerm::Dump(std::string& out)
 {
     out.append(term());
     out.append(vespalib::make_string("%s:%d", (_options & X_PREFIX ? "*" : ""), _weight));
 }
 
 
-void QueryNode::Dump(std::string& out)
+void
+QueryNode::Dump(std::string& out)
 {
     out.append(vespalib::make_string("Node<a:%d", _arity));
     if (_options & X_ORDERED) out.append(",o");
@@ -191,45 +195,15 @@ void QueryNode::Dump(std::string& out)
 }
 
 
-bool QueryNode::StackComplete()
+bool
+QueryNode::StackComplete()
 {
     // Stack is complete if rightmost nodes in tree are complete
     return (Complete() && (!_arity || _children[_arity - 1]->StackComplete()));
 }
 
-
-bool QueryTerm::StackComplete()
-{
-    return true;
-}
-
-
-QueryNode* QueryNode::AsNode()
-{
-    return this;
-}
-
-QueryNode* QueryTerm::AsNode()
-{
-    return NULL;
-}
-
-QueryTerm* QueryNode::AsTerm()
-{
-    return NULL;
-}
-
-QueryTerm* QueryTerm::AsTerm()
-{
-    return this;
-}
-
-bool QueryTerm::Complex()
-{
-    return false;
-}
-
-bool QueryNode::Complex()
+bool
+QueryNode::Complex()
 {
     for (int i = 0; i < _nchild; i++) {
         if (_children[i]->_arity > 1) return true;
@@ -238,7 +212,8 @@ bool QueryNode::Complex()
 }
 
 
-int QueryNode::MaxArity()
+int
+QueryNode::MaxArity()
 {
     int max_arity = _arity;
     for (int i = 0; i < _nchild; i++) {
@@ -249,7 +224,8 @@ int QueryNode::MaxArity()
 }
 
 
-bool QueryNode::AcceptsInitially(QueryExpr* n)
+bool
+QueryNode::AcceptsInitially(QueryExpr* n)
 {
     assert(n->_parent == this);
 //  return (!(_options & X_ORDERED)) || n->_childno == 0;
@@ -262,7 +238,8 @@ bool QueryNode::AcceptsInitially(QueryExpr* n)
 /** Modify the given stack by eliminating unnecessary internal nodes
  *  with arity 1 or non-terms with arity 0
  */
-void SimplifyStack(QueryExpr*& orig_stack)
+void
+SimplifyStack(QueryExpr*& orig_stack)
 {
     if (!orig_stack) return;
     QueryNode* node = orig_stack->AsNode();
@@ -274,7 +251,7 @@ void SimplifyStack(QueryExpr*& orig_stack)
         LOG(warning, "juniper: query stack incomplete, got arity %d, expected %d",
             node->_nchild, node->_arity);
         delete node;
-        orig_stack = NULL;
+        orig_stack = nullptr;
         return;
     }
 
@@ -282,12 +259,12 @@ void SimplifyStack(QueryExpr*& orig_stack)
         if (i > 0 && (node->_options & X_ONLY_1)) {
             // Get rid of children # >2 for RANK/ANDNOT
             delete node->_children[i];
-            node->_children[i] = NULL;
+            node->_children[i] = nullptr;
         }
         else
             SimplifyStack(node->_children[i]);
 
-        if (node->_children[i] == NULL)
+        if (node->_children[i] == nullptr)
             compact++;
     }
     if (compact > 0) {
@@ -307,10 +284,10 @@ void SimplifyStack(QueryExpr*& orig_stack)
     }
 
     if (node->_arity <= 1) {
-        QueryExpr* ret = NULL;
+        QueryExpr* ret = nullptr;
         if (node->_arity == 1) {
             ret = node->_children[0];
-            node->_children[0] = NULL;
+            node->_children[0] = nullptr;
             ret->_parent = node->_parent;
             ret->_childno = node->_childno;
         }
@@ -321,19 +298,20 @@ void SimplifyStack(QueryExpr*& orig_stack)
 
 
 // default implementation of 2nd visit to QueryNode objs:
-void IQueryExprVisitor::RevisitQueryNode(QueryNode*)
-{ }
+void IQueryExprVisitor::RevisitQueryNode(QueryNode*) { }
 
 
 // visitor pattern:
 
-void QueryTerm::Accept(IQueryExprVisitor& v)
+void
+QueryTerm::Accept(IQueryExprVisitor& v)
 {
     v.VisitQueryTerm(this);
 }
 
 
-void QueryNode::Accept(IQueryExprVisitor& v)
+void
+QueryNode::Accept(IQueryExprVisitor& v)
 {
     int i;
     v.VisitQueryNode(this);

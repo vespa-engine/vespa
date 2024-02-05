@@ -25,11 +25,11 @@ JuniperDFWTermVisitor::visitProperty(const search::fef::Property::Value &key, co
             _visitor->VisitPHRASE(&item, phraseLen);
             s = & values.getAt(index++);
             while ((*s)[0] != '"') {
-                _visitor->VisitKeyword(&item, s->c_str(), s->length());
+                _visitor->visitKeyword(&item, *s, false, false);
                 s = & values.getAt(index++);
             }
         } else {
-            _visitor->VisitKeyword(&item, s->c_str(), s->length());
+            _visitor->visitKeyword(&item, *s, false, false);
         }
     }
 }
