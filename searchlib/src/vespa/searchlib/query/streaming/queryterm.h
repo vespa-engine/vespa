@@ -9,6 +9,12 @@
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace search::fef {
+
+class ITermData;
+class MatchData;
+
+}
 namespace search::streaming {
 
 class FuzzyTerm;
@@ -98,7 +104,9 @@ public:
     virtual MultiTerm* as_multi_term() noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
     virtual FuzzyTerm* as_fuzzy_term() noexcept;
+    virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data);
 protected:
+    void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const QueryTerm& fl_term) const;
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;
     EncodingBitMap               _encoding;

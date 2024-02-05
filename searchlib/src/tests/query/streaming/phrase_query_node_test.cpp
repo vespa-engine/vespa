@@ -74,22 +74,13 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     ASSERT_EQ(3u, hits.size());
     EXPECT_EQ(0u, hits[0].field_id());
     EXPECT_EQ(0u, hits[0].element_id());
-    EXPECT_EQ(2u, hits[0].position());
+    EXPECT_EQ(0u, hits[0].position());
     EXPECT_EQ(1u, hits[1].field_id());
     EXPECT_EQ(0u, hits[1].element_id());
-    EXPECT_EQ(6u, hits[1].position());
+    EXPECT_EQ(4u, hits[1].position());
     EXPECT_EQ(3u, hits[2].field_id());
     EXPECT_EQ(0u, hits[2].element_id());
-    EXPECT_EQ(2u, hits[2].position());
-    ASSERT_EQ(4u, p->getFieldInfoSize());
-    EXPECT_EQ(0u, p->getFieldInfo(0).getHitOffset());
-    EXPECT_EQ(1u, p->getFieldInfo(0).getHitCount());
-    EXPECT_EQ(1u, p->getFieldInfo(1).getHitOffset());
-    EXPECT_EQ(1u, p->getFieldInfo(1).getHitCount());
-    EXPECT_EQ(0u, p->getFieldInfo(2).getHitOffset()); // invalid, but will never be used
-    EXPECT_EQ(0u, p->getFieldInfo(2).getHitCount());
-    EXPECT_EQ(2u, p->getFieldInfo(3).getHitOffset());
-    EXPECT_EQ(1u, p->getFieldInfo(3).getHitCount());
+    EXPECT_EQ(0u, hits[2].position());
     EXPECT_TRUE(p->evaluate());
 }
 

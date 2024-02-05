@@ -23,7 +23,6 @@ public:
     ~HitIteratorPack();
     FieldElement& get_field_element_ref() noexcept { return _field_element; }
     HitIterator& front() noexcept { return _iterators.front(); }
-    HitIterator& back() noexcept { return _iterators.back(); }
     iterator begin() noexcept { return _iterators.begin(); }
     iterator end() noexcept { return _iterators.end(); }
     bool all_valid() const noexcept;

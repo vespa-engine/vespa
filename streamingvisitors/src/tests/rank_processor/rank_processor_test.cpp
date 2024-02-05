@@ -85,8 +85,8 @@ RankProcessorTest::test_unpack_match_data_for_term_node(bool interleaved_feature
     RankProcessor::unpack_match_data(1, *md, *_query_wrapper);
     EXPECT_EQ(invalid_id, tfmd->getDocId());
     node->add(field_id, 0, 1, 0);
+    node->add(field_id, 0, 1, 1);
     auto& field_info = node->getFieldInfo(field_id);
-    field_info.setHitCount(mock_num_occs);
     field_info.setFieldLength(mock_field_length);
     RankProcessor::unpack_match_data(2, *md, *_query_wrapper);
     EXPECT_EQ(2, tfmd->getDocId());
@@ -97,7 +97,7 @@ RankProcessorTest::test_unpack_match_data_for_term_node(bool interleaved_feature
         EXPECT_EQ(0, tfmd->getNumOccs());
         EXPECT_EQ(0, tfmd->getFieldLength());
     }
-    EXPECT_EQ(1, tfmd->size());
+    EXPECT_EQ(2, tfmd->size());
     node->reset();
     RankProcessor::unpack_match_data(3, *md, *_query_wrapper);
     EXPECT_EQ(2, tfmd->getDocId());
