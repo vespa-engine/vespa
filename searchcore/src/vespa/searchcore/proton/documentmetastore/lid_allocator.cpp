@@ -13,6 +13,7 @@ LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::Blueprint;
+using search::queryeval::FlowStats;
 using search::queryeval::FullSearch;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
@@ -222,8 +223,9 @@ public:
         setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
-    double calculate_relative_estimate() const final {
-        return abs_to_rel_est(getState().estimate().estHits, get_docid_limit());
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        auto est = abs_to_rel_est(getState().estimate().estHits, docid_limit);
+        return {est, 1.0, est};
     }
 
     bool isWhiteList() const noexcept final { return true; }

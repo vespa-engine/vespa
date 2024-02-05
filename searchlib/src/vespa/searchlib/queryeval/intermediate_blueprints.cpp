@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "intermediate_blueprints.h"
-#include "flow.h"
 #include "andnotsearch.h"
 #include "andsearch.h"
 #include "orsearch.h"
@@ -86,22 +85,12 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
 
 //-----------------------------------------------------------------------------
 
-double
-AndNotBlueprint::calculate_relative_estimate() const
+FlowStats
+AndNotBlueprint::calculate_flow_stats(uint32_t) const
 {
-    return AndNotFlow::estimate_of(get_children());
-}
-
-double
-AndNotBlueprint::calculate_cost() const
-{
-    return AndNotFlow::cost_of(get_children(), false);
-}
-
-double
-AndNotBlueprint::calculate_strict_cost() const
-{
-    return AndNotFlow::cost_of(get_children(), true);    
+    return {AndNotFlow::estimate_of(get_children()),
+            AndNotFlow::cost_of(get_children(), false),
+            AndNotFlow::cost_of(get_children(), true)};
 }
 
 Blueprint::HitEstimate
@@ -218,19 +207,11 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
 
 //-----------------------------------------------------------------------------
 
-double
-AndBlueprint::calculate_relative_estimate() const {
-    return AndFlow::estimate_of(get_children());
-}
-
-double
-AndBlueprint::calculate_cost() const {
-    return AndFlow::cost_of(get_children(), false);
-}
-
-double
-AndBlueprint::calculate_strict_cost() const {
-    return AndFlow::cost_of(get_children(), true);
+FlowStats
+AndBlueprint::calculate_flow_stats(uint32_t) const {
+    return {AndFlow::estimate_of(get_children()),
+            AndFlow::cost_of(get_children(), false),
+            AndFlow::cost_of(get_children(), true)};
 }
 
 Blueprint::HitEstimate
@@ -332,19 +313,11 @@ OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const 
 
 OrBlueprint::~OrBlueprint() = default;
 
-double
-OrBlueprint::calculate_relative_estimate() const {
-    return OrFlow::estimate_of(get_children());
-}
-
-double
-OrBlueprint::calculate_cost() const {
-    return OrFlow::cost_of(get_children(), false);
-}
-
-double
-OrBlueprint::calculate_strict_cost() const {
-    return OrFlow::cost_of(get_children(), true);
+FlowStats
+OrBlueprint::calculate_flow_stats(uint32_t) const {
+    return {OrFlow::estimate_of(get_children()),
+            OrFlow::cost_of(get_children(), false),
+            OrFlow::cost_of(get_children(), true)};
 }
 
 Blueprint::HitEstimate
@@ -442,21 +415,13 @@ OrBlueprint::calculate_cost_tier() const
 //-----------------------------------------------------------------------------
 WeakAndBlueprint::~WeakAndBlueprint() = default;
 
-double
-WeakAndBlueprint::calculate_relative_estimate() const {
+FlowStats
+WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
     double child_est = OrFlow::estimate_of(get_children());
-    double my_est = abs_to_rel_est(_n, get_docid_limit());
-    return std::min(my_est, child_est);
-}
-
-double
-WeakAndBlueprint::calculate_cost() const {
-    return OrFlow::cost_of(get_children(), false);
-}
-
-double
-WeakAndBlueprint::calculate_strict_cost() const {
-    return OrFlow::cost_of(get_children(), true);
+    double my_est = abs_to_rel_est(_n, docid_limit);
+    return {std::min(my_est, child_est),
+            OrFlow::cost_of(get_children(), false),
+            OrFlow::cost_of(get_children(), true)};
 }
 
 Blueprint::HitEstimate
@@ -518,19 +483,12 @@ WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) c
 
 //-----------------------------------------------------------------------------
 
-double
-NearBlueprint::calculate_relative_estimate() const {
-    return AndFlow::estimate_of(get_children());
-}
-
-double
-NearBlueprint::calculate_cost() const {
-    return AndFlow::cost_of(get_children(), false) + childCnt() * estimate();
-}
-
-double
-NearBlueprint::calculate_strict_cost() const {
-    return AndFlow::cost_of(get_children(), true) + childCnt() * estimate();
+FlowStats
+NearBlueprint::calculate_flow_stats(uint32_t) const {
+    double est = AndFlow::estimate_of(get_children()); 
+    return {est,
+            AndFlow::cost_of(get_children(), false) + childCnt() * est,
+            AndFlow::cost_of(get_children(), true) + childCnt() * est};
 }
 
 Blueprint::HitEstimate
@@ -590,19 +548,12 @@ NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 
 //-----------------------------------------------------------------------------
 
-double
-ONearBlueprint::calculate_relative_estimate() const {
-    return AndFlow::estimate_of(get_children());
-}
-
-double
-ONearBlueprint::calculate_cost() const {
-    return AndFlow::cost_of(get_children(), false) + childCnt() * estimate();
-}
-
-double
-ONearBlueprint::calculate_strict_cost() const {
-    return AndFlow::cost_of(get_children(), true) + childCnt() * estimate();
+FlowStats
+ONearBlueprint::calculate_flow_stats(uint32_t) const {
+    double est = AndFlow::estimate_of(get_children());
+    return {est,
+            AndFlow::cost_of(get_children(), false) + childCnt() * est,
+            AndFlow::cost_of(get_children(), true) + childCnt() * est};
 }
 
 Blueprint::HitEstimate
@@ -660,19 +611,14 @@ ONearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) con
 
 //-----------------------------------------------------------------------------
 
-double
-RankBlueprint::calculate_relative_estimate() const {
-    return (childCnt() == 0) ? 0.0 : getChild(0).estimate();
-}
-
-double
-RankBlueprint::calculate_cost() const {
-    return (childCnt() == 0) ? 0.0 : getChild(0).cost();
-}
-
-double
-RankBlueprint::calculate_strict_cost() const {
-    return (childCnt() == 0) ? 0.0 : getChild(0).strict_cost();
+FlowStats
+RankBlueprint::calculate_flow_stats(uint32_t) const {
+    if (childCnt() == 0) {
+        return {0.0, 0.0, 0.0};
+    }
+    return {getChild(0).estimate(),
+            getChild(0).cost(),
+            getChild(0).strict_cost()};
 }
 
 Blueprint::HitEstimate
@@ -766,27 +712,15 @@ SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector) 
 
 SourceBlenderBlueprint::~SourceBlenderBlueprint() = default;
 
-double
-SourceBlenderBlueprint::calculate_relative_estimate() const {
-    return OrFlow::estimate_of(get_children());
-}
-
-double
-SourceBlenderBlueprint::calculate_cost() const {
+FlowStats
+SourceBlenderBlueprint::calculate_flow_stats(uint32_t) const {
     double my_cost = 0.0;
+    double my_strict_cost = 0.0;
     for (const auto &child: get_children()) {
         my_cost = std::max(my_cost, child->cost());
+        my_strict_cost = std::max(my_strict_cost, child->strict_cost());
     }
-    return my_cost;
-}
-
-double
-SourceBlenderBlueprint::calculate_strict_cost() const {
-    double my_cost = 0.0;
-    for (const auto &child: get_children()) {
-        my_cost = std::max(my_cost, child->strict_cost());
-    }
-    return my_cost;
+    return {OrFlow::estimate_of(get_children()), my_cost, my_strict_cost};
 }
 
 Blueprint::HitEstimate

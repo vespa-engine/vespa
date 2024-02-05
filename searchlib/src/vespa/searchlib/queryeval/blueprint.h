@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "flow.h"
 #include "field_spec.h"
 #include "unpackinfo.h"
 #include "executeinfo.h"
@@ -178,9 +179,7 @@ public:
 
 private:
     Blueprint *_parent;
-    double     _relative_estimate;
-    double     _cost;
-    double     _strict_cost;
+    FlowStats  _flow_stats;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
     bool       _frozen;
@@ -196,10 +195,6 @@ protected:
         _frozen = true;
     }
 
-    void set_relative_estimate(double value) noexcept { _relative_estimate = value; }
-    void set_cost(double value) noexcept { _cost = value; }
-    void set_strict_cost(double value) noexcept { _strict_cost = value; }
-    
 public:
     class IPredicate {
     public:
@@ -259,25 +254,31 @@ public:
     double hit_ratio() const { return getState().hit_ratio(_docid_limit); }
 
     // The flow statistics for a blueprint is calculated during the
-    // LAST optimize pass (just prior to sorting). The relative
-    // estimate may be used to calculate the costs and the non-strict
-    // cost may be used to calculate the strict cost. After being
+    // LAST optimize pass (just prior to sorting). After being
     // calculated, each value is available through a simple accessor
-    // function. Note that these values may not be available for
-    // blueprints used inside complex leafs (this case will probably
-    // be solved using custom flow adapters that has knowledge of
-    // docid limit).
+    // function. Since the optimize process is performed bottom-up, a
+    // blueprint can expect all children to already have these values
+    // calculated when the calculate_flow_stats function is called.
+    //
+    // Note that values are not automatically available for blueprints
+    // used inside complex leafs since they are not part of the tree
+    // seen by optimize. When the calculate_flow_stats function is
+    // called on a complex leaf, it can call the update_flow_stats
+    // function directly (the function that is normally called by
+    // optimize) on interal blueprints to make these values available
+    // before using them to calculate its own flow stats.
     //
     //    'estimate': relative estimate in the range [0,1]
     //        'cost': per-document cost of non-strict evaluation
     // 'strict_cost': per-document cost of strict evaluation
-    double estimate() const noexcept { return _relative_estimate; }
-    double cost() const noexcept { return _cost; }
-    double strict_cost() const noexcept { return _strict_cost; }
-    virtual double calculate_relative_estimate() const = 0;
-    virtual double calculate_cost() const = 0;
-    virtual double calculate_strict_cost() const = 0;
-    
+    double estimate() const noexcept { return _flow_stats.estimate; }
+    double cost() const noexcept { return _flow_stats.cost; }
+    double strict_cost() const noexcept { return _flow_stats.strict_cost; }
+    virtual FlowStats calculate_flow_stats(uint32_t docid_limit) const = 0;
+    void update_flow_stats(uint32_t docid_limit) {
+        _flow_stats = calculate_flow_stats(docid_limit);
+    }
+
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
@@ -417,7 +418,6 @@ class LeafBlueprint : public Blueprint
 {
 private:
     State _state;
-    mutable bool _can_skip = true;
 protected:
     void optimize(Blueprint* &self, OptimizePass pass) final;
     void sort(bool strict, bool sort_by_cost) override;
@@ -453,9 +453,7 @@ protected:
 public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
-    double calculate_relative_estimate() const override;
-    double calculate_cost() const override;
-    double calculate_strict_cost() const override;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;

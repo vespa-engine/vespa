@@ -23,14 +23,10 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
-    double calculate_relative_estimate() const final {
-        return OrFlow::estimate_of(get_children());
-    }
-    double calculate_cost() const final {
-        return OrFlow::cost_of(get_children(), false);
-    }
-    double calculate_strict_cost() const final {
-        return OrFlow::cost_of(get_children(), true);
+    FlowStats calculate_flow_stats(uint32_t) const final {
+        return {OrFlow::estimate_of(get_children()),
+                OrFlow::cost_of(get_children(), false),
+                OrFlow::cost_of(get_children(), true)};
     }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
@@ -798,7 +794,7 @@ TEST("requireThatDocIdLimitInjectionWorks")
 TEST("Control object sizes") {
     EXPECT_EQUAL(32u, sizeof(Blueprint::State));
     EXPECT_EQUAL(56u, sizeof(Blueprint));
-    EXPECT_EQUAL(96u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(88u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {
