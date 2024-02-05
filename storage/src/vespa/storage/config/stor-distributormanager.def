@@ -181,3 +181,7 @@ enable_operation_cancellation bool default=false
 
 ## TODO GC very soon, it has no effect.
 priority_merge_out_of_sync_copies int default=120
+
+## TODO GC as it has no effect
+use_btree_database bool default=true
+
