@@ -52,6 +52,7 @@ public:
     const std::optional<double>& get_distance() const { return _distance; }
     // This is used during unpacking, and also signals to the RawScoreCalculator that the entire document was a match.
     std::optional<double> get_raw_score() const;
+    void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data) override;
 };
 
 }

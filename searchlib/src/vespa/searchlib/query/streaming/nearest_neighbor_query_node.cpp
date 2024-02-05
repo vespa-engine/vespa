@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nearest_neighbor_query_node.h"
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <cassert>
 
 namespace search::streaming {
@@ -47,6 +49,20 @@ NearestNeighborQueryNode::get_raw_score() const
         return _calc->to_raw_score(_distance.value());
     }
     return std::nullopt;
+}
+
+void
+NearestNeighborQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
+{
+    auto raw_score = get_raw_score();
+    if (raw_score.has_value()) {
+        if (td.numFields() == 1u) {
+            auto& tfd = td.field(0u);
+            auto tmd = match_data.resolveTermField(tfd.getHandle());
+            assert(tmd != nullptr);
+            tmd->setRawScore(docid, raw_score.value());
+        }
+    }
 }
 
 }
