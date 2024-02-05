@@ -11,7 +11,7 @@ class FieldSearchSpec
 {
 public:
     using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
-    using Normalizing = search::streaming::Normalizing;
+    using Normalizing = search::Normalizing;
     FieldSearchSpec();
     FieldSearchSpec(const FieldIdT & id, const vespalib::string & name, Searchmethod searchMethod,
                     Normalizing normalize_mode, vespalib::stringref arg1, size_t maxLength);

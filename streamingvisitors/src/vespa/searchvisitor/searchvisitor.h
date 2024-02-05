@@ -44,7 +44,7 @@ class SearchEnvironmentSnapshot;
  * converts them to a QueryResultCommand.
  **/
 class SearchVisitor : public storage::Visitor,
-                      public SearchMethodInfo {
+                      public search::QueryNormalization {
 public:
     SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv,
                   const vdslib::Parameters & params);

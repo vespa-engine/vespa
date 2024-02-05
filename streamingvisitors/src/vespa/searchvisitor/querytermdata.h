@@ -20,29 +20,22 @@ public:
     search::fef::SimpleTermData &getTermData() noexcept { return _termData; }
 };
 
-class SearchMethodInfo {
-public:
-    using Normalizing = search::streaming::Normalizing;
-    virtual ~SearchMethodInfo() = default;
-    virtual bool is_text_matching(vespalib::stringref index) const noexcept = 0;
-    virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept = 0;
-};
-
 class QueryTermDataFactory final : public search::streaming::QueryNodeResultFactory {
 public:
-    using Normalizing = search::streaming::Normalizing;
-    QueryTermDataFactory(const SearchMethodInfo * searchMethodInfo) noexcept : _searchMethodInfo(searchMethodInfo) {}
+    using Normalizing = search::Normalizing;
+    using QueryNormalization = search::QueryNormalization;
+    QueryTermDataFactory(const  QueryNormalization * normalization) noexcept : _normalization(normalization) {}
     std::unique_ptr<search::streaming::QueryNodeResultBase> create() const override {
         return std::make_unique<QueryTermData>();
     }
     Normalizing normalizing_mode(vespalib::stringref index) const noexcept override {
-        return _searchMethodInfo ? _searchMethodInfo->normalizing_mode(index) : Normalizing::LOWERCASE_AND_FOLD;
+        return _normalization ? _normalization->normalizing_mode(index) : Normalizing::LOWERCASE_AND_FOLD;
     }
     bool allow_float_terms_rewrite(vespalib::stringref index ) const noexcept override {
-        return _searchMethodInfo && _searchMethodInfo->is_text_matching(index);
+        return _normalization && _normalization->is_text_matching(index);
     }
 private:
-    const SearchMethodInfo * _searchMethodInfo;
+    const QueryNormalization * _normalization;
 };
 
 

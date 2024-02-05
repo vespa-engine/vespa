@@ -48,7 +48,6 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
     std::unique_ptr<juniper::Result> result;
 
     if (query) {
-
         if (LOG_WOULD_LOG(spam)) {
             std::ostringstream hexDump;
             hexDump << vespalib::HexDump(input.data(), input.length());

@@ -42,7 +42,7 @@ using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::expression::ConfigureStaticParams;
 using search::streaming::Query;
-using search::streaming::Normalizing;
+using search::Normalizing;
 using search::streaming::QueryTermList;
 using storage::StorageComponent;
 using storage::VisitorEnvironment;
@@ -355,7 +355,7 @@ count_normalize_none(const vsm::FieldSearchSpecMapT & specMap, const StringField
 
 }
 
-SearchMethodInfo::Normalizing
+search::Normalizing
 SearchVisitor::normalizing_mode(vespalib::stringref index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);

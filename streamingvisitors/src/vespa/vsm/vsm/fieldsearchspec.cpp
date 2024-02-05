@@ -263,14 +263,14 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
     return ifm;
 }
 
-search::streaming::Normalizing
+search::Normalizing
 normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode) {
     switch (normalize_mode) {
-        case VsmfieldsConfig::Fieldspec::Normalize::NONE: return search::streaming::Normalizing::NONE;
-        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE: return search::streaming::Normalizing::LOWERCASE;
-        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE_AND_FOLD: return search::streaming::Normalizing::LOWERCASE_AND_FOLD;
+        case VsmfieldsConfig::Fieldspec::Normalize::NONE: return search::Normalizing::NONE;
+        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE: return search::Normalizing::LOWERCASE;
+        case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE_AND_FOLD: return search::Normalizing::LOWERCASE_AND_FOLD;
     }
-    return search::streaming::Normalizing::LOWERCASE_AND_FOLD;
+    return search::Normalizing::LOWERCASE_AND_FOLD;
 }
 
 }
