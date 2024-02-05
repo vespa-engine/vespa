@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "juniperdfw.h"
+#include "dynamicteaserdfw.h"
 #include "docsumstate.h"
 #include "i_docsum_store_document.h"
 #include "i_juniper_converter.h"
@@ -11,6 +11,7 @@
 #include <vespa/juniper/config.h>
 #include <vespa/juniper/result.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -18,43 +19,17 @@ LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
 namespace search::docsummary {
 
-
-JuniperDFW::JuniperDFW(const juniper::Juniper * juniper)
-    : _input_field_name(),
-      _juniperConfig(),
-      _juniper(juniper),
-      _query_term_filter()
+DynamicTeaserDFW::~DynamicTeaserDFW() = default;
+DynamicTeaserDFW::DynamicTeaserDFW(const juniper::Juniper * juniper, const char * fieldName, vespalib::stringref inputField,
+                                   const IQueryTermFilterFactory& query_term_filter_factory)
+    : _juniper(juniper),
+      _input_field_name(inputField),
+      _juniperConfig(juniper->CreateConfig(fieldName)),
+      _query_term_filter(query_term_filter_factory.make(_input_field_name))
 {
-}
-
-
-JuniperDFW::~JuniperDFW() = default;
-
-bool
-JuniperDFW::Init(
-        const char *fieldName,
-        const vespalib::string& inputField,
-        const IQueryTermFilterFactory& query_term_filter_factory)
-{
-    bool rc = true;
-    _juniperConfig = _juniper->CreateConfig(fieldName);
-    if ( ! _juniperConfig) {
-        LOG(warning, "could not create juniper config for field '%s'", fieldName);
-        rc = false;
+    if (!_juniperConfig) {
+        throw vespalib::IllegalArgumentException("Failed to initialize DynamicTeaserDFW.");
     }
-
-    _input_field_name = inputField;
-    _query_term_filter = query_term_filter_factory.make(_input_field_name);
-    return rc;
-}
-
-bool
-JuniperTeaserDFW::Init(
-        const char *fieldName,
-        const vespalib::string& inputField,
-        const IQueryTermFilterFactory& query_term_filter_factory)
-{
-    return JuniperDFW::Init(fieldName, inputField, query_term_filter_factory);
 }
 
 void
@@ -68,8 +43,7 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
         query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
-    LOG(debug, "makeDynamicTeaser: docid (%d)",
-        docid);
+    LOG(debug, "makeDynamicTeaser: docid (%d)", docid);
 
     std::unique_ptr<juniper::Result> result;
 
@@ -114,8 +88,8 @@ namespace {
 class JuniperConverter : public IJuniperConverter
 {
     const DynamicTeaserDFW& _writer;
-    uint32_t          _doc_id;
-    GetDocsumsState&   _state;
+    uint32_t                _doc_id;
+    GetDocsumsState&        _state;
 
 public:
     JuniperConverter(const DynamicTeaserDFW& writer, uint32_t doc_id, GetDocsumsState& state);
