@@ -12,7 +12,6 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/storagelinkqueued.h>
-#include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
 
 #include <vespa/storage/common/nodestateupdater.h>
@@ -25,6 +24,10 @@ namespace config {
     class ConfigFetcher;
 }
 namespace vespalib { class IDestructorCallback; }
+
+namespace vespa::config::content::internal {
+    class InternalStorFilestorType;
+}
 
 namespace storage {
 namespace api {
@@ -50,7 +53,7 @@ class FileStorManager : public StorageLinkQueued,
                         public MessageSender,
                         public spi::BucketExecutor
 {
-    using StorFilestorConfig = vespa::config::content::StorFilestorConfig;
+    using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 
     ServiceLayerComponentRegister             & _compReg;
     ServiceLayerComponent                       _component;
@@ -62,10 +65,10 @@ class FileStorManager : public StorageLinkQueued,
     std::vector<std::unique_ptr<DiskThread>>         _threads;
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
-    std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
-    bool                  _use_async_message_handling_on_schedule;
-    std::shared_ptr<FileStorMetrics> _metrics;
-    std::unique_ptr<FileStorHandler> _filestorHandler;
+    std::unique_ptr<StorFilestorConfig> _config;
+    bool                                _use_async_message_handling_on_schedule;
+    std::shared_ptr<FileStorMetrics>    _metrics;
+    std::unique_ptr<FileStorHandler>    _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
 
     bool       _closed;
@@ -111,7 +114,7 @@ public:
 
     const FileStorMetrics& get_metrics() const { return *_metrics; }
 
-    void on_configure(const vespa::config::content::StorFilestorConfig& config);
+    void on_configure(const StorFilestorConfig& config);
 
 private:
     PersistenceHandler & createRegisteredHandler(const ServiceLayerComponent & component);

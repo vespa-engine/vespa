@@ -10,8 +10,6 @@
 #include "simplemessagehandler.h"
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <vespa/config-stor-filestor.h>
-#include <atomic>
 
 namespace storage {
 
@@ -26,7 +24,7 @@ class PersistenceHandler : public Types
 {
 public:
     PersistenceHandler(vespalib::ISequencedTaskExecutor &, const ServiceLayerComponent & component,
-                      const vespa::config::content::StorFilestorConfig &, spi::PersistenceProvider &,
+                      uint32_t mergeChunkSize, bool multibitSplit, spi::PersistenceProvider &,
                       FileStorHandler &, BucketOwnershipNotifier &, FileStorThreadMetrics&);
     ~PersistenceHandler();
 

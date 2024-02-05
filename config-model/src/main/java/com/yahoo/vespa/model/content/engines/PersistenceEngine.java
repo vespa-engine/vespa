@@ -23,14 +23,6 @@ public abstract class PersistenceEngine extends TreeConfigProducer<AnyConfigProd
 
         PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
 
-        /**
-         * Multi level splitting can increase split performance a lot where documents have been
-         * co-localized, for backends where retrieving document identifiers contained in bucket
-         * is cheap. Backends where split is cheaper than fetching document identifiers will
-         * not want to enable multi level splitting.
-         */
-        boolean enableMultiLevelSplitting();
-
         ContentCluster.DistributionMode getDefaultDistributionMode();
 
     }

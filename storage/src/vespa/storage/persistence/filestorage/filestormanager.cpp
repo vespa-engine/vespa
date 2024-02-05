@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/config-stor-filestor.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 
@@ -189,8 +190,8 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
     size_t index = _persistenceHandlers.size();
     assert(index < _metrics->threads.size());
     _persistenceHandlers.push_back(
-            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
-                                                 *_config, *_provider, *_filestorHandler,
+            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component, _config->bucketMergeChunkSize,
+                                                 false, *_provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->threads[index]));
     return *_persistenceHandlers.back();
 }
@@ -884,8 +885,8 @@ namespace {
 bool
 FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
 {
-    for (auto& elem :  _component.getBucketSpaceRepo()) {
-        ContentBucketSpace& bucket_space = *elem.second;
+    for (const auto& elem :  _component.getBucketSpaceRepo()) {
+        const ContentBucketSpace& bucket_space = *elem.second;
         auto derived_cluster_state = bucket_space.getClusterState();
         if (!derived_cluster_state->getNodeState(node).getState().oneOf("m")) {
             return false;

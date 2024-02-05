@@ -18,6 +18,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config-persistence.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");

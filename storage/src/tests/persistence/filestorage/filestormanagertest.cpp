@@ -34,6 +34,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config-stor-filestor.h>
 #include <atomic>
 #include <thread>
 
@@ -46,7 +47,7 @@ using namespace storage::api;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 using vespalib::IDestructorCallback;
-using vespa::config::content::StorFilestorConfig;
+using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 using vespa::config::content::StorFilestorConfigBuilder;
 using namespace ::testing;
 
@@ -281,7 +282,7 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
     {
         StorFilestorConfig cfg;
         persistenceHandler =
-                std::make_unique<PersistenceHandler>(executor, component, cfg,
+                std::make_unique<PersistenceHandler>(executor, component, 4_Mi, false,
                                                      test._node->getPersistenceProvider(),
                                                      *filestorHandler, bucketOwnershipNotifier,
                                                      *metrics.threads[0]);
@@ -746,12 +747,11 @@ TEST_F(FileStorManagerTest, priority) {
 
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+    PersistenceHandler persistenceHandler(_node->executor(), component, 4_Mi, false, _node->getPersistenceProvider(),
                                           filestorHandler, bucketOwnershipNotifier, *metrics.threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
-    PersistenceHandler persistenceHandler2(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+    PersistenceHandler persistenceHandler2(_node->executor(), component, 4_Mi, false, _node->getPersistenceProvider(),
                                            filestorHandler, bucketOwnershipNotifier, *metrics.threads[1]);
     std::unique_ptr<DiskThread> thread2(createThread(persistenceHandler2, filestorHandler, component));
 

@@ -29,12 +29,6 @@ response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE re
 ## Should follow stor-distributormanager:splitsize (16MB).
 bucket_merge_chunk_size int default=16772216 restart
 
-## Whether or not to enable the multibit split optimalization. This is useful
-## if splitting is expensive, but listing document identifiers is fairly cheap.
-## This is true for memfile persistence layer, but not for vespa search.
-## TODO verify its usage
-enable_multibit_split_optimalization bool default=true restart
-
 ## Whether or not to use async message handling when scheduling storage messages from FileStorManager.
 ##
 ## When turned on, the calling thread (e.g. FNET network thread when using Storage API RPC)

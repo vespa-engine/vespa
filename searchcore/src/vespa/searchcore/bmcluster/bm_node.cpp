@@ -35,6 +35,7 @@
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
@@ -50,6 +51,8 @@
 #include <vespa/config-slobroks.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-upgrading.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config-persistence.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/document/repo/configbuilder.h>

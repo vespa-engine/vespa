@@ -224,9 +224,9 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         expected.insert(ost.str());
     }
     std::set<std::string> actual;
-    for (uint32_t i=0; i<reply.getSplitInfo().size(); ++i) {
+    for (const auto & info : reply.getSplitInfo()) {
         std::ostringstream ost;
-        document::BucketId b(reply.getSplitInfo()[i].first);
+        document::BucketId b(info.first);
         ost << b << " - " << b.getUsedBits();
         actual.insert(ost.str());
     }
