@@ -37,7 +37,10 @@ public class GlobalPhaseRanker {
         var setup = globalPhaseSetupFor(query, schema).orElse(null);
         if (setup == null) return Optional.empty();
         var sorting = query.getRanking().getSorting();
-        if (sorting == null || sorting.fieldOrders() == null) return Optional.empty();
+        if (sorting == null) return Optional.empty();
+        if (sorting.fieldOrders() == null || sorting.fieldOrders().isEmpty()) {
+            return Optional.of(ErrorMessage.createIllegalQuery("Invalid sorting for global phase"));
+        }
         for (var fieldOrder : sorting.fieldOrders()) {
             if (!fieldOrder.getSorter().getName().equals("[rank]")
                     || fieldOrder.getSortOrder() != Sorting.Order.DESCENDING) {

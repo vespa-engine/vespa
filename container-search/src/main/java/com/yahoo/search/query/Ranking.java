@@ -233,7 +233,13 @@ public class Ranking implements Cloneable {
     public Sorting getSorting() { return sorting; }
 
     /** Sets how this query should be sorted. Set to null to turn off explicit sorting. */
-    public void setSorting(Sorting sorting) { this.sorting = sorting; }
+    public void setSorting(Sorting sorting) {
+        if (sorting == null || sorting.fieldOrders().isEmpty()) {
+            this.sorting = null;
+        } else {
+            this.sorting = sorting;
+        }
+    }
 
     /** Sets sorting from a string. See {@link Sorting} on syntax */
     public void setSorting(String sortingString) {
