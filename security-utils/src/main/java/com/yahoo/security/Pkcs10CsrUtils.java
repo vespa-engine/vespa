@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author bjorncs
@@ -35,4 +37,13 @@ public class Pkcs10CsrUtils {
             throw new UncheckedIOException(e);
         }
     }
+
+    /** Returns all DNS names contained in given CSR (CN + subject alternative names) */
+    public static List<String> dnsNames(Pkcs10Csr csr) {
+        return Stream.concat(X509CertificateUtils.getCommonNames(csr.getSubject()).stream(),
+                             csr.getSubjectAlternativeNames().stream()
+                                .map(SubjectAlternativeName::getValue))
+                     .toList();
+    }
+
 }
