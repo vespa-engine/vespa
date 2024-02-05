@@ -181,8 +181,6 @@ computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfi
            1; // Async cluster state processing thread (might be a pessimization to include here...)
 }
 
-constexpr bool DISABLE_MULTIBIT_SPLIT = false;
-
 }
 
 PersistenceHandler &
@@ -193,7 +191,7 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
     assert(index < _metrics->threads.size());
     _persistenceHandlers.push_back(
             std::make_unique<PersistenceHandler>(*_sequencedExecutor, component, _config->bucketMergeChunkSize,
-                                                 DISABLE_MULTIBIT_SPLIT, *_provider, *_filestorHandler,
+                                                 false, *_provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->threads[index]));
     return *_persistenceHandlers.back();
 }
