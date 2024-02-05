@@ -271,10 +271,10 @@ private:
     bool _enableInconsistentJoin;
     bool _disableBucketActivation;
     bool _allowStaleReadsDuringClusterStateTransitions;
-    bool _update_fast_path_restart_enabled;
+    bool _update_fast_path_restart_enabled; //TODO Rewrite tests and GC
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
-    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
+    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates; //TODO Rewrite tests and GC
     bool _enable_operation_cancellation;
 
     ReplicaCountingMode _minimumReplicaCountingMode;

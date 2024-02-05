@@ -41,10 +41,10 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enableInconsistentJoin(false),
       _disableBucketActivation(false),
       _allowStaleReadsDuringClusterStateTransitions(false),
-      _update_fast_path_restart_enabled(false),
+      _update_fast_path_restart_enabled(true),
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
-      _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
+      _enable_metadata_only_fetch_phase_for_inconsistent_updates(true),
       _enable_operation_cancellation(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
@@ -145,10 +145,8 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
 
     _disableBucketActivation = config.disableBucketActivation;
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
-    _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
-    _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _enable_operation_cancellation = config.enableOperationCancellation;
     _minimumReplicaCountingMode = deriveReplicaCountingMode(config.minimumReplicaCountingMode);
@@ -161,6 +159,10 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     }
     _simulated_db_pruning_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbPruningLatencyMsec));
     _simulated_db_merging_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbMergingLatencyMsec));
+
+    // TODO GC
+    _update_fast_path_restart_enabled = true;
+    _enable_metadata_only_fetch_phase_for_inconsistent_updates = true;
 
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "
