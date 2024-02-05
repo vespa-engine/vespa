@@ -179,7 +179,7 @@ struct MergeThrottlerTest : Test {
     std::shared_ptr<api::StorageMessage> send_and_expect_forwarding(const std::shared_ptr<api::StorageMessage>& msg);
 
     void fill_throttler_queue_with_n_commands(uint16_t throttler_index, size_t queued_count);
-    void receive_chained_merge_with_full_queue(bool disable_queue_limits, bool unordered_fwd = false);
+    void receive_chained_merge_with_full_queue(bool unordered_fwd = false);
 
     std::shared_ptr<api::MergeBucketCommand> peek_throttler_queue_top(size_t throttler_idx) {
         auto& queue = _throttlers[throttler_idx]->getMergeQueue();
@@ -1234,10 +1234,9 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue_for_merges_sent_from_dist
 }
 
 void
-MergeThrottlerTest::receive_chained_merge_with_full_queue(bool disable_queue_limits, bool unordered_fwd)
+MergeThrottlerTest::receive_chained_merge_with_full_queue(bool unordered_fwd)
 {
     // Note: uses node with index 1 to not be the first node in chain
-    _throttlers[1]->set_disable_queue_limits_for_chained_merges_locking(disable_queue_limits);
     size_t max_pending = throttler_max_merges_pending(1);
     size_t max_enqueued = _throttlers[1]->getMaxQueueSize();
     for (size_t i = 0; i < max_pending + max_enqueued; ++i) {
@@ -1269,21 +1268,13 @@ MergeThrottlerTest::receive_chained_merge_with_full_queue(bool disable_queue_lim
 }
 
 TEST_F(MergeThrottlerTest, forwarded_merges_not_busy_bounced_even_if_queue_is_full_if_chained_limits_disabled) {
-    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue(true));
+    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue());
     size_t max_enqueued = _throttlers[1]->getMaxQueueSize();
     waitUntilMergeQueueIs(*_throttlers[1], max_enqueued + 1, _messageWaitTime);
 }
 
-TEST_F(MergeThrottlerTest, forwarded_merges_busy_bounced_if_queue_is_full_and_chained_limits_enforced) {
-    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue(false));
-
-    _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
-    auto reply = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    EXPECT_EQ(ReturnCode::BUSY, static_cast<MergeBucketReply&>(*reply).getResult().getResult());
-}
-
 TEST_F(MergeThrottlerTest, forwarded_merge_has_higher_pri_when_chain_limits_disabled) {
-    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue(true));
+    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue());
     size_t max_enqueued = _throttlers[1]->getMaxQueueSize();
     waitUntilMergeQueueIs(*_throttlers[1], max_enqueued + 1, _messageWaitTime);
 
@@ -1293,7 +1284,7 @@ TEST_F(MergeThrottlerTest, forwarded_merge_has_higher_pri_when_chain_limits_disa
 
 TEST_F(MergeThrottlerTest, forwarded_unordered_merge_is_directly_accepted_into_active_window) {
     // Unordered forwarding is orthogonal to disabled chain limits config, so we implicitly test that too.
-    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue(true, true));
+    ASSERT_NO_FATAL_FAILURE(receive_chained_merge_with_full_queue(true));
 
     // Unordered merge is immediately forwarded to the next node
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);

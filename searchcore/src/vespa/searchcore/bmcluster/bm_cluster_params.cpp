@@ -7,7 +7,6 @@ namespace search::bmcluster {
 
 BmClusterParams::BmClusterParams()
     : _bucket_db_stripe_bits(4),
-      _disable_queue_limits_for_chained_merges(false), // Same default as in stor-server.def
       _distributor_merge_busy_wait(10), // Same default as stor_distributormanager.def
       _distributor_stripes(0),
       _doc_store_chunk_compression_level(9), // Same default as in proton.def

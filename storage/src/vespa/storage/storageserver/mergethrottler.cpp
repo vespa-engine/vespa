@@ -12,7 +12,6 @@
 #include <vespa/messagebus/error.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configfetcher.hpp>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -206,7 +205,6 @@ MergeThrottler::MergeThrottler(
       _active_merge_memory_used_bytes(0),
       _max_merge_memory_usage_bytes(0), // 0 ==> unlimited
       _use_dynamic_throttling(false),
-      _disable_queue_limits_for_chained_merges(false),
       _closing(false)
 {
     _throttlePolicy->setMinWindowSize(20);
@@ -252,7 +250,6 @@ MergeThrottler::on_configure(const StorServerConfig& new_config)
     _maxQueueSize = new_config.maxMergeQueueSize;
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::duration<double>(new_config.resourceExhaustionMergeBackPressureDurationSecs));
-    _disable_queue_limits_for_chained_merges = new_config.disableQueueLimitsForChainedMerges;
     if (new_config.mergeThrottlingMemoryLimit.maxUsageBytes > 0) {
         _max_merge_memory_usage_bytes = static_cast<size_t>(new_config.mergeThrottlingMemoryLimit.maxUsageBytes);
     } else if ((new_config.mergeThrottlingMemoryLimit.maxUsageBytes == 0) && (_hw_info.memory().sizeBytes() > 0)) {
@@ -437,8 +434,7 @@ MergeThrottler::enqueue_merge_for_later_processing(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
-    // TODO remove once unordered merges are default, since forwarded unordered merges are never enqueued
-    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.from_distributor();
+    const bool is_forwarded_merge = !mergeCmd.from_distributor();
     _queue.emplace(msg, _queueSequence++, is_forwarded_merge);
     _metrics->queueSize.set(static_cast<int64_t>(_queue.size()));
 }
@@ -767,8 +763,7 @@ bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) co
     if (cmd.use_unordered_forwarding()) {
         return cmd.from_distributor();
     }
-    return ((_queue.size() < _maxQueueSize)
-            || (_disable_queue_limits_for_chained_merges && !cmd.from_distributor()));
+    return (_queue.size() < _maxQueueSize) || !cmd.from_distributor();
 }
 
 // Must be run from worker thread
@@ -1329,12 +1324,6 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
             activeMerge.second.setAborted(true);
         }
     }
-}
-
-void
-MergeThrottler::set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept {
-    std::lock_guard lock(_stateLock);
-    _disable_queue_limits_for_chained_merges = disable_limits;
 }
 
 void

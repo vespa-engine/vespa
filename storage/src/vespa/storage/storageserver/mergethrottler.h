@@ -185,7 +185,6 @@ private:
     size_t                                        _active_merge_memory_used_bytes;
     size_t                                        _max_merge_memory_usage_bytes;
     bool                                          _use_dynamic_throttling;
-    bool                                          _disable_queue_limits_for_chained_merges;
     bool                                          _closing;
 public:
     /**
@@ -227,7 +226,6 @@ public:
     // For unit testing only
     const mbus::DynamicThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::DynamicThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
-    void set_disable_queue_limits_for_chained_merges_locking(bool disable_limits) noexcept;
     void set_max_merge_memory_usage_bytes_locking(uint32_t max_memory_bytes) noexcept;
     [[nodiscard]] uint32_t max_merge_memory_usage_bytes_locking() const noexcept;
     void set_hw_info_locking(const vespalib::HwInfo& hw_info);
