@@ -144,10 +144,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         });
     }
 
-    void configure_update_fast_path_restart_enabled() {
-        configure_stripe_with([&](auto& builder) { (void) builder; });
-    }
-
     void configure_merge_operations_disabled(bool disabled) {
         configure_stripe_with([&](auto& builder) {
             builder.mergeOperationsDisabled = disabled;
@@ -158,10 +154,6 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         configure_stripe_with([&](auto& builder) {
             builder.useWeakInternalReadConsistencyForClientGets = use_weak;
         });
-    }
-
-    void configure_metadata_update_phase_enabled() {
-        configure_stripe_with([&](auto& builder) { (void) builder; });
     }
 
     void configure_max_activation_inhibited_out_of_sync_groups(uint32_t n_groups) {
