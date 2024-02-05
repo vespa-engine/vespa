@@ -223,11 +223,6 @@ public:
         setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
-    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
-        auto est = abs_to_rel_est(getState().estimate().estHits, docid_limit);
-        return {est, 1.0, est};
-    }
-
     bool isWhiteList() const noexcept final { return true; }
 
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {

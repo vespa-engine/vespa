@@ -129,6 +129,7 @@ private:
     // as only a few ISearchContext implementations exposes the query term.
     vespalib::string _query_term;
     ISearchContext::UP _search_context;
+    attribute::HitEstimate _hit_estimate;
     enum Type {INT, FLOAT, OTHER};
     Type _type;
 
@@ -138,6 +139,18 @@ public:
     AttributeFieldBlueprint(FieldSpecBase field, const IAttributeVector &attribute,
                             QueryTermSimple::UP term, const SearchContextParams &params);
     ~AttributeFieldBlueprint() override;
+
+    search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        if (_hit_estimate.is_unknown()) {
+            // E.g. attributes without fast-search are not able to provide a hit estimate.
+            // In this case we just assume matching half of the document corpus.
+            // In addition, we are not able to skip documents efficiently when being strict.
+            return {0.5, 1.0, 1.0};
+        } else {
+            double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
+            return {rel_est, 1.0, rel_est};
+        }
+    }
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
@@ -182,9 +195,10 @@ AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAtt
       _attr(attribute),
       _query_term(term->getTermString()),
       _search_context(attribute.createSearchContext(std::move(term), params)),
+      _hit_estimate(_search_context->calc_hit_estimate()),
       _type(OTHER)
 {
-    uint32_t estHits = _search_context->calc_hit_estimate().est_hits();
+    uint32_t estHits = _hit_estimate.est_hits();
     HitEstimate estimate(estHits, estHits == 0);
     setEstimate(estimate);
     if (attribute.isFloatingPointType()) {
@@ -193,8 +207,6 @@ AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAtt
         _type = INT;
     }
 }
-
-
 
 void
 AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
