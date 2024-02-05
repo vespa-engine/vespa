@@ -18,6 +18,7 @@ public enum Labels {
     SYSTEM("ai.vespa.system", "The name of a managed Vespa system, sample values are 'public', 'publiccd'."),
     ZONE("ai.vespa.zone", "The name of a zone in managed Vespa, in the format <environment>.<region>. Sample name 'prod.aws-us-west-2a'."),
     PARENT("ai.vespa.parent", "The fully qualified name of the parent host on which a Vespa node is running."),
+    NODE("ai.vespa.node", "The fully qualified name of the Vespa node."),
 
     // Labels used for a subset of the metrics only:
     CHAIN("ai.vespa.chain", "The name of a search chain"),
