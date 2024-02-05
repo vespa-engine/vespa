@@ -689,7 +689,7 @@ public:
 
     static std::unique_ptr<lib::Distribution> default_grouped_distribution() {
         return std::make_unique<lib::Distribution>(
-                GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
+                lib::Distribution::ConfigWrapper(GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
 R"(redundancy 2
 group[3]
 group[0].name "invalid"
@@ -708,7 +708,7 @@ group[2].nodes[3]
 group[2].nodes[0].index 3
 group[2].nodes[1].index 4
 group[2].nodes[2].index 5
-)")));
+)"))));
     }
 
     static std::shared_ptr<lib::Distribution> derived_global_grouped_distribution() {

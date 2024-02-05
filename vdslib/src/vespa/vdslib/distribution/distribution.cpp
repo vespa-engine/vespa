@@ -44,6 +44,8 @@ Distribution::Distribution()
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
     auto config(getDefaultDistributionConfig(0, 0));
@@ -60,6 +62,8 @@ Distribution::Distribution(const Distribution& d)
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(d._serialized)
 {
@@ -84,6 +88,8 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
     vespalib::asciistream ost;
@@ -99,6 +105,8 @@ Distribution::Distribution(const vespalib::string& serialized)
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
+      _readyCopies(0),
+      _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(serialized)
 {
@@ -121,7 +129,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
         if (nodeGraph) {
             path = DistributionConfigUtil::getGroupPath(cg.index);
         }
-        bool isLeafGroup = (cg.nodes.size() > 0);
+        bool isLeafGroup = ! cg.nodes.empty();
         uint16_t index = (path.empty() ? 0 : path.back());
         std::unique_ptr<Group> group = (isLeafGroup)
                 ? std::make_unique<Group>(index, cg.name)
@@ -163,7 +171,6 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
-    _distributorAutoOwnershipTransferOnWholeGroupDown = config.distributorAutoOwnershipTransferOnWholeGroupDown;
 }
 
 uint32_t
@@ -318,9 +325,7 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket, const C
             score = std::pow(score, 1.0 / subGroup.second->getCapacity().getValue());
         }
         if (score > result._score) {
-            if (!_distributorAutoOwnershipTransferOnWholeGroupDown
-                || !allDistributorsDown(*subGroup.second, clusterState))
-            {
+            if (!allDistributorsDown(*subGroup.second, clusterState)) {
                 result = ScoredGroup(score, subGroup.second);
             }
         }
@@ -335,8 +340,8 @@ bool
 Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
 {
     if (g.isLeafGroup()) {
-        for (uint32_t i=0, n=g.getNodes().size(); i<n; ++i) {
-            const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, g.getNodes()[i])));
+        for (uint16_t node : g.getNodes()) {
+            const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, node)));
             if (ns.getState().oneOf("ui")) return false;
         }
     } else {
@@ -378,38 +383,38 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
             ss << "There is no legal distributor target in state with version " << clusterState.getVersion();
             throw NoDistributorsAvailableException(ss.str(), VESPA_STRLOC);
         }
-        _groupDistribution.push_back(ResultGroup(*group, 1));
+        _groupDistribution.emplace_back(*group, 1);
     }
     RandomGen random(seed);
     uint32_t randomIndex = 0;
     std::vector<ScoredNode> tmpResults;
-    for (uint32_t i=0, n=_groupDistribution.size(); i<n; ++i) {
-        uint16_t groupRedundancy(_groupDistribution[i]._redundancy);
-        const std::vector<uint16_t>& nodes(_groupDistribution[i]._group->getNodes());
+    for (const auto & group : _groupDistribution) {
+        uint16_t groupRedundancy(group._redundancy);
+        const std::vector<uint16_t>& nodes(group._group->getNodes());
         // Create temporary place to hold results.
         // Stuff in redundancy fake entries to
         // avoid needing to check size during iteration.
         tmpResults.reserve(groupRedundancy);
         tmpResults.clear();
         tmpResults.resize(groupRedundancy);
-        for (uint32_t j=0; j < nodes.size(); ++j) {
+        for (uint16_t node : nodes) {
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.
-            const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, nodes[j])));
+            const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, node)));
             if (!nodeState.getState().oneOf(upStates)) continue;
             // Get the score from the random number generator. Make sure we
             // pick correct random number. Optimize for the case where we
             // pick in rising order.
-            if (nodes[j] != randomIndex) {
-                if (nodes[j] < randomIndex) {
+            if (node != randomIndex) {
+                if (node < randomIndex) {
                     random.setSeed(seed);
                     randomIndex = 0;
                 }
-                for (uint32_t k=randomIndex, o=nodes[j]; k<o; ++k) {
+                for (uint32_t k=randomIndex, o=node; k<o; ++k) {
                     random.nextDouble();
                 }
-                randomIndex = nodes[j];
+                randomIndex = node;
             }
             double score = random.nextDouble();
             ++randomIndex;
@@ -417,7 +422,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
                 score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }
             if (score > tmpResults.back()._score) {
-                insertOrdered(tmpResults, ScoredNode(score, nodes[j]));
+                insertOrdered(tmpResults, ScoredNode(score, node));
             }
         }
         trimResult(tmpResults, groupRedundancy);

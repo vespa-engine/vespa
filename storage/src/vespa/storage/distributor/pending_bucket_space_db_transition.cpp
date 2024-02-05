@@ -303,9 +303,6 @@ PendingBucketSpaceDbTransition::nodeNeedsOwnershipTransferFromGroupDown(
         const lib::ClusterState& state) const
 {
     const auto &dist(_bucket_space_state.get_distribution());
-    if (!dist.distributorAutoOwnershipTransferOnWholeGroupDown()) {
-        return false; // Not doing anything for downed groups.
-    }
     const lib::Group* group(dist.getNodeGraph().getGroupForNode(nodeIndex));
     // If there is no group information associated with the node (because the
     // group has changed or the node has been removed from config), we must

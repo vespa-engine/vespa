@@ -37,7 +37,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 3
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -48,7 +47,6 @@ group[0].nodes[1].index 1
 group[0].nodes[1].retired false
 group[0].nodes[2].index 2
 group[0].nodes[2].retired false
-disk_distribution MODULO_BID
 )");
 
 }
@@ -92,7 +90,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 6
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -117,7 +114,6 @@ group[2].nodes[1].index 4
 group[2].nodes[1].retired false
 group[2].nodes[2].index 5
 group[2].nodes[2].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
@@ -163,7 +159,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 4
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -200,7 +195,6 @@ group[6].capacity 1
 group[6].partitions ""
 group[6].nodes[0].index 3
 group[6].nodes[0].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
@@ -234,7 +228,6 @@ initial_redundancy 0
 ensure_primary_persisted true
 ready_copies 3
 active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
 group[0].index "invalid"
 group[0].name "invalid"
 group[0].capacity 1
@@ -253,7 +246,6 @@ group[2].capacity 1
 group[2].partitions ""
 group[2].nodes[0].index 2
 group[2].nodes[0].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
