@@ -47,7 +47,6 @@ private:
     void handleChildDeaths();
     void handleRestarts();
 
-    void updateMetrics();
     void terminateServices(bool catchable, bool printDebug = false);
     void doConfigure();
 public:

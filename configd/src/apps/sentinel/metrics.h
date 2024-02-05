@@ -27,6 +27,7 @@ struct StartMetrics {
 
     void maybeLog();
     void incRestartsCounter();
+    void reset();
 };
 
 }
