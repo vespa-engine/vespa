@@ -4,6 +4,7 @@
 
 #include "item_creator.h"
 #include <vespa/searchlib/query/weight.h>
+#include <vespa/searchlib/query/query_normalization.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {
@@ -89,19 +90,37 @@ public:
     };
 
     /** Extra information on each item (creator id) coded in bit 3 of flags */
-    static inline ItemCreator GetCreator(uint8_t flags) { return static_cast<ItemCreator>((flags >> 3) & 0x01); }
+    static inline ItemCreator GetCreator(uint8_t flags) {
+        return static_cast<ItemCreator>((flags >> 3) & 0x01);
+    }
 
-    static inline bool GetFeature(uint8_t type, uint8_t feature)
-    { return ((type & feature) != 0); }
+    static inline bool GetFeature(uint8_t type, uint8_t feature) {
+        return ((type & feature) != 0);
+    }
 
-    static inline bool GetFeature_Weight(uint8_t type)
-    { return GetFeature(type, IF_WEIGHT); }
+    static inline bool GetFeature_Weight(uint8_t type) {
+        return GetFeature(type, IF_WEIGHT);
+    }
 
-    static inline bool getFeature_UniqueId(uint8_t type)
-    { return GetFeature(type, IF_UNIQUEID); }
-
-    static inline bool getFeature_Flags(uint8_t type)
-    { return GetFeature(type, IF_FLAGS); }
+    static inline bool getFeature_UniqueId(uint8_t type) {
+        return GetFeature(type, IF_UNIQUEID);
+    }
+    static inline bool getFeature_Flags(uint8_t type) {
+        return GetFeature(type, IF_FLAGS);
+    }
+    static TermType toTermType(ItemType itemType) noexcept {
+        switch (itemType) {
+            case ParseItem::ITEM_REGEXP: return TermType::REGEXP;
+            case ParseItem::ITEM_PREFIXTERM: return TermType::PREFIXTERM;
+            case ParseItem::ITEM_SUBSTRINGTERM: return TermType::SUBSTRINGTERM;
+            case ParseItem::ITEM_EXACTSTRINGTERM: return TermType::EXACTSTRINGTERM;
+            case ParseItem::ITEM_SUFFIXTERM: return TermType::SUFFIXTERM;
+            case ParseItem::ITEM_FUZZY: return TermType::FUZZYTERM;
+            case ParseItem::ITEM_GEO_LOCATION_TERM: return TermType::GEO_LOCATION;
+            case ParseItem::ITEM_NEAREST_NEIGHBOR: return TermType::NEAREST_NEIGHBOR;
+            default: return TermType::WORD;
+        }
+    }
 };
 
 } // namespace search

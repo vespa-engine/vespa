@@ -43,6 +43,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _attrCtx(),
       _attributes(),
       _stash(),
+      _normalization(nullptr),
       _fieldWriterStates(),
       _parsedLocations(),
       _summaryFeatures(nullptr),

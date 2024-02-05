@@ -1,12 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryterm.h"
-#include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <algorithm>
-#include <cmath>
 #include <limits>
 
 #include <vespa/log/log.h>
@@ -68,81 +66,9 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
     visit(visitor, "uniqueid", _uniqueId);
 }
 
-namespace {
-
-using Type = QueryTermSimple::Type;
-
-Normalizing
-requireFold(Type type, Normalizing normalizing) {
-    if (normalizing == Normalizing::NONE) return Normalizing::NONE;
-    if (normalizing == Normalizing::LOWERCASE) return Normalizing::LOWERCASE;
-    if (type == Type::EXACTSTRINGTERM) return Normalizing::LOWERCASE;
-    return ((type == Type::WORD) || (type == Type::SUBSTRINGTERM) ||
-           (type == Type::PREFIXTERM) || (type == Type::SUFFIXTERM))
-           ? Normalizing::LOWERCASE_AND_FOLD
-           : Normalizing::NONE;
-}
-
-vespalib::string
-fold(vespalib::stringref s) {
-    const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
-    const unsigned char * end = curr + s.size();
-    vespalib::string folded;
-    for (; curr < end;) {
-        uint32_t c_ucs4 = *curr;
-        if (c_ucs4 < 0x80) {
-            folded.append(Fast_NormalizeWordFolder::lowercase_and_fold_ascii(*curr++));
-        } else {
-            c_ucs4 = Fast_UnicodeUtil::GetUTF8CharNonAscii(curr);
-            const char *repl = Fast_NormalizeWordFolder::ReplacementString(c_ucs4);
-            if (repl != nullptr) {
-                size_t repllen = strlen(repl);
-                folded.append(repl, repllen);
-            } else {
-                c_ucs4 = Fast_NormalizeWordFolder::lowercase_and_fold(c_ucs4);
-                char tmp[6];
-                const char * tmp_end = Fast_UnicodeUtil::utf8cput(tmp, c_ucs4);
-                folded.append(tmp, tmp_end - tmp);
-            }
-        }
-    }
-    return folded;
-}
-
-vespalib::string
-lowercase(vespalib::stringref s) {
-    const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
-    const unsigned char * end = curr + s.size();
-    vespalib::string folded;
-    for (; curr < end;) {
-        uint32_t c_ucs4 = *curr;
-        if (c_ucs4 < 0x80) {
-            folded.append(static_cast<char>(Fast_NormalizeWordFolder::lowercase_ascii(*curr++)));
-        } else {
-            c_ucs4 = Fast_NormalizeWordFolder::lowercase(Fast_UnicodeUtil::GetUTF8CharNonAscii(curr));
-            char tmp[6];
-            const char * tmp_end = Fast_UnicodeUtil::utf8cput(tmp, c_ucs4);
-            folded.append(tmp, tmp_end - tmp);
-        }
-    }
-    return folded;
-}
-
-vespalib::string
-optional_fold(vespalib::stringref s, Type type, Normalizing normalizing) {
-    switch ( requireFold(type, normalizing)) {
-        case Normalizing::NONE: return s;
-        case Normalizing::LOWERCASE: return lowercase(s);
-        case Normalizing::LOWERCASE_AND_FOLD: return fold(s);
-    }
-    return s;
-}
-
-}
-
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, stringref termS, const string & indexS,
                      Type type, Normalizing normalizing)
-    : QueryTermUCS4(optional_fold(termS, type, normalizing), type),
+    : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),
       _index(indexS),
       _encoding(0x01),
       _result(org.release()),

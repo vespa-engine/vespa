@@ -6,10 +6,22 @@
 
 namespace search {
 
-enum class Normalizing {
+enum class Normalizing : uint8_t {
     NONE,
     LOWERCASE,
     LOWERCASE_AND_FOLD
+};
+
+enum class TermType : uint8_t {
+    WORD = 0,
+    PREFIXTERM = 1,
+    SUBSTRINGTERM = 2,
+    EXACTSTRINGTERM = 3,
+    SUFFIXTERM = 4,
+    REGEXP = 5,
+    GEO_LOCATION = 6,
+    FUZZYTERM = 7,
+    NEAREST_NEIGHBOR = 8
 };
 
 std::ostream &operator<<(std::ostream &, Normalizing);
@@ -20,6 +32,7 @@ public:
     virtual ~QueryNormalization() = default;
     virtual bool is_text_matching(vespalib::stringref index) const noexcept = 0;
     virtual Normalizing normalizing_mode(vespalib::stringref index) const noexcept = 0;
+    static vespalib::string optional_fold(vespalib::stringref s, TermType type, Normalizing normalizing);
 };
 
 }

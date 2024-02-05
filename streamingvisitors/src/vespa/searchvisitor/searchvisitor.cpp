@@ -174,7 +174,8 @@ SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::
 
 SearchVisitor::StreamingDocsumsState::~StreamingDocsumsState() = default;
 
-SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManager& attr_manager)
+SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManager& attr_manager,
+                                                  const search::QueryNormalization & query_normalization)
     : HitsAggregationResult::SummaryGenerator(),
       _callback(),
       _docsum_states(),
@@ -185,7 +186,8 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
       _dump_features(),
       _location(),
       _stack_dump(),
-      _attr_manager(attr_manager)
+      _attr_manager(attr_manager),
+      _query_normalization(query_normalization)
 {
 }
 
@@ -206,6 +208,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
     auto &ds = state->get_state();
     ds._args.setResultClassName(summary_class);
     ds._args.set_fields(fields);
+    ds.query_normalization(&_query_normalization);
     if (_dump_features.has_value()) {
         ds._args.dumpFeatures(_dump_features.value());
     }
@@ -297,7 +300,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _summaryClass("default"),
     _attrMan(),
     _attrCtx(_attrMan.createContext()),
-    _summaryGenerator(_attrMan),
+    _summaryGenerator(_attrMan, *this),
     _groupingList(),
     _attributeFields(),
     _sortList(),

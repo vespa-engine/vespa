@@ -4,6 +4,7 @@
 
 #include "getdocsumargs.h"
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/query/query_normalization.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/stash.h>
@@ -67,7 +68,8 @@ public:
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
 private:
-    vespalib::Stash _stash;
+    vespalib::Stash           _stash;
+    const QueryNormalization *_normalization;
 public:
     // DocsumFieldWriterState instances are owned by _stash
     std::vector<DocsumFieldWriterState*> _fieldWriterStates;
@@ -94,6 +96,8 @@ public:
 
     const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
     vespalib::Stash& get_stash() noexcept { return _stash; }
+    const QueryNormalization * query_normalization() const { return _normalization; }
+    void query_normalization(const QueryNormalization * normalization) { _normalization = normalization; }
 };
 
 }

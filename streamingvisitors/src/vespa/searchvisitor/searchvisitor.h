@@ -413,7 +413,7 @@ private:
     class SummaryGenerator : public HitsAggregationResult::SummaryGenerator
     {
     public:
-        explicit SummaryGenerator(const search::IAttributeManager& attr_manager);
+        explicit SummaryGenerator(const search::IAttributeManager&, const search::QueryNormalization &);
         ~SummaryGenerator() override;
         vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
@@ -436,6 +436,7 @@ private:
         std::optional<vespalib::string>         _location;
         std::optional<std::vector<char>>        _stack_dump;
         const search::IAttributeManager&        _attr_manager;
+        const search::QueryNormalization &      _query_normalization;
     };
 
     class HitsResultPreparator : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
@@ -477,8 +478,8 @@ private:
     std::vector<size_t>                     _sortList;
     vsm::SharedSearcherBuf                  _searchBuffer;
     std::vector<char>                       _tmpSortBuffer;
-    search::AttributeVector::SP    _documentIdAttributeBacking;
-    search::AttributeVector::SP    _rankAttributeBacking;
+    search::AttributeVector::SP             _documentIdAttributeBacking;
+    search::AttributeVector::SP             _rankAttributeBacking;
     search::SingleStringExtAttribute      & _documentIdAttribute;
     search::SingleFloatExtAttribute       & _rankAttribute;
     bool                                    _shouldFillRankAttribute;
