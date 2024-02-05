@@ -105,6 +105,7 @@ class ProtonServiceLayerProcess : public storage::ServiceLayerProcess {
     FNET_Transport&         _transport;
     vespalib::string        _file_distributor_connection_spec;
     metrics::MetricManager* _metricManager;
+    std::weak_ptr<streaming::SearchVisitorFactory> _search_visitor_factory;
 
 public:
     ProtonServiceLayerProcess(const config::ConfigUri & configUri,
@@ -137,7 +138,8 @@ ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & c
       _proton(proton),
       _transport(transport),
       _file_distributor_connection_spec(file_distributor_connection_spec),
-      _metricManager(nullptr)
+      _metricManager(nullptr),
+      _search_visitor_factory()
 {
     setMetricManager(_proton.getMetricManager());
 }
@@ -167,13 +169,23 @@ ProtonServiceLayerProcess::getGeneration() const
 {
     int64_t slGen = storage::ServiceLayerProcess::getGeneration();
     int64_t protonGen = _proton.getConfigGeneration();
-    return std::min(slGen, protonGen);
+    int64_t gen = std::min(slGen, protonGen);
+    auto factory = _search_visitor_factory.lock();
+    if (factory) {
+        auto factory_gen = factory->get_oldest_config_generation();
+        if (factory_gen.has_value()) {
+            gen = std::min(gen, factory_gen.value());
+        }
+    }
+    return gen;
 }
 
 void
 ProtonServiceLayerProcess::add_external_visitors()
 {
-    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri, &_transport, _file_distributor_connection_spec);
+    auto factory = std::make_shared<streaming::SearchVisitorFactory>(_configUri, &_transport, _file_distributor_connection_spec);
+    _search_visitor_factory = factory;
+    _externalVisitors["searchvisitor"] = factory;
 }
 
 namespace {

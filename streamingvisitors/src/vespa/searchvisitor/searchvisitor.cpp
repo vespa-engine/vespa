@@ -556,6 +556,13 @@ SearchVisitorFactory::makeVisitor(StorageComponent& component,
     return new SearchVisitor(component, env, params);
 }
 
+std::optional<int64_t>
+SearchVisitorFactory::get_oldest_config_generation() const
+{
+    auto& env = dynamic_cast<SearchEnvironment&>(*_env);
+    return env.get_oldest_config_generation();
+}
+
 void
 SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
 {
