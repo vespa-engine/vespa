@@ -718,14 +718,7 @@ FlowStats
 LeafBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
     double rel_est = abs_to_rel_est(_state.estimate().estHits, docid_limit);
-    if (rel_est > 0.9) {
-        // Assume we do not really know how much we are matching when
-        // we claim to match 'everything'. Also assume we are not able
-        // to skip documents efficiently when strict.
-        return {0.5, 1.0, 1.0};
-    } else {
-        return {rel_est, 1.0, rel_est};
-    }
+    return {rel_est, 1.0, rel_est};
 }
 
 void
