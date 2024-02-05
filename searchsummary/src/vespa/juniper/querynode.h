@@ -102,20 +102,22 @@ class QueryNode : public QueryExpr
 {
 public:
     // Create a new node with arity children
+    QueryNode(QueryNode &) = delete;
+    QueryNode &operator=(QueryNode &) = delete;
     QueryNode(int arity, int threshold, int weight = 0);
 
     // Create a copy of the node n wrt. arity etc, but without adding any children..
     explicit QueryNode(QueryNode* n);
 
-    ~QueryNode();
+    ~QueryNode() override;
     QueryNode* AddChild(QueryExpr* child) override;
     int Limit() override;
     bool Complete() const { return _arity == _nchild; }
     void Dump(std::string&) override;
     bool StackComplete() override;
     void ComputeThreshold() override;
-    QueryNode* AsNode() override;
-    QueryTerm* AsTerm() override;
+    QueryNode* AsNode() override { return this; }
+    QueryTerm* AsTerm() override { return nullptr; }
     bool Complex() override;
     int MaxArity() override;
 
@@ -133,10 +135,6 @@ public:
     QueryExpr** _children;
     int _nchild;   // end pointer (fill level) of _children
     int _node_idx; // Index (position) of this nonterminal within table of all nonterminals
-
-private:
-    QueryNode(QueryNode &);
-    QueryNode &operator=(QueryNode &);
 };
 
 
@@ -151,10 +149,10 @@ public:
     int Limit() override;
     QueryNode* AddChild(QueryExpr* child) override;
     void Dump(std::string&) override;
-    bool StackComplete() override;
-    QueryNode* AsNode() override;
-    QueryTerm* AsTerm() override;
-    bool Complex() override;
+    bool StackComplete() override { return true; }
+    QueryNode* AsNode() override { return nullptr; }
+    QueryTerm* AsTerm() override { return this; }
+    bool Complex() override { return false; }
 
     void Accept(IQueryExprVisitor& v) override;
     inline const char* term() { return _rep; }

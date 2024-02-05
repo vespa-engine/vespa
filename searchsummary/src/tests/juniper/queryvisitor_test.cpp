@@ -27,14 +27,14 @@ private:
     vespalib::string _term;
 
 public:
-    MyQuery(const vespalib::string &term) : _term(term) {}
+    explicit MyQuery(const vespalib::string &term) : _term(term) {}
 
-    virtual bool Traverse(IQueryVisitor* v) const override {
+    bool Traverse(IQueryVisitor* v) const override {
         MyQueryItem item;
-        v->VisitKeyword(&item, _term.c_str(), _term.size());
+        v->visitKeyword(&item, _term, false, false);
         return true;
     }
-    virtual bool UsefulIndex(const QueryItem*) const override {
+    bool UsefulIndex(const QueryItem*) const override {
         return true;
     }
 };
@@ -45,7 +45,7 @@ struct Fixture
     QueryModifier modifier;
     QueryHandle handle;
     QueryVisitor visitor;
-    Fixture(const vespalib::string &term)
+    explicit Fixture(const vespalib::string &term)
         : query(term),
           modifier(),
           handle(query, "", modifier),

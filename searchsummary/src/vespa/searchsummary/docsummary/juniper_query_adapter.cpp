@@ -72,7 +72,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
             {
                 vespalib::stringref term = iterator.getTerm();
-                v->VisitKeyword(&item, term.data(), term.size(), false, isSpecialToken);
+                v->visitKeyword(&item, term, false, isSpecialToken);
             }
             break;
         case search::ParseItem::ITEM_NUMTERM:
@@ -82,17 +82,13 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
                 if (splitter.parts() > 1) {
                     if (v->VisitPHRASE(&item, splitter.parts())) {
                         for (size_t i = 0; i < splitter.parts(); ++i) {
-                            v->VisitKeyword(&item,
-                                    splitter.getPart(i).c_str(),
-                                    splitter.getPart(i).size(), false);
+                            v->visitKeyword(&item, splitter.getPart(i), false, false);
                         }
                     }
                 } else if (splitter.parts() == 1) {
-                    v->VisitKeyword(&item,
-                                    splitter.getPart(0).c_str(),
-                                    splitter.getPart(0).size(), false);
+                    v->visitKeyword(&item, splitter.getPart(0), false, false);
                 } else {
-                    v->VisitKeyword(&item, term.c_str(), term.size(), false, true);
+                    v->visitKeyword(&item, term, false, true);
                 }
             }
             break;
@@ -104,7 +100,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_SUBSTRINGTERM:
             {
                 vespalib::stringref term = iterator.getTerm();
-                v->VisitKeyword(&item, term.data(), term.size(), true, isSpecialToken);
+                v->visitKeyword(&item, term, true, isSpecialToken);
             }
             break;
         case search::ParseItem::ITEM_ANY:
