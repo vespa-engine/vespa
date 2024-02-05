@@ -106,6 +106,9 @@ Manager::doConfigure()
         }
     }
     _env.notifyConfigUpdated();
+    if (_services.empty()) {
+        _env.metrics().reset();
+    }
 }
 
 
@@ -314,12 +317,6 @@ Manager::handleCmd(const Cmd& cmd)
         }
         break;
     }
-}
-
-void
-Manager::updateMetrics()
-{
-    _env.metrics().maybeLog();
 }
 
 }
