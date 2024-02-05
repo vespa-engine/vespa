@@ -11,7 +11,7 @@
 namespace search::docsummary {
 
 JuniperQueryAdapter::JuniperQueryAdapter(const IQueryTermFilter *query_term_filter, vespalib::stringref buf,
-                                         const search::fef::Properties *highlightTerms)
+                                         const search::fef::Properties & highlightTerms)
     : _query_term_filter(query_term_filter),
       _buf(buf),
       _highlightTerms(highlightTerms)
@@ -42,7 +42,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     search::SimpleQueryStackDumpIterator iterator(_buf);
     JuniperDFWQueryItem item(&iterator);
 
-    if (_highlightTerms->numKeys() > 0) {
+    if (_highlightTerms.numKeys() > 0) {
         v->VisitAND(&item, 2);
     }
     while (rc && iterator.next()) {
@@ -144,11 +144,11 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         }
     }
 
-    if (_highlightTerms->numKeys() > 1) {
-        v->VisitAND(&item, _highlightTerms->numKeys());
+    if (_highlightTerms.numKeys() > 1) {
+        v->VisitAND(&item, _highlightTerms.numKeys());
     }
     JuniperDFWTermVisitor tv(v);
-    _highlightTerms->visitProperties(tv);
+    _highlightTerms.visitProperties(tv);
 
     return rc;
 }

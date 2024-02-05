@@ -39,7 +39,7 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
     if (!query) {
         JuniperQueryAdapter iq(_query_term_filter.get(),
                                state._args.getStackDump(),
-                               &state._args.highlightTerms());
+                               state._args.highlightTerms());
         query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
