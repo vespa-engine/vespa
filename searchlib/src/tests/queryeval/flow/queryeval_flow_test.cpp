@@ -130,10 +130,6 @@ TEST(FlowTest, or_ordering_is_strict_weak) {
     verify_ordering_is_strict_weak<flow::MinOrCost>();
 }
 
-TEST(FlowTest, strict_or_ordering_is_strict_weak) {
-    verify_ordering_is_strict_weak<flow::MinOrStrictCost>();
-}
-
 struct ExpectFlow {
     double flow;
     double est;
@@ -166,13 +162,16 @@ TEST(FlowTest, basic_and_flow) {
 
 TEST(FlowTest, basic_or_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
-        for (bool strict: {false, true}) {
-            verify_flow(OrFlow(in, strict), {0.4, 0.7, 0.2},
-                        {{in, 0.0, strict},
-                         {in*0.6, 1.0-in*0.6, strict},
-                         {in*0.6*0.3, 1.0-in*0.6*0.3, strict},
-                         {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, strict}});
-        }
+        verify_flow(OrFlow(in, false), {0.4, 0.7, 0.2},
+                    {{in, 0.0, false},
+                     {in*0.6, 1.0-in*0.6, false},
+                     {in*0.6*0.3, 1.0-in*0.6*0.3, false},
+                     {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, false}});
+        verify_flow(OrFlow(in, true), {0.4, 0.7, 0.2},
+                    {{in, 0.0, true},
+                     {in, 1.0-in*0.6, true},
+                     {in, 1.0-in*0.6*0.3, true},
+                     {in, 1.0-in*0.6*0.3*0.8, true}});
     }
 }
 
@@ -193,7 +192,7 @@ TEST(FlowTest, flow_cost) {
     EXPECT_DOUBLE_EQ(Item::ordered_cost_of<AndFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.7*1.3);
     EXPECT_DOUBLE_EQ(Item::ordered_cost_of<AndFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.7*1.3);
     EXPECT_DOUBLE_EQ(Item::ordered_cost_of<OrFlow>(data, false), 1.1 + 0.6*1.2 + 0.6*0.3*1.3);
-    EXPECT_DOUBLE_EQ(Item::ordered_cost_of<OrFlow>(data, true), 0.6 + 0.6*0.5 + 0.6*0.3*0.4);
+    EXPECT_DOUBLE_EQ(Item::ordered_cost_of<OrFlow>(data, true), 0.6 + 0.5 + 0.4);
     EXPECT_DOUBLE_EQ(Item::ordered_cost_of<AndNotFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.3*1.3);
     EXPECT_DOUBLE_EQ(Item::ordered_cost_of<AndNotFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.3*1.3);
 }
@@ -232,7 +231,7 @@ TEST(FlowTest, optimal_or_flow) {
             EXPECT_EQ(Item::ordered_cost_of<OrFlow>(data, strict), min_cost);
             auto check = [&](const std::vector<Item> &my_data) noexcept {
                              double my_cost = Item::ordered_cost_of<OrFlow>(my_data, strict);
-                             EXPECT_LE(min_cost, my_cost);
+                             EXPECT_LE(min_cost, my_cost + 1e-9);
                              max_cost = std::max(max_cost, my_cost);
                          };
             each_perm(data, check);

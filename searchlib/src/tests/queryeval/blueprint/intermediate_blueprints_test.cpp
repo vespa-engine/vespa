@@ -1345,7 +1345,7 @@ double calc_cost(std::vector<std::pair<double,double>> list) {
 TEST("cost for OR") {
     verify_cost(make::OR(),
                 calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
-                calc_cost({{0.2*1.1, 0.8},{0.3*1.2, 0.7},{1.3, 0.5}}));
+                0.2*1.1 + 0.3*1.2 + 1.3);
 }
 
 TEST("cost for AND") {
@@ -1384,7 +1384,7 @@ TEST("cost for ONEAR") {
 TEST("cost for WEAKAND") {
     verify_cost(make::WEAKAND(1000),
                 calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
-                calc_cost({{0.2*1.1, 0.8},{0.3*1.2, 0.7},{1.3, 0.5}}));
+                0.2*1.1 + 0.3*1.2 + 1.3);
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }
