@@ -4,6 +4,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
+#include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vsm/common/document.h>
@@ -224,6 +225,7 @@ RankManager::RankManager(VSMAdapter * const vsmAdapter) :
 {
     // init blueprint factory
     search::features::setup_search_features(_blueprintFactory);
+    search::fef::test::setup_fef_test_plugin(_blueprintFactory);
 }
 
 RankManager::~RankManager() = default;
