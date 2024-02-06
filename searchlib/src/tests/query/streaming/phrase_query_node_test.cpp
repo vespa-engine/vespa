@@ -34,11 +34,9 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     vespalib::string stackDump = StackDumpCreator::create(*node);
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
-    QueryNodeRefList phrases;
-    q.getPhrases(phrases);
-    QueryTermList terms;
-    q.getLeaves(terms);
-    for (QueryTerm * qt : terms) {
+    auto& p = dynamic_cast<PhraseQueryNode&>(q.getRoot());
+    auto& terms = p.get_terms();
+    for (auto& qt : terms) {
         qt->resizeFieldId(1);
     }
 
@@ -69,8 +67,7 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     terms[1]->add(5, 0, 1, 1);
     terms[2]->add(5, 0, 1, 0);
     HitList hits;
-    auto * p = static_cast<PhraseQueryNode *>(phrases[0]);
-    p->evaluateHits(hits);
+    p.evaluateHits(hits);
     ASSERT_EQ(3u, hits.size());
     EXPECT_EQ(0u, hits[0].field_id());
     EXPECT_EQ(0u, hits[0].element_id());
@@ -81,7 +78,7 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     EXPECT_EQ(3u, hits[2].field_id());
     EXPECT_EQ(0u, hits[2].element_id());
     EXPECT_EQ(0u, hits[2].position());
-    EXPECT_TRUE(p->evaluate());
+    EXPECT_TRUE(p.evaluate());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

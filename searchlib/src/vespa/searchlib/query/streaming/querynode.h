@@ -50,10 +50,6 @@ class QueryNode
   virtual void getLeaves(QueryTermList & tl) = 0;
   /// Gives you all leafs of this tree. Indicating that they are all const.
   virtual void getLeaves(ConstQueryTermList & tl) const = 0;
-  /// Gives you all phrases of this tree.
-  virtual void getPhrases(QueryNodeRefList & tl) = 0;
-  /// Gives you all phrases of this tree. Indicating that they are all const.
-  virtual void getPhrases(ConstQueryNodeRefList & tl) const = 0;
   virtual void setIndex(const vespalib::string & index) = 0;
   virtual const vespalib::string & getIndex() const = 0;
 

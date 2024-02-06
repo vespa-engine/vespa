@@ -61,46 +61,36 @@ RankProcessor::initQueryEnvironment()
     QueryWrapper::TermList & terms = _query.getTermList();
 
     for (auto& term : terms) {
-        if (term.isGeoPosTerm()) {
-            const vespalib::string & fieldName = term.getTerm()->index();
-            const vespalib::string & locStr = term.getTerm()->getTermString();
+        if (term->isGeoLoc()) {
+            const vespalib::string & fieldName = term->index();
+            const vespalib::string & locStr = term->getTermString();
             _queryEnv.addGeoLocation(fieldName, locStr);
         }
-        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // register 1 term data per phrase
-            QueryTermData & qtd = dynamic_cast<QueryTermData &>(term.getTerm()->getQueryItem());
+        QueryTermData & qtd = dynamic_cast<QueryTermData &>(term->getQueryItem());
 
-            qtd.getTermData().setWeight(term.getTerm()->weight());
-            qtd.getTermData().setUniqueId(term.getTerm()->uniqueId());
-            if (term.isFirstPhraseTerm()) {
-                qtd.getTermData().setPhraseLength(term.getParent()->width());
-            } else {
-                qtd.getTermData().setPhraseLength(1);
-            }
-            auto* nn_term = term.getTerm()->as_nearest_neighbor_query_node();
-            if (nn_term != nullptr) {
-                qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
-            }
-
-            vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.getTerm()->index());
-            const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
-            if (view != nullptr) {
-                for (auto field_id : *view) {
-                    qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
-                }
-            } else {
-                LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
-                    getIndexName(term.getTerm()->index(), expandedIndexName).c_str());
-            }
-
-            LOG(debug, "Setup query term '%s:%s' (%s)",
-                getIndexName(term.getTerm()->index(), expandedIndexName).c_str(),
-                term.getTerm()->getTerm(),
-                term.isFirstPhraseTerm() ? "phrase" : "term");
-            _queryEnv.addTerm(&qtd.getTermData());
-        } else {
-            LOG(debug, "Ignore query term '%s:%s' (part of phrase)",
-                term.getTerm()->index().c_str(), term.getTerm()->getTerm());
+        qtd.getTermData().setWeight(term->weight());
+        qtd.getTermData().setUniqueId(term->uniqueId());
+        qtd.getTermData().setPhraseLength(term->width());
+        auto* nn_term = term->as_nearest_neighbor_query_node();
+        if (nn_term != nullptr) {
+            qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
         }
+
+        vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term->index());
+        const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
+        if (view != nullptr) {
+            for (auto field_id : *view) {
+                qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
+            }
+        } else {
+            LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
+                getIndexName(term->index(), expandedIndexName).c_str());
+        }
+
+        LOG(debug, "Setup query term '%s:%s'",
+            getIndexName(term->index(), expandedIndexName).c_str(),
+            term->getTerm());
+        _queryEnv.addTerm(&qtd.getTermData());
     }
     _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     _match_data = _mdLayout.createMatchData();
@@ -257,18 +247,10 @@ RankProcessor::unpackMatchData(uint32_t docId)
 void
 RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
 {
-    for (QueryWrapper::Term & term: query.getTermList()) {
-        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
-            bool isPhrase = term.isFirstPhraseTerm();
-            QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
-            const ITermData &td = qtd.getTermData();
-
-            if (isPhrase) {
-                term.getParent()->unpack_match_data(docid, td, matchData);
-            } else {
-                term.getTerm()->unpack_match_data(docid, td, matchData);
-            }
-        }
+    for (auto& term : query.getTermList()) {
+        QueryTermData & qtd = static_cast<QueryTermData &>(term->getQueryItem());
+        const ITermData &td = qtd.getTermData();
+        term->unpack_match_data(docid, td, matchData);
     }
 }
 

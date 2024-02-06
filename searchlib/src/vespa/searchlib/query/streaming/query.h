@@ -19,8 +19,6 @@ public:
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;
-    void getPhrases(QueryNodeRefList & tl) override;
-    void getPhrases(ConstQueryNodeRefList & tl) const override;
     size_t depth() const override;
     size_t width() const override;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
@@ -139,9 +137,6 @@ public:
     /// Will get all leafnodes.
     void getLeaves(QueryTermList & tl);
     void getLeaves(ConstQueryTermList & tl) const;
-    /// Gives you all phrases of this tree.
-    void getPhrases(QueryNodeRefList & tl);
-    void getPhrases(ConstQueryNodeRefList & tl) const;
     bool evaluate() const;
     size_t depth() const;
     size_t width() const;

@@ -20,44 +20,10 @@ PhraseQueryNode::evaluate() const
   return ! evaluateHits(hl).empty();
 }
 
-void
-PhraseQueryNode::getPhrases(QueryNodeRefList & tl)
-{
-    tl.push_back(this);
-}
-
-void
-PhraseQueryNode::getPhrases(ConstQueryNodeRefList & tl) const
-{
-    tl.push_back(this);
-}
-
-void
-PhraseQueryNode::getLeaves(QueryTermList & tl)
-{
-    for (const auto& node : get_terms()) {
-        node->getLeaves(tl);
-    }
-}
-
-void
-PhraseQueryNode::getLeaves(ConstQueryTermList & tl) const
-{
-    for (const auto& node : get_terms()) {
-        node->getLeaves(tl);
-    }
-}
-
 size_t
 PhraseQueryNode::width() const
 {
     return get_terms().size();
-}
-
-MultiTerm*
-PhraseQueryNode::as_multi_term() noexcept
-{
-    return nullptr;
 }
 
 const HitList &
