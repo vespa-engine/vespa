@@ -137,6 +137,8 @@ public:
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }
     int64_t getIntergerTerm() const { return _curr_integer_term; }
+
+    static vespalib::stringref DEFAULT_INDEX;
 };
 
 }

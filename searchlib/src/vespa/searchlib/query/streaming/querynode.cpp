@@ -21,7 +21,6 @@ namespace search::streaming {
 
 namespace {
 
-vespalib::stringref DEFAULT("default");
 bool disableRewrite(const QueryNode * qn) {
     return dynamic_cast<const NearQueryNode *> (qn) ||
            dynamic_cast<const PhraseQueryNode *> (qn) ||
@@ -105,7 +104,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                 index = parent->getIndex();
             } else {
-                index = DEFAULT;
+                index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
             }
         }
         if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {

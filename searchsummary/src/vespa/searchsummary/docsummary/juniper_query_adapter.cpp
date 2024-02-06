@@ -80,7 +80,11 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             {
                 vespalib::string term = iterator.getTerm();
                 if (_query_normalization) {
-                    Normalizing normalization = _query_normalization->normalizing_mode(iterator.getIndexName());
+                    vespalib::string index = iterator.getIndexName();
+                    if (index.empty()) {
+                        index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
+                    }
+                    Normalizing normalization = _query_normalization->normalizing_mode(index);
                     TermType termType = ParseItem::toTermType(iterator.getType());
                     v->visitKeyword(&item, QueryNormalization::optional_fold(term, termType, normalization),
                                     prefix_like, isSpecialToken);

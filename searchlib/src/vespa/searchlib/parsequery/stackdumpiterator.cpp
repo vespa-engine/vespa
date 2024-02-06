@@ -14,6 +14,8 @@ using search::query::StringTermVector;
 
 namespace search {
 
+vespalib::stringref SimpleQueryStackDumpIterator::DEFAULT_INDEX = "default";
+
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf)
     : _buf(buf.begin()),
       _bufEnd(buf.end()),
