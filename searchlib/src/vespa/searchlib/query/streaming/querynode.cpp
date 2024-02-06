@@ -265,6 +265,8 @@ QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryS
 {
     auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
     auto arity = queryRep.getArity();
+    phrase->setWeight(queryRep.GetWeight());
+    phrase->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         auto qn = Build(phrase.get(), factory, queryRep, false);
@@ -273,6 +275,10 @@ QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryS
         qn.release();
         std::unique_ptr<QueryTerm> qt(qtp);
         phrase->add_term(std::move(qt));
+    }
+    if (!phrase->get_terms().empty()) {
+        auto& first = *phrase->get_terms().front();
+        phrase->setIndex(first.getIndex());
     }
     return phrase;
 }

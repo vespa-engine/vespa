@@ -63,22 +63,6 @@ QueryConnector::getLeaves(ConstQueryTermList & tl) const
     }
 }
 
-void
-QueryConnector::getPhrases(QueryNodeRefList & tl)
-{
-    for (const auto & node : _children) {
-        node->getPhrases(tl);
-    }
-}
-
-void
-QueryConnector::getPhrases(ConstQueryNodeRefList & tl) const
-{
-    for (const auto & node : _children) {
-        node->getPhrases(tl);
-    }
-}
-
 size_t
 QueryConnector::depth() const
 {
@@ -214,20 +198,6 @@ void
 Query::getLeaves(ConstQueryTermList & tl) const {
     if (valid()) {
         _root->getLeaves(tl);
-    }
-}
-
-void
-Query::getPhrases(QueryNodeRefList & tl) {
-    if (valid()) {
-        _root->getPhrases(tl);
-    }
-}
-
-void
-Query::getPhrases(ConstQueryNodeRefList & tl) const {
-    if (valid()) {
-        _root->getPhrases(tl);
     }
 }
 

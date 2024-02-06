@@ -26,7 +26,6 @@ void
 QueryWrapperTest::testQueryWrapper()
 {
     QueryNodeResultFactory empty;
-    PhraseQueryNode * null = NULL;
     {
         QueryBuilder<SimpleQueryNodeTypes> builder;
         builder.addAnd(3);
@@ -48,42 +47,16 @@ QueryWrapperTest::testQueryWrapper()
 
         QueryTermList terms;
         q.getLeaves(terms);
-        ASSERT_TRUE(tl.size() == 5 && terms.size() == 5);
-        for (size_t i = 0; i < 5; ++i) {
-            EXPECT_EQUAL(tl[i].getTerm(), terms[i]);
+        ASSERT_TRUE(tl.size() == 3 && terms.size() == 3);
+        for (size_t i = 0; i < 3; ++i) {
+            EXPECT_EQUAL(tl[i], terms[i]);
             std::cout << "t[" << i << "]:" << terms[i] << std::endl;
+            auto phrase = dynamic_cast<PhraseQueryNode*>(terms[i]);
+            EXPECT_EQUAL(i == 1, phrase != nullptr);
+            if (i == 1) {
+                EXPECT_EQUAL(3u, phrase->get_terms().size());
+            }
         }
-
-        QueryNodeRefList phrases;
-        q.getPhrases(phrases);
-        for (size_t i = 0; i < phrases.size(); ++i) {
-            std::cout << "p[" << i << "]:" << phrases[i] << std::endl;
-        }
-        EXPECT_EQUAL(phrases.size(), 1u);
-        ASSERT_TRUE(phrases.size() == 1);
-        EXPECT_EQUAL(tl[0].getParent(), null);
-        EXPECT_EQUAL(tl[1].getParent(), phrases[0]);
-        EXPECT_EQUAL(tl[2].getParent(), phrases[0]);
-        EXPECT_EQUAL(tl[3].getParent(), phrases[0]);
-        EXPECT_EQUAL(tl[4].getParent(), null);
-
-        EXPECT_EQUAL(tl[0].getIndex(), 0u);
-        EXPECT_EQUAL(tl[1].getIndex(), 0u);
-        EXPECT_EQUAL(tl[2].getIndex(), 1u);
-        EXPECT_EQUAL(tl[3].getIndex(), 2u);
-        EXPECT_EQUAL(tl[4].getIndex(), 0u);
-
-        EXPECT_TRUE(!tl[0].isFirstPhraseTerm());
-        EXPECT_TRUE( tl[1].isFirstPhraseTerm());
-        EXPECT_TRUE(!tl[2].isFirstPhraseTerm());
-        EXPECT_TRUE(!tl[3].isFirstPhraseTerm());
-        EXPECT_TRUE(!tl[4].isFirstPhraseTerm());
-
-        EXPECT_TRUE(!tl[0].isPhraseTerm());
-        EXPECT_TRUE( tl[1].isPhraseTerm());
-        EXPECT_TRUE( tl[2].isPhraseTerm());
-        EXPECT_TRUE( tl[3].isPhraseTerm());
-        EXPECT_TRUE(!tl[4].isPhraseTerm());
     }
 }
 

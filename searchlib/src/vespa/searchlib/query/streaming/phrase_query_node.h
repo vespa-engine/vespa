@@ -17,13 +17,8 @@ public:
     ~PhraseQueryNode() override;
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
-    void getPhrases(QueryNodeRefList & tl) override;
-    void getPhrases(ConstQueryNodeRefList & tl) const override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data) override;
-    void getLeaves(QueryTermList & tl) override;
-    void getLeaves(ConstQueryTermList & tl) const override;
     size_t width() const override;
-    MultiTerm* as_multi_term() noexcept override;
 };
 
 }

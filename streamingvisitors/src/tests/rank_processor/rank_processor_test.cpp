@@ -67,7 +67,7 @@ RankProcessorTest::test_unpack_match_data_for_term_node(bool interleaved_feature
     build_query(builder);
     auto& term_list = _query_wrapper->getTermList();
     EXPECT_EQ(1u, term_list.size());
-    auto node = dynamic_cast<QueryTerm*>(term_list.front().getTerm());
+    auto node = dynamic_cast<QueryTerm*>(term_list.front());
     EXPECT_NE(nullptr, node);
     auto& qtd = static_cast<QueryTermData &>(node->getQueryItem());
     auto& td = qtd.getTermData();
@@ -132,7 +132,7 @@ TEST_F(RankProcessorTest, unpack_match_data_for_nearest_neighbor_query_node)
     build_query(builder);
     auto& term_list = _query_wrapper->getTermList();
     EXPECT_EQ(1u, term_list.size());
-    auto node = dynamic_cast<NearestNeighborQueryNode*>(term_list.front().getTerm());
+    auto node = dynamic_cast<NearestNeighborQueryNode*>(term_list.front());
     EXPECT_NE(nullptr, node);
     MockRawScoreCalculator calc;
     node->set_raw_score_calc(&calc);

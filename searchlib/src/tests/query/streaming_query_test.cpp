@@ -404,26 +404,20 @@ TEST(StreamingQueryTest, test_get_query_parts)
     QueryNodeResultFactory empty;
     Query q(empty, stackDump);
     QueryTermList terms;
-    QueryNodeRefList phrases;
     q.getLeaves(terms);
-    q.getPhrases(phrases);
-    ASSERT_TRUE(terms.size() == 7);
-    ASSERT_TRUE(phrases.size() == 2);
+    ASSERT_TRUE(terms.size() == 4);
+    PhraseQueryNode* null = nullptr;
+    EXPECT_EQ(null, dynamic_cast<PhraseQueryNode*>(terms[0]));
+    EXPECT_NE(null, dynamic_cast<PhraseQueryNode*>(terms[1]));
+    EXPECT_EQ(null, dynamic_cast<PhraseQueryNode*>(terms[2]));
+    EXPECT_NE(null, dynamic_cast<PhraseQueryNode*>(terms[3]));
     {
-        QueryTermList pts;
-        phrases[0]->getLeaves(pts);
+        auto& pts = dynamic_cast<PhraseQueryNode&>(*terms[1]).get_terms();
         ASSERT_TRUE(pts.size() == 3);
-        for (size_t i = 0; i < 3; ++i) {
-            EXPECT_EQ(pts[i], terms[i + 1]);
-        }
     }
     {
-        QueryTermList pts;
-        phrases[1]->getLeaves(pts);
+        auto& pts = dynamic_cast<PhraseQueryNode&>(*terms[3]).get_terms();
         ASSERT_TRUE(pts.size() == 2);
-        for (size_t i = 0; i < 2; ++i) {
-            EXPECT_EQ(pts[i], terms[i + 5]);
-        }
     }
 }
 

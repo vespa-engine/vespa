@@ -75,10 +75,6 @@ public:
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;
-    /// Gives you all phrases of this tree.
-    void getPhrases(QueryNodeRefList & tl) override;
-    /// Gives you all phrases of this tree. Indicating that they are all const.
-    void getPhrases(ConstQueryNodeRefList & tl) const override;
 
     uint32_t            add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position);
     void                set_element_length(uint32_t hitlist_idx, uint32_t element_length);
