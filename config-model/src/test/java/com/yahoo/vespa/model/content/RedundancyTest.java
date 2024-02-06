@@ -36,10 +36,10 @@ public class RedundancyTest {
 
     @Test
     void test_that_redundancy_is_rounded_up() {
-        verifyFinalRedundancy(new Redundancy(1, 1, 1, 5, 5), 1,5);
-        verifyFinalRedundancy(new Redundancy(1, 1, 1, 5, 4), 1,4);
-        verifyFinalRedundancy(new Redundancy(1, 2, 2, 5, 10), 2,10);
-        verifyFinalRedundancy(new Redundancy(1, 2, 2, 5, 9), 2,9);
+        verifyFinalRedundancy(new Redundancy(1, 1, 1, 5, 5), 1, 5);
+        verifyFinalRedundancy(new Redundancy(1, 1, 1, 5, 4), 1, 4);
+        verifyFinalRedundancy(new Redundancy(1, 2, 2, 5, 10), 2, 10);
+        verifyFinalRedundancy(new Redundancy(1, 2, 2, 5, 9), 2, 9);
     }
 
 }
