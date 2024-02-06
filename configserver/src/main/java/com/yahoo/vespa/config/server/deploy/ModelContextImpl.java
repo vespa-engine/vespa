@@ -206,7 +206,6 @@ public class ModelContextImpl implements ModelContext {
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
-        private final boolean restartOnDeployWhenOnnxModelChanges;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,7 +247,6 @@ public class ModelContextImpl implements ModelContext {
             this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
             this.searchHandlerThreadpool = flagValue(source, appId, version, Flags.SEARCH_HANDLER_THREADPOOL);
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
-            this.restartOnDeployWhenOnnxModelChanges = flagValue(source, appId, version, Flags.RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES);
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
         }
 
@@ -299,7 +297,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
-        @Override public boolean restartOnDeployWhenOnnxModelChanges() { return restartOnDeployWhenOnnxModelChanges; }
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {

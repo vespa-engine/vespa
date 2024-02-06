@@ -218,9 +218,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
 
     private static DeployState.Builder deployStateBuilder(boolean hosted) {
         var builder = new DeployState.Builder()
-                .properties((new TestProperties())
-                                    .setRestartOnDeployForOnnxModelChanges(true)
-                                    .setHostedVespa(hosted));
+                .properties((new TestProperties()).setHostedVespa(hosted));
         if (hosted)
             builder.endpoints(Set.of(new ContainerEndpoint("cluster1", ApplicationClusterEndpoint.Scope.zone, List.of("tc.example.com"))))
                     .modelHostProvisioner(new InMemoryProvisioner(5, new NodeResources(1, 2, 25, 0.3), true));
