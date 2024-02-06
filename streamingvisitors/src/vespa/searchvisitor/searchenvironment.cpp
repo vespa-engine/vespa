@@ -76,7 +76,7 @@ SearchEnvironment::Env::configure(const config::ConfigSnapshot & snapshot)
     _generation = snapshot.getGeneration();
     _vsmAdapter->configure(snap);
     _rankManager->configure(snap, _ranking_assets_repo);
-    auto se_snapshot = std::make_shared<const SearchEnvironmentSnapshot>(*_rankManager, *_vsmAdapter);
+    auto se_snapshot = std::make_shared<const SearchEnvironmentSnapshot>(*_rankManager, *_vsmAdapter, _generation);
     std::lock_guard guard(_lock);
     std::swap(se_snapshot, _snapshot);
 }
@@ -159,6 +159,29 @@ std::shared_ptr<const SearchEnvironmentSnapshot>
 SearchEnvironment::get_snapshot(const vespalib::string& search_cluster)
 {
     return getEnv(search_cluster).get_snapshot();
+}
+
+std::optional<int64_t>
+SearchEnvironment::get_oldest_config_generation()
+{
+    std::optional<int64_t> oldest;
+    std::vector<std::shared_ptr<Env>> envs;
+    {
+        std::lock_guard guard(_lock);
+        for (auto& env : _envMap) {
+            envs.emplace_back(env.second);
+        }
+    }
+    for (auto& env : envs) {
+        auto snapshot = env->get_snapshot();
+        if (snapshot) {
+            auto gen = snapshot->get_config_generation();
+            if (!oldest.has_value() || oldest.value() > gen) {
+                oldest = gen;
+            }
+        }
+    }
+    return oldest;
 }
 
 }

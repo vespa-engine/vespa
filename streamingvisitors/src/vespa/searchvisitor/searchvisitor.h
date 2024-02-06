@@ -502,6 +502,7 @@ class SearchVisitorFactory : public storage::VisitorFactory {
 public:
     explicit SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~SearchVisitorFactory() override;
+    std::optional<int64_t> get_oldest_config_generation() const;
 };
 
 }

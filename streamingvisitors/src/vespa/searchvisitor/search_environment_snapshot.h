@@ -16,13 +16,15 @@ class SearchEnvironmentSnapshot
     std::shared_ptr<const RankManager::Snapshot> _rank_manager_snapshot;
     std::shared_ptr<VsmfieldsConfig>             _vsm_fields_cfg;
     std::shared_ptr<const vsm::DocsumTools>      _docsum_tools;
+    int64_t                                      _config_generation;
 
 public:
-    SearchEnvironmentSnapshot(const RankManager& rank_manager, const vsm::VSMAdapter& vsm_adapter);
+    SearchEnvironmentSnapshot(const RankManager& rank_manager, const vsm::VSMAdapter& vsm_adapter, int64_t config_generation);
     ~SearchEnvironmentSnapshot();
     const std::shared_ptr<const RankManager::Snapshot>& get_rank_manager_snapshot() const noexcept { return _rank_manager_snapshot; }
     const std::shared_ptr<VsmfieldsConfig>& get_vsm_fields_config() const noexcept { return _vsm_fields_cfg; }
     const std::shared_ptr<const vsm::DocsumTools>& get_docsum_tools() const noexcept { return _docsum_tools; }
+    int64_t get_config_generation() const noexcept { return _config_generation; }
 };
 
 }

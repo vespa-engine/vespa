@@ -81,6 +81,7 @@ public:
     SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~SearchEnvironment();
     std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const vespalib::string& search_cluster);
+    std::optional<int64_t> get_oldest_config_generation();
     // Should only be used by unit tests to simulate that the calling thread is finished.
     void clear_thread_local_env_map();
 };
