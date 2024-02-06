@@ -75,6 +75,9 @@ struct MockBlueprint : SimpleLeafBlueprint {
     {
         setEstimate(HitEstimate(756, false));
     }    
+    search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, 756, 0);
+    }
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         if (postings_fetched) {

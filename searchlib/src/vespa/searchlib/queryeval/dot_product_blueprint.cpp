@@ -38,6 +38,12 @@ DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimate & e
     _terms.push_back(std::move(term));
 }
 
+FlowStats
+DotProductBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, getState().estimate().estHits, _terms.size());
+}
+
 SearchIterator::UP
 DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool) const
 {

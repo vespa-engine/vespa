@@ -52,6 +52,12 @@ EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields,
 
 EquivBlueprint::~EquivBlueprint() = default;
 
+FlowStats
+EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, _estimate.estHits, _terms.size());
+}
+
 SearchIterator::UP
 EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bool strict) const
 {

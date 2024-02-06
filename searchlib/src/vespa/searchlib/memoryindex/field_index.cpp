@@ -256,6 +256,10 @@ public:
         setEstimate(estimate);
     }
 
+    queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, _posting_itr.size(), 0);
+    }
+    
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {
         auto result = make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda);
         if (_use_bit_vector) {

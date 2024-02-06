@@ -28,6 +28,7 @@ public:
     AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr);
     ~AttributeWeightedSetBlueprint();
     void addToken(std::unique_ptr<ISearchContext> context, int32_t weight);
+    queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     queryeval::SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;

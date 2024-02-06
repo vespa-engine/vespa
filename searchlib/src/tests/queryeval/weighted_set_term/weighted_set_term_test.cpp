@@ -344,6 +344,9 @@ struct VerifyMatchData {
             ++vmd.child_cnt;
             return std::make_unique<EmptySearch>();
         }
+        FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+            return default_flow_stats(docid_limit, 0, 0);
+        }
         [[nodiscard]] SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
             return create_default_filter(strict, constraint);
         }

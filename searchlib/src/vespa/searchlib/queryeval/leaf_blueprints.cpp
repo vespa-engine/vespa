@@ -10,6 +10,12 @@ namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
+FlowStats
+EmptyBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, 0, 0);
+}
+
 SearchIterator::UP
 EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
 {
@@ -25,6 +31,12 @@ EmptyBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constrai
 EmptyBlueprint::EmptyBlueprint(FieldSpecBaseList fields)
     : SimpleLeafBlueprint(std::move(fields))
 {
+}
+
+FlowStats
+AlwaysTrueBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, docid_limit, 0);
 }
 
 SearchIterator::UP
@@ -45,6 +57,12 @@ AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint()
 }
 
 //-----------------------------------------------------------------------------
+
+FlowStats
+SimpleBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, _result.getHitCount(), 0);
+}
 
 SearchIterator::UP
 SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool strict) const

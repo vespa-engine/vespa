@@ -265,6 +265,10 @@ public:
 
     bool should_use() const { return _should_use; }
 
+    queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, getState().estimate().estHits, _rangeSearches.size());
+    }
+    
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
@@ -323,6 +327,10 @@ public:
     ~LocationPostFilterBlueprint() override;
 
     const common::Location &location() const { return _location; }
+
+    queryeval::FlowStats calculate_flow_stats(uint32_t) const override {
+        return default_flow_stats(0);
+    }
 
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
@@ -447,6 +455,10 @@ public:
     }
     void complete(HitEstimate estimate) {
         setEstimate(estimate);
+    }
+
+    queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, getState().estimate().estHits, _terms.size());
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {

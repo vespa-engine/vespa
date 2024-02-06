@@ -83,6 +83,9 @@ struct MyBlueprint : SimpleLeafBlueprint {
         set_allow_termwise_eval(allow_termwise_eval);
     }
     ~MyBlueprint() override;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
+    }
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &,
                                         bool strict) const override
     {
