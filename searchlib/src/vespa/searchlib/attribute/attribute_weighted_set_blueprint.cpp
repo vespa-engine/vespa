@@ -116,6 +116,12 @@ AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context,
     _contexts.push_back(context.release());
 }
 
+queryeval::FlowStats
+AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, _estHits, _weights.size());
+}
+
 queryeval::SearchIterator::UP
 AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {

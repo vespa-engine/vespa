@@ -278,6 +278,8 @@ public:
     void update_flow_stats(uint32_t docid_limit) {
         _flow_stats = calculate_flow_stats(docid_limit);
     }
+    static FlowStats default_flow_stats(uint32_t docid_limit, uint32_t abs_est, size_t child_cnt);
+    static FlowStats default_flow_stats(size_t child_cnt);
 
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
@@ -453,7 +455,6 @@ protected:
 public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
-    FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;

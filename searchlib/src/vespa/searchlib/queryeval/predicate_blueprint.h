@@ -49,6 +49,11 @@ public:
     ~PredicateBlueprint();
     void fetchPostings(const ExecuteInfo &execInfo) override;
 
+    FlowStats calculate_flow_stats(uint32_t) const override {
+        return default_flow_stats(_interval_btree_iterators.size() + _interval_vector_iterators.size() +
+                                  _bounds_btree_iterators.size() + _bounds_vector_iterators.size() + 2);
+    }
+
     SearchIterator::UP
     createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {

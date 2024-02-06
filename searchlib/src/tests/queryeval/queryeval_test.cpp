@@ -358,6 +358,12 @@ public:
         _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::Type::WORD),
                            SearchContextParams().useBitVector(true));
     }
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        auto est = _sc->calc_hit_estimate();
+        return est.is_unknown()
+            ? default_flow_stats(0)
+            : default_flow_stats(docid_limit, est.est_hits(), 0);
+    }
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {

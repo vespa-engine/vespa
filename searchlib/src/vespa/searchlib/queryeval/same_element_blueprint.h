@@ -34,6 +34,8 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
+    
     void optimize_self(OptimizePass pass) override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
 

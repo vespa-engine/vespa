@@ -45,6 +45,12 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
     _terms.push_back(std::move(term));
 }
 
+FlowStats
+SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, _estimate.estHits, _terms.size());
+}
+
 SearchIterator::UP
 SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {

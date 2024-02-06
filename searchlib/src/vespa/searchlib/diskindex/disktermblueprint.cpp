@@ -65,6 +65,12 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
     _fetchPostingsDone = true;
 }
 
+queryeval::FlowStats
+DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+{
+    return default_flow_stats(docid_limit, _lookupRes->counts._numDocs, 0);
+}
+
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool strict) const
 {

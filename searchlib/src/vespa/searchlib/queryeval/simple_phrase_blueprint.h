@@ -30,6 +30,8 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
+    
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

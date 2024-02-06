@@ -205,6 +205,9 @@ private:
         }
         return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
     }
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, _activeLids.size(), 0);
+    }
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {

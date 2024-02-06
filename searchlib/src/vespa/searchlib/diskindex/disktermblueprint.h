@@ -37,6 +37,8 @@ public:
                       DiskIndex::LookupResult::UP lookupRes,
                       bool useBitVector);
 
+    queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
+    
     // Inherit doc from Blueprint.
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda, bool strict) const override;

@@ -35,6 +35,9 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     {
         setEstimate(HitEstimate(hits, (hits == 0)));
     }
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
+        return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
+    }
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
         return {};
     }

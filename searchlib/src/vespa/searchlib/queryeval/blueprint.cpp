@@ -161,6 +161,20 @@ Blueprint::root() const
     return *bp;
 }
 
+FlowStats
+Blueprint::default_flow_stats(uint32_t docid_limit, uint32_t abs_est, size_t child_cnt)
+{
+    double rel_est = abs_to_rel_est(abs_est, docid_limit);
+    double seek_cost = (child_cnt == 0) ? rel_est : (rel_est * 2.0);
+    return {rel_est, 1.0 + child_cnt, seek_cost};
+}
+
+FlowStats
+Blueprint::default_flow_stats(size_t child_cnt)
+{
+    return {0.5, 1.0 + child_cnt, 1.0 + child_cnt};
+}
+
 std::unique_ptr<MatchingElementsSearch>
 Blueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
@@ -714,13 +728,6 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 //-----------------------------------------------------------------------------
 
-FlowStats
-LeafBlueprint::calculate_flow_stats(uint32_t docid_limit) const
-{
-    double rel_est = abs_to_rel_est(_state.estimate().estHits, docid_limit);
-    return {rel_est, 1.0, rel_est};
-}
-
 void
 LeafBlueprint::fetchPostings(const ExecuteInfo &)
 {
@@ -790,8 +797,6 @@ LeafBlueprint::set_tree_size(uint32_t value)
 //-----------------------------------------------------------------------------
 
 }
-
-//-----------------------------------------------------------------------------
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::Blueprint *obj)

@@ -71,6 +71,7 @@ struct LeafProxy : SimpleLeafBlueprint {
       : SimpleLeafBlueprint(), child(std::move(child_in)) { init(); }
     LeafProxy(FieldSpecBase field, std::unique_ptr<Blueprint> child_in)
       : SimpleLeafBlueprint(field), child(std::move(child_in)) { init(); }
+    FlowStats calculate_flow_stats(uint32_t) const override { abort(); }
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &, bool) const override { abort(); }
     SearchIteratorUP createFilterSearch(bool strict, Constraint constraint) const override {
         return child->createFilterSearch(strict, constraint);
