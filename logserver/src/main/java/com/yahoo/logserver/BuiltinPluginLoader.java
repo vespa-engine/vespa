@@ -3,7 +3,6 @@ package com.yahoo.logserver;
 
 import java.util.logging.Level;
 import com.yahoo.logserver.handlers.archive.ArchiverPlugin;
-import com.yahoo.logserver.handlers.logmetrics.LogMetricsPlugin;
 
 import java.util.logging.Logger;
 
@@ -20,7 +19,6 @@ public class BuiltinPluginLoader extends AbstractPluginLoader {
         log.log(Level.FINE, "starting to load builtin plugins");
 
         loadFromClass(ArchiverPlugin.class);
-        loadFromClass(LogMetricsPlugin.class);
 
         log.log(Level.FINE, "done loading builtin plugins");
     }
