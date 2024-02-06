@@ -26,6 +26,10 @@ enum class TermType : uint8_t {
 
 std::ostream &operator<<(std::ostream &, Normalizing);
 
+/**
+ * Resolves what kind of normalization that is needed for the query terms in context
+ * of the fields searched. It also provides a utility method for doing the normalization.
+ */
 class QueryNormalization {
 public:
     using Normalizing = search::Normalizing;
