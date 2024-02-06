@@ -175,7 +175,7 @@ SearchEnvironment::get_oldest_config_generation()
     for (auto& env : envs) {
         auto snapshot = env->get_snapshot();
         if (snapshot) {
-            auto gen = snapshot->get_generation();
+            auto gen = snapshot->get_config_generation();
             if (!oldest.has_value() || oldest.value() > gen) {
                 oldest = gen;
             }
