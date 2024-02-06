@@ -262,7 +262,11 @@ QueryNode::build_weighted_set_term(const QueryNodeResultFactory& factory, Simple
 std::unique_ptr<QueryNode>
 QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
-    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    vespalib::string index = queryRep.getIndexName();
+    if (index.empty()) {
+        index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
+    }
+    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), index, queryRep.getArity());
     auto arity = queryRep.getArity();
     phrase->setWeight(queryRep.GetWeight());
     phrase->setUniqueId(queryRep.getUniqueId());
@@ -274,10 +278,6 @@ QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryS
         qn.release();
         std::unique_ptr<QueryTerm> qt(qtp);
         phrase->add_term(std::move(qt));
-    }
-    if (!phrase->get_terms().empty()) {
-        auto& first = *phrase->get_terms().front();
-        phrase->setIndex(first.getIndex());
     }
     return phrase;
 }
