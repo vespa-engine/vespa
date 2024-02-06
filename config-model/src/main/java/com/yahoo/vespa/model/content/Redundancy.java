@@ -33,9 +33,9 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     }
 
     /** Returns the final redundancy per group */
-    public int finalRedundancy() { return effectiveFinalRedundancy()/groups; }
+    public int finalRedundancy() { return (int)Math.ceil((double)effectiveFinalRedundancy()/groups); }
 
-    public int readyCopies() { return effectiveReadyCopies()/groups; }
+    public int readyCopies() { return (int)Math.ceil((double)effectiveReadyCopies()/groups); }
     public int groups() { return groups; }
     public int totalNodes() { return totalNodes; }
 
