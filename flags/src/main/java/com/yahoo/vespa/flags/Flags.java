@@ -421,13 +421,6 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag ENABLE_NEW_PAYMENT_METHOD_FLOW = defineFeatureFlag(
-            "enable-new-payment-method-flow", false,
-            List.of("bjorncs"), "2023-11-29", "2024-03-01",
-            "Whether to enable the new billing flow",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
