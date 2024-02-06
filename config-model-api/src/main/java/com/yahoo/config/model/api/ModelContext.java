@@ -115,7 +115,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default long mergingMaxMemoryUsagePerNode() { return 0; }
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default boolean usePerDocumentThrottledDeleteBucket() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean restartOnDeployWhenOnnxModelChanges() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.300.x") default boolean restartOnDeployWhenOnnxModelChanges() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
     }
 
