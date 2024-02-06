@@ -22,20 +22,21 @@ using SharedSearcherBuf = std::shared_ptr<SearcherBuf>;
 
 class FieldSearcherBase
 {
+public:
+    FieldSearcherBase & operator = (const FieldSearcherBase & org) = delete;
 protected:
     FieldSearcherBase() noexcept;
     FieldSearcherBase(const FieldSearcherBase & org);
     virtual ~FieldSearcherBase();
-    FieldSearcherBase & operator = (const FieldSearcherBase & org) = delete;
     void prepare(const search::streaming::QueryTermList & qtl);
-protected:
+
     search::streaming::QueryTermList _qtl;
 };
 
 class FieldSearcher : public FieldSearcherBase
 {
 public:
-    using Normalizing = search::streaming::Normalizing;
+    using Normalizing = search::Normalizing;
     enum MatchType {
         REGULAR,
         PREFIX,

@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <iosfwd>
+#include <vespa/searchlib/query/query_normalization.h>
 #include <memory>
 
 namespace search::streaming {
@@ -18,14 +17,6 @@ public:
     virtual ~QueryNodeResultBase() = default;
     virtual QueryNodeResultBase * clone() const = 0;
 };
-
-enum class Normalizing {
-    NONE,
-    LOWERCASE,
-    LOWERCASE_AND_FOLD
-};
-
-std::ostream& operator<<(std::ostream&, Normalizing);
 
 class QueryNodeResultFactory {
 public:

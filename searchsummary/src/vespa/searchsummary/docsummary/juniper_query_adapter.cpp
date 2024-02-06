@@ -7,12 +7,14 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/split_float.h>
+#include <vespa/searchlib/query/query_normalization.h>
 
 namespace search::docsummary {
 
-JuniperQueryAdapter::JuniperQueryAdapter(const IQueryTermFilter *query_term_filter, vespalib::stringref buf,
-                                         const search::fef::Properties *highlightTerms)
-    : _query_term_filter(query_term_filter),
+JuniperQueryAdapter::JuniperQueryAdapter(const QueryNormalization * normalization, const IQueryTermFilter *query_term_filter,
+                                         vespalib::stringref buf, const search::fef::Properties & highlightTerms)
+    : _query_normalization(normalization),
+      _query_term_filter(query_term_filter),
       _buf(buf),
       _highlightTerms(highlightTerms)
 {
@@ -42,11 +44,12 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     search::SimpleQueryStackDumpIterator iterator(_buf);
     JuniperDFWQueryItem item(&iterator);
 
-    if (_highlightTerms->numKeys() > 0) {
+    if (_highlightTerms.numKeys() > 0) {
         v->VisitAND(&item, 2);
     }
     while (rc && iterator.next()) {
         bool isSpecialToken = iterator.hasSpecialTokenFlag();
+        bool prefix_like = false;
         switch (iterator.getType()) {
         case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:
@@ -67,12 +70,23 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             if (!v->VisitRANK(&item, iterator.getArity()))
                 rc = skipItem(&iterator);
             break;
+        case search::ParseItem::ITEM_PREFIXTERM:
+        case search::ParseItem::ITEM_SUBSTRINGTERM:
+            prefix_like = true;
+            [[fallthrough]];
         case search::ParseItem::ITEM_TERM:
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
             {
-                vespalib::stringref term = iterator.getTerm();
-                v->visitKeyword(&item, term, false, isSpecialToken);
+                vespalib::string term = iterator.getTerm();
+                if (_query_normalization) {
+                    Normalizing normalization = _query_normalization->normalizing_mode(iterator.getIndexName());
+                    TermType termType = ParseItem::toTermType(iterator.getType());
+                    v->visitKeyword(&item, QueryNormalization::optional_fold(term, termType, normalization),
+                                    prefix_like, isSpecialToken);
+                } else {
+                    v->visitKeyword(&item, term, prefix_like, isSpecialToken);
+                }
             }
             break;
         case search::ParseItem::ITEM_NUMTERM:
@@ -95,13 +109,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_PHRASE:
             if (!v->VisitPHRASE(&item, iterator.getArity()))
                 rc = skipItem(&iterator);
-            break;
-        case search::ParseItem::ITEM_PREFIXTERM:
-        case search::ParseItem::ITEM_SUBSTRINGTERM:
-            {
-                vespalib::stringref term = iterator.getTerm();
-                v->visitKeyword(&item, term, true, isSpecialToken);
-            }
             break;
         case search::ParseItem::ITEM_ANY:
             if (!v->VisitANY(&item, iterator.getArity()))
@@ -144,11 +151,11 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         }
     }
 
-    if (_highlightTerms->numKeys() > 1) {
-        v->VisitAND(&item, _highlightTerms->numKeys());
+    if (_highlightTerms.numKeys() > 1) {
+        v->VisitAND(&item, _highlightTerms.numKeys());
     }
     JuniperDFWTermVisitor tv(v);
-    _highlightTerms->visitProperties(tv);
+    _highlightTerms.visitProperties(tv);
 
     return rc;
 }

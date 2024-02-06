@@ -215,21 +215,24 @@ QueryTermSimple::getRange() const noexcept
     return getIntegerRange<int64_t>();
 }
 
-bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const noexcept
+bool
+QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const noexcept
 {
     lower = std::numeric_limits<int64_t>::min();
     upper = std::numeric_limits<int64_t>::max();
     return getAsNumericTerm(lower, upper, IntDecoder());
 }
 
-bool QueryTermSimple::getAsFloatTerm(double & lower, double & upper) const noexcept
+bool
+QueryTermSimple::getAsFloatTerm(double & lower, double & upper) const noexcept
 {
     lower = -std::numeric_limits<double>::infinity();
     upper = std::numeric_limits<double>::infinity();
     return getAsNumericTerm(lower, upper, FloatDecoder<double>());
 }
 
-bool QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
+bool
+QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
 {
     lower = -std::numeric_limits<float>::infinity();
     upper = std::numeric_limits<float>::infinity();
@@ -237,12 +240,6 @@ bool QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcep
 }
 
 QueryTermSimple::~QueryTermSimple() = default;
-
-namespace {
-
-
-
-}
 
 QueryTermSimple::QueryTermSimple(const string & term_, Type type)
     : _rangeLimit(0),

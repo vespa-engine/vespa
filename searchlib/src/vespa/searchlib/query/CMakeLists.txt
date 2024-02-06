@@ -4,5 +4,6 @@ vespa_add_library(searchlib_query OBJECT
     query_term_simple.cpp
     query_term_ucs4.cpp
     query_term_decoder.cpp
+    query_normalization.cpp
     DEPENDS
 )

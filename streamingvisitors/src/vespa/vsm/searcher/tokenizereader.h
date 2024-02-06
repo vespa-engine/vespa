@@ -14,7 +14,7 @@ namespace vsm {
 class TokenizeReader {
 public:
     using byte = search::byte;
-    using Normalizing = search::streaming::Normalizing;
+    using Normalizing = search::Normalizing;
     TokenizeReader(const byte *p, uint32_t len, ucs4_t *q) noexcept
         : _p(p),
           _p_end(p + len),

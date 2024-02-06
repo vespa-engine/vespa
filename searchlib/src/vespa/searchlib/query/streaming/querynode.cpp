@@ -84,7 +84,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_GEO_LOCATION_TERM:
         // just keep the string representation here; parsed in vsm::GeoPosFieldSearcher
         qn = std::make_unique<QueryTerm>(factory.create(), queryRep.getTerm(), queryRep.getIndexName(),
-                                         QueryTerm::Type::GEO_LOCATION, Normalizing::NONE);
+                                         TermType::GEO_LOCATION, Normalizing::NONE);
         break;
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
         qn = build_nearest_neighbor_query_node(factory, queryRep);
@@ -111,30 +111,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
             index = parent->getIndex() + "." + index;
         }
-        using TermType = QueryTerm::Type;
-        TermType sTerm(TermType::WORD);
-        switch (type) {
-        case ParseItem::ITEM_REGEXP:
-            sTerm = TermType::REGEXP;
-            break;
-        case ParseItem::ITEM_PREFIXTERM:
-            sTerm = TermType::PREFIXTERM;
-            break;
-        case ParseItem::ITEM_SUBSTRINGTERM:
-            sTerm = TermType::SUBSTRINGTERM;
-            break;
-        case ParseItem::ITEM_EXACTSTRINGTERM:
-            sTerm = TermType::EXACTSTRINGTERM;
-            break;
-        case ParseItem::ITEM_SUFFIXTERM:
-            sTerm = TermType::SUFFIXTERM;
-            break;
-        case ParseItem::ITEM_FUZZY:
-            sTerm = TermType::FUZZYTERM;
-            break;
-        default:
-            break;
-        }
+        TermType sTerm = ParseItem::toTermType(type);
         QueryTerm::string ssTerm;
         if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
             char buf[24];

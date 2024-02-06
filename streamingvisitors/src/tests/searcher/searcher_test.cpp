@@ -30,7 +30,7 @@ using search::streaming::QueryNodeResultFactory;
 using search::streaming::FuzzyTerm;
 using search::streaming::RegexpTerm;
 using search::streaming::QueryTerm;
-using search::streaming::Normalizing;
+using search::Normalizing;
 using Searchmethod = VsmfieldsConfig::Fieldspec::Searchmethod;
 using search::streaming::QueryTermList;
 using TermType = QueryTerm::Type;

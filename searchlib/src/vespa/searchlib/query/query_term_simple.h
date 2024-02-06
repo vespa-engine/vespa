@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "query_normalization.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memory.h>
@@ -15,17 +16,7 @@ public:
     using UP = std::unique_ptr<QueryTermSimple>;
     using string = vespalib::string;
     using stringref = vespalib::stringref;
-    enum class Type : uint8_t {
-        WORD = 0,
-        PREFIXTERM = 1,
-        SUBSTRINGTERM = 2,
-        EXACTSTRINGTERM = 3,
-        SUFFIXTERM = 4,
-        REGEXP = 5,
-        GEO_LOCATION = 6,
-        FUZZYTERM = 7,
-        NEAREST_NEIGHBOR = 8
-    };
+    using Type = TermType;
 
     template <typename N>
     struct RangeResult {

@@ -37,9 +37,8 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
 {
     auto& query = state._dynteaser.get_query(_input_field_name);
     if (!query) {
-        JuniperQueryAdapter iq(_query_term_filter.get(),
-                               state._args.getStackDump(),
-                               &state._args.highlightTerms());
+        JuniperQueryAdapter iq(state.query_normalization(), _query_term_filter.get(),
+                               state._args.getStackDump(), state._args.highlightTerms());
         query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 
@@ -48,7 +47,6 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input
     std::unique_ptr<juniper::Result> result;
 
     if (query) {
-
         if (LOG_WOULD_LOG(spam)) {
             std::ostringstream hexDump;
             hexDump << vespalib::HexDump(input.data(), input.length());

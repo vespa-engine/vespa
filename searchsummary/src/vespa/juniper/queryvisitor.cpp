@@ -282,8 +282,7 @@ QueryVisitor::visitKeyword(const QueryItem* item, vespalib::stringref keyword, b
 }
 
 
-namespace juniper
-{
+namespace juniper {
 
 const char* creator_text(ItemCreator creator)
 {
