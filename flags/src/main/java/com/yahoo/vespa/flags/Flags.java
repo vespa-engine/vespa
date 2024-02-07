@@ -428,13 +428,6 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
-    public static final UnboundBooleanFlag RESTART_ON_DEPLOY_WHEN_ONNX_MODEL_CHANGES = defineFeatureFlag(
-            "restart-on-deploy-when-onnx-model-changes", true,
-            List.of("hmusum"), "2023-12-04", "2024-03-01",
-            "If set, restart on deploy if onnx model or onnx model options used by a container cluster change",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
