@@ -11,6 +11,7 @@ template <HnswIndexType type>
 HnswGraph<type>::HnswGraph()
   : nodes(),
     nodes_size(1u),
+    active_nodes(0u),
     levels_store(HnswIndex<type>::make_default_level_array_store_config(), {}),
     links_store(HnswIndex<type>::make_default_link_array_store_config(), {}),
     entry_nodeid_and_level()
@@ -40,6 +41,9 @@ HnswGraph<type>::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, u
     if (nodeid >= nodes_size.load(std::memory_order_relaxed)) {
         nodes_size.store(nodeid + 1, std::memory_order_release);
     }
+    if (levels_ref.valid()) {
+        set_active_nodes(get_active_nodes() + 1);
+    }
     return levels_ref;
 }
 
@@ -58,6 +62,7 @@ HnswGraph<type>::remove_node(uint32_t nodeid)
         auto old_links_ref = levels[i].load_relaxed();
         links_store.remove(old_links_ref);
     }
+    set_active_nodes(get_active_nodes() - 1);
     if (nodeid + 1 == nodes_size.load(std::memory_order_relaxed)) {
         trim_nodes_size();
     }

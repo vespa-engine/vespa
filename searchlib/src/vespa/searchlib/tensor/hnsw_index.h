@@ -240,6 +240,8 @@ public:
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }
 
+    uint32_t get_active_nodes() const noexcept { return _graph.get_active_nodes(); }
+
     // Should only be used by unit tests.
     HnswTestNode get_node(uint32_t nodeid) const;
     void set_node(uint32_t nodeid, const HnswTestNode &node);
