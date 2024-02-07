@@ -39,9 +39,9 @@ struct IndirectAdapter {
     double strict_cost(size_t child) const noexcept { return adapter.strict_cost(data[child]); }
 };
 
-auto make_index(const auto &children) {
-    vespalib::SmallVector<uint32_t> index(children.size());
-    for (size_t i = 0; i < index.size(); ++i) {
+inline auto make_index(size_t size) {
+    vespalib::SmallVector<uint32_t> index(size);
+    for (size_t i = 0; i < size; ++i) {
         index[i] = i;
     }
     return index;
@@ -137,7 +137,7 @@ struct FlowMixin {
     }
     static double cost_of(auto adapter, const auto &children, bool strict) {
         auto my_adapter = flow::IndirectAdapter(adapter, children);
-        auto order = flow::make_index(children);
+        auto order = flow::make_index(children.size());
         FLOW::sort(my_adapter, order, strict);
         return flow::ordered_cost_of(my_adapter, order, FLOW(1.0, strict));
     }
