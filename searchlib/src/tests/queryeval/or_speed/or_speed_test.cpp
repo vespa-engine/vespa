@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/unpackinfo.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -12,12 +13,11 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 #include <random>
+#include <cmath>
 
-using namespace search;
 using namespace vespalib;
-using search::queryeval::SearchIterator;
-using search::queryeval::OrSearch;
-using search::queryeval::UnpackInfo;
+using namespace search;
+using namespace search::queryeval;
 using TMD = search::fef::TermFieldMatchData;
 using vespalib::make_string_short::fmt;
 using Impl = OrSearch::StrictImpl;
@@ -33,9 +33,18 @@ const char *impl_str(Impl impl) {
     if (impl == Impl::HEAP)  { return " heap"; }
     return "unknown";
 }
-const char *bool_str(bool bit) { return bit ? "true" : "false"; }
+const char *bool_str(bool bit) { return bit ? " true" : "false"; }
 const char *leaf_str(bool array) { return array ? "A" : "B"; }
 const char *opt_str(bool optimize) { return optimize ? "OPT" : "std"; }
+const char *wrapped_str(bool wrapped) { return wrapped ? "WRAPPED" : "   LEAF"; }
+const char *strict_str(bool strict) { return strict ? "    strict" : "non-strict"; }
+
+double ns_per(size_t cnt, double time_ms) {
+    return (time_ms * 1000.0 * 1000.0) / cnt;
+}
+double ns_per(std::pair<size_t,double> result) {
+    return ns_per(result.first, result.second);
+}
 
 BitVector::UP make_bitvector(size_t size, size_t num_bits) {
     EXPECT_GT(size, num_bits);
@@ -59,6 +68,7 @@ BitVector::UP make_bitvector(size_t size, size_t num_bits) {
 // This class has 2 uses:
 // 1: better performance for few hits compared to bitvector
 // 2: not a bitvector, useful when testing multi-bitvector interactions
+template <bool strict>
 struct ArrayIterator : SearchIterator {
     uint32_t               my_offset = 0;
     uint32_t               my_limit;
@@ -86,9 +96,17 @@ struct ArrayIterator : SearchIterator {
             ++my_offset;
         }
         if (my_offset < my_hits.size()) {
-            setDocId(my_hits[my_offset]);
+            if constexpr (strict) {
+                setDocId(my_hits[my_offset]);
+            } else {
+                if (my_hits[my_offset] == docid) {
+                    setDocId(my_hits[my_offset]);
+                }
+            }
         } else {
-            setAtEnd();
+            if constexpr (strict) {
+                setAtEnd();
+            }
         }
     }
     Trinary is_strict() const final { return Trinary::True; }
@@ -102,6 +120,9 @@ struct OrSetup {
     std::vector<std::unique_ptr<TMD>> match_data;
     std::vector<BitVector::UP>        child_hits;
     std::vector<bool>                 use_array;
+    bool                              strict_or = true;
+    bool                              strict_children = true;
+    bool                              unwrap_single_child = true;
     OrSetup(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
     size_t per_child(double target, size_t child_cnt) {
         size_t result = (docid_limit * target) / child_cnt;
@@ -126,14 +147,18 @@ struct OrSetup {
     }
     SearchIterator::UP make_leaf(size_t i) {
         if (use_array[i]) {
-            return std::make_unique<ArrayIterator>(*child_hits[i], *match_data[i]);
+            if (strict_children) {
+                return std::make_unique<ArrayIterator<true>>(*child_hits[i], *match_data[i]);
+            } else {
+                return std::make_unique<ArrayIterator<false>>(*child_hits[i], *match_data[i]);
+            }
         } else {
-            return BitVectorIterator::create(child_hits[i].get(), *match_data[i], true);
+            return BitVectorIterator::create(child_hits[i].get(), *match_data[i], strict_children);
         }
     }
     SearchIterator::UP make_or(Impl impl, bool optimize) {
         assert(!child_hits.empty());
-        if (child_hits.size() == 1) {
+        if ((child_hits.size() == 1) && unwrap_single_child) {
             // use child directly if there is only one
             return make_leaf(0);
         }
@@ -151,7 +176,7 @@ struct OrSetup {
                 }
             }
         }
-        auto result = OrSearch::create(std::move(children), true, unpack, impl);
+        auto result = OrSearch::create(std::move(children), strict_or, unpack, impl);
         if (optimize) {
             result = queryeval::MultiBitVectorIteratorBase::optimize(std::move(result));
         }
@@ -163,24 +188,48 @@ struct OrSetup {
         }
         return *this;
     }
-    std::pair<size_t,double> bm_search_ms(Impl impl, bool optimized) {
+    std::pair<size_t,double> bm_strict(Impl impl, bool optimized) {
         auto search_up = make_or(impl, optimized);
         SearchIterator &search = *search_up;
-        size_t hits = 0;
+        size_t seeks = 0;
         BenchmarkTimer timer(budget);
         while (timer.has_budget()) {
             timer.before();
-            hits = 0;
+            seeks = 1;
             search.initRange(1, docid_limit);
             uint32_t docid = search.seekFirst(1);
             while (docid < docid_limit) {
-                ++hits;
+                ++seeks;
                 docid = search.seekNext(docid + 1);
                 // no unpack
             }
             timer.after();
         }
-        return std::make_pair(hits, timer.min_time() * 1000.0);
+        return std::make_pair(seeks, timer.min_time() * 1000.0);
+    }
+    std::pair<size_t,double> bm_non_strict(Impl impl, bool optimized) {
+        auto search_up = make_or(impl, optimized);
+        SearchIterator &search = *search_up;
+        size_t seeks = 0;
+        BenchmarkTimer timer(budget);
+        while (timer.has_budget()) {
+            timer.before();
+            seeks = 0;
+            search.initRange(1, docid_limit);
+            for (uint32_t docid = 1; docid < docid_limit; ++docid) {
+                ++seeks;
+                search.seek(docid);
+            }
+            timer.after();
+        }
+        return std::make_pair(seeks, timer.min_time() * 1000.0);
+    }
+    std::pair<size_t,double> bm_search_ms(Impl impl, bool optimized) {
+        if (strict_or) {
+            return bm_strict(impl, optimized);
+        } else {
+            return bm_non_strict(impl, optimized);
+        }
     }
     void verify_not_match(uint32_t docid) {
         for (size_t i = 0; i < match_data.size(); ++i) {
@@ -249,6 +298,43 @@ struct OrSetup {
 };
 OrSetup::~OrSetup() = default;
 
+struct FlowAdapter {
+    const OrSetup &setup;
+    FlowAdapter(const OrSetup &setup_in) noexcept : setup(setup_in) {}
+    double estimate(uint32_t i) const {
+        return Blueprint::abs_to_rel_est(setup.child_hits[i]->countTrueBits(), setup.docid_limit);
+    }
+    double cost(uint32_t i) const {
+        if (setup.use_array[i]) {
+            return 1.0; // array cost
+        } else {
+            return 1.0; // bitvector cost
+        }
+    }
+    double strict_cost(uint32_t i) const {
+        if (setup.use_array[i]) {
+            return estimate(i); // array strict cost
+        } else {
+            return estimate(i); // bitvector strict cost
+        }
+    }
+    static FlowStats stats(const OrSetup &setup) {
+        auto adapter = FlowAdapter(setup);
+        if ((setup.child_hits.size() == 1) && setup.unwrap_single_child) {
+            // if child will be unwrapped; return child flow stats directly
+            return {adapter.estimate(0), adapter.cost(0), adapter.strict_cost(0)};
+        }
+        auto index = flow::make_index(setup.child_hits.size());
+        double est = OrFlow::estimate_of(adapter, index);
+        double cost = OrFlow::cost_of(adapter, index, false);
+        double strict_cost = OrFlow::cost_of(adapter, index, true);
+        // account for OR seeks and heap maintenance
+        // (seems to be a surprisingly good baseline)
+        strict_cost += est * log2(double(setup.child_hits.size()));
+        return {est, cost, strict_cost};
+    }
+};
+
 TEST(OrSpeed, array_iterator_seek_unpack) {
     OrSetup setup(100);
     setup.add(10, true, true);
@@ -289,11 +375,21 @@ TEST(OrSpeed, bm_array_vs_bitvector) {
         size_t hits = target * bench_docs;
         OrSetup setup(bench_docs);
         setup.add(hits, false, false);
-        for (bool use_array: {false, true}) {
-            setup.use_array[0] = use_array;
-            auto result = setup.bm_search_ms(Impl::PLAIN, false);
-            fprintf(stderr, "LEAF(%s): (one of %4zu) hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n",
-                    leaf_str(use_array), one_of, result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
+        for (bool wrapped: {false, true}) {
+            setup.unwrap_single_child = !wrapped;
+            for (bool strict: {false, true}) {
+                setup.strict_or = strict;
+                setup.strict_children = strict;
+                for (bool use_array: {false, true}) {
+                    setup.use_array[0] = use_array;
+                    auto result = setup.bm_search_ms(Impl::HEAP, false);
+                    auto flow_stats = FlowAdapter::stats(setup);
+                    double ms_per_cost = result.second / (strict ? flow_stats.strict_cost : flow_stats.cost);
+                    fprintf(stderr, "%s(%s) %s: (one of %4zu) seeks: %8zu, time: %10.3f ms, ns per seek: %10.3f, ms per cost: %10.3f\n",
+                            wrapped_str(wrapped), leaf_str(use_array), strict_str(strict), one_of,
+                            result.first, result.second, ns_per(result), ms_per_cost);
+                }
+            }
         }
     }
 }
@@ -304,7 +400,7 @@ TEST(OrSpeed, bm_strict_or) {
         return;
     }
     for (double target: {0.001, 0.01, 0.1, 0.5, 1.0, 10.0}) {
-        for (size_t child_cnt: {2, 3, 4, 5, 10, 100, 250, 500, 1000}) {
+        for (size_t child_cnt: {2, 5, 10, 100, 250, 500, 1000}) {
             for (bool optimize: {false, true}) {
                 OrSetup setup(bench_docs);
                 size_t part = setup.per_child(target, child_cnt);
@@ -312,11 +408,17 @@ TEST(OrSpeed, bm_strict_or) {
                 if (part > 0 && (!use_array || !optimize)) {
                     setup.prepare_bm(child_cnt, part);
                     for (auto impl: {Impl::PLAIN, Impl::HEAP}) {
-                        auto result = setup.bm_search_ms(impl, optimize);
-                        fprintf(stderr, "OR bench(%s, %s, children: %4zu, hits_per_child: %8zu %s): "
-                                "total_hits: %8zu, time: %10.3f ms, time per hits: %10.3f ns\n",
-                                impl_str(impl), opt_str(optimize), child_cnt, part, leaf_str(use_array),
-                                result.first, result.second, (result.second * 1000.0 * 1000.0) / result.first);
+                        for (bool strict: {false, true}) {
+                            setup.strict_or = strict;
+                            setup.strict_children = strict;
+                            auto result = setup.bm_search_ms(impl, optimize);
+                            auto flow_stats = FlowAdapter::stats(setup);
+                            double ms_per_cost = result.second / (strict ? flow_stats.strict_cost : flow_stats.cost);
+                            fprintf(stderr, "OR bench(%s, %s, children: %4zu, hits_per_child: %8zu %s, %s): "
+                                    "seeks: %8zu, time: %10.3f ms, ns per seek: %10.3f, ms per cost: %10.3f\n",
+                                    impl_str(impl), opt_str(optimize), child_cnt, part, leaf_str(use_array), strict_str(strict),
+                                    result.first, result.second, ns_per(result), ms_per_cost);
+                        }
                     }
                 }
             }
