@@ -594,7 +594,7 @@ void AuxTest::TestJuniperStack()
     // Stack simplification tests
     QueryExpr* q = new QueryNode(1, 0, 0);
     QueryExpr* q1 = new QueryNode(1, 0, 0);
-    QueryExpr* q2 = new QueryTerm("Hepp", 4, 0);
+    QueryExpr* q2 = new QueryTerm("Hepp", 0, 100);
     q->AddChild(q1);
     q1->AddChild(q2);
 
@@ -653,7 +653,7 @@ struct QB {
     QB(size_t numTerms) : q(new QueryNode(numTerms, 0, 0)) {}
     QB(QB & rhs) : q(std::move(rhs.q)) { }
     QB & add(const char * t, bool st = true) {
-        QueryTerm * qt = new QueryTerm(t, strlen(t), 0);
+        QueryTerm * qt = new QueryTerm(t, 0, 100);
         if (st) qt->_options |= X_SPECIALTOKEN;
         q->AddChild(qt);
         return *this;
@@ -671,7 +671,7 @@ struct Ctx {
 };
 
 Ctx::Ctx(const std::string & text_, QB & qb_) : text(text_), qb(qb_), str(qb.q.get()), wf(), tp(text), jt(&wf, text.c_str(), text.size(), &tp, &str) { jt.scan(); }
-Ctx::~Ctx() { }
+Ctx::~Ctx() = default;
 
 void
 AuxTest::TestSpecialTokenRegistry()

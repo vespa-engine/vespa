@@ -17,9 +17,8 @@ using Token = ITokenProcessor::Token;
 //
 struct QueryTermLengthComparator
 {
-    inline bool operator()(QueryTerm* m1, QueryTerm* m2)
-    {
-        return m1->len <= m2->len;
+    bool operator()(const QueryTerm* m1, const QueryTerm* m2) {
+        return m1->len() <= m2->len();
     }
 };
 

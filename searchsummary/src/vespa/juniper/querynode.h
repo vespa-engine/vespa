@@ -41,7 +41,7 @@ using querynode_vector = std::vector<QueryNode*>;
 class IQueryExprVisitor
 {
 public:
-    virtual ~IQueryExprVisitor() {}
+    virtual ~IQueryExprVisitor() = default;
 
     // Visit before visiting subnodes
     virtual void VisitQueryNode(QueryNode*) = 0;
@@ -56,7 +56,9 @@ public:
 class QueryExpr
 {
 public:
-    explicit QueryExpr(int weight, int arity);
+    QueryExpr(const QueryExpr &) = delete;
+    QueryExpr &operator=(const QueryExpr &) = delete;
+    QueryExpr(int weight, int arity);
     explicit QueryExpr(QueryExpr* e);
 
     /** Add a child to the end of the list of children for this node.
@@ -79,20 +81,14 @@ public:
 
     virtual int MaxArity() { return 0; }
 
-    inline bool HasConstraints() { return _options & X_CONSTR; }
-    inline bool UsesValid() { return _options & X_CHKVAL; }
-    inline bool HasLimit() { return _options & X_LIMIT; }
-    inline bool Exact() { return _options & X_EXACT; }
+    bool HasLimit() const noexcept { return _options & X_LIMIT; }
+    bool Exact() const noexcept { return _options & X_EXACT; }
 
-    int _options;       // Applied options (bitmap) for this node
-    int _weight;        // Weight of this term by parent - if 0: weight is sum of children
-    int _arity;         // Arity of this query subexpression (may get decremented..)
-    QueryNode* _parent; // Pointer to parent or NULL if this is the root of the query
-    int _childno;       // Position number within parent's children (0 if no parents)
-
-private:
-    QueryExpr(QueryExpr &);
-    QueryExpr &operator=(QueryExpr &);
+    QueryNode* _parent;   // Pointer to parent or NULL if this is the root of the query
+    int        _options;  // Applied options (bitmap) for this node
+    int        _weight;   // Weight of this term by parent - if 0: weight is sum of children
+    int        _arity;    // Arity of this query subexpression (may get decremented..)
+    int        _childno;  // Position number within parent's children (0 if no parents)
 };
 
 
@@ -123,16 +119,11 @@ public:
 
     void Accept(IQueryExprVisitor& v) override;
 
-    // return true if a match for n should lead to creation of a new candidate node
-    // corresponding to this query tree node:
-    bool AcceptsInitially(QueryExpr* n);
-
-    int _threshold;       // Threshold for this expression node to be considered complete
-    int _limit;           // NEAR/WITHIN limit if X_LIMIT option set
-
     /* Pointer to an array of length _arity of pointers to
      * subqueries associated with this query */
     QueryExpr** _children;
+    int _threshold;       // Threshold for this expression node to be considered complete
+    int _limit;           // NEAR/WITHIN limit if X_LIMIT option set
     int _nchild;   // end pointer (fill level) of _children
     int _node_idx; // Index (position) of this nonterminal within table of all nonterminals
 };
@@ -143,9 +134,11 @@ public:
 class QueryTerm : public QueryExpr
 {
 public:
-    QueryTerm(const char* t, int length, int ix, int weight = 100);
-    explicit QueryTerm(QueryTerm* const);
-    ~QueryTerm();
+    QueryTerm(const QueryTerm &) = delete;
+    QueryTerm &operator=(const QueryTerm &) = delete;
+    QueryTerm(vespalib::stringref, int ix, int weight);
+    explicit QueryTerm(QueryTerm*);
+    ~QueryTerm() override;
     int Limit() override;
     QueryNode* AddChild(QueryExpr* child) override;
     void Dump(std::string&) override;
@@ -155,13 +148,12 @@ public:
     bool Complex() override { return false; }
 
     void Accept(IQueryExprVisitor& v) override;
-    inline const char* term() { return _rep; }
-    inline const ucs4_t* ucs4_term() { return _ucs4_term; }
-    inline bool is_prefix() { return _options & X_PREFIX; }
-    inline bool is_wildcard() { return _options & X_WILD; }
-    inline bool isSpecialToken() { return _options & X_SPECIALTOKEN; }
-
-    size_t len;
+    const char* term() const noexcept { return _term.c_str(); }
+    const ucs4_t* ucs4_term() const noexcept { return _ucs4_term; }
+    bool is_prefix() const noexcept { return _options & X_PREFIX; }
+    bool is_wildcard() const noexcept { return _options & X_WILD; }
+    bool isSpecialToken() const noexcept { return _options & X_SPECIALTOKEN; }
+    size_t len() const noexcept { return _term.size(); }
     size_t ucs4_len;
     int total_match_cnt;
     int exact_match_cnt;
@@ -169,11 +161,8 @@ public:
     juniper::Rewriter* rewriter;
     juniper::string_matcher* reduce_matcher;
 private:
-    char* _rep;
+    vespalib::string _term;
     ucs4_t* _ucs4_term;
-
-    QueryTerm(QueryTerm &);
-    QueryTerm &operator=(QueryTerm &);
 };
 
 
