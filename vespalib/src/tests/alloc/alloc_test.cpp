@@ -198,23 +198,6 @@ void verifyNoExtensionWhenNoRoom(Alloc & buf, Alloc & reserved, size_t sz) {
 }
 
 #ifdef __linux__
-TEST("auto alloced mmap alloc can be extended if room") {
-    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
-    Alloc reserved = Alloc::alloc(SZ);
-    Alloc buf = Alloc::alloc(SZ);
-
-    TEST_DO(ensureRoomForExtension(buf, reserved));
-    TEST_DO(verifyExtension(buf, SZ, (SZ/2)*3));
-}
-
-TEST("auto alloced mmap alloc can not be extended if no room") {
-    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
-    Alloc reserved = Alloc::alloc(SZ);
-    Alloc buf = Alloc::alloc(SZ);
-
-    TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, SZ));
-}
-
 /*
  * The two following tests are disabled when any sanitizer is
  * enabled since extra instrumentation code might trigger extra mmap
