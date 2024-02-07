@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "query.h"
 #include "matchobject.h"
-#include "juniperdebug.h"
 #include "juniper_separators.h"
 #include "result.h"
 #include "charutil.h"
@@ -16,7 +14,7 @@ using namespace juniper::separators;
 class traverser : public IQueryExprVisitor
 {
 public:
-    traverser(MatchObject& mo) : _mo(mo) {}
+    explicit traverser(MatchObject& mo) noexcept : _mo(mo) {}
 
     void VisitQueryNode(QueryNode*) override {
         // We must not add this node to nonterminals before all children has been added!
@@ -24,13 +22,11 @@ public:
         // until no more candidates...
     }
 
-    void RevisitQueryNode(QueryNode* n) override
-    {
+    void RevisitQueryNode(QueryNode* n) override {
         _mo.add_nonterm(n);
     }
 
-    void VisitQueryTerm(QueryTerm* t) override
-    {
+    void VisitQueryTerm(QueryTerm* t) override {
         if (t->rewriter && t->rewriter->ForDocument())
             _mo.add_reduction_term(t, t->rewriter);
         else
@@ -44,21 +40,18 @@ private:
 class query_expander : public IQueryExprVisitor
 {
 public:
-    query_expander(MatchObject& mo, uint32_t langid)
+    query_expander(MatchObject& mo, uint32_t langid) noexcept
         : _caller(), _mo(mo), _langid(langid) {}
 
-    void VisitQueryTerm(QueryTerm* orig) override
-    {
-        const char* nt = NULL;
+    void VisitQueryTerm(QueryTerm* orig) override {
+        const char* nt = nullptr;
         size_t length;
-        juniper::RewriteHandle* te = NULL;
+        juniper::RewriteHandle* te = nullptr;
         bool reduction = false;
 
-        if (orig->rewriter)
-        {
+        if (orig->rewriter) {
             // Check if expansions are necessary
-            if (orig->rewriter->ForQuery())
-            {
+            if (orig->rewriter->ForQuery()) {
                 te = orig->rewriter->Rewrite(_langid, orig->term());
                 if (te)
                     nt = orig->rewriter->NextTerm(te, length);
@@ -69,8 +62,7 @@ public:
             // to a separate mapping
             reduction = orig->rewriter->ForDocument();
         }
-        if (nt == NULL)
-        {
+        if (nt == nullptr) {
             QueryTerm* t = new QueryTerm(orig); // No matches found, just clone term..
             if (!reduction)
                 _mo.add_queryterm(t);
@@ -81,9 +73,8 @@ public:
         }
         // Start expanding...
         std::vector<QueryTerm*> newterms;
-        while (nt != NULL)
-        {
-            QueryTerm* nqt = new QueryTerm(nt, length, -1);
+        while (nt != nullptr) {
+            QueryTerm* nqt = new QueryTerm(vespalib::stringref(nt, length), -1, 100);
             // Copy options but do not apply juniper stem match for expanded terms
             nqt->_options = orig->_options | X_EXACT;
             if (!reduction)
@@ -93,8 +84,7 @@ public:
             newterms.push_back(nqt);
             nt = orig->rewriter->NextTerm(te, length);
         }
-        if (newterms.size() == 1)
-        {
+        if (newterms.size() == 1) {
             update(newterms.front());
             return;
         }
@@ -102,10 +92,8 @@ public:
         QueryNode* qn = new QueryNode(newterms.size(), orig->_weight, orig->_weight);
         // preserve options for nodes too, but make the node an OR..
         qn->_options = orig->_options | X_OR;
-        for (std::vector<QueryTerm*>::iterator it = newterms.begin();
-             it != newterms.end();      ++it)
-        {
-            qn->AddChild(*it);
+        for (QueryTerm * newTerm : newterms) {
+            qn->AddChild(newTerm);
         }
         update(qn);
         _mo.add_nonterm(qn);
@@ -128,12 +116,11 @@ public:
     }
 
     QueryExpr* NewQuery() {
-        if (_caller.empty()) return NULL;
+        if (_caller.empty()) return nullptr;
         return _caller.top();
     }
 private:
-    void update(QueryExpr* e)
-    {
+    void update(QueryExpr* e) {
         if (!_caller.empty())
             _caller.top()->AddChild(e);
     }
@@ -161,7 +148,7 @@ MatchObject::MatchObject(QueryExpr* query, bool has_reductions) :
 
 
 MatchObject::MatchObject(QueryExpr* query,  bool has_reductions, uint32_t langid) :
-    _query(NULL),
+    _query(nullptr),
     _qt(),
     _nonterms(),
     _match_overlap(false),
@@ -178,8 +165,7 @@ MatchObject::MatchObject(QueryExpr* query,  bool has_reductions, uint32_t langid
     if (LOG_WOULD_LOG(debug)) {
         std::string s;
         _query->Dump(s);
-        LOG(debug, "juniper::MatchObject(language id %d): modified stack: %s",
-            langid, s.c_str());
+        LOG(debug, "juniper::MatchObject(language id %d): modified stack: %s", langid, s.c_str());
     }
     _max_arity = _query->MaxArity();
 }
@@ -199,8 +185,7 @@ bool MatchObject::Match(MatchObject::iterator& mi, Token& token, unsigned& optio
     if (!q) return false;
     options = 0;
     q->total_match_cnt++;
-    if (q->ucs4_len == static_cast<size_t>(token.curlen))
-    {
+    if (q->ucs4_len == static_cast<size_t>(token.curlen)) {
         options |= X_EXACT;
         q->exact_match_cnt++;
     }
@@ -221,8 +206,7 @@ void MatchObject::add_queryterm(QueryTerm* nt)
     _qt.push_back(nt);
     nt->idx = _qt.size() - 1;
 
-    _qt_byname.Insert(
-            *(reinterpret_cast<const queryterm_hashtable::keytype*>(nt->ucs4_term())), nt);
+    _qt_byname.Insert(*(reinterpret_cast<const queryterm_hashtable::keytype*>(nt->ucs4_term())), nt);
 
     LOG(debug, "MatchObject: adding term '%s'", nt->term());
 }
@@ -242,25 +226,24 @@ void MatchObject::add_reduction_term(QueryTerm* nt, juniper::Rewriter* rw)
 
 
 match_iterator::match_iterator(MatchObject* mo, Result* rhandle) :
-    _table(mo->_qt_byname), _el(NULL), _rhandle(rhandle),
-    _reductions(mo->HasReductions()), _reduce_matches(NULL), _reduce_matches_it(),
+    _table(mo->_qt_byname), _el(nullptr), _rhandle(rhandle),
+    _reductions(mo->HasReductions()), _reduce_matches(nullptr), _reduce_matches_it(),
     _mo(mo), _len(0), _stem_min(rhandle->StemMin()), _stemext(rhandle->StemExt()),
-    _term(NULL)
+    _term(nullptr)
 {}
 
 
-QueryTerm* match_iterator::first()
+QueryTerm*
+match_iterator::first()
 {
-    for (; _el != NULL; _el = _el->GetNext())
-    {
+    for (; _el != nullptr; _el = _el->GetNext()) {
         QueryTerm* q = _el->GetItem();
 
         // If exact match is desired by this subexpression,
         // only have effect if exact match
-        if (q->Exact() && _len > q->len) continue;
+        if (q->Exact() && _len > q->len()) continue;
 
-        if (q->is_wildcard())
-        {
+        if (q->is_wildcard()) {
             if (fast::util::wildcard_match(_term, q->ucs4_term()) == false) continue;
             return q;
         }
@@ -268,30 +251,28 @@ QueryTerm* match_iterator::first()
         if (_len < q->ucs4_len) continue;
         // allow prefix match iff prefix query term or
         // rest < _stem_extend and length > stem_min
-        if (!q->is_prefix())
-        {
+        if (!q->is_prefix()) {
             size_t stem_extend = (q->ucs4_len <= _stem_min ? 0 : _stemext);
             if (_len > q->ucs4_len + stem_extend) continue;
         }
         if (juniper::strncmp(_term, q->ucs4_term(), q->ucs4_len) != 0) continue;
         return q;
     }
-    return NULL;
+    return nullptr;
 }
 
 
 QueryTerm* match_iterator::next_reduce_match()
 {
-    if (!_reduce_matches) return NULL;
-    if (_reduce_matches_it != _reduce_matches->end())
-    {
+    if (!_reduce_matches) return nullptr;
+    if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         ++_reduce_matches_it;
         return t;
     }
     delete _reduce_matches;
-    _reduce_matches = NULL;
-    return NULL;
+    _reduce_matches = nullptr;
+    return nullptr;
 }
 
 
@@ -321,7 +302,7 @@ QueryTerm* match_iterator::first_match(Token& token)
                     token.curlen = term - token.token;
                     LOG(debug, "recurse A to match token %u..%u len %d", token.token[0], token.token[token.curlen-1], token.curlen);
                     qt = this->first_match(token);
-                    if (qt != NULL) {
+                    if (qt != nullptr) {
                         return qt;
                     }
                     token.token = ++term; // skip SPACE
@@ -348,7 +329,7 @@ QueryTerm* match_iterator::first_match(Token& token)
     queryterm_hashtable::keytype keyval = termval;
     if (LOG_WOULD_LOG(spam)) {
        char utf8term[1024];
-       Fast_UnicodeUtil::utf8ncopy(utf8term, term, 1024, (term != NULL ? len : 0));
+       Fast_UnicodeUtil::utf8ncopy(utf8term, term, 1024, (term != nullptr ? len : 0));
        LOG(spam, "term %s, len %ld, keyval 0x%x termval 0x%x",
            utf8term, len, keyval, termval);
     }
@@ -356,22 +337,18 @@ QueryTerm* match_iterator::first_match(Token& token)
     _len = len;
     QueryTerm* rtrn = first();
 
-    if (rtrn == 0)
-    {
+    if (rtrn == 0) {
         _el = _table.FindRef('*');
-        if ((rtrn = first()) == 0)
-        {
+        if ((rtrn = first()) == 0) {
             _el = _table.FindRef('?');
             rtrn = first();
         }
     }
-    if (_reductions)
-    {
+    if (_reductions) {
         _reduce_matches = _mo->_reduce_matchers.match(_rhandle->_langid,
                 &_rhandle->_docsum[token.bytepos],
                 token.bytelen);
-        if (_reduce_matches)
-        {
+        if (_reduce_matches) {
             _reduce_matches_it = _reduce_matches->begin();
 
             // Find the first reduce match only if no other match was found
@@ -388,26 +365,24 @@ QueryTerm* match_iterator::first_match(Token& token)
 QueryTerm* match_iterator::current()
 {
     if (_el) return _el->GetItem();
-    if (!_reduce_matches) return NULL;
-    if (_reduce_matches_it != _reduce_matches->end())
-    {
+    if (!_reduce_matches) return nullptr;
+    if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         return t;
     }
     delete _reduce_matches;
-    return NULL;
+    return nullptr;
 }
 
 
 QueryTerm* match_iterator::next()
 {
-    if (_el)
-    {
+    if (_el) {
         _el = _el->GetNext();
         return first();
     }
     else if (_reduce_matches)
         return next_reduce_match();
-    return NULL;
+    return nullptr;
 }
 

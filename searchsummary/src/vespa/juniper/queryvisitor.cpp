@@ -251,7 +251,7 @@ QueryVisitor::visitKeyword(const QueryItem* item, vespalib::stringref keyword, b
             ind.c_str(), (!ind.empty() ? ":" : ""), s.c_str());
     }
 
-    auto * term = new QueryTerm(keyword.data(), keyword.size(), _term_index++, item->get_weight());
+    auto * term = new QueryTerm(keyword, _term_index++, item->get_weight());
     if (prefix) {
         bool is_wild = std::any_of(keyword.begin(), keyword.end(), [](char c) {return (c == '*') || (c == '?'); });
         term->_options |= (is_wild ? X_WILD : X_PREFIX);

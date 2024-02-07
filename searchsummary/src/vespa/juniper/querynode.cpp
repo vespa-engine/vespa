@@ -12,65 +12,67 @@ LOG_SETUP(".juniper.querynode");
  *  in Matcher.h
  */
 
-QueryExpr::QueryExpr(int weight, int arity) :
-    _options(0), _weight(weight), _arity(arity), _parent(nullptr), _childno(0)
+QueryExpr::QueryExpr(int weight, int arity)
+    : _parent(nullptr),
+      _options(0),
+      _weight(weight),
+      _arity(arity),
+      _childno(0)
 { }
 
-QueryExpr::QueryExpr(QueryExpr* e) :
-    _options(e->_options),
-    _weight(e->_weight),
-    _arity(e->_arity),
-    _parent(nullptr),
-    _childno(0)
+QueryExpr::QueryExpr(QueryExpr* e)
+    : _parent(nullptr),
+      _options(e->_options),
+      _weight(e->_weight),
+      _arity(e->_arity),
+      _childno(0)
 { }
 
 QueryExpr::~QueryExpr() = default;
 
 
-QueryTerm::QueryTerm(const char* t, int length, int ix, int wgt)
-    : QueryExpr(wgt, 0), len(length),
+QueryTerm::QueryTerm(vespalib::stringref term, int ix, int wgt)
+    : QueryExpr(wgt, 0),
       ucs4_len(0),
-      total_match_cnt(0), exact_match_cnt(0),
-      idx(ix), rewriter(nullptr), reduce_matcher(nullptr), _rep(nullptr),
-      _ucs4_term(nullptr)
+      total_match_cnt(0),
+      exact_match_cnt(0),
+      idx(ix),
+      rewriter(nullptr),
+      reduce_matcher(nullptr),
+      _term(term),
+      _ucs4_term(new ucs4_t[_term.size()+1])
 {
-    if (len <= 0)
-        len = strlen(t);
-    _rep = new char[len+1];
-    strncpy(_rep, t, len);                _rep[len] = '\0';
-    _ucs4_term = new ucs4_t[len+1];
-    Fast_UnicodeUtil::ucs4copy(_ucs4_term, _rep);
+    Fast_UnicodeUtil::ucs4copy(_ucs4_term, _term.c_str());
     ucs4_len = Fast_UnicodeUtil::ucs4strlen(_ucs4_term);
 }
 
 
 QueryTerm::QueryTerm(QueryTerm* t)
-    : QueryExpr(t), len(t->len),
+    : QueryExpr(t),
       ucs4_len(0),
       total_match_cnt(0), exact_match_cnt(0),
-      idx(-1), rewriter(nullptr), reduce_matcher(nullptr), _rep(nullptr),
-      _ucs4_term(nullptr)
+      idx(-1), rewriter(nullptr), reduce_matcher(nullptr),
+      _term(t->_term),
+      _ucs4_term(new ucs4_t[_term.size()+1])
 {
-    _rep = new char[len+1];
-    strncpy(_rep, t->term(), len);         _rep[len] = '\0';
-    _ucs4_term = new ucs4_t[len+1];
-    Fast_UnicodeUtil::ucs4copy(_ucs4_term, _rep);
+    Fast_UnicodeUtil::ucs4copy(_ucs4_term, _term.c_str());
     ucs4_len = Fast_UnicodeUtil::ucs4strlen(_ucs4_term);
 }
 
 
 
-QueryTerm::~QueryTerm()
-{
-    delete[] _rep;
+QueryTerm::~QueryTerm() {
     delete[] _ucs4_term;
 }
 
 
-QueryNode::QueryNode(int arity, int threshold, int weight) :
-    QueryExpr(weight, arity), _threshold(threshold), _limit(0),
-    _children(nullptr),
-    _nchild(0), _node_idx(-1)
+QueryNode::QueryNode(int arity, int threshold, int weight)
+    : QueryExpr(weight, arity),
+      _children(nullptr),
+      _threshold(threshold),
+      _limit(0),
+      _nchild(0),
+      _node_idx(-1)
 {
     assert(arity > 0);
     _children = new QueryExpr*[arity];
@@ -79,9 +81,9 @@ QueryNode::QueryNode(int arity, int threshold, int weight) :
 
 QueryNode::QueryNode(QueryNode* n)
     : QueryExpr(n),
+      _children(nullptr),
       _threshold(n->_threshold),
       _limit(n->_limit),
-      _children(nullptr),
       _nchild(0),
       _node_idx(n->_node_idx)
 {
@@ -115,12 +117,10 @@ QueryTerm::AddChild(QueryExpr*)
 
 
 QueryNode*
-QueryNode::AddChild(QueryExpr* child)
-{
-    if (!child)
+QueryNode::AddChild(QueryExpr* child) {
+    if (!child) {
         _arity--;
-    else
-    {
+    } else {
         child->_parent = this;
         child->_childno = _nchild;
         _children[_nchild++] = child;
@@ -222,18 +222,6 @@ QueryNode::MaxArity()
     }
     return max_arity;
 }
-
-
-bool
-QueryNode::AcceptsInitially(QueryExpr* n)
-{
-    assert(n->_parent == this);
-//  return (!(_options & X_ORDERED)) || n->_childno == 0;
-    // currently implicitly add all terms even for ordered..
-    (void) n;
-    return true;
-}
-
 
 /** Modify the given stack by eliminating unnecessary internal nodes
  *  with arity 1 or non-terms with arity 0
