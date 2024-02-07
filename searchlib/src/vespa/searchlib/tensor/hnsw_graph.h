@@ -47,6 +47,7 @@ struct HnswGraph {
 
     NodeVector nodes;
     std::atomic<uint32_t> nodes_size;
+    std::atomic<uint32_t> active_nodes;
     LevelArrayStore levels_store;
     LinkArrayStore links_store;
 
@@ -169,6 +170,8 @@ struct HnswGraph {
     }
 
     size_t size() const { return nodes_size.load(std::memory_order_acquire); }
+    uint32_t get_active_nodes() const noexcept { return active_nodes.load(std::memory_order_relaxed); }
+    void set_active_nodes(uint32_t value) noexcept { active_nodes.store(value, std::memory_order_relaxed); }
 
     struct Histograms {
         std::vector<uint32_t> level_histogram;

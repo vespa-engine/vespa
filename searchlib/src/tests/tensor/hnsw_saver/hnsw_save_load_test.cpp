@@ -167,6 +167,7 @@ public:
 
     void expect_copy_as_populated() const {
         EXPECT_EQ(copy.size(), 7);
+        EXPECT_EQ(4, copy.get_active_nodes());
         auto entry = copy.get_entry_node();
         EXPECT_EQ(entry.nodeid, 2);
         EXPECT_EQ(entry.level, 1);

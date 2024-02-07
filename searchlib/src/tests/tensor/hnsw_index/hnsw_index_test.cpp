@@ -273,6 +273,9 @@ public:
     void reset_doom(vespalib::steady_time::duration time_to_doom) {
         _doom = std::make_unique<vespalib::FakeDoom>(time_to_doom);
     }
+    uint32_t get_active_nodes() const noexcept {
+        return index->get_active_nodes();
+    }
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
@@ -284,24 +287,29 @@ TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors)
 {
     this->init(false);
+    EXPECT_EQ(0, this->get_active_nodes());
 
     this->add_document(1);
     this->expect_level_0(1, {});
+    EXPECT_EQ(1, this->get_active_nodes());
 
     this->add_document(2);
     this->expect_level_0(1, {2});
     this->expect_level_0(2, {1});
+    EXPECT_EQ(2, this->get_active_nodes());
 
     this->add_document(3);
     this->expect_level_0(1, {2, 3});
     this->expect_level_0(2, {1, 3});
     this->expect_level_0(3, {1, 2});
+    EXPECT_EQ(3, this->get_active_nodes());
 
     this->add_document(4);
     this->expect_level_0(1, {2, 3, 4});
     this->expect_level_0(2, {1, 3});
     this->expect_level_0(3, {1, 2, 4});
     this->expect_level_0(4, {1, 3});
+    EXPECT_EQ(4, this->get_active_nodes());
 
     this->add_document(5);
     this->expect_level_0(1, {2, 3, 4});
@@ -309,6 +317,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_level_0(3, {1, 2, 4, 5});
     this->expect_level_0(4, {1, 3});
     this->expect_level_0(5, {2, 3});
+    EXPECT_EQ(5, this->get_active_nodes());
 
     this->add_document(6);
     this->expect_level_0(1, {2, 3, 4});
@@ -317,6 +326,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_level_0(4, {1, 3});
     this->expect_level_0(5, {2, 3, 6});
     this->expect_level_0(6, {2, 5});
+    EXPECT_EQ(6, this->get_active_nodes());
 
     this->add_document(7);
     this->expect_level_0(1, {2, 3, 4});
@@ -326,6 +336,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_level_0(5, {2, 3, 6});
     this->expect_level_0(6, {2, 5});
     this->expect_level_0(7, {2, 3});
+    EXPECT_EQ(7, this->get_active_nodes());
 
     this->expect_top_3(1, {1});
     this->expect_top_3(2, {2, 1, 3});
@@ -352,47 +363,57 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
 {
     this->init(false);
+    EXPECT_EQ(0, this->get_active_nodes());
 
     this->add_document(1);
     this->expect_level_0(1, {});
     this->expect_entry_point(1, 0);
+    EXPECT_EQ(1, this->get_active_nodes());
 
     this->add_document(2);
     this->expect_level_0(1, {2});
     this->expect_level_0(2, {1});
     this->expect_entry_point(1, 0);
+    EXPECT_EQ(2, this->get_active_nodes());
 
     this->add_document(3);
     this->expect_level_0(1, {2, 3});
     this->expect_level_0(2, {1, 3});
     this->expect_level_0(3, {1, 2});
     this->expect_entry_point(1, 0);
+    EXPECT_EQ(3, this->get_active_nodes());
 
     this->remove_document(2);
     this->expect_level_0(1, {3});
     this->expect_level_0(3, {1});
     this->expect_entry_point(1, 0);
+    EXPECT_EQ(2, this->get_active_nodes());
 
     this->remove_document(1);
     this->expect_level_0(3, {});
     this->expect_entry_point(3, 0);
+    EXPECT_EQ(1, this->get_active_nodes());
 
     this->remove_document(3);
     this->expect_entry_point(0, -1);
+    EXPECT_EQ(0, this->get_active_nodes());
 }
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors)
 {
     this->init(true);
+    EXPECT_EQ(0, this->get_active_nodes());
 
     this->add_document(1);
     this->expect_entry_point(1, 0);
     this->expect_level_0(1, {});
+    EXPECT_EQ(1, this->get_active_nodes());
 
     this->add_document(2);
     this->expect_entry_point(1, 0);
     this->expect_level_0(1, {2});
     this->expect_level_0(2, {1});
+    EXPECT_EQ(2, this->get_active_nodes());
 
     // Doc 3 is also added to level 1
     this->add_document(3, 1);
@@ -402,6 +423,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(1, {2, 3});
     this->expect_level_0(2, {1});
     this->expect_levels(3, {{1}, {}});
+    EXPECT_EQ(3, this->get_active_nodes());
 
     // Doc 4 is closest to 1 and they are linked.
     // Doc 4 is NOT linked to 3 as the distance between 4 and 3 is greater than the distance between 3 and 1.
@@ -412,6 +434,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(2, {1});
     this->expect_levels(3, {{1}, {}});
     this->expect_level_0(4, {1});
+    EXPECT_EQ(4, this->get_active_nodes());
 
     // Doc 5 is closest to 2 and they are linked.
     // The other docs are reachable via 2, and no other links are created. Same argument as with doc 4 above.
@@ -422,6 +445,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_levels(3, {{1}, {}});
     this->expect_level_0(4, {1});
     this->expect_level_0(5, {2});
+    EXPECT_EQ(5, this->get_active_nodes());
 
     // Doc 6 is closest to 5 and they are linked.
     // Doc 6 is also linked to 2 as the distance between 6 and 2 is less than the distance between 2 and 5.
@@ -434,6 +458,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(4, {1});
     this->expect_level_0(5, {2, 6});
     this->expect_levels(6, {{2, 5}, {3}, {}});
+    EXPECT_EQ(6, this->get_active_nodes());
 
     // Doc 7 is closest to 3 and they are linked.
     // Doc 7 is also linked to 6 as the distance between 7 and 6 is less than the distance between 6 and 3.
@@ -447,13 +472,15 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(5, {2, 6});
     this->expect_levels(6, {{2, 5, 7}, {3}, {}});
     this->expect_level_0(7, {3, 6});
+    EXPECT_EQ(7, this->get_active_nodes());
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
         this->index->get_state(inserter);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
-        EXPECT_EQ(8, root["nodes"].asLong());
+        EXPECT_EQ(8, root["nodeid_limit"].asLong());
+        EXPECT_EQ(7, root["nodes"].asLong());
         EXPECT_EQ(7, root["valid_nodes"].asLong());
         EXPECT_EQ(0, root["level_histogram"][0].asLong());
         EXPECT_EQ(5, root["level_histogram"][1].asLong());
@@ -476,13 +503,15 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(5, {2, 6});
     this->expect_levels(6, {{2, 5, 7}, {3}, {}});
     this->expect_level_0(7, {3, 6});
+    EXPECT_EQ(6, this->get_active_nodes());
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
         this->index->get_state(inserter);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
-        EXPECT_EQ(8, root["nodes"].asLong());
+        EXPECT_EQ(8, root["nodeid_limit"].asLong());
+        EXPECT_EQ(6, root["nodes"].asLong());
         EXPECT_EQ(6, root["valid_nodes"].asLong());
         EXPECT_EQ(0, root["level_histogram"][0].asLong());
         EXPECT_EQ(4, root["level_histogram"][1].asLong());
@@ -498,17 +527,21 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
 TYPED_TEST(HnswIndexTest, manual_insert)
 {
     this->init(false);
+    EXPECT_EQ(0, this->get_active_nodes());
 
     std::vector<uint32_t> nbl;
     HnswTestNode empty{nbl};
     this->index->set_node(1, empty);
+    EXPECT_EQ(1, this->get_active_nodes());
     this->index->set_node(2, empty);
+    EXPECT_EQ(2, this->get_active_nodes());
 
     HnswTestNode three{{1,2}};
     this->index->set_node(3, three);
     this->expect_level_0(1, {3});
     this->expect_level_0(2, {3});
     this->expect_level_0(3, {1,2});
+    EXPECT_EQ(3, this->get_active_nodes());
 
     this->expect_entry_point(1, 0);
 
@@ -517,6 +550,7 @@ TYPED_TEST(HnswIndexTest, manual_insert)
 
     this->expect_entry_point(4, 1);
     this->expect_level_0(1, {3,4});
+    EXPECT_EQ(4, this->get_active_nodes());
 
     HnswTestNode five{{{1,2}, {4}}};
     this->index->set_node(5, five);
@@ -526,6 +560,7 @@ TYPED_TEST(HnswIndexTest, manual_insert)
     this->expect_levels(3, {{1,2}});
     this->expect_levels(4, {{1}, {5}});
     this->expect_levels(5, {{1,2}, {4}});
+    EXPECT_EQ(5, this->get_active_nodes());
 }
 
 TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
@@ -540,12 +575,14 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     this->expect_level_0(1, {2,3});
     this->expect_level_0(2, {1,3});
     this->expect_level_0(3, {1,2});
+    EXPECT_EQ(3, this->get_active_nodes());
     auto mem_2 = this->memory_usage();
     // We should use more memory with larger link arrays and extra document.
     EXPECT_GT((mem_2.usedBytes() - mem_2.deadBytes()), (mem_1.usedBytes() - mem_1.deadBytes()));
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
 
     this->remove_document(2);
+    EXPECT_EQ(2, this->get_active_nodes());
     size_t nodes_growth = 0;
     if constexpr (TestFixture::is_single) {
         this->expect_level_0(1, {3});
@@ -562,6 +599,7 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
     EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + nodes_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
     EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
+    EXPECT_EQ(2, this->get_active_nodes());
 }
 
 TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
@@ -957,16 +995,21 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     this->expect_levels(4, {{1,2}, {5,6}});
     this->expect_levels(5, {{2,3}, {4,6}});
     this->expect_levels(6, {{1,3}, {4,5}, {}});
+    EXPECT_EQ(6, this->get_active_nodes());
 
     auto up = this->prepare_add(7, 1);
     // simulate things happening while 7 is in progress:
     this->add_document(8); // added
+    EXPECT_EQ(7, this->get_active_nodes());
     this->remove_document(1); // removed
     this->remove_document(5);
+    EXPECT_EQ(5, this->get_active_nodes());
     this->vectors.set(5, {8, 14}); // updated and moved
     this->add_document(5, 2);
     this->add_document(9, 1); // added
+    EXPECT_EQ(7, this->get_active_nodes());
     this->complete_add(7, std::move(up));
+    EXPECT_EQ(8, this->get_active_nodes());
 
     auto& id_mapping = this->index->get_id_mapping();
     auto nodeids = id_mapping.get_ids(7);

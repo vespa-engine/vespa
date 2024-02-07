@@ -609,8 +609,8 @@ HnswIndex<type>::prepare_add_document(uint32_t docid,
                                 VectorBundle vectors,
                                 vespalib::GenerationHandler::Guard read_guard) const
 {
-    uint32_t max_nodes = _graph.nodes_size.load(std::memory_order_acquire);
-    if (max_nodes < _cfg.min_size_before_two_phase()) {
+    uint32_t active_nodes = _graph.get_active_nodes();
+    if (active_nodes < _cfg.min_size_before_two_phase()) {
         // the first documents added will do all work in write thread
         // to ensure they are linked together:
         return std::make_unique<PreparedFirstAddDoc>();
@@ -628,7 +628,7 @@ HnswIndex<type>::complete_add_document(uint32_t docid, std::unique_ptr<PrepareRe
         internal_complete_add(docid, *prepared);
     } else {
         // we expect this for the first documents added, so no warning for them
-        if (_graph.nodes.size() > 1.25 * _cfg.min_size_before_two_phase()) {
+        if (_graph.get_active_nodes() > 1.25 * _cfg.min_size_before_two_phase()) {
             LOG(warning, "complete_add_document(%u) called with invalid prepare_result %s/%u",
                 docid, (prepared ? "valid ptr" : "nullptr"), (prepared ? prepared->docid : 0u));
         }
@@ -824,7 +824,8 @@ HnswIndex<type>::get_state(const vespalib::slime::Inserter& inserter) const
     StateExplorerUtils::memory_usage_to_slime(_graph.nodes.getMemoryUsage(), memUsageObj.setObject("nodes"));
     StateExplorerUtils::memory_usage_to_slime(_graph.levels_store.getMemoryUsage(), memUsageObj.setObject("levels"));
     StateExplorerUtils::memory_usage_to_slime(_graph.links_store.getMemoryUsage(), memUsageObj.setObject("links"));
-    object.setLong("nodes", _graph.size());
+    object.setLong("nodeid_limit", _graph.size());
+    object.setLong("nodes", _graph.get_active_nodes());
     auto& histogram_array = object.setArray("level_histogram");
     auto& links_hst_array = object.setArray("level_0_links_histogram");
     auto histograms = _graph.histograms();
