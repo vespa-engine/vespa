@@ -530,7 +530,7 @@ jobs:
       screwdriver.cd/cpu: LOW
       screwdriver.cd/ram: LOW
       screwdriver.cd/timeout: 10
-      screwdriver.cd/buildPeriodically: H 6 * * 1
+      screwdriver.cd/buildPeriodically: H 6 * * *
     secrets:
       - CLOUDSMITH_API_CREDS
     steps:
