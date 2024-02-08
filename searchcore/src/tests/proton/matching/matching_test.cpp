@@ -174,7 +174,7 @@ struct MyWorld {
 
         // attribute context
         {
-            SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("a1");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a1");
             AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -184,7 +184,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            auto *attr = new SingleInt32ExtAttribute("a2");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a2");
             AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -194,7 +194,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            auto *attr = new SingleInt32ExtAttribute("a3");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a3");
             AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
