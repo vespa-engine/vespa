@@ -88,7 +88,7 @@ class JvmHeapSizeValidatorTest {
                                 .build())
                 .modelHostProvisioner(new InMemoryProvisioner(5, new NodeResources(4, nodeGb, 125, 0.3), true))
                 .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("c.example.com"))))
-                .properties(new TestProperties().setHostedVespa(true).setDynamicHeapSize(true))
+                .properties(new TestProperties().setHostedVespa(true))
                 .onnxModelCost(new ModelCostDummy(modelCostBytes))
                 .build();
     }

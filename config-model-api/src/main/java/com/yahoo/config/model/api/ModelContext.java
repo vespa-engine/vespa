@@ -43,7 +43,6 @@ public interface ModelContext {
     FileRegistry getFileRegistry();
     ExecutorService getExecutor();
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
-    default Set<ClusterSpec.Id> restartingClusters() { return Set.of(); } // TODO: Remove after 8.290 is gone.
     Properties properties();
     default Optional<File> appDir() { return Optional.empty(); }
     OnnxModelCost onnxModelCost();
@@ -109,11 +108,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
-        @ModelFeatureFlag(owners = {"bjorncs"}, removeAfter = "8.289") default boolean dynamicHeapSize() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default long mergingMaxMemoryUsagePerNode() { return 0; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.292.x") default boolean usePerDocumentThrottledDeleteBucket() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean alwaysMarkPhraseExpensive() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.300.x") default boolean restartOnDeployWhenOnnxModelChanges() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
